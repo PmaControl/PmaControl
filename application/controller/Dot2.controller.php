@@ -18,26 +18,27 @@ class Dot2 extends Controller
 
     use \App\Library\Debug;
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE         = "#5cb85c";
+    CONST NODE_AVAILABLE         = "green";
     CONST NODE_NOT_ANSWERED      = "orange";
-    CONST NODE_ERROR             = "#323232";
+    CONST NODE_ERROR             = "red";
 //for galera
     CONST NODE_NOT_PRIMARY       = "blue"; //galera cluster
-    CONST NODE_DONOR             = "#009AC5";
+    CONST NODE_DONOR             = "cyan";
     CONST NODE_DONOR_DESYNCED    = "yellow";
-    CONST NODE_MANUAL_DESYNC     = "#000000";
+    CONST NODE_MANUAL_DESYNC     = "brown";
     CONST NODE_RECEIVE_SST       = "yellow";
-    CONST REPLICATION_OK         = "#5cb85c";
+    CONST NODE_BUG               = "pink";
+    CONST REPLICATION_OK         = "green";
     CONST REPLICATION_IST        = "yellow";
-    CONST REPLICATION_SST        = "#009AC5";
-    CONST REPLICATION_STOPPED    = "#5bc0de";
+    CONST REPLICATION_SST        = "grey";
+    CONST REPLICATION_STOPPED    = "blue";
     CONST REPLICATION_ERROR      = "red";
-    CONST REPLICATION_BLACKOUT   = "#000000";
-    CONST REPLICATION_DELAY      = "#f0ad4e";
+    CONST REPLICATION_BLACKOUT   = "pink";
+    CONST REPLICATION_DELAY      = "orange";
     CONST REPLICATION_CONNECTING = "yellow";
     CONST GALERA_SPLIT_BRAIN     = "orange";
-    CONST GALERA_AVAILABLE       = "#5cb85c";
-    CONST GALERA_UNAVAILABLE     = "#323232";
+    CONST GALERA_AVAILABLE       = "green";
+    CONST GALERA_UNAVAILABLE     = "red";
     CONST GALERA_NON_PRIMARY     = "blue";
 
     var $maping_master           = array();
@@ -401,7 +402,7 @@ class Dot2 extends Controller
             }
         }
 
-        $this->debug($this->servers, "GENERATE NODE");
+            $this->debug($this->graph_node, "GENERATE NODE");
 
 
 //$this->debug($this->graph_node);
@@ -677,6 +678,12 @@ class Dot2 extends Controller
           $databases[$ob->id_mysql_server][$ob->id_db]['binlog_ignore_db'] = $ob->binlog_ignore_db;
           }
          */
+
+
+        if ($id_mysql_server == "66")
+        {
+            $this->debug($this->graph_node[$id_mysql_server]['color'],"COLOR NODE");
+        }
 
         $node .= "node [color = \"".$this->graph_node[$id_mysql_server]['color']."\"];\n";
         $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
