@@ -61,7 +61,7 @@ class Export extends Controller
         }
 
          // a remplacer par une implementation full PHP
-        $cmd = "mysqldump -h ".$connect['hostname']
+        $cmd = "mysqldump --extended-insert=FALSE -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
             ." -p'".Crypt::decrypt($connect['password'])
@@ -70,7 +70,7 @@ class Export extends Controller
 
         shell_exec($cmd);
 
-        $cmd = "mysqldump -h ".$connect['hostname']
+        $cmd = "mysqldump --extended-insert=FALSE -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
             ." -d "
