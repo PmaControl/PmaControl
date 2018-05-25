@@ -789,6 +789,17 @@ class Dot2 extends Controller
                         $val['label'] = " ";
                     }
 
+
+                    // si le serveur est HS on surcharge la replication
+
+                    if ($this->servers[$id_slave]['is_available'] === "0")
+                    {
+                        $val['color'] = self::REPLICATION_ERROR;
+                        $val['label'] = "HS";
+                    }
+
+
+
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
                         .$val['color']."\" label=\"".$val['label']."\"  edgetarget=\"".LINK."mysql/thread/"
@@ -797,9 +808,6 @@ class Dot2 extends Controller
 
                     $edges .= $edge;
 
-                    if (in_array('76', $group)) {
-                        $this->debug($edge, "EDGE");
-                    }
                 }
             }
         }
