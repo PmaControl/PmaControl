@@ -1,22 +1,25 @@
 {
         "mysql": [{
-                "fqdn": "my.server.mysql.com",
+                "fqdn": "www.google.com",
                 "display_name": "@hostname",
                 "port": "3306",
                 "login": "pmacontrol",
-                "password": "********",
+                "password": "secret_password",
                 "tag": ["text","datacenter1"],
-                "client": "68Koncept",
+                "organization": "68Koncept",
                 "environment": "test"
         }],
         "haproxy": [{
                 "fqdn": "my.haproxy.com",
                 "port": "3307",
+                "organization": "68Koncept",
+                "tag": ["text","datacenter1"],
+                "environment": "test",
                 "stats": {
                         "path": "\/haproxy_stats;csv",
                         "port": "9000",
                         "login": "haproxy",
-                        "password": "********"
+                        "password": "secret_password"
                 }
         }]
 }

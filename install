@@ -205,11 +205,14 @@ if [ -f $CONFIG_FILE ]; then
 	   exit 4
 	fi
 
-
-
 	php application/webroot/index.php ldap updateFromInstall $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 5
+	fi
+
+	php application/webroot/index.php webservice addAccount $CONFIG_FILE
+	if [ $? != 0 ]; then
+	   exit 6
 	fi
 
 

@@ -6,7 +6,7 @@
     "password": "secret_password",
     "database": "pmacontrol"
   },
-  "organisation": [
+  "organization": [
     "68Koncept"
   ],
   "webroot": "/",
@@ -38,6 +38,13 @@
       }
     ]
   },
+  "webservice": [{
+    "user": "salt",
+    "host": "%",
+    "password": "secret_password",
+    "organization": "68Koncept"
+  }]
+,
   "ssh": {
     "user": "pmacontrol",
     "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
