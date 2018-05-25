@@ -18,23 +18,25 @@ class Dot2 extends Controller
 
     use \App\Library\Debug;
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE         = "green";
-    CONST NODE_NOT_ANSWERED      = "orange";
-    CONST NODE_ERROR             = "red";
+    CONST NODE_AVAILABLE       = "green";
+    CONST NODE_NOT_ANSWERED    = "orange";
+    CONST NODE_ERROR           = "red";
 //for galera
-    CONST NODE_NOT_PRIMARY       = "blue"; //galera cluster
-    CONST NODE_DONOR             = "cyan";
-    CONST NODE_DONOR_DESYNCED    = "yellow";
-    CONST NODE_MANUAL_DESYNC     = "brown";
-    CONST NODE_RECEIVE_SST       = "yellow";
-    CONST NODE_BUG               = "pink";
-    CONST REPLICATION_OK         = "green";
-    CONST REPLICATION_IST        = "yellow";
-    CONST REPLICATION_SST        = "grey";
-    CONST REPLICATION_STOPPED    = "blue";
-    CONST REPLICATION_ERROR      = "red";
-    CONST REPLICATION_BLACKOUT   = "pink";
-    CONST REPLICATION_DELAY      = "orange";
+    CONST NODE_NOT_PRIMARY     = "blue"; //galera cluster
+    CONST NODE_DONOR           = "cyan";
+    CONST NODE_DONOR_DESYNCED  = "yellow";
+    CONST NODE_MANUAL_DESYNC   = "brown";
+    CONST NODE_RECEIVE_SST     = "yellow";
+    CONST NODE_BUG             = "pink";
+    CONST REPLICATION_OK       = "green";
+    CONST REPLICATION_IST      = "yellow";
+    CONST REPLICATION_SST      = "grey";
+    CONST REPLICATION_STOPPED  = "blue";
+    CONST REPLICATION_ERROR    = "red";
+    CONST REPLICATION_BLACKOUT = "pink";
+    CONST REPLICATION_DELAY    = "orange";
+    CONST REPLICATION_NA       = "grey";
+
     CONST REPLICATION_CONNECTING = "yellow";
     CONST GALERA_SPLIT_BRAIN     = "orange";
     CONST GALERA_AVAILABLE       = "green";
@@ -402,7 +404,7 @@ class Dot2 extends Controller
             }
         }
 
-            $this->debug($this->graph_node, "GENERATE NODE");
+        $this->debug($this->graph_node, "GENERATE NODE");
 
 
 //$this->debug($this->graph_node);
@@ -416,6 +418,8 @@ class Dot2 extends Controller
 
                 //debug($slave);
 //$this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $slave;
+
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "filled";
 
                 if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_OK;
@@ -440,6 +444,13 @@ class Dot2 extends Controller
                 if ($slave['last_sql_errno'] !== "0") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
+                }
+
+                if ($slave['slave_io_running'] == "Connecting") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "dashed";
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_NA;
+
+
                 }
 
 //debug($this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color']);
@@ -680,9 +691,8 @@ class Dot2 extends Controller
          */
 
 
-        if ($id_mysql_server == "66")
-        {
-            $this->debug($this->graph_node[$id_mysql_server]['color'],"COLOR NODE");
+        if ($id_mysql_server == "66") {
+            $this->debug($this->graph_node[$id_mysql_server]['color'], "COLOR NODE");
         }
 
         $node .= "node [color = \"".$this->graph_node[$id_mysql_server]['color']."\"];\n";
@@ -799,12 +809,15 @@ class Dot2 extends Controller
 
                     // si le serveur est HS on surcharge la replication
 
-                    if ($this->servers[$id_slave]['is_available'] === "0")
-                    {
+                    if ($this->servers[$id_slave]['is_available'] === "0") {
                         $val['color'] = self::REPLICATION_ERROR;
                         $val['label'] = "HS";
                     }
 
+
+                    if (!empty($val['style'])) {
+                        $style = $val['style'];
+                    }
 
 
                     $edge = $id_master." -> ".$id_slave
@@ -814,7 +827,6 @@ class Dot2 extends Controller
                         ."sfghwdgf"."/"."thread"."\"];\n";
 
                     $edges .= $edge;
-
                 }
             }
         }
@@ -1056,5 +1068,34 @@ class Dot2 extends Controller
         }
 
         return $graph;
+    }
+
+    public function legend()
+    {
+        $legend = 'digraph {
+  rankdir=LR
+  node [shape=plaintext]
+  subgraph cluster_01 {
+    label = "Legend";
+    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+      <tr><td align="right" port="i1">item 1</td></tr>
+      <tr><td align="right" port="i2">item 2</td></tr>
+      <tr><td align="right" port="i3">item 3</td></tr>
+      <tr><td align="right" port="i4">item 4</td></tr>
+      </table>>]
+    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+      <tr><td port="i1">&nbsp;</td></tr>
+      <tr><td port="i2">&nbsp;</td></tr>
+      <tr><td port="i3">&nbsp;</td></tr>
+      <tr><td port="i4">&nbsp;</td></tr>
+      </table>>]
+    key:i1:e -> key2:i1:w [color=blue]
+    key:i2:e -> key2:i2:w [color=gray]
+    key:i3:e -> key2:i3:w [color=peachpuff3]
+    key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
+  }
+}';
+
+        //https://dreampuf.github.io/GraphvizOnline/
     }
 }
