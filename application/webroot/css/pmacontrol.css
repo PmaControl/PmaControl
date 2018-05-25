@@ -1,0 +1,420 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 21 janv. 2015, 18:47:01
+    Author     : alequoy
+*/
+
+.dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus {
+    background-color: #3071a9;
+    color:#fff;
+}
+
+body { padding-bottom: 70px;padding-top: 70px; font-size:12px}
+
+
+.pmacontrol {width:100%; }
+
+.pmacontrol > tbody > tr > th {padding: 2px 4px; border-bottom: #666 1px solid; line-height:30px; background:#fff }
+.pmacontrol > tbody > tr > td {padding: 2px 4px; cursor: pointer; }
+.pmacontrol > tbody > tr.highlight_row {border: #666 1px solid ;}
+
+.pmacontrol > tbody > tr:nth-child(odd){
+    background-color:#eeeeee;
+}
+
+.highlight_row td{background-color: #ddd;}
+
+.rotate {
+    margin: 0;
+    padding: 0;
+    -webkit-transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    transform-origin: 0 0;
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+
+
+.opacity {
+    position: absolute;
+    top: 0;left:0;
+    width: 100%;height: 100%;
+    background:rgba(0,0,0,.5);
+    z-index:1;
+}
+
+.opacity { 
+    opacity : .9;
+    z-index: 999999;
+}
+
+#domMessage
+{
+    position: absolute;
+    width: 100%; 
+    height: 100%; 
+    top: 0px;
+    left:0;
+    border: none; 
+    backgroundColor: #000; 
+    -webkit-border-radius: 10px; 
+    -moz-border-radius: 10px; 
+    opacity: .6; 
+    color: #000 
+}
+
+
+a img {
+    border: 0px none;
+}
+
+.icon {
+    margin: 0px 0px 0px 0.3em;
+    padding: 0px !important;
+    width: 16px;
+    height: 16px;
+    background-image: url("../image/main/sprites.png") !important;
+    background-repeat: no-repeat !important;
+    background-position: left top !important;
+}
+
+
+.ic_b_relations {
+    background-position: 0px -752px !important;
+}
+
+
+.row input {margin:2px 0}
+.row select {margin:2px 0}
+
+
+span.ariane .glyphicon {font-size:12px}
+span.ariane .fa {font-size:14px}
+
+
+
+/* ---------------------------------------------------
+
+Project : CSS Checkbox Switch
+Author : Partha Kar (https://www.facebook.com/partha.creativemind)
+Version : 1.0
+Release Dtae : 15 November, 2017
+
+---------------------------------------------------- */
+
+
+.checkbox.checbox-switch {
+    padding-left: 0;
+}
+
+.checkbox.checbox-switch label,
+.checkbox-inline.checbox-switch {
+    display: inline-block;
+    position: relative;
+    padding-left: 0;
+}
+.checkbox.checbox-switch label input,
+.checkbox-inline.checbox-switch input {
+    display: none;
+}
+.checkbox.checbox-switch label span,
+.checkbox-inline.checbox-switch span {
+    width: 35px;
+    border-radius: 20px;
+    height: 18px;
+    border: 1px solid #dbdbdb;
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(223, 223, 223);
+    box-shadow: rgb(223, 223, 223) 0px 0px 0px 0px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+.checkbox.checbox-switch label span:before,
+.checkbox-inline.checbox-switch span:before {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgb(255,255,255);
+    content: " ";
+    top: 0;
+    position: relative;
+    left: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.checkbox.checbox-switch label > input:checked + span:before,
+.checkbox-inline.checbox-switch > input:checked + span:before {
+    left: 17px;
+}
+
+
+/* Switch Default */
+.checkbox.checbox-switch label > input:checked + span,
+.checkbox-inline.checbox-switch > input:checked + span {
+    background-color: rgb(180, 182, 183);
+    border-color: rgb(180, 182, 183);
+    box-shadow: rgb(180, 182, 183) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch > input:checked:disabled + span {
+    background-color: rgb(220, 220, 220);
+    border-color: rgb(220, 220, 220);
+    box-shadow: rgb(220, 220, 220) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch label > input:disabled + span,
+.checkbox-inline.checbox-switch > input:disabled + span {
+    background-color: rgb(232,235,238);
+    border-color: rgb(255,255,255);
+}
+.checkbox.checbox-switch label > input:disabled + span:before,
+.checkbox-inline.checbox-switch > input:disabled + span:before {
+    background-color: rgb(248,249,250);
+    border-color: rgb(243, 243, 243);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Switch Light */
+.checkbox.checbox-switch.switch-light label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-light > input:checked + span {
+    background-color: rgb(248,249,250);
+    border-color: rgb(248,249,250);
+    box-shadow: rgb(248,249,250) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+/* Switch Dark */
+.checkbox.checbox-switch.switch-dark label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-dark > input:checked + span {
+    background-color: rgb(52,58,64);
+    border-color: rgb(52,58,64);
+    box-shadow: rgb(52,58,64) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-dark label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-dark > input:checked:disabled + span {
+    background-color: rgb(100, 102, 104);
+    border-color: rgb(100, 102, 104);
+    box-shadow: rgb(100, 102, 104) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+/* Switch Success */
+.checkbox.checbox-switch.switch-success label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-success > input:checked + span {
+    background-color: rgb(40, 167, 69);
+    border-color: rgb(40, 167, 69);
+    box-shadow: rgb(40, 167, 69) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-success label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-success > input:checked:disabled + span {
+    background-color: rgb(153, 217, 168);
+    border-color: rgb(153, 217, 168);
+    box-shadow: rgb(153, 217, 168) 0px 0px 0px 8px inset;
+}
+
+/* Switch Danger */
+.checkbox.checbox-switch.switch-danger label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-danger > input:checked + span {
+    background-color: rgb(200, 35, 51);
+    border-color: rgb(200, 35, 51);
+    box-shadow: rgb(200, 35, 51) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-danger label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-danger > input:checked:disabled + span {
+    background-color: rgb(216, 119, 129);
+    border-color: rgb(216, 119, 129);
+    box-shadow: rgb(216, 119, 129) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+/* Switch Primary */
+.checkbox.checbox-switch.switch-primary label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-primary > input:checked + span {
+    background-color: rgb(0, 105, 217);
+    border-color: rgb(0, 105, 217);
+    box-shadow: rgb(0, 105, 217) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-primary label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-primary > input:checked:disabled + span {
+    background-color: rgb(109, 163, 221);
+    border-color: rgb(109, 163, 221);
+    box-shadow: rgb(109, 163, 221) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+/* Switch Info */
+.checkbox.checbox-switch.switch-info label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-info > input:checked + span {
+    background-color: rgb(23, 162, 184);
+    border-color: rgb(23, 162, 184);
+    box-shadow: rgb(23, 162, 184) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-info label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-info > input:checked:disabled + span {
+    background-color: rgb(102, 192, 206);
+    border-color: rgb(102, 192, 206);
+    box-shadow: rgb(102, 192, 206) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+/* Switch Warning */
+.checkbox.checbox-switch.switch-warning label > input:checked + span,
+.checkbox-inline.checbox-switch.switch-warning > input:checked + span {
+    background-color: rgb(255, 193, 7);
+    border-color: rgb(255, 193, 7);
+    box-shadow: rgb(255, 193, 7) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+.checkbox.checbox-switch.switch-warning label > input:checked:disabled + span,
+.checkbox-inline.checbox-switch.switch-warning > input:checked:disabled + span {
+    background-color: rgb(226, 195, 102);
+    border-color: rgb(226, 195, 102);
+    box-shadow: rgb(226, 195, 102) 0px 0px 0px 8px inset;
+    transition: border 0.4s ease 0s, box-shadow 0.4s ease 0s, background-color 1.2s ease 0s;
+}
+
+
+.panel .well{
+    margin-bottom: 0px;
+    border-width: 0px;
+}
+
+
+div.pre pre{width:400px; overflow: auto; font-size: 12px}
+
+
+td.pma a, tr.pma td a{color:#fff;}
+td.pma-default {background:#ffffff !important; color:#000}
+td.pma-primary {background:#337ab7 !important; color:#fff}
+td.pma-success {background:#449d44 !important; color:#fff}
+td.pma-info {background:#5bc0de !important; color:#fff}
+td.pma-warning {background:#f0ad4e !important; color:#fff}
+td.pma-danger {background:#c9302c !important; color:#fff}
+
+
+tr.pma-default td{background:#ffffff; color:#000}
+tr.pma-primary td{background:#337ab7; color:#fff}
+tr.pma-success td{background:#449d44; color:#fff}
+tr.pma-info td{background:#5bc0de; color:#fff}
+tr.pma-warning td{background:#f0ad4e; color:#fff}
+tr.pma-danger td{background:#c9302c; color:#fff}
+
+
+
+
+
+.tooltip-inner{text-align: left;}
+
+
+
+
+/*
+.text{
+	color: rgba(0,0,0,.9);
+	text-align: center;
+}*/
+
+
+.folded-corner:hover .text{
+	visibility: visible;
+	color: #ccc;
+}
+
+
+.folded-corner:hover h3{
+	visibility: visible;
+	color: #fff;
+} 
+.Services-tab{
+	margin-top:20px;
+	
+
+}
+
+/*
+  nav link items
+*/
+.folded-corner{
+  padding: 25px 25px;
+  position: relative;
+  font-size: 90%;
+  text-decoration: none;
+  color: #999; 
+  background: transparent;
+  transition: all ease .5s;
+  border: 1px solid rgba(0,0,0,.9);
+}
+.folded-corner:hover{
+	background-color: rgba(0,0,0,.9);
+}
+
+/*
+  paper fold corner
+*/
+
+.folded-corner:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-style: solid;
+  border-width: 0 0px 0px 0;
+  border-color: #ddd #000;
+  transition: all ease .3s;
+}
+
+/*
+  on li hover make paper fold larger
+*/
+.folded-corner:hover:before {
+	background-color: #fff;
+  border-width: 0 50px 50px 0;
+  border-color: #ccc #fff;
+  
+}
+
+.service_tab_1{
+	background-color: #eee;
+}
+.service_tab_1:hover .fa-icon-image{
+    color: #eee;
+    transform: rotate(360deg) scale(1.2);
+}
+
+
+.fa-icon-image{
+	color: rgba(0,0,0,.9);
+	display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: normal;
+    line-height: 1;
+    font-size-adjust: none;
+    font-stretch: normal;
+    -moz-font-feature-settings: normal;
+    -moz-font-language-override: normal;
+    text-rendering: auto;
+    transition: all .65s linear 0s;
+    text-align: center;
+    transition: all 1s cubic-bezier(.99,.82,.11,1.41);
+}
+
+ul.padnull{padding-left:0}
+
+
+td.line-edit{ligne-height:50px; min-height: 270px}

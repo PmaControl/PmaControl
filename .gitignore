@@ -1,0 +1,5 @@
+composer.lock
+/configuration/*.php
+/vendor/*
+version
+config.json

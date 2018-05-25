@@ -1,0 +1,24 @@
+{
+        "mysql": [{
+                "fqdn": "my.server.mysql.com",
+                "display_name": "@hostname",
+                "port": "3306",
+                "login": "pmacontrol",
+                "password": "********",
+                "tag": ["text","datacenter1"],
+                "client": "68Koncept",
+                "environment": "test"
+        }],
+        "haproxy": [{
+                "fqdn": "my.haproxy.com",
+                "port": "3307",
+                "stats": {
+                        "path": "\/haproxy_stats;csv",
+                        "port": "9000",
+                        "login": "haproxy",
+                        "password": "********"
+                }
+        }]
+}
+
+

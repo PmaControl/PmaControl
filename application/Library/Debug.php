@@ -1,0 +1,178 @@
+<?php
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace App\Library;
+
+use \Glial\Cli\Table;
+
+trait Debug
+{
+    var $debug       = false;
+    var $count       = 0;
+    var $microtime   = array();
+    var $display_sql = true;
+
+    public function debug($string, $var = "")
+    {
+        if ($this->debug) {
+
+            $calledFrom = debug_backtrace();
+            $file       = pathinfo(substr(str_replace(ROOT, '', $calledFrom[0]['file']), 1))["basename"];
+            $line       = $calledFrom[0]['line'];
+
+            $file = explode(".", $file)[0];
+
+            echo "#".$this->count++."\t";
+            echo $file.":".$line."\t";
+            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+
+            if (!empty($var)) {
+                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+            }
+
+
+            if (is_array($string)) {
+                print_r($string);
+            } else {
+                echo trim($string)."\n";
+            }
+        }
+    }
+
+    public function parseDebug(& $param)
+    {
+
+
+        if (!empty($param)) {
+            foreach ($param as $key => $elem) {
+                if ($elem == "--debug") {
+                    $this->debug = true;
+
+                    $this->checkPoint("Start debug");
+                    $this->debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
+
+                    unset($param[$key]);
+                }
+            }
+        }
+    }
+
+    public function debugShowQueries()
+    {
+
+        if ($this->debug) {
+
+            $thread_sgbd = $this->di['db']->getConnected();
+
+            foreach ($thread_sgbd as $name_db) {
+
+                echo \Glial\Cli\Color::getColoredString($name_db, "black", "yellow")."\n";
+
+                $db = $this->di['db']->sql($name_db);
+
+                $table = new Table("1");
+                $table->addHeader(array("Top", "File", "Time", "Cumul", "Query",
+                    "Rows"));
+
+                $cumul = 0;
+                $i     = 1;
+                foreach ($db->query as $tab) {
+                    if (mb_strlen($tab['query']) > 100) {
+                        $query = trim(\SqlFormatter::format($tab['query']));
+                    } else {
+                        if (mb_strlen($tab['query']) > 200) {
+                            $tab['query'] = substr($tab['query'], 0, 200);
+                        }
+
+                        $query = trim(\SqlFormatter::highlight($tab['query']));
+                    }
+
+                    $cumul += $tab['time'];
+                    $table->addHeader(array($i, pathinfo($tab['file'])['basename'].":".$tab['line'],
+                        (string) $tab['time'], (string) $cumul, $query,
+                        $tab['rows']));
+
+                    $i++;
+                }
+
+                echo $table->display();
+            }
+        }
+    }
+
+    public function checkPoint($name = "")
+    {
+        if ($this->debug) {
+
+            $calledFrom = debug_backtrace();
+
+            $this->microtime[] = array(microtime(true), pathinfo($calledFrom[0]['file'])["basename"].':'.$calledFrom[0]['line'],
+                date("Y-m-d H:i:s"), $name);
+        }
+    }
+
+    public function debugShowTime()
+    {
+        if ($this->debug) {
+
+            $table = new Table("1");
+            $table->addHeader(array("Top", "Name", "File:line", "Date", "Time", "Cumul"));
+
+
+            $cumul = 0;
+            $time  = 0;
+
+            $i = 0;
+            foreach ($this->microtime as $var) {
+                if ($cumul === 0) {
+                    $cumul_new = 0;
+                    $time_new  = "N/A";
+
+                    $cumul = $var[0];
+                } else {
+
+                    $time_new  = round(abs($time - $var[0]), 5);
+                    $cumul_new = round(abs($cumul - $var[0]), 5);
+
+
+                    if ($time_new > 1) {
+                        $time_new = \Glial\Cli\Color::getColoredString($time_new, "grey", "red");
+                    } elseif ($time_new > 0.1) {
+                        $time_new = \Glial\Cli\Color::getColoredString($time_new, "yellow");
+                    }
+                }
+
+
+                $i++;
+                $table->addLine(array($i, $var[3], $var[1], $var[2], $time_new, $cumul_new));
+
+                $time = $var[0];
+            }
+
+            echo "\n".$table->display();
+        }
+    }
+
+    public function after($param = "")
+    {
+        $this->checkPoint("End Debug");
+        $this->debugShowTime();
+        if ($this->display_sql) {
+            $this->debugShowQueries();
+        }
+    }
+
+    public function debugPurge()
+    {
+        $this->microtime = array();
+    }
+
+    public function debugQueriesOff()
+    {
+        $this->display_sql = false;
+    }
+}

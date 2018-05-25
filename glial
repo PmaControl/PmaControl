@@ -1,0 +1,9 @@
+#!/usr/bin/php
+<?php
+cli_set_process_title("glial-cmd");
+$argv = $_SERVER["argv"];
+unset($argv[0]);
+$arg_string = implode(' ',$argv);
+$cmd = "php application/webroot/index.php " . $arg_string;
+passthru($cmd, $code_retour);
+exit($code_retour);

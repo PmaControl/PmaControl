@@ -1,0 +1,14 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 7 nov. 2014, 11:32:57
+    Author     : alequoy
+*/
+
+ul.col {width:16.6%; float: left; list-style:none; margin:0; padding:0}
+ul.col li{list-style:none}
+
+textarea.photobox {width:100%; height:100px;}

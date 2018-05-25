@@ -1,0 +1,47 @@
+
+.notification{ margin: 0 auto 10px auto; color: #c4bdb0; font-size: 11px; overflow: hidden;
+		-moz-border-radius: 6px; -webkit-border-radius: 6px; border-radius: 6px;
+		-moz-box-shadow: 0 0 10px #555;
+		-webkit-box-shadow: 0 0 10px #555; 
+		box-shadow: 0 0 10px #555;
+		width:1000px;
+}
+.notification-inner {-moz-border-radius: 6px; -webkit-border-radius: 6px; border-radius: 6px; }
+
+.notification .notification-inner { width: 800px; float: left; -moz-border-radius-bottomright: 0; -webkit-border-bottom-right-radius: 0; border-bottom-right-radius: 0; -moz-border-radius-topright: 0; -webkit-border-top-right-radius: 0; border-top-right-radius: 0; }
+.notification .notification-message { padding: 15px 10px 15px 50px; }
+.notification .notification-message .title strong { font-size: 14px; font-weight:700 }
+.notification .notification-message a { color: #ffd800; }
+.notification .notification-close {display: block; margin: 12px 22px 0 0; width: 68px; text-align: right; float: right; color: #fff; letter-spacing:2px; text-transform: uppercase; background: url("pictures/notification/close-small.png") no-repeat right center; padding-right: 16px; }
+
+
+.notification div.title {margin: 0 0 10px 0;}
+
+.notification.error { color: #c4bdb0; background: #530901 url("pictures/notification/notification-error-close.png") 0 0 repeat-x; }
+.notification.error strong { color: #fff; }
+.notification.error .notification-inner { background: #732e03 url("pictures/notification/notification-error.png") 0 0 repeat-x; }
+.notification.error .notification-message { background: url("pictures/notification/error.png") 13px 18px no-repeat; }
+.notification.error div { color: #fff; }
+.notification.error .notification-message a { color: #ffd800; }
+
+.notification.caution { color: #6f3900; background: #ea8e00 url("pictures/notification/notification-caution-close.png") 0 0 repeat-x; }
+.notification.caution strong { color: #000; }
+.notification.caution .notification-inner { background: #efa700 url("pictures/notification/notification-caution.png") 0 0 repeat-x; }
+.notification.caution .notification-message { background: url("pictures/notification/warning.png") 13px 18px no-repeat; }
+.notification.caution div { color: #000; }
+.notification.caution .notification-message a { color: #006c9d; }
+
+.notification.success { color: #adbda8; background: #2f4728 url("pictures/notification/notification-success-close.png") 0 0 repeat-x; }
+.notification.success strong { color: #fff; }
+.notification.success .notification-inner { background: #4c7141 url("pictures/notification/notification-success.png") 0 0 repeat-x; }
+.notification.success .notification-message { background: url("pictures/notification/success.png") 13px 18px no-repeat; }
+.notification.success div { color: #fff; }
+.notification.success .notification-message a { color: #ffd800; }
+
+.notification a.notification-close {text-decoration:none;}
+
+.notification-message table td, .notification-message table th{border:#fff 1px solid; padding:2px; color:#fff}
+.notification-message table th {font-weight:700;}
+.notification-message table {margin: 4px 0}
+
+.notification-message li{color:#fff}
