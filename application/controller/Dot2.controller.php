@@ -401,6 +401,8 @@ class Dot2 extends Controller
             }
         }
 
+        $this->debug($this->servers, "GENERATE NODE");
+
 
 //$this->debug($this->graph_node);
     }
