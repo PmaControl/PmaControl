@@ -103,8 +103,7 @@ class Dot2 extends Controller
     {
         foreach ($this->servers as $server) {
             if (!empty($server['wsrep_on']) && $server['wsrep_on'] === "ON") {
-                debug($server);
-
+                //debug($server);
                 //$server['wsrep_incoming_addresses']
                 $tab      = explode(",", $server['wsrep_incoming_addresses']);
                 $to_match = $server['ip'].":".$server['port'];
@@ -134,7 +133,7 @@ class Dot2 extends Controller
                     $incomming[] = $server['wsrep_incoming_addresses'];
 
 
-                    
+
                     $tab      = explode(",", $server['wsrep_incoming_addresses']);
                     $to_match = $server['ip'].":".$server['port'];
                     // the goal is to remove proxy
@@ -160,7 +159,7 @@ class Dot2 extends Controller
             }
 
 
-            debug($group_galera);
+            $this->debug($group_galera);
         }
 
 
@@ -171,7 +170,7 @@ class Dot2 extends Controller
     private function getAllMemberFromGalera($incomming, $galera_nodes, $group)
     {
         //need dertect split brain !!
-        debug($incomming);
+        $this->debug($incomming);
 
 
 
@@ -187,7 +186,7 @@ class Dot2 extends Controller
 
         $nodes = array_unique($all_node);
 
-        debug($nodes);
+        $this->debug($nodes);
 
 
         $arbitres = array();
@@ -274,6 +273,9 @@ class Dot2 extends Controller
 //$masterSlave = $this->getMasterSlave($param);
         $groups = $this->array_merge_group($groups);
 
+
+        $this->debug($groups, "groups");
+
         $result['groups']  = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
 
@@ -335,18 +337,14 @@ class Dot2 extends Controller
 
 
 
-
-
-
         foreach ($group as $id_mysql_server) {
             $graph .= $this->generateNode($id_mysql_server);
-
-
-//cas des multi master
-            if (!empty($this->graph_master_master[$id_mysql_server])) {
-                $graph .= "{rank = same; ".implode(";", $this->graph_master_master[$id_mysql_server]).";}\n";
-            }
         }
+//cas des multi master
+
+
+        $graph .= $this->generateRankForMM($group);
+
 
         $graph .= $this->generateEdge($group);
 
@@ -439,55 +437,46 @@ class Dot2 extends Controller
 
     public function pushMasterMaster()
     {
-        $this->graph_master_master;
+        $couples = array();
 
-        $master_slave = array();
         foreach ($this->slaves as $gg) {
             foreach ($gg as $server) {
-                $master_slave[$server['id_master']][] = $server['id_mysql_server'];
-            }
-        }
 
-        foreach ($master_slave as $id_master => $slaves) {
-            foreach ($slaves as $id => $id_slave) {
-
-                if (empty($master_slave[$id_slave])) {
-                    unset($master_slave[$id_master][$id]);
-                }
+                $tmp       = array($server['id_master'], $server['id_mysql_server']);
+                $couples[] = min($tmp).":".max($tmp);
             }
         }
 
 
-        $new_master_master = array();
+        $cpl_count = array_count_values($couples);
 
-        foreach ($master_slave as $id_master => $slaves) {
-            foreach ($slaves as $id => $id_slave) {
 
-                if (!empty($master_slave[$id_slave])) {
+        $this->debug($cpl_count, "cpl_count");
 
-                    $new_master_master[$id_master][] = $id_slave;
-                    $new_master_master[$id_master][] = $id_master;
-                }
+        $paires = array();
+        foreach ($cpl_count as $key => $val) {
+            if ($val > 1) {
+                $paires[] = $key;
             }
         }
 
 
-//debug($new_master_master);
+        $this->debug($paires, "paires");
 
+        foreach ($paires as $val) {
+            $new_master_master[] = explode(":", $val);
+        }
+
+        $new_master_master = $this->array_merge_group($new_master_master);
+
+
+        $this->debug($new_master_master, "new_master_master");
+
+
+        //$new_master_master = array();
+        //$this->debug($new_master_master, "MASTER / MASTER");
 
         $this->graph_master_master = $new_master_master;
-        /*
-          $slave_master = array_flip($master_slave);
-          $MasterMaster = array_intersect($slave_master, $master_slave);
-          $unique = array();
-          foreach($MasterMaster as $server1 => $server2)
-          {
-          $unique[$server1] = min($server1,$server2).";".max($server1,$server2);
-          }
-          debug($unique);
-          $this->graph_master_master = array_unique($unique);
-          $this->debug($this->graph_master_master);
-         */
     }
 
     public function run($param)
@@ -1015,5 +1004,21 @@ class Dot2 extends Controller
         $this->graph_node[$row['id_mysql_server']]['color'] = self::NODE_RECEIVE_SST;
 
         $this->debug($row);
+    }
+
+    public function generateRankForMM($group)
+    {
+        $graph = '';
+
+        foreach ($this->graph_master_master as $key => $mastermaster) {
+            foreach ($mastermaster as $id_server) {
+                if (in_array($id_server, $group)) {
+                    $graph .= "{rank = same; ".implode(";", $mastermaster).";}\n";
+                    break;
+                }
+            }
+        }
+
+        return $graph;
     }
 }
