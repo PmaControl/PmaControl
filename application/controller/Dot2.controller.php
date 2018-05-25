@@ -96,6 +96,9 @@ class Dot2 extends Controller
         }
         $this->master_slave = $tmp_group;
 
+
+        $this->debug($this->slaves, "MASTER / SLAVE");
+
         return $this->master_slave;
     }
 
@@ -416,18 +419,24 @@ class Dot2 extends Controller
                 } else if ($slave['seconds_behind_master'] !== "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_DELAY;
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
-                } elseif ($slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
+                } elseif ($slave['slave_io_running'] === "No" && $slave['slave_sql_running'] === "No") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_STOPPED;
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "STOPPED";
+                } else {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_BLACKOUT;
+                }
+
+
+
+                if ($slave['last_io_errno'] !== "0") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_io_errno'];
                 }
 
                 if ($slave['last_sql_errno'] !== "0") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
-                }
-
-                if ($slave['last_io_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_io_errno'];
                 }
 
 //debug($this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color']);
@@ -763,6 +772,10 @@ class Dot2 extends Controller
         $edges = "";
 
 
+
+
+
+
         //debug($this->graph_edge);
 
         foreach ($this->graph_edge as $id_slave => $masters) {
@@ -774,11 +787,17 @@ class Dot2 extends Controller
                         $val['label'] = " ";
                     }
 
-                    $edges .= $id_master." -> ".$id_slave
+                    $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
                         .$val['color']."\" label=\"".$val['label']."\"  edgetarget=\"".LINK."mysql/thread/"
                         ."dsGDG"."/\" edgeURL=\"".LINK."mysql/thread/"
                         ."sfghwdgf"."/"."thread"."\"];\n";
+
+                    $edges .= $edge;
+
+                    if (in_array('76', $group)) {
+                        $this->debug($edge, "EDGE");
+                    }
                 }
             }
         }
