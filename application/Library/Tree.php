@@ -42,7 +42,7 @@ class Tree
         $ob       = $this->db->sql_fetch_object($this->db->sql_query($sql));
         $interval = $ob->{$this->fields['bd']} - $ob->{$this->fields['bg']} + 1;
 
-        $sql2 = "DELETE FROM `".$this->table_name."` WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}." 
+        $sql2 = "DELETE FROM `".$this->table_name."` WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}."
             AND `".$this->fields['bd']."` <= '".$ob->{$this->fields['bd']}."'".$this->extraWhere();
 
         $this->db->sql_query($sql2);
@@ -141,7 +141,7 @@ class Tree
         $ofset_all = $ofset + $ofset2;
 
 
-        // création d'un espace vide pour y mettre le nouveau sous tableau
+// création d'un espace vide pour y mettre le nouveau sous tableau
         $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."` = `".$this->fields['bd']."` + $ofset WHERE `".$this->fields['bd']."` >= ".$bg_d."";
         $this->db->sql_query($sql);
 
@@ -150,8 +150,8 @@ class Tree
         /**/
 
 
-        //déplacement du tableau du dessous pour le mettre dans le trou que l'on vient de faire
-        $sql = "UPDATE `".$this->table_name."` 
+//déplacement du tableau du dessous pour le mettre dans le trou que l'on vient de faire
+        $sql = "UPDATE `".$this->table_name."`
             SET `".$this->fields['bd']."` = `".$this->fields['bd']."` - ".$ofset_all.",
             `".$this->fields['bg']."` = `".$this->fields['bg']."` - ".$ofset_all."
             WHERE `".$this->fields['bg']."` >= ".($bornes['bg'] + $ofset)." AND `".$this->fields['bd']."` <= ".($bornes['bd'] + $ofset)."";
@@ -159,7 +159,7 @@ class Tree
         /**/
 
 
-        //comblement du vide crée qui se retrouve à la fin de l'inversion
+//comblement du vide crée qui se retrouve à la fin de l'inversion
         $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."` = `".$this->fields['bd']."` - $ofset
          WHERE `".$this->fields['bd']."` >= ".($bornes['bd'] + $ofset)."";
         $this->db->sql_query($sql);
@@ -201,7 +201,6 @@ class Tree
         return $ret;
     }
 
-
     public function getfather($id)
     {
 
@@ -209,14 +208,13 @@ class Tree
         $res = $this->db->sql_query($sql);
 
         $ret = array();
-        while ($ob = $this->db->sql_fetch_object($res)) {
+        while ($ob  = $this->db->sql_fetch_object($res)) {
             $ret['bg'] = $ob->{$this->fields['bg']};
             $ret['bd'] = $ob->{$this->fields['bd']};
             $ret['id'] = $ob->{$this->fields['id']};
         }
 
         return $ret;
-
     }
 
     public function left($id)
@@ -224,10 +222,37 @@ class Tree
         $bornes = $this->getInterval($id);
 
         $current_father = $this->getfather($id);
-        $new_father = $this->getfather($current_father['id']);
 
-        $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."`";
 
+        debug($current_father);
+
+        $new_father     = $this->getfather($current_father['id']);
+
+
+        try {
+
+
+
+            $sql = "BEGIN";
+            $this->db->sql_query($sql);
+            $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."`=`".$this->fields['bg']."`-2 "
+                ."WHERE  `".$this->fields['bg']."` > ".$bornes['bg']." AND `".$this->fields['bg']."` < ".$current_father['bd'];
+            $this->db->sql_query($sql);
+
+            $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."`=`".$this->fields['bd']."`-2 "
+                ."WHERE  `".$this->fields['bd']."` > ".$bornes['bd']." AND `".$this->fields['bd']."` <= ".$current_father['bd'];
+            $this->db->sql_query($sql);
+
+
+            $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."`=".($current_father['bd'] - 1).",
+            `".$this->fields['bg']."`=".($current_father['bd'] - 1).",
+            `".$this->fields['id_parent']."`=".$new_father['id'].",";
+
+            $this->db->sql_query("COMMIT;");
+        } catch (Exception $ex) {
+            $this->db->sql_query("ROLLBACK;");
+        }
+        
         
     }
 
@@ -235,6 +260,7 @@ class Tree
     {
 
 
-        $sql = "SELECT id, parent_id ,bg,bd,title  FROM `menu` WHERE `bg` < 71 AND 72 < `bd` and group_id = 1 order by `bg` desc limit 1;";
+        $sql = "SELECT id, parent_id, bg, bd, title FROM `menu` WHERE `bg` < 71 AND 72 < `bd` and group_id = 1 order by `bg` desc limit 1;
+";
     }
 }

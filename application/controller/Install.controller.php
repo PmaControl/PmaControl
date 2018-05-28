@@ -614,7 +614,7 @@ database=".$server['database']."";
         if (!empty($filename) && file_exists($filename)) {
 
             $config = $this->parseConfig($filename);
-            $orgas  = $config['organisation'];
+            $orgas  = $config['organization'];
         } else {
 
             createOragnisation:
@@ -622,7 +622,7 @@ database=".$server['database']."";
 
             do {
                 $rl            = new Hoa\Console\Readline\Readline();
-                $oraganisation = $rl->readLine('Your Oraganisation : ');
+                $oraganisation = $rl->readLine('Your Oraganization : ');
             } while (strlen($oraganisation) < 3);
 
             $orgas = array($oraganisation);
