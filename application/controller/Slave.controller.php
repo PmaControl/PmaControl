@@ -31,18 +31,18 @@ class Slave extends Controller
                 "slave::last_sql_error", "slave::last_sql_errno"));
 
 
-        
+
         /* besoin de testé avec les thread (trouver autre chose)
-        //order by master host
-        function invenDescSort($item1, $item2)
-        {
-            if (substr($item1['']['master_host'], 6)
-                == substr($item2['']['master_host'], 6)) return 0;
-            return (substr($item1['']['master_host'], 6)
-                < substr($item2['']['master_host'], 6)) ? 1 : -1;
-        }
-        usort($data['slave'], 'invenDescSort');
-        */
+          //order by master host
+          function invenDescSort($item1, $item2)
+          {
+          if (substr($item1['']['master_host'], 6)
+          == substr($item2['']['master_host'], 6)) return 0;
+          return (substr($item1['']['master_host'], 6)
+          < substr($item2['']['master_host'], 6)) ? 1 : -1;
+          }
+          usort($data['slave'], 'invenDescSort');
+         */
 
         $data['hostname'] = Extraction::display(array("variables::hostname"));
 
@@ -59,10 +59,10 @@ class Slave extends Controller
         $data['server'] = array();
         while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['server']['master'][$arr['ip'].':'.$arr['port']] = $arr;
-            $data['server']['master'][$arr['id']] = $arr;
+            $data['server']['master'][$arr['id']]                  = $arr;
 
-            
-            $data['server']['slave'][$arr['id']]                   = $arr;
+
+            $data['server']['slave'][$arr['id']] = $arr;
         }
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
@@ -170,6 +170,73 @@ var myChart'.$slave['id_mysql_server'].' = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
+    }
+
+    public function box()
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        Extraction::setDb($db);
+        $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
+                "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
+                "slave::last_sql_error", "slave::last_sql_errno"));
+
+
+
+        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
+                 INNER JOIN client c on c.id = a.id_client
+                 INNER JOIN environment d on d.id = a.id_environment
+                 WHERE 1 ".self::getFilter()."
+                 ORDER by `name`;";
+
+
+        $res = $db->sql_query($sql);
+
+        $data['server'] = array();
+        while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['server']['master'][$arr['ip'].':'.$arr['port']] = $arr;
+            $data['server']['master'][$arr['id']]                  = $arr;
+
+
+            $data['server']['slave'][$arr['id']] = $arr;
+        }
+
+
+        //debug($data['slave']);
+
+
+        $data['box'] = array();
+
+        foreach ($data['slave'] as $id_mysql_server => $slaves) {
+
+            foreach ($slaves as $connect_name => $slave) {
+                if ($slave['slave_sql_running'] !== "Yes" || $slave['slave_io_running'] !== "Yes" || $slave['seconds_behind_master'] !== "0"
+                ) {
+
+                    $export                      = array();
+                    $export['master']            = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']];
+                    $export['slave']             = $data['server']['slave'][$id_mysql_server];
+                    $export['connect']           = $connect_name;
+                    $export['seconds']           = $slave['seconds_behind_master'];
+                    $export['slave_sql_running'] = $slave['slave_sql_running'];
+                    $export['slave_io_running']  = $slave['slave_io_running'];
+                   
+                    $export['slave_sql_error']   = $slave['last_sql_error'];
+                    $export['slave_io_error']    = $slave['last_io_error'];
+
+
+                    $export['slave_sql_errno'] = $slave['last_sql_errno'];
+                    $export['slave_io_errno']  = $slave['last_io_errno'];
+
+                    $data['box'][] = $export;
+                }
+            }
+        }
+
+
+        $this->set('data', $data);
+        //debug($data['box']);
     }
 }
 /*

@@ -26,7 +26,8 @@ class Tree extends Controller
           trigger:"hover",
           html:true
           });
-          });'); */
+          });');
+         */
 
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -138,15 +139,27 @@ class Tree extends Controller
         $id      = $param[1];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-        
+
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 
         $data['cpt'] = $tree->countFather($id);
 
-        
-        $this->set('data', $data);
 
-        
+        $this->set('data', $data);
+    }
+
+    public function left($param)
+    {
+        $id_menu = $param[0];
+        $id      = $param[1];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
+
+        $tree->left($id);
+
+
     }
 }
 // WITH a as (SELECT count(1) as cpt from menu WHERE menu_id = 1 ) SELECT

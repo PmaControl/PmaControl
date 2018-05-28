@@ -18,15 +18,18 @@ class Home extends Controller
         $this->title = __("Home");
         $this->ariane = " > " . __("Welcome to PmaControl !");
 
-        
-        
-        $data['link'] = [
-          '0' => ['url' => 'sql', 'name' => __("Synchronise"), 'icon' => 'glyphicon glyphicon-refresh'],
-          '2' => ['url' => 'sql', 'name' => __("Configuration"), 'icon' => 'glyphicon glyphicon-file'],
-          '3' => ['url' => 'sql', 'name' => __("Status"), 'icon' => 'glyphicon glyphicon-adjust'],
-          '4' => ['url' => 'sql', 'name' => __("Variables"), 'icon' => 'glyphicon glyphicon-th-list'],
-          '5' => ['url' => 'sql', 'name' => __("Events"), 'icon' => 'glyphicon glyphicon-list'],
-        ];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `home_box` ORDER BY `order`;";
+
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['item'][] = $arr;
+        }
+
+
         
         $this->set('data',$data);
         

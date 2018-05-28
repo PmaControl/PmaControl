@@ -14,7 +14,7 @@ class Export extends Controller
     use \App\Library\Debug;
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country","history_etat",
-        "group", "environment", "daemon_main", "version", "sharding", "ts_variable");
+        "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend", "home_box");
     var $exlude_table    = array("translation_*", "slave_*","master_*", "variables_*", "status_*", "ts_value_*");
 
     function generateDump($param)
@@ -61,7 +61,7 @@ class Export extends Controller
         }
 
          // a remplacer par une implementation full PHP
-        $cmd = "mysqldump --skip-dump-date --extended-insert=FALSE -h ".$connect['hostname']
+        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
             ." -p'".Crypt::decrypt($connect['password'])
@@ -70,7 +70,7 @@ class Export extends Controller
 
         shell_exec($cmd);
 
-        $cmd = "mysqldump --skip-dump-date --extended-insert=FALSE -h ".$connect['hostname']
+        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
             ." -d "

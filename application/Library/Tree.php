@@ -201,10 +201,32 @@ class Tree
         return $ret;
     }
 
+
+    public function getfather($id)
+    {
+
+        $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id_parent']."` = ".$id."";
+        $res = $this->db->sql_query($sql);
+
+        $ret = array();
+        while ($ob = $this->db->sql_fetch_object($res)) {
+            $ret['bg'] = $ob->{$this->fields['bg']};
+            $ret['bd'] = $ob->{$this->fields['bd']};
+            $ret['id'] = $ob->{$this->fields['id']};
+        }
+
+        return $ret;
+
+    }
+
     public function left($id)
     {
         $bornes = $this->getInterval($id);
 
+        $current_father = $this->getfather($id);
+        $new_father = $this->getfather($current_father['id']);
+
+        $sql = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."`";
 
         
     }

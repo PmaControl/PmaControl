@@ -18,25 +18,26 @@ class Dot2 extends Controller
 
     use \App\Library\Debug;
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE       = "green";
-    CONST NODE_NOT_ANSWERED    = "orange";
-    CONST NODE_ERROR           = "red";
+    CONST NODE_AVAILABLE         = "green";
+    CONST NODE_NOT_ANSWERED      = "orange";
+    CONST NODE_ERROR             = "red";
 //for galera
-    CONST NODE_NOT_PRIMARY     = "blue"; //galera cluster
-    CONST NODE_DONOR           = "cyan";
-    CONST NODE_DONOR_DESYNCED  = "yellow";
-    CONST NODE_MANUAL_DESYNC   = "brown";
-    CONST NODE_RECEIVE_SST     = "yellow";
-    CONST NODE_BUG             = "pink";
-    CONST REPLICATION_OK       = "green";
-    CONST REPLICATION_IST      = "yellow";
-    CONST REPLICATION_SST      = "grey";
-    CONST REPLICATION_STOPPED  = "blue";
-    CONST REPLICATION_ERROR    = "red";
-    CONST REPLICATION_BLACKOUT = "pink";
-    CONST REPLICATION_DELAY    = "orange";
-    CONST REPLICATION_NA       = "grey";
+    CONST NODE_NOT_PRIMARY       = "blue"; //galera cluster
+    CONST NODE_DONOR             = "cyan";
+    CONST NODE_DONOR_DESYNCED    = "yellow";
+    CONST NODE_MANUAL_DESYNC     = "brown";
+    CONST NODE_RECEIVE_SST       = "yellow";
+    CONST NODE_BUG               = "pink";
 
+
+    CONST REPLICATION_OK         = "green";
+    CONST REPLICATION_IST        = "yellow";
+    CONST REPLICATION_SST        = "grey";
+    CONST REPLICATION_STOPPED    = "blue";
+    CONST REPLICATION_ERROR      = "red";
+    CONST REPLICATION_BLACKOUT   = "pink";
+    CONST REPLICATION_DELAY      = "orange";
+    CONST REPLICATION_NA         = "grey";
     CONST REPLICATION_CONNECTING = "yellow";
     CONST GALERA_SPLIT_BRAIN     = "orange";
     CONST GALERA_AVAILABLE       = "green";
@@ -449,8 +450,6 @@ class Dot2 extends Controller
                 if ($slave['slave_io_running'] == "Connecting") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "dashed";
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_NA;
-
-
                 }
 
 //debug($this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color']);
@@ -911,7 +910,7 @@ class Dot2 extends Controller
             $cluster      = "";
             $cluster      .= 'subgraph cluster_'.str_replace('-', '', $cluster_name).' {'."\n";
             $cluster      .= 'rankdir="LR";';
-            $cluster      .= 'style=solid;penwidth=1.5; color="'.self::GALERA_AVAILABLE.'";'."\n";
+            $cluster      .= 'style=solid;penwidth=2; color="'.self::GALERA_AVAILABLE.'";'."\n";
             $cluster      .= 'label = "Galera : '.$cluster_name.'";';
 
             foreach ($segments as $segment => $nodes) {
@@ -919,8 +918,8 @@ class Dot2 extends Controller
                 $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name)."_".$segment." {\n";
                 $cluster .= 'label = "Segment : '.$segment.'";'."\n";
                 $cluster .= 'rankdir="LR";';
-                $cluster .= 'rank="same"; penwidth=1.5;';
-                $cluster .= 'color="'.self::GALERA_AVAILABLE.'";style=dashed;penwidth=1.5;fontname="arial";'."\n";
+                $cluster .= 'rank="same"; penwidth=2;';
+                $cluster .= 'color="'.self::GALERA_AVAILABLE.'";style=dashed;penwidth=2;fontname="arial";'."\n";
 
                 if (count($nodes) > 1) {
                     $cluster .= implode("->", $nodes)."[style=invis];\n"; // [constraint=false]
@@ -967,7 +966,7 @@ class Dot2 extends Controller
 
             $ret .= 'subgraph cluster_'.str_replace('-', '', $name_galera)."_".$segment_name." {\n";
             $ret .= 'label = "Segment : '.$segment_name.'";'."\n";
-            $ret .= 'color='.self::COLOR_SUCCESS.';style=dashed;penwidth=1.5;fontname="arial";'."\n";
+            $ret .= 'color='.self::COLOR_SUCCESS.';style=dashed;penwidth=2;fontname="arial";'."\n";
 
 
             $ret .= $this->display_node_galera($segment);
@@ -991,6 +990,13 @@ class Dot2 extends Controller
 
         return $id;
     }
+
+
+    /*
+     * shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false
+     */
+
+
 
     private function createArbitrator()
     {
@@ -1072,29 +1078,72 @@ class Dot2 extends Controller
 
     public function legend()
     {
+
+        $sql = "SELECT * FROM `architecture_legend` order by `order`;";
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $res = $db->sql_query($sql);
+
+        $edges = array();
+        while ($arr   = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $edges[] = $arr;
+        }
+
         $legend = 'digraph {
   rankdir=LR
-  node [shape=plaintext]
+  graph [fontname = "helvetica"];
+ node [fontname = "helvetica"];
+ edge [fontname = "helvetica"];
+
+  node [shape=plaintext fontsize=12];
+
   subgraph cluster_01 {
-    label = "Legend";
-    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
-      <tr><td align="right" port="i1">item 1</td></tr>
-      <tr><td align="right" port="i2">item 2</td></tr>
-      <tr><td align="right" port="i3">item 3</td></tr>
-      <tr><td align="right" port="i4">item 4</td></tr>
-      </table>>]
-    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
-      <tr><td port="i1">&nbsp;</td></tr>
-      <tr><td port="i2">&nbsp;</td></tr>
-      <tr><td port="i3">&nbsp;</td></tr>
-      <tr><td port="i4">&nbsp;</td></tr>
-      </table>>]
-    key:i1:e -> key2:i1:w [color=blue]
-    key:i2:e -> key2:i2:w [color=gray]
-    key:i3:e -> key2:i3:w [color=peachpuff3]
-    key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
+    
+    label = "Repplication : Legend";
+    
+    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">';
+
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'</td></tr>'."\n";
+            $i++;
+        }
+        $legend .= '</table>>]
+    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">'."\n";
+
+
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
+            $i++;
+        }
+
+
+        $legend .= '</table>>]'."\n";
+
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color='.$edge['color'].' arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
+            $i++;
+        }
+
+        /*
+          key:i1:e -> key2:i1:w [color=blue]
+          key:i2:e -> key2:i2:w [color=gray]
+          key:i3:e -> key2:i3:w [color=peachpuff3]
+          key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
+         */
+        $legend .= '
   }
 }';
+
+
+        //echo str_replace("\n", "<br />",htmlentities($legend));
+
+        $data['legend'] = $this->getRenderer($legend);
+
+        $this->set('data', $data);
 
         //https://dreampuf.github.io/GraphvizOnline/
     }
