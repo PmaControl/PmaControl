@@ -214,22 +214,36 @@ var myChart'.$slave['id_mysql_server'].' = new Chart(ctx, {
                 if ($slave['slave_sql_running'] !== "Yes" || $slave['slave_io_running'] !== "Yes" || $slave['seconds_behind_master'] !== "0"
                 ) {
 
-                    $export                      = array();
+                    $export = array();
+
+
+                    if (empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
+                        $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['display_name'] = "Unknow ".$slave['master_host'].':'.$slave['master_port'];
+
+                        if ($slave['slave_io_running'] === 'Yes') {
+                            $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['is_available'] = "1";
+                        } else {
+                            $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['is_available'] = "0";
+                        }
+                    }
+
+
                     $export['master']            = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']];
                     $export['slave']             = $data['server']['slave'][$id_mysql_server];
                     $export['connect']           = $connect_name;
                     $export['seconds']           = $slave['seconds_behind_master'];
                     $export['slave_sql_running'] = $slave['slave_sql_running'];
                     $export['slave_io_running']  = $slave['slave_io_running'];
-                   
-                    $export['slave_sql_error']   = $slave['last_sql_error'];
-                    $export['slave_io_error']    = $slave['last_io_error'];
+
+                    $export['slave_sql_error'] = $slave['last_sql_error'];
+                    $export['slave_io_error']  = $slave['last_io_error'];
 
 
                     $export['slave_sql_errno'] = $slave['last_sql_errno'];
                     $export['slave_io_errno']  = $slave['last_io_errno'];
 
                     $data['box'][] = $export;
+
                 }
             }
         }

@@ -6,39 +6,41 @@
  */
 
 
-echo '<table class="table table-condensed table-bordered table-striped" >';
-
-echo '<tr>';
-echo '<th>'.__("Server").'</th>';
-echo '<th>'.__("Date").'</th>';
-echo '<th>'.__("Error").'</th>';
-echo '<tr>';
-
-foreach ($data['box'] as $server) {
+if (!empty($data['box'])) {
+    echo '<table class="table table-condensed table-bordered table-striped" >';
 
     echo '<tr>';
-    echo '<td><a href="">'.$server['display_name'].'</a></td>';
-    echo '<td>'.'2018-02-05'.'</td>';
+    echo '<th>'.__("Server").'</th>';
+    echo '<th>'.__("Date").'</th>';
+    echo '<th>'.__("Error").'</th>';
+    echo '<tr>';
+
+    foreach ($data['box'] as $server) {
+
+        echo '<tr>';
+        echo '<td><a href="">'.$server['display_name'].'</a></td>';
+        echo '<td>'.'2018-02-05'.'</td>';
 
 
-    $class = "";
-    $pos   = strpos($server['error'], "GLI-012");
-    if ($pos !== false) {
-        $class = "pma pma-danger";
-    } else {
-        $class = "pma pma-warning";
+        $class = "";
+        $pos   = strpos($server['error'], "GLI-012");
+        if ($pos !== false) {
+            $class = "pma pma-danger";
+        } else {
+            $class = "pma pma-warning";
+        }
+
+
+        $pos = strpos($server['error'], "GLI-19");
+        if ($pos !== false) {
+            $class = "pma pma-primary";
+        }
+
+
+        echo '<td class="'.$class.'">'.$server['error'].'</td>';
+        echo '<tr>';
     }
 
 
-    $pos = strpos($server['error'], "GLI-19");
-    if ($pos !== false) {
-        $class = "pma pma-primary";
-    }
-
-
-    echo '<td class="'.$class.'">'.$server['error'].'</td>';
-    echo '<tr>';
+    echo '</table>';
 }
-
-
-echo '</table>';
