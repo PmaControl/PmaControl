@@ -312,8 +312,7 @@ END IF;";
     {
 
 
-        if ($this->debug)
-        {
+        if ($this->debug) {
             return $name;
         }
 
@@ -337,7 +336,7 @@ END IF;";
             $hostname = $name;
         }
 
-  
+
 
 
 
@@ -362,7 +361,7 @@ END IF;";
     private function unCrypt($password_crypted)
     {
         Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::decrypt($password);
+        $passwd     = Crypt::decrypt($password_crypted);
 
         return $passwd;
     }
@@ -457,15 +456,14 @@ END IF;";
 
             foreach ($config['webservice'] as $user) {
 
-                if (!is_array($user))
-                {
+                if (!is_array($user)) {
                     throw new \InvalidArgumentException('PMACTRL-029 : user\'s account should be in array and not set directly !');
                 }
 
                 $to_check = array('user', 'password', 'host', 'organization');
 
                 foreach ($to_check as $val) {
-                    if (! isset($user[$val])) {
+                    if (!isset($user[$val])) {
                         throw new \InvalidArgumentException('PMACTRL-028 : webservice.'.$val.' is empty in config file :'.$filename);
                     }
                 }
@@ -493,6 +491,10 @@ END IF;";
                     throw new \Exception('save failed !', 80);
                 }
             }
+        }
+        else
+        {
+            //show that we don't sert webservice
         }
     }
 }
