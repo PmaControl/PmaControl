@@ -18,18 +18,16 @@ class Dot2 extends Controller
 
     use \App\Library\Debug;
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE         = "green";
-    CONST NODE_NOT_ANSWERED      = "orange";
-    CONST NODE_ERROR             = "red";
+    CONST NODE_AVAILABLE      = "green";
+    CONST NODE_NOT_ANSWERED   = "orange";
+    CONST NODE_ERROR          = "red";
 //for galera
-    CONST NODE_NOT_PRIMARY       = "blue"; //galera cluster
-    CONST NODE_DONOR             = "cyan";
-    CONST NODE_DONOR_DESYNCED    = "yellow";
-    CONST NODE_MANUAL_DESYNC     = "brown";
-    CONST NODE_RECEIVE_SST       = "yellow";
-    CONST NODE_BUG               = "pink";
-
-
+    CONST NODE_NOT_PRIMARY    = "blue"; //galera cluster
+    CONST NODE_DONOR          = "cyan";
+    CONST NODE_DONOR_DESYNCED = "yellow";
+    CONST NODE_MANUAL_DESYNC  = "brown";
+    CONST NODE_RECEIVE_SST    = "yellow";
+    CONST NODE_BUG            = "pink";
     CONST REPLICATION_OK         = "green";
     CONST REPLICATION_IST        = "yellow";
     CONST REPLICATION_SST        = "grey";
@@ -419,6 +417,11 @@ class Dot2 extends Controller
 
                 //debug($slave);
 //$this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $slave;
+                //si le master est pas dans le monitoring on le saute
+                if (empty($slave['id_master'])) {
+                    continue;
+                }
+
 
                 $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "filled";
 
@@ -464,6 +467,11 @@ class Dot2 extends Controller
         foreach ($this->slaves as $gg) {
             foreach ($gg as $server) {
 
+
+                if (empty($server['id_master'])) {
+                    continue;
+                }
+
                 $tmp       = array($server['id_master'], $server['id_mysql_server']);
                 $couples[] = min($tmp).":".max($tmp);
             }
@@ -489,16 +497,22 @@ class Dot2 extends Controller
             $new_master_master[] = explode(":", $val);
         }
 
-        $new_master_master = $this->array_merge_group($new_master_master);
+
+        if (!empty($new_master_master)) {
+
+            $new_master_master = $this->array_merge_group($new_master_master);
 
 
-        $this->debug($new_master_master, "new_master_master");
+            $this->debug($new_master_master, "new_master_master");
 
 
-        //$new_master_master = array();
-        //$this->debug($new_master_master, "MASTER / MASTER");
+            //$new_master_master = array();
+            //$this->debug($new_master_master, "MASTER / MASTER");
 
-        $this->graph_master_master = $new_master_master;
+            $this->graph_master_master = $new_master_master;
+        } else {
+            $this->graph_master_master = array();
+        }
     }
 
     public function run($param)
@@ -990,13 +1004,9 @@ class Dot2 extends Controller
 
         return $id;
     }
-
-
     /*
      * shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false
      */
-
-
 
     private function createArbitrator()
     {

@@ -893,6 +893,9 @@ var myChart = new Chart(ctx, {
 
         $res = $db->sql_query($sql);
 
+
+        $data = array();
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
 
