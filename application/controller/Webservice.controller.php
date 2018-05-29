@@ -134,7 +134,7 @@ class Webservice extends Controller
 
 
         $server                              = array();
-        $server['mysql_server']['id_client'] = $this->getId($data['client'] ?? "none", "client", "libelle");
+        $server['mysql_server']['id_client'] = $this->getId($data['organization'] ?? "none", "client", "libelle");
 
 
 
