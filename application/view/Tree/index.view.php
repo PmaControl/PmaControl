@@ -90,8 +90,9 @@ use Glial\Html\Form\Form;
 
                         <a href="<?= LINK ?>tree/add/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
                         <a role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span></a>
-                        <a role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-left" aria-hidden="true"></span></a>
-                        <a role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></a>
+
+                        <a href="<?= LINK ?>tree/left/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-left" aria-hidden="true"></span></a>
+                        <a href="<?= LINK ?>tree/down/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span></a>
                         <a href="<?= LINK ?>tree/up/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></a>
                         - <a href="<?= LINK ?>tree/delete/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
                     </td>

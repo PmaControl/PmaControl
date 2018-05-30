@@ -4,6 +4,10 @@ echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
+echo '<div style="float:right; border:#000 0px solid">';
+\Glial\Synapse\FactoryController::addNode("Dot2", "legend", array());
+echo '</div>';
+
 // @TODO remove empry graph from dot generateCache
 foreach ($data['graphs'] as $graph) {
     if (!empty($graph['display'])) {

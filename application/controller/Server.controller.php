@@ -884,4 +884,37 @@ var myChart = new Chart(ctx, {
             $db->sql_query($sql);
         }
     }
+
+    public function box()
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * from mysql_server where is_available = 0;";
+
+        $res = $db->sql_query($sql);
+
+
+        $data = array();
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+
+            if (strstr($arr['error'], 'Call Stack:')) {
+                //echo end(explode("\n", $server['error']));
+                preg_match_all("/\[[\s0-9:_-]+\]\[ERROR\](.*)/", $arr['error'], $output_array);
+
+                if (!empty($output_array[0][0])) {
+                    $arr['error'] = $output_array[0][0];
+                }
+
+                //echo $server['error'];
+            }
+
+
+            $data['box'][] = $arr;
+        }
+
+
+        $this->set('data', $data);
+    }
 }

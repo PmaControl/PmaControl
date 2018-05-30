@@ -134,7 +134,7 @@ class Webservice extends Controller
 
 
         $server                              = array();
-        $server['mysql_server']['id_client'] = $this->getId($data['client'] ?? "none", "client", "libelle");
+        $server['mysql_server']['id_client'] = $this->getId($data['organization'] ?? "none", "client", "libelle");
 
 
 
@@ -312,8 +312,7 @@ END IF;";
     {
 
 
-        if ($this->debug)
-        {
+        if ($this->debug) {
             return $name;
         }
 
@@ -337,7 +336,7 @@ END IF;";
             $hostname = $name;
         }
 
-  
+
 
 
 
@@ -362,7 +361,7 @@ END IF;";
     private function unCrypt($password_crypted)
     {
         Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::decrypt($password);
+        $passwd     = Crypt::decrypt($password_crypted);
 
         return $passwd;
     }
@@ -457,16 +456,17 @@ END IF;";
 
             foreach ($config['webservice'] as $user) {
 
+                if (!is_array($user)) {
+                    throw new \InvalidArgumentException('PMACTRL-029 : user\'s account should be in array and not set directly !');
+                }
 
                 $to_check = array('user', 'password', 'host', 'organization');
 
-
-                foreach ($to_check as $key => $val) {
-                    if (empty($user[$val])) {
-                        throw new \InvalidArgumentException('webservice.'.$val.' is empty');
+                foreach ($to_check as $val) {
+                    if (!isset($user[$val])) {
+                        throw new \InvalidArgumentException('PMACTRL-028 : webservice.'.$val.' is empty in config file :'.$filename);
                     }
                 }
-
 
                 $id_client = $this->getId($user['organization'], "client", "libelle");
 
@@ -475,11 +475,9 @@ END IF;";
 
                 $data = array();
 
-
                 while ($ob = $db->sql_fetch_object($res)) {
                     $data['webservice_user']['id'] = $ob->id;
                 }
-
 
                 $data['webservice_user']['user']      = $user['user'];
                 $data['webservice_user']['password']  = $this->crypt($user['password']);
@@ -493,6 +491,10 @@ END IF;";
                     throw new \Exception('save failed !', 80);
                 }
             }
+        }
+        else
+        {
+            //show that we don't sert webservice
         }
     }
 }

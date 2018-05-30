@@ -415,7 +415,6 @@ class Ldap extends Controller {
         //debug(self::LDAP_CONFIG);
         //echo "\n";
 
-        debug($var);
 
         $ldap = file_get_contents(self::LDAP_CONFIG);
 
@@ -440,7 +439,7 @@ class Ldap extends Controller {
             if (!in_array($ldap_const, $this->without_quote)) {
                 $new_value = '"' . str_replace('"', '', $val) . '"';
             } else {
-                debug($val);
+                //debug($val);
 
                 $new_value = str_replace('"', '', $val);
             }
