@@ -23,6 +23,7 @@ class Server extends Controller
 
         $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
             FROM mysql_server a
+                 INNER JOIN ssh_key e ON e.id = a.id_ssh_key
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
