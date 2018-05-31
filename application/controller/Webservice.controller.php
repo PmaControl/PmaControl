@@ -128,7 +128,7 @@ class Webservice extends Controller
 
     private function addMysqlServer($data)
     {
-        $this->debug($data);
+        //$this->debug($data);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -336,10 +336,6 @@ END IF;";
             $hostname = $name;
         }
 
-
-
-
-
         return $hostname;
     }
 
@@ -491,9 +487,7 @@ END IF;";
                     throw new \Exception('save failed !', 80);
                 }
             }
-        }
-        else
-        {
+        } else {
             //show that we don't sert webservice
         }
     }

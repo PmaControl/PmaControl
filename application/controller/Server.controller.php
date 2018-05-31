@@ -400,6 +400,8 @@ class Server extends Controller
           group by datetime div 500
          */
 //$this->di['js']->addJavascript(array("Chart.Core.js", "Chart.Scatter.min.js"));
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -692,8 +694,11 @@ var myChart = new Chart(ctx, {
 
 
 
-            $this->set('data', $data);
+            
         }
+
+        $this->set('data', $data);
+
     }
 
 //DEPRECATED
