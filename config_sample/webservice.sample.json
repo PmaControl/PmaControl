@@ -7,7 +7,9 @@
                 "password": "secret_password",
                 "tag": ["text","datacenter1"],
                 "organization": "68Koncept",
-                "environment": "test"
+                "environment": "test",
+		"ssh_ip": "10.10.1.1",
+		"ssh_port": "22"
         }],
         "haproxy": [{
                 "fqdn": "my.haproxy.com",

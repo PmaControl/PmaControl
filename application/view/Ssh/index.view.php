@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -17,24 +17,40 @@ echo '</div>';
 echo '</div>';
 
 
-foreach($data['keys'] as $key)
-{
+foreach ($data['keys'] as $key) {
     echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
-    echo '<div class="pma-item">';
 
-        echo '<div class="col-md-2 text-center"><i class="fa fa-key fa-5a" aria-hidden="true"></i><br /><span class="badge">SSH</span></div>';
-         echo '<div class="col-md-3"><b>User :</b> '.$key['user'].'</div>';
-        echo '<div class="col-md-5"><b>Fingerprint:</b> '.implode(':',str_split($key['fingerprint'],2)).''
-            . '<br />'
-            . 'Added on : '.$key['added_on']
-            . '</div>';
-        echo '<div class="col-md-2">';
 
-        echo '<a href="'.LINK.'ssh/delete/'.$key['id'].'" type="button" class="btn btn-danger">'.__('Delete').'</a>';
-        echo '</div>';
+    echo '<div class="col-md-2 text-center"><i class="fa fa-key fa-5a" aria-hidden="true"></i><br /><span class="badge">SSH</span></div>';
+    echo '<div class="col-md-3"><b>User :</b> '.$key['user'].'</div>';
+    echo '<div class="col-md-5"><b>Fingerprint:</b> '.implode(':', str_split($key['fingerprint'], 2)).''
+    .'<br />'
+    .'Added on : '.$key['added_on']
+    .'</div>';
+    echo '<div class="col-md-2">';
+
+    echo '<a href="'.LINK.'ssh/delete/'.$key['id'].'" type="button" class="btn btn-danger">'.__('Delete').'</a>';
+    echo '</div>';
+
+    echo '<div class="col-md-12" style="padding-top:10px">';
+
+    /*
+     * green : #449D44
+     * red : #C9302C
+     */
+    foreach ($data['servers'] as $server) {
+        if ($server['active'] == "1") {
+            $class = 'label-success';
+        } else {
+            $class = 'label-primary';
+        }
+
+
+        echo '<span class="label '.$class.'" style="line-height:22px">'.$server['display_name'].'</span> ';
+    }
 
     echo '</div>';
 
-    echo '</div>';
 
+    echo '</div>';
 }

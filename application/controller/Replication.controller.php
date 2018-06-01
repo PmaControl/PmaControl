@@ -7,12 +7,7 @@ class Replication extends Controller
 
     public function index()
     {
-
-
-
         $this->layout_name = 'default';
-
-
         $this->title = __("Replication");
         $this->ariane = " > " . $this->title;
 
