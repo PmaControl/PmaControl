@@ -13,16 +13,15 @@ use \Monolog\Handler\StreamHandler;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use \Glial\Synapse\Config;
+use \App\Library\Debug;
 
 class Agent extends Controller
 {
 
     use \App\Library\Decoupage;
 
-    use \App\Library\Debug;
 
     use \App\Library\System;
-    
     var $debug    = false;
     var $url      = "Daemon/index/";
     var $log_file = TMP."log/daemon.log";
@@ -103,9 +102,8 @@ class Agent extends Controller
 
             $pid = shell_exec($cmd);
 
-            
-            $this->logger->info(Color::getColoredString('Started daemon with pid : '.$pid,
-                    "grey", "green"));
+
+            $this->logger->info(Color::getColoredString('Started daemon with pid : '.$pid, "grey", "green"));
 
             $sql   = "UPDATE daemon_main SET pid ='".$pid."' WHERE id = '".$id_daemon."'";
             $db->sql_query($sql);
@@ -114,8 +112,7 @@ class Agent extends Controller
             set_flash("success", $title, $msg);
             header("location: ".LINK.$this->url);
         } else {
-            $this->logger->info(Color::getColoredString('Impossible to start daemon (Already running)',
-                    "yellow"));
+            $this->logger->info(Color::getColoredString('Impossible to start daemon (Already running)', "yellow"));
             $msg   = I18n::getTranslation(__("Impossible to launch the daemon ")."(".__("Already running !").")");
             $title = I18n::getTranslation(__("Error"));
             set_flash("caution", $title, $msg);
@@ -164,13 +161,11 @@ class Agent extends Controller
             shell_exec($cmd);
             //shell_exec("echo '[" . date("Y-m-d H:i:s") . "] DAEMON STOPPED !' >> " . $ob->log_file);
 
-            $this->logger->info(Color::getColoredString('Stopped daemon with the pid : '.$ob->pid,
-                    "grey", "red"));
+            $this->logger->info(Color::getColoredString('Stopped daemon with the pid : '.$ob->pid, "grey", "red"));
         } else {
 
             if (!empty($pid)) {
-                $this->logger->info(Color::getColoredString('Impossible to find the daemon with the pid : '.$pid,
-                        "yellow"));
+                $this->logger->info(Color::getColoredString('Impossible to find the daemon with the pid : '.$pid, "yellow"));
             }
 
             $msg   = I18n::getTranslation(__("Impossible to find the daemon with the pid : ")."'".$ob->pid."'");
@@ -184,8 +179,7 @@ class Agent extends Controller
             $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '".$id_daemon."'";
             $db->sql_query($sql);
         } else {
-            $this->logger->info(Color::getColoredString('Impossible to stop daemon with pid : '.$pid,
-                    "grey", "red"));
+            $this->logger->info(Color::getColoredString('Impossible to stop daemon with pid : '.$pid, "grey", "red"));
             throw new Exception('PMACTRL-876 : Impossible to stop daemon with pid : "'.$ob->pid.'"');
         }
 
@@ -205,7 +199,7 @@ class Agent extends Controller
     public function launch($params)
     {
 
-        $this->parseDebug($params);
+        Debug::parseDebug($params);
         $id = $params[0];
 
         $debug = "";
@@ -228,15 +222,15 @@ class Agent extends Controller
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
                 $cmd = $php." ".GLIAL_INDEX." ".$ob->class." ".$ob->method." ".$ob->id." ".$ob->params." loop:".$id_loop." ".$debug." >> ".$this->log_file."";
-                $this->debug($cmd);
+                Debug::debug($cmd);
 
                 $pid = shell_exec($cmd);
-                $this->debug($pid);
+                Debug::debug($pid);
 
                 $refresh_time = $ob->refresh_time;
             }
 
-            $this->debug("refresh time : ".$refresh_time);
+            Debug::debug("refresh time : ".$refresh_time);
 
             // in case of mysql gone away, like this daemon restart when mysql is back
             $this->di['db']->sql(DB_DEFAULT)->sql_close();
@@ -265,9 +259,9 @@ class Agent extends Controller
         $date_start = microtime(true);
 
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
         }
 
@@ -290,7 +284,7 @@ class Agent extends Controller
             $maxExecutionTime = $ob->max_delay;
         }
 
-        $this->debug("max execution time : ".$maxExecutionTime);
+        Debug::debug("max execution time : ".$maxExecutionTime);
 
         //to prevent any trouble with fork
         $db->sql_close();
@@ -300,7 +294,7 @@ class Agent extends Controller
 
 
 
-        $this->debug("Nombre de threads : ".$maxThreads);
+        Debug::debug("Nombre de threads : ".$maxThreads);
 
 
         $openThreads     = 0;
@@ -308,8 +302,7 @@ class Agent extends Controller
 
         if (empty($server_list)) {
             sleep(10);
-            $this->logger->info(Color::getColoredString('List of server to test is empty',
-                    "grey", "red"));
+            $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             //throw new Exception("List of server to test is empty", 20);
         }
 
@@ -356,7 +349,7 @@ class Agent extends Controller
 
 
 
-            //$this->debug($child_processes);
+            //Debug::debug($child_processes);
         }
 
         if ($father) {
@@ -371,7 +364,7 @@ class Agent extends Controller
             $time = microtime(true) - $date_start;
 
 
-            $this->debug("All tests termined : ".round($time, 2)." sec");
+            Debug::debug("All tests termined : ".round($time, 2)." sec");
         } else {
             exit;
         }
@@ -382,9 +375,9 @@ class Agent extends Controller
 
     public function testMaxExecution($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
         }
 
@@ -435,10 +428,9 @@ class Agent extends Controller
 
         //execute a process with a timelimit (in case of MySQL don't answer and keep connection)
         //$max_execution_time = 20; // in seconds
-        //$this->debug("monitoring : " . $server['name'] . ":" . $server['id']);
+        //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
-        $ret = SetTimeLimit::run("Agent", "tryMysqlConnection",
-                array($server['name'], $server['id']), $max_execution_time);
+        $ret = SetTimeLimit::run("Agent", "tryMysqlConnection", array($server['name'], $server['id']), $max_execution_time);
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
             /* in case of somthing wrong :
@@ -463,11 +455,11 @@ class Agent extends Controller
             $db->sql_query($sql);
             $db->sql_close();
 
-            echo ($this->debug) ? $server['name']." KO :\n" : "";
-            ($this->debug) ? print_r($ret) : '';
+            echo (Debug::$debug) ? $server['name']." KO :\n" : "";
+            (Debug::$debug) ? print_r($ret) : '';
             return false;
         } else {
-            //echo ($this->debug) ? $server['name']." OK \n" : "";
+            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
             return true;
         }
     }
@@ -485,7 +477,7 @@ class Agent extends Controller
     public function tryMysqlConnection($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
 
         $name_server = $param[0];
@@ -496,22 +488,21 @@ class Agent extends Controller
         // on évite de lancer deux fois le même process sur le même serveur MySQL/MariaDB/Percona
 
         $pid = getmypid();
-        $this->debug($pid);
+        Debug::debug($pid);
 
         $cmd = "ps -eaf | grep -v grep | grep -v sh | grep php | grep tryMysqlConnection | grep ".$name_server." | grep ".$id_server." | awk '/php/{print $2}'";
         $cmp = trim(shell_exec($cmd));
 
 
-        $this->debug($cmp);
+        Debug::debug($cmp);
 
 
         $pids = explode("\n", $cmp);
-        $this->debug($pids);
+        Debug::debug($pids);
 
         if (count($pids) > 1) {
-            throw new \Exception('PMACTRL-521 : un processus est déjà en cours sur ce serveur',
-            80);
-            //$this->debug("");
+            throw new \Exception('PMACTRL-521 : un processus est déjà en cours sur ce serveur', 80);
+            //Debug::debug("");
             exit(12);
         }
         /*         * * */
@@ -522,7 +513,7 @@ class Agent extends Controller
 
         $variables = $mysql_tested->getVariables();
 
-        $this->debug($variables);
+        Debug::debug($variables);
 
         $status = $mysql_tested->getStatus();
 
@@ -530,7 +521,7 @@ class Agent extends Controller
         $slave  = $mysql_tested->isSlave();
 
 
-        $this->debug($slave);
+        Debug::debug($slave);
         /*
           $sql       = "SELECT now() as date_time";
           $res2      = $mysql_tested->sql_query($sql);
@@ -586,11 +577,11 @@ GROUP BY table_schema ;';
 
 
                 $sql   = "SHOW DATABASES";
-                $this->debug(SqlFormatter::highlight($sql));
+                Debug::debug(SqlFormatter::highlight($sql));
                 $res50 = $mysql_tested->sql_query($sql);
 
                 if ($mysql_tested->sql_num_rows($res50) < 100) {
-                    $this->debug(SqlFormatter::highlight($sql2));
+                    Debug::debug(SqlFormatter::highlight($sql2));
                     $res5 = $mysql_tested->sql_query($sql2);
                     while ($ob   = $mysql_tested->sql_fetch_array($res5)) {
                         $schema[$ob['table_schema']] = $ob;
@@ -605,11 +596,11 @@ GROUP BY table_schema ;';
         try {
 
             $sql = "START TRANSACTION;";
-            $this->debug(trim(SqlFormatter::highlight($sql)));
+            Debug::debug(trim(SqlFormatter::highlight($sql)));
             $db->sql_query($sql);
             $sql = "SELECT id FROM mysql_replication_stats where id_mysql_server = '".$id_server."'";
 
-            $this->debug(trim(SqlFormatter::highlight($sql)));
+            Debug::debug(trim(SqlFormatter::highlight($sql)));
             $res3 = $db->sql_query($sql);
 
             $table                                 = array();
@@ -620,8 +611,7 @@ GROUP BY table_schema ;';
             $res10 = $db->sql_save($table);
 
             if (!$res10) {
-                throw new \Exception('PMACTRL-159 : impossible to remove error !',
-                60);
+                throw new \Exception('PMACTRL-159 : impossible to remove error !', 60);
             }
 
             $table = array();
@@ -639,14 +629,11 @@ GROUP BY table_schema ;';
             $table['mysql_replication_stats']['date']           = $date_time;
             $table['mysql_replication_stats']['is_master']      = ($master) ? 1 : 0;
             $table['mysql_replication_stats']['is_slave']       = ($slave) ? 1 : 0;
-            $table['mysql_replication_stats']['uptime']         = ($mysql_tested->getStatus('Uptime'))
-                    ? $mysql_tested->getStatus('Uptime') : '-1';
-            $table['mysql_replication_stats']['time_zone']      = ($mysql_tested->getVariables('system_time_zone'))
-                    ? $mysql_tested->getVariables('system_time_zone') : '-1';
+            $table['mysql_replication_stats']['uptime']         = ($mysql_tested->getStatus('Uptime')) ? $mysql_tested->getStatus('Uptime') : '-1';
+            $table['mysql_replication_stats']['time_zone']      = ($mysql_tested->getVariables('system_time_zone')) ? $mysql_tested->getVariables('system_time_zone') : '-1';
             $table['mysql_replication_stats']['ping']           = 1;
             $table['mysql_replication_stats']['last_sql_error'] = '';
-            $table['mysql_replication_stats']['binlog_format']  = ($mysql_tested->getVariables('binlog_format'))
-                    ? $mysql_tested->getVariables('binlog_format') : 'N/A';
+            $table['mysql_replication_stats']['binlog_format']  = ($mysql_tested->getVariables('binlog_format')) ? $mysql_tested->getVariables('binlog_format') : 'N/A';
 
             $id_mysql_replication_stats = $db->sql_save($table);
 
@@ -654,11 +641,10 @@ GROUP BY table_schema ;';
 
 
 
-                $this->debug($table);
-                $this->debug($db->sql_error());
+                Debug::debug($table);
+                Debug::debug($db->sql_error());
 
-                throw new \Exception('PMACTRL-059 : insert in mysql_replication_stats !',
-                60);
+                throw new \Exception('PMACTRL-059 : insert in mysql_replication_stats !', 60);
             }
 
 
@@ -666,7 +652,7 @@ GROUP BY table_schema ;';
                 //get all id_mysql_database
                 $id_mysql_server = [];
                 $sql             = "SELECT * FROM mysql_database WHERE id_mysql_server = '".$id_server."'";
-                $this->debug(trim(SqlFormatter::highlight($sql)));
+                Debug::debug(trim(SqlFormatter::highlight($sql)));
                 $res6            = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_array($res6)) {
@@ -689,8 +675,7 @@ GROUP BY table_schema ;';
                     }
 
                     if (empty($database['data'])) $database['data']      = 0;
-                    if (empty($database['data_free']))
-                            $database['data_free'] = 0;
+                    if (empty($database['data_free'])) $database['data_free'] = 0;
                     if (empty($database['index'])) $database['index']     = 0;
 
                     $mysql_database['mysql_database']['id_mysql_server'] = $id_server;
@@ -701,8 +686,7 @@ GROUP BY table_schema ;';
                         $database['rows'] = 0;
                     }
 
-                    $mysql_database['mysql_database']['rows']               = $mysql_database['mysql_database']['data_length']
-                        = $database['data'];
+                    $mysql_database['mysql_database']['rows']               = $mysql_database['mysql_database']['data_length']        = $database['data'];
                     $mysql_database['mysql_database']['data_free']          = $database['data_free'];
                     $mysql_database['mysql_database']['index_length']       = $database['index'];
                     $mysql_database['mysql_database']['character_set_name'] = $database['DEFAULT_CHARACTER_SET_NAME'];
@@ -722,8 +706,7 @@ GROUP BY table_schema ;';
                     if (!$res7) {
                         print_r($mysql_database);
                         print_r($db->sql_error());
-                        throw new \Exception('PMACTRL-060 : insert in mysql_database !',
-                        60);
+                        throw new \Exception('PMACTRL-060 : insert in mysql_database !', 60);
                     }
                 }
 
@@ -731,7 +714,7 @@ GROUP BY table_schema ;';
                 //delete DB deleted
                 foreach ($id_mysql_server as $key => $tab) {
                     $sql = "DELETE FROM mysql_database WHERE id = '".$tab['id']."'";
-                    $this->debug(SqlFormatter::highlight($sql));
+                    Debug::debug(SqlFormatter::highlight($sql));
                     $db->sql_query($sql);
                     // push event DB deleted
 
@@ -754,64 +737,45 @@ GROUP BY table_schema ;';
                     $sql = "SELECT id from mysql_replication_thread where id_mysql_replication_stats = '".$id_mysql_replication_stats."' 
 			AND thread_name = '".$thread_slave['Connection_name']."'";
 
-                    $this->debug($sql);
+                    Debug::debug($sql);
 
                     $res34 = $db->sql_query($sql);
 
                     while ($ob = $db->sql_fetch_object($res34)) {
-                        $mysql_replication_thread['mysql_replication_thread']['id']
-                            = $ob->id;
+                        $mysql_replication_thread['mysql_replication_thread']['id'] = $ob->id;
                     }
 
-                    $mysql_replication_thread['mysql_replication_thread']['id_mysql_replication_stats']
-                        = $id_mysql_replication_stats;
-                    $mysql_replication_thread['mysql_replication_thread']['relay_master_log_file']
-                        = $thread_slave['Relay_Master_Log_File'];
-                    $mysql_replication_thread['mysql_replication_thread']['exec_master_log_pos']
-                        = $thread_slave['Exec_Master_Log_Pos'];
-                    $mysql_replication_thread['mysql_replication_thread']['thread_io']
-                        = $thread_slave['Slave_IO_Running'];
-                    $mysql_replication_thread['mysql_replication_thread']['thread_sql']
-                        = $thread_slave['Slave_SQL_Running'];
-                    $mysql_replication_thread['mysql_replication_thread']['thread_name']
-                        = (empty($thread_slave['Connection_name'])) ? '' : $thread_slave['Connection_name'];
-                    $mysql_replication_thread['mysql_replication_thread']['time_behind']
-                        = $thread_slave['Seconds_Behind_Master'];
-                    $mysql_replication_thread['mysql_replication_thread']['master_host']
-                        = $thread_slave['Master_Host'];
-                    $mysql_replication_thread['mysql_replication_thread']['master_port']
-                        = $thread_slave['Master_Port'];
-                    $mysql_replication_thread['mysql_replication_thread']['last_sql_error']
-                        = (empty($thread_slave['Last_SQL_Error'])) ? $thread_slave['Last_Error']
-                            : $thread_slave['Last_SQL_Error'];
-                    $mysql_replication_thread['mysql_replication_thread']['last_sql_errno']
-                        = (empty($thread_slave['Last_SQL_Errno'])) ? $thread_slave['Last_Errno']
-                            : $thread_slave['Last_SQL_Errno'];
-                    $mysql_replication_thread['mysql_replication_thread']['last_io_error']
-                        = (empty($thread_slave['Last_IO_Error'])) ? $thread_slave['Last_Error']
-                            : $thread_slave['Last_IO_Error'];
-                    $mysql_replication_thread['mysql_replication_thread']['last_io_errno']
-                        = (empty($thread_slave['Last_IO_Errno'])) ? $thread_slave['Last_Errno']
-                            : $thread_slave['Last_IO_Errno'];
+                    $mysql_replication_thread['mysql_replication_thread']['id_mysql_replication_stats'] = $id_mysql_replication_stats;
+                    $mysql_replication_thread['mysql_replication_thread']['relay_master_log_file']      = $thread_slave['Relay_Master_Log_File'];
+                    $mysql_replication_thread['mysql_replication_thread']['exec_master_log_pos']        = $thread_slave['Exec_Master_Log_Pos'];
+                    $mysql_replication_thread['mysql_replication_thread']['thread_io']                  = $thread_slave['Slave_IO_Running'];
+                    $mysql_replication_thread['mysql_replication_thread']['thread_sql']                 = $thread_slave['Slave_SQL_Running'];
+                    $mysql_replication_thread['mysql_replication_thread']['thread_name']                = (empty($thread_slave['Connection_name'])) ? '' : $thread_slave['Connection_name'];
+                    $mysql_replication_thread['mysql_replication_thread']['time_behind']                = $thread_slave['Seconds_Behind_Master'];
+                    $mysql_replication_thread['mysql_replication_thread']['master_host']                = $thread_slave['Master_Host'];
+                    $mysql_replication_thread['mysql_replication_thread']['master_port']                = $thread_slave['Master_Port'];
+                    $mysql_replication_thread['mysql_replication_thread']['last_sql_error']             = (empty($thread_slave['Last_SQL_Error'])) ? $thread_slave['Last_Error'] : $thread_slave['Last_SQL_Error'];
+                    $mysql_replication_thread['mysql_replication_thread']['last_sql_errno']             = (empty($thread_slave['Last_SQL_Errno'])) ? $thread_slave['Last_Errno'] : $thread_slave['Last_SQL_Errno'];
+                    $mysql_replication_thread['mysql_replication_thread']['last_io_error']              = (empty($thread_slave['Last_IO_Error'])) ? $thread_slave['Last_Error'] : $thread_slave['Last_IO_Error'];
+                    $mysql_replication_thread['mysql_replication_thread']['last_io_errno']              = (empty($thread_slave['Last_IO_Errno'])) ? $thread_slave['Last_Errno'] : $thread_slave['Last_IO_Errno'];
 
 
                     $connection_name[] = $mysql_replication_thread['mysql_replication_thread']['thread_name'];
 
-                    $this->debug($mysql_replication_thread);
+                    Debug::debug($mysql_replication_thread);
 
                     $res8 = $db->sql_save($mysql_replication_thread);
 
                     if (!$res8) {
                         debug($db->sql_error());
-                        throw new \Exception('PMACTRL-060 : insert in mysql_database !',
-                        60);
+                        throw new \Exception('PMACTRL-060 : insert in mysql_database !', 60);
                     }
                 }
 
                 // was bug there in case of multi source replication and we remove one thread !
 
                 $sql   = "SELECT `id`,`thread_name` from `mysql_replication_thread` where `id_mysql_replication_stats` = '".$id_mysql_replication_stats."'";
-                $this->debug(trim(SqlFormatter::highlight($sql)));
+                Debug::debug(trim(SqlFormatter::highlight($sql)));
                 $res35 = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res35)) {
@@ -819,42 +783,40 @@ GROUP BY table_schema ;';
                     if (!in_array($ob->thread_name, $connection_name)) {
 
                         $sql = "DELETE FROM mysql_replication_thread WHERE id = ".$ob->id.";";
-                        $this->debug(trim(SqlFormatter::highlight($sql)));
+                        Debug::debug(trim(SqlFormatter::highlight($sql)));
                         $db->sql_query($sql);
                     }
                 }
             } else {
 
                 $sql   = "SELECT id from mysql_replication_thread where id_mysql_replication_stats = '".$id_mysql_replication_stats."'";
-                $this->debug(trim(SqlFormatter::highlight($sql)));
+                Debug::debug(trim(SqlFormatter::highlight($sql)));
                 $res34 = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res34)) {
                     //$mysql_replication_thread['mysql_replication_thread']['id'] = $ob->id;
 
                     $sql = "DELETE FROM mysql_replication_thread WHERE id = ".$ob->id.";";
-                    $this->debug(trim(SqlFormatter::highlight($sql)));
+                    Debug::debug(trim(SqlFormatter::highlight($sql)));
                     $out = $db->sql_query($sql);
 
                     if (!$out) {
-                        $this->logger->info(Color::getColoredString(print_r($db->sql_error()),
-                                "red"));
+                        $this->logger->info(Color::getColoredString(print_r($db->sql_error()), "red"));
                     }
 
                     $this->logger->info(Color::getColoredString($sql, "red"));
-                    $this->logger->info(Color::getColoredString('Slave deleted',
-                            "yellow"));
+                    $this->logger->info(Color::getColoredString('Slave deleted', "yellow"));
                     //log delete of a slave !
                 }
             }
 
             $sql = "COMMIT;";
-            $this->debug(trim(SqlFormatter::highlight($sql)));
+            Debug::debug(trim(SqlFormatter::highlight($sql)));
             $db->sql_query($sql);
         } catch (\Exception $ex) {
 
             $sql = "ROLLBACK;";
-            $this->debug(trim(SqlFormatter::highlight($sql)));
+            Debug::debug(trim(SqlFormatter::highlight($sql)));
             $db->sql_query($sql);
 
             $msg = $ex->getMessage();
@@ -878,8 +840,7 @@ GROUP BY table_schema ;';
 
 
         if (count($err = error_get_last()) != 0) {
-            throw new \Exception('PMACTRL-056 : '.$err['message'].' in '.$err['file'].' on line '.$err['line'],
-            80);
+            throw new \Exception('PMACTRL-056 : '.$err['message'].' in '.$err['file'].' on line '.$err['line'], 80);
         }
     }
     /*
@@ -937,10 +898,9 @@ GROUP BY table_schema ;';
             }
 
             $data['mysql_server']['passwd']       = $passwd;
-            $data['mysql_server']['port']         = empty($info_server['port']) ? 3306
-                    : $info_server['port'];
+            $data['mysql_server']['port']         = empty($info_server['port']) ? 3306 : $info_server['port'];
             $data['mysql_server']['date_refresh'] = date('Y-m-d H:i:s');
-            $data['mysql_server']['database'] = $info_server['database'];
+            $data['mysql_server']['database']     = $info_server['database'];
 
             //$data['mysql_server']['is_monitored'] = 1;
 
@@ -969,8 +929,8 @@ GROUP BY table_schema ;';
 
             echo "[Warning] Removed : ".$to_delete['name']." from monitoring\n";
         }
-        
-        $sql5 ="INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`) SELECT 7,id, now(), now() from mysql_server;";
+
+        $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`) SELECT 7,id, now(), now() from mysql_server;";
         $db->sql_query($sql5);
     }
 
@@ -1033,7 +993,7 @@ GROUP BY table_schema ;';
         $all_name = array_keys($all_status);
 
         $sql = "SELECT * FROM status_name";
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
 
         $index = [];
@@ -1075,8 +1035,7 @@ GROUP BY table_schema ;';
      *
      */
 
-    public function saveValue($data, $all_status, $id_mysql_server,
-                              $variables = 0)
+    public function saveValue($data, $all_status, $id_mysql_server, $variables = 0)
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -1107,14 +1066,14 @@ GROUP BY table_schema ;';
         $date = date('Y-m-d H:i:s');
 
 
-        $this->debug($all_status);
+        Debug::debug($all_status);
 
 
         foreach ($all_status as $name => $status) {
 
 
             $name = strtolower($name);
-            //$this->debug($data[$name]['type']);
+            //Debug::debug($data[$name]['type']);
             // case of sql_slave_skip_counter 
             if ($status === '' && in_array($data[$name]['type'], array(0, 1))) {
                 $status = '0';
@@ -1131,12 +1090,11 @@ GROUP BY table_schema ;';
                 if (!empty($feed[$i])) {
 
                     $req = $sql[$i].implode(',', $feed[$i]).";";
-                    $this->debug(trim(SqlFormatter::highlight($req)));
+                    Debug::debug(trim(SqlFormatter::highlight($req)));
                     $ret = $db->sql_query($req);
                     if (!$ret) {
                         //à changer : chopper l'exception mysql et l'afficher dans le log d'erreur de PmaControl
-                        $this->logger->error(Color::getColoredString($db->sql_error(),
-                                "white", "red"));
+                        $this->logger->error(Color::getColoredString($db->sql_error(), "white", "red"));
                         //$this->stop(array(1));
                         //throw new \Exception('PMACTRL-065 : '.$ret->sql_error());
                     }
@@ -1144,13 +1102,12 @@ GROUP BY table_schema ;';
             }
 
             $sql = "UPDATE `".$table_name."_max_date`  SET `date_previous`=`date`,`date`= '".$date."' WHERE id_mysql_server=".$id_mysql_server."";
-            $this->debug(trim(SqlFormatter::highlight($sql)));
+            Debug::debug(trim(SqlFormatter::highlight($sql)));
             $db->sql_query($sql);
         } catch (Exception $ex) {
 
             //à changer
-            $this->logger->error(Color::getColoredString("ERROR: ".$ex->getMessage(),
-                    "white", "red"));
+            $this->logger->error(Color::getColoredString("ERROR: ".$ex->getMessage(), "white", "red"));
         }
 
 
@@ -1243,19 +1200,16 @@ GROUP BY table_schema ;';
         // update param for the daemon
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
-            if (!empty($_POST['daemon_main']['refresh_time']) && !empty($_POST['daemon_main']['thread_concurency'])
-                && !empty($_POST['daemon_main']['max_delay'])) {
+            if (!empty($_POST['daemon_main']['refresh_time']) && !empty($_POST['daemon_main']['thread_concurency']) && !empty($_POST['daemon_main']['max_delay'])) {
                 $table                      = [];
                 $table['daemon_main']       = $_POST['daemon_main'];
                 $table['daemon_main']['id'] = 1;
                 $gg                         = $db->sql_save($table);
 
                 if (!$gg) {
-                    set_flash("error", "Error",
-                        "Impossible to update the params of Daemon");
+                    set_flash("error", "Error", "Impossible to update the params of Daemon");
                 } else {
-                    set_flash("success", "Success",
-                        "The params of Daemon has been updated");
+                    set_flash("success", "Success", "The params of Daemon has been updated");
                 }
                 header("location: ".LINK."Server/listing/logs");
             }
@@ -1326,21 +1280,21 @@ GROUP BY table_schema ;';
 
     public function refreshDataSsh($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->view = false;
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $sql        = "SELECT * FROM `mysql_server` WHERE  ssh_available =1 AND is_monitored=1";
         $res        = $db->sql_query($sql);
 
-        $this->debug($sql);
+        Debug::debug($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $ssh = new SSH2($ob->ip);
             $rsa = new RSA();
 
-            $this->debug($ob->key_private_path);
+            Debug::debug($ob->key_private_path);
 
             $privatekey = file_get_contents($ob->key_private_path);
 
@@ -1348,14 +1302,14 @@ GROUP BY table_schema ;';
                 exit("private key loading failed!");
             }
 
-            $this->debug('Server : '.$ob->ip." : ".$ob->key_private_user." ".$ob->key_private_path);
+            Debug::debug('Server : '.$ob->ip." : ".$ob->key_private_user." ".$ob->key_private_path);
 
             if (!$ssh->login($ob->key_private_user, $rsa)) {
                 echo "Login Failed\n";
                 continue;
             }
 
-            $this->debug("SSH OK;");
+            Debug::debug("SSH OK;");
 
             $this->hardware($ssh, $ob->id);
             $this->addIpVirtuel($ssh, $ob->id);
@@ -1404,7 +1358,7 @@ GROUP BY table_schema ;';
                 return false;
             }
         }
-    
+
 
         return true;
     }
@@ -1429,7 +1383,7 @@ GROUP BY table_schema ;';
         $sql = "DELETE FROM galera_cluster_node WHERE id_mysql_server IN (SELECT id FROM mysql_server where error= '')";
         $db->sql_query($sql);
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo SqlFormatter::format($sql)."\n";
         }
 
@@ -1450,7 +1404,7 @@ GROUP BY table_schema ;';
         $sql    = $this->buildQuery($fields, "status");
         $res2   = $db->sql_query($sql);
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo SqlFormatter::format($sql)."\n";
         }
         while ($ob = $db->sql_fetch_object($res2)) {
@@ -1464,7 +1418,7 @@ GROUP BY table_schema ;';
             "wsrep_sst_method", "wsrep_desync");
         $sql    = $this->buildQuery($fields, "variables");
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo SqlFormatter::format($sql)."\n";
         }
 
@@ -1473,12 +1427,11 @@ GROUP BY table_schema ;';
         while ($ob = $db->sql_fetch_object($res)) {
             if ($ob->wsrep_on === "ON") {
 
-                $segment = $this->extract($ob->wsrep_provider_options,
-                    "gmcast.segment");
+                $segment = $this->extract($ob->wsrep_provider_options, "gmcast.segment");
 
                 $sql  = "SELECT * FROM galera_cluster_main WHERE name='".$ob->wsrep_cluster_name."' AND segment ='".$segment."'";
                 $res2 = $db->sql_query($sql);
-                if ($this->debug) {
+                if (Debug::$debug) {
                     echo SqlFormatter::format($sql)."\n";
                 }
 
@@ -1490,7 +1443,7 @@ GROUP BY table_schema ;';
 
                     $sql = "INSERT INTO galera_cluster_main SET name='".$ob->wsrep_cluster_name."', segment='".$segment."'";
                     $db->sql_query($sql);
-                    if ($this->debug) {
+                    if (Debug::$debug) {
                         echo SqlFormatter::format($sql)."\n";
                     }
                     $id_galera_cluster_main = $db->_insert_id();
@@ -1507,7 +1460,7 @@ GROUP BY table_schema ;';
                         ." desync  ='".$ob->wsrep_desync."' "
                         ."WHERE id=".$ob->id."";
                     $db->sql_query($sql);
-                    if ($this->debug) {
+                    if (Debug::$debug) {
                         echo SqlFormatter::format($sql)."\n";
                     }
                 } else {
@@ -1520,12 +1473,12 @@ GROUP BY table_schema ;';
                         ." desync  ='".$ob->wsrep_desync."', "
                         ." id_mysql_server=".$ob->id."";
                     $db->sql_query($sql);
-                    if ($this->debug) {
+                    if (Debug::$debug) {
                         echo SqlFormatter::format($sql)."\n";
                     }
                 }
 
-                if ($this->debug) {
+                if (Debug::$debug) {
                     echo SqlFormatter::format($sql)."\n";
                 }
             }
@@ -1541,7 +1494,7 @@ GROUP BY table_schema ;';
         $all_name = array_keys($all_variables);
 
 
-        $this->debug($all_variables);
+        Debug::debug($all_variables);
 
         $sql = "SELECT * FROM variables_name";
 
@@ -1557,7 +1510,7 @@ GROUP BY table_schema ;';
         }
 
 
-        $this->debug($data);
+        Debug::debug($data);
 
 
         foreach ($all_variables as $name => $status) {
@@ -1686,14 +1639,14 @@ GROUP BY table_schema ;';
 
         $id_loop = $param[0];
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->logger->info(str_repeat("#", 40));
 
 
         $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server WHERE is_monitored=1 AND key_private_path != '' and key_private_user != '';";
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
         $res = $db->sql_query($sql);
 
         $server_list = array();
@@ -1704,7 +1657,7 @@ GROUP BY table_schema ;';
         $sql = "SELECT * FROM daemon_main where id=4;";
         $res = $db->sql_query($sql);
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
         while ($ob = $db->sql_fetch_object($res)) {
             $maxThreads       = $ob->thread_concurency; // check MySQL server x by x
@@ -1721,8 +1674,7 @@ GROUP BY table_schema ;';
 
         if (empty($server_list)) {
             sleep(10);
-            $this->logger->info(Color::getColoredString('List of server to test is empty',
-                    "grey", "red"));
+            $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             //throw new Exception("List of server to test is empty", 20);
         }
 
@@ -1773,7 +1725,7 @@ GROUP BY table_schema ;';
                 unset($child_processes[$childPid]);
             }
 
-            if ($this->debug) {
+            if (Debug::$debug) {
                 echo "[".date('Y-m-d H:i:s')."]"." All tests termined\n";
             }
         } else {
@@ -1787,16 +1739,15 @@ GROUP BY table_schema ;';
         //$max_execution_time = 20; // in seconds
 
         $debug = "";
-        if ($this->debug) {
+        if (Debug::$debug) {
             $debug = " --debug ";
         }
 
         //$this->logger->info("trySshConnection (" . $server_id.")");
 
-        $ret = SetTimeLimit::run("Agent", "trySshConnection",
-                array($server_id, $id_loop, $debug), $max_execution_time);
+        $ret = SetTimeLimit::run("Agent", "trySshConnection", array($server_id, $id_loop, $debug), $max_execution_time);
 
-        $this->debug($ret);
+        Debug::debug($ret);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -1814,7 +1765,7 @@ GROUP BY table_schema ;';
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[".date("Y-m-d H:i:s")."]"." Server Ssh didn't answer in time (delay max : ".$max_execution_time." seconds)";
 
-                $this->debug($ret['stdout']);
+                Debug::debug($ret['stdout']);
             }
 
             //echo $sql . "\n";
@@ -1822,7 +1773,7 @@ GROUP BY table_schema ;';
             $sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
             $db->sql_query($sql);
 
-            $this->debug("Server ID : ".$server_id."(FAILED !)");
+            Debug::debug("Server ID : ".$server_id."(FAILED !)");
 
             $db->sql_close();
 
@@ -1832,16 +1783,15 @@ GROUP BY table_schema ;';
             $sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
             $db->sql_query($sql);
 
-            $this->debug("Server ID : ".$server_id." (answered in time)");
-            //echo ($this->debug) ? $server['name']." OK \n" : "";
+            Debug::debug("Server ID : ".$server_id." (answered in time)");
+            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
             return true;
         }
     }
 
     public function extract($wsrep_provider_options, $variable)
     {
-        preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/",
-            $wsrep_provider_options, $output_array);
+        preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
 
         if (!empty($output_array[1])) {
             return $output_array[1];
@@ -1856,13 +1806,13 @@ GROUP BY table_schema ;';
         $this->view = false;
         $id_server  = $param[0];
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id=".$id_server.";";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
         $res = $db->sql_query($sql);
 
@@ -1875,22 +1825,22 @@ GROUP BY table_schema ;';
 
 
             if (!file_exists($ob->key_private_path)) {
-                $this->debug("This file doesn't exist : ".$ob->key_private_path);
+                Debug::debug("This file doesn't exist : ".$ob->key_private_path);
                 $this->logger->error("This file doesn't exist : ".$ob->key_private_path);
             } else {
 
-                $this->debug("This file exist : ".$ob->key_private_path);
+                Debug::debug("This file exist : ".$ob->key_private_path);
             }
 
             $privatekey = file_get_contents($ob->key_private_path);
 
             if ($rsa->loadKey($privatekey) === false) {
                 $login_successfull = false;
-                $this->debug("private key loading failed!");
+                Debug::debug("private key loading failed!");
             }
 
             if (!$ssh->login($ob->key_private_user, $rsa)) {
-                $this->debug("Login Failed");
+                Debug::debug("Login Failed");
                 $login_successfull = false;
             }
         }
@@ -1898,19 +1848,16 @@ GROUP BY table_schema ;';
 
         $msg = ($login_successfull) ? "Successfull" : "Failed";
 
-        $this->debug("Connection to server:".$id_server." (".$ip.":22) : ".$msg);
+        Debug::debug("Connection to server:".$id_server." (".$ip.":22) : ".$msg);
 
         $this->logger->info("Connection to server (".$ip.":22) : ".$msg);
 
         $sql = "UPDATE mysql_server SET ssh_available = '".((int) $login_successfull)."' where id=".$id_server.";";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
         $db->sql_query($sql);
         $db->sql_close();
     }
-
-
-
 
     public function hardware($ssh, $id_mysql_server)
     {
@@ -1999,7 +1946,7 @@ GROUP BY table_schema ;';
                    swappiness='".trim($swapiness)."'
                    WHERE id=".$id_mysql_server."";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
 
         $db->sql_query($sql);
@@ -2016,12 +1963,12 @@ GROUP BY table_schema ;';
 
         $cmd = "ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'";
         $ip  = $ssh->exec($cmd);
-        $this->debug($cmd);
+        Debug::debug($cmd);
 
         $ips_actual = explode("\n", trim($ip));
 
         $sql = "SELECT * FROM `virtual_ip` WHERE id_mysql_server=".$id_mysql_server.";";
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
         $res = $db->sql_query($sql);
 
         $sqls = array();
@@ -2031,9 +1978,8 @@ GROUP BY table_schema ;';
 
                 unset($ips_actual[$revert[$ob->ip]]);
             } else {
-                $sql = "DELETE FROM `virtual_ip` WHERE `ip` IN ('".implode("','",
-                        $ips_actual)."') AND `id_mysql_server`= ".$id_mysql_server."";
-                $this->debug(SqlFormatter::highlight($sql));
+                $sql = "DELETE FROM `virtual_ip` WHERE `ip` IN ('".implode("','", $ips_actual)."') AND `id_mysql_server`= ".$id_mysql_server."";
+                Debug::debug(SqlFormatter::highlight($sql));
                 $db->sql_query($sql);
             }
         }
@@ -2046,7 +1992,7 @@ GROUP BY table_schema ;';
 
 
             $sql = "INSERT INTO `virtual_ip` VALUES ".implode(",", $vals).";";
-            $this->debug(SqlFormatter::highlight($sql));
+            Debug::debug(SqlFormatter::highlight($sql));
             $db->sql_query($sql);
         }
     }
@@ -2093,8 +2039,7 @@ GROUP BY table_schema ;';
 
 
                 $this->logger->warning(Color::getColoredString('Daemon '.$ob->name
-                        .' with pid ('.$ob->pid.') was down, crontab restart it with pid : '.$pid,
-                        "black", "yellow"));
+                        .' with pid ('.$ob->pid.') was down, crontab restart it with pid : '.$pid, "black", "yellow"));
             }
         }
     }

@@ -126,9 +126,9 @@ class Chiffrement
     {
         Crypt::$key = CRYPT_KEY;
         $passwd     = Crypt::decrypt($password_crypted);
-
+        
         return $passwd;
     }
-
+    
     
 }

@@ -19,7 +19,7 @@ class Webservice extends Controller
         $this->layout_name = false;
 
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
 
         if (!isset($_SERVER['PHP_AUTH_USER'])) {
@@ -60,7 +60,7 @@ class Webservice extends Controller
     public function importFile($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $filename = $param[0] ?? "";
 
@@ -118,7 +118,7 @@ class Webservice extends Controller
     public function parseTest($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $json = file_get_contents(ROOT."config_sample/webservice.sample.json");
         echo json_encode(json_decode($json));
@@ -128,7 +128,7 @@ class Webservice extends Controller
 
     private function addMysqlServer($data)
     {
-        //$this->debug($data);
+        //Debug::debug($data);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -161,7 +161,7 @@ class Webservice extends Controller
             }
         }
 
-        $this->debug($server, "new MySQL");
+        Debug::debug($server, "new MySQL");
 
         $ret = $db->sql_save($server);
 
@@ -202,7 +202,7 @@ class Webservice extends Controller
     {
         $this->view = false;
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -229,7 +229,7 @@ class Webservice extends Controller
 
             $config .= $string."\n\n";
 
-            //$this->debug($string);
+            //Debug::debug($string);
         }
 
         file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
@@ -266,7 +266,7 @@ BEGIN
 END;
 END IF;";
 
-        $this->debug(SqlFormatter::highlight($sql), "SQL");
+        Debug::debug(SqlFormatter::highlight($sql), "SQL");
 
 
         if ($db->sql_multi_query($sql)) {
@@ -312,7 +312,7 @@ END IF;";
     {
 
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             return $name;
         }
 

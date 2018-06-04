@@ -5,10 +5,13 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 
+use \App\Library\Debug;
+
+
 class Server extends Controller
 {
 
-    use \App\Library\Debug;
+    
     use \App\Library\Filter;
 
 //dba_source

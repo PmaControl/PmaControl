@@ -39,9 +39,9 @@
 
 <h3>Powered by</h3>
 <ul>
-    <li><img src="<?= IMG ?>main/esysteme.jpg" height="32" width="32" /><b>Esysteme</b> (<a href="http://www.esysteme.com">www.esysteme.com</a>)</li>
+    <li><img src="<?= IMG ?>main/esysteme.jpg" height="32" width="32" /><b>68 Koncept</b> (<a href="http://www.68koncept.com">www.esysteme.com</a>)</li>
     <li>Author : <b>Aurélien LEQUOY</b></li>
-    <li>Email : <b><a href="mailto:pmacontrol@esysteme.com">pmacontrol@esysteme.com</a></b></li>
+    <!--<li>Email : <b><a href="mailto:pmacontrol@esysteme.com">pmacontrol@esysteme.com</a></b></li>-->
 </ul>
 
 <h3>Credits</h3>

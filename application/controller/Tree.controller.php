@@ -2,13 +2,12 @@
 
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
+use App\Library\Debug;
 
 // https://codepen.io/gab/pen/Bxpwi
 
 class Tree extends Controller
 {
-
-    use \App\Library\Debug;
 
     public function index()
     {
@@ -98,7 +97,7 @@ class Tree extends Controller
     public function up($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -158,8 +157,6 @@ class Tree extends Controller
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 
         $tree->left($id);
-
-
     }
 }
 // WITH a as (SELECT count(1) as cpt from menu WHERE menu_id = 1 ) SELECT

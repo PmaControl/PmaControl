@@ -45,7 +45,7 @@ trait Decoupage {
 
     public function OnAddServer($param) {
         $this->view = false;
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $id_server = $param[0];
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -57,7 +57,7 @@ trait Decoupage {
 
         while ($ob2 = $db->sql_fetch_object($res2)) {
 
-            $this->debug(array($ob2->prefix, $ob2->table_link));
+            Debug::debug(array($ob2->prefix, $ob2->table_link));
 
             $this->buildRootTable($ob2->prefix, $ob2->table_link);
 
@@ -85,7 +85,7 @@ trait Decoupage {
 
             foreach ($fields as $field) {
                 $sql = "DROP TABLE IF EXISTS `" . $ob2->prefix . "_value_" . $field . "__" . $id_server . "`;";
-                $this->debug(\SqlFormatter::highlight($sql));
+                Debug::debug(\SqlFormatter::highlight($sql));
                 $db->sql_query($sql);
             }
         }
@@ -112,7 +112,7 @@ trait Decoupage {
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1;";
 
-        $this->debug(\SqlFormatter::highlight($sql));
+        Debug::debug(\SqlFormatter::highlight($sql));
         $db->sql_query($sql);
     }
 
@@ -127,7 +127,7 @@ trait Decoupage {
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1;";
 
-        $this->debug(\SqlFormatter::highlight($sql));
+        Debug::debug(\SqlFormatter::highlight($sql));
         $db->sql_query($sql);
     }
 
@@ -156,7 +156,7 @@ trait Decoupage {
             //$sql .= "KEY `id_" . $name_table . "_name__" . $id_server . "` (`id_" . $name_table . "_name`)";
             $sql .= ") ENGINE=" . $this->engine_bigdata . " AUTO_INCREMENT=0 DEFAULT CHARSET=latin1;";
 
-            $this->debug(\SqlFormatter::highlight($sql));
+            Debug::debug(\SqlFormatter::highlight($sql));
             $db->sql_query($sql);
         }
     }
@@ -182,7 +182,7 @@ trait Decoupage {
                 $partitions[] = $partion;
             }
 
-            $this->debug($partitions);
+            Debug::debug($partitions);
 
             $sql = "CREATE TABLE IF NOT EXISTS `" . $prefix . "_value_" . $name . "` ";
 
@@ -210,12 +210,12 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
             if ($this->spider) {
                 $sql10 = "DROP TABLE IF EXISTS `" . $prefix . "_value_" . $name . "`;";
-                $this->debug(\SqlFormatter::highlight($sql10));
+                Debug::debug(\SqlFormatter::highlight($sql10));
 
                 $db->sql_query($sql10);
             }
 
-            $this->debug(\SqlFormatter::highlight($sql));
+            Debug::debug(\SqlFormatter::highlight($sql));
             $db->sql_query($sql);
         }
     }
@@ -228,7 +228,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
         /*
           $sql10 = "DROP TABLE IF EXISTS `" . $prefix . "_max_date` ";
-          $this->debug(SqlFormatter::highlight($sql10));
+          Debug::debug(SqlFormatter::highlight($sql10));
           $db->sql_query($sql10);
          */
 
@@ -243,7 +243,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
   CONSTRAINT `idx_" . $prefix . "_" . $link_to . "_2` FOREIGN KEY (`id_" . $link_to . "`) REFERENCES `" . $link_to . "` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1;";
 
-        $this->debug(\SqlFormatter::format($sql));
+        Debug::debug(\SqlFormatter::format($sql));
         $db->sql_query($sql);
 
 
@@ -252,7 +252,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
         foreach ($id_servers as $id_server) {
             $sql = "INSERT IGNORE INTO  `" . $prefix . "_max_date` (`id_" . $link_to . "`) VALUES (" . $id_server . ");";
-            $this->debug(\SqlFormatter::highlight($sql));
+            Debug::debug(\SqlFormatter::highlight($sql));
             $db->sql_query($sql);
         }
     }
@@ -286,7 +286,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
     public function rebuildAll($param) {
         $this->view = false;
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->dropAll($param);
         $this->init($param);
@@ -294,7 +294,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
     public function init($param) {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         
         $db = $this->di['db']->sql(DB_DEFAULT);
         $id_servers = $this->getIdservers();
@@ -317,7 +317,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
     public function dropAll($param) {
 
         $this->view = false;
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -329,7 +329,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
 
         $sql = "SELECT * FROM sharding;";
-        $this->debug(\SqlFormatter::highlight($sql));
+        Debug::debug(\SqlFormatter::highlight($sql));
         $res2 = $db->sql_query($sql);
 
         $fields = array("int", "double", "text");
@@ -337,17 +337,17 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         while ($ob2 = $db->sql_fetch_object($res2)) {
 
             $sql = "DROP TABLE IF EXISTS `" . $ob2->prefix . "_name`;";
-            $this->debug(\SqlFormatter::highlight($sql));
+            Debug::debug(\SqlFormatter::highlight($sql));
             $db->sql_query($sql);
 
             $sql = "DROP TABLE IF EXISTS `" . $ob2->prefix . "_max_date`;";
-            $this->debug(\SqlFormatter::highlight($sql));
+            Debug::debug(\SqlFormatter::highlight($sql));
             $db->sql_query($sql);
 
 
             foreach ($fields as $field) {
                 $sql = "DROP TABLE IF EXISTS `" . $ob2->prefix . "_value_" . $field . "`;";
-                $this->debug(\SqlFormatter::highlight($sql));
+                Debug::debug(\SqlFormatter::highlight($sql));
                 $db->sql_query($sql);
             }
         }

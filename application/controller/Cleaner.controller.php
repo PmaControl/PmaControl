@@ -17,6 +17,7 @@ use \Monolog\Handler\StreamHandler;
 use \Glial\Sgbd\Sql\Mysql\Compare;
 use \App\Library\Ariane;
 use \Glial\Synapse\Basic;
+use \App\Library\Debug;
 
 // Installation des gestionnaires de signaux
 declare(ticks = 1);
@@ -24,7 +25,6 @@ declare(ticks = 1);
 class Cleaner extends Controller
 {
 
-    use \App\Library\Debug;
     use \App\Library\Scp;
     var $id_cleaner  = 0;
 //status to check
@@ -33,14 +33,12 @@ class Cleaner extends Controller
 
     const FIELD_LOOP = "pmactrol_purge_loop";
 
-    public $color                  = true;
-    public $prefix                 = "DELETE_";
+    public $color  = true;
+    public $prefix = "DELETE_";
     public $link_to_purge;
     public $libelle; //name of cleaner
     public $schema_to_purge;
     public $schema_main;
-
-
     public $schema_delete          = "CLEANER";
     public $table_to_purge         = array();
     public $main_field             = array(); // => needed
@@ -734,7 +732,7 @@ var myChart = new Chart(ctx, {
 
     public function launch($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $id_cleaner       = $param[0];
         $this->id_cleaner = $id_cleaner;
@@ -788,10 +786,10 @@ var myChart = new Chart(ctx, {
             $date_start = date("Y-m-d H:i:s");
             $time_start = microtime(true);
 
-            $this->checkPoint("Cleaner Start !!!");
+            Debug::checkPoint("Cleaner Start !!!");
             $ret = $this->purge();
 
-            $this->checkPoint("Cleaner Terminé !!!");
+            Debug::checkPoint("Cleaner Terminé !!!");
 
             if (empty($ret[$this->main_table])) {
                 $ret[$this->main_table] = 0;
@@ -849,9 +847,9 @@ var myChart = new Chart(ctx, {
             $i++;
 
 
-            $this->checkPoint("End loop");
+            Debug::checkPoint("End loop");
 
-            $this->debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
+            Debug::debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
 
             $this->debugShowTime();
 
@@ -1042,7 +1040,7 @@ var myChart = new Chart(ctx, {
 
         //echo "errror : ".pcntl_strerror(pcntl_get_last_error())." : ".pcntl_get_last_error()."\n";
 
-        $this->debug("mypid : ".getmypid());
+        Debug::debug("mypid : ".getmypid());
     }
     /*
      * utiliser seulement pour par le MPD
@@ -1086,7 +1084,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        $this->debug($files, "Files to push");
+        Debug::debug($files, "Files to push");
 
         return $files;
     }
@@ -1174,7 +1172,7 @@ var myChart = new Chart(ctx, {
     public function purge_clean_db($param = array())
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->get_id_cleaner($param);
 
         $db                = $this->di['db']->sql(DB_DEFAULT);
@@ -1189,9 +1187,9 @@ var myChart = new Chart(ctx, {
 
         $res = $db->sql_query($sql);
 
-        $this->debug("On drop les tables de purge ...");
+        Debug::debug("On drop les tables de purge ...");
 
-        
+
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -1205,10 +1203,10 @@ var myChart = new Chart(ctx, {
                     if (substr($table, 0, strlen($ob->prefix)) === $ob->prefix) {
                         $sql = "DROP TABLE IF EXISTS `".$ob->cleaner_db."`.`".$table."`;";
 
-                        $this->debug($sql);
+                        Debug::debug($sql);
                         $db_to_clean->sql_query($sql);
                     } else {
-                        $this->debug("We keep the table : '".$table."'");
+                        Debug::debug("We keep the table : '".$table."'");
                     }
                 }
             }
@@ -1216,7 +1214,7 @@ var myChart = new Chart(ctx, {
 
         $db->sql_close();
 
-        $this->checkPoint("Tables de purge effacé");
+        Debug::checkPoint("Tables de purge effacé");
     }
 
 // gestionnaire de signaux système
@@ -1245,7 +1243,7 @@ var myChart = new Chart(ctx, {
 
                 $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR1][pid:'.getmypid().'] DEBUG : ON');
                 $this->debug = true;
-                $this->debug("DEBUG : [ON] OFF");
+                Debug::debug("DEBUG : [ON] OFF");
                 break;
 
             case SIGUSR2:
@@ -1253,11 +1251,11 @@ var myChart = new Chart(ctx, {
                 //toggle active // desactive le mode debug
                 $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR2][pid:'.getmypid().'] DEBUG : OFF');
                 $this->debug = false;
-                $this->debug("DEBUG : ON [OFF]");
+                Debug::debug("DEBUG : ON [OFF]");
                 break;
 
             case SIGHUP:
-                
+
                 // gestion du redémarrage
                 //ne marche pas au second run pourquoi ?
 
@@ -1452,7 +1450,7 @@ var myChart = new Chart(ctx, {
 
     public function feedDeleteTableWithFk()
     {
-        $this->checkPoint("FEED FROM FK");
+        Debug::checkPoint("FEED FROM FK");
 
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
@@ -1520,7 +1518,7 @@ var myChart = new Chart(ctx, {
                     if ($fk['REFERENCED_TABLE_NAME'] == $table_name) {
                         $circular = true;
 
-                        $this->debug("detected Circular FK on table '".$table_name."'");
+                        Debug::debug("detected Circular FK on table '".$table_name."'");
                     } else {
                         $circular = false;
                     }
@@ -1557,7 +1555,7 @@ var myChart = new Chart(ctx, {
                         }
 
                         if ($circular) {
-                            $this->debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
+                            Debug::debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
                         }
 
                         // archivation en fichier plat
@@ -1578,7 +1576,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        $this->checkPoint("Feed delete tables from FKs");
+        Debug::checkPoint("Feed delete tables from FKs");
     }
 
     public function createAllTemporaryTable()
@@ -1593,7 +1591,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        $this->debug("Create all temporary tables.");
+        Debug::debug("Create all temporary tables.");
     }
 
     public function getTableError()
@@ -1624,7 +1622,7 @@ var myChart = new Chart(ctx, {
             $order_to_feed[$ob->REFERENCED_TABLE_NAME][] = $ob->TABLE_NAME;
         }
 
-        $this->debug($order_to_feed, "REAL FOREIGN KEY");
+        Debug::debug($order_to_feed, "REAL FOREIGN KEY");
 
 
         return $order_to_feed;
@@ -1633,7 +1631,7 @@ var myChart = new Chart(ctx, {
     private function getVirtualForeignKeys()
     {
 
-        $this->debug("get the virtual foreign keys");
+        Debug::debug("get the virtual foreign keys");
 
         $default = $this->di['db']->sql(DB_DEFAULT);
 
@@ -1670,7 +1668,7 @@ var myChart = new Chart(ctx, {
         }
 
 
-        $this->debug($order_to_feed, "VIRTUAL FOREIGN KEY");
+        Debug::debug($order_to_feed, "VIRTUAL FOREIGN KEY");
 
         return $order_to_feed;
     }
@@ -1696,7 +1694,7 @@ var myChart = new Chart(ctx, {
             foreach ($tmp as $key => $tab) {
                 $fks[$key] = array_unique($fks[$key]);
             }
-            $this->debug("On retire les FKs en double");
+            Debug::debug("On retire les FKs en double");
 
 
             //remove all tables with no father from $this->main_table
@@ -1806,7 +1804,7 @@ var myChart = new Chart(ctx, {
 
             file_put_contents($this->path_to_orderby_tmp, serialize($this));
 
-            $this->checkPoint("générer l'ordre de remplissasage et d'effacement");
+            Debug::checkPoint("générer l'ordre de remplissasage et d'effacement");
         } else {
 
 //on load le fichier précédement enregistré
@@ -1865,7 +1863,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        $this->checkPoint("On efface les données et on purge les tables de travail");
+        Debug::checkPoint("On efface les données et on purge les tables de travail");
     }
 
     private function setAffectedRows($table)
@@ -1918,7 +1916,7 @@ var myChart = new Chart(ctx, {
                 }
                 if (!$found) {
 
-                    $this->debug(Color::getColoredString("We removed this table (Not a child of : `".$this->schema_to_purge."`.`".$this->main_table."`) : ".$table, 'yellow'));
+                    Debug::debug(Color::getColoredString("We removed this table (Not a child of : `".$this->schema_to_purge."`.`".$this->main_table."`) : ".$table, 'yellow'));
                     unset($tmp2[$table]);
                     $nbfound++;
                 }
@@ -2163,7 +2161,7 @@ var myChart = new Chart(ctx, {
         $this->view = false;
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $default                      = $this->di['db']->sql(DB_DEFAULT);
         $storage_area                 = $this->getIdStorageArea($id_cleaner);
@@ -2174,7 +2172,7 @@ var myChart = new Chart(ctx, {
             $this->backup_dir = DATA."cleaner/".$this->id_cleaner;
             $files            = $this->checkFileToPush($this->backup_dir);
 
-            $this->debug($files, "Files to push");
+            Debug::debug($files, "Files to push");
 
 
             foreach ($files as $file) {
@@ -2231,7 +2229,7 @@ var myChart = new Chart(ctx, {
 
     private function getIdStorageArea($id_cleaner)
     {
-        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_select_db($this->schema_main);
 
         $sql = "SELECT b.* FROM cleaner_main a
@@ -2248,7 +2246,7 @@ var myChart = new Chart(ctx, {
     {
 
         $this->logger->info('[id:'.$this->id_cleaner.'][INIT][pid:'.getmypid().'] Init of cleaner');
-        $this->debug("REAL INIT !");
+        Debug::debug("REAL INIT !");
 
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
@@ -2259,11 +2257,11 @@ var myChart = new Chart(ctx, {
         $sql = "CREATE DATABASE IF NOT EXISTS `".$this->schema_delete."`;";
         $db->sql_query($sql);
 
-        $this->checkPoint("Create database `".$this->schema_delete."`");
+        Debug::checkPoint("Create database `".$this->schema_delete."`");
 
 
         $this->purge_clean_db();
-        
+
 
         $this->setCacheFile();
 
@@ -2280,8 +2278,6 @@ var myChart = new Chart(ctx, {
 
         sleep(1); //temporisation nécessaire entre le temps d'un DROP TABLE IF EXISTS et un CREATE TABLE IF NOT EXISTS
         $this->initDdlOnDisk();
-        
-        
     }
 
     private function generateCreateTable()
@@ -2303,7 +2299,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        $this->checkPoint("generate create table from actual DB");
+        Debug::checkPoint("generate create table from actual DB");
 
         return $this->cache_table[$this->schema_to_purge];
     }
@@ -2367,7 +2363,7 @@ var myChart = new Chart(ctx, {
 
             $this->log("INFO", "TABLES", "Création des tables en cas de leur non présence");
 
-            $this->checkPoint("Création des tables en cas de leur non présence");
+            Debug::checkPoint("Création des tables en cas de leur non présence");
         }
     }
     /*
@@ -2412,7 +2408,7 @@ var myChart = new Chart(ctx, {
     private function cacheComStatus()
     {
 
-        $this->debug("Refresh GLOBAL STATUS");
+        Debug::debug("Refresh GLOBAL STATUS");
 
         $db = $this->di['db']->sql($this->link_to_purge);
 
@@ -2513,7 +2509,7 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql($this->link_to_purge);
 
         $this->showQueries();
-        $this->checkPoint("[DEBUG] Time to generate showQueries");
+        Debug::checkPoint("[DEBUG] Time to generate showQueries");
         $db->sql_close();
     }
     /*

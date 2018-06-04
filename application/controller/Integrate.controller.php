@@ -5,6 +5,8 @@ use \Glial\Cli\SetTimeLimit;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 
+
+use \App\Library\Debug;
 //require ROOT."/application/library/Filter.php";
 
 class Integrate extends Controller
@@ -12,14 +14,14 @@ class Integrate extends Controller
 
     use \App\Library\Filter;
 
-    use \App\Library\Debug;
+    
     const MAX_FILE_AT_ONCE = 20;
 
     var $shared;
 
     public function evaluate($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
 
         $db         = $this->di['db']->sql(DB_DEFAULT);
@@ -40,7 +42,7 @@ class Integrate extends Controller
         foreach ($files as $file) {
             $file_parsed++;
 
-            $this->debug($file, " [FILE] ");
+            Debug::debug($file, " [FILE] ");
 
             $storage = new StorageFile($file); // to export in config ?
             $data    = new SharedMemory($storage);
@@ -123,7 +125,7 @@ class Integrate extends Controller
                                                     .$slave_value.'")';
                                             }
                                         } // END SLAVE
-                                        //$this->debug($slave);
+                                        //Debug::debug($slave);
                                     } else { // partie pour les données général
                                         if (!empty($variables[$type_metrics][$variable])) {
 
@@ -150,11 +152,11 @@ class Integrate extends Controller
                                               continue;
                                               }
 
-                                              $this->debug(PHP_INT_MAX, 'PHP_INT_MAX');
-                                              $this->debug($this->getTypeOfData($value), '$this->getTypeOfData($value)');
-                                              $this->debug($variables[$type_metrics][$variable]['type'], '$variables[$type_metrics][$variable]["type"]');
-                                              $this->debug($variable,'$variable' );
-                                              $this->debug($value, '$value');
+                                              Debug::debug(PHP_INT_MAX, 'PHP_INT_MAX');
+                                              Debug::debug($this->getTypeOfData($value), '$this->getTypeOfData($value)');
+                                              Debug::debug($variables[$type_metrics][$variable]['type'], '$variables[$type_metrics][$variable]["type"]');
+                                              Debug::debug($variable,'$variable' );
+                                              Debug::debug($value, '$value');
 
                                               exit;
                                               } */
@@ -188,10 +190,10 @@ class Integrate extends Controller
                     }
                 } // date
                 //debug($ts_max_date);
-                //$this->debug($insert);
+                //Debug::debug($insert);
             }
 
-            $this->checkPoint("before insert file : ".$file);
+            Debug::checkPoint("before insert file : ".$file);
 
             unlink($file);
 
@@ -204,10 +206,10 @@ class Integrate extends Controller
 
         if (count($variables_to_insert) > 0) {
 
-            $this->checkPoint("variables");
+            Debug::checkPoint("variables");
             $this->insert_variable($variables_to_insert);
         } else {
-            $this->checkPoint("values");
+            Debug::checkPoint("values");
             $this->insert_value($insert);
 
             if (!empty($slave)) {
@@ -221,10 +223,10 @@ class Integrate extends Controller
             $this->linkServerVariable($history);
         }
 
-        $this->debugQueriesOff();
+        Debug::debugQueriesOff();
 
         // end files
-        //$this->checkPoint("end method ");
+        //Debug::checkPoint("end method ");
     }
 
     private function get_variable()
@@ -289,8 +291,8 @@ class Integrate extends Controller
 
     private function insert_variable($variables_to_insert)
     {
-        //$this->debug($variables_to_insert, "dfgfgdg");
-        //$this->debug($variables_to_insert);
+        //Debug::debug($variables_to_insert, "dfgfgdg");
+        //Debug::debug($variables_to_insert);
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
@@ -300,7 +302,7 @@ class Integrate extends Controller
 
     private function insert_value($values)
     {
-        //$this->debug($values);
+        //Debug::debug($values);
 
         if (count($values) == 0) {
             return 1;
@@ -308,13 +310,13 @@ class Integrate extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->checkPoint("start save");
+        Debug::checkPoint("start save");
 
         foreach ($values as $type => $elems) {
             $sql = "INSERT INTO `ts_value_general_".strtolower($type)."` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES ".implode(",", $elems).";";
             $db->sql_query($sql);
 
-            $this->checkPoint("saved ".$type." elems : ".count($elems));
+            Debug::checkPoint("saved ".$type." elems : ".count($elems));
         }
     }
 
@@ -330,7 +332,7 @@ class Integrate extends Controller
 
     private function insert_slave_value($values, $val = "slave")
     {
-        //$this->debug($values);
+        //Debug::debug($values);
 
         if (count($values) == 0) {
             return 1;
@@ -338,11 +340,11 @@ class Integrate extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->checkPoint("start save");
+        Debug::checkPoint("start save");
 
         foreach ($values as $type => $elems) {
 
-            if ($this->debug) {
+            if (Debug::$debug) {
 
                 foreach ($elems as $elem) {
                     $sql = "INSERT INTO `ts_value_".$val."_".strtolower($type)."` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES ".$elem.";";
@@ -357,7 +359,7 @@ class Integrate extends Controller
                 debug($db->sql_error());
             }
 
-            $this->checkPoint("saved ".$type." elems : ".count($elems));
+            Debug::checkPoint("saved ".$type." elems : ".count($elems));
         }
     }
 
@@ -383,7 +385,7 @@ class Integrate extends Controller
         foreach ($history as $date => $is_servers) {
             $sql = "UPDATE `ts_max_date`  SET `date_previous`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).");";
 
-            $this->debug($sql);
+            Debug::debug($sql);
             $db->sql_query($sql);
         }
     }

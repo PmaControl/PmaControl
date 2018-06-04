@@ -9,51 +9,25 @@ namespace App\Library;
 
 use \Glial\Cli\Table;
 
-trait Debug
+class Debug
 {
-    var $debug       = false;
-    var $count       = 0;
-    var $microtime   = array();
-    var $display_sql = true;
-
-    public function debug($string, $var = "")
-    {
-        if ($this->debug) {
-
-            $calledFrom = debug_backtrace();
-            $file       = pathinfo(substr(str_replace(ROOT, '', $calledFrom[0]['file']), 1))["basename"];
-            $line       = $calledFrom[0]['line'];
-
-            $file = explode(".", $file)[0];
-
-            echo "#".$this->count++."\t";
-            echo $file.":".$line."\t";
-            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
-
-            if (!empty($var)) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
-            }
+    static $debug       = false;
+    static $count       = 0;
+    static $microtime   = array();
+    static $display_sql = true;
 
 
-            if (is_array($string)) {
-                print_r($string);
-            } else {
-                echo trim($string)."\n";
-            }
-        }
-    }
-
-    public function parseDebug(& $param)
+    static function parseDebug(& $param)
     {
 
 
         if (!empty($param)) {
             foreach ($param as $key => $elem) {
                 if ($elem == "--debug") {
-                    $this->debug = true;
+                    self::$debug = true;
 
-                    $this->checkPoint("Start debug");
-                    $this->debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
+                    self::checkPoint("Start debug");
+                    self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
 
                     unset($param[$key]);
                 }
@@ -61,10 +35,10 @@ trait Debug
         }
     }
 
-    public function debugShowQueries()
+    static public function debugShowQueries()
     {
 
-        if ($this->debug) {
+        if (self::$debug) {
 
             $thread_sgbd = $this->di['db']->getConnected();
 
@@ -104,20 +78,20 @@ trait Debug
         }
     }
 
-    public function checkPoint($name = "")
+    static public function checkPoint($name = "")
     {
-        if ($this->debug) {
+        if (self::$debug) {
 
             $calledFrom = debug_backtrace();
 
-            $this->microtime[] = array(microtime(true), pathinfo($calledFrom[0]['file'])["basename"].':'.$calledFrom[0]['line'],
+            self::$microtime[] = array(microtime(true), pathinfo($calledFrom[0]['file'])["basename"].':'.$calledFrom[0]['line'],
                 date("Y-m-d H:i:s"), $name);
         }
     }
 
-    public function debugShowTime()
+    static function debugShowTime()
     {
-        if ($this->debug) {
+        if (self::$debug) {
 
             $table = new Table("1");
             $table->addHeader(array("Top", "Name", "File:line", "Date", "Time", "Cumul"));
@@ -127,7 +101,7 @@ trait Debug
             $time  = 0;
 
             $i = 0;
-            foreach ($this->microtime as $var) {
+            foreach (self::$microtime as $var) {
                 if ($cumul === 0) {
                     $cumul_new = 0;
                     $time_new  = "N/A";
@@ -157,22 +131,43 @@ trait Debug
         }
     }
 
-    public function after($param = "")
+
+
+    static function debugPurge()
     {
-        $this->checkPoint("End Debug");
-        $this->debugShowTime();
-        if ($this->display_sql) {
-            $this->debugShowQueries();
+        self::$microtime = array();
+    }
+
+    static function debugQueriesOff()
+    {
+        self::$display_sql = false;
+    }
+
+
+    static function debug($string, $var = "")
+    {
+        if (self::$debug) {
+
+            $calledFrom = debug_backtrace();
+            $file       = pathinfo(substr(str_replace(ROOT, '', $calledFrom[0]['file']), 1))["basename"];
+            $line       = $calledFrom[0]['line'];
+
+            $file = explode(".", $file)[0];
+
+            echo "#".self::$count++."\t";
+            echo $file.":".$line."\t";
+            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+
+            if (!empty($var)) {
+                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+            }
+
+
+            if (is_array($string)) {
+                print_r($string);
+            } else {
+                echo trim($string)."\n";
+            }
         }
-    }
-
-    public function debugPurge()
-    {
-        $this->microtime = array();
-    }
-
-    public function debugQueriesOff()
-    {
-        $this->display_sql = false;
     }
 }

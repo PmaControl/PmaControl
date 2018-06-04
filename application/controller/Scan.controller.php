@@ -316,7 +316,7 @@ class Scan extends Controller
         shell_exec("cd ".$this->cache_file." && rm -f *.json");
 
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
         }
 
@@ -345,7 +345,7 @@ class Scan extends Controller
         //to prevent any trouble with fork
         $db->sql_close();
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Number of ranges : ".count($ranges)."\n";
             echo "[".date('Y-m-d H:i:s')."]"." Number of IPs to scans : ".count($listIps)."\n";
         }
@@ -383,7 +383,7 @@ class Scan extends Controller
                 unset($child_processes[$childPid]);
             }
 
-            if ($this->debug) {
+            if (Debug::$debug) {
                 echo "[".date('Y-m-d H:i:s')."]"." All tests termined\n";
             }
         } else {
@@ -455,7 +455,7 @@ class Scan extends Controller
         //to prevent any trouble with fork
         $db->sql_close();
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Number of combi : ".count($combi)."\n";
         }
 
@@ -492,7 +492,7 @@ class Scan extends Controller
                 unset($child_processes[$childPid]);
             }
 
-            if ($this->debug) {
+            if (Debug::$debug) {
                 echo "[".date('Y-m-d H:i:s')."]"." All tests termined\n";
             }
 

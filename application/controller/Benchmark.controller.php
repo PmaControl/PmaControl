@@ -36,14 +36,14 @@ class Benchmark extends Controller {
                 if ($elem == "--debug") {
                     $this->debug = true;
 
-                    $this->debug(Color::getColoredString("Debug enabled !", "yellow"));
+                    Debug::debug(Color::getColoredString("Debug enabled !", "yellow"));
                 }
             }
         }
 
         $id_benchmark_main = $param[0];
 
-        $this->debug("id_benchmark_main : $id_benchmark_main");
+        Debug::debug("id_benchmark_main : $id_benchmark_main");
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -52,13 +52,13 @@ class Benchmark extends Controller {
         WHERE a.id = " . $id_benchmark_main;
         $res = $db->sql_query($sql);
 
-        $this->debug(trim(SqlFormatter::highlight($sql)));
+        Debug::debug(trim(SqlFormatter::highlight($sql)));
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $sql2 = "UPDATE benchmark_main SET status = 'RUNNING',date_start = '" . date('Y-m-d H:i:s') . "' WHERE id ='" . $id_benchmark_main . "'";
             $db->sql_query($sql2);
-            $this->debug(trim(SqlFormatter::highlight($sql2)));
+            Debug::debug(trim(SqlFormatter::highlight($sql2)));
 
             $password = Crypt::decrypt($ob->passwd, CRYPT_KEY);
 
@@ -76,10 +76,10 @@ class Benchmark extends Controller {
                     . '--mysql-db=sbtest --mysql-table-engine=InnoDB '
                     . '--oltp-tables-count=' . $ob->tables_count . ' --max-time=' . $ob->max_time . ' prepare';
 
-            $this->debug($prepare);
+            Debug::debug($prepare);
 
             $input_lines = shell_exec($prepare);
-            $this->debug($input_lines);
+            Debug::debug($input_lines);
 
             $sql = "select @@max_connections as max;";
             $res2 = $server->sql_query($sql);
@@ -138,12 +138,12 @@ class Benchmark extends Controller {
 
 
 
-                    $this->debug(Color::getColoredString($cmd, "yellow"));
+                    Debug::debug(Color::getColoredString($cmd, "yellow"));
 
                     $input_lines = shell_exec($cmd);
                     sleep(5);
 
-                    $this->debug(Color::getColoredString($input_lines, "blue"));
+                    Debug::debug(Color::getColoredString($input_lines, "blue"));
 
                     $sql = "INSERT INTO benchmark_run
                       SET id_benchmark_main = '" . $id_benchmark_main . "',
@@ -168,7 +168,7 @@ class Benchmark extends Controller {
                         $db->sql_query($sql);
                     }
                 } else {
-                    $this->debug(Color::getColoredString("Thread canceled : " . $thread . " (max_connections : " . $max_connections . ")", "yellow"));
+                    Debug::debug(Color::getColoredString("Thread canceled : " . $thread . " (max_connections : " . $max_connections . ")", "yellow"));
                 }
 
 
@@ -852,7 +852,7 @@ Threads fairness:
                 if ($elem == "--debug") {
                     $this->debug = true;
 
-                    $this->debug(Color::getColoredString("Debug enabled !", "yellow"));
+                    Debug::debug(Color::getColoredString("Debug enabled !", "yellow"));
                 }
             }
         }
@@ -861,12 +861,12 @@ Threads fairness:
         $sql3 = "UPDATE `benchmark_main` SET `status` = 'NOT STARTED' WHERE `status` = 'LAUNCHED';";
         $db->sql_query($sql3);
 
-        $this->debug(trim(SqlFormatter::highlight($sql3)));
+        Debug::debug(trim(SqlFormatter::highlight($sql3)));
 
 
         $sql = "SELECT * FROM `benchmark_main` WHERE `status` = 'NOT STARTED' limit 1;";
         $res = $db->sql_query($sql);
-        $this->debug(trim(SqlFormatter::highlight($sql)));
+        Debug::debug(trim(SqlFormatter::highlight($sql)));
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_benchmark_main = $ob->id;
@@ -879,7 +879,7 @@ Threads fairness:
                 $db->sql_close();
 
                 $debug = '';
-                if ($this->debug) {
+                if (Debug::$debug) {
                     $debug = "--debug";
                 }
 
@@ -887,12 +887,12 @@ Threads fairness:
                 $cmd = $php . " " . GLIAL_INDEX . " Benchmark run " . $id_benchmark_main . " " . $debug . "";
 
 
-                $this->debug($cmd);
+                Debug::debug($cmd);
 
                 $err = 1;
                 echo passthru($cmd, $err);
 
-                $this->debug("return : " . $err);
+                Debug::debug("return : " . $err);
 
 
                 $db = $this->di['db']->sql(DB_DEFAULT);
@@ -903,11 +903,11 @@ Threads fairness:
                     $sql2 = "UPDATE benchmark_main SET status = 'LAUNCHED' WHERE id ='" . $id_benchmark_main . "';";
                     $db->sql_query($sql2);
 
-                    $this->debug(trim(SqlFormatter::highlight($sql2)));
+                    Debug::debug(trim(SqlFormatter::highlight($sql2)));
                 }
             } while ($db->sql_num_rows($res) > 0);
         } else {
-            $this->debug("No bench to do !");
+            Debug::debug("No bench to do !");
         }
 
 
@@ -918,7 +918,7 @@ Threads fairness:
     }
 
     public function debug($string) {
-        if ($this->debug) {
+        if (Debug::$debug) {
             $calledFrom = debug_backtrace();
             $file = pathinfo(substr(str_replace(ROOT, '', $calledFrom[0]['file']), 1))["basename"];
             $line = $calledFrom[0]['line'];

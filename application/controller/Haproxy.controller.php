@@ -9,7 +9,7 @@ class Haproxy extends Controller
 
     public function refreshConfiguration($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
 
         $db         = $this->di['db']->sql(DB_DEFAULT);
@@ -28,7 +28,7 @@ class Haproxy extends Controller
             $config = $this->parseConfiguration($ob->config);
 
 
-            $this->debug($config);
+            Debug::debug($config);
         }
     }
 
@@ -44,7 +44,7 @@ class Haproxy extends Controller
             $lines[0] = trim($lines[0]);
 
             $nb_elem = explode(" ", $lines[0]);
-            $this->debug($nb_elem);
+            Debug::debug($nb_elem);
 
             if (count($nb_elem) == 1) {
                 //cas pour un server

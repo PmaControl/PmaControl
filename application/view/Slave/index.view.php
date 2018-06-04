@@ -89,18 +89,15 @@ foreach ($data['slave'] as $slaves) {
             .substr($m_env, 0, 1).'</span> ';
 
 
-            if (! empty($data['hostname'][$id_master]['']['hostname']))
-            {
+            if (!empty($data['hostname'][$id_master]['']['hostname'])) {
                 echo '<a href="">'.$data['hostname'][$id_master]['']['hostname'].'</a>';
-            }
-            else
-            {
+            } else {
 
                 echo $data['server']['master'][$id_master]['display_name'];
             }
 
 
-            
+
 
 
 

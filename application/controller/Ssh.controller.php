@@ -7,11 +7,13 @@ use phpseclib\Net\SSH2;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use \App\Library\Debug;
+
 
 class Ssh extends Controller
 {
 
-    use \App\Library\Debug;
+    
 
     public function keys()
     {
@@ -187,9 +189,9 @@ class Ssh extends Controller
     public function associate($param)
     {
         $this->view = false;
-        $id_server  = $param[0];
+        
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
 
         $keys = $this->getSshKeys();
@@ -246,15 +248,17 @@ class Ssh extends Controller
         // debug(Chiffrement::decrypt($key['private_key']));
 
 
+        $key['private_key'] = $this->formatPrivateKey(Chiffrement::decrypt($key['private_key']));
 
+        debug($key);
 
-        if ($rsa->loadKey(Chiffrement::decrypt($this->formatPrivateKey($key['private_key']))) === false) {
+        if ($rsa->loadKey($key['private_key'] ) === false) {
             $login_successfull = false;
-            $this->debug("private key loading failed!");
+            Debug::debug("private key loading failed!");
         }
 
         if (!$ssh->login($key['user'], $rsa)) {
-            $this->debug("Login Failed");
+            Debug::debug("Login Failed");
             $login_successfull = false;
         }
 
@@ -262,7 +266,7 @@ class Ssh extends Controller
         $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
 
         $this->logger->info($ret);
-        $this->debug($ret);
+        Debug::debug($ret);
 
 
         if ($login_successfull === true) {
@@ -277,12 +281,5 @@ class Ssh extends Controller
         }
     }
 
-    private function formatPrivateKey($key)
-    {
-        $key = str_replace("\n", "", $key);
-        $key = str_replace("-----BEGIN RSA PRIVATE KEY-----", "", $key);
-        $key = str_replace("-----END RSA PRIVATE KEY-----", "", $key);
 
-        return $key;
-    }
 }

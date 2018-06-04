@@ -34,10 +34,10 @@ class Control extends Controller
         $datadir = $db->getVariables("datadir");
 
         $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"');
-        $this->debug($size);
+        Debug::debug($size);
 
         $resultats = preg_replace('`([ ]{2,})`', ' ', $size);
-        $this->debug($resultats);
+        Debug::debug($resultats);
 
         $results = explode(' ', trim($resultats));
 
@@ -45,11 +45,11 @@ class Control extends Controller
         $data['used']      = $results['2'];
         $data['available'] = $results['3'];
 
-        $this->debug($data);
+        Debug::debug($data);
 
         $percent = ceil($data['used'] / $data['size'] * 100);
 
-        $this->debug($percent);
+        Debug::debug($percent);
 
         return $percent;
     }
@@ -156,12 +156,12 @@ class Control extends Controller
     public function service($param = "")
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
 
         //we drop oldest parttion if free space is low
         if ($this->checkSize() > $this->percent_max_disk_used) {
-            $this->debug($partitions['min'], "Drop Partition");
+            Debug::debug($partitions['min'], "Drop Partition");
 
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
                 $this->dropPartition(array($partitions['min']));
@@ -170,13 +170,13 @@ class Control extends Controller
 
         $part = $this->getDates();
 
-        $this->debug($part);
+        Debug::debug($part);
 
         // check partition of today and tomorow and create it if it's not exist
         foreach ($part as $date) {
             $partition_to_check = $this->getToDays(array($date));
 
-            $this->debug($partition_to_check);
+            Debug::debug($partition_to_check);
 
             if (!in_array($partition_to_check, $partitions['other'])) {
                 $this->addPartition(array($partition_to_check));
@@ -247,7 +247,7 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function rebuildAll($param = "")
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->dropTsTable();
         $this->createTsTable();
@@ -255,7 +255,7 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function statistique($param = "")
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -264,7 +264,7 @@ PARTITION BY RANGE (to_days(`date`))
         $sql = "SELECT `TABLE_NAME`,`PARTITION_NAME`,`SUBPARTITION_NAME` ,`TABLE_ROWS` FROM information_schema.partitions
             where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
 
-        $this->debug(SqlFormatter::format($sql));
+        Debug::debug(SqlFormatter::format($sql));
     }
 
     private function getDates()
@@ -323,8 +323,8 @@ PARTITION BY RANGE (to_days(`date`))
 
         //$resultat = array_intersect($link1, $link2);
 
-        //$this->debug($link1, "link1");
-        //$this->debug($link2, "link2");
+        //Debug::debug($link1, "link1");
+        //Debug::debug($link2, "link2");
 
 
         $to_delete = array_diff($link1, $link2);
@@ -332,8 +332,8 @@ PARTITION BY RANGE (to_days(`date`))
 
  
 
-        $this->debug($to_delete,"to delete");
-        $this->debug($to_create,"to create");
+        Debug::debug($to_delete,"to delete");
+        Debug::debug($to_create,"to create");
 
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)

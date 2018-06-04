@@ -36,21 +36,21 @@ class Exctractor extends Controller
 
     public function refreshDataSsh($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->view = false;
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $sql        = "SELECT * FROM `mysql_server` WHERE  ssh_available =1 AND is_monitored=1";
         $res        = $db->sql_query($sql);
 
-        $this->debug($sql);
+        Debug::debug($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $ssh = new SSH2($ob->ip);
             $rsa = new RSA();
 
-            $this->debug($ob->key_private_path);
+            Debug::debug($ob->key_private_path);
 
             $privatekey = file_get_contents($ob->key_private_path);
 
@@ -58,14 +58,14 @@ class Exctractor extends Controller
                 exit("private key loading failed!");
             }
 
-            $this->debug('Server : '.$ob->ip." : ".$ob->key_private_user." ".$ob->key_private_path);
+            Debug::debug('Server : '.$ob->ip." : ".$ob->key_private_user." ".$ob->key_private_path);
 
             if (!$ssh->login($ob->key_private_user, $rsa)) {
                 echo "Login Failed\n";
                 continue;
             }
 
-            $this->debug("SSH OK;");
+            Debug::debug("SSH OK;");
 
             $this->hardware($ssh, $ob->id);
             $this->addIpVirtuel($ssh, $ob->id);
@@ -79,14 +79,14 @@ class Exctractor extends Controller
 
         $id_loop = $param[0];
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->logger->info(str_repeat("#", 40));
 
 
         $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server WHERE is_monitored=1 AND key_private_path != '' and key_private_user != '';";
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
         $res = $db->sql_query($sql);
 
         $server_list = array();
@@ -97,7 +97,7 @@ class Exctractor extends Controller
         $sql = "SELECT * FROM daemon_main where id=4;";
         $res = $db->sql_query($sql);
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
         while ($ob = $db->sql_fetch_object($res)) {
             $maxThreads       = $ob->thread_concurency; // check MySQL server x by x
@@ -166,7 +166,7 @@ class Exctractor extends Controller
                 unset($child_processes[$childPid]);
             }
 
-            if ($this->debug) {
+            if (Debug::$debug) {
                 echo "[".date('Y-m-d H:i:s')."]"." All tests termined\n";
             }
         } else {
@@ -180,7 +180,7 @@ class Exctractor extends Controller
         //$max_execution_time = 20; // in seconds
 
         $debug = "";
-        if ($this->debug) {
+        if (Debug::$debug) {
             $debug = " --debug ";
         }
 
@@ -188,7 +188,7 @@ class Exctractor extends Controller
 
         $ret = SetTimeLimit::run("Agent", "trySshConnection", array($server_id, $id_loop, $debug), $max_execution_time);
 
-        $this->debug($ret);
+        Debug::debug($ret);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -206,7 +206,7 @@ class Exctractor extends Controller
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[".date("Y-m-d H:i:s")."]"." Server Ssh didn't answer in time (delay max : ".$max_execution_time." seconds)";
 
-                $this->debug($ret['stdout']);
+                Debug::debug($ret['stdout']);
             }
 
             //echo $sql . "\n";
@@ -214,7 +214,7 @@ class Exctractor extends Controller
             $sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
             $db->sql_query($sql);
 
-            $this->debug("Server ID : ".$server_id."(FAILED !)");
+            Debug::debug("Server ID : ".$server_id."(FAILED !)");
 
             $db->sql_close();
 
@@ -224,8 +224,8 @@ class Exctractor extends Controller
             $sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
             $db->sql_query($sql);
 
-            $this->debug("Server ID : ".$server_id." (answered in time)");
-            //echo ($this->debug) ? $server['name']." OK \n" : "";
+            Debug::debug("Server ID : ".$server_id." (answered in time)");
+            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
             return true;
         }
     }
@@ -235,13 +235,13 @@ class Exctractor extends Controller
         $this->view = false;
         $id_server  = $param[0];
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id=".$id_server.";";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
         $res = $db->sql_query($sql);
 
@@ -254,22 +254,22 @@ class Exctractor extends Controller
 
 
             if (!file_exists($ob->key_private_path)) {
-                $this->debug("This file doesn't exist : ".$ob->key_private_path);
+                Debug::debug("This file doesn't exist : ".$ob->key_private_path);
                 $this->logger->error("This file doesn't exist : ".$ob->key_private_path);
             } else {
 
-                $this->debug("This file exist : ".$ob->key_private_path);
+                Debug::debug("This file exist : ".$ob->key_private_path);
             }
 
             $privatekey = file_get_contents($ob->key_private_path);
 
             if ($rsa->loadKey($privatekey) === false) {
                 $login_successfull = false;
-                $this->debug("private key loading failed!");
+                Debug::debug("private key loading failed!");
             }
 
             if (!$ssh->login($ob->key_private_user, $rsa)) {
-                $this->debug("Login Failed");
+                Debug::debug("Login Failed");
                 $login_successfull = false;
             }
         }
@@ -277,13 +277,13 @@ class Exctractor extends Controller
 
         $msg = ($login_successfull) ? "Successfull" : "Failed";
 
-        $this->debug("Connection to server:".$id_server." (".$ip.":22) : ".$msg);
+        Debug::debug("Connection to server:".$id_server." (".$ip.":22) : ".$msg);
 
         $this->logger->info("Connection to server (".$ip.":22) : ".$msg);
 
         $sql = "UPDATE mysql_server SET ssh_available = '".((int) $login_successfull)."' where id=".$id_server.";";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
         $db->sql_query($sql);
         $db->sql_close();
@@ -378,7 +378,7 @@ class Exctractor extends Controller
                    swappiness='".trim($swapiness)."'
                    WHERE id=".$id_mysql_server."";
 
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
 
 
         $db->sql_query($sql);
