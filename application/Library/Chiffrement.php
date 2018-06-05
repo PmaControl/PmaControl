@@ -9,6 +9,8 @@ namespace App\Library;
 
 use phpseclib\Crypt\AES;
 use phpseclib\Crypt\Random;
+use \Glial\Security\Crypt\Crypt;
+
 
 class Chiffrement
 {
@@ -109,4 +111,24 @@ class Chiffrement
         }
         return $written;
     }
+
+
+    static function encrypt($password)
+    {
+        Crypt::$key = CRYPT_KEY;
+        $passwd     = Crypt::encrypt($password);
+        
+        return $passwd;
+    }
+
+
+    static function decrypt($password_crypted)
+    {
+        Crypt::$key = CRYPT_KEY;
+        $passwd     = Crypt::decrypt($password_crypted);
+        
+        return $passwd;
+    }
+    
+    
 }

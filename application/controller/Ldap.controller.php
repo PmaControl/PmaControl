@@ -8,19 +8,20 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use Symfony\Component\Yaml\Yaml;
 
-class Ldap extends Controller {
-
-    public $module_group = "Ldap";
+class Ldap extends Controller
+{
+    public $module_group          = "Ldap";
     public $method_administration = array(__CLASS__, "roles");
-    public $without_quote = array('LDAP_CHECK', 'LDAP_PORT');
+    public $without_quote         = array('LDAP_CHECK', 'LDAP_PORT');
 
-    const LDAP_CONFIG = ROOT . "/configuration/ldap.config.php";
+    const LDAP_CONFIG = ROOT."/configuration/ldap.config.php";
 
     /*
      * recupére recurssivement toutes les valeurs avec la clefs donnée en argument
      */
 
-    private function recursiveArraySearchByKey($haystack, $needle, &$ret) {
+    private function recursiveArraySearchByKey($haystack, $needle, &$ret)
+    {
 
         if (!is_array($haystack)) {
 
@@ -38,7 +39,8 @@ class Ldap extends Controller {
         }
     }
 
-    function index($param) {
+    function index($param)
+    {
 
         /*
           if (!empty($param[0]) && $param[0] === "success") {
@@ -106,19 +108,19 @@ class Ldap extends Controller {
                 clearstatcache();
                 //sleep(1);
                 if (count($error) === 0 && $check) {
-                    $msg = I18n::getTranslation(__("LDAP configuration has been updated"));
+                    $msg   = I18n::getTranslation(__("LDAP configuration has been updated"));
                     $title = I18n::getTranslation(__("Sucess"));
                     set_flash("success", $title, $msg);
 
-                    header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/success");
+                    header("location: ".LINK.__CLASS__."/".__FUNCTION__."/success");
                     exit;
                 } else {
 
-                    $msg = I18n::getTranslation($this->putUl($error));
+                    $msg   = I18n::getTranslation($this->putUl($error));
                     $title = I18n::getTranslation(__("Error"));
                     set_flash("error", $title, $msg);
 
-                    header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/" . $url);
+                    header("location: ".LINK.__CLASS__."/".__FUNCTION__."/".$url);
                     exit;
                 }
             }
@@ -129,23 +131,23 @@ class Ldap extends Controller {
 
                 foreach ($_POST['ldap_group'] as $ldap_group) {
                     if (empty($ldap_group['id']) || empty($ldap_group['name'])) {
-                        $sql = "DELETE FROM `ldap_group` WHERE id_group =" . $ldap_group['id'];
+                        $sql = "DELETE FROM `ldap_group` WHERE id_group =".$ldap_group['id'];
                         $db->sql_query($sql);
                     } else {
-                        $sql = "REPLACE INTO `ldap_group` (`id_group`,`cn`) VALUES ('" . $ldap_group['id'] . "','" . $ldap_group['name'] . "')";
+                        $sql = "REPLACE INTO `ldap_group` (`id_group`,`cn`) VALUES ('".$ldap_group['id']."','".$ldap_group['name']."')";
                         $db->sql_query($sql);
 
                         $this->update_group($ldap_group['id']);
                     }
                 }
 
-                $msg = I18n::getTranslation(__("LDAP groups has been updated"));
+                $msg   = I18n::getTranslation(__("LDAP groups has been updated"));
                 $title = I18n::getTranslation(__("Sucess"));
                 set_flash("success", $title, $msg);
 
 
 
-                header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__);
+                header("location: ".LINK.__CLASS__."/".__FUNCTION__);
                 exit;
             }
             //second form
@@ -153,14 +155,14 @@ class Ldap extends Controller {
 
 
         if (empty($_GET['ldap'])) {
-            $_GET['ldap']['url'] = LDAP_URL;
-            $_GET['ldap']['port'] = LDAP_PORT;
-            $_GET['ldap']['bind_dn'] = LDAP_BIND_DN;
-            $_GET['ldap']['root_dn'] = LDAP_ROOT_DN;
-            $_GET['ldap']['root_dn_search'] = LDAP_ROOT_DN_SEARCH;
-            $_GET['ldap']['bind_passwd'] = LDAP_BIND_PASSWD;
+            $_GET['ldap']['url']                 = LDAP_URL;
+            $_GET['ldap']['port']                = LDAP_PORT;
+            $_GET['ldap']['bind_dn']             = LDAP_BIND_DN;
+            $_GET['ldap']['root_dn']             = LDAP_ROOT_DN;
+            $_GET['ldap']['root_dn_search']      = LDAP_ROOT_DN_SEARCH;
+            $_GET['ldap']['bind_passwd']         = LDAP_BIND_PASSWD;
             $_GET['ldap']['bind_passwd_confirm'] = LDAP_BIND_PASSWD;
-            $_GET['ldap']['check'] = LDAP_CHECK;
+            $_GET['ldap']['check']               = LDAP_CHECK;
         }
 
         $data['check_server'] = $this->testLdap($_GET['ldap']['url'], $_GET['ldap']['port']);
@@ -170,7 +172,7 @@ class Ldap extends Controller {
         if ($data['check_credential'] === true) {
             //test ldap
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
-            $r = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
+            $r  = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
 
 
             if ($r) {
@@ -188,9 +190,9 @@ class Ldap extends Controller {
 
                     $tmp = array();
 
-                    $tmp['id'] = utf8_encode($cn);
+                    $tmp['id']      = utf8_encode($cn);
                     $tmp['libelle'] = utf8_encode($cn);
-                    $data['cn'][] = $tmp;
+                    $data['cn'][]   = $tmp;
                 }
             }
 
@@ -207,10 +209,10 @@ class Ldap extends Controller {
 
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = array();
-                $tmp['id'] = $ob->id;
-                $tmp['name'] = $ob->name;
-                $tmp['cn'] = $ob->cn;
+                $tmp             = array();
+                $tmp['id']       = $ob->id;
+                $tmp['name']     = $ob->name;
+                $tmp['cn']       = $ob->cn;
                 $data['group'][] = $tmp;
             }
         }
@@ -223,7 +225,8 @@ class Ldap extends Controller {
         $this->set('data', $data);
     }
 
-    private function testLdap($url, $port) {
+    private function testLdap($url, $port)
+    {
         $fp = @fsockopen($url, $port, $errno, $errstr, 1);
         if (!$fp) {
             return "$errstr ($errno)";
@@ -232,22 +235,24 @@ class Ldap extends Controller {
         }
     }
 
-    private function postToGet($post, $exclude = array()) {
+    private function postToGet($post, $exclude = array())
+    {
         global $ret, $way;
 
         foreach ($post as $key => $val) {
             if (is_array($val)) {
-                $way .= trim(":" . $key, ":");
+                $way .= trim(":".$key, ":");
                 $this->postToGet($val, $exclude, array(), "");
             } else {
-                $ret[] = $way . ':' . $key . ':' . urlencode($val);
+                $ret[] = $way.':'.$key.':'.urlencode($val);
             }
         }
 
         return implode('/', $ret);
     }
 
-    private function testLdapCredential($url, $port, $bind_dn, $bind_passwd) {
+    private function testLdapCredential($url, $port, $bind_dn, $bind_passwd)
+    {
         if ($this->testLdap($url, $port)) {
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
 
@@ -261,49 +266,51 @@ class Ldap extends Controller {
             if ($r) {
                 return true;
             } else {
-                $ret = ldap_error($ds) . " (" . ldap_errno($ds) . ")";
+                $ret = ldap_error($ds)." (".ldap_errno($ds).")";
                 return $ret;
             }
         }
     }
 
-    private function putUl($error) {
+    private function putUl($error)
+    {
         $ret = "<ul>";
         foreach ($error as $msg) {
-            $ret .= "<li>" . __($msg) . "</li>";
+            $ret .= "<li>".__($msg)."</li>";
         }
         $ret .= "</ul>";
 
         return $ret;
     }
 
-    public function before($param) {
-        $logger = new Logger('ldap');
-        $file_log = LOG_FILE;
-        $handler = new StreamHandler($file_log, Logger::DEBUG);
+    public function before($param)
+    {
+        $logger       = new Logger('ldap');
+        $file_log     = LOG_FILE;
+        $handler      = new StreamHandler($file_log, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
     }
 
-    private function log($level, $type, $msg) {
+    private function log($level, $type, $msg)
+    {
 
         if (IS_CLI) {
-            $this->logger->{$level}('[' . $type . '][pid:' . getmypid() . '] "' . $msg . '" ' . __("by") . ' [CLI]');
+            $this->logger->{$level}('['.$type.'][pid:'.getmypid().'] "'.$msg.'" '.__("by").' [CLI]');
         } else {
-            $this->logger->{$level}('[' . $type . '][pid:' . getmypid() . '] "' . $msg . '" ' . __("by") . ' '
-                    . $this->di['auth']->getUser()->firstname . " " . $this->di['auth']->getUser()->name . " (id:" . $this->di['auth']->getUser()->id . ")");
+            $this->logger->{$level}('['.$type.'][pid:'.getmypid().'] "'.$msg.'" '.__("by").' '
+                .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id.")");
         }
     }
-
     /*
      * A remplacer par le fait qu'un user peut avoir plusieurs group et qu'il faut tout tester
      *
      */
 
-    private function update_group($id_group) {
+    private function update_group($id_group)
+    {
 
-        debug($id_group);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -315,31 +322,29 @@ class Ldap extends Controller {
             $cn[$ob->id_group] = $ob->cn;
         }
 
-        debug($cn);
 
-        $sql = "SELECT * FROM `user_main` WHERE is_ldap = 1 and id_group = " . $id_group;
+        $sql = "SELECT * FROM `user_main` WHERE is_ldap = 1 and id_group = ".$id_group;
         $res = $db->sql_query($sql);
 
 
-        debug($sql);
 
-        $tree = $this->di['acl']->obtenirHierarchie();
+        $tree  = $this->di['acl']->obtenirHierarchie();
         $alias = $this->di['acl']->getAlias();
         $alias = array_flip($alias);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
+
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
-            $r = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
+            $r  = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
 
             if ($r) {
-                $results = ldap_search($ds, LDAP_ROOT_DN, "(samaccountname=" . $ob->login . ")", array("memberof"));
+                $results = ldap_search($ds, LDAP_ROOT_DN, "(samaccountname=".$ob->login.")", array("memberof"));
 
                 $entries = ldap_get_entries($ds, $results);
 
                 $memberof = $entries[0]['memberof'];
 
-                debug($memberof);
 
                 unset($memberof['count']);
 
@@ -347,7 +352,7 @@ class Ldap extends Controller {
                     $memberof[$key] = utf8_encode($value);
                 }
 
-                $resultat = array_intersect($cn, $memberof);
+                $resultat           = array_intersect($cn, $memberof);
                 $id_group_available = array_keys($resultat);
 
                 $id_group = 1;
@@ -360,36 +365,38 @@ class Ldap extends Controller {
                     }
                 }
 
-                $sql = "UPDATE `user_main` SET `id_group`=" . $id_group . " WHERE id=" . $ob->id . ";";
+                $sql = "UPDATE `user_main` SET `id_group`=".$id_group." WHERE id=".$ob->id.";";
                 $db->sql_query($sql);
             }
         }
     }
 
-    public function change() {
+    public function change()
+    {
         $this->update_group(1);
         $this->update_group(2);
         $this->update_group(3);
         $this->update_group(4);
         $this->view = false;
     }
-
     /*
      *
      *
      * to move in ACL
      */
 
-    public function show() {
+    public function show()
+    {
         $this->view = false;
         $this->getHightestRank();
     }
 
-    private function obtenirRangLePlusHaut() {
+    private function obtenirRangLePlusHaut()
+    {
         $acl = $this->di['acl'];
 
         $data['alias'] = $acl->getAlias();
-        $parsed = parse_ini_file($acl->getPathIniFile(), true);
+        $parsed        = parse_ini_file($acl->getPathIniFile(), true);
 
         $roles = $parsed['role'];
 
@@ -403,14 +410,16 @@ class Ldap extends Controller {
         //debug($tree);
     }
 
-    private function OraganiseNiveau() {
+    private function OraganiseNiveau()
+    {
         $tree = $this->di['acl']->obtenirHierarchie();
 
         //debug($tree);
         //foreach($tree as )
     }
 
-    private function UpdateConfigFile($var) {
+    private function UpdateConfigFile($var)
+    {
 
         //debug(self::LDAP_CONFIG);
         //echo "\n";
@@ -423,12 +432,12 @@ class Ldap extends Controller {
         $error = array();
 
         foreach ($var as $key => $val) {
-            $ldap_const = "LDAP_" . strtoupper($key);
+            $ldap_const = "LDAP_".strtoupper($key);
 
 
 
 
-            preg_match_all("/define\(\"" . preg_quote($ldap_const) . "\"\,\s(.*)\);/", $ldap, $output_array);
+            preg_match_all("/define\(\"".preg_quote($ldap_const)."\"\,\s(.*)\);/", $ldap, $output_array);
 
             if (empty($output_array[1][0])) {
                 continue;
@@ -437,7 +446,7 @@ class Ldap extends Controller {
 
 
             if (!in_array($ldap_const, $this->without_quote)) {
-                $new_value = '"' . str_replace('"', '', $val) . '"';
+                $new_value = '"'.str_replace('"', '', $val).'"';
             } else {
                 //debug($val);
 
@@ -499,8 +508,8 @@ class Ldap extends Controller {
             }
 
 
-            $replace = "define(\"" . $ldap_const . "\", " . $new_value . ");";
-            $search = $output_array[0][0];
+            $replace = "define(\"".$ldap_const."\", ".$new_value.");";
+            $search  = $output_array[0][0];
 
             //echo $search." ---> ".$replace."\n";
 
@@ -513,15 +522,15 @@ class Ldap extends Controller {
 
         file_put_contents(self::LDAP_CONFIG, $ldap);
     }
-
     /*
      *
      * ./glial ldap updateFromInstall config.json
      */
 
-    public function updateFromInstall($param) {
+    public function updateFromInstall($param)
+    {
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
 
         $filename = $param[0] ?? "";
@@ -533,7 +542,7 @@ class Ldap extends Controller {
             $mapping = array("url" => "URL", "port" => "PORT", "bind dn" => "BIND_DN", "bind passwd" => "BIND_PASSWD",
                 "user base" => "ROOT_DN", "group base" => "ROOT_DN_SEARCH", "enabled" => "CHECK");
 
-            $search = array_keys($mapping);
+            $search  = array_keys($mapping);
             $replace = array_values($mapping);
 
             if (empty($config['ldap'])) {
@@ -568,11 +577,11 @@ class Ldap extends Controller {
 
                 foreach ($config['ldap']['mapping group'] as $group => $val) {
 
-                    $sql = "SELECT id from `group` where name= '" . $group . "'";
+                    $sql = "SELECT id from `group` where name= '".$group."'";
                     $res = $db->sql_query($sql);
 
                     while ($ob = $db->sql_fetch_object($res)) {
-                        $sql = "REPLACE INTO `ldap_group` (`id_group`, `cn`) VALUES (" . $ob->id . ", '" . $val . "');";
+                        $sql = "REPLACE INTO `ldap_group` (`id_group`, `cn`) VALUES (".$ob->id.", '".$val."');";
 
                         $db->sql_query($sql);
                     }
@@ -581,22 +590,24 @@ class Ldap extends Controller {
         }
     }
 
-    public function parseConfig($configFile) {
+    public function parseConfig($configFile)
+    {
         $config = json_decode(file_get_contents($configFile), true);
         return $config;
     }
 
-    private function requestLdap($command) {
+    private function requestLdap($command)
+    {
 
         if (empty($_GET['ldap'])) {
-            $_GET['ldap']['url'] = LDAP_URL;
-            $_GET['ldap']['port'] = LDAP_PORT;
-            $_GET['ldap']['bind_dn'] = LDAP_BIND_DN;
-            $_GET['ldap']['root_dn'] = LDAP_ROOT_DN;
-            $_GET['ldap']['root_dn_search'] = LDAP_ROOT_DN_SEARCH;
-            $_GET['ldap']['bind_passwd'] = LDAP_BIND_PASSWD;
+            $_GET['ldap']['url']                 = LDAP_URL;
+            $_GET['ldap']['port']                = LDAP_PORT;
+            $_GET['ldap']['bind_dn']             = LDAP_BIND_DN;
+            $_GET['ldap']['root_dn']             = LDAP_ROOT_DN;
+            $_GET['ldap']['root_dn_search']      = LDAP_ROOT_DN_SEARCH;
+            $_GET['ldap']['bind_passwd']         = LDAP_BIND_PASSWD;
             $_GET['ldap']['bind_passwd_confirm'] = LDAP_BIND_PASSWD;
-            $_GET['ldap']['check'] = LDAP_CHECK;
+            $_GET['ldap']['check']               = LDAP_CHECK;
         }
 
         $data['check_server'] = $this->testLdap($_GET['ldap']['url'], $_GET['ldap']['port']);
@@ -607,7 +618,11 @@ class Ldap extends Controller {
 
             //test ldap
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
+            ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
+
             $r = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
+
+
 
             if ($r) {
 
@@ -619,19 +634,27 @@ class Ldap extends Controller {
         }
     }
 
-    public function getGroupFromUser() {
+    public function getGroupFromUser()
+    {
         $data = array();
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             if (!empty($_POST['ldap']['user'])) {
-                $result = $this->requestLdap($_POST['ldap']['user']);
+                $result       = $this->requestLdap($_POST['ldap']['user']);
+                $data['list'] = $result[0]['memberof'];
+
+
+                $data['user'] = $_POST['ldap']['user'];
+
+                if (! empty($data['list']['count'])) {
+                    unset($data['list']['count']);
+                }
             }
         }
 
-        $data['list'] = $result[0]['memberof'];
+
 
 
         $this->set('data', $data);
     }
-
 }

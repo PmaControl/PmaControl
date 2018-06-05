@@ -200,7 +200,7 @@ use App\Library\Debug;
 
     public function gg($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
 
         $cache = $this->cache();
@@ -217,7 +217,7 @@ use App\Library\Debug;
         {
             foreach ($graph['Formula'] as $formula)
             {
-                $this->debug($formula);
+                Debug::debug($formula);
                 $var_to_get = array_merge($var_to_get, $this->getElems($formula));
         
             }
@@ -229,7 +229,7 @@ use App\Library\Debug;
         $sql = $this->buildQuery($var_to_get, "status",671 );
 
 
-        $this->debug(SqlFormatter::format($sql));
+        Debug::debug(SqlFormatter::format($sql));
     }
 
 

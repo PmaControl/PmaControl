@@ -7,10 +7,10 @@
 
 namespace App\Library;
 
+use \App\Library\Debug;
+
 class Tree
 {
-
-    use \App\Library\Debug;
     var $db;
     var $table_name;
     var $fields  = array("id" => "id", "id_parent" => "id_parent", "bg" => "bg", "bd" => "bd");
@@ -226,7 +226,7 @@ class Tree
 
         debug($current_father);
 
-        $new_father     = $this->getfather($current_father['id']);
+        $new_father = $this->getfather($current_father['id']);
 
 
         try {
@@ -252,8 +252,6 @@ class Tree
         } catch (Exception $ex) {
             $this->db->sql_query("ROLLBACK;");
         }
-        
-        
     }
 
     public function getFirstFather($id)

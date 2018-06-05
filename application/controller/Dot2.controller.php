@@ -9,6 +9,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Form\Upload;
 use \Glial\Date\Date;
 use App\Library\Extraction;
+use \App\Library\Debug;
 
 //add virtual_ip
 // ha proxy
@@ -16,18 +17,17 @@ use App\Library\Extraction;
 class Dot2 extends Controller
 {
 
-    use \App\Library\Debug;
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE      = "green";
-    CONST NODE_NOT_ANSWERED   = "orange";
-    CONST NODE_ERROR          = "red";
+    CONST NODE_AVAILABLE         = "green";
+    CONST NODE_NOT_ANSWERED      = "orange";
+    CONST NODE_ERROR             = "red";
 //for galera
-    CONST NODE_NOT_PRIMARY    = "blue"; //galera cluster
-    CONST NODE_DONOR          = "cyan";
-    CONST NODE_DONOR_DESYNCED = "yellow";
-    CONST NODE_MANUAL_DESYNC  = "brown";
-    CONST NODE_RECEIVE_SST    = "yellow";
-    CONST NODE_BUG            = "pink";
+    CONST NODE_NOT_PRIMARY       = "blue"; //galera cluster
+    CONST NODE_DONOR             = "cyan";
+    CONST NODE_DONOR_DESYNCED    = "yellow";
+    CONST NODE_MANUAL_DESYNC     = "brown";
+    CONST NODE_RECEIVE_SST       = "yellow";
+    CONST NODE_BUG               = "pink";
     CONST REPLICATION_OK         = "green";
     CONST REPLICATION_IST        = "yellow";
     CONST REPLICATION_SST        = "grey";
@@ -61,7 +61,7 @@ class Dot2 extends Controller
     public function getMasterSlave($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
         $db         = $this->di['db']->sql(DB_DEFAULT);
 
@@ -81,7 +81,7 @@ class Dot2 extends Controller
                 if (!empty($this->maping_master[$slave['master_host'].":".$slave['master_port']])) {
                     $id_master = $this->maping_master[$slave['master_host'].":".$slave['master_port']];
                 } else {
-//$this->debug($slave['master_host'], "master_host --");
+//Debug::debug($slave['master_host'], "master_host --");
 //add server generate negative id ?
                     continue;
                 }
@@ -99,7 +99,7 @@ class Dot2 extends Controller
         $this->master_slave = $tmp_group;
 
 
-        $this->debug($this->slaves, "MASTER / SLAVE");
+        Debug::debug($this->slaves, "MASTER / SLAVE");
 
         return $this->master_slave;
     }
@@ -164,7 +164,7 @@ class Dot2 extends Controller
             }
 
 
-            $this->debug($group_galera);
+            Debug::debug($group_galera);
         }
 
 
@@ -175,7 +175,7 @@ class Dot2 extends Controller
     private function getAllMemberFromGalera($incomming, $galera_nodes, $group)
     {
         //need dertect split brain !!
-        $this->debug($incomming);
+        Debug::debug($incomming);
 
 
 
@@ -191,7 +191,7 @@ class Dot2 extends Controller
 
         $nodes = array_unique($all_node);
 
-        $this->debug($nodes);
+        Debug::debug($nodes);
 
 
         $arbitres = array();
@@ -206,7 +206,7 @@ class Dot2 extends Controller
                 } else {
                     // unknow node
 
-                    $this->debug($node, "UNKNOW NODE");
+                    Debug::debug($node, "UNKNOW NODE");
                 }
             } else {
                 //arbitre
@@ -271,7 +271,7 @@ class Dot2 extends Controller
 
     public function generateGroup($groups)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
 
 
@@ -279,12 +279,12 @@ class Dot2 extends Controller
         $groups = $this->array_merge_group($groups);
 
 
-        $this->debug($groups, "groups");
+        Debug::debug($groups, "groups");
 
         $result['groups']  = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
 
-//$this->debug($result);
+//Debug::debug($result);
         $this->groups = $result;
 
         return $this->groups;
@@ -296,7 +296,7 @@ class Dot2 extends Controller
     private function array_merge_group($array)
     {
 
-//$this->debug($array);
+//Debug::debug($array);
 
         $all_values  = $this->array_values_recursive($array);
         $group_merge = [];
@@ -403,10 +403,10 @@ class Dot2 extends Controller
             }
         }
 
-        $this->debug($this->graph_node, "GENERATE NODE");
+        Debug::debug($this->graph_node, "GENERATE NODE");
 
 
-//$this->debug($this->graph_node);
+//Debug::debug($this->graph_node);
     }
 
     public function pushUpdateMS()
@@ -481,7 +481,7 @@ class Dot2 extends Controller
         $cpl_count = array_count_values($couples);
 
 
-        $this->debug($cpl_count, "cpl_count");
+        Debug::debug($cpl_count, "cpl_count");
 
         $paires = array();
         foreach ($cpl_count as $key => $val) {
@@ -491,7 +491,7 @@ class Dot2 extends Controller
         }
 
 
-        $this->debug($paires, "paires");
+        Debug::debug($paires, "paires");
 
         foreach ($paires as $val) {
             $new_master_master[] = explode(":", $val);
@@ -503,11 +503,11 @@ class Dot2 extends Controller
             $new_master_master = $this->array_merge_group($new_master_master);
 
 
-            $this->debug($new_master_master, "new_master_master");
+            Debug::debug($new_master_master, "new_master_master");
 
 
             //$new_master_master = array();
-            //$this->debug($new_master_master, "MASTER / MASTER");
+            //Debug::debug($new_master_master, "MASTER / MASTER");
 
             $this->graph_master_master = $new_master_master;
         } else {
@@ -517,8 +517,8 @@ class Dot2 extends Controller
 
     public function run($param)
     {
-        $this->parseDebug($param);
-        $this->debugQueriesOff();
+        Debug::parseDebug($param);
+        Debug::debugQueriesOff();
 
         $this->view = false;
 
@@ -526,7 +526,7 @@ class Dot2 extends Controller
         $this->mappingMaster($param);
         $this->getInfoServer($param);
 
-//$this->debug($this->servers, "\$this->servers");
+//Debug::debug($this->servers, "\$this->servers");
 
         $master_slave   = $this->getMasterSlave($param);
         $galera_cluster = $this->getGaleraCluster($param);
@@ -535,9 +535,9 @@ class Dot2 extends Controller
 
         $this->generateGroup($all_groups);
 
-        //$this->debug($this->galera_cluster);
+        //Debug::debug($this->galera_cluster);
 
-        $this->checkPoint("Split Graph");
+        Debug::checkPoint("Split Graph");
 
 
 // format and push to pivot
@@ -547,18 +547,18 @@ class Dot2 extends Controller
 
         $this->pushGaleraCluster();
 
-//$this->debug($this->slaves, "graph_edge");
-//$this->debug($this->graph_edge, "graph_edge");
+//Debug::debug($this->slaves, "graph_edge");
+//Debug::debug($this->graph_edge, "graph_edge");
 //exit;
 //generate and save graph
 //e
 //cho $this->debugShowQueries();
 //        debug($this->servers);
 
-        $this->checkPoint("Push data");
+        Debug::checkPoint("Push data");
 
         $this->generateAllGraph();
-        $this->checkPoint("generateAllGraph");
+        Debug::checkPoint("generateAllGraph");
     }
 
     public function generateAllGraph()
@@ -592,7 +592,7 @@ class Dot2 extends Controller
 
         $servers = implode(",", $group);
 
-//$this->debug($servers);
+//Debug::debug($servers);
 
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -705,7 +705,7 @@ class Dot2 extends Controller
 
 
         if ($id_mysql_server == "66") {
-            $this->debug($this->graph_node[$id_mysql_server]['color'], "COLOR NODE");
+            Debug::debug($this->graph_node[$id_mysql_server]['color'], "COLOR NODE");
         }
 
         $node .= "node [color = \"".$this->graph_node[$id_mysql_server]['color']."\"];\n";
@@ -864,7 +864,7 @@ class Dot2 extends Controller
 
         //debug($this->graph_node);
 
-        $this->debug($this->galera_cluster, "galera_cluster");
+        Debug::debug($this->galera_cluster, "galera_cluster");
 
         foreach ($this->galera_cluster as $cluster_name => $members) {
             foreach ($members as $id_mysql_server => $member) {
@@ -905,7 +905,7 @@ class Dot2 extends Controller
             }
         }
 
-        $this->debug($this->graph_galera_cluster, "Galera Cluster");
+        Debug::debug($this->graph_galera_cluster, "Galera Cluster");
         //$graph_galera_cluster;
 
         return $this->graph_galera_cluster;
@@ -967,7 +967,7 @@ class Dot2 extends Controller
             $ret .= $this->display_segment($galera, $name_galera);
         } else {
 
-            $this->debug(end($galera));
+            Debug::debug(end($galera));
             $ret .= $this->display_node_galera(end($galera));
         }
     }
@@ -997,7 +997,7 @@ class Dot2 extends Controller
 
         $id = max(array_keys($servers));
 
-        $this->debug($id, "max id");
+        Debug::debug($id, "max id");
 
 
         $id++;
@@ -1034,7 +1034,7 @@ class Dot2 extends Controller
 
         //debug($this->maping_master);
 
-        $this->debug($all_ip_port);
+        Debug::debug($all_ip_port);
 
 
         foreach ($all_ip_port as $key => $ip_port) {
@@ -1067,7 +1067,7 @@ class Dot2 extends Controller
 
         $this->graph_node[$row['id_mysql_server']]['color'] = self::NODE_RECEIVE_SST;
 
-        $this->debug($row);
+        Debug::debug($row);
     }
 
     public function generateRankForMM($group)

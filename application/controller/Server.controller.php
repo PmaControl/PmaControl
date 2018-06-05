@@ -5,10 +5,13 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 
+use \App\Library\Debug;
+
+
 class Server extends Controller
 {
 
-    use \App\Library\Debug;
+    
     use \App\Library\Filter;
 
 //dba_source
@@ -23,6 +26,7 @@ class Server extends Controller
 
         $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
             FROM mysql_server a
+                 INNER JOIN ssh_key e ON e.id = a.id_ssh_key
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
@@ -400,6 +404,8 @@ class Server extends Controller
           group by datetime div 500
          */
 //$this->di['js']->addJavascript(array("Chart.Core.js", "Chart.Scatter.min.js"));
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -692,8 +698,11 @@ var myChart = new Chart(ctx, {
 
 
 
-            $this->set('data', $data);
+            
         }
+
+        $this->set('data', $data);
+
     }
 
 //DEPRECATED

@@ -57,7 +57,7 @@ class Environment extends Controller
     public function up($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 

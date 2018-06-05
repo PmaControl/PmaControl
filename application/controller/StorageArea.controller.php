@@ -9,15 +9,16 @@ use \Glial\Cli\Crontab;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
+use \App\Library\Debug;
 
-class StorageArea extends Controller {
+class StorageArea extends Controller
+{
 
-    use \App\Library\Debug;
-
-    public function index($param) {
-        $this->title = __("Storage area");
-        $this->ariane = " > " . __("Backup") . " > " . $this->title;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+    public function index($param)
+    {
+        $this->title  = __("Storage area");
+        $this->ariane = " > ".__("Backup")." > ".$this->title;
+        $db           = $this->di['db']->sql(DB_DEFAULT);
 
         if (empty($param[0])) {
             $data['menu'] = "listStorage";
@@ -34,7 +35,8 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
-    public function add() {
+    public function add()
+    {
 
 //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
@@ -44,12 +46,12 @@ class StorageArea extends Controller {
             Crypt::$key = CRYPT_KEY;
 
             $storage_area['backup_storage_area'] = $_POST['backup_storage_area'];
-            $password = $storage_area['backup_storage_area']['ssh_password'];
+            $password                            = $storage_area['backup_storage_area']['ssh_password'];
 
 
             // clef ssh ou password ?
             if (!empty($storage_area['backup_storage_area']['ssh_key'])) {
-                $key = new RSA();
+                $key      = new RSA();
                 $key->loadKey($storage_area['backup_storage_area']['ssh_key']);
                 $password = $key;
             }
@@ -61,58 +63,58 @@ class StorageArea extends Controller {
             //tentative connexion au serveur ssh
             if (!$ssh->login($storage_area['backup_storage_area']['ssh_login'], $password)) {
                 foreach ($_POST['backup_storage_area'] as $var => $val) {
-                    $ret[] = "backup_storage_area:" . $var . ":" . urlencode(html_entity_decode($val));
+                    $ret[] = "backup_storage_area:".$var.":".urlencode(html_entity_decode($val));
                 }
 
                 $param = implode("/", $ret);
 
                 $title = I18n::getTranslation(__("Failed to connect on ssh/scp"));
-                $msg = I18n::getTranslation(__("Please check your hostname and you credentials !"));
+                $msg   = I18n::getTranslation(__("Please check your hostname and you credentials !"));
 
                 set_flash("error", $title, $msg);
 
-                header("location: " . LINK . "storageArea/add/" . $param);
+                header("location: ".LINK."storageArea/add/".$param);
                 exit;
             }
 
-            $storage_area['backup_storage_area']['ssh_login'] = Crypt::encrypt($storage_area['backup_storage_area']['ssh_login']);
+            $storage_area['backup_storage_area']['ssh_login']    = Crypt::encrypt($storage_area['backup_storage_area']['ssh_login']);
             $storage_area['backup_storage_area']['ssh_password'] = Crypt::encrypt($storage_area['backup_storage_area']['ssh_password']);
-            $storage_area['backup_storage_area']['ssh_key'] = Crypt::encrypt($storage_area['backup_storage_area']['ssh_key']);
+            $storage_area['backup_storage_area']['ssh_key']      = Crypt::encrypt($storage_area['backup_storage_area']['ssh_key']);
 
             $id_storage_area = $db->sql_save($storage_area);
 
             if (!$id_storage_area) {
 
 
-                $error = $db->sql_error();
+                $error             = $db->sql_error();
                 $_SESSION['ERROR'] = $error;
 
                 $title = I18n::getTranslation(__("Fail to add this storage area"));
-                $msg = I18n::getTranslation(__("One or more problem came when you try to add this storage, please verify your informations"));
+                $msg   = I18n::getTranslation(__("One or more problem came when you try to add this storage, please verify your informations"));
 
                 set_flash("error", $title, $msg);
 
                 foreach ($_POST['backup_storage_area'] as $var => $val) {
-                    $ret[] = "backup_storage_area:" . $var . ":" . urlencode(html_entity_decode($val));
+                    $ret[] = "backup_storage_area:".$var.":".urlencode(html_entity_decode($val));
                 }
 
                 $param = implode("/", $ret);
 
-                header("location: " . LINK . "storageArea/add/" . $param);
+                header("location: ".LINK."storageArea/add/".$param);
                 exit;
             } else {
 
 
 
-                $cmd = $php . " " . GLIAL_INDEX . " StorageArea getStorageSpace " . $id_storage_area .  " & echo $!";
+                $cmd = $php." ".GLIAL_INDEX." StorageArea getStorageSpace ".$id_storage_area." & echo $!";
                 $pid = shell_exec($cmd);
 
 
                 $title = I18n::getTranslation(__("Successfull"));
-                $msg = I18n::getTranslation(__("You storage area has been successfull added !"));
+                $msg   = I18n::getTranslation(__("You storage area has been successfull added !"));
 
                 set_flash("success", $title, $msg);
-                header("location: " . LINK . "storageArea/listStorage");
+                header("location: ".LINK."storageArea/listStorage");
                 exit;
             }
         }
@@ -121,7 +123,7 @@ class StorageArea extends Controller {
         $this->di['js']->addJavascript(array("jquery.browser.min.js", "jquery.autocomplete.min.js"));
 
 
-        $this->di['js']->code_javascript('$("#backup_storage_area-id_geolocalisation_city-auto").autocomplete("' . LINK . 'user/city/none>none", {
+        $this->di['js']->code_javascript('$("#backup_storage_area-id_geolocalisation_city-auto").autocomplete("'.LINK.'user/city/none>none", {
 		extraParams: {
 			country: function() {return $("#backup_storage_area-id_geolocalisation_country").val();}
 		},
@@ -146,14 +148,15 @@ class StorageArea extends Controller {
 
 
 
-        $sql = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
-        $res = $db->sql_query($sql);
+        $sql                                   = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
+        $res                                   = $db->sql_query($sql);
         $this->data['geolocalisation_country'] = $db->sql_to_array($res);
 
         $this->set('data', $this->data);
     }
 
-    public function listStorage() {
+    public function listStorage()
+    {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT *,c.libelle as city, a.libelle as name,a.id as id_backup_storage_area
@@ -176,23 +179,24 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
-    public function getStorageSpace($param) {
+    public function getStorageSpace($param)
+    {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM backup_storage_area";
 
         if (!empty($param[0])) {
-            $sql .= " WHERE id = '" . $param[0] . "'";
+            $sql .= " WHERE id = '".$param[0]."'";
         }
         $sql .= ";";
 
-        $this->debug(\SqlFormatter::highlight($sql));
+        Debug::debug(\SqlFormatter::highlight($sql));
 
         $storages = $db->sql_fetch_yield($sql);
 
@@ -219,13 +223,13 @@ class StorageArea extends Controller {
 
             //$publicHostKey = $ssh->getServerPublicHostKey();
 
-            $this->debug(Crypt::decrypt($storage['ssh_login']));
+            Debug::debug(Crypt::decrypt($storage['ssh_login']));
 
             if (!$ssh->login(Crypt::decrypt($storage['ssh_login']), $password)) {
 
-                $this->debug("SSH FAILED ! ");
+                Debug::debug("SSH FAILED ! ");
             } else {
-                $this->debug("SSH ok !");
+                Debug::debug("SSH ok !");
 
                 /*
                  * df -k . => get file systeme for current directory
@@ -235,28 +239,28 @@ class StorageArea extends Controller {
                  * awk '{print $2 \" \" $3 \" \" $4 \" \" $5}' => split result by space
                  */
 
-                $cmd = 'cd ' . $storage['path'] . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
+                $cmd       = 'cd '.$storage['path'].' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
                 $resultats = $ssh->exec($cmd);
                 $resultats = preg_replace('`([ ]{2,})`', ' ', $resultats);
-                $results = explode(' ', trim($resultats));
+                $results   = explode(' ', trim($resultats));
 
 
-                $cmd2 = "cd " . $storage['path'] . " && du -s . | awk '{print $1}'";
+                $cmd2           = "cd ".$storage['path']." && du -s . | awk '{print $1}'";
                 $used_by_backup = $ssh->exec($cmd2);
 
-                $data = [];
+                $data                                                   = [];
                 $data['backup_storage_space']['id_backup_storage_area'] = $storage['id'];
-                $data['backup_storage_space']['date'] = date('Y-m-d H:i:s');
-                $data['backup_storage_space']['size'] = $results['1'];
-                $data['backup_storage_space']['used'] = $results['2'];
-                $data['backup_storage_space']['available'] = $results['3'];
-                $data['backup_storage_space']['percent'] = substr(trim($results['4']), 0, -1);
-                $data['backup_storage_space']['backup'] = trim($used_by_backup);
+                $data['backup_storage_space']['date']                   = date('Y-m-d H:i:s');
+                $data['backup_storage_space']['size']                   = $results['1'];
+                $data['backup_storage_space']['used']                   = $results['2'];
+                $data['backup_storage_space']['available']              = $results['3'];
+                $data['backup_storage_space']['percent']                = substr(trim($results['4']), 0, -1);
+                $data['backup_storage_space']['backup']                 = trim($used_by_backup);
 
                 if (!$db->sql_save($data)) {
 
 
-                    debug($cmd . "\n");
+                    debug($cmd."\n");
                     debug($resultats);
                     debug($results);
                     debug($data);
@@ -272,16 +276,18 @@ class StorageArea extends Controller {
         return true;
     }
 
-    public function delete($param) {
+    public function delete($param)
+    {
         $id_backup_storage_area = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "DELETE FROM  backup_storage_area WHERE id ='" . $id_backup_storage_area . "'";
+        $db                     = $this->di['db']->sql(DB_DEFAULT);
+        $sql                    = "DELETE FROM  backup_storage_area WHERE id ='".$id_backup_storage_area."'";
 
         $db->sql_query($sql);
-        header("location: " . LINK . "StorageArea/");
+        header("location: ".LINK."StorageArea/");
     }
 
-    public function menu($param) {
+    public function menu($param)
+    {
         if (empty($param[0])) {
             $param[0] = "listStorage";
         }
@@ -291,5 +297,4 @@ class StorageArea extends Controller {
 
         $this->set("data", $data);
     }
-
 }

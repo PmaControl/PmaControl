@@ -18,7 +18,7 @@ class CheckDataOnCluster extends Controller
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'CheckDataOnCluster/index.js'));
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 

@@ -19,7 +19,7 @@ class Export extends Controller
 
     function generateDump($param)
     {
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -50,8 +50,8 @@ class Export extends Controller
 
         $table_without_data = array_diff($tables, $to_remove);
 
-        $this->debug($table_with_data);
-        $this->debug($table_without_data);
+        Debug::debug($table_with_data);
+        Debug::debug($table_without_data);
 
         $connect    = $db->getParams();
         Crypt::$key = CRYPT_KEY;

@@ -10,10 +10,11 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use App\Library\Chiffrement;
+use \App\Library\Debug;
+
 class Archives extends Controller
 {
 
-    use \App\Library\Debug;
     use App\Library\Filter;
     use App\Library\Scp;
     use App\Library\File;
@@ -188,7 +189,7 @@ var myChart = new Chart(ctx, {
     public function load($param)
     {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         if (IS_CLI) {
             $id_archive_load = (int) $param[0];
@@ -269,7 +270,7 @@ var myChart = new Chart(ctx, {
                 $conf = $this->di['db']->getParam($mysqlservertoload);
 
 
-                $this->debug($conf);
+                Debug::debug($conf);
 
                 if (!empty($conf['crypted']) && $conf['crypted'] === "1") {
                     $conf['password'] = Crypt::decrypt($conf['password']);
@@ -283,7 +284,7 @@ var myChart = new Chart(ctx, {
 
                 $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database;
 
-                $this->debug($cmd);
+                Debug::debug($cmd);
                 $cmd = str_replace("{password}", $conf['password'], $cmd);
                 passthru($cmd, $exit);
 
@@ -303,7 +304,7 @@ var myChart = new Chart(ctx, {
                 $db->sql_query($sql4);
 
 
-                $this->checkPoint("traitement : ".$stats['file_path']);
+                Debug::checkPoint("traitement : ".$stats['file_path']);
             }
 
             $this->log("info", "COMPLETED", "The load of archive is completed");
@@ -389,7 +390,7 @@ var myChart = new Chart(ctx, {
                     if ($id_archive_load) {
 
 
-                        $sql ="SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
+                        $sql = "SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
 
 
 
@@ -518,11 +519,8 @@ var myChart = new Chart(ctx, {
         return $this->user[$this->id_user_main];
     }
 
-
     public function detail($param)
     {
-        $db  = $this->di['db']->sql(DB_DEFAULT);
-
-        
+        $db = $this->di['db']->sql(DB_DEFAULT);
     }
 }

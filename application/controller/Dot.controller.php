@@ -88,7 +88,7 @@ class Dot extends Controller {
 
             $graphs[] = $tmp;
 
-            if ($this->debug) {
+            if (Debug::$debug) {
                 echo str_repeat("#", 79) . "\n";
                 echo "SERVER List : " . implode(",", $list) . "\n";
                 echo str_repeat("#", 79) . "\n";
@@ -110,7 +110,7 @@ class Dot extends Controller {
 //echo $graphs[0];
 //print_r($graphs);
 
-        $this->debug($graphs);
+        Debug::debug($graphs);
 
         return $graphs;
     }
@@ -246,7 +246,7 @@ rankdir=LR;
 
     public function generateNode($list_id) {
 
-//$this->debug($this->proxy);
+//Debug::debug($this->proxy);
 //les proxy sont quand même prise en compte et retirer après au niveau de la query
 //$list_id = array_diff($list_id, $this->proxy);
 
@@ -258,7 +258,7 @@ rankdir=LR;
             INNER JOIN mysql_database b ON b.id_mysql_server = a.id
                 WHERE a.id IN (" . $id_mysql_servers . ") ;";
 
-//$this->debug(SqlFormatter::highlight($sql));
+//Debug::debug(SqlFormatter::highlight($sql));
 
         $res2 = $db->sql_query($sql);
 
@@ -280,7 +280,7 @@ rankdir=LR;
                 WHERE a.id IN (" . $id_mysql_servers . ")
              GROUP BY a.id;";
 
-//$this->debug(SqlFormatter::highlight($sql));
+//Debug::debug(SqlFormatter::highlight($sql));
 
         $res3 = $db->sql_query($sql);
 
@@ -352,7 +352,7 @@ rankdir=LR;
                 WHERE a.id IN (" . $id_mysql_servers . ") " . $this->getFilter() . ")";
 
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             echo SqlFormatter::format($sql);
         }
 
@@ -382,7 +382,7 @@ rankdir=LR;
 //detection Master/Master
         $sum = array_count_values($link);
 
-        //$this->debug($sum);
+        //Debug::debug($sum);
 
         foreach ($sum as $key => $val) {
             if ($val === 2) {
@@ -390,7 +390,7 @@ rankdir=LR;
             }
         }
 
-        //$this->debug($this->MasterMaster);
+        //Debug::debug($this->MasterMaster);
 
 
         return $ret;
@@ -462,14 +462,14 @@ rankdir=LR;
             $color_node = self::COLOR_NODE_RECEIVE_SST;
         }
 
-        //$this->debug($color_node);
+        //Debug::debug($color_node);
 
         return "node [color = \"" . $color_node . "\"];\n";
     }
 
     public function generateGroup($param) {
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
         $this->view = false;
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -481,7 +481,7 @@ rankdir=LR;
             INNER JOIN mysql_replication_thread c ON c.id_mysql_replication_stats = b.id
             INNER JOIN mysql_server d ON d.ip = c.master_host AND d.port = a.port WHERE 1 " . $this->getFilter();
 
-        if ($this->debug) {
+        if (Debug::$debug) {
             debug($sql);
         }
 
@@ -514,7 +514,7 @@ rankdir=LR;
 
         $galera = $tmp_group;
 
-        $this->debug($galera);
+        Debug::debug($galera);
 
 
 // cas des SST (regrouper les serveurs en cours de transfert avec le cluster auquel il est censé être rataché)
@@ -586,7 +586,7 @@ rankdir=LR;
             }
 
             $sql2 = "(" . implode("\n) UNION (", $sqls) . ")";
-            $this->debug(SqlFormatter::highlight($sql2));
+            Debug::debug(SqlFormatter::highlight($sql2));
             $res2 = $db->sql_query($sql2);
 
 
@@ -604,7 +604,7 @@ rankdir=LR;
             WHERE (c.master_host = '" . $ob->haproxy . "' OR c.master_host = '" . $ob->vip . "') AND c.master_port = " . $ob->port_input . "
             ";
 
-            $this->debug(SqlFormatter::highlight($sql3));
+            Debug::debug(SqlFormatter::highlight($sql3));
             $res3 = $db->sql_query($sql3);
 
 
@@ -621,7 +621,7 @@ rankdir=LR;
 
         $ha_proxy = $tmp_group;
 
-        $this->debug($ha_proxy);
+        Debug::debug($ha_proxy);
 
 
 
@@ -643,8 +643,8 @@ rankdir=LR;
         }
         $instance = $tmp_group;
 
-//$this->debug($master_slave);
-//$this->debug($ha_proxy);
+//Debug::debug($master_slave);
+//Debug::debug($ha_proxy);
 
 
         $groups = $this->array_merge_group(array_merge($galera, $instance, $master_slave, $segments, $ha_proxy, $vips));
@@ -652,7 +652,7 @@ rankdir=LR;
         $result['groups'] = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
 
-        //$this->debug($result['groups']);
+        //Debug::debug($result['groups']);
 
         return $result;
     }
@@ -792,7 +792,7 @@ rankdir=LR;
                 continue;
             }
 
-//$this->debug($graph['servers']);
+//Debug::debug($graph['servers']);
 
 
             foreach ($graph['servers'] as $id_mysql_server) {
@@ -808,7 +808,7 @@ rankdir=LR;
         $sql = "COMMIT";
         $db->sql_query($sql);
 
-//$this->debug($this->segment);
+//Debug::debug($this->segment);
     }
 
     public function generateCluster($list_id) {
@@ -821,7 +821,7 @@ rankdir=LR;
              WHERE b.id_mysql_server IN (" . $id_mysql_servers . ")  ORDER BY a.name,a.segment;";
 
 
-//$this->debug(SqlFormatter::highlight($sql));
+//Debug::debug(SqlFormatter::highlight($sql));
 
 
 
@@ -845,7 +845,7 @@ rankdir=LR;
         if (!empty($galeras)) {
 
 
-            $this->debug($galeras);
+            Debug::debug($galeras);
 
             foreach ($galeras as $name_galera => $galera) {
 
@@ -862,7 +862,7 @@ rankdir=LR;
                     $ret .= $this->display_segment($galera, $name_galera);
                 } else {
 
-                    $this->debug(end($galera));
+                    Debug::debug(end($galera));
                     $ret .= $this->display_node_galera(end($galera));
                 }
 
@@ -877,7 +877,7 @@ rankdir=LR;
           } */
 
 
-//$this->debug($ret);
+//Debug::debug($ret);
 
         return $ret;
     }
@@ -901,7 +901,7 @@ rankdir=LR;
 
     private function display_node_galera($segment) {
 
-        $this->debug($segment);
+        Debug::debug($segment);
 
         $ret = "";
 
@@ -939,7 +939,7 @@ rankdir=LR;
 
     private function array_merge_group($array) {
 
-        $this->debug($array);
+        Debug::debug($array);
 
         $all_values = $this->array_values_recursive($array);
         $group_merge = [];
@@ -1026,7 +1026,7 @@ rankdir=LR;
             $couple[] = "SELECT * FROM mysql_server WHERE `ip`='" . $part[0] . "' AND port='" . $part[1] . "' and error != ''";
         }
         $sql = "(" . implode("\n) UNION (", $couple) . ");";
-        $this->debug(SqlFormatter::highlight($sql));
+        Debug::debug(SqlFormatter::highlight($sql));
         $res = $db->sql_query($sql);
 
 
@@ -1056,7 +1056,7 @@ rankdir=LR;
             AND b.id_mysql_server IN (" . $id_mysql_servers . ")
             GROUP BY a.name,a.segment";
 
-        if ($this->debug) {
+        if (Debug::$debug) {
 
 //echo SqlFormatter::format($sql);
         }
@@ -1114,19 +1114,19 @@ rankdir=LR;
 
     public function getHaProxy($list_id) {
 
-        //$this->debug($this->ha_proxy);
+        //Debug::debug($this->ha_proxy);
 
         $ret = "";
 
         foreach ($this->ha_proxy as $id_haproxy => $proxy) {
 
-            $this->debug($proxy);
+            Debug::debug($proxy);
 
             $inter = array_intersect($proxy['linked'], $list_id);
 
             if (count($inter) != 0) {
 
-                $this->debug($inter);
+                Debug::debug($inter);
 
                 $ret .= $this->nodeProxy($id_haproxy);
             }
@@ -1215,13 +1215,13 @@ rankdir=LR;
     function getDataDir($param) {
         $this->view = false;
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
 
         $sql = $this->buildQuery(array("datadir"), "variables", 635);
 
 
-        $this->debug(SqlFormatter::format($sql));
+        Debug::debug(SqlFormatter::format($sql));
     }
 
     public function getGroupVip() {

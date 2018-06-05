@@ -88,7 +88,16 @@ foreach ($data['slave'] as $slaves) {
             echo '<span data-toggle="tooltip" data-placement="right" title="'.$m_env.'" class="label label-'.$data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['class'].'">'
             .substr($m_env, 0, 1).'</span> ';
 
-            echo '<a href="">'.$data['hostname'][$id_master]['']['hostname'].'</a>';
+
+            if (!empty($data['hostname'][$id_master]['']['hostname'])) {
+                echo '<a href="">'.$data['hostname'][$id_master]['']['hostname'].'</a>';
+            } else {
+
+                echo $data['server']['master'][$id_master]['display_name'];
+            }
+
+
+
 
 
 

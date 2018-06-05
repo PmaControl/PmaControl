@@ -1469,7 +1469,7 @@ class Mysql extends Controller
     {
         $this->view = false;
 
-        $this->parseDebug($param);
+        Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -1489,7 +1489,7 @@ class Mysql extends Controller
 
             $config .= $string."\n\n";
 
-            $this->debug($string);
+            Debug::debug($string);
         }
 
         file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
