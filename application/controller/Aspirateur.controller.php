@@ -579,7 +579,6 @@ class Aspirateur extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            debug($ob);
 
             $time_start             = microtime(true);
             $ssh                    = Ssh::connect($ob->ip, 22, $ob->user, Chiffrement::decrypt($ob->private_key));
@@ -596,21 +595,21 @@ class Aspirateur extends Controller
             $hardware = $this->getHardware($ssh, $data);
 
 
-            
-            
+
+
 
 
             $id = $ob->id;
 
-            $date= array();
+            $date = array();
 
             $this->allocate_shared_storage('ssh_stats');
-            $date[date('Y-m-d H:i:s')][$ob->id]['stats']    = $stats;
-            $this->shared->$id = $date;
+            $date[date('Y-m-d H:i:s')][$ob->id]['stats'] = $stats;
+            $this->shared->$id                           = $date;
 
             $this->allocate_shared_storage('hardware');
             $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
-            
+
 
             Debug::debug($date);
         }
@@ -716,6 +715,109 @@ class Aspirateur extends Controller
         if (!empty($output_array[1])) {
             $stats['uptime'] = $output_array[1];
         }
+
+
+        $membrut = trim($ssh->exec("free -b"));
+
+        $lines = explode("\n", $membrut);
+
+        unset($lines[0]);
+
+
+        $titles = array('memory', 'swap');
+        $items  = array('total', 'used', 'free', 'shared', 'buff/cache', 'available');
+
+
+        $i = 1;
+        foreach ($titles as $title) {
+            $elems = preg_split('/\s+/', $lines[$i]);
+            unset($elems[0]); // to remove Mem: and Swap:
+
+
+            $j = 0;
+            foreach ($elems as $elem) {
+                $stats[$title.'_'.$items[$j]] = $elem;
+                $j++;
+            }
+
+            $i++;
+        }
+
+        $dd    = trim($ssh->exec("df"));
+        $lines = explode("\n", $dd);
+
+        $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
+
+        unset($lines[0]);
+
+
+        $tmp = array();
+        foreach ($lines as $line) {
+            $elems = preg_split('/\s+/', $line);
+
+            $tmp[$elems[5]] = $elems;
+        }
+
+        $stats['disks'] = json_encode($tmp);
+
+
+        $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
+
+
+
+        $stats['ips'] = json_encode(explode("\n", $ips));
+
+
+
+        $cpus = trim($ssh->exec("grep 'cpu' /proc/stat"));
+        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
+
+        $cpu_lines = explode("\n", $cpus);
+
+
+        $i = 0;
+        foreach ($cpu_lines as $line) {
+
+            $elems = preg_split('/\s+/', $line);
+
+            //debug($elems);
+            //system + user + idle
+            if ($i === 0) {
+                $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
+            } else {
+                $cpu[$elems[0]] = ($elems[1] + $elems[3]) * 100 / ($elems[1] + $elems[3] + $elems[4]);
+            }
+            $i++;
+        }
+        $stats['cpu_detail'] = json_encode($cpu);
+
+
+
+        /* io wait */
+
+        /*
+          $cpu_user = trim($ssh->exec("iostat -c | tail -2 | head -n 1"));
+          $cpu_user = trim(shell_exec("iostat -c | tail -2 | head -n 1"));
+
+          $titles = array('cpu_user%', 'cpu_nice%', 'cpu_system%', 'cpu_iowait%', 'cpu_steal%', 'cpu_idle%');
+
+          $elems = preg_split('/\s+/', $cpu_user);
+          $i     = 0;
+          foreach ($titles as $title) {
+
+          $stats[$title] = $elems[$i];
+          $i++;
+          } */
+
+
+        $mem = trim($ssh->exec("ps aux | grep mysqld | grep -v grep | awk '{print $5,$6}'"));
+
+        $mysql = explode(' ', $mem);
+
+        $stats['mysqld_mem_physical'] = $mysql[1];
+        $stats['mysqld_mem_virtual']  = $mysql[0];
+
+
 
         return $stats;
     }
