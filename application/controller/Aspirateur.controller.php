@@ -819,6 +819,13 @@ class Aspirateur extends Controller
 
 
 
+        //ifconfig
+
+        /*
+         * SELECT sum( data_length + index_length) / 1024 / 1024 " Taille en Mo" FROM information_schema.TABLES WHERE table_schema = "WORDPRESS" GROUP BY table_schema;
+         *
+         */
+
         return $stats;
     }
 }
