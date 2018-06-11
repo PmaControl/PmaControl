@@ -98,19 +98,14 @@ class Ssh extends Controller
 
             $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
-            $data['ssh_key']['public_key']  = Chiffrement::encrypt($keys['public key']);
-            $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace("\n", "", $keys['private key']));
+            $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public key']));
+            $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace('\n', "\n", $keys['private key']));
             $data['ssh_key']['user']        = $keys['user'];
-
-
 
             $res = $db->sql_save($data);
 
             if (!$res) {
                 debug($data);
-
-
-
 
                 throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
             }
@@ -262,9 +257,9 @@ class Ssh extends Controller
 
         $login_successfull = true;
 
-        // debug(Chiffrement::decrypt($key['private_key']));
+        debug(Chiffrement::decrypt($key['private_key']));
 
-        $key['private_key'] = $this->formatPrivateKey(Chiffrement::decrypt($key['private_key']));
+        $key['private_key'] = Chiffrement::decrypt($key['private_key']);
 
         debug($key);
 
@@ -282,7 +277,7 @@ class Ssh extends Controller
         $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
 
         $this->logger->info($ret);
-        Debug::debug($ret);
+        //Debug::debug($ret);
 
 
         if ($login_successfull === true) {
@@ -297,12 +292,4 @@ class Ssh extends Controller
         }
     }
 
-    private function formatPrivateKey($key)
-    {
-        $key = str_replace("\n", "", $key);
-        $key = str_replace("-----BEGIN RSA PRIVATE KEY-----", "", $key);
-        $key = str_replace("-----END RSA PRIVATE KEY-----", "", $key);
-
-        return $key;
-    }
 }
