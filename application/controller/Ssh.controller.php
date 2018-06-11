@@ -55,8 +55,8 @@ class Ssh extends Controller
                         throw new \InvalidArgumentException("PMACTRL-030 : ssh.".$elem." is missing in file : ".$filename);
                     }
                 }
-                
-                
+
+
                 $this->save($keys);
             }
         } else {
@@ -295,5 +295,14 @@ class Ssh extends Controller
 
             $db->sql_save($data);
         }
+    }
+
+    private function formatPrivateKey($key)
+    {
+        $key = str_replace("\n", "", $key);
+        $key = str_replace("-----BEGIN RSA PRIVATE KEY-----", "", $key);
+        $key = str_replace("-----END RSA PRIVATE KEY-----", "", $key);
+
+        return $key;
     }
 }
