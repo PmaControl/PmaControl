@@ -95,7 +95,9 @@ class Ssh extends Controller
                 $data['ssh_key']['id'] = $ob->id;
             }
 
+            preg_match("/ssh\-(\w+)/", $keys['public key'], $output_array);
 
+            $data['ssh_key']['type'] = $output_array[1];
             $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
             $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public key']));
@@ -168,17 +170,18 @@ class Ssh extends Controller
         }
 
 
-        $sql2            = "SELECT a.*, b.active FROM mysql_server a
+        $sql2            = "SELECT a.*, b.active, c.id as id_key FROM mysql_server a
             INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             INNER JOIN ssh_key c ON c.id = b.id_ssh_key
             GROUP BY c.id, a.id";
         $res2            = $db->sql_query($sql2);
         $data['servers'] = array();
         while ($arr2            = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-            $data['servers'][] = $arr2;
+            $data['servers'][$arr2['id_key']][] = $arr2;
         }
 
 
+        $data['ssh_supported'] = array('rsa','dsa');
 
         $this->set('data', $data);
     }
@@ -214,7 +217,7 @@ class Ssh extends Controller
         $sql = "SELECT a.* FROM mysql_server a
             LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL)";
+            WHERE (`active`=0 OR `active` IS NULL) AND a.id=99";
 
 
         $res = $db->sql_query($sql);
