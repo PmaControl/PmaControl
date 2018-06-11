@@ -9,11 +9,8 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 
-
 class Ssh extends Controller
 {
-
-    
 
     public function keys()
     {
@@ -61,41 +58,52 @@ class Ssh extends Controller
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 //traitement du UI en post
 
+                if (isset($_POST['ssh_key'])) {
 
-                $keys = $_POST['ssh_key'];
+                    $keys = $_POST['ssh_key'];
+
+                    $keys['public key']  = $_POST['public_key'];
+                    $keys['private key'] = $_POST['private_key'];
+
+                }
             }
         }
 
 
-        $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public key'], 1);
+        if (!empty($keys)) {
+            $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public key'], 1);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
-        $res = $db->sql_query($sql);
-
-
-        $data            = array();
-        $data['ssh_key'] = $keys;
-        while ($ob              = $db->sql_fetch_object($res)) {
-            $data['ssh_key']['id'] = $ob->id;
-        }
+            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
+            $res = $db->sql_query($sql);
 
 
-        $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
-        $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
-        $data['ssh_key']['public_key']  = Chiffrement::encrypt($keys['public key']);
-        $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace("\n", "", $keys['private key']));
-        $data['ssh_key']['user']        = $keys['user'];
+            $data            = array();
+            $data['ssh_key'] = $keys;
+            while ($ob              = $db->sql_fetch_object($res)) {
+                $data['ssh_key']['id'] = $ob->id;
+            }
+
+
+            $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
+            $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
+            $data['ssh_key']['public_key']  = Chiffrement::encrypt($keys['public key']);
+            $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace("\n", "", $keys['private key']));
+            $data['ssh_key']['user']        = $keys['user'];
 
 
 
-        $res = $db->sql_save($data);
+            $res = $db->sql_save($data);
 
-        if (!$res) {
-            debug($data);
+            if (!$res) {
+                debug($data);
 
-            throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
+
+
+
+                throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
+            }
         }
     }
 
@@ -155,13 +163,13 @@ class Ssh extends Controller
         }
 
 
-        $sql2             = "SELECT a.*, b.active FROM mysql_server a
+        $sql2            = "SELECT a.*, b.active FROM mysql_server a
             INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             INNER JOIN ssh_key c ON c.id = b.id_ssh_key
             GROUP BY c.id, a.id";
-        $res2             = $db->sql_query($sql2);
+        $res2            = $db->sql_query($sql2);
         $data['servers'] = array();
-        while ($arr2             = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+        while ($arr2            = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr2;
         }
 
@@ -189,7 +197,7 @@ class Ssh extends Controller
     public function associate($param)
     {
         $this->view = false;
-        
+
 
         Debug::parseDebug($param);
 
@@ -252,7 +260,7 @@ class Ssh extends Controller
 
         debug($key);
 
-        if ($rsa->loadKey($key['private_key'] ) === false) {
+        if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
             Debug::debug("private key loading failed!");
         }
@@ -280,6 +288,4 @@ class Ssh extends Controller
             $db->sql_save($data);
         }
     }
-
-
 }

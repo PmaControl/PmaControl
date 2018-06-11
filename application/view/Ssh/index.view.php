@@ -6,11 +6,11 @@
  */
 
 echo '<div class="row" style="padding:10px; margin: 5px;">';
-echo '<div class="col-md-6">This is a list of SSH keys associated with your account. Remove any keys that you do not recognize.</div>';
+//echo '<div class="col-md-6">This is a list of SSH keys associated with your account. Remove any keys that you do not recognize.</div>';
 
 
-echo '<div class="col-md-6" style="text-align:right">';
-echo '<a href="" type="button" class="btn btn-success">'.__('New SSH key').'</a>';
+echo '<div class="col-md-12" style="text-align:right">';
+echo '<a href="'.LINK.'ssh/add" type="button" class="btn btn-success">'.__('New SSH key').'</a>';
 echo '</div>';
 
 

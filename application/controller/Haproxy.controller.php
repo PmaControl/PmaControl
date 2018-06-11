@@ -1,11 +1,13 @@
 <?php
 
 use \Glial\Synapse\Controller;
+use \App\Library\Debug;
+
 
 class Haproxy extends Controller
 {
 
-    use \App\Library\Debug;
+    
 
     public function refreshConfiguration($param)
     {

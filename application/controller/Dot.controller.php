@@ -10,13 +10,13 @@ use \Glial\Synapse\Controller;
 use \Glial\Form\Upload;
 use \Glial\Date\Date;
 use \Glial\Cli\Color;
-
+use \App\Library\Debug;
 //add virtual_ip
 // ha proxy
 
 class Dot extends Controller {
 
-    use \App\Library\Debug;
+    
 
     use \App\Mutual\Bigdata;
 
