@@ -45,14 +45,19 @@ class Ssh extends Controller
 
             $config = $this->parseConfig($filename);
 
-            $keys = $config['ssh'];
+            $all_keys = $config['ssh'];
 
-            $to_check = array('user', 'private key', 'public key');
+            foreach ($all_keys as $keys) {
+                $to_check = array('user', 'private key', 'public key', 'organization');
 
-            foreach ($to_check as $elem) {
-                if (empty($keys[$elem])) {
-                    throw new \InvalidArgumentException("PMACTRL-030 : ssh.".$elem." is missing in file : ".$filename);
+                foreach ($to_check as $elem) {
+                    if (empty($keys[$elem])) {
+                        throw new \InvalidArgumentException("PMACTRL-030 : ssh.".$elem." is missing in file : ".$filename);
+                    }
                 }
+                
+                
+                $this->save($keys);
             }
         } else {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -65,10 +70,15 @@ class Ssh extends Controller
                     $keys['public key']  = $_POST['public_key'];
                     $keys['private key'] = $_POST['private_key'];
 
+
+                    $this->save($keys);
                 }
             }
         }
+    }
 
+    private function save($keys)
+    {
 
         if (!empty($keys)) {
             $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public key'], 1);
@@ -209,7 +219,7 @@ class Ssh extends Controller
         $sql = "SELECT a.* FROM mysql_server a
             LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL) AND display_name like 'sand%'";
+            WHERE (`active`=0 OR `active` IS NULL)";
 
 
         $res = $db->sql_query($sql);
@@ -252,9 +262,7 @@ class Ssh extends Controller
 
         $login_successfull = true;
 
-
         // debug(Chiffrement::decrypt($key['private_key']));
-
 
         $key['private_key'] = $this->formatPrivateKey(Chiffrement::decrypt($key['private_key']));
 
