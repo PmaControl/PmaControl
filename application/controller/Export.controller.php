@@ -82,4 +82,40 @@ class Export extends Controller
         shell_exec($cmd);
 
     }
+
+
+
+    function index()
+    {
+
+        $this->title = '<span class="glyphicon glyphicon-import"></span> ' . __("Import / Export");
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $this->di['js']->code_javascript("
+function toggle(source) {
+  checkboxes = document.getElementsByName('foo');
+  for(var checkbox in checkboxes)
+    checkbox.checked = source.checked;
+}");
+
+
+
+
+        $sql = "SELECT * FROM `export_option`";
+
+        $res = $db->sql_query($sql);
+
+        $data['options'] = array();
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['options'][] = $arr;
+
+        }
+
+
+
+        $this->set('data', $data);
+        
+    }
 }
