@@ -585,11 +585,6 @@ class Aspirateur extends Controller
             $data['server']['ping'] = microtime(true) - $time_start;
 
 
-
-
-
-
-
             $stats = $this->getStats($ssh, $data);
 
             $hardware = $this->getHardware($ssh, $data);

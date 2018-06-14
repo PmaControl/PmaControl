@@ -60,18 +60,20 @@ class Ssh extends Controller
                 $this->save($keys);
             }
         } else {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                //traitement du UI en post
+            if (!IS_CLI) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    //traitement du UI en post
 
-                if (isset($_POST['ssh_key'])) {
+                    if (isset($_POST['ssh_key'])) {
 
-                    $keys = $_POST['ssh_key'];
+                        $keys = $_POST['ssh_key'];
 
-                    $keys['public key']  = $_POST['public_key'];
-                    $keys['private key'] = $_POST['private_key'];
+                        $keys['public key']  = $_POST['public_key'];
+                        $keys['private key'] = $_POST['private_key'];
 
 
-                    $this->save($keys);
+                        $this->save($keys);
+                    }
                 }
             }
         }
@@ -97,7 +99,7 @@ class Ssh extends Controller
 
             preg_match("/ssh\-(\w+)/", $keys['public key'], $output_array);
 
-            $data['ssh_key']['type'] = $output_array[1];
+            $data['ssh_key']['type']        = $output_array[1];
             $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
             $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public key']));
@@ -181,7 +183,7 @@ class Ssh extends Controller
         }
 
 
-        $data['ssh_supported'] = array('rsa','dsa');
+        $data['ssh_supported'] = array('rsa', 'dsa');
 
         $this->set('data', $data);
     }
@@ -294,5 +296,4 @@ class Ssh extends Controller
             $db->sql_save($data);
         }
     }
-
 }

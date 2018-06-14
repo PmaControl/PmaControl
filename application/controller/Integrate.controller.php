@@ -28,7 +28,7 @@ class Integrate extends Controller
         $this->view = false;
 
         $files = glob("/dev/shm/answer_*");
-        sleep(2);
+        sleep(1);
 
         $variables           = $this->get_variable();
         $variables_to_insert = array();
@@ -65,6 +65,7 @@ class Integrate extends Controller
                                 foreach ($metrics as $variable => $value) {
 
                                     //cas spécial des thread de réplications (il peux y en avoir plusieurs)
+                                    //où des HDD ? genre DF ?
                                     if (is_array($value)) {
 
                                         $value = array_change_key_case($value);
@@ -220,7 +221,7 @@ class Integrate extends Controller
         }
 
         if (!empty($history)) {
-            $this->linkServerVariable($history);
+            $this->linkServerVariable($history, $memory_file);
         }
 
         Debug::debugQueriesOff();
@@ -403,38 +404,3 @@ class Integrate extends Controller
         return $gg[$id];
     }
 }
-// INSERT INTO ts_max_date (id_daemon_main, id_mysql_server, date, date_previous) SELECT 7,id, now(), now() from mysql_server;
-/*
- *
- * ALTER TABLE
- *
- * CREATE TABLE `ts_value_general_int_5` (
-  `id_mysql_server` int(11) NOT NULL,
-  `id_ts_variable` int(11) NOT NULL,
-  `date` datetime NOT NULL,
-  `value` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
- PARTITION BY RANGE (to_days(`date`))
-SUBPARTITION BY KEY (`id_ts_variable`)
-SUBPARTITIONS 10
-(PARTITION `p5` VALUES LESS THAN (737065) ENGINE = InnoDB,
- PARTITION `p6` VALUES LESS THAN (737066) ENGINE = InnoDB,
- PARTITION `p7` VALUES LESS THAN (737077) ENGINE = InnoDB,
- PARTITION `p8` VALUES LESS THAN (737078) ENGINE = InnoDB)
-
- * ALTER TABLE `ts_value_general_int_5` DROP PARTITION p7;
- *
-ALTER TABLE `ts_value_general_int_5` ADD PARTITION `p9` VALUES LESS THAN (737069);
- * test
- *
- *
- * ALTER TABLE tbl
-    REORGANIZE PARTITION future INTO
-        from20120415 VALUES LESS THAN (TO_DAYS('2012-04-16')),
-        future     VALUES LESS THAN MAXVALUE;
- *
- *
- * ALTER TABLE `ts_value_general_int_5` ADD PARTITION (PARTITION `p9` VALUES LESS THAN (737079));
- *
- */
