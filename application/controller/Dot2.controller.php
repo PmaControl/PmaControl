@@ -1003,7 +1003,7 @@ class Dot2 extends Controller
 
             $ret .= 'subgraph cluster_'.str_replace('-', '', $name_galera)."_".$segment_name." {\n";
             $ret .= 'label = "Segment : '.$segment_name.'";'."\n";
-            $ret .= 'color='.self::COLOR_SUCCESS.';style=dashed;penwidth=2;fontname="arial";'."\n";
+            $ret .= 'color='.self::COLOR_SUCCESS.';style=dotted;penwidth=2;fontname="arial";'."\n";
 
 
             $ret .= $this->display_node_galera($segment);
