@@ -38,6 +38,7 @@ class Dot extends Controller {
     var $node = array();
     var $segment = array();
     var $sst = false;
+    var $sst_target = array();
 
     /*
      *
@@ -1032,7 +1033,10 @@ rankdir=LR;
 
         $i = 0;
         while ($ob2 = $db->sql_fetch_object($res)) {
-            $this->exclude[$ob2->id] = $ob['id_mysql_server'];
+		
+//	    if(in_array($ob2->id, $this->sst_target)	
+		
+	    $this->exclude[$ob2->id] = $ob['id_mysql_server'];
             $id_mysql_server = $ob2->id;
             $i++;
         }
