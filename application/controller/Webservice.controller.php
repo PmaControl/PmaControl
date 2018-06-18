@@ -7,11 +7,13 @@
 
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
+use \App\Library\Debug;
+
 
 class Webservice extends Controller
 {
 
-    use \App\Library\Debug;
+    
 
     public function pushServer($param)
     {

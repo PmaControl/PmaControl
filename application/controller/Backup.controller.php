@@ -10,6 +10,7 @@ use \Glial\Cli\Crontab;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
+use \App\Library\Debug;
 
 class Backup extends Controller
 {
@@ -31,7 +32,7 @@ class Backup extends Controller
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
 
-    use \App\Library\Debug;
+    
 
 //use \Glial\Neuron\Controller\PmaCliBackup;
     function before($param)

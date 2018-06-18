@@ -216,6 +216,20 @@ if [ -f $CONFIG_FILE ]; then
 	fi
 
 
+	php application/webroot/index.php ssh add $CONFIG_FILE
+	if [ $? != 0 ]; then
+	   exit 7
+	fi
+
+
+	php application/webroot/index.php ssh associate $CONFIG_FILE
+	if [ $? != 0 ]; then
+	   exit 7
+	fi
+
+        
+
+
 else
 	php application/webroot/index.php install index
 	if [ $? != 0 ]; then

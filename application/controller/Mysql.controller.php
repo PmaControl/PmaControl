@@ -9,10 +9,12 @@ use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 use \Glial\Cli\SetTimeLimit;
 
+use \App\Library\Debug;
+
 class Mysql extends Controller
 {
 
-    use \App\Library\Debug;
+    
     const DEBUG = true;
 
     private $table_to_purge = array();

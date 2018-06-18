@@ -3,6 +3,7 @@
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Color;
+use \App\Library\Debug;
 
 class CheckDataOnCluster extends Controller
 {
@@ -11,7 +12,7 @@ class CheckDataOnCluster extends Controller
     var $not_important = array("general_log_file", "gtid_binlog_state");
     var $master_master = array("");
 
-    use \App\Library\Debug;
+    
 
     public function index($param)
     {

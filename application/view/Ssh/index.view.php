@@ -5,15 +5,14 @@
  * and open the template in the editor.
  */
 
+
+//debug($data['servers']);
 echo '<div class="row" style="padding:10px; margin: 5px;">';
-echo '<div class="col-md-6">This is a list of SSH keys associated with your account. Remove any keys that you do not recognize.</div>';
+//echo '<div class="col-md-6">This is a list of SSH keys associated with your account. Remove any keys that you do not recognize.</div>';
 
-
-echo '<div class="col-md-6" style="text-align:right">';
-echo '<a href="" type="button" class="btn btn-success">'.__('New SSH key').'</a>';
+echo '<div class="col-md-12" style="text-align:right">';
+echo '<a href="'.LINK.'ssh/add" type="button" class="btn btn-success">'.__('New SSH key').'</a>';
 echo '</div>';
-
-
 echo '</div>';
 
 
@@ -30,12 +29,25 @@ foreach ($data['keys'] as $key) {
     //echo '<i class="fa fa-key fa-5a" aria-hidden="true"></i>';
 
     echo '<br /><span class="badge">SSH</span></div>';
-    echo '<div class="col-md-3"><b>User :</b> '.$key['user'].'</div>';
+    echo '<div class="col-md-2"><b>User :</b> '.$key['user'].'</div>';
+    echo '<div class="col-md-2"><b>Type :</b> '.$key['type'].'<br />';
+
+    if (in_array($key['type'],$data['ssh_supported'] ))
+    {
+        
+        
+    }
+    else{
+        echo '<span class="label label-warning">Not supported</span>';
+    }
+
+
+    echo '</div>';
     echo '<div class="col-md-5"><b>Fingerprint:</b> '.implode(':', str_split($key['fingerprint'], 2)).''
     .'<br />'
     .'Added on : '.$key['added_on']
     .'</div>';
-    echo '<div class="col-md-2">';
+    echo '<div class="col-md-1">';
 
     echo '<a href="'.LINK.'ssh/delete/'.$key['id'].'" type="button" class="btn btn-danger">'.__('Delete').'</a>';
     echo '</div>';
@@ -46,17 +58,23 @@ foreach ($data['keys'] as $key) {
      * green : #449D44
      * red : #C9302C
      */
-    foreach ($data['servers'] as $server) {
-        if ($server['active'] == "1") {
-            $class = 'label-success';
-        } else {
-            $class = 'label-primary';
+
+    if (!empty($data['servers'][$key['id']])) {
+
+        //debug($data['servers'][$key['id']]);
+
+        echo '<b>'.__('Servers linked').'</b> : ';
+        foreach ($data['servers'][$key['id']] as $server) {
+            if ($server['active'] == "1") {
+                $class = 'label-success';
+            } else {
+                $class = 'label-primary';
+            }
+
+
+            echo '<span class="label '.$class.'" style="line-height:22px">'.$server['display_name'].'</span> ';
         }
-
-
-        echo '<span class="label '.$class.'" style="line-height:22px">'.$server['display_name'].'</span> ';
     }
-
     echo '</div>';
 
 

@@ -1,13 +1,15 @@
 <?php
 
 use \Glial\Synapse\Controller;
+use App\Library\Debug;
+
 
 class Graph extends Controller
 {
 
     use \App\Mutual\Bigdata;
 
-use App\Library\Debug;
+
 
     public function index()
     {

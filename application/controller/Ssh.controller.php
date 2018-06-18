@@ -9,11 +9,8 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 
-
 class Ssh extends Controller
 {
-
-    
 
     public function keys()
     {
@@ -48,54 +45,74 @@ class Ssh extends Controller
 
             $config = $this->parseConfig($filename);
 
-            $keys = $config['ssh'];
+            $all_keys = $config['ssh'];
 
-            $to_check = array('user', 'private key', 'public key');
+            foreach ($all_keys as $keys) {
+                $to_check = array('user', 'private key', 'public key', 'organization');
 
-            foreach ($to_check as $elem) {
-                if (empty($keys[$elem])) {
-                    throw new \InvalidArgumentException("PMACTRL-030 : ssh.".$elem." is missing in file : ".$filename);
+                foreach ($to_check as $elem) {
+                    if (empty($keys[$elem])) {
+                        throw new \InvalidArgumentException("PMACTRL-030 : ssh.".$elem." is missing in file : ".$filename);
+                    }
                 }
+
+
+                $this->save($keys);
             }
         } else {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                //traitement du UI en post
+            if (!IS_CLI) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    //traitement du UI en post
+
+                    if (isset($_POST['ssh_key'])) {
+
+                        $keys = $_POST['ssh_key'];
+
+                        $keys['public key']  = $_POST['public_key'];
+                        $keys['private key'] = $_POST['private_key'];
 
 
-                $keys = $_POST['ssh_key'];
+                        $this->save($keys);
+                    }
+                }
             }
         }
+    }
+
+    private function save($keys)
+    {
+
+        if (!empty($keys)) {
+            $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public key'], 1);
+
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
+            $res = $db->sql_query($sql);
 
 
-        $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public key'], 1);
+            $data            = array();
+            $data['ssh_key'] = $keys;
+            while ($ob              = $db->sql_fetch_object($res)) {
+                $data['ssh_key']['id'] = $ob->id;
+            }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+            preg_match("/ssh\-(\w+)/", $keys['public key'], $output_array);
 
-        $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
-        $res = $db->sql_query($sql);
+            $data['ssh_key']['type']        = $output_array[1];
+            $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
+            $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
+            $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public key']));
+            $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace('\n', "\n", $keys['private key']));
+            $data['ssh_key']['user']        = $keys['user'];
 
+            $res = $db->sql_save($data);
 
-        $data            = array();
-        $data['ssh_key'] = $keys;
-        while ($ob              = $db->sql_fetch_object($res)) {
-            $data['ssh_key']['id'] = $ob->id;
-        }
+            if (!$res) {
+                debug($data);
 
-
-        $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
-        $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
-        $data['ssh_key']['public_key']  = Chiffrement::encrypt($keys['public key']);
-        $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace("\n", "", $keys['private key']));
-        $data['ssh_key']['user']        = $keys['user'];
-
-
-
-        $res = $db->sql_save($data);
-
-        if (!$res) {
-            debug($data);
-
-            throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
+                throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
+            }
         }
     }
 
@@ -155,17 +172,18 @@ class Ssh extends Controller
         }
 
 
-        $sql2             = "SELECT a.*, b.active FROM mysql_server a
+        $sql2            = "SELECT a.*, b.active, c.id as id_key FROM mysql_server a
             INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             INNER JOIN ssh_key c ON c.id = b.id_ssh_key
             GROUP BY c.id, a.id";
-        $res2             = $db->sql_query($sql2);
+        $res2            = $db->sql_query($sql2);
         $data['servers'] = array();
-        while ($arr2             = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-            $data['servers'][] = $arr2;
+        while ($arr2            = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $data['servers'][$arr2['id_key']][] = $arr2;
         }
 
 
+        $data['ssh_supported'] = array('rsa', 'dsa');
 
         $this->set('data', $data);
     }
@@ -189,7 +207,7 @@ class Ssh extends Controller
     public function associate($param)
     {
         $this->view = false;
-        
+
 
         Debug::parseDebug($param);
 
@@ -201,7 +219,7 @@ class Ssh extends Controller
         $sql = "SELECT a.* FROM mysql_server a
             LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL) AND display_name like 'sand%'";
+            WHERE (`active`=0 OR `active` IS NULL)";
 
 
         $res = $db->sql_query($sql);
@@ -245,20 +263,16 @@ class Ssh extends Controller
         $login_successfull = true;
 
 
-        // debug(Chiffrement::decrypt($key['private_key']));
+        $key['private_key'] = Chiffrement::decrypt($key['private_key']);
 
 
-        $key['private_key'] = $this->formatPrivateKey(Chiffrement::decrypt($key['private_key']));
-
-        debug($key);
-
-        if ($rsa->loadKey($key['private_key'] ) === false) {
+        if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
-            Debug::debug("private key loading failed!");
+            Debug::debug($server['ip'], "private key loading failed!");
         }
 
         if (!$ssh->login($key['user'], $rsa)) {
-            Debug::debug("Login Failed");
+            Debug::debug($server['ip'],"Login Failed");
             $login_successfull = false;
         }
 
@@ -266,10 +280,13 @@ class Ssh extends Controller
         $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
 
         $this->logger->info($ret);
-        Debug::debug($ret);
+        //Debug::debug($ret);
 
 
-        if ($login_successfull === true) {
+	if ($login_successfull === true) {
+
+	Debug::debug($server['ip'],"Login Successfull");	
+
             $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
             $data['link__mysql_server__ssh_key']['id_ssh_key']      = $key['id'];
@@ -280,6 +297,4 @@ class Ssh extends Controller
             $db->sql_save($data);
         }
     }
-
-
 }

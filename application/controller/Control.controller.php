@@ -4,11 +4,13 @@ use \Glial\Synapse\Controller;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use \App\Library\Debug;
+
 
 class Control extends Controller
 {
 
-    use \App\Library\Debug;
+    
     var $tables      = array("ts_value_general", "ts_value_slave");
     var $ext         = array("int", "double", "text");
     var $field_value = array("int" => "bigint(20) unsigned NOT NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
