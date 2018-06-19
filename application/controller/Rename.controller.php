@@ -20,7 +20,7 @@ class Rename extends Controller
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['rename']['new_name']) && !empty($_POST['rename']['database']) && !empty($_POST['rename']['id_mysql_server'])) {
 
-                $this->rename(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name']));
+                $nb_renamed = $this->move(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name']));
 
                 header('location: '.LINK.__CLASS__.'/'.__FUNCTION__.'/renamed:tables:'.$nb_renamed);
             }
@@ -123,6 +123,8 @@ class Rename extends Controller
         }
 
         Debug::debugShowQueries($this->di['db']);
+
+        return $nb_renamed;
     }
 
     public function create_trigger()
