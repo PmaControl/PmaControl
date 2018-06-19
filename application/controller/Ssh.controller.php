@@ -60,18 +60,20 @@ class Ssh extends Controller
                 $this->save($keys);
             }
         } else {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                //traitement du UI en post
+            if (!IS_CLI) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    //traitement du UI en post
 
-                if (isset($_POST['ssh_key'])) {
+                    if (isset($_POST['ssh_key'])) {
 
-                    $keys = $_POST['ssh_key'];
+                        $keys = $_POST['ssh_key'];
 
-                    $keys['public key']  = $_POST['public_key'];
-                    $keys['private key'] = $_POST['private_key'];
+                        $keys['public key']  = $_POST['public_key'];
+                        $keys['private key'] = $_POST['private_key'];
 
 
-                    $this->save($keys);
+                        $this->save($keys);
+                    }
                 }
             }
         }
@@ -97,7 +99,7 @@ class Ssh extends Controller
 
             preg_match("/ssh\-(\w+)/", $keys['public key'], $output_array);
 
-            $data['ssh_key']['type'] = $output_array[1];
+            $data['ssh_key']['type']        = $output_array[1];
             $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
             $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public key']));
@@ -181,7 +183,7 @@ class Ssh extends Controller
         }
 
 
-        $data['ssh_supported'] = array('rsa','dsa');
+        $data['ssh_supported'] = array('rsa', 'dsa');
 
         $this->set('data', $data);
     }
@@ -217,7 +219,7 @@ class Ssh extends Controller
         $sql = "SELECT a.* FROM mysql_server a
             LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL) AND a.id=99";
+            WHERE (`active`=0 OR `active` IS NULL)";
 
 
         $res = $db->sql_query($sql);
@@ -260,19 +262,17 @@ class Ssh extends Controller
 
         $login_successfull = true;
 
-        debug(Chiffrement::decrypt($key['private_key']));
 
         $key['private_key'] = Chiffrement::decrypt($key['private_key']);
 
-        debug($key);
 
         if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
-            Debug::debug("private key loading failed!");
+            Debug::debug($server['ip'], "private key loading failed!");
         }
 
         if (!$ssh->login($key['user'], $rsa)) {
-            Debug::debug("Login Failed");
+            Debug::debug($server['ip'],"Login Failed");
             $login_successfull = false;
         }
 
@@ -283,7 +283,10 @@ class Ssh extends Controller
         //Debug::debug($ret);
 
 
-        if ($login_successfull === true) {
+	if ($login_successfull === true) {
+
+	Debug::debug($server['ip'],"Login Successfull");	
+
             $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
             $data['link__mysql_server__ssh_key']['id_ssh_key']      = $key['id'];
@@ -294,5 +297,4 @@ class Ssh extends Controller
             $db->sql_save($data);
         }
     }
-
 }
