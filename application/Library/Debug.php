@@ -35,18 +35,18 @@ class Debug
         }
     }
 
-    static public function debugShowQueries()
+    static public function debugShowQueries($di_link)
     {
 
         if (self::$debug) {
 
-            $thread_sgbd = $this->di['db']->getConnected();
+            $thread_sgbd = $di_link->getConnected();
 
             foreach ($thread_sgbd as $name_db) {
 
                 echo \Glial\Cli\Color::getColoredString($name_db, "black", "yellow")."\n";
 
-                $db = $this->di['db']->sql($name_db);
+                $db = $di_link->sql($name_db);
 
                 $table = new Table("1");
                 $table->addHeader(array("Top", "File", "Time", "Cumul", "Query",
