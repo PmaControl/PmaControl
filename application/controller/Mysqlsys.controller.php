@@ -56,7 +56,7 @@ class Mysqlsys extends Controller
             if (!empty($link_name)) {
 
                 $remote                 = $this->di['db']->sql($link_name);
-                $sql                    = "select table_name from information_schema.tables WHERE table_schema = 'sys' and table_name not like 'x$%';";
+                $sql                    = "select table_name from information_schema.tables WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
                 $res                    = $remote->sql_query($sql);
                 $data['view_available'] = [];
                 while ($ob                     = $remote->sql_fetch_object($res)) {

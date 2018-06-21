@@ -20,21 +20,38 @@ class Format extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
-            header("location: ".LINK.__CLASS__."/".__FUNCTION__."/".urlencode(base64_encode($_POST['sql'])));
+
+            $md5            = md5($_POST['sql']);
+            $_SESSION[$md5] = $_POST['sql'];
+
+            header("location: ".LINK.__CLASS__."/".__FUNCTION__."/".$md5);
         }
 
         if (!empty($param[0])) {
 
 
-            $sql = base64_decode($param[0]);
+            $data['sql'] = $_SESSION[$param[0]];
 
-            $data['sql'] = $sql;
+            $queries = \SqlFormatter::splitQuery($_SESSION[$param[0]]);
 
-            $data['sql_formated'] = \SqlFormatter::format($data['sql']);
-
+            foreach ($queries as $query) {
+                $data['sql_formated'][] = \SqlFormatter::format($query);
+            }
 
             $this->set('data', $data);
         }
+    }
+
+    private function base64url_encode($data)
+    {
+        return strtr(base64_encode($val), '+/=', '-_,');
+        //return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    private function base64url_decode($data)
+    {
+        return base64_decode(strtr($val, '-_,', '+/='));
+        //return base64_decode(strtr($data, '-_', '+/').str_repeat('=', 3 - ( 3 + strlen($data)) % 4));
     }
 }
 /*

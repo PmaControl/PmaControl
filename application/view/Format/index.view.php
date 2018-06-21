@@ -1,29 +1,21 @@
 <form action="" method="post">
-
     <div class="panel panel-primary">
         <div class="panel-heading">
-
             <h3 class="panel-title"><?= __('Format SQL') ?></h3>
         </div>
-
-
         <div class="well">
             <div class="row">
-
-
-
-
                 <div class="col-md-12">
                     Type your SQL here:<br />
                 </div>
                 <div class="col-md-12">
                     <textarea name="sql" rows="5" class="form-control">
-<?php
-if (!empty($data['sql'])) {
-    echo $data['sql'];
-}
-?>
-</textarea>
+                        <?php
+                        if (!empty($data['sql'])) {
+                            echo $data['sql'];
+                        }
+                        ?>
+                    </textarea>
                 </div>
                 <div class="col-md-12">
                     <br />
@@ -34,12 +26,13 @@ if (!empty($data['sql'])) {
         </div>
     </div>
 </form>
-
-
-
-
 <?php
 if (!empty($data['sql_formated'])) {
-    echo $data['sql_formated'];
+    echo '<pre style="color: black; background-color: white;">';
+    foreach ($data['sql_formated'] as $query) {
+        echo str_replace(';', ";<br/>", strip_tags($query, '<span><br>'));
+    }
+
+    echo '</pre>';
 }
 ?>
