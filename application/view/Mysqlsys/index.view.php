@@ -33,7 +33,9 @@ function remove($array)
 echo '<br />';
 echo '<form action="" method="POST">';
 echo __("Server")." : ";
-echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
+
+\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id","auto"));
+//echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
 echo ' ';
 
 

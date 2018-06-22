@@ -72,12 +72,7 @@ class Ldap extends Controller
 
             if (!empty($_POST['ldap']['url'])) {
 
-
                 $error = array();
-
-
-
-
 
                 $this->log("info", "POST", json_encode($_POST));
 
@@ -172,6 +167,7 @@ class Ldap extends Controller
         if ($data['check_credential'] === true) {
             //test ldap
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
+            ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
             $r  = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
 
 
@@ -190,8 +186,8 @@ class Ldap extends Controller
 
                     $tmp = array();
 
-                    $tmp['id']      = utf8_encode($cn);
-                    $tmp['libelle'] = utf8_encode($cn);
+                    $tmp['id']      = $cn;
+                    $tmp['libelle'] = $cn;
                     $data['cn'][]   = $tmp;
                 }
             }
@@ -255,7 +251,7 @@ class Ldap extends Controller
     {
         if ($this->testLdap($url, $port)) {
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
-
+            ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
 
             if (empty(LDAP_BIND_DN)) {
                 return false;
@@ -335,7 +331,9 @@ class Ldap extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
 
 
+            
             $ds = ldap_connect(LDAP_URL, LDAP_PORT);  // doit être un serveur LDAP valide !
+            ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
             $r  = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
 
             if ($r) {
@@ -349,7 +347,7 @@ class Ldap extends Controller
                 unset($memberof['count']);
 
                 foreach ($memberof as $key => $value) {
-                    $memberof[$key] = utf8_encode($value);
+                    $memberof[$key] = $value;
                 }
 
                 $resultat           = array_intersect($cn, $memberof);
