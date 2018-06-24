@@ -219,7 +219,7 @@ class Ssh extends Controller
         $sql = "SELECT a.* FROM mysql_server a
             LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL) AND a.id=99";
+            WHERE (`active`=0 OR `active` IS NULL)";
 
 
         $res = $db->sql_query($sql);

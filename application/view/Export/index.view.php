@@ -5,7 +5,7 @@ use Glial\Html\Form\Form;
 
 <div class="row">
     <div class="col-md-6">
-        <form action="" method="post">
+        <form action="<?=LINK ?>export/export_conf" method="post">
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title"><?= __('Export configuration') ?></h3>
@@ -24,7 +24,7 @@ use Glial\Html\Form\Form;
                                           $params['checked'] = "checked";
                                           } */
                                         ?>
-                                        <?= Form::input("export_option", "all", array("class" => "form-control", "type" => "checkbox")) ?>
+                                        <?= Form::input("export_all", "all", array("class" => "form-control", "type" => "checkbox")) ?>
                                         <span></span>
                                         <?= __("All") ?>
                                     </label>
@@ -49,7 +49,7 @@ use Glial\Html\Form\Form;
                                               $params['checked'] = "checked";
                                               } */
                                             ?>
-                                            <?= Form::input("export_option", $options['libelle'], $params) ?>
+                                            <?= Form::input("export_option", $options['id'], $params) ?>
                                             <span></span>
                                             <?= $options['libelle'] ?>
                                         </label>
@@ -63,17 +63,17 @@ use Glial\Html\Form\Form;
                     <div class="row">
                         <div class="col-md-6">Password
                             <?=
-                            Form::input("export_option", "password", array("class" => "form-control", "type" => "password", "placeholder" => "Password used to crypt the export file"))
+                            Form::input("export", "password", array("class" => "form-control", "type" => "password", "placeholder" => "Password used to crypt the export file"))
                             ?>
                         </div>
 
                         <div class="col-md-6">Repeat
-                            <?= Form::input("export_option", "password2", array("class" => "form-control", "type" => "password", "placeholder" => "Repeat again the password")) ?>
+                            <?= Form::input("export", "password2", array("class" => "form-control", "type" => "password", "placeholder" => "Repeat again the password")) ?>
                         </div>
                     </div>
 
                     <br />
-                    <button type="button" class="btn btn-success"><span class="glyphicon glyphicon-export"></span> Export</button>
+                    <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-export"></span> Export</button>
 
 
                 </div>
@@ -90,7 +90,7 @@ use Glial\Html\Form\Form;
         <div class="panel panel-primary">
             <div class="panel-heading">
 
-                <h3 class="panel-title"><?= __('Export configuration') ?></h3>
+                <h3 class="panel-title"><?= __('Import configuration') ?></h3>
             </div>
 
             <div class="well">
@@ -142,7 +142,7 @@ use Glial\Html\Form\Form;
                 </div>
 
                 <br />
-                <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-import"></span> Export</button> (Be carrefull the identical value will be overwriten)
+                <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-import"></span> Import</button> (Be carrefull the identical value will be overwriten)
 
 
             </div>

@@ -8,15 +8,14 @@
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
+use App\Library\Chiffrement;
 
 class Export extends Controller
 {
-
-    
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
-        "geolocalisation_continent", "geolocalisation_country","history_etat",
+        "geolocalisation_continent", "geolocalisation_country", "history_etat",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend", "home_box");
-    var $exlude_table    = array("translation_*", "slave_*","master_*", "variables_*", "status_*", "ts_value_*");
+    var $exlude_table    = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*");
 
     function generateDump($param)
     {
@@ -61,7 +60,7 @@ class Export extends Controller
             $connect['port'] = 3306;
         }
 
-         // a remplacer par une implementation full PHP
+        // a remplacer par une implementation full PHP
         $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
@@ -80,42 +79,101 @@ class Export extends Controller
 
 
         shell_exec($cmd);
-
     }
-
-
 
     function index()
     {
 
-        $this->title = '<span class="glyphicon glyphicon-import"></span> ' . __("Import / Export");
+        $this->title = '<span class="glyphicon glyphicon-import"></span> '.__("Import / Export");
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $this->di['js']->code_javascript("
-function toggle(source) {
-  checkboxes = document.getElementsByName('foo');
-  for(var checkbox in checkboxes)
-    checkbox.checked = source.checked;
-}");
+$('#checkAll').change(function(){
+
+  if (! $('input:checkbox').is('checked')) {
+      $('input:checkbox').prop('checked',true);
+  } else {
+      $('input:checkbox').prop('checked', false);
+  }       
+});
+
+");
 
 
 
 
-        $sql = "SELECT * FROM `export_option`";
+        $sql = "SELECT * FROM `export_option` where active =1";
 
         $res = $db->sql_query($sql);
 
         $data['options'] = array();
-        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
-        {
+        while ($arr             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['options'][] = $arr;
-
         }
 
 
 
         $this->set('data', $data);
-        
     }
+
+    public function export_conf()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+            $sql = "SELECT * FROM `export_option`";
+
+            $res = $db->sql_query($sql);
+
+            $data['options'] = array();
+            while ($arr             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $data['options'][$arr['id']] = $arr;
+            }
+
+            $backup = array();
+            foreach ($_POST['export_option'] as $id => $val) {
+
+                if (!empty($data['options'][$id]['table_name'])) {
+
+                    $tables = explode(",", $data['options'][$id]['table_name']);
+
+                    foreach ($tables as $table) {
+                        $sql = "SELECT * FROM `".$table."`";
+
+                        $res = $db->sql_query($sql);
+
+                        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                            if (!empty($data['options'][$id]['decrypt'])) {
+
+                                $fields = explode(",", $data['options'][$id]['decrypt']);
+
+                                foreach ($fields as $field) {
+                                    $arr[$field] = Chiffrement::decrypt($arr[$field]);
+                                }
+                            }
+
+
+                            $backup[$data['options'][$id]['libelle']][] = $arr;
+                        }
+                    }
+                } else if ($data['options'][$id]['config_file']) {
+
+                    $config = file_get_contents(CONFIG.$data['options'][$id]['config_file']);
+                    preg_match_all("/define\(\"(\w+)\"\s*,\s*\"(.*)\"/", $config, $output_array);
+
+                    foreach ($output_array[1] as $key => $val) {
+
+                        $backup[$data['options'][$id]['libelle']][$val] = $output_array[2][$key];
+                    }
+                    //debug($output_array);
+                }
+            }
+
+            debug($backup);
+        }
+    }
+
+
 }
