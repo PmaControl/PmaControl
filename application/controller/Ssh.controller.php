@@ -262,19 +262,17 @@ class Ssh extends Controller
 
         $login_successfull = true;
 
-        debug(Chiffrement::decrypt($key['private_key']));
 
         $key['private_key'] = Chiffrement::decrypt($key['private_key']);
 
-        debug($key);
 
         if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
-            Debug::debug("private key loading failed!");
+            Debug::debug($server['ip'], "private key loading failed!");
         }
 
         if (!$ssh->login($key['user'], $rsa)) {
-            Debug::debug("Login Failed");
+            Debug::debug($server['ip'],"Login Failed");
             $login_successfull = false;
         }
 
@@ -285,7 +283,10 @@ class Ssh extends Controller
         //Debug::debug($ret);
 
 
-        if ($login_successfull === true) {
+	if ($login_successfull === true) {
+
+	Debug::debug($server['ip'],"Login Successfull");	
+
             $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
             $data['link__mysql_server__ssh_key']['id_ssh_key']      = $key['id'];
