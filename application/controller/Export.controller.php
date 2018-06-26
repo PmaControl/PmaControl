@@ -88,20 +88,16 @@ class Export extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->di['js']->code_javascript("
-$('#checkAll').change(function(){
 
-  if (! $('input:checkbox').is('checked')) {
-      $('input:checkbox').prop('checked',true);
-  } else {
-      $('input:checkbox').prop('checked', false);
-  }       
+
+        $this->di['js']->code_javascript('
+$("#export_all-all").click(function(){
+    $(".form1 input:checkbox").not(this).prop("checked", this.checked);
 });
-
-");
-
-
-
+$("#export_all-all2").click(function(){
+    $(".form2 input:checkbox").not(this).prop("checked", this.checked);
+});
+');
 
         $sql = "SELECT * FROM `export_option` where active =1";
 
@@ -119,6 +115,9 @@ $('#checkAll').change(function(){
 
     public function export_conf()
     {
+
+        $this->view = false;
+
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -155,7 +154,7 @@ $('#checkAll').change(function(){
                             }
 
 
-                            $backup[$data['options'][$id]['libelle']][] = $arr;
+                            $backup[$data['options'][$id]['key']][] = $arr;
                         }
                     }
                 } else if ($data['options'][$id]['config_file']) {
@@ -165,15 +164,72 @@ $('#checkAll').change(function(){
 
                     foreach ($output_array[1] as $key => $val) {
 
-                        $backup[$data['options'][$id]['libelle']][$val] = $output_array[2][$key];
+                        $backup[$data['options'][$id]['key']][$val] = $output_array[2][$key];
                     }
                     //debug($output_array);
                 }
             }
 
-            debug($backup);
+
+            $json = json_encode($backup);
+
+            $compressed = gzcompress($json, 9);
+
+
+
+
+            $crypted = Crypt::encrypt($compressed, $_POST['export']['password']);
+
+
+            $file_name = $_POST['export']['name_file'];
+
+            file_put_contents("/tmp/export", $crypted);
+
+            header("Content-Disposition: attachment; filename=\"".$file_name."\"");
+            header("Content-Length: ".filesize("/tmp/export"));
+            header("Content-Type: application/octet-stream;");
+
+            readfile("/tmp/export");
+
+            //debug($backup);
+        }
+    }
+
+    public function import_conf($param)
+    {
+        $this->view = false;
+
+
+        //debug($_FILES);
+        //debug($_POST);
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            if (!empty($_FILES['export']['tmp_name']['file'])) {
+
+                $crypted = file_get_contents($_FILES['export']['tmp_name']['file']);
+                $compressed = Crypt::decrypt($crypted, $_POST['export']['password']);
+
+                $json = gzuncompress($compressed);
+
+
+                $this->import(array($json));
+            }
         }
     }
 
 
+    private function import($param)
+    {
+
+        $arr = json_decode($json, true);
+
+                debug($arr);
+
+    }
+
+
 }
+/*$compressed   = gzcompress('Compresse moi', 9);
+$uncompressed = gzuncompress($compressed);
+echo $uncompressed;*/
