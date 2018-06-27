@@ -207,28 +207,49 @@ $("#export_all-all2").click(function(){
 
             if (!empty($_FILES['export']['tmp_name']['file'])) {
 
-                $crypted = file_get_contents($_FILES['export']['tmp_name']['file']);
+                $crypted    = file_get_contents($_FILES['export']['tmp_name']['file']);
                 $compressed = Crypt::decrypt($crypted, $_POST['export']['password']);
 
                 $json = gzuncompress($compressed);
 
+                file_put_contents("/tmp/gg", $json);
 
                 $this->import(array($json));
             }
         }
     }
 
-
-    private function import($param)
+    public function import($param)
     {
+
+        $file = $param[0];
+
+        $json = file_get_contents($file);
 
         $arr = json_decode($json, true);
 
-                debug($arr);
+        //debug($arr);
 
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        foreach ($arr['mysql'] as $mysql) {
+
+            unset($mysql['id']);
+
+            $mysql['error'] = '';
+            debug($mysql);
+
+            $data['mysql_server'] = $mysql;
+
+            $res = $db->sql_save($data);
+
+            if (!$res) {
+
+                debug($db->sql_error());
+            }
+        }
     }
-
-
 }
 /*$compressed   = gzcompress('Compresse moi', 9);
 $uncompressed = gzuncompress($compressed);
