@@ -137,6 +137,9 @@ $("#export_all-all2").click(function(){
                 if (!empty($data['options'][$id]['table_name'])) {
 
                     $tables = explode(",", $data['options'][$id]['table_name']);
+                    $crypted = explode(",", $data['options'][$id]['crypted_fields']);
+
+
 
                     foreach ($tables as $table) {
                         $sql = "SELECT * FROM `".$table."`";
@@ -146,7 +149,7 @@ $("#export_all-all2").click(function(){
                         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                             if (!empty($data['options'][$id]['decrypt'])) {
 
-                                $fields = explode(",", $data['options'][$id]['decrypt']);
+                                $fields = explode(",", $data['options'][$id]['crypted_fields']);
 
                                 foreach ($fields as $field) {
                                     $arr[$field] = Chiffrement::decrypt($arr[$field]);
