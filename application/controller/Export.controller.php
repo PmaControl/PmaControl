@@ -60,7 +60,7 @@ class Export extends Controller
             $connect['port'] = 3306;
         }
 
-        // a remplacer par une implementation full PHP
+// a remplacer par une implementation full PHP
         $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
@@ -119,71 +119,16 @@ $("#export_all-all2").click(function(){
         $this->view = false;
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-            $sql = "SELECT * FROM `export_option`";
-
-            $res = $db->sql_query($sql);
-
-            $data['options'] = array();
-            while ($arr             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $data['options'][$arr['id']] = $arr;
-            }
-
-            $backup = array();
-            foreach ($_POST['export_option'] as $id => $val) {
-
-                if (!empty($data['options'][$id]['table_name'])) {
-
-                    $tables = explode(",", $data['options'][$id]['table_name']);
-                    $crypted = explode(",", $data['options'][$id]['crypted_fields']);
-
-
-
-                    foreach ($tables as $table) {
-                        $sql = "SELECT * FROM `".$table."`";
-
-                        $res = $db->sql_query($sql);
-
-                        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                            if (!empty($data['options'][$id]['decrypt'])) {
-
-                                $fields = explode(",", $data['options'][$id]['crypted_fields']);
-
-                                foreach ($fields as $field) {
-                                    $arr[$field] = Chiffrement::decrypt($arr[$field]);
-                                }
-                            }
-
-
-                            $backup[$data['options'][$id]['key']][] = $arr;
-                        }
-                    }
-                } else if ($data['options'][$id]['config_file']) {
-
-                    $config = file_get_contents(CONFIG.$data['options'][$id]['config_file']);
-                    preg_match_all("/define\(\"(\w+)\"\s*,\s*\"(.*)\"/", $config, $output_array);
-
-                    foreach ($output_array[1] as $key => $val) {
-
-                        $backup[$data['options'][$id]['key']][$val] = $output_array[2][$key];
-                    }
-                    //debug($output_array);
-                }
-            }
-
+            $backup = $this->export();
 
             $json = json_encode($backup);
 
             $compressed = gzcompress($json, 9);
 
 
-
-
-            $crypted = Crypt::encrypt($compressed, $_POST['export']['password']);
-
-
+            $crypted   = Crypt::encrypt($compressed, $_POST['export']['password']);
             $file_name = $_POST['export']['name_file'];
 
             file_put_contents("/tmp/export", $crypted);
@@ -194,7 +139,7 @@ $("#export_all-all2").click(function(){
 
             readfile("/tmp/export");
 
-            //debug($backup);
+//debug($backup);
         }
     }
 
@@ -203,8 +148,8 @@ $("#export_all-all2").click(function(){
         $this->view = false;
 
 
-        //debug($_FILES);
-        //debug($_POST);
+//debug($_FILES);
+//debug($_POST);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
@@ -217,22 +162,15 @@ $("#export_all-all2").click(function(){
 
                 file_put_contents("/tmp/gg", $json);
 
-                $this->import(array($json));
+                $this->import($json);
             }
         }
     }
 
-    public function import($param)
+    private function import($json)
     {
 
-        $file = $param[0];
-
-        $json = file_get_contents($file);
-
         $arr = json_decode($json, true);
-
-        //debug($arr);
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -253,7 +191,86 @@ $("#export_all-all2").click(function(){
             }
         }
     }
+
+    public function test_import($param)
+    {
+        $file = $param[0];
+        $json = file_get_contents($file);
+        $this->import($json);
+    }
+
+    private function _export($options = array())
+    {
+        $db   = $this->di['db']->sql(DB_DEFAULT);
+        $sql1 = "SELECT * FROM `export_option` where active ='1'";
+        $res1 = $db->sql_query($sql1);
+        $backup = array();
+
+        while ($ob = $db->sql_fetch_object($res1, MYSQLI_ASSOC)) {
+
+            $tables  = explode(",", trim($ob->table_name));
+            $crypted = explode(",", $ob->crypted_fields);
+
+            Debug::debug("--------------");
+            Debug::debug($ob->config_file,"config file");
+
+
+            if (!empty($tables)) {
+                foreach ($tables as $table) {
+                    if (empty($table)) {
+                        continue;
+                    }
+
+                    Debug::debug($table, "table MySQL");
+
+                    $sql2 = "SELECT * FROM `".$table."`";
+
+                    $res2 = $db->sql_query($sql2);
+
+                    while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                        if (!empty($ob->crypted_fields)) {
+
+                            $fields = explode(",", $ob->crypted_fields);
+
+                            foreach ($fields as $field) {
+                                $arr2[$field] = Chiffrement::decrypt($arr2[$field]);
+                            }
+                        }
+                        $backup[$ob->key][] = $arr2;
+                    }
+                }
+            } else if (!empty($ob->config_file)) {
+                //cas des fichiers de configurations (ldap etc...)
+
+
+                Debug::debug($ob->config_file, "config file");
+                //Debug::debug($tables);
+
+                $config = file_get_contents(CONFIG.$ob->config_file);
+                preg_match_all("/define\(\"(\w+)\"\s*,\s*\"(.*)\"/", $config, $output_array);
+
+                foreach ($output_array[1] as $key => $val) {
+                    $backup[$ob->key][$val] = $output_array[2][$key];
+                }
+            } else {
+                // error
+                Debug::debug($ob, "PROBLEME !!");
+            }
+        }
+
+        return $backup;
+    }
+
+    public function test_export($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $backup = $this->_export();
+
+        debug($backup);
+    }
 }
-/*$compressed   = gzcompress('Compresse moi', 9);
-$uncompressed = gzuncompress($compressed);
-echo $uncompressed;*/
+/* $compressed   = gzcompress('Compresse moi', 9);
+  $uncompressed = gzuncompress($compressed);
+  echo $uncompressed; */

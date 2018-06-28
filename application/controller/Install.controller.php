@@ -10,7 +10,7 @@ use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
-use Symfony\Component\Yaml\Yaml;
+
 
 class Install extends Controller
 {
