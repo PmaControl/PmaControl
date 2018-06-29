@@ -210,7 +210,12 @@ See documentation for more details about other possible values";
 
         foreach($keys as $key)
         {
-            $lines[1] = str_replace($key, '<a href="">'.$key.'</a>', $lines[1]);
+
+            //preg_replace($key, '$1<a href="">$2</a>$3', $lines[1]);
+            preg_replace("/(\s|\|)(".$key.")(\s|\|)/", '\\\$1<a href="">\\\$2</a>\\\$3', $lines[1]);
+
+
+            //$lines[1] = str_replace($key, '<a href="">'.$key.'</a>', $lines[1]);
         }
 
 
