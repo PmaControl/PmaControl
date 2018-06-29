@@ -438,3 +438,26 @@ ul.padnull{padding-left:0}
 
 
 td.line-edit{ligne-height:50px; width: 300px}
+
+
+
+/** myxplain **/
+
+
+.command-shell
+{
+    background:#30383d;
+    color:#fff;
+    padding:10px;
+    font-family: Courier;
+    font-size: 15px;
+    border-radius: 10px;
+}
+
+.command-shell pre
+{
+    background: unset;
+    color: unset;
+    border:unset;
+    font-size: 15px;
+}
