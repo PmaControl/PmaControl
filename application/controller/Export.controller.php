@@ -219,14 +219,18 @@ $("#export_all-all2").click(function(){
         }
     }
 
-    public function import($param)
+    public function import($json)
     {
 
-        $file = $param[0];
 
-        $json = file_get_contents($file);
+        //$file = $param[0];
 
-        $arr = json_decode($json, true);
+        if (file_exists($json[0])) {
+            $json[0] = file_get_contents($json[0]);
+        }
+
+
+        $arr = json_decode($json[0], true);
 
         //debug($arr);
 
@@ -238,17 +242,65 @@ $("#export_all-all2").click(function(){
             unset($mysql['id']);
 
             $mysql['error'] = '';
-            debug($mysql);
 
-            $data['mysql_server'] = $mysql;
+
+            $data['mysql_server']                   = $mysql;
+            $data['mysql_server']['id_client']      = 1;
+            $data['mysql_server']['id_environment'] = 1;
+
+            $data['mysql_server']['is_password_crypted'] = 1;
+            $data['mysql_server']['passwd']              = Crypt::encrypt($data['mysql_server']['passwd'], CRYPT_KEY);
+
+            unset($data['mysql_server']['key_private_path']);
+            unset($data['mysql_server']['key_private_user']);
 
             $res = $db->sql_save($data);
 
             if (!$res) {
 
+                debug($data);
                 debug($db->sql_error());
             }
+
+            $this->generateMySQLConfig();
         }
+    }
+
+    public function generateMySQLConfig($param = '')
+    {
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
+        $res = $db->sql_query($sql);
+
+        $config = ';[name_of_connection] => will be acceded in framework with $this->di[\'db\']->sql(\'name_of_connection\')->method()
+;driver => list of SGBD avaible {mysql, pgsql, sybase, oracle}
+;hostname => server_name of ip of server SGBD (better to put localhost or real IP)
+;user => user who will be used to connect to the SGBD
+;password => password who will be used to connect to the SGBD
+;database => database / schema witch will be used to access to datas
+';
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $string = "[".$ob->name."]\n";
+            $string .= "driver=mysql\n";
+            $string .= "hostname=".$ob->ip."\n";
+            $string .= "port=".$ob->port."\n";
+            $string .= "user=".$ob->login."\n";
+            $string .= "password=".$ob->passwd."\n";
+            $string .= "crypted=1\n";
+            $string .= "database=".$ob->database."\n";
+
+            $config .= $string."\n\n";
+
+            //Debug::debug($string);
+        }
+
+        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
 }
 /*$compressed   = gzcompress('Compresse moi', 9);
