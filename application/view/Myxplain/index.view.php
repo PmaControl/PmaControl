@@ -1,7 +1,7 @@
 
 <div class="command-shell">
     MariaDB [(pmacontrol)]> <?= $data['query']['command'] ?>
-    <br><?= $data['table'] ?>
+    <br><br><?= $data['table'] ?>
     <br>
     <?= $data['rows'] ?> row in set (<?= $data['query']['duration'] ?> sec)
 </div>

@@ -121,7 +121,7 @@ $("#export_all-all2").click(function(){
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
 
-            $backup = $this->export();
+            $backup = $this->_export();
 
             $json = json_encode($backup);
 

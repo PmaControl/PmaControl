@@ -212,8 +212,22 @@ See documentation for more details about other possible values";
         {
 
             //preg_replace($key, '$1<a href="">$2</a>$3', $lines[1]);
-            preg_replace("/(\s|\|)(".$key.")(\s|\|)/", '\\\$1<a href="">\\\$2</a>\\\$3', $lines[1]);
 
+
+            debug($lines[1]);
+
+
+            $search = '/(\s|\|)('.$key.')(\s|\|)/';
+
+            debug($search);
+
+            //preg_replace('/(\s|\|)(key_len)(\s|\|)/', '$1<a href="">$2</a>$3', $lines[1]);
+            //preg_replace($search, "$1<a href="">$2</a>$3", $input_lines);
+
+            preg_replace('/(\s|\|)(key_len)(\s|\|)/', '$1<a href="">$2</a>$3', $lines[1]);
+
+
+            debug($lines[1]);
 
             //$lines[1] = str_replace($key, '<a href="">'.$key.'</a>', $lines[1]);
         }
