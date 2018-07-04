@@ -36,12 +36,12 @@ use Glial\Html\Form\Form;
             <div class="row">
                 <div class="col-md-6"><?= __("Login") ?>
                     <?=
-                    Form::input("mysql_server", "login", array("class" => "form-control", "placeholder" => "login mysql server"))
+                    Form::input("mysql_server", "login", array("class" => "form-control", "placeholder" => "login mysql server : root ?"))
                     ?></div>
 
                 <div class="col-md-6"><?= __("Password") ?>
                     <?=
-                    Form::input("mysql_server", "password", array("class" => "form-control", "placeholder" => "Password of mysql server"))
+                    Form::input("mysql_server", "password", array("type"=>"password", "class" => "form-control", "placeholder" => "Password of mysql server"))
                     ?></div>
             </div>
 
@@ -67,11 +67,12 @@ use Glial\Html\Form\Form;
                         , "", array("class" => "form-control"))
                     ?></div>
 
+                <!--
                 <div class="col-md-4"><?= __("Tags") ?><?=
                     Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
                         , "", array("class" => "form-control"))
                     ?></div>
-
+                -->
             </div>
 
 

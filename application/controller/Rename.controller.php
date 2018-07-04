@@ -2,6 +2,7 @@
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use App\Library\Mysql;
 
 class Rename extends Controller
 {
@@ -40,7 +41,7 @@ class Rename extends Controller
         $id_mysql_server = $param[0];
         $OLD_DB          = $param[1];
         $NEW_DB          = $param[2];
-        $AP              = $param[3];
+        $AP              = $param[3] ?? "";
 
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -95,12 +96,12 @@ class Rename extends Controller
             $sql20 = "SELECT  views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
 FROM information_schema.`TABLES` AS tab
 INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('% `',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='sys' AND views.TABLE_SCHEMA='sys' AND tab.TABLE_TYPE = 'VIEW'
+ON views.VIEW_DEFINITION LIKE CONCAT('% `',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW'
 UNION
 SELECT views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
 FROM information_schema.`TABLES` AS tab
 INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='sys' AND views.TABLE_SCHEMA='sys' AND tab.TABLE_TYPE = 'VIEW';";
+ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW';";
 
 
             Debug::debug(SqlFormatter::format($sql20));
@@ -250,6 +251,10 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 $db2->sql_query($sql18);
             }
 
+
+
+            // DÉPLACEMENT DES TABLES
+            
             $sql2 = "select table_name "
                 ."from information_schema.tables "
                 ."where table_schema='".$OLD_DB."' AND TABLE_TYPE='BASE TABLE';";
@@ -311,7 +316,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
             }
 
 
-
+            
             $grants = $this->getChangeGrant($db2, $OLD_DB, $NEW_DB);
 
 
@@ -322,6 +327,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                     echo $grant."\n";
                 }
             }
+            
 
 
             // DROP DATABASE IF NO OBJECT
@@ -364,51 +370,26 @@ END;";
         
     }
 
-    public function adjust_privileges($db_link, $OLD_DB, $NEW_DB)
+
+
+    public function testu($param)
     {
-        //select user, host from mysql.user;
+        Debug::parseDebug($param);
 
+        $db = $this->di['db']->sql('hb01_mariaexport01');
 
+        $users = Mysql::exportAllUser($db);
 
+        foreach ($users as $user) {
+            $pos = strpos($user, "root");
 
-        /*
-          $sql   = array();
-          $sql[] = "UPDATE mysql.columns_priv set db='".$NEW_DB."' WHERE db='".$OLD_DB."';";
-          $sql[] = "UPDATE mysql.procs_priv set db='".$NEW_DB."' WHERE db='".$OLD_DB."'";
-          $sql[] = "UPDATE mysql.tables_priv set db='".$NEW_DB."' WHERE db='".$OLD_DB."'";
-          $sql[] = "UPDATE mysql.db set db='".$NEW_DB."' WHERE db='".$OLD_DB."'";
-          $sql[] = "flush privileges;";
-
-          foreach($sql as $query)
-          {
-          $db_link->sql_query($sql);
-          } */
-    }
-
-    public function exportAllUser($db_link)
-    {
-        $sql1 = "select user, host from mysql.user;";
-        $res1 = $db_link->sql_query($sql1);
-
-        $users = array();
-        while ($ob1   = $db_link->sql_fetch_object($res1)) {
-            $sql2 = "SHOW GRANTS FOR '".$ob1->user."'@'".$ob1->host."'";
-            $res2 = $db_link->sql_query($sql2);
-
-            while ($ob2 = $db_link->sql_fetch_array($res2, MYSQLI_NUM)) {
-
-                $users[] = $ob2[0];
+            if ($pos === false) {
+                echo $user.";\n";
             }
         }
 
-        return $users;
-    }
 
-    public function testu()
-    {
-        $db = $this->di['db']->sql('preprod_mariamasterzm01_preprod_rdc');
-
-        $this->changeGrant($db, "mall", "mall_gg");
+        Debug::debug($users);
     }
 
     public function getChangeGrant($db_link, $OLD_DB, $NEW_DB)
@@ -417,12 +398,13 @@ END;";
         $grants = array();
         $revoke = array();
 
-        $users = $this->exportAllUser($db_link);
+        $users = Mysql::exportAllUser($db_link);
         foreach ($users as $user) {
             $pos = strpos($user, $OLD_DB);
 
             if ($pos !== false) {
-                $revoke[] = str_replace("GRANT", "REVOKE", $user).";";
+                $revoke[] = str_replace(array(" TO ", "GRANT"), array(" FROM ", "REVOKE"), $user).";";
+
                 $grants[] = str_replace("`".$OLD_DB."`", "`".$NEW_DB."`", $user).";";
             }
         }
@@ -433,6 +415,8 @@ END;";
     }
 }
 /*
+ * 
+ * mysql -h $h -u $u -p$p INFORMATION_SCHEMA --skip-column-names --batch  -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h $h -u $u -p$p mall > views.sql
  *
 #!/bin/bash
 # Copyright 2013 Percona LLC and/or its affiliates

@@ -4,15 +4,13 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
+use \App\Library\Mysql;
 
 class CheckDataOnCluster extends Controller
 {
-
     var $should_be_different = array("server_id", "report_host", "wsrep_node_name");
-    var $not_important = array("general_log_file", "gtid_binlog_state");
-    var $master_master = array("");
-
-    
+    var $not_important       = array("general_log_file", "gtid_binlog_state");
+    var $master_master       = array("");
 
     public function index($param)
     {
@@ -37,8 +35,8 @@ class CheckDataOnCluster extends Controller
 
                 $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_cluster']['id'].")";
                 $res = $db->sql_query($sql);
-                while ($ob = $db->sql_fetch_object($res)) {
-                    $data['mysql_server'][$ob->id] = $ob->display_name ." (".$ob->ip.")";
+                while ($ob  = $db->sql_fetch_object($res)) {
+                    $data['mysql_server'][$ob->id] = $ob->display_name." (".$ob->ip.")";
                 }
 
                 $resultat = array();
@@ -268,7 +266,7 @@ class CheckDataOnCluster extends Controller
     private function perm($nbrs)
     {
         $temp = $nbrs;
-        $ret = [];
+        $ret  = [];
 
         foreach ($nbrs as $server1) {
             foreach ($temp as $server2) {
@@ -286,5 +284,45 @@ class CheckDataOnCluster extends Controller
         }
 
         return $ret;
+    }
+
+    public function see($param)
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $display_name = $param[0];
+        $sql          = "SELECT * FROM mysql_server WHERE display_name='".$display_name."'";
+
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+
+            $_db = $this->di['db']->sql($ob->name);
+        }
+
+
+        if (!empty($_db)) {
+
+            $users = Mysql::exportAllUser($_db);
+
+            foreach ($users as $user) {
+
+                $pos = strpos($user, "debian-sys-maint");
+
+// Notez notre utilisation de ===.  == ne fonctionnerait pas comme attendu
+// car la position de 'a' est la 0-ième (premier) caractère.
+                if ($pos !== false) {
+
+                    continue;
+                }
+
+                echo $user.";\n";
+            }
+        } else {
+            echo "Server not found !! \n";
+        }
     }
 }

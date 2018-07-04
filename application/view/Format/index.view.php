@@ -9,13 +9,11 @@
                     Type your SQL here:<br />
                 </div>
                 <div class="col-md-12">
-                    <textarea name="sql" rows="5" class="form-control">
-                        <?php
+                    <textarea name="sql" rows="5" class="form-control"><?php
                         if (!empty($data['sql'])) {
                             echo $data['sql'];
                         }
-                        ?>
-                    </textarea>
+                        ?></textarea>
                 </div>
                 <div class="col-md-12">
                     <br />

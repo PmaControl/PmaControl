@@ -157,7 +157,7 @@ class Ssh extends Controller
 
     public function index()
     {
-
+        $this->title = '<i class="fa fa-key" aria-hidden="true"></i> SSH keys';
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 

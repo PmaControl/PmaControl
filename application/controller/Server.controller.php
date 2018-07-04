@@ -222,7 +222,7 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by `name`;";
+                 ORDER by d.`libelle`;";
 
         $res = $db->sql_query($sql);
 
