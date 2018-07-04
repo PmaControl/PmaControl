@@ -13,7 +13,7 @@ use App\Library\Chiffrement;
 class Export extends Controller
 {
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
-        "geolocalisation_continent", "geolocalisation_country", "history_etat",
+        "geolocalisation_continent", "geolocalisation_country", "history_etat","ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend", "home_box");
     var $exlude_table    = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*");
 

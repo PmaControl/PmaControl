@@ -168,7 +168,7 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
         echo ' <div style="width:160px; height:17px" class="display:inline">'
-        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].'"></canvas></div>';
+        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].crc32($connect_name).'"></canvas></div>';
         echo '</td>';
 
         $class = "";

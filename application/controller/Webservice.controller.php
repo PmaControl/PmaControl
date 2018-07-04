@@ -396,8 +396,20 @@ END IF;";
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`) SELECT 7,id, now(), now() from mysql_server;";
+        $sql1 = "select * from ts_file;";
+        $res1 = $db->sql_query($sql1);
+
+        while ($ob1 = $db->sql_fetch_object($res1))
+        {
+            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`, `id_ts_file`) "
+            . "SELECT 7,id, now(), now(), ".$ob1->id." from mysql_server;";
         $db->sql_query($sql5);
+
+        }
+
+
+
+        
     }
 
     public function parseConfig($configFile)
