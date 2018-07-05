@@ -406,10 +406,6 @@ END IF;";
         $db->sql_query($sql5);
 
         }
-
-
-
-        
     }
 
     public function parseConfig($configFile)

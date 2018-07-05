@@ -13,7 +13,7 @@ use App\Library\Chiffrement;
 class Export extends Controller
 {
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
-        "geolocalisation_continent", "geolocalisation_country", "history_etat","ts_file",
+        "geolocalisation_continent", "geolocalisation_country", "history_etat", "ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend", "home_box");
     var $exlude_table    = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*");
 
@@ -170,6 +170,8 @@ $("#export_all-all2").click(function(){
     public function import($json)
     {
 
+        Debug::parseDebug($json);
+
 
         //$file = $param[0];
 
@@ -182,7 +184,13 @@ $("#export_all-all2").click(function(){
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
+
+
+        $options = $this->getExportOption();
+
         foreach ($arr['mysql'] as $mysql) {
+
+            $option = $options['mysql'];
 
             unset($mysql['id']);
 
@@ -194,10 +202,50 @@ $("#export_all-all2").click(function(){
             $data['mysql_server']['id_environment'] = 1;
 
             $data['mysql_server']['is_password_crypted'] = 1;
-            $data['mysql_server']['passwd']              = Crypt::encrypt($data['mysql_server']['passwd'], CRYPT_KEY);
+
+            foreach ($option['crypted_fields'] as $crypted_field) {
+                $data['mysql_server'][$crypted_field] = Crypt::encrypt($data['mysql_server'][$crypted_field], CRYPT_KEY);
+            }
 
             unset($data['mysql_server']['key_private_path']);
             unset($data['mysql_server']['key_private_user']);
+
+
+
+            $uniques = $this->getUniqueKey('mysql_server');
+
+            Debug($uniques);
+
+
+            $sql2 = array();
+            foreach ($uniques as $unique) {
+
+                $keys = explode(",", $unique);
+
+
+                $sql = array();
+                foreach ($keys as $key) {
+                    $sql[] = " `".$key."` = '".$data['mysql_server'][$key]."' ";
+                }
+
+                $sql2[] = "SELECT * FROM `mysql_server` WHERE ".implode(" AND ", $sql);
+            }
+
+
+            if (!empty($sql2)) {
+                $sql_good = '( '.implode(") UNION (", $sql2).' )';
+
+
+                Debug::debug($sql_good);
+
+                $res10 = $db->sql_query($sql_good);
+
+                $cpt = $db->sql_num_rows($res10);
+
+                if ($cpt !== 0) {
+                    continue;
+                }
+            }
 
             $res = $db->sql_save($data);
 
@@ -208,6 +256,8 @@ $("#export_all-all2").click(function(){
             }
 
             $this->generateMySQLConfig();
+
+            $this->onAddMysqlServer();
         }
     }
 
@@ -257,9 +307,9 @@ $("#export_all-all2").click(function(){
 
     private function _export($options = array())
     {
-        $db   = $this->di['db']->sql(DB_DEFAULT);
-        $sql1 = "SELECT * FROM `export_option` where active ='1'";
-        $res1 = $db->sql_query($sql1);
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $sql1   = "SELECT * FROM `export_option` where active ='1'";
+        $res1   = $db->sql_query($sql1);
         $backup = array();
 
         while ($ob = $db->sql_fetch_object($res1, MYSQLI_ASSOC)) {
@@ -268,7 +318,7 @@ $("#export_all-all2").click(function(){
             $crypted = explode(",", $ob->crypted_fields);
 
             Debug::debug("--------------");
-            Debug::debug($ob->config_file,"config file");
+            Debug::debug($ob->config_file, "config file");
 
 
             if (!empty($tables)) {
@@ -325,6 +375,65 @@ $("#export_all-all2").click(function(){
         $backup = $this->_export();
 
         debug($backup);
+    }
+
+    public function getExportOption()
+    {
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM export_option";
+
+        $res = $db->sql_query($sql);
+
+        $export_option = array();
+        while ($arr           = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            $arr['table_name']     = explode(",", trim($arr['table_name']));
+            $arr['crypted_fields'] = explode(",", trim($arr['crypted_fields']));
+
+            if (empty($arr['table_name'][0])) {
+                $arr['table_name'] = array();
+            }
+
+            if (empty($arr['crypted_fields'][0])) {
+                $arr['crypted_fields'] = array();
+            }
+
+            $export_option[$arr['key']] = $arr;
+        }
+
+        return $export_option;
+    }
+
+    private function getUniqueKey($table_name)
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "select group_concat(COLUMN_NAME) as colonne from information_schema.KEY_COLUMN_USAGE where TABLE_schema = 'pmacontrol' and table_name ='".$table_name."' and POSITION_IN_UNIQUE_CONSTRAINT is null and CONSTRAINT_NAME != 'PRIMARY' group by CONSTRAINT_NAME;";
+
+        $res = $db->sql_query($sql);
+
+        $unique = array();
+        while ($arr    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $unique[] = $arr['colonne'];
+        }
+
+        return $unique;
+    }
+
+    //a mettre dans une librairy
+    public function onAddMysqlServer()
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql1 = "select * from ts_file;";
+        $res1 = $db->sql_query($sql1);
+
+        while ($ob1 = $db->sql_fetch_object($res1)) {
+            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`, `id_ts_file`) "
+                ."SELECT 7,id, now(), now(), ".$ob1->id." from mysql_server;";
+            $db->sql_query($sql5);
+        }
     }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);
