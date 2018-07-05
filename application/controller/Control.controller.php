@@ -7,6 +7,11 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 
 
+/*
+ * ./glial Aspirateur testAllMysql 6 --debug
+ * ./glial integrate evaluate --debug
+ */
+
 class Control extends Controller
 {
 

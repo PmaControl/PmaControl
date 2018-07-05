@@ -4,20 +4,18 @@ use \Glial\Synapse\Controller;
 use \Glial\Cli\SetTimeLimit;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
-
-
 use \App\Library\Debug;
+
 //require ROOT."/application/library/Filter.php";
 
 class Integrate extends Controller
 {
 
     use \App\Library\Filter;
-
-    
     const MAX_FILE_AT_ONCE = 20;
 
     var $shared;
+    var $memory_file = "answer";
 
     public function evaluate($param)
     {
@@ -27,7 +25,7 @@ class Integrate extends Controller
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $this->view = false;
 
-        $files = glob("/dev/shm/answer_*");
+        $files = glob("/dev/shm/".$this->memory_file."_*");
         sleep(1);
 
         $variables           = $this->get_variable();
@@ -221,7 +219,9 @@ class Integrate extends Controller
         }
 
         if (!empty($history)) {
-            $this->linkServerVariable($history, $memory_file);
+
+
+            $this->linkServerVariable($history);
         }
 
         Debug::debugQueriesOff();
@@ -292,6 +292,9 @@ class Integrate extends Controller
 
     private function insert_variable($variables_to_insert)
     {
+
+
+
         //Debug::debug($variables_to_insert, "dfgfgdg");
         //Debug::debug($variables_to_insert);
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -382,9 +385,26 @@ class Integrate extends Controller
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
+        switch ($this->memory_file) {
+            case 'answer':
+                $id_file_name = 3;
+                break;
+
+            case 'hardware':
+                $id_file_name = 2;
+                break;
+
+            case 'ssh_stats':
+                $id_file_name = 1;
+                break;
+        }
+
+
+
+
 
         foreach ($history as $date => $is_servers) {
-            $sql = "UPDATE `ts_max_date`  SET `date_previous`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).");";
+            $sql = "UPDATE `ts_max_date`  SET `date_previous`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).") AND id_ts_file=".$id_file_name.";";
 
             Debug::debug($sql);
             $db->sql_query($sql);
