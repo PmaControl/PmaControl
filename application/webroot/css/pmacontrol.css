@@ -454,6 +454,21 @@ td.line-edit{ligne-height:50px; width: 300px}
     border-radius: 10px;
 }
 
+
+.command-shell a
+{
+    
+    color:#fff;
+    font-weight:700;
+    text-decoration: underline;
+}
+.command-shell a:hover
+{
+    
+    text-decoration: none;
+}
+
+
 .command-shell pre
 {
     background: unset;
