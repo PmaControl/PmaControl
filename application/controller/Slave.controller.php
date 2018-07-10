@@ -171,6 +171,10 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
+
+
+
+
     }
 
     public function box()

@@ -31,10 +31,6 @@ class Extraction
             $server = self::getServerList();
         }
 
-
-
-
-
         $extra_where = "";
         $INNER       = "";
         if (empty($date)) {

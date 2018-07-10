@@ -400,11 +400,8 @@ class Integrate extends Controller
         }
 
 
-
-
-
         foreach ($history as $date => $is_servers) {
-            $sql = "UPDATE `ts_max_date`  SET `date_previous`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).") AND id_ts_file=".$id_file_name.";";
+            $sql = "UPDATE `ts_max_date`  SET `date_p4`=`date_p3`,`date_p3`=`date_p2`,`date_p2`=`date_p1`,`date_p1`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).") AND id_ts_file=".$id_file_name.";";
 
             Debug::debug($sql);
             $db->sql_query($sql);

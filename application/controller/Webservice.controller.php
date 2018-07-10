@@ -12,9 +12,6 @@ use \App\Library\Debug;
 
 class Webservice extends Controller
 {
-
-    
-
     public function pushServer($param)
     {
         $this->view        = false;

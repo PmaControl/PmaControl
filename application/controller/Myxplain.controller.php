@@ -1,20 +1,16 @@
 <?php
 
 use \Glial\Synapse\Controller;
-
 use Glial\Cli\Table;
 
 class Myxplain extends Controller
 {
-    var $id            = "This is the query identifier, this column shows the number of SELECTs (This is not the identifier of a join)
-
-Therefore, in the case of a simple SELECT query, this identifier will always be equal to 1 for each row of the EXPLAIN output
-
-Other values are possible when using subqueries, derived tables or UNION
-
-NULL value will be displayed for the results of an UNION of two (or more) SELECTs of the EXPLAIN output
-
-In our example, the column table looks like that : <union1,2>, where 1 and 2 are the two SELECTs of the EXPLAIN plan";
+    var $id = '<p>This is <b>the query identifier</b>, this column <B>shows the number of SELECTs</B> (This is not the identifier of a join)</p>
+	<p>Therefore, in the case of a simple SELECT query, this identifier will always be equal to 1 for each row of the EXPLAIN output</p>
+	<p>Other values are possible when using <a href="'.LINK.__CLASS__.'/index/id/18">subqueries</a>, '
+        . '<a href="'.LINK.__CLASS__.'/index/id/16">derived tables</a> or <a href="'.LINK.__CLASS__.'/index/id/18">UNION</a></p>
+	<p>NULL value will be displayed for the results of an UNION of two (or more) SELECTs of the EXPLAIN output</p>
+	<p>In our example, the column <i>table</i> looks like that : &lt;union1,2&gt;, where 1 and 2 are the two SELECT of the EXPLAIN plan</p>';
     var $select_type   = "This column indicates if you run a simple or a complex query
 
 This is an informative column related to the id column
@@ -173,6 +169,7 @@ See documentation for more details about other possible values";
 
         $sql1 = "SELECT * FROM myxplain WHERE id = ".$query;
 
+
         $res1 = $db->sql_query($sql1);
 
         while ($ob1 = $db->sql_fetch_array($res1, MYSQLI_ASSOC)) {
@@ -181,8 +178,6 @@ See documentation for more details about other possible values";
 
         $data['query']['explain'] = json_decode($data['query']['explain'], true);
 
-
-        debug($data['query']['explain']);
 
         $table = new Table(2);
 
@@ -195,50 +190,31 @@ See documentation for more details about other possible values";
         $table->addHeader($keys);
 
         $data['rows'] = 0;
-        foreach($data['query']['explain'] as $line)
-        {
-             $vals = array_values($line);
+        foreach ($data['query']['explain'] as $line) {
+            $vals = array_values($line);
 
-             $table->addLine($vals);
-             $data['rows']++;
+            $table->addLine($vals);
+            $data['rows'] ++;
         }
 
         $data['table'] = $table->display();
 
-        $lines = explode("\n",$data['table']);
+        $lines = explode("\n", $data['table']);
 
 
-        foreach($keys as $key)
-        {
-
-            //preg_replace($key, '$1<a href="">$2</a>$3', $lines[1]);
-
-
-            debug($lines[1]);
-
-
-            $search = '/(\s|\|)('.$key.')(\s|\|)/';
-
-            debug($search);
-
-            //preg_replace('/(\s|\|)(key_len)(\s|\|)/', '$1<a href="">$2</a>$3', $lines[1]);
-            //preg_replace($search, "$1<a href="">$2</a>$3", $input_lines);
-
-            preg_replace('/(\s|\|)(key_len)(\s|\|)/', '$1<a href="">$2</a>$3', $lines[1]);
-
-
-            debug($lines[1]);
-
-            //$lines[1] = str_replace($key, '<a href="">'.$key.'</a>', $lines[1]);
+        foreach ($keys as $key) {
+            $search   = '/(\s|\|)('.$key.')(\s|\|)/';
+            $lines[1] = preg_replace($search, '$1<a href="'.LINK.__CLASS__.'/'.__FUNCTION__.'/$2">$2</a>$3', $lines[1]);
         }
 
 
-        $data['table'] = implode("\n",  $lines);
+        $data['table'] = implode("<br>", $lines);
+
+        //$data['table'] = str_replace("\n", "<br>", $data['table']);
+        $data['table'] = str_replace("  ", "&nbsp;&nbsp;", $data['table']);
 
 
-        $data['table'] = str_replace("\n", "<br>", $data['table']);
-        $data['table'] = str_replace(" ", "&nbsp;", $data['table']);
-
+        $data['explication'] = $this->{$colonne};
 
         $this->set('data', $data);
     }

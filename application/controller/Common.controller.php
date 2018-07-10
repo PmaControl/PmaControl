@@ -209,6 +209,14 @@ class Common extends Controller
         $this->set("data", $data);
         return $data;
     }
+    /*
+     *
+     *
+     * params
+     * 1 => table_name
+     * 2 => id
+     * 3 => array (options for select)
+     */
 
     public function getSelectServerAvailable($param = array())
     {
@@ -225,8 +233,15 @@ class Common extends Controller
             $data['field'] = "id";
         }
 
+        $options = array();
+        if (!empty($param[2])) {
 
-        $data['width'] = $param[2] ?? "auto";
+            $options = (array) $param[2];
+        }
+
+        $data['options'] = $options;
+
+        //$data['width'] = $param[2] ?? "auto";
 
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
@@ -249,14 +264,15 @@ class Common extends Controller
 
             $tmp['extra'] = array("data-content" => "<span title='".$ob->libelle."' class='label label-".$ob->class."'>".$ob->letter."</span> ".$ob->display_name." <small class='text-muted'>".$ob->ip."</small>");
 
-            if (! empty($ob->error))
-            {
+            if (!empty($ob->error)) {
                 $tmp['extra']["disabled"] = "disabled";
             }
 
 
             $data['list_server'][] = $tmp;
         }
+
+
 
 
         $this->set('data', $data);

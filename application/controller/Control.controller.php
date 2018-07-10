@@ -5,6 +5,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
+use \App\Library\Mysql;
 
 
 /*
@@ -40,6 +41,11 @@ class Control extends Controller
 
         $datadir = $db->getVariables("datadir");
 
+        $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
+
+        $percent = substr($size, 0, -1);
+
+        /*
         $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"');
         Debug::debug($size);
 
@@ -57,7 +63,7 @@ class Control extends Controller
         $percent = ceil($data['used'] / $data['size'] * 100);
 
         Debug::debug($percent);
-
+        */
         return $percent;
     }
 
@@ -191,6 +197,9 @@ class Control extends Controller
         }
 
         $this->updateLinkVariableServeur();
+
+
+        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function dropTsTable()
@@ -258,6 +267,10 @@ PARTITION BY RANGE (to_days(`date`))
 
         $this->dropTsTable();
         $this->createTsTable();
+
+        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+
+
     }
 
     public function statistique($param = "")

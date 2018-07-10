@@ -9,6 +9,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
+use App\Library\Mysql;
 
 class Export extends Controller
 {
@@ -124,6 +125,8 @@ $("#export_all-all2").click(function(){
             $backup = $this->_export();
 
             $json = json_encode($backup);
+
+            file_put_contents("/tmp/json", $json);
 
             $compressed = gzcompress($json, 9);
 
@@ -257,7 +260,7 @@ $("#export_all-all2").click(function(){
 
             $this->generateMySQLConfig();
 
-            $this->onAddMysqlServer();
+            Mysql::onAddMysqlServer($db);
         }
     }
 
@@ -422,19 +425,7 @@ $("#export_all-all2").click(function(){
     }
 
     //a mettre dans une librairy
-    public function onAddMysqlServer()
-    {
-        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql1 = "select * from ts_file;";
-        $res1 = $db->sql_query($sql1);
-
-        while ($ob1 = $db->sql_fetch_object($res1)) {
-            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`, `id_ts_file`) "
-                ."SELECT 7,id, now(), now(), ".$ob1->id." from mysql_server;";
-            $db->sql_query($sql5);
-        }
-    }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);

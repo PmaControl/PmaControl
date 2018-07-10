@@ -33,8 +33,8 @@ class Cleaner extends Controller
 
     const FIELD_LOOP = "pmactrol_purge_loop";
 
-    public $color  = true;
-    public $prefix = "DELETE_";
+    public $color                  = true;
+    public $prefix                 = "DELETE_";
     public $link_to_purge;
     public $libelle; //name of cleaner
     public $schema_to_purge;
@@ -750,7 +750,7 @@ var myChart = new Chart(ctx, {
         pcntl_signal(SIGUSR1, array($this, 'sig_handler')); // active / desactive debug
         pcntl_signal(SIGUSR2, array($this, 'sig_handler')); // rechargement de la configuration ?
 
-        $sql = "SELECT *, b.name as nameserver,a.id as id_cleaner_main
+        $sql = "SELECT *,a.database, b.name as nameserver,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
                 WHERE a.id = '".$id_cleaner."';";
@@ -851,12 +851,13 @@ var myChart = new Chart(ctx, {
 
             Debug::debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
 
-            $this->debugShowTime();
+            Debug::debugShowTime();
 
 
             //to prevent mysql gone away (if stay long time connected)
             $default->sql_close();
-            $this->debugPurge();
+
+            Debug::debugPurge();
 
             sleep($this->WAIT_TIME);
             usleep(700);
@@ -1851,7 +1852,7 @@ var myChart = new Chart(ctx, {
                 $sql = "DELETE a FROM ".$table." a
                   INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";";
 
-                $db->sql_query($sql);
+                //$db->sql_query($sql);
 
 
                 if (end($db->query)['rows'] == "-1") {
@@ -2484,6 +2485,9 @@ var myChart = new Chart(ctx, {
     {
         $db = $this->di['db']->sql($this->link_to_purge);
 
+
+
+
         if (empty($this->primary_key[$database][$table])) {
 
             $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` ='PRIMARY';";
@@ -2508,7 +2512,8 @@ var myChart = new Chart(ctx, {
     {
         $db = $this->di['db']->sql($this->link_to_purge);
 
-        $this->showQueries();
+
+        //Debug::showQueries();
         Debug::checkPoint("[DEBUG] Time to generate showQueries");
         $db->sql_close();
     }
@@ -2664,10 +2669,13 @@ var myChart = new Chart(ctx, {
 
 
 
-        $sql = "SELECT *, b.name as nameserver,b.ip, b.display_name,a.id as id_cleaner_main
+        $sql = "SELECT *,a.database, b.name as nameserver,b.ip, b.display_name,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
                 WHERE a.id = '".$id_cleaner."';";
+
+
+
 
         $res = $db->sql_query($sql);
 
@@ -2935,7 +2943,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT *,a.id as id_cleaner_main,
+        $sql = "SELECT *,a.database,a.id as id_cleaner_main,
             b.name as mysql_server_name
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
