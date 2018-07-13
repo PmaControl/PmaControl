@@ -44,10 +44,25 @@ class MysqlUser extends Controller
 
 
 
+
                 foreach ($users as $user => $arr) {
                     foreach ($arr as $host => $bla) {
                         $data['all_user'][$user.":".$user]['user'] = $user;
                         $data['all_user'][$user.":".$user]['host'] = $host;
+
+                        foreach($bla as $grant)
+                        {
+                            $output_array = array();
+                            preg_match('/GRANT\s(.*)\sON/', $grant, $out_grant);
+
+                           
+
+                            $data['all_user'][$user.":".$user]['grant'][] = explode(", ",$out_grant[1]);
+
+
+                        }
+
+
                     }
                 }
             }
