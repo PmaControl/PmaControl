@@ -6,8 +6,6 @@
  */
 
 
-
-
 echo '<form method="post" action="">';
 echo '<div class="well">';
 echo '<div class="row">';
@@ -43,6 +41,9 @@ $colspan = count($data['user']);
 echo '<th colspan="'.$colspan.'">'.__("Password").'</th>';
 
 
+echo '<th colspan="'.$colspan.'">'.__("Database").'</th>';
+
+
 echo '<th colspan="'.$colspan.'">'.__("Grant").'</th>';
 
 
@@ -63,47 +64,99 @@ foreach ($data['user'] as $key => $server) {
     echo '<th>'.$key.'</th>';
 }
 
+foreach ($data['user'] as $key => $server) {
+    echo '<th>'.$key.'</th>';
+}
+
 echo '</tr>';
 
 
 $i = 1;
 
-foreach ($data['all_user'] as $user) {
-    echo '<tr>';
-    echo '<td>'.$i.'</td>';
-    echo '<td>'.$user['user'].'</td>';
-    echo '<td>'.$user['host'].'</td>';
-    echo '<td>'.'</td>';
-    echo '<td>';
-
-    echo '<ul>';
-
-    //debug($user['grant']);
-
-    sort($user['grant'][0]);
-
-    foreach ($user['grant'][0] as $grant) {
-        echo '<li>'.$grant.'</li>';
-    }
-    echo '</ul>';
 
 
-    echo '</td>';
 
-    foreach ($data['user'] as $server) {
+foreach ($data['all_user'] as $user_name => $user) {
 
-        if (!empty($server[$user['user']][$user['host']])) {
-            echo '<td>'.'XFDFGD'.'</td>';
-        } else {
-            echo '<td></td>';
+    foreach ($user as $host => $res) {
+
+        //debug($res);
+
+        $nb_lines = count(end($res)['grant']);
+
+
+        echo '<tr>';
+        echo '<td rowspan="'.$nb_lines.'">'.$i.'</td>';
+        echo '<td rowspan="'.$nb_lines.'">'.$user_name.'</td>';
+        echo '<td rowspan="'.$nb_lines.'">'.$host.'</td>';
+
+
+        foreach ($data['user'] as $key => $server) {
+            echo '<td rowspan="'.$nb_lines.'">';
+
+            if (! empty($res[$key]['password']))
+            {
+
+                echo '<span data-clipboard-text="'.$res[$key]['password'].'" onclick="return false;" class="copy-button clipboard badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7; cursor:pointer;"><i class="fa fa-files-o" aria-hidden="true"></i></span>';
+
+            }
+
+
+            echo '</td>';
         }
+        /*         * ***** */
+
+        for ($k = 0; $k < $nb_lines; $k++) {
+
+
+
+            if ($k !== 0) {
+                echo '<tr>';
+            }
+
+
+
+
+
+            $elems = array("database", "grant","create");
+
+            foreach ($elems as $elem) {
+
+
+
+                foreach ($data['user'] as $key => $server) {
+                    echo '<td>';
+
+                    if (!empty($res[$key][$elem])) {
+
+                        if (is_array($res[$key][$elem][$k])) {
+
+                            echo '<ul>';
+                            foreach ($res[$key][$elem][$k] as $right) {
+                                echo '<li>'.$right.'</li>';
+                            }
+                            echo '</ul>';
+                        } else {
+                            echo $res[$key][$elem][$k];
+                        }
+                    }
+
+                    echo '</td>';
+                }
+            }
+
+            echo '</tr>';
+
+            /*             * ******* */
+        }
+
+        $i++;
     }
-
-
-    echo '</tr>';
-
-    $i++;
 }
 
 
 echo '</table>';
+//debug($data['all_user']);
+
+
+//debug($data['user']);
