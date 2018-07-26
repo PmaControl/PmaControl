@@ -20,12 +20,9 @@ class Log extends Controller
         $data = array();
 
         Extraction::setDb($db);
-        $res = Extraction::extract(array("last_io_error", "last_sql_error", "master_log_file", "exec_master_log_pos"), array(7), array("2018-07-26 10:00:00","2018-07-26 11:48:33"));
+        $data['log'] = Extraction::display(array("slave::"), array(7), array(0=>"2018-07-27 10:00:00",1=>"2018-07-27 12:08:10"), true);
 
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['log'][] = $arr;
-        }
-
+        $data['db'] = $this->di['db']->sql(DB_DEFAULT);
 
         $this->set('data', $data);
     }

@@ -5,9 +5,13 @@
  * and open the template in the editor.
  */
 
-
+use \App\Library\Debug;
 
 if (!empty($data['log'])) {
 
     debug($data['log']);
 }
+
+
+//Debug::$debug = true;
+//Debug::debugShowQueries($data['db']);
