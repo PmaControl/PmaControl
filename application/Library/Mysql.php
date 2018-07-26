@@ -59,4 +59,36 @@ class Mysql
             $db->sql_query($sql5);
         }
     }
+
+    static public function generateMySQLConfig($db)
+    {
+   
+        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
+        $res = $db->sql_query($sql);
+
+        $config = ';[name_of_connection] => will be acceded in framework with $this->di[\'db\']->sql(\'name_of_connection\')->method()
+;driver => list of SGBD avaible {mysql, pgsql, sybase, oracle}
+;hostname => server_name of ip of server SGBD (better to put localhost or real IP)
+;user => user who will be used to connect to the SGBD
+;password => password who will be used to connect to the SGBD
+;database => database / schema witch will be used to access to datas
+';
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $string = "[".$ob->name."]\n";
+            $string .= "driver=mysql\n";
+            $string .= "hostname=".$ob->ip."\n";
+            $string .= "port=".$ob->port."\n";
+            $string .= "user=".$ob->login."\n";
+            $string .= "password=".$ob->passwd."\n";
+            $string .= "crypted=1\n";
+            $string .= "database=".$ob->database."\n";
+
+            $config .= $string."\n\n";
+
+            //Debug::debug($string);
+        }
+
+        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+    }
 }

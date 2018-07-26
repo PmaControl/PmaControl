@@ -8,10 +8,11 @@
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
-
+use App\Library\Mysql;
 
 class Webservice extends Controller
 {
+
     public function pushServer($param)
     {
         $this->view        = false;
@@ -106,7 +107,7 @@ class Webservice extends Controller
         }
 
 
-        $this->generateMySQLConfig();
+        Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
 
         return true;
     }
@@ -172,7 +173,9 @@ class Webservice extends Controller
                 echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - UPDATED"}';
             }
 
-            $this->onAddMysqlServer();
+
+
+            Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
         } else {
             echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "KO"}';
         }
@@ -195,43 +198,6 @@ class Webservice extends Controller
     private function addProxysqlServer()
     {
         
-    }
-
-    public function generateMySQLConfig($param = '')
-    {
-        $this->view = false;
-
-        Debug::parseDebug($param);
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
-        $res = $db->sql_query($sql);
-
-        $config = ';[name_of_connection] => will be acceded in framework with $this->di[\'db\']->sql(\'name_of_connection\')->method()
-;driver => list of SGBD avaible {mysql, pgsql, sybase, oracle}
-;hostname => server_name of ip of server SGBD (better to put localhost or real IP)
-;user => user who will be used to connect to the SGBD
-;password => password who will be used to connect to the SGBD
-;database => database / schema witch will be used to access to datas
-';
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $string = "[".$ob->name."]\n";
-            $string .= "driver=mysql\n";
-            $string .= "hostname=".$ob->ip."\n";
-            $string .= "port=".$ob->port."\n";
-            $string .= "user=".$ob->login."\n";
-            $string .= "password=".$ob->passwd."\n";
-            $string .= "crypted=1\n";
-            $string .= "database=".$ob->database."\n";
-
-            $config .= $string."\n\n";
-
-            //Debug::debug($string);
-        }
-
-        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
     /*
      * to export in Glial::MySQL ?
@@ -388,22 +354,6 @@ END IF;";
         }
     }
     /*     * ************************ */
-
-    public function onAddMysqlServer()
-    {
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-        $sql1 = "select * from ts_file;";
-        $res1 = $db->sql_query($sql1);
-
-        while ($ob1 = $db->sql_fetch_object($res1))
-        {
-            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`, `id_ts_file`) "
-            . "SELECT 7,id, now(), now(), ".$ob1->id." from mysql_server;";
-        $db->sql_query($sql5);
-
-        }
-    }
 
     public function parseConfig($configFile)
     {
