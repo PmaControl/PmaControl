@@ -94,11 +94,9 @@ foreach ($data['all_user'] as $user_name => $user) {
         foreach ($data['user'] as $key => $server) {
             echo '<td rowspan="'.$nb_lines.'">';
 
-            if (! empty($res[$key]['password']))
-            {
+            if (!empty($res[$key]['password'])) {
 
                 echo '<span data-clipboard-text="'.$res[$key]['password'].'" onclick="return false;" class="copy-button clipboard badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7; cursor:pointer;"><i class="fa fa-files-o" aria-hidden="true"></i></span>';
-
             }
 
 
@@ -118,7 +116,7 @@ foreach ($data['all_user'] as $user_name => $user) {
 
 
 
-            $elems = array("database", "grant","create");
+            $elems = array("database", "grant", "create");
 
             foreach ($elems as $elem) {
 
@@ -129,7 +127,7 @@ foreach ($data['all_user'] as $user_name => $user) {
 
                     if (!empty($res[$key][$elem])) {
 
-                        if (is_array($res[$key][$elem][$k])) {
+                        if (!empty($res[$key][$elem][$k]) && is_array($res[$key][$elem][$k])) {
 
                             echo '<ul>';
                             foreach ($res[$key][$elem][$k] as $right) {
@@ -137,7 +135,11 @@ foreach ($data['all_user'] as $user_name => $user) {
                             }
                             echo '</ul>';
                         } else {
-                            echo $res[$key][$elem][$k];
+
+
+                            if (!empty($res[$key][$elem][$k])) {
+                                echo $res[$key][$elem][$k];
+                            }
                         }
                     }
 
@@ -156,6 +158,70 @@ foreach ($data['all_user'] as $user_name => $user) {
 
 
 echo '</table>';
+
+
+echo '<div class="well">';
+
+foreach ($data['user'] as $server_name => $users) {
+
+    echo '<h4>'.__('Server').' '.$server_name.' '.' ('.(count($users)).')</h4>';
+
+    foreach ($users as $user) {
+
+        foreach ($user as $grants) {
+            foreach ($grants as $grant) {
+                echo $grant.";<br>";
+            }
+        }
+    }
+}
+echo '</div>';
+
+
+
+echo '<div class="well">';
+
+
+$nb = count($data['grants']);
+
+echo '<h3>'.__('Merge all user in read only').' ('.$nb.')</h3>';
+foreach ($data['grants'] as $grant) {
+    //debug($data['grants']);
+    echo $grant."<br />";
+}
+
+echo '</div>';
+
+
+
+
+
+echo '<div class="well">';
+
+
+$nb = count($data['grants']);
+
+echo '<h3>'.__('Revoke rights on disapear DB').'</h3>';
+
+
+
+foreach ($data['revokes'] as $server_name => $revokes) {
+
+    echo '<h4>'.__('Revoke rights on DB').' '.$server_name.' '.' ('.(count($revokes)).')</h4>';
+
+
+    foreach ($revokes as $revoke) {
+        echo $revoke."<br />";
+    }
+    //debug($data['grants']);echo $grant."<br />";
+}
+
+echo '</div>';
+
+
+
+
+
 //debug($data['all_user']);
 
 

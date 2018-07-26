@@ -33,6 +33,17 @@ class MysqlUser extends Controller
 
                 $users = Mysql::exportUserByUser($db_link);
 
+                $sql152 = "SHOW DATABASES;";
+                $res152 = $db_link->sql_query($sql152);
+
+
+                $all_databases = array();
+                while ($ob            = $db_link->sql_fetch_object($res152)) {
+                    $all_databases[] = $ob->Database;
+                }
+
+
+
 
                 $data['user'][$ob1->name] = $users;
 
@@ -50,9 +61,22 @@ class MysqlUser extends Controller
                             }
 
                             // périmètre
-                            preg_match_all('/ON\s(.*)\sTO/', $grant, $output_array);
+                            preg_match_all('/\sON\s([^,]+)\sTO/', $grant, $output_array);
+
+                            //debug($grant);
+                            //preg_match_all('/ON\s(.*)\sTO/', $grant, $output_array);
                             $data['all_user'][$user][$host][$ob1->name]['database'][] = $output_array[1][0];
 
+
+                            $output_array2 = array();
+                            preg_match_all('/`([^`]+)`\./', $output_array[1][0], $output_array2);
+
+
+                            if (!empty($output_array2[1][0])) {
+                                $data['all_user'][$user][$host][$ob1->name]['match'][] = $output_array2[1][0];
+                            } else {
+                                $data['all_user'][$user][$host][$ob1->name]['match'][] = "";
+                            }
 
 
                             // liste des droits
@@ -81,6 +105,88 @@ class MysqlUser extends Controller
                 }
             }
         }
+
+
+        $options         = array('SELECT', 'USAGE', 'SHOW VIEW');
+        $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol', 'cactimon', 'catimon', 'grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication');
+
+
+
+        $data['revokes'] = array();
+        $data['grant']   = array();
+
+        
+        foreach ($data['all_user'] as $user => $hosts) {
+
+            if (in_array($user, $black_list_user)) {
+                continue;
+            }
+
+
+            foreach ($hosts as $host => $servers) {
+
+                foreach ($servers as $server_name => $server) {
+
+                    $i = 0;
+                    foreach ($server['database'] as $db) {
+
+
+                        $all_right = $server['grant'][$i];
+
+                        foreach ($server['grant'][$i] as $key => $grant) {
+                            if (!in_array($grant, $options)) {
+                                unset($server['grant'][$i][$key]);
+                            }
+
+
+                            if ($grant === "ALL PRIVILEGES")
+                            {
+                                $server['grant'][$i][$key] = "SELECT";
+                            }
+                        }
+
+                        if (count($server['grant'][$i]) === 0) {
+                            if ($i === 0) {
+                                $server['grant'][$i][] = "USAGE";
+                            } else {
+                                continue;
+                            }
+                        }
+
+                        $extra = "";
+                        if ($i === 0) {
+                            $extra = " IDENTIFIED BY PASSWORD '".$server['password']."'";
+                        }
+
+
+                        $revoke = false;
+                        if (!empty($server['match'][$i])) {
+                            if (!in_array($server['match'][$i], $all_databases)) {
+                                $data['revokes'][$server_name][] = "REVOKE ".implode(",", $all_right)." ON ".$db." FROM '".$user."'@'".$host."';";
+                                $revoke            = true;
+                            }
+                        }
+
+
+                        if (!$revoke) {
+                            $data['grants'][] = "GRANT ".implode(",", $server['grant'][$i])." ON ".$db." TO '".$user."'@'".$host."'".$extra.";";
+                        }
+
+
+
+                        $i++;
+                    }
+
+                    //debug($server);
+                }
+            }
+        }
+
+
+
+        $data['grants'] = array_unique($data['grants']);
+
+
 
 
         $this->set('data', $data);
