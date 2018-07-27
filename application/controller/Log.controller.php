@@ -20,7 +20,7 @@ class Log extends Controller
         $data = array();
 
         Extraction::setDb($db);
-        $data['log'] = Extraction::display(array("slave::"), array(7), array(0=>"2018-07-27 10:00:00",1=>"2018-07-27 12:08:10"), true);
+        $data['log'] = Extraction::display(array("slave::"), array(44), array("2018-07-26 14:49:16","2018-07-26 14:50:51"), true);
 
         $data['db'] = $this->di['db']->sql(DB_DEFAULT);
 

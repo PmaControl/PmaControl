@@ -61,16 +61,16 @@ class Extraction
 
 
         /*
-        if (count($var) != self::count_recursive($variable)) {
+          if (count($var) != self::count_recursive($variable)) {
 
-            //echo from(__FILE__);
-            //debug(self::count_recursive($variable));
-            //debug($var);
-            //debug($variable);
+          //echo from(__FILE__);
+          //debug(self::count_recursive($variable));
+          //debug($var);
+          //debug($variable);
 
 
-            throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
-        }*/
+          throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
+          } */
 
         $sql2 = array();
 
@@ -158,9 +158,15 @@ class Extraction
 
             //debug(self::$variable[$ob->id_ts_variable]);
 
-            $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-            $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
-            $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            if ($range) {
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            } else {
+                $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
+                $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
+                $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            }
         }
 
         //debug($table);

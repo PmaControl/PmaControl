@@ -34,7 +34,7 @@ echo '<br />';
 echo '<form action="" method="POST">';
 echo __("Server")." : ";
 
-\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id","auto"));
+\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id",array("data-width"=>"auto")));
 //echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
 echo ' ';
 

@@ -7,6 +7,12 @@
 
 use \App\Library\Debug;
 
+
+
+
+
+
+
 if (!empty($data['log'])) {
 
     debug($data['log']);
