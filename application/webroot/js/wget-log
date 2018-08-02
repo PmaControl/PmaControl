@@ -1,0 +1,86 @@
+/*!: Scheme missing.
+--2018-07-27 09:06:53--  http://version/
+Resolving version (version)... failed: Temporary failure in name resolution.
+wget: unable to resolve host address ‘version’
+:: Scheme missing.
+--2018-07-27 09:06:53--  http://4.15.35/
+Resolving 4.15.35 (4.15.35)... 4.15.0.35
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:09:03--  (try: 2)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:11:15--  (try: 3)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:13:29--  (try: 4)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:15:43--  (try: 5)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:17:59--  (try: 6)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:20:16--  (try: 7)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:22:32--  (try: 8)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:24:50--  (try: 9)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:27:08--  (try:10)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:29:28--  (try:11)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:31:48--  (try:12)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:34:07--  (try:13)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:36:26--  (try:14)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:38:45--  (try:15)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:41:05--  (try:16)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:43:24--  (try:17)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:45:43--  (try:18)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:48:03--  (try:19)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Retrying.
+
+--2018-07-27 09:50:22--  (try:20)  http://4.15.35/
+Connecting to 4.15.35 (4.15.35)|4.15.0.35|:80... failed: Connection timed out.
+Giving up.
+

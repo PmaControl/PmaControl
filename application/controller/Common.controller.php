@@ -279,4 +279,55 @@ class Common extends Controller
 
         return $data['list_server'];
     }
+
+    function getTsVariables($param = array())
+    {
+
+
+        if (!empty($param[0])) {
+            $data['table'] = $param[0];
+        } else {
+            $data['table'] = "ts_variable";
+        }
+
+        if (!empty($param[1])) {
+            $data['field'] = $param[1];
+        } else {
+            $data['field'] = "id";
+        }
+
+        $options = array();
+        if (!empty($param[2])) {
+
+            $options = (array) $param[2];
+        }
+
+        $data['options'] = $options;
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM ts_variable order by `from`, `name`;";
+
+        $res = $db->sql_query($sql);
+
+        $data['variable'] = array();
+        while ($ob               = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->from.'::'.$ob->name;
+            //$tmp['error']   = $ob->error;
+            $tmp['libelle'] = $ob->from.'::'.$ob->name."";
+
+            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
+
+            $data['variable'][] = $tmp;
+        }
+
+
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+
+
+        $this->set('data', $data);
+    }
 }

@@ -108,83 +108,98 @@ class MysqlUser extends Controller
 
 
         $options         = array('SELECT', 'USAGE', 'SHOW VIEW');
-        $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol', 'cactimon', 'catimon', 'grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication');
+        $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol','grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication', 'sst');
 
 
 
         $data['revokes'] = array();
         $data['grant']   = array();
-
-        
-        foreach ($data['all_user'] as $user => $hosts) {
-
-            if (in_array($user, $black_list_user)) {
-                continue;
-            }
+        $data['switch_to_ro'] = array();
+        $data['revoke_all'] = array();
 
 
-            foreach ($hosts as $host => $servers) {
+        if (!empty($data['all_user'])) {
 
-                foreach ($servers as $server_name => $server) {
+            foreach ($data['all_user'] as $user => $hosts) {
 
-                    $i = 0;
-                    foreach ($server['database'] as $db) {
+                if (in_array($user, $black_list_user)) {
+                    continue;
+                }
 
 
-                        $all_right = $server['grant'][$i];
+                foreach ($hosts as $host => $servers) {
 
-                        foreach ($server['grant'][$i] as $key => $grant) {
-                            if (!in_array($grant, $options)) {
-                                unset($server['grant'][$i][$key]);
+
+                    $data['revoke_all'][] = "DROP USER '".$user."'@'".$host."';";
+
+                    foreach ($servers as $server_name => $server) {
+
+
+
+
+
+
+
+                        $i = 0;
+                        foreach ($server['database'] as $db) {
+
+
+                            $all_right = $server['grant'][$i];
+
+                            foreach ($server['grant'][$i] as $key => $grant) {
+                                if (!in_array($grant, $options)) {
+                                    unset($server['grant'][$i][$key]);
+                                }
+
+
+                                if ($grant === "ALL PRIVILEGES") {
+                                    $server['grant'][$i][$key] = "SELECT";
+                                }
                             }
 
-
-                            if ($grant === "ALL PRIVILEGES")
-                            {
-                                $server['grant'][$i][$key] = "SELECT";
+                            if (count($server['grant'][$i]) === 0) {
+                                if ($i === 0) {
+                                    $server['grant'][$i][] = "USAGE";
+                                } else {
+                                    continue;
+                                }
                             }
-                        }
 
-                        if (count($server['grant'][$i]) === 0) {
+                            $extra = "";
                             if ($i === 0) {
-                                $server['grant'][$i][] = "USAGE";
-                            } else {
-                                continue;
+                                $extra = " IDENTIFIED BY PASSWORD '".$server['password']."'";
                             }
-                        }
-
-                        $extra = "";
-                        if ($i === 0) {
-                            $extra = " IDENTIFIED BY PASSWORD '".$server['password']."'";
-                        }
 
 
-                        $revoke = false;
-                        if (!empty($server['match'][$i])) {
-                            if (!in_array($server['match'][$i], $all_databases)) {
-                                $data['revokes'][$server_name][] = "REVOKE ".implode(",", $all_right)." ON ".$db." FROM '".$user."'@'".$host."';";
-                                $revoke            = true;
+                            $revoke = false;
+                            if (!empty($server['match'][$i])) {
+                                if (!in_array($server['match'][$i], $all_databases)) {
+                                    $data['revokes'][$server_name][] = "REVOKE ".implode(",", $all_right)." ON ".$db." FROM '".$user."'@'".$host."';";
+                                    $revoke                          = true;
+                                }
                             }
+
+
+                            if (!$revoke) {
+                                $data['grants'][] = "GRANT ".implode(",", $server['grant'][$i])." ON ".$db." TO '".$user."'@'".$host."'".$extra.";";
+                            }
+
+
+
+                            $i++;
                         }
 
-
-                        if (!$revoke) {
-                            $data['grants'][] = "GRANT ".implode(",", $server['grant'][$i])." ON ".$db." TO '".$user."'@'".$host."'".$extra.";";
-                        }
-
-
-
-                        $i++;
+                        //debug($server);
                     }
-
-                    //debug($server);
                 }
             }
         }
 
+        if (!empty($data['grants'])) {
+            $data['grants'] = array_unique($data['grants']);
+        }
 
 
-        $data['grants'] = array_unique($data['grants']);
 
 
 
