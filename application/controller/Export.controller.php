@@ -32,7 +32,6 @@ class Export extends Controller
 
         foreach ($tables as $key => $table) {
             if (in_array($table, $this->table_with_data)) {
-
                 $table_with_data[] = $table;
                 unset($tables[$key]);
             }
@@ -163,27 +162,36 @@ $("#export_all-all2").click(function(){
 
                 $json = gzuncompress($compressed);
 
-                file_put_contents("/tmp/gg", $json);
+                $file = "/tmp/".uniqid();
+                file_put_contents($file, $json);
 
-                $this->import($json);
+                $this->import(array($file));
             }
         }
     }
 
     public function import($json)
     {
+        $json[] = "--debug";
+
+
 
         Debug::parseDebug($json);
-
-
         //$file = $param[0];
 
         if (file_exists($json[0])) {
-            $json[0] = file_get_contents($json[0]);
+
+            $file = $json[0];
+            $json[0] = file_get_contents($file);
+
+            unlink($file);
         }
 
 
         $arr = json_decode($json[0], true);
+
+
+        Debug::debug($arr);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -217,7 +225,7 @@ $("#export_all-all2").click(function(){
 
             $uniques = $this->getUniqueKey('mysql_server');
 
-            Debug($uniques);
+            Debug::debug($uniques);
 
 
             $sql2 = array();
@@ -253,7 +261,6 @@ $("#export_all-all2").click(function(){
             $res = $db->sql_save($data);
 
             if (!$res) {
-
                 debug($data);
                 debug($db->sql_error());
             }
