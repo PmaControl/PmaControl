@@ -160,7 +160,7 @@ trait Scp {
 
             $data['size'] = $sftp->size($src);
 
-            $md5 = $ssh->exec("md5sum " . $src);
+            $md5 = $ssh->exec("md5sum " . $src. " 2>1 >> /dev/null");
 
             $data['md5'] = explode(" ", $md5)[0];
             

@@ -85,7 +85,16 @@ foreach ($data['servers'] as $server) {
 
 
     $_GET["mysql_server"][($i-1)]["display_name"] = $server['display_name'];
-    echo '<td>'.Form::input("mysql_server", "display_name").'</td>';
+    echo '<td>'.Form::input("mysql_server", "display_name");
+    
+    
+    
+    echo ' <a class="btn-xs btn btn-default" href="'.LINK.'server/password/'.$server['id'].'">'.__('Edit password').'</a>';
+    
+    echo '</td>';
+
+
+
     echo '<td>'.$server['ip'].'</td>';
     echo '<td>'.$server['port'].'</td>';
     echo '</tr>'."\n";

@@ -27,12 +27,12 @@ use \Glial\Synapse\FactoryController;
             <div class="col-md-4"><?= __("Database") ?></div>
             <div class="col-md-4">
                 <?php
-                echo Form::select("compare_main", "database__original", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker"))
+                echo Form::select("compare_main", "database__original", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker","data-width"=>"100%" ))
                 ?>
             </div>
             <div class="col-md-4">
                 <?php
-                echo Form::select("compare_main", "database__compare", $data['listdb2'], "", array("data-live-search" => "true", "class" => "selectpicker"))
+                echo Form::select("compare_main", "database__compare", $data['listdb2'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width"=>"100%"))
                 ?>
             </div>
         </div>

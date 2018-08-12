@@ -31,10 +31,6 @@ class Extraction
             $server = self::getServerList();
         }
 
-
-
-
-
         $extra_where = "";
         $INNER       = "";
         if (empty($date)) {
@@ -50,7 +46,7 @@ class Extraction
                     $date_min = $date[0];
                     $date_max = $date[1];
 
-                    $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '.$date_max.' ";
+                    $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
                     $extra_where = " AND a.`date` IN ('".implode("','", $date)."') ";
                 }
@@ -64,17 +60,17 @@ class Extraction
 
 
 
+        /*
+          if (count($var) != self::count_recursive($variable)) {
 
-        if (count($var) != self::count_recursive($variable)) {
-
-            //echo from(__FILE__);
-            //debug(self::count_recursive($variable));
-            //debug($var);
-            //debug($variable);
+          //echo from(__FILE__);
+          //debug(self::count_recursive($variable));
+          //debug($var);
+          //debug($variable);
 
 
-            throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
-        }
+          throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
+          } */
 
         $sql2 = array();
 
@@ -162,9 +158,15 @@ class Extraction
 
             //debug(self::$variable[$ob->id_ts_variable]);
 
-            $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
-            $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
-            $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            if ($range) {
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
+                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            } else {
+                $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
+                $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
+                $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+            }
         }
 
         //debug($table);
@@ -182,7 +184,12 @@ class Extraction
                 $name = $split[1];
                 $from = $split[0];
 
-                $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' AND `from` = '".strtolower($from)."')";
+                if (empty($name)) {
+                    $sqls[] = "(SELECT * FROM ts_variable where `from` = '".strtolower($from)."')";
+                } else {
+
+                    $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' AND `from` = '".strtolower($from)."')";
+                }
             } else {
 
                 $name   = $split[0];
@@ -223,7 +230,7 @@ class Extraction
 
     static public function graph($var, $server, $range)
     {
-        $res  = self::extract($var, $server, $date = "", $range, true);
+        $res   = self::extract($var, $server, $date  = "", $range, true);
         $graph = array();
         while ($ar    = self::$db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $graph[$ar['id_mysql_server']] = $ar;

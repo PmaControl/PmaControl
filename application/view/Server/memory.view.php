@@ -100,6 +100,9 @@ if (! empty($data['variables'])) {
             $mem_kb = format($data['memory'][$server] * 1024);
         }
 
+
+
+        $data['memory'][$server] = $data['memory'][$server] ?? 8*1024;
         
         $style = ($totalmemory > $data['memory'][$server] * 1024) ? "background:#d9534f; color:#fff" : "";
         $style2 = ($totalmemoryused > $data['memory'][$server] * 1024) ? "background:#000000; color:#fff" : "";
@@ -127,7 +130,11 @@ if (! empty($data['variables'])) {
         echo '<td style="' . $style . '">' . format($totalmemory) . '</td>';
 
         echo '<td style="' . $style2 . '">' . format($totalmemoryused) . '</td>';
-        echo '<td>' . $data['status'][$server]['Max_used_connections'] . '</td>';
+
+
+        debug($data['status'][$server]);
+        
+        echo '<td>' . $data['status'][$server]['max_used_connections'] . '</td>';
         echo '<td>' . $mem_kb . '</td>';
 
         echo '</tr>';

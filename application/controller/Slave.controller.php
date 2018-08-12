@@ -84,15 +84,16 @@ class Slave extends Controller
     private function generateGraph($slaves)
     {
 
+
         foreach ($slaves as $slave) {
 
             $this->di['js']->code_javascript('
 
 Chart.defaults.global.legend.display = false;
 
-var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].'").getContext("2d");
+var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'").getContext("2d");
 
-var myChart'.$slave['id_mysql_server'].' = new Chart(ctx, {
+var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new Chart(ctx, {
     type: "line",
     data: {
         labels: [],
@@ -170,6 +171,10 @@ var myChart'.$slave['id_mysql_server'].' = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
+
+
+
+
     }
 
     public function box()

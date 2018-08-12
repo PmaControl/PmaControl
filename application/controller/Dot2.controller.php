@@ -58,6 +58,7 @@ class Dot2 extends Controller
     var $serveur_affiche         = array();
     var $graph_arbitrator        = array(); // containt all id of arbitrator
     var $joiner                  = array();
+    var $galera_border           = array();
 
     public function getMasterSlave($param)
     {
@@ -404,7 +405,7 @@ class Dot2 extends Controller
             }
         }
 
-        Debug::debug($this->graph_node, "GENERATE NODE");
+//        Debug::debug($this->graph_node, "GENERATE NODE");
 
 
 //Debug::debug($this->graph_node);
@@ -825,11 +826,10 @@ class Dot2 extends Controller
 
                     if ($this->servers[$id_slave]['is_available'] === "0") {
 
-			    if ($val['label'] != "SST")
-			    {    
-			$val['color'] = self::REPLICATION_ERROR;
-			$val['label'] = "HS";
-			    }
+                        if ($val['label'] != "SST") {
+                            $val['color'] = self::REPLICATION_ERROR;
+                            $val['label'] = "HS";
+                        }
                     }
 
 
@@ -837,11 +837,10 @@ class Dot2 extends Controller
                         $style = $val['style'];
                     }
 
-		    $extra = "";
-		    if ($val['label'] === 'SST')
-		    {
-			$extra = " constraint=false ";
-			   }
+                    $extra = "";
+                    if ($val['label'] === 'SST') {
+                        $extra = " constraint=false ";
+                    }
 
 
                     $edge = $id_master." -> ".$id_slave
@@ -874,31 +873,25 @@ class Dot2 extends Controller
     {
 
         //debug($this->graph_node);
-
-        Debug::debug($this->galera_cluster, "galera_cluster");
+        //Debug::debug($this->galera_cluster, "galera_cluster");
 
         foreach ($this->galera_cluster as $cluster_name => $members) {
-		
+
             $this->joiner = array();
 
+            //Debug::debug($members);
 
-	Debug::debug($members);
-
-	    foreach ($members as $id_mysql_server => $member) {
+            foreach ($members as $id_mysql_server => $member) {
                 $segment = $this->extractProviderOption($member['wsrep_provider_options'], "gmcast.segment");
 
                 $this->graph_galera_cluster[$cluster_name][$segment][] = $id_mysql_server;
 
-
-
-
                 if (!empty($member['wsrep_local_state_comment']) && $member['wsrep_local_state_comment'] === "Donor/Desynced") {
-			$this->getSstJoiner($member);
+                    $this->getSstJoiner($member);
 
-			Debug::debug($this->joiner);
+                    Debug::debug($this->joiner);
                 }
-		Debug::debug($this->graph_edge);
-
+                //Debug::debug($this->graph_edge);
                 // if donor
                 // $this->graph_node[$id_mysql_server]['color']
 
@@ -924,7 +917,7 @@ class Dot2 extends Controller
             }
         }
 
-        Debug::debug($this->graph_galera_cluster, "Galera Cluster");
+        //Debug::debug($this->graph_galera_cluster, "Galera Cluster");
         //$graph_galera_cluster;
 
         return $this->graph_galera_cluster;
@@ -933,9 +926,7 @@ class Dot2 extends Controller
     public function generateGaleraCluster($group)
     {
         $galera = "";
-
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
-
 
             ksort($segments);
 
@@ -946,28 +937,40 @@ class Dot2 extends Controller
             $cluster      .= 'style=solid;penwidth=2; color="'.self::GALERA_AVAILABLE.'";'."\n";
             $cluster      .= 'label = "Galera : '.$cluster_name.'";';
 
+            //Debug::debug($nodes_ordered, "nodes_ordered");
+            //$cluster .= implode(" -> ", $all_segment)."[color=grey arrowhead=none];\n"; // [constraint=false]
+
+            $first_from_segment = array();
+
+
+
             foreach ($segments as $segment => $nodes) {
+
+                $nodes_ordered = $this->orderyBy($nodes, 'hostname');
+
+
+                $first_from_segment[$segment] = end($nodes_ordered);
 
                 $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name)."_".$segment." {\n";
                 $cluster .= 'label = "Segment : '.$segment.'";'."\n";
                 $cluster .= 'rankdir="LR";';
                 $cluster .= 'rank="same"; penwidth=2;';
                 $cluster .= 'color="'.self::GALERA_AVAILABLE.'";style=dashed;penwidth=2;fontname="arial";'."\n";
-		
+
 //		ksort($nodes);
-		
-		if (count($nodes) > 1) {
-                    $cluster .= implode("->", $nodes)."[style=invis];\n"; // [constraint=false]
+
+                if (count($nodes) > 1) {
+                    $cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n";
                 } else {
                     $cluster .= end($nodes).";\n"; // [constraint=false]
-		}/**/
+                }/**/
 
-
-		
                 foreach ($nodes as $id_mysql_server) {
 
-                  // $cluster .= $id_mysql_server.";\n";
-		}/***/
+                    // $cluster .= $id_mysql_server.";\n";
+                }
+
+
                 $cluster .= ' }'."\n";
             }
 
@@ -975,9 +978,29 @@ class Dot2 extends Controller
 
 
             if (in_array($id_mysql_server, $group)) {
+
+
+
+                if (count($first_from_segment) > 1) { // evite que la fleche entre segement si un seul segment
+                    $cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
+                    //Debug::debug($this->servers);
+                }
+
                 $galera .= $cluster;
+
+                if (in_array(7, $group)) {
+
+                    //$galera .= "27 -> 97 [style=invis];\n";
+                    //$galera .= "97 -> 21 ;\n";
+                    //$galera .= "6 -> 21 [style=invis];\n";
+
+                    Debug::debug($first_from_segment);
+                    Debug::debug($cluster, "GOOG");
+                }
             }
         }
+
+
 
 
         return $galera;
@@ -1072,71 +1095,66 @@ class Dot2 extends Controller
                 unset($all_ip_port[$key]);
             }
         }
-	Debug::debug($all_ip_port, "SST RECEIVER");
+        Debug::debug($all_ip_port, "SST RECEIVER");
 
-	foreach($all_ip_port as $joiner)
-	{
-	   	if (! in_array($joiner, $this->joiner))
-		{
-		$row = $this->servers[$this->maping_master[$joiner]];
+        foreach ($all_ip_port as $joiner) {
+            if (!in_array($joiner, $this->joiner)) {
+                $row = $this->servers[$this->maping_master[$joiner]];
 
 
-		$this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = self::REPLICATION_SST;
-		$this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['label'] = "SST";
+                $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = self::REPLICATION_SST;
+                $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['label'] = "SST";
 
-		if ($data['wsrep_sst_method'] === "xtrabackup-v2" || $data['wsrep_sst_method'] === "mariabackup") {
-			$this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR;
-		} else {
-			$this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR_DESYNCED;
-		}
+                if ($data['wsrep_sst_method'] === "xtrabackup-v2" || $data['wsrep_sst_method'] === "mariabackup") {
+                    $this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR;
+                } else {
+                    $this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR_DESYNCED;
+                }
 
+                $this->graph_node[$row['id_mysql_server']]['color'] = self::NODE_RECEIVE_SST;
 
-
-		$this->graph_node[$row['id_mysql_server']]['color'] = self::NODE_RECEIVE_SST;
-
-		$this->joiner[] = $joiner;
-		break;
-		}
-		Debug::debug($row);
-	}
+                $this->joiner[] = $joiner;
+                break;
+            }
+            Debug::debug($row);
+        }
     }
 
     public function generateRankForMM($group)
     {
-	    $graph = '';
+        $graph = '';
 
-	    foreach ($this->graph_master_master as $key => $mastermaster) {
-		    foreach ($mastermaster as $id_server) {
-			    if (in_array($id_server, $group)) {
-				    $graph .= "{rank = same; ".implode(";", $mastermaster).";}\n";
-				    break;
-			    }
-		    }
-	    }
+        foreach ($this->graph_master_master as $key => $mastermaster) {
+            foreach ($mastermaster as $id_server) {
+                if (in_array($id_server, $group)) {
+                    $graph .= "{rank = same; ".implode(";", $mastermaster).";}\n";
+                    break;
+                }
+            }
+        }
 
-	    return $graph;
+        return $graph;
     }
 
     public function legend()
     {
 
-	    $sql = "SELECT * FROM `architecture_legend` order by `order`;";
+        $sql = "SELECT * FROM `architecture_legend` order by `order`;";
 
-	    $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-	    $res = $db->sql_query($sql);
+        $res = $db->sql_query($sql);
 
-	    $edges = array();
-	    while ($arr   = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-		    $edges[] = $arr;
-	    }
+        $edges = array();
+        while ($arr   = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $edges[] = $arr;
+        }
 
-	    $legend = 'digraph {
+        $legend = 'digraph {
 	    rankdir=LR
-		    graph [fontname = "helvetica"];
+	    graph [fontname = "helvetica"];
 	    node [fontname = "helvetica"];
 	    edge [fontname = "helvetica"];
-
 	    node [shape=plaintext fontsize=12];
 
 	    subgraph cluster_01 {
@@ -1145,65 +1163,85 @@ class Dot2 extends Controller
 
 	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">';
 
-	    $i = 1;
-	    foreach ($edges as $edge) {
-		    $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'</td></tr>'."\n";
-		    $i++;
-	    }
-	    $legend .= '</table>>]
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'</td></tr>'."\n";
+            $i++;
+        }
+        $legend .= '</table>>]
 		    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">'."\n";
 
 
-	    $i = 1;
-	    foreach ($edges as $edge) {
-		    $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
-		    $i++;
-	    }
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
+            $i++;
+        }
 
 
-	    $legend .= '</table>>]'."\n";
+        $legend .= '</table>>]'."\n";
 
-	    $i = 1;
-	    foreach ($edges as $edge) {
-		    $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color='.$edge['color'].' arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
-		    $i++;
-	    }
+        $i = 1;
+        foreach ($edges as $edge) {
+            $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color='.$edge['color'].' arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
+            $i++;
+        }
 
-	/*
-	  key:i1:e -> key2:i1:w [color=blue]
-	  key:i2:e -> key2:i2:w [color=gray]
-	  key:i3:e -> key2:i3:w [color=peachpuff3]
-	  key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
-	 */
-	    $legend .= '
+        /*
+          key:i1:e -> key2:i1:w [color=blue]
+          key:i2:e -> key2:i2:w [color=gray]
+          key:i3:e -> key2:i3:w [color=peachpuff3]
+          key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
+         */
+        $legend .= '
   }
 }';
 
 
-	    //echo str_replace("\n", "<br />",htmlentities($legend));
+        //echo str_replace("\n", "<br />",htmlentities($legend));
 
-	    $data['legend'] = $this->getRenderer($legend);
+        $data['legend'] = $this->getRenderer($legend);
 
-	    $this->set('data', $data);
+        $this->set('data', $data);
 
-	    //https://dreampuf.github.io/GraphvizOnline/
+        //https://dreampuf.github.io/GraphvizOnline/
     }
 
-
-    function array_orderby()
+    private function array_orderby()
     {
-	    $args = func_get_args();
-	    $data = array_shift($args);
-	    foreach ($args as $n => $field) {
-		    if (is_string($field)) {
-			    $tmp = array();
-			    foreach ($data as $key => $row)
-				    $tmp[$key] = $row[$field];
-			    $args[$n] = $tmp;
-		    }
-	    }
-	    $args[] = &$data;
-	    call_user_func_array('array_multisort', $args);
-	    return array_pop($args);
+        $args = func_get_args();
+        $data = array_shift($args);
+        foreach ($args as $n => $field) {
+            if (is_string($field)) {
+                $tmp       = array();
+                foreach ($data as $key => $row)
+                    $tmp[$key] = $row[$field];
+                $args[$n]  = $tmp;
+            }
+        }
+        $args[] = &$data;
+        call_user_func_array('array_multisort', $args);
+        return array_pop($args);
+    }
+
+    public function orderyBy($array, $field)
+    {
+        $to_order = array();
+
+        foreach ($array as $id_mysql_server) {
+            if (!empty($this->servers[$id_mysql_server][$field])) {
+                $to_order[$this->servers[$id_mysql_server][$field]] = $id_mysql_server;
+            } else {
+                $to_order[] = $id_mysql_server;
+            }
+        }
+
+        krsort($to_order, SORT_REGULAR);
+
+
+
+
+
+        return $to_order;
     }
 }

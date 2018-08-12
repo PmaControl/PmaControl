@@ -32,7 +32,11 @@ class Backup extends Controller
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
 
-    
+    /*
+     * 
+     *  mysql -h 10.243.4.44 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
+     *
+     */
 
 //use \Glial\Neuron\Controller\PmaCliBackup;
     function before($param)
@@ -1328,4 +1332,12 @@ C'est simple, voici la commande :
     sed -n '/^-- Current Database: `BASE_A_EXTRAIRE`/,/^-- Current Database: `/p' dumpcomplet.sql > mabase.sql
 
 Attention toutefois, selon les exports, la langue peut changer et "Current Database" s'écrire alors en français "Base de données". À vous d'adapter cette commande.
- */
+ *
+ *
+ *
+ *  Launching ( ulimit -n 256000 && LC_ALL=C /usr/bin/mariabackup --defaults-file=/etc/mysql/my.cnf --backup --galera-info --parallel 1 --stream=xbstream --no-timestamp | gzip -6 - > /RDC/backup/BACKUP-4/backup-full-2018-08-03_192110.xbstream.gz ) 2>&1.
+
+ *
+ *
+ *
+ *  */

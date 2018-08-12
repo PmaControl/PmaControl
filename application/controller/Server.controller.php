@@ -4,14 +4,15 @@ use \Glial\Synapse\Controller;
 //use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
-
 use \App\Library\Debug;
+use \App\Library\Mysql;
+
+use App\Library\Chiffrement;
 
 
 class Server extends Controller
 {
 
-    
     use \App\Library\Filter;
 
 //dba_source
@@ -222,7 +223,7 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by `name`;";
+                 ORDER by d.`libelle`;";
 
         $res = $db->sql_query($sql);
 
@@ -695,14 +696,9 @@ var myChart = new Chart(ctx, {
 
                 $data['fields_required'] = 1;
             }
-
-
-
-            
         }
 
         $this->set('data', $data);
-
     }
 
 //DEPRECATED
@@ -926,4 +922,42 @@ var myChart = new Chart(ctx, {
 
         $this->set('data', $data);
     }
+
+    public function password($param)
+    {
+        $id_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            if (!empty($_POST['mysql_server']['passwd'])) {
+                $server['mysql_server']['passwd'] = Chiffrement::encrypt($_POST['mysql_server']['passwd']);
+                $server['mysql_server']['login'] = $_POST['mysql_server']['login'];
+                $server['mysql_server']['id']     = $id_server;
+
+                $ret = $db->sql_save($server);
+
+                if ($ret) {
+
+                    Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+                    Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+
+                    set_flash("success", "Success", "Password updated !");
+
+
+                    header("location: ".LINK.__CLASS__.'/settings');
+
+
+
+                } else {
+                    set_flash("error", "Error", "Password not updated !");
+
+                    header("location: ".LINK.__CLASS__.'/'.__FUNCTION__.'/'.$id_server);
+                    
+                }
+            }
+        }
+    }
+
 }

@@ -55,16 +55,9 @@ foreach ($data['slave'] as $slaves) {
 
         $i++;
 
-
-
-
-
         echo '<tr>';
         echo '<td>'.$i.'</td>';
         //echo '<td>' .  . '</td>';
-
-
-
 
         $class = "";
         if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
@@ -82,7 +75,6 @@ foreach ($data['slave'] as $slaves) {
         if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
 
             $id_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
-
             $m_env = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['environment'];
 
             echo '<span data-toggle="tooltip" data-placement="right" title="'.$m_env.'" class="label label-'.$data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['class'].'">'
@@ -168,7 +160,7 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
         echo ' <div style="width:160px; height:17px" class="display:inline">'
-        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].'"></canvas></div>';
+        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].crc32($connect_name).'"></canvas></div>';
         echo '</td>';
 
         $class = "";

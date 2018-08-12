@@ -163,11 +163,38 @@ class Debug
             }
 
 
-            if (is_array($string)) {
+            if (is_array($string) || is_object($string)) {
                 print_r($string);
             } else {
                 echo trim($string)."\n";
             }
+        }
+    }
+
+
+    static function sql($sql, $var ="")
+    {
+        if (self::$debug) {
+
+
+            $calledFrom = debug_backtrace();
+            $file       = pathinfo(substr(str_replace(ROOT, '', $calledFrom[0]['file']), 1))["basename"];
+            $line       = $calledFrom[0]['line'];
+
+            $file = explode(".", $file)[0];
+
+            echo "#".self::$count++."\t";
+            echo $file.":".$line."\t";
+            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+
+            if (!empty($var)) {
+                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+            }
+
+
+            echo \SqlFormatter::format($sql);
+            //echo trim($string)."\n";
+            
         }
     }
 }

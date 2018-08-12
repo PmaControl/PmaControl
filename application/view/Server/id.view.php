@@ -18,7 +18,10 @@ use Glial\Html\Form\Form;
 
     echo __("Server : ");
     echo ' ';
-    echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
+
+    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id",array("data-width"=>"auto")));
+
+    //echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
     echo ' ';
 
     echo Form::select("ts_variable", "name", $data['status'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));

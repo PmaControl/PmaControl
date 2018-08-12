@@ -8,13 +8,10 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 use \Glial\Cli\SetTimeLimit;
-
 use \App\Library\Debug;
 
 class Mysql extends Controller
 {
-
-    
     const DEBUG = true;
 
     private $table_to_purge = array();
@@ -897,8 +894,7 @@ class Mysql extends Controller
 
                 foreach ($contraints as $contraint) {
 
-                    if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'],
-                            $this->table_to_purge)) {
+                    if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge)) {
                         $color = "#337ab7";
                     } else {
                         $color = "#5cb85c";
@@ -1328,9 +1324,7 @@ class Mysql extends Controller
                 }
 
 
-                $ret = $this->testMysqlServer(array($_POST['mysql_server']['ip'],
-                    $_POST['mysql_server']['port'], $_POST['mysql_server']['login'],
-                    $_POST['mysql_server']['password']));
+                $ret = $this->testMySQL($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'], $_POST['mysql_server']['login'], $_POST['mysql_server']['password']);
 
                 if ($ret !== true) {
 
@@ -1361,32 +1355,14 @@ class Mysql extends Controller
 
                     header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
+                } else {
+                    $msg   = I18n::getTranslation(__("Your MySQL server was successfully"));
+                    $title = I18n::getTranslation(__("Success"));
+                    set_flash("success", $title, $msg);
+
+                    header("location: ".LINK."mysql/add/");
+                    exit;
                 }
-
-                /*
-                  if (empty($_POST['mysql_server']['id_client'])) {
-
-                  $_SESSION['ERROR']['mysql_server']['id_client'] = I18n::getTranslation(__("Client is mandatory"));
-
-                  $msg   = I18n::getTranslation(__("Client's link error"));
-                  $title = I18n::getTranslation(__("Client's link error"));
-                  set_flash("error", $title, $msg);
-
-                  header("location: ".LINK."mysql/add/".$this->getPost());
-                  exit;
-                  }
-
-                  if (empty($_POST['mysql_server']['id_environment'])) {
-
-                  $_SESSION['ERROR']['mysql_server']['id_environment'] = I18n::getTranslation(__("Environment is mandatory"));
-
-                  $msg   = $ret;
-                  $title = I18n::getTranslation(__("Environment's link error"));
-                  set_flash("error", $title, $msg);
-
-                  header("location: ".LINK."mysql/add/".$this->getPost());
-                  exit;
-                  } */
             } else {
 
                 $msg   = I18n::getTranslation(__("IP, port, login and password are mandatory"));
@@ -1396,13 +1372,6 @@ class Mysql extends Controller
                 header("location: ".LINK."mysql/add/".$this->getPost());
                 exit;
             }
-
-            $msg   = I18n::getTranslation(__("Your MySQL server was successfully"));
-            $title = I18n::getTranslation(__("Success"));
-            set_flash("success", $title, $msg);
-
-            header("location: ".LINK."mysql/add/");
-            exit;
         }
 
 
@@ -1439,6 +1408,18 @@ class Mysql extends Controller
 
 
         $this->set('data', $data);
+    }
+
+    private function testMySQL($hostname, $port, $user, $password)
+    {
+
+        $this->link = @mysqli_connect($hostname.":".$port, $user, trim($password));
+
+        if ($this->link) {
+            return true;
+        } else {
+            return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+        }
     }
 
     private function scanPort($ip, $port, $timeOut = 1)
@@ -1512,7 +1493,7 @@ class Mysql extends Controller
 
 
         foreach ($myfile as $line) {
-            $comment_removed = explode('#', $line)[0];
+            $comment_removed   = explode('#', $line)[0];
             $comment_removed_t = trim($comment_removed);
 
             if (!empty($comment_removed_t)) {

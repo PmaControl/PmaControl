@@ -66,7 +66,12 @@ foreach ($data['cleaner'] as $cleaner) {
     
     echo '<input type="hidden" name="id_cleaner_main" value="'.$cleaner[0].'" />';
     echo 'Servers : ';
-    echo Form::select("mysql_server", "id", $data['list_server'], "", array("data-live-search" => "true", "class" => "selectpicker server", "data-width" => "auto"));
+
+
+    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-live-search" => "true", "class" => "selectpicker server", "data-width" => "auto")));
+
+
+    //echo Form::select("mysql_server", "id", $data['list_server'], "", array("data-live-search" => "true", "class" => "selectpicker server", "data-width" => "auto"));
     echo ' - Database : ';
 
     echo Form::select("mysql_server", "database", array(), $data['databases'], array("data-live-search" => "true", "class" => "selectpicker database"));
