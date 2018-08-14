@@ -469,7 +469,7 @@ class Server extends Controller
             $data['derivate'][1]['libelle'] = __("No");
 
             if (empty($_GET['ts_variable']['date'])) {
-                $_GET['ts_variable']['date'] = "6 hour";
+                $_GET['ts_variable']['date'] = "1 hour";
             }
 
             if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])

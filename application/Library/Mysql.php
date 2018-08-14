@@ -7,6 +7,8 @@
 
 namespace App\Library;
 
+use App\Library\Extraction;
+
 class Mysql
 {
 
@@ -62,7 +64,7 @@ class Mysql
 
     static public function generateMySQLConfig($db)
     {
-   
+
         $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
         $res = $db->sql_query($sql);
 
@@ -90,5 +92,46 @@ class Mysql
         }
 
         file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+    }
+
+    static public function getMaster($db, $id_mysql_server, $connection_name = '')
+    {
+
+        Extraction::setDb($db);
+        $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
+
+        $all_masters = array();
+
+        foreach ($masters as $master) {
+
+            //a mapper aussi avec les ip virtuel (version enterprise)
+            $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
+
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                return $ob->id;
+            }
+        }
+
+
+
+        return 0;
+    }
+
+
+    static public function getDbLink($dblink,$id_mysql_server)
+    {
+
+        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
+        $res = $dblink->sql_query($sql);
+
+        while($ob = $dblink->sql_fetch_object($res))
+        {
+            $name = $ob->name;
+        }
+
+        return $name;
+        
     }
 }

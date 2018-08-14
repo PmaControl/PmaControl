@@ -414,7 +414,7 @@ class Dot2 extends Controller
     public function pushUpdateMS()
     {
         foreach ($this->slaves as $connections) {
-            foreach ($connections as $slave) {
+            foreach ($connections as $connection_name => $slave) {
 
 
                 //debug($slave);
@@ -426,6 +426,7 @@ class Dot2 extends Controller
 
 
                 $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "filled";
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
 
                 if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_OK;
@@ -714,6 +715,8 @@ class Dot2 extends Controller
         $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
 
 
+        //debug($server);
+
         $node .= $this->nodeHead($server['hostname']);
 
         $lines[] = "IP : ".$server['ip'].":".$server['port'];
@@ -842,12 +845,20 @@ class Dot2 extends Controller
                         $extra = " constraint=false ";
                     }
 
+                    $connection_name = "";
+
+
+                    //Debug::debug($this->graph_edge, "xfghbxfhg");
+
+                    if (!empty($this->graph_edge[$id_master][$id_slave]['connection_name']))
+                    {
+                        $connection_name = $this->graph_edge[$id_master][$id_slave]['connection_name'];
+                    }
+
 
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
-                        .$val['color']."\" label=\"".$val['label']."\"  edgetarget=\"".LINK."mysql/thread/"
-                        ."dsGDG"."/\" edgeURL=\"".LINK."mysql/thread/"
-                        ."sfghwdgf"."/"."thread"."\" ".$extra."];\n";
+                        .$val['color']."\" label=\"".$val['label']."\" edgeURL=\"".LINK."slave/show/".$id_slave."/".$connection_name."/\" ".$extra."];\n";
 
                     $edges .= $edge;
                 }

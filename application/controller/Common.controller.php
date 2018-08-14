@@ -242,6 +242,17 @@ class Common extends Controller
         $data['options'] = $options;
 
         //$data['width'] = $param[2] ?? "auto";
+        //pour restreindre la liste des serveurs a ceux spécifier
+
+        $mysql_server_specify = array();
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "mysql_server_specify") {
+                $mysql_server_specify = $val;
+
+                unset($data['options'][$key]);
+            }
+        }
+
 
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
@@ -251,7 +262,7 @@ class Common extends Controller
         $sql = "SELECT case error WHEN a.error='' THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip , b.letter, b.class, b.libelle
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
-            WHERE 1 ".self::getFilter()." ORDER by b.libelle,a.name";
+            WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
 
         $res = $db->sql_query($sql);
 
