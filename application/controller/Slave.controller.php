@@ -169,12 +169,18 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function show($param)
     {
+
+        $this->title = '<i class="fa fa-sitemap"></i> '.__("Slave status");
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
 
         $id_mysql_server  = $param[0];
         $replication_name = $param[1];
+
+        $data['id_mysql_server'] = $id_mysql_server ;
+        $data['replication_name'] = $replication_name;
 
         $sql = "SELECT * from mysql_server where id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
@@ -248,6 +254,43 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $data['id_slave']              = array($id_mysql_server);
         $_GET['mysql_slave']['server'] = $id_mysql_server;
+
+
+
+
+        //rebuild db
+        $db_master = $this->di['db']->sql(Mysql::getDbLink($db,$_GET['mysql_server']['id']));
+
+        $sql = "show databases;";
+        $res7 = $db_master->sql_query($sql);
+
+        $data['db_on_master'] = array();
+        $i = 0;
+        while($ob7 = $db->sql_fetch_object($res7))
+        {
+            if (in_array($ob7->Database, array('information_schema','performance_schema','mysql','sys')))
+            {
+                continue;
+            }
+
+            if ($i > 1)
+            {
+                $data['db_on_master'][] = "...";
+                break;
+            }
+
+            $data['db_on_master'][] = $ob7->Database;
+            $i++;
+        }
+
+        //gtid
+        // https://mariadb.com/fr/node/493
+        // https://mariadb.com/kb/en/library/gtid/
+
+
+        $data['class'] = __CLASS__;
+        $data['function'] = __FUNCTION__;
+
 
         $this->set('data', $data);
     }
@@ -410,7 +453,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
     }
 
-    public function startSlave()
+    public function startSlave($param)
     {
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
