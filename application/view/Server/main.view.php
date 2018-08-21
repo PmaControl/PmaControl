@@ -90,7 +90,7 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
         echo '</td>';
-        echo '<td style="'.$style.'"><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:6 hour/ts_variable:derivate:1">';
+        echo '<td style="'.$style.'"><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1 hour/ts_variable:derivate:1">';
 
 
         echo $server['display_name'];

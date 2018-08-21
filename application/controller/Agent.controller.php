@@ -218,6 +218,11 @@ class Agent extends Controller
 
             while ($ob = $db->sql_fetch_object($res)) {
 
+                // to prevent inactive daemon or crontab failure (to move to right place
+                $cmd = $php." ".GLIAL_INDEX." control service";
+                Debug::debug($cmd);
+                shell_exec($cmd);
+
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";

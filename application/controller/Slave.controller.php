@@ -5,6 +5,7 @@
 
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
+use App\Library\Mysql;
 
 class Slave extends Controller
 {
@@ -18,7 +19,7 @@ class Slave extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
+
         $this->di['js']->code_javascript('
         $(function () {
   $(\'a[data-toggle="tooltip"]\').tooltip();  /* tooltip("show") */
@@ -83,7 +84,7 @@ class Slave extends Controller
 
     private function generateGraph($slaves)
     {
-
+        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
         foreach ($slaves as $slave) {
 
@@ -168,13 +169,130 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function show($param)
     {
+
+        $this->title = '<i class="fa fa-sitemap"></i> '.__("Slave status");
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
 
+        $id_mysql_server  = $param[0];
+        $replication_name = $param[1];
+
+        $data['id_mysql_server'] = $id_mysql_server ;
+        $data['replication_name'] = $replication_name;
+
+        $sql = "SELECT * from mysql_server where id = ".$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $server = $ob;
+        }
+
+        //debug($server);
+
+        $data['slave'] = array();
+
+        if ($server['is_available'] === "1") {
+            $link_slave = $this->di['db']->sql($server['name']);
+
+            $slaves = $link_slave->isSlave();
+
+            if (count($slaves) === 1) {
+                $slave = end($slaves);
+            } else {
+
+                foreach ($slaves as $option) {
+                    if ($option['Connection_name'] === $replication_name) {
+                        $slave = $option;
+                    }
+                }
+            }
+
+            $data['slave'] = $slave;
+        }
+
+        ksort($data['slave']);
+        //debug($data['slave']);
+
+
+        $data['replication_name'] = $replication_name;
 
 
 
+        Extraction::setDb($db);
+
+        Extraction::setOption('groupbyday', true);
+        $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array("2018-08-01 00:00:00", "2018-08-19 00:00:00"), true, true);
+
+
+        $this->generateGraphSlave($slaves);
+
+
+        foreach ($slaves as $slave) {
+            $data['graph'][$slave['day']] = $slave;
+        }
+
+
+
+        //change master
+        $sql = "SELECT a.id_mysql_server FROM link__architecture__mysql_server a
+          INNER JOIN link__architecture__mysql_server b ON a.id_architecture = b.id_architecture
+          WHERE b.id_mysql_server=".$id_mysql_server." and a.id_mysql_server != ".$id_mysql_server.";";
+
+        $res = $db->sql_query($sql);
+
+        $data['mysql_server_specify'] = array();
+        while ($ob                           = $db->sql_fetch_object($res)) {
+            $data['mysql_server_specify'][] = $ob->id_mysql_server;
+        }
+
+
+
+        // find master
+        $_GET['mysql_server']['id'] = Mysql::getMaster($db, $id_mysql_server, $replication_name);
+
+        $data['id_slave']              = array($id_mysql_server);
+        $_GET['mysql_slave']['server'] = $id_mysql_server;
+
+
+
+
+        //rebuild db
+        $db_master = $this->di['db']->sql(Mysql::getDbLink($db,$_GET['mysql_server']['id']));
+
+        $sql = "show databases;";
+        $res7 = $db_master->sql_query($sql);
+
+        $data['db_on_master'] = array();
+        $i = 0;
+        while($ob7 = $db->sql_fetch_object($res7))
+        {
+            if (in_array($ob7->Database, array('information_schema','performance_schema','mysql','sys')))
+            {
+                continue;
+            }
+
+            if ($i > 1)
+            {
+                $data['db_on_master'][] = "...";
+                break;
+            }
+
+            $data['db_on_master'][] = $ob7->Database;
+            $i++;
+        }
+
+        //gtid
+        // https://mariadb.com/fr/node/493
+        // https://mariadb.com/kb/en/library/gtid/
+
+
+        $data['class'] = __CLASS__;
+        $data['function'] = __FUNCTION__;
+
+
+        $this->set('data', $data);
     }
 
     public function box()
@@ -248,7 +366,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
                     $export['slave_io_errno']  = $slave['last_io_errno'];
 
                     $data['box'][] = $export;
-
                 }
             }
         }
@@ -257,55 +374,93 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $this->set('data', $data);
         //debug($data['box']);
     }
-}
-/*
- *
-MariaDB [pmacontrol]> select * from ts_variable where `from` = 'slave';
-+------+-------------------------------+--------+-------+
-| id   | name                          | type   | from  |
-+------+-------------------------------+--------+-------+
-|  794 | slave_io_state                | TEXT   | slave |
-|  795 | master_host                   | TEXT   | slave |
-|  796 | master_user                   | TEXT   | slave |
-|  797 | master_port                   | INT    | slave |
-|  798 | connect_retry                 | INT    | slave |
-|  799 | master_log_file               | TEXT   | slave |
-|  800 | read_master_log_pos           | INT    | slave |
-|  801 | relay_log_file                | TEXT   | slave |
-|  802 | relay_log_pos                 | INT    | slave |
-|  803 | relay_master_log_file         | TEXT   | slave |
-|  804 | slave_io_running              | TEXT   | slave |
-|  805 | slave_sql_running             | TEXT   | slave |
-|  806 | replicate_do_db               | TEXT   | slave |
-|  807 | replicate_ignore_db           | TEXT   | slave |
-|  808 | last_errno                    | INT    | slave |
-|  809 | skip_counter                  | INT    | slave |
-|  810 | exec_master_log_pos           | INT    | slave |
-|  811 | relay_log_space               | INT    | slave |
-|  812 | until_condition               | TEXT   | slave |
-|  813 | until_log_pos                 | INT    | slave |
-|  814 | master_ssl_allowed            | TEXT   | slave |
-|  815 | seconds_behind_master         | INT    | slave |
-|  816 | master_ssl_verify_server_cert | TEXT   | slave |
-|  817 | last_io_errno                 | INT    | slave |
-|  818 | last_sql_errno                | INT    | slave |
-|  819 | master_server_id              | INT    | slave |
-| 1174 | slave_sql_state               | TEXT   | slave |
-| 1175 | using_gtid                    | TEXT   | slave |
-| 1176 | parallel_mode                 | TEXT   | slave |
-| 1177 | retried_transactions          | INT    | slave |
-| 1178 | max_relay_log_size            | INT    | slave |
-| 1179 | executed_log_entries          | INT    | slave |
-| 1180 | slave_received_heartbeats     | INT    | slave |
-| 1181 | slave_heartbeat_period        | DOUBLE | slave |
-| 1182 | gtid_slave_pos                | TEXT   | slave |
-| 1183 | gtid_io_pos                   | TEXT   | slave |
-| 1233 | sql_delay                     | INT    | slave |
-| 1234 | sql_remaining_delay           | TEXT   | slave |
-| 1235 | slave_sql_running_state       | TEXT   | slave |
-| 1924 | last_io_error                 | TEXT   | slave |
-+------+-------------------------------+--------+-------+
-40 rows in set (0.002 sec)
 
- *
- */
+    private function generateGraphSlave($slaves)
+    {
+        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
+
+        foreach ($slaves as $slave) {
+
+            $this->di['js']->code_javascript('
+
+Chart.defaults.global.legend.display = false;
+
+var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'").getContext("2d");
+
+var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new Chart(ctx, {
+
+    type: "line",
+    data: {
+        datasets: [{
+            label: "'.__('Second behind master').'",
+            data: ['.$slave['graph'].'],
+                borderWidth: 1,
+             pointRadius :1,
+             lineTension: 0
+
+        },
+]
+    },
+    options: {
+        bezierCurve: false,
+        title: {
+            display: true,
+            text: "Replication : '.$slave['day'].'",
+            position: "top",
+            padding: "0"
+        },
+        pointDot : false,
+        scales: {
+            xAxes: [{
+
+                type: "time",
+                display: true,
+                scaleLabel: {
+                  display: true,
+                  labelString: "Date",
+                },
+                distribution: "linear",
+                time: {
+
+                    min: new Date("'.$slave['day'].' 00:00:00"),
+                    max: new Date("'.$slave['day'].' 23:59:59"),
+                    tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
+                    displayFormats: {
+          minute: "HH:mm"
+        }
+
+                }
+
+            }],
+             yAxes: [{
+             ticks: {
+         beginAtZero:false,
+      },
+
+      scaleLabel: {
+        display: true,
+        labelString: "Second behind master",
+
+      }
+
+    }]
+        }
+    }
+});
+
+
+');
+        }
+    }
+
+    public function startSlave($param)
+    {
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            $db = Mysql::getDbLink();
+
+            
+        }
+    }
+}

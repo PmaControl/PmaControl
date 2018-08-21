@@ -946,3 +946,11 @@ td.line-edit{ligne-height:50px; width: 300px}
   background: #00ff00;
   color: #2c8e24;
 }
+
+
+.tab-slave td{
+    padding:4px;
+    text-align: right
+}
+
+.table tr:first-child th {background: #ccc; }

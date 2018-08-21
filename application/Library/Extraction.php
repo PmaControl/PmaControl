@@ -12,8 +12,9 @@ class Extraction
 
     use \App\Library\Filter;
     static $db;
-    static $variable = array();
-    static $server   = array();
+    static $variable   = array();
+    static $server     = array();
+    static $groupbyday = false;
 
     static public function setDb($db)
     {
@@ -82,6 +83,9 @@ class Extraction
 
                 //debug($radical);
 
+
+
+
                 if ($radical == "slave") {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
@@ -89,10 +93,17 @@ class Extraction
                 }
 
 
-                $sql2[] = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
+
+
+                $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
                     .$INNER."
                 WHERE id_ts_variable IN (".implode(",", $tab_ids).")
                     AND a.id_mysql_server IN (".implode(",", $server).") $extra_where)";
+
+
+
+
+                $sql2[] = $sql4;
             }
         }
 
@@ -109,14 +120,27 @@ class Extraction
 
             $sql3 = "WITH t as ($sql3)
                 SELECT t.id_mysql_server,
-                id_ts_variable,
+                id_ts_variable,";
+
+            if (self::$groupbyday) {
+                $sql3 .= " date(t.`date`) as day, ";
+            }
+
+
+            $sql3 .= "
                 connection_name,
                 group_concat(concat('{ x: new Date(\'',t.`date`, '\'), y: ',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
                 min(t.`value`) as `min`,
                 max(t.`value`) as `max`,
                 avg(t.`value`) as `avg`,
                 std(t.`value`) as `std`
-            FROM t GROUP BY id_mysql_server order by `std` desc;";
+            FROM t GROUP BY id_mysql_server ";
+
+            if (self::$groupbyday) {
+                $sql3 .= " ,date(t.`date`) ";
+            } else {
+                $sql3 .= " order by `std` desc;";
+            }
         }
 
 
@@ -237,5 +261,10 @@ class Extraction
         }
 
         return $graph;
+    }
+
+    static public function setOption($var, $val)
+    {
+        self::$$var = $val;
     }
 }

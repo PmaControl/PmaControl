@@ -10,7 +10,7 @@ namespace App\Library;
 trait Filter
 {
 
-    static private function getFilter()
+    static private function getFilter($id_mysql_server = array())
     {
 
         $where = "";
@@ -35,6 +35,11 @@ trait Filter
         }
         if (!empty($client)) {
             $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
+        }
+
+        if (! empty($id_mysql_server))
+        {
+            $where .= " AND a.id IN (".implode(',', $id_mysql_server).") ";
         }
 
         return $where;
