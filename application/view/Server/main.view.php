@@ -13,27 +13,24 @@ function formatVersion($version)
         $number = $version;
     }
 
-    $name = 'MySQL';
 
     switch (strtolower($fork)) {
 
-        case 'mysql':
-            $name = 'MySQL';
-            break;
 
         case 'mariadb':
-            $name = 'MariaDB';
+            $name = '<span class="geek">&#xF130;</span> MariaDB';
             break;
 
         case 'percona':
             $name = 'percona';
             break;
+
+        default:
+           $name = '<span class="geek">&#xF137;</span> MySQL';
     }
 
     return $name." ".$number;
 }
-
-
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -59,7 +56,8 @@ echo '<th>'.__("Date refresh").'</th>';
 
 
 
-echo '<th style="max-width:500px">'.__("Error").'</th>';
+echo '<th style="max-width:400px">'.__("Error").'</th>';
+echo '<th>'.__("Acknowledge").'</th>';
 echo '</tr>';
 
 
@@ -77,6 +75,11 @@ if (!empty($data['servers'])) {
         $style = "";
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
             $style = 'background-color:#d9534f; color:#FFFFFF';
+
+            if ($server['is_acknowledged'] !== "0")
+            {
+                $style = 'background-color:#cccccc; color:#999999';
+            }
         }
 
         echo '<tr>';
@@ -117,6 +120,8 @@ if (!empty($data['servers'])) {
         }
 
 
+        
+
         echo '</td>';
         echo '<td style="'.$style.'">';
 
@@ -131,7 +136,7 @@ if (!empty($data['servers'])) {
 
         echo '<td style="max-width:600px;'.$style.'" class="">';
 
-        if (strstr($server['error'], '[0m') ) {
+        if (strstr($server['error'], '[0m')) {
             $converter = new AnsiToHtmlConverter();
             $html      = $converter->convert($server['error']);
 
@@ -139,25 +144,26 @@ if (!empty($data['servers'])) {
 
             echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">'.$html.'</pre>';
 //$server['error'];
-        }
-
-        else if (strstr($server['error'], 'Call Stack:'))
-        {
+        } else if (strstr($server['error'], 'Call Stack:')) {
             //echo end(explode("\n", $server['error']));
             preg_match_all("/\[[\s0-9:_-]+\]\[ERROR\](.*)/", $server['error'], $output_array);
 
-            if (!empty($output_array[0][0]))
-            {
+            if (!empty($output_array[0][0])) {
                 echo $output_array[0][0];
             }
 
             //echo $server['error'];
-        }
-
-        else {
+        } else {
             echo str_replace("\n", '<br>', trim($server['error']));
         }
         echo '</td>';
+        echo '<td style="'.$style.'">';
+
+        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
+        }
+        echo '</td>';
+
         echo '</tr>';
     }
 }
@@ -168,3 +174,4 @@ echo '<input type="hidden" name="is_monitored" value="1" />';
 echo '<button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Update</button>';
 
 echo '</form>';
+        

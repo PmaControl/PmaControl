@@ -89,7 +89,8 @@ foreach ($data['servers'] as $server) {
     
     
     
-    echo ' <a class="btn-xs btn btn-default" href="'.LINK.'server/password/'.$server['id'].'">'.__('Edit password').'</a>';
+    echo ' <a class="btn-xs btn btn-primary" href="'.LINK.'server/password/'.$server['id'].'">'.__('Edit password').'</a>';
+    echo ' <a class="btn-xs btn btn-danger" href="'.LINK.'server/remove/'.$server['id'].'">'.__('Remove').'</a>';
     
     echo '</td>';
 

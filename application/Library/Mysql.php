@@ -8,6 +8,7 @@
 namespace App\Library;
 
 use App\Library\Extraction;
+use \Glial\Security\Crypt\Crypt;
 
 class Mysql
 {
@@ -52,14 +53,9 @@ class Mysql
 
     static public function onAddMysqlServer($db)
     {
-        $sql1 = "select * from ts_file;";
-        $res1 = $db->sql_query($sql1);
 
-        while ($ob1 = $db->sql_fetch_object($res1)) {
-            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server;";
-            $db->sql_query($sql5);
-        }
+        self::addMaxDate($db);
+        self::generateMySQLConfig($db);
     }
 
     static public function generateMySQLConfig($db)
@@ -94,6 +90,18 @@ class Mysql
         file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
 
+    static public function addMaxDate($db)
+    {
+        $sql1 = "select * from ts_file;";
+        $res1 = $db->sql_query($sql1);
+
+        while ($ob1 = $db->sql_fetch_object($res1)) {
+            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
+                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server;";
+            $db->sql_query($sql5);
+        }
+    }
+
     static public function getMaster($db, $id_mysql_server, $connection_name = '')
     {
 
@@ -119,19 +127,64 @@ class Mysql
         return 0;
     }
 
-
-    static public function getDbLink($dblink,$id_mysql_server)
+    static public function getDbLink($dblink, $id_mysql_server)
     {
 
         $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
         $res = $dblink->sql_query($sql);
 
-        while($ob = $dblink->sql_fetch_object($res))
-        {
+        while ($ob = $dblink->sql_fetch_object($res)) {
             $name = $ob->name;
         }
 
         return $name;
-        
+    }
+
+    static function getIp($hostname)
+    {
+        $ip = shell_exec("dig +short ".$hostname);
+
+        return trim($ip);
+    }
+
+    static function crypt($password)
+    {
+        Crypt::$key = CRYPT_KEY;
+        $passwd     = Crypt::encrypt($password);
+
+        return $passwd;
+    }
+
+    static function unCrypt($password_crypted)
+    {
+        Crypt::$key = CRYPT_KEY;
+        $passwd     = Crypt::decrypt($password_crypted);
+
+        return $passwd;
+    }
+
+    static function getHostname($name, $data)
+    {
+
+
+        if (empty($name) || $name == "@hostname") {
+
+
+            $db = new \mysqli($data['0'], $data['1'], $data['2'], "mysql", $data['3']);
+
+            if ($db) {
+                $res = $db->query('SELECT @@hostname as hostname;');
+
+                while ($ob = $res->fetch_object()) {
+                    $hostname = $ob->hostname;
+                }
+
+                $db->close();
+            }
+        } else {
+            $hostname = $name;
+        }
+
+        return $hostname;
     }
 }

@@ -13,6 +13,36 @@ use Glial\Html\Form\Form;
         </div>
 
         <div class="well">
+
+
+
+
+
+
+
+
+            <div class="row">
+
+
+                <div class="col-md-12">
+                    <b>Name</b><br><br>
+                </div>
+
+                <div class="col-md-6">
+                    <?= __("Connection name") ?>
+                    <?=
+                    Form::input("mysql_server", "display_name",
+                        array("class" => "form-control", "placeholder" => __("Type a name for the connection, if you let empty we will take 'select @@hostname'")))
+                    ?>
+                </div>
+
+            </div>
+
+
+            <div class="row"><br><br></div>
+
+
+
             <div class="row">
 
 
@@ -41,18 +71,19 @@ use Glial\Html\Form\Form;
 
                 <div class="col-md-6"><?= __("Password") ?>
                     <?=
-                    Form::input("mysql_server", "password", array("type"=>"password", "class" => "form-control", "placeholder" => "Password of mysql server"))
+                    Form::input("mysql_server", "password", array("type" => "password", "class" => "form-control", "placeholder" => "Password of mysql server"))
                     ?></div>
             </div>
 
 
-            <div class="col-md-12">
-                <br><br><b>Others</b><br><br>
-            </div>
+
 
 
             <div class="row">
 
+                <div class="col-md-12">
+                    <br><br><b>Others</b><br><br>
+                </div>
 
 
                 <div class="col-md-4"><?= __("Clients") ?>
@@ -69,9 +100,9 @@ use Glial\Html\Form\Form;
 
                 <!--
                 <div class="col-md-4"><?= __("Tags") ?><?=
-                    Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
-                        , "", array("class" => "form-control"))
-                    ?></div>
+                Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
+                    , "", array("class" => "form-control"))
+                ?></div>
                 -->
             </div>
 

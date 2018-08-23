@@ -6,7 +6,25 @@ and open the template in the editor.
 /* 
     Created on : 21 janv. 2015, 18:47:01
     Author     : alequoy
+https://github.com/file-icons/MFixx
 */
+
+@font-face {
+    font-family: 'MFixx';
+    src: url('../fonts/MFixx.eot'); /* IE9 Compat Modes */
+    src: url('../fonts/MFixx.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+        url('../fonts/MFixx.woff') format('woff'), /* Modern Browsers */
+        url('../fonts/MFixx.ttf')  format('truetype'), /* Safari, Android, iOS */
+        url('../fonts/MFixx.svg#svgFontName') format('svg'); /* Legacy iOS */
+}
+
+
+.geek
+{
+    font-family: "MFixx";
+}
+
+
 
 .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus {
     background-color: #3071a9;
@@ -325,24 +343,24 @@ tr.pma-danger td{background:#c9302c; color:#fff}
 
 /*
 .text{
-	color: rgba(0,0,0,.9);
-	text-align: center;
+        color: rgba(0,0,0,.9);
+        text-align: center;
 }*/
 
 
 .folded-corner:hover .text{
-	visibility: visible;
-	color: #ccc;
+    visibility: visible;
+    color: #ccc;
 }
 
 
 .folded-corner:hover h3{
-	visibility: visible;
-	color: #fff;
+    visibility: visible;
+    color: #fff;
 } 
 .Services-tab{
-	margin-top:20px;
-	
+    margin-top:20px;
+
 
 }
 
@@ -350,18 +368,18 @@ tr.pma-danger td{background:#c9302c; color:#fff}
   nav link items
 */
 .folded-corner{
-  padding: 25px 25px;
-  position: relative;
+    padding: 25px 25px;
+    position: relative;
 
-  
-  background: transparent;
-  transition: all ease .5s;
-  border: 1px solid rgba(0,0,0,.9);
+
+    background: transparent;
+    transition: all ease .5s;
+    border: 1px solid rgba(0,0,0,.9);
 }
 .folded-corner:hover, .folded-corner:hover td a{
-	background-color: rgba(0,0,0,.9);
-        color: #f5f5f5;
-        
+    background-color: rgba(0,0,0,.9);
+    color: #f5f5f5;
+
 }
 
 .folded-corner:hover th, .folded-corner:hover td
@@ -386,28 +404,28 @@ tr.pma-danger td{background:#c9302c; color:#fff}
 */
 
 .folded-corner:before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  border-style: solid;
-  border-width: 0 0px 0px 0;
-  border-color: #ddd #000;
-  transition: all ease .3s;
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-style: solid;
+    border-width: 0 0px 0px 0;
+    border-color: #ddd #000;
+    transition: all ease .3s;
 }
 
 /*
   on li hover make paper fold larger
 */
 .folded-corner:hover:before {
-	background-color: #fff;
-  border-width: 0 50px 50px 0;
-  border-color: #ccc #fff;
-  
+    background-color: #fff;
+    border-width: 0 50px 50px 0;
+    border-color: #ccc #fff;
+
 }
 
 .service_tab_1{
-	background-color: #f5f5f5;
+    background-color: #f5f5f5;
 }
 .service_tab_1:hover .fa-icon-image{
     color: #f5f5f5;
@@ -418,8 +436,8 @@ tr.pma-danger td{background:#c9302c; color:#fff}
 
 
 .fa-icon-image{
-	color: rgba(0,0,0,.9);
-	display: inline-block;
+    color: rgba(0,0,0,.9);
+    display: inline-block;
     font-style: normal;
     font-variant: normal;
     font-weight: normal;
@@ -457,14 +475,14 @@ td.line-edit{ligne-height:50px; width: 300px}
 
 .command-shell a
 {
-    
+
     color:#fff;
     font-weight:700;
     text-decoration: underline;
 }
 .command-shell a:hover
 {
-    
+
     text-decoration: none;
 }
 
@@ -482,119 +500,119 @@ td.line-edit{ligne-height:50px; width: 300px}
 
 
 .ref{
-  font: normal normal 12px/18px Consolas, Monaco, Andale Mono, Courier New, monospace;  
-  color: #333;
+    font: normal normal 12px/18px Consolas, Monaco, Andale Mono, Courier New, monospace;  
+    color: #333;
 }
 
 /* reset default styles for these elements */
 .ref i,
 .ref span,
 .ref a{
-  font-style: inherit;  
-  font-weight: inherit;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-  display: inline;
-  text-decoration: inherit;
-  white-space: normal;
-  background: none;
+    font-style: inherit;  
+    font-weight: inherit;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    display: inline;
+    text-decoration: inherit;
+    white-space: normal;
+    background: none;
 }
 
 /* meta content (used to generate tooltips) */
 .ref > div{
-  display: none;  
+    display: none;  
 }
 
 /* show help cursor when mouse is over an entity with a tooltip */
 .ref [data-tip]{
-  cursor: help;
+    cursor: help;
 }
 
 /* pointer if inside a link */
 .ref a > [data-tip]{
-  cursor: pointer;
+    cursor: pointer;
 }
 
 /* links */
 .ref a{
-  color: inherit;
-  border-bottom: 1px dotted transparent;
-  border-color: inherit;
+    color: inherit;
+    border-bottom: 1px dotted transparent;
+    border-color: inherit;
 }
 
 /* tooltip; note that the js overrides top/left properties, this is why we use margin  */
 #rTip{
-  display: none;  
-  position: absolute;
-  z-index: 99999;  
-  font-size: 12px;
-  white-space: pre;  
-  text-align: left;  
-  text-shadow: 0 -1px 0 #191919;  
-  line-height: 16px;
-  background: #222;
-  color: #888;         
-  border: 0;  
-  border-radius: 4px;
-  opacity: 0.90;
-  box-shadow:0 0 4px rgba(0,0,0, 0.25);  
-  -webkit-transition: opacity .25s, margin .25s;
-     -moz-transition: opacity .25s, margin .25s;
-      -ms-transition: opacity .25s, margin .25s;
-          transition: opacity .25s, margin .25s;
+    display: none;  
+    position: absolute;
+    z-index: 99999;  
+    font-size: 12px;
+    white-space: pre;  
+    text-align: left;  
+    text-shadow: 0 -1px 0 #191919;  
+    line-height: 16px;
+    background: #222;
+    color: #888;         
+    border: 0;  
+    border-radius: 4px;
+    opacity: 0.90;
+    box-shadow:0 0 4px rgba(0,0,0, 0.25);  
+    -webkit-transition: opacity .25s, margin .25s;
+    -moz-transition: opacity .25s, margin .25s;
+    -ms-transition: opacity .25s, margin .25s;
+    transition: opacity .25s, margin .25s;
 }
 
 #rTip.visible{
-  display: table;
-  margin: 10px 0 0 15px;  
+    display: table;
+    margin: 10px 0 0 15px;  
 }
 
 #rTip.visible.fadingOut{
-  opacity: 0;
-  margin: 20px 0 0 25px;
+    opacity: 0;
+    margin: 20px 0 0 25px;
 }
 
 #rTip [data-cell]{
-  padding: 2px 7px;
+    padding: 2px 7px;
 }
 
 #rTip [data-title], #rTip [data-desc]{
-  padding: 8px;
-  display: block;
-  color: #ccc;
+    padding: 8px;
+    display: block;
+    color: #ccc;
 }
 
 #rTip [data-desc]{
-  padding-top: 0px;  
-  color: #777;  
+    padding-top: 0px;  
+    color: #777;  
 }
 
 #rTip [data-cell][data-varType]{
-  padding: 10px;
-  background: #333;
-  box-shadow: inset -1px 0 0 #444;    
-  border-right:1px solid #111;
-  border-top-left-radius: 4px;
-  border-bottom-left-radius: 4px;  
+    padding: 10px;
+    background: #333;
+    box-shadow: inset -1px 0 0 #444;    
+    border-right:1px solid #111;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;  
 }
 
 #rTip [data-cell][data-sub]{
-  padding: 8px 10px 10px 10px;
-  background: #333;
-  box-shadow: inset 0 1px 0 #444;    
-  border-top:1px solid #111;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 4px;
+    padding: 8px 10px 10px 10px;
+    background: #333;
+    box-shadow: inset 0 1px 0 #444;    
+    border-top:1px solid #111;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
 
 #rTip [data-table] [data-cell]:first-child{
-  font: bold 11px Helvetica, Arial;   
-  color: #888;
+    font: bold 11px Helvetica, Arial;   
+    color: #888;
 }
 
 #rTip [data-table] [data-cell]:nth-child(2){
-  color: #edd078;
+    color: #edd078;
 }
 
 
@@ -602,101 +620,101 @@ td.line-edit{ligne-height:50px; width: 300px}
 
 /* base entity - can be nested */
 .ref span{
-  white-space: pre;
-  display: inline;
+    white-space: pre;
+    display: inline;
 }
 
 /* key-value dividers, property & method modifiers etc. */
 .ref i{
-  white-space: pre;  
-  color: #aaa;
+    white-space: pre;  
+    color: #aaa;
 }
 
 /* source expression (input) */
 .ref [data-input] > *{
-  display: none;
+    display: none;
 }
 .ref [data-input]{
-  margin: 2px 0 0;
-  padding: 2px 7px 3px 4px;
-  display: block;
-  color: #ccc;
-  background-color: #333;
-  background-image: -webkit-linear-gradient(top, #444, #333);  
-  background-image: -moz-linear-gradient(top, #444, #333);
-  background-image: -ms-linear-gradient(top, #444, #333);
-  background-image: linear-gradient(top, #444, #333);  
-  border-radius: 4px 4px 0 0;
-  border-bottom: 1px solid #fff;  
+    margin: 2px 0 0;
+    padding: 2px 7px 3px 4px;
+    display: block;
+    color: #ccc;
+    background-color: #333;
+    background-image: -webkit-linear-gradient(top, #444, #333);  
+    background-image: -moz-linear-gradient(top, #444, #333);
+    background-image: -ms-linear-gradient(top, #444, #333);
+    background-image: linear-gradient(top, #444, #333);  
+    border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid #fff;  
 }
 
 .ref [data-backtrace]{
-  float: right;
+    float: right;
 }
 
 .ref [data-output]{
-  background: #f9f9f9;        
-  border: 1px solid #eee;
-  border-top: 0;
-  border-radius: 0 0 4px 4px;
-  box-shadow: inset 0px 4px 4px #f3f3f3, inset 0px -8px 8px #fff;
-  padding: 2px 5px;  
-  margin: 0 0 4px;
-  text-shadow: 0 1px 0 #fff;
-  display: block;
+    background: #f9f9f9;        
+    border: 1px solid #eee;
+    border-top: 0;
+    border-radius: 0 0 4px 4px;
+    box-shadow: inset 0px 4px 4px #f3f3f3, inset 0px -8px 8px #fff;
+    padding: 2px 5px;  
+    margin: 0 0 4px;
+    text-shadow: 0 1px 0 #fff;
+    display: block;
 }
 
 /* expand/collapse toggle link for groups */
 .ref [data-toggle]{
-  display: inline-block;
-  vertical-align: -3px;
-  margin-left: 2px;
-  width: 0px;
-  height: 0px;
-  border-style: solid;
-  border-width: 7px 0 7px 10px;
-  border-color: transparent transparent transparent #8892BF;
-  cursor: pointer;
-  -webkit-transition: all ease-in .15s;  
-     -moz-transition: all ease-in .15s;     
-      -ms-transition: all ease-in .15s;          
-          transition: all ease-in .15s;    
+    display: inline-block;
+    vertical-align: -3px;
+    margin-left: 2px;
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    border-width: 7px 0 7px 10px;
+    border-color: transparent transparent transparent #8892BF;
+    cursor: pointer;
+    -webkit-transition: all ease-in .15s;  
+    -moz-transition: all ease-in .15s;     
+    -ms-transition: all ease-in .15s;          
+    transition: all ease-in .15s;    
 }
 
 /* collapse graphic */
 .ref [data-toggle][data-exp]{
-  -webkit-transform: rotate(90deg);
-     -moz-transform: rotate(90deg);       
-      -ms-transform: rotate(90deg);
-          transform: rotate(90deg);  
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);       
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);  
 }
 
 .ref [data-group]{
-  display: none;
+    display: none;
 }
 
 .ref [data-toggle][data-exp] ~ [data-group]{
-  display: block;
+    display: block;
 }
 
 /* group sections */
 .ref [data-table]{
-  display: table;
+    display: table;
 }
 
 /* section titles */
 .ref [data-tHead]{
-  font: bold 11px Helvetica, Arial;
-  color: #bcbcbc;
-  text-transform: lowercase;
-  margin: 12px 0 2px 10px;
-  display: block;
+    font: bold 11px Helvetica, Arial;
+    color: #bcbcbc;
+    text-transform: lowercase;
+    margin: 12px 0 2px 10px;
+    display: block;
 }
 
 /* emulate a table for displaying array & object members */
 /* section row */
 .ref [data-row]{
-  display: table-row; 
+    display: table-row; 
 }
 
 /* zebra-like rows */
@@ -705,16 +723,16 @@ td.line-edit{ligne-height:50px; width: 300px}
 
 /* section cells */
 .ref [data-cell]{
-  display: table-cell;
-  width: auto;
-  vertical-align: top;
-  padding: 1px 0 1px 10px;
+    display: table-cell;
+    width: auto;
+    vertical-align: top;
+    padding: 1px 0 1px 10px;
 }
 
 /* last cell of a row (forces table to adjust width like we want to) */
 .ref [data-output] [data-table],
 .ref [data-output] [data-cell]:last-child{
-  width: 100%;
+    width: 100%;
 }
 
 
@@ -726,75 +744,75 @@ td.line-edit{ligne-height:50px; width: 300px}
 .ref [data-unknown],
 .ref [data-resource],
 .ref [data-match]{
-  font: bold 11px Helvetica, Arial; 
-  color: #fff;        
-  padding: 1px 3px;
-  text-transform: lowercase;
-  text-shadow: none;
-  border-radius: 2px;        
-  margin-right: 5px;
-  background-color: #eee;  
-  background-image: -webkit-linear-gradient(top, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);  
-  background-image: -moz-linear-gradient(top, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%);
-  background-image: -ms-linear-gradient(top, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);
-  background-image: linear-gradient(to bottom, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);
+    font: bold 11px Helvetica, Arial; 
+    color: #fff;        
+    padding: 1px 3px;
+    text-transform: lowercase;
+    text-shadow: none;
+    border-radius: 2px;        
+    margin-right: 5px;
+    background-color: #eee;  
+    background-image: -webkit-linear-gradient(top, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);  
+    background-image: -moz-linear-gradient(top, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%);
+    background-image: -ms-linear-gradient(top, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);
+    background-image: linear-gradient(to bottom, rgba(255,255,255,0.1) 40%,rgba(0,0,0,0.1) 100%);
 }
 
 /* string matches */
 .ref [data-match]{
-  background-color: #d78035;
+    background-color: #d78035;
 }
 
 /* boolean true */
 .ref [data-true]{
-  background-color: #339900;
+    background-color: #339900;
 }
 
 /* boolean false */
 .ref [data-false]{
-  background-color: #8892BF;
-  color: #fff;
+    background-color: #8892BF;
+    color: #fff;
 }   
 
 /* null value */
 .ref [data-null],
 .ref [data-unknown]{
-  background-color: #eee;
-  color: #999;
-  text-shadow: inherit;
+    background-color: #eee;
+    color: #999;
+    text-shadow: inherit;
 }
 
 /* resources */
 .ref [data-resource]{
-  background-color: #0057ae;
+    background-color: #0057ae;
 }
 
 .ref [data-resourceProp]{
-  font: bold 11px Helvetica, Arial;   
-  color: #999;
+    font: bold 11px Helvetica, Arial;   
+    color: #999;
 }
 
 /* integer or double values */
 .ref [data-integer],
 .ref [data-double]{
-  color: #0099CC;
+    color: #0099CC;
 }   
 
 /* string values */
 .ref [data-string]{
-  background: #e6e6e6;
-  color: #000;  
-  padding: 3px 1px;
+    background: #e6e6e6;
+    color: #000;  
+    padding: 3px 1px;
 }
 
 .ref [data-string][data-special]{
-  background: none;
-  padding: 0;
+    background: none;
+    padding: 0;
 }
 
 .ref [data-string][data-special] i{
-  background: #faf3dc;
-  color: #d78035;
+    background: #faf3dc;
+    color: #d78035;
 }
 
 /* arrays & objects */
@@ -803,109 +821,109 @@ td.line-edit{ligne-height:50px; width: 300px}
 .ref [data-object],
 .ref [data-object] ~ i,
 .ref [data-resource] ~ i{
-  color:#8892BF;
+    color:#8892BF;
 }
 
 .ref [data-method]{
-  font-weight: bold;
-  color: #0057ae;
+    font-weight: bold;
+    color: #0057ae;
 }
 
 .ref [data-const][data-inherited],
 .ref [data-prop][data-inherited]{
-  color: #999;
+    color: #999;
 }
 
 .ref [data-prop][data-private],
 .ref [data-method][data-private]{
-  color: #8892BF;
+    color: #8892BF;
 }
 
 /* inherited methods */
 .ref [data-method][data-inherited]{
-  font-weight: bold;
-  color: #6da5de;
+    font-weight: bold;
+    color: #6da5de;
 }
 
 /* method arguments */
 .ref [data-param]{
-  font-weight: normal;  
-  color: #333;
+    font-weight: normal;  
+    color: #333;
 }
 
 /* optional method arguments */
 .ref [data-param][data-optional]{
-  font-style: italic;
-  font-weight: normal;    
-  color: #aaa;
+    font-style: italic;
+    font-weight: normal;    
+    color: #aaa;
 }
 
 /* group info prefix */
 .ref [data-gLabel]{
-  font: bold 11px Helvetica, Arial;  
-  padding: 0 3px;
-  color: #333;
+    font: bold 11px Helvetica, Arial;  
+    padding: 0 3px;
+    color: #333;
 }
 
 /* tiny bubbles that indicate visibility info or class features */
 .ref [data-mod]{
-  font: bold 11px Helvetica, Arial;      
-  text-shadow: none;
-  color: #fff;            
+    font: bold 11px Helvetica, Arial;      
+    text-shadow: none;
+    color: #fff;            
 }
 
 .ref [data-input] [data-mod]{
-  color: #444;
+    color: #444;
 }
 
 .ref [data-mod] span{
-  display: inline-block;  
-  margin: 0 2px;  
-  width: 14px;
-  height: 14px;
-  text-align: center;  
-  border-radius: 30px;   
-  line-height: 15px;    
+    display: inline-block;  
+    margin: 0 2px;  
+    width: 14px;
+    height: 14px;
+    text-align: center;  
+    border-radius: 30px;   
+    line-height: 15px;    
 }
 
 .ref [data-mod-interface],
 .ref [data-mod-abstract]{
-  background: #baed78;
+    background: #baed78;
 }
 
 .ref [data-mod-protected]{
-  background: #edd078;
+    background: #edd078;
 }
 
 .ref [data-mod-private]{
-  background: #eea8b9;
+    background: #eea8b9;
 }
 
 .ref [data-mod-iterateable]{
-  background: #d5dea5;
+    background: #d5dea5;
 }
 
 .ref [data-mod-cloneable]{
-  background: #bdd7d1;
+    background: #bdd7d1;
 }
 
 .ref [data-mod-final]{
-  background: #78bded;  
+    background: #78bded;  
 }
 
 /* regular expression (colors partially match RegexBuddy and RegexPal) */
 .ref [data-regex]{
-  font-weight: bold;
-  text-shadow: none;
-  padding: 1px 0;
-  background: #e6e6e6;  
-  word-wrap: break-word;
+    font-weight: bold;
+    text-shadow: none;
+    padding: 1px 0;
+    background: #e6e6e6;  
+    word-wrap: break-word;
 }
 
 /* char class */
 .ref [data-regex-chr]{
-  background: #ffc080;
-  color: #694c07;
+    background: #ffc080;
+    color: #694c07;
 }
 
 .ref [data-regex-chr-meta]{background: #e0a060;} /* char class: metasequence */
@@ -913,38 +931,38 @@ td.line-edit{ligne-height:50px; width: 300px}
 
 /* metasequence */
 .ref [data-regex-meta]{
-  background: #80c0ff;
-  color: #105f8c;
+    background: #80c0ff;
+    color: #105f8c;
 } 
 
 /* group: depth 1 */
 .ref [data-regex-g1]{
-  background: #00c000;
-  color: #fff;
+    background: #00c000;
+    color: #fff;
 }
 
 /* group: depth 2 */
 .ref [data-regex-g2]{
-  background: #c3e86c;
-  color: #648c1c;
+    background: #c3e86c;
+    color: #648c1c;
 }
 
 /* group: depth 3 */
 .ref [data-regex-g3]{
-  background: #008000;
-  color: #fff;
+    background: #008000;
+    color: #fff;
 }
 
 /* group: depth 4 */
 .ref [data-regex-g4]{
-  background: #6dcb99;
-  color: #fff;
+    background: #6dcb99;
+    color: #fff;
 }
 
 /* group: depth 5 */
 .ref [data-regex-g5]{
-  background: #00ff00;
-  color: #2c8e24;
+    background: #00ff00;
+    color: #2c8e24;
 }
 
 

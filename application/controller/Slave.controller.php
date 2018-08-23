@@ -1,4 +1,4 @@
-<?php
+ <?php
 /*
  * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK
  */

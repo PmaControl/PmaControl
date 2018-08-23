@@ -6,9 +6,7 @@ use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-
 use App\Library\Chiffrement;
-
 
 class Server extends Controller
 {
@@ -506,7 +504,7 @@ class Server extends Controller
                 $i    = 0;
 
                 $old_date = "";
-                $points   = [];
+                $point   = [];
 
                 foreach ($data['graph'] as $value) {
 
@@ -933,7 +931,7 @@ var myChart = new Chart(ctx, {
 
             if (!empty($_POST['mysql_server']['passwd'])) {
                 $server['mysql_server']['passwd'] = Chiffrement::encrypt($_POST['mysql_server']['passwd']);
-                $server['mysql_server']['login'] = $_POST['mysql_server']['login'];
+                $server['mysql_server']['login']  = $_POST['mysql_server']['login'];
                 $server['mysql_server']['id']     = $id_server;
 
                 $ret = $db->sql_save($server);
@@ -947,17 +945,56 @@ var myChart = new Chart(ctx, {
 
 
                     header("location: ".LINK.__CLASS__.'/settings');
-
-
-
                 } else {
                     set_flash("error", "Error", "Password not updated !");
 
                     header("location: ".LINK.__CLASS__.'/'.__FUNCTION__.'/'.$id_server);
-                    
                 }
             }
         }
     }
 
+    public function acknowledge($param)
+    {
+        $this->view = false;
+
+        $id_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
+
+        debug($sql);
+        $db->sql_query($sql);
+
+        header("location: ".LINK.__CLASS__."/main/");
+
+        
+    }
+
+
+    public function remove($param)
+    {
+        $this->view = false;
+
+        $id_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+        $db->sql_query($sql);
+
+        header("location: ".LINK.__CLASS__."/settings/");
+    }
+
+
+    public function acknowledgedBy($param)
+    {
+        
+
+
+        
+    }
 }
