@@ -134,7 +134,7 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="max-width:600px;'.$style.'" class="">';
+        echo '<td style="max-width:400px;'.$style.'" class="">';
 
         if (strstr($server['error'], '[0m')) {
             $converter = new AnsiToHtmlConverter();

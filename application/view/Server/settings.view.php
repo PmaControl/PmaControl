@@ -68,11 +68,12 @@ foreach ($data['servers'] as $server) {
         .'<input type="checkbox" name="mysql_server['.($i-1).'][is_monitored]" '.$checked.' />'.'</td>';
     
     echo '<td>';
-    echo Form::select("mysql_server", "id_client", $data['clients'], $server['id_client'], array());
+    echo Form::select("mysql_server", "id_client", $data['clients'], $server['id_client'], array("data-live-search" => "true", "class" => "selectpicker",  "data-actions-box"=> "true"));
     echo '</td>';
 
     echo '<td>';
-    echo Form::select("mysql_server", "id_environment", $data['environments'], $server['id_environment'], array());
+
+    echo Form::select("mysql_server", "id_environment", $data['environments'], $server['id_environment'], array("data-live-search" => "true", "class" => "selectpicker",  "data-actions-box"=> "true"));
     echo '</td>';
     echo '<td>'.__('Tags').'</td>';
     echo '<td>'.$server['name'].'</td>';
@@ -85,7 +86,7 @@ foreach ($data['servers'] as $server) {
 
 
     $_GET["mysql_server"][($i-1)]["display_name"] = $server['display_name'];
-    echo '<td>'.Form::input("mysql_server", "display_name");
+    echo '<td>'.Form::input("mysql_server", "display_name", array("class"=>"form-control"));
     
     
     
