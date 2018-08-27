@@ -122,9 +122,9 @@ class Backup extends Controller
                 $dblink = $this->di['db']->sql($db);
 
 
-               
+
                 echo '#'.$dblink->host."\n";
-               
+
 
 
                 $path = "/data/backup/user/".$dblink->host."-".$dblink->port;
@@ -152,16 +152,16 @@ class Backup extends Controller
                     while ($ob = $dblink->sql_fetch_object($res)) {
 
                         /*
-                        if ($resolve === '1') {
+                          if ($resolve === '1') {
 
-                            if ($ob->hostname === "%" || filter_var($ob->hostname, FILTER_VALIDATE_IP) || $ob->hostname === "localhost") {
-                                
-                            } else {
-                                echo "REMOVED '".$ob->user."'@'".$ob->hostname."'\n";
-                                continue;
-                            }
-                        }*/
-                        
+                          if ($ob->hostname === "%" || filter_var($ob->hostname, FILTER_VALIDATE_IP) || $ob->hostname === "localhost") {
+
+                          } else {
+                          echo "REMOVED '".$ob->user."'@'".$ob->hostname."'\n";
+                          continue;
+                          }
+                          } */
+
                         $sql  = "show grants for '".$ob->user."'@'".$ob->hostname."'";
                         $res2 = $dblink->sql_query($sql);
 
@@ -258,6 +258,14 @@ class Backup extends Controller
         $this->ariane = ' > <a href="#"><span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span> '.__("Backup management").'</a> > <span class="glyphicon glyphicon-cog" style="font-size:12px"></span> '.$this->title;
 
 
+
+        $this->di['js']->code_javascript('$("#mysql-server-").change(function () {
+    data = $(this).val();
+    $("#rename-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+       function(){
+	$("#rename-database").selectpicker("refresh");
+    });
+});');
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 

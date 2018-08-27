@@ -19,8 +19,10 @@ if (empty($data['storage_area'])) {
     echo '<table class="table table-bordered table-striped" id="table">';
 
     echo '<tr>';
-    echo '<th colspan="2">'.__("Server").'</th>';
-    echo '<th colspan="2">'.__("Database").'</th>';
+
+   echo '<th rowspan="2">'.__("ID").'</th>';
+    echo '<th rowspan="2">'.__("Server").'</th>';
+    echo '<th rowspan="2">'.__("Database").'</th>';
     echo '<th rowspan="2">'.__("Storage area").'</th>';
     echo '<th rowspan="2">'.__("Tools").'</th>';
     echo '<th colspan="5">'.__("Shedule").'</th>';
@@ -29,10 +31,8 @@ if (empty($data['storage_area'])) {
 
 
     echo '<tr>';
-    echo '<th>'.__("ID").'</th>';
-    echo '<th>'.__("Name").'</th>';
-    echo '<th>'.__("IP").'</th>';
-    echo '<th>'.__("Name").'</th>';
+    
+    
 //echo '<th>' . __("Size") . '</th>';
 
     echo '<th>'.__("Minutes").'</th>';
@@ -85,9 +85,21 @@ if (empty($data['storage_area'])) {
 
     echo '<tr id="tr-'.$i.'" class="blah">';
     echo '<td>#</td>';
-    echo '<td>'.Form::autocomplete("backup_database", "id_mysql_server", array("class" => "server form-control")).'</td>';
-    echo '<td>'.Form::autocomplete("backup_database", "id_mysql_server_2", array("class" => "ip form-control", "style" => "width:150px")).'</td>';
-    echo '<td>'.Form::select("backup_database", "id_mysql_database", $data['databases'], "", array("class" => "form-control")).'</td>';
+    echo '<td>';
+
+    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id",array("data-width"=>"auto")));
+    //.Form::autocomplete("backup_database", "id_mysql_server", array("class" => "server form-control")).
+
+    echo '</td>';
+
+
+    //echo '<td>'.Form::autocomplete("backup_database", "id_mysql_server_2", array("class" => "ip form-control", "style" => "width:150px")).'</td>';
+    echo '<td>';
+
+    
+    echo Form::select("backup_database", "id_mysql_database", $data['databases'], "", array("class" => "form-control", "data-live-search" => "true", "class" => "selectpicker","data-width"=>"100%"));
+
+    echo '</td>';
 //echo '<td>' . 0 . '</td>';
     echo '<td>'.Form::select("backup_database", "id_backup_storage_area", $data['storage_area'], "", array("class" => "form-control")).'</td>';
     echo '<td>'.Form::select("backup_database", "id_backup_type", $data['type_backup'], "", array("class" => "form-control")).'</td>';

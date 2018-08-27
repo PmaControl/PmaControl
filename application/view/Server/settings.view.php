@@ -11,9 +11,15 @@ use Glial\Html\Form\Form;
 
 echo '<form action="" method="POST">';
 echo '<div class="well">';
+
+echo '<div class="row">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
-echo '<br />';
+
 echo ' <a href="'.LINK.'Mysql/add/" class="btn btn-primary" style="font-size:12px"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a MySQL server</a> ';
+echo '</div>';
+
+
+
 echo '</div>';
 echo '</form>';
 
