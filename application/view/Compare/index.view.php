@@ -14,10 +14,10 @@ use \Glial\Synapse\FactoryController;
         <div class="row">
             <div class="col-md-4"><?= __("Server") ?></div>
             <div class="col-md-4"><?php
-                \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__original"));
+                \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__original", array("data-width"=>"100%")));
                 ?></div>
             <div class="col-md-4"><?php
-                \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__compare"));
+                \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__compare", array("data-width"=>"100%")));
                 ?></div>
         </div>
 

@@ -223,7 +223,20 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         Extraction::setDb($db);
 
         Extraction::setOption('groupbyday', true);
-        $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array("2018-08-01 00:00:00", "2018-08-19 00:00:00"), true, true);
+        
+        
+        $date        = date('Y-m-d H:i:s');
+        $date_format = 'Y-m-d';
+
+        $array_date = date_parse_from_format($date_format, $date);
+
+        $more_days = -7;
+        $next_date = date(
+            $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
+        );
+
+
+        $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date,$date ), true, true);
 
 
         $this->generateGraphSlave($slaves);

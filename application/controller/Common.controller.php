@@ -141,23 +141,60 @@ class Common extends Controller
 
     function getDatabaseByServer($param)
     {
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
+
+
+        $data['ajax'] = false;
         if (IS_AJAX) {
             $this->layout_name = false;
+            $data['ajax']      = true;
         }
 
-        $id_mysql_server = $param[0];
+        $data['table']   = $param[0];
+        $data['field']   = $param[1];
+        $id_mysql_server = $param[2];
 
-        $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
 
-        $sql  = "SHOW DATABASES";
-        $res2 = $db_to_get_db->sql_query($sql);
+        $options = array();
+        if (!empty($param[3])) {
 
-        $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
-            $data['databases'][] = $tmp;
+            $options = (array) $param[3];
+        }
+
+        $data['options'] = $options;
+
+        //$data['width'] = $param[2] ?? "auto";
+        //pour restreindre la liste des serveurs a ceux spécifier
+
+        $mysql_server_specify = array();
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "mysql_server_specify") {
+                $mysql_server_specify = $val;
+
+                unset($data['options'][$key]);
+            }
+        }
+
+
+
+
+
+        if (!empty($id_mysql_server)) {
+            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
+
+            $sql  = "SHOW DATABASES";
+            $res2 = $db_to_get_db->sql_query($sql);
+
+            $data['databases'] = [];
+            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
+                $tmp                 = [];
+                $tmp['id']           = $ob->Database;
+                $tmp['libelle']      = $ob->Database;
+                $data['databases'][] = $tmp;
+            }
+        } else {
+            $data['databases'] = array();
         }
 
         $this->set("data", $data);
@@ -176,6 +213,10 @@ class Common extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
             $db_link = $this->di['db']->sql($ob->name);
+        }
+
+        if (empty($db_link)) {
+            throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "'.$id_db.'".', 478);
         }
 
         return $db_link;

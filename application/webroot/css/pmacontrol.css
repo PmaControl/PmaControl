@@ -971,4 +971,4 @@ td.line-edit{ligne-height:50px; width: 300px}
     text-align: right
 }
 
-.table tr:first-child th {background: #ccc; }
+.table tr th {background: #ccc; }
