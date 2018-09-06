@@ -1429,9 +1429,13 @@ $(function () {
         //$this->backup_dir = $this->backup_dir;
 
 
+        Debug::debug($backup);
+
 
         $db_to_backup = $this->di['db']->sql($backup['id_connection']);
-        $MS->setInstance($db_to_backup);
+
+
+        
 
         $server_config = $db_to_backup->getParams();
 

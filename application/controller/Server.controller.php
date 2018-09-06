@@ -237,7 +237,16 @@ class Server extends Controller
         Extraction::setDb($db);
         $data['extra'] = Extraction::display(array("Version", "Hostname"));
 
-//debug($data['extra']);
+
+        $sql     = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
+        $res     = $db->sql_query($sql);
+        $data['last_date'] = array();
+        while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['last_date'][$arr['id_mysql_server']] = $arr;
+        }
+
+
+        //debug($data['extra']);
 
 
         $this->set('data', $data);
@@ -504,46 +513,49 @@ class Server extends Controller
                 $i    = 0;
 
                 $old_date = "";
-                $point   = [];
+                $point    = [];
 
-                foreach ($data['graph'] as $value) {
 
-                    if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
+                if (!empty($data['graph'])) {
+
+                    foreach ($data['graph'] as $value) {
+
+                        if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
+
+                            $old_date  = $value['date'];
+                            $old_value = $value['value'];
+                            continue;
+                        } elseif ($_GET['ts_variable']['derivate'] == "1") {
+
+                            $datetime1 = strtotime($old_date);
+                            $datetime2 = strtotime($value['date']);
+
+                            $secs = $datetime2 - $datetime1; // == <seconds between the two times>
+//echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
+
+                            $derivate = round(($value['value'] - $old_value) / $secs, 2);
+
+                            if ($derivate < 0) {
+                                $derivate = 0;
+                            }
+
+                            $val = $derivate;
+
+//$points[] = "{ x: " . $datetime2 . ", y :" . $derivate . "}";
+                        } else {
+                            $val = $value['value'];
+                        }
+
+
+
+                        $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
+
+                        $dates[] = $value['date'];
 
                         $old_date  = $value['date'];
                         $old_value = $value['value'];
-                        continue;
-                    } elseif ($_GET['ts_variable']['derivate'] == "1") {
-
-                        $datetime1 = strtotime($old_date);
-                        $datetime2 = strtotime($value['date']);
-
-                        $secs = $datetime2 - $datetime1; // == <seconds between the two times>
-//echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
-
-                        $derivate = round(($value['value'] - $old_value) / $secs, 2);
-
-                        if ($derivate < 0) {
-                            $derivate = 0;
-                        }
-
-                        $val = $derivate;
-
-//$points[] = "{ x: " . $datetime2 . ", y :" . $derivate . "}";
-                    } else {
-                        $val = $value['value'];
                     }
-
-
-
-                    $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
-
-                    $dates[] = $value['date'];
-
-                    $old_date  = $value['date'];
-                    $old_value = $value['value'];
                 }
-
 
 
 //$point2[] = "{ x: new Date('2017-10-28 00:38:34'), y: 50}";
@@ -969,10 +981,7 @@ var myChart = new Chart(ctx, {
         $db->sql_query($sql);
 
         header("location: ".LINK.__CLASS__."/main/");
-
-        
     }
-
 
     public function remove($param)
     {
@@ -989,12 +998,8 @@ var myChart = new Chart(ctx, {
         header("location: ".LINK.__CLASS__."/settings/");
     }
 
-
     public function acknowledgedBy($param)
     {
-        
 
-
-        
     }
 }

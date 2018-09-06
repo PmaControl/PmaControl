@@ -272,7 +272,7 @@ class Ssh extends Controller
         }
 
         if (!$ssh->login($key['user'], $rsa)) {
-            Debug::debug($server['ip'],"Login Failed");
+            Debug::debug($server['ip'], "Login Failed");
             $login_successfull = false;
         }
 
@@ -283,9 +283,9 @@ class Ssh extends Controller
         //Debug::debug($ret);
 
 
-	if ($login_successfull === true) {
+        if ($login_successfull === true) {
 
-	Debug::debug($server['ip'],"Login Successfull");	
+            Debug::debug($server['ip'], "Login Successfull");
 
             $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
@@ -295,6 +295,24 @@ class Ssh extends Controller
 
 
             $db->sql_save($data);
+        }
+    }
+
+    public function display_public($param)
+    {
+        $id_ssh_key = $param[0];
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "select public_key from ssh_key where id =".$id_ssh_key;
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            echo Chiffrement::decrypt($ob->public_key)."\n";
         }
     }
 }

@@ -25,7 +25,8 @@
         "esysteme/mysql-sys": "1.6.2",
         "ninsuo/php-shared-memory": "*",
         "geerlingguy/ping": "*",
-	"phpseclib/mcrypt_compat": "*"
+	"phpseclib/mcrypt_compat": "*",
+	"itsjavi/bootstrap-colorpicker": "3.*"
     },
     "autoload": {
         "classmap": [

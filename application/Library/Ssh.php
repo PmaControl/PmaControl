@@ -4,14 +4,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-namespace App\Library;
 
+namespace App\Library;
 
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
-
-use App\Library\Chiffrement;
-
+use \App\Library\Chiffrement;
+use \App\Library\Debug;
 
 class Ssh
 {
@@ -37,7 +36,7 @@ class Ssh
 
         // debug(Chiffrement::decrypt($key['private_key']));
 
-        
+
 
 
         $private_key = self::formatPrivateKey($password);
@@ -60,9 +59,73 @@ class Ssh
         return $ssh;
     }
 
-
     static function close()
     {
         
+    }
+
+    static function isValid($pubkeyssh)
+    {
+        // check public key
+
+
+        Debug::debug($pubkeyssh);
+
+        if (file_exists($pubkeyssh)) {
+
+            $pubkeyssh = file_get_contents($pubkeyssh);
+        }
+
+        Debug::debug($pubkeyssh, "public key");
+
+
+        $path_puplic_key = "/tmp/".uniqid();
+
+        file_put_contents($path_puplic_key, $pubkeyssh);
+
+
+
+        $file_error = "/tmp/isvalid_error";
+
+        if (file_exists($file_error)) {
+            unlink($file_error);
+        }
+
+        $cmd = "ssh-keygen -l -f ".$path_puplic_key."  2>".$file_error;
+        Debug::debug($cmd);
+
+        if (file_exists($file_error)) {
+            Debug::debug(file_get_contents($file_error), "[ERROR]");
+            unlink($file_error);
+        }
+
+        $result = shell_exec($cmd);
+
+        Debug::debug($result, "RESULT");
+
+        unlink($path_puplic_key);
+
+        if (empty($result)) {
+
+            
+            return false;
+        } else {
+
+            $elems = explode(" ", $result);
+
+            $data['bit']    = $elems[0];
+            $data['pubkey'] = $elems[1];
+            $data['type']   = substr(end($elems), 1, -2);
+
+            unset($elems[count($elems)-1]);
+            unset($elems[0]);
+            unset($elems[1]);
+
+            $data['name'] = implode(" ",$elems);
+        }
+
+        Debug::debug($data);
+
+        return $data;
     }
 }

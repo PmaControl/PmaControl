@@ -11,6 +11,9 @@ class Common extends Controller
 {
 
     use \App\Library\Filter;
+    
+    //list des tag pour eviter de faire la requete a chaque fois
+    static $tags = array();
 
     //dba_source
 
@@ -175,10 +178,6 @@ class Common extends Controller
                 unset($data['options'][$key]);
             }
         }
-
-
-
-
 
         if (!empty($id_mysql_server)) {
             $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
@@ -382,4 +381,80 @@ class Common extends Controller
 
         $this->set('data', $data);
     }
+
+    function getTagByServer($param)
+    {
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
+
+
+        $data['ajax'] = false;
+        if (IS_AJAX) {
+            $this->layout_name = false;
+            $data['ajax']      = true;
+        }
+
+        $data['table'] = $param[0];
+        $data['field'] = $param[1];
+        $data['tags']  = $param[2];
+
+
+        $options = array();
+        if (!empty($param[3])) {
+
+            $options = (array) $param[3];
+        }
+
+        $data['options'] = $options;
+
+        //$data['width'] = $param[2] ?? "auto";
+        //pour restreindre la liste des serveurs a ceux spécifier
+
+        $mysql_server_specify = array();
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "mysql_server_specify") {
+                $mysql_server_specify = $val;
+
+                unset($data['options'][$key]);
+            }
+        }
+
+        if (!empty($id_mysql_server)) {
+            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
+
+            $sql  = "SHOW DATABASES";
+            $res2 = $db_to_get_db->sql_query($sql);
+
+            $data['databases'] = [];
+            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
+                $tmp                 = [];
+                $tmp['id']           = $ob->Database;
+                $tmp['libelle']      = $ob->Database;
+                $data['databases'][] = $tmp;
+            }
+        } else {
+            $data['databases'] = array();
+        }
+
+        $this->set("data", $data);
+        return $data;
+    }
+
+
+    static public function getTagArray($db)
+    {
+        if (!empty(self::tags))
+        {
+
+
+
+        }
+        else
+        {
+            return self::tags;
+        }
+
+        
+    }
+
 }

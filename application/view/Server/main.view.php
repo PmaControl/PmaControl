@@ -26,7 +26,7 @@ function formatVersion($version)
             break;
 
         default:
-           $name = '<span class="geek">&#xF137;</span> MySQL';
+            $name = '<span class="geek">&#xF137;</span> MySQL';
     }
 
     return $name." ".$number;
@@ -76,8 +76,7 @@ if (!empty($data['servers'])) {
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
             $style = 'background-color:#d9534f; color:#FFFFFF';
 
-            if ($server['is_acknowledged'] !== "0")
-            {
+            if ($server['is_acknowledged'] !== "0") {
                 $style = 'background-color:#cccccc; color:#999999';
             }
         }
@@ -120,7 +119,7 @@ if (!empty($data['servers'])) {
         }
 
 
-        
+
 
         echo '</td>';
         echo '<td style="'.$style.'">';
@@ -143,6 +142,11 @@ if (!empty($data['servers'])) {
 
 
             echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">'.$html.'</pre>';
+
+            if (!empty($data['last_date'][$server['id']]['date'])) {
+                echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
+            }
+
 //$server['error'];
         } else if (strstr($server['error'], 'Call Stack:')) {
             //echo end(explode("\n", $server['error']));
@@ -152,10 +156,61 @@ if (!empty($data['servers'])) {
                 echo $output_array[0][0];
             }
 
+            if (!empty($data['last_date'][$server['id']]['date'])) {
+                echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
+            }
             //echo $server['error'];
         } else {
             echo str_replace("\n", '<br>', trim($server['error']));
+
+            if (!empty(trim($server['error']))) {
+                if (!empty($data['last_date'][$server['id']]['date'])) {
+                    echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
+                }
+            }
+
+
+
+            /*
+            echo "   -   ".$y." years\n";
+            echo $d." days\n";
+            echo $h." hours\n";
+            echo $m." minutes\n";*/
         }
+
+
+
+
+
+            $date1   = strtotime($data['last_date'][$server['id']]['date']);
+            $date2   = time();
+            $subTime = $date2 - $date1;
+
+            $d       = ($subTime / (60 * 60 * 24));
+            $h       = ($subTime / (60 * 60)) % 24;
+            $m       = ($subTime / 60) % 60;
+
+            $t = $subTime - 60;
+
+            if ($d >= 1)
+            {
+                echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d,0).' '.__("Days").'</span>';
+            }
+            else if ($t <0 )
+            {
+                echo ' <span class="label label-success" title="'.$data['last_date'][$server['id']]['date'].'">'.__("OK").'</span>';
+            }
+
+
+            else{
+                echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.':'.$m.'</span>';
+            }
+
+
+
+
+
+
         echo '</td>';
         echo '<td style="'.$style.'">';
 
@@ -174,4 +229,3 @@ echo '<input type="hidden" name="is_monitored" value="1" />';
 echo '<button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Update</button>';
 
 echo '</form>';
-        

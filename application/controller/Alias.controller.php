@@ -14,7 +14,8 @@ class Alias extends Controller
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM alias_dns ORDER BY dns";
+        $sql = "SELECT * FROM alias_dns a
+        ORDER BY dns";
 
         $res = $db->sql_query($sql);
 

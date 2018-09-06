@@ -87,7 +87,7 @@ class Mysqlsys extends Controller
                     //fin patch
 
 
-                    $sql           = "SELECT * FROM `sys`.`".$_GET['mysqlsys']."` LIMIT 10000";
+                    $sql           = "SELECT * FROM `sys`.`".$_GET['mysqlsys']."` LIMIT 200";
                     $data['table'] = $remote->sql_fetch_yield($sql);
                 }
 
