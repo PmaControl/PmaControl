@@ -182,7 +182,7 @@ class Server extends Controller
         $this->di['js']->addJavascript(array('clipboard.min.js'));
 
         $this->di['js']->code_javascript('
-        $("#checkAll").click(function(){
+        $("#check-all").click(function(){
     $("input:checkbox").not(this).prop("checked", this.checked);
 });
 
@@ -238,10 +238,10 @@ class Server extends Controller
         $data['extra'] = Extraction::display(array("Version", "Hostname"));
 
 
-        $sql     = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
-        $res     = $db->sql_query($sql);
+        $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
+        $res               = $db->sql_query($sql);
         $data['last_date'] = array();
-        while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['last_date'][$arr['id_mysql_server']] = $arr;
         }
 
@@ -758,6 +758,7 @@ var myChart = new Chart(ctx, {
 
             if (!empty($_POST['settings'])) {
 
+
                 foreach ($_POST['id'] as $key => $value) {
 
                     if (empty($_POST['mysql_server'][$key]['is_monitored'])) {
@@ -780,6 +781,33 @@ var myChart = new Chart(ctx, {
                     if (!$ret) {
                         debug($server_main);
                         print_r($db->sql_error());
+                    }
+                }
+
+                if (!empty($_POST['link__mysql_server_tag'])) {
+
+                    $sql = "BEGIN";
+                    $db->sql_query($sql);
+
+                    try {
+
+                        $sql = "delete from link__mysql_server__tag where id_mysql_server in (".implode(",", $_POST['id']).")";
+                        $db->sql_query($sql);
+                        foreach ($_POST['link__mysql_server_tag'] as $key => $servers) {
+
+                            foreach ($servers as $tags) {
+                                foreach ($tags as $tag) {
+
+                                    $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('".$_POST['id'][$key]."','".$tag."')";
+                                    $db->sql_query($sql);
+                                }
+                            }
+                        }
+                        $sql = "COMMIT";
+                        $db->sql_query($sql);
+                    } catch (Exception $ex) {
+                        $sql = "ROLLBACK";
+                        $db->sql_query($sql);
                     }
                 }
 
@@ -806,6 +834,29 @@ var myChart = new Chart(ctx, {
         $data['clients']      = $this->getClients();
         $data['environments'] = $this->getEnvironments();
 
+
+
+        // tag
+        $sql         = "SELECT * FROM tag order by name";
+        $res         = $db->sql_query($sql);
+        $data['tag'] = array();
+        while ($ob          = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->name;
+            $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
+
+            $data['tag'][] = $tmp;
+        }
+
+
+        $sql = "SELECT * FROM link__mysql_server__tag";
+        $res         = $db->sql_query($sql);
+        while ($ob          = $db->sql_fetch_object($res)) {
+
+            $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
+
+        }
 
 
         $this->set('data', $data);

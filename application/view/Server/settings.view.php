@@ -43,19 +43,19 @@ echo '<th>'.__('Port').'</th>';
 
 echo '</tr>';
 
-$i = 0;
+$i     = 0;
 $style = '';
 
 Form::setIndice(true);
 
 foreach ($data['servers'] as $server) {
-    
+
     $i++;
     echo '<tr>';
     echo '<td>'.$i.'</td>';
     echo '<td>'.$server['id'];
     //print_r($server);
-    echo '<input type="hidden" name="id['.($i-1).']" value="'.$server['id'].'" />';
+    echo '<input type="hidden" name="id['.($i - 1).']" value="'.$server['id'].'" />';
 
     echo '</td>';
 
@@ -68,37 +68,57 @@ foreach ($data['servers'] as $server) {
     echo '</td>';
 
 
-    $checked = $server['is_monitored'] == 1 ? 'checked="checked"':   '';
+    $checked = $server['is_monitored'] == 1 ? 'checked="checked"' : '';
 
     echo '<td style="'.$style.'">'
-        .'<input type="checkbox" name="mysql_server['.($i-1).'][is_monitored]" '.$checked.' />'.'</td>';
+    .'<input type="checkbox" name="mysql_server['.($i - 1).'][is_monitored]" '.$checked.' />'.'</td>';
+
+    echo '<td>';
+    echo Form::select("mysql_server", "id_client", $data['clients'], $server['id_client'], array("data-live-search" => "true", "class" => "selectpicker", "data-actions-box" => "true"));
+    echo '</td>';
+
+    echo '<td>';
+
+    echo Form::select("mysql_server", "id_environment", $data['environments'], $server['id_environment'], array("data-live-search" => "true", "class" => "selectpicker", "data-actions-box" => "true"));
+    echo '</td>';
+    echo '<td>';
+
+    //$server['id_tag'] = json_encode(array(1,2));
+    //$tag = "[2,4,6]";
+
+
+    if (!empty($data['tag_selected'][$server['id']])) {
+        $_GET['link__mysql_server_tag']['tag'] =  "[".implode(",",$data['tag_selected'][$server['id']])."]";
+
+        //debug($_GET['link__mysql_server_tag']['tag']);
+    }
+    else
+    {
+        $_GET['link__mysql_server_tag']['tag'] = "";
+    }
+
     
-    echo '<td>';
-    echo Form::select("mysql_server", "id_client", $data['clients'], $server['id_client'], array("data-live-search" => "true", "class" => "selectpicker",  "data-actions-box"=> "true"));
-    echo '</td>';
+//$_GET['link__mysql_server_tag'][5]['tag'] = json_encode(array(2,4));
+    echo Form::select("link__mysql_server_tag", "tag", $data['tag'], "", array("data-live-search" => "true", "class" => "selectpicker", "multiple" => "multiple"));
 
-    echo '<td>';
 
-    echo Form::select("mysql_server", "id_environment", $data['environments'], $server['id_environment'], array("data-live-search" => "true", "class" => "selectpicker",  "data-actions-box"=> "true"));
     echo '</td>';
-    echo '<td>'.__('Tags').'</td>';
     echo '<td>'.$server['name'].'</td>';
 
 
-    if (empty($server['display_name']))
-    {
+    if (empty($server['display_name'])) {
         $server['display_name'] = $server['name'];
     }
 
 
-    $_GET["mysql_server"][($i-1)]["display_name"] = $server['display_name'];
-    echo '<td>'.Form::input("mysql_server", "display_name", array("class"=>"form-control"));
-    
-    
-    
+    $_GET["mysql_server"][($i - 1)]["display_name"] = $server['display_name'];
+    echo '<td>'.Form::input("mysql_server", "display_name", array("class" => "form-control"));
+
+
+
     echo ' <a class="btn-xs btn btn-primary" href="'.LINK.'server/password/'.$server['id'].'">'.__('Edit password').'</a>';
     echo ' <a class="btn-xs btn btn-danger" href="'.LINK.'server/remove/'.$server['id'].'">'.__('Remove').'</a>';
-    
+
     echo '</td>';
 
 

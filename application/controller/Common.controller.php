@@ -11,7 +11,6 @@ class Common extends Controller
 {
 
     use \App\Library\Filter;
-    
     //list des tag pour eviter de faire la requete a chaque fois
     static $tags = array();
 
@@ -385,6 +384,8 @@ class Common extends Controller
     function getTagByServer($param)
     {
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
 
 
@@ -419,42 +420,34 @@ class Common extends Controller
             }
         }
 
-        if (!empty($id_mysql_server)) {
-            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-            $sql  = "SHOW DATABASES";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-            $data['databases'] = [];
-            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-                $tmp                 = [];
-                $tmp['id']           = $ob->Database;
-                $tmp['libelle']      = $ob->Database;
-                $data['databases'][] = $tmp;
-            }
-        } else {
-            $data['databases'] = array();
-        }
+        $data['tag'] = self::getTagArray($db);
 
         $this->set("data", $data);
         return $data;
     }
 
-
     static public function getTagArray($db)
     {
-        if (!empty(self::tags))
-        {
+        if (empty(self::$tags)) {
+            //$db = $this->di['db']->sql(DB_DEFAULT);
 
+            $sql = "SELECT * FROM tag order by name";
 
+            $res = $db->sql_query($sql);
 
-        }
-        else
-        {
-            return self::tags;
-        }
+            $data['tag'] = array();
+            while ($ob  = $db->sql_fetch_object($res)) {
+                $tmp            = array();
+                $tmp['id']      = $ob->id;
+                $tmp['libelle'] = $ob->name;
+                $tmp['extra'] = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
 
+                $data['tag'][] = $tmp;
+            }
+
+            self::$tags = $data['tag'];
+        } 
         
+        return self::$tags;
     }
-
 }

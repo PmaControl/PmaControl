@@ -13,7 +13,7 @@ use \App\Library\Debug;
 
 //add virtual_ip
 // ha proxy
-
+// https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
 class Dot2 extends Controller
 {
 
