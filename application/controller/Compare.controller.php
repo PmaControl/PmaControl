@@ -37,7 +37,7 @@ class Compare extends Controller
         $db                = $this->di['db']->sql(DB_DEFAULT);
         $this->db_default  = $db;
         $this->title       = __("Compare");
-        $this->ariane      = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Plugins')."</a> > ".$this->title;
+        //$this->ariane      = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Plugins')."</a> > ".$this->title;
 
         $redirect = false;
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -231,13 +231,13 @@ class Compare extends Controller
 
         foreach ($data as $table => $elem) {
             if (!empty($elem[0])) {
-                $data[$table]['ori'] = $resultat[$table][0]['Create Table'];
+                $data[$table]['ori'] = $resultat[$table][0]['Create Table'].";";
             } else {
                 $data[$table]['ori'] = "";
             }
 
             if (!empty($elem[1])) {
-                $data[$table]['cmp'] = $resultat2[$table][0]['Create Table'];
+                $data[$table]['cmp'] = $resultat2[$table][0]['Create Table'].";";
             } else {
                 $data[$table]['cmp'] = "";
             }
@@ -249,11 +249,11 @@ class Compare extends Controller
             } elseif (empty($data[$table]['cmp'])) {
                 $data[$table]['script'][0]  = str_replace("CREATE TABLE",
                     "CREATE TABLE IF NOT EXISTS", $data[$table]['ori']);
-                $data[$table]['script2'][0] = "DROP TABLE IF EXISTS `".$table."`";
+                $data[$table]['script2'][0] = "DROP TABLE IF EXISTS `".$table."`;";
             } elseif (empty($data[$table]['ori'])) {
                 $data[$table]['script2'][0] = str_replace("CREATE TABLE",
                     "CREATE TABLE IF NOT EXISTS", $data[$table]['cmp']);
-                $data[$table]['script'][0]  = "DROP TABLE IF EXISTS `".$table."`";
+                $data[$table]['script'][0]  = "DROP TABLE IF EXISTS `".$table."`;";
             } else {
                 $updater                 = new CompareTable;
                 $data[$table]['script']  = $updater->getUpdates($data[$table]['cmp'],
@@ -534,6 +534,11 @@ class Compare extends Controller
         return $data;
     }
 
+    /*
+     * used for load database from get have to delete it and find a better solution
+     *
+     *
+     */
     function getDatabaseByServer($param)
     {
         if (IS_AJAX) {

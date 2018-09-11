@@ -51,15 +51,15 @@ if (count($data['resultat'][$_GET['menu']]) != 0) {
         echo '<td class="vers2">';
 
         if (count($table['script']) != 0) {
-            $queries = implode(';', $table['script']).";";
-            echo SqlFormatter::format($queries);
+            $queries = implode("\n", $table['script']);
+            echo SqlFormatter::highlight($queries);
         }
         echo '</td>';
 
         echo '<td style="display:none" class="vers1">';
         if (count($table['script2']) != 0) {
-            $queries = implode(';', $table['script2']).";";
-            echo SqlFormatter::format($queries);
+            $queries = implode("\n", $table['script2']);
+            echo SqlFormatter::highlight($queries);
         }
         echo '</td>';
         echo '</tr>';
@@ -89,11 +89,10 @@ if (count($data['resultat'][$_GET['menu']]) != 0) {
 
         foreach ($data['resultat'][$_GET['menu']] as $tablename => $table) {
             if (count($table['script']) != 0) {
-                $queries = implode(';', $table['script']).";";
+                $queries = implode('', $table['script']);
                 $queries = str_replace(";",";\n", $queries);
                 echo $queries."\n";
             }
-            
         }
 
 

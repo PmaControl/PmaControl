@@ -140,6 +140,11 @@ class Common extends Controller
 
         return $ret;
     }
+    /*
+     * @test : http://localhost/pmacontrol/en/common/getDatabaseByServer/35/ajax>true/
+     *
+     *
+     */
 
     function getDatabaseByServer($param)
     {
@@ -153,10 +158,13 @@ class Common extends Controller
             $data['ajax']      = true;
         }
 
-        $data['table']   = $param[0];
-        $data['field']   = $param[1];
-        $id_mysql_server = $param[2];
-
+        if (!empty($param[2]) && !empty($param[1]) && !empty($param[0])) {
+            $data['table']   = $param[0];
+            $data['field']   = $param[1];
+            $id_mysql_server = $param[2];
+        } else {
+            $id_mysql_server = $param[0];
+        }
 
         $options = array();
         if (!empty($param[3])) {
@@ -194,6 +202,8 @@ class Common extends Controller
         } else {
             $data['databases'] = array();
         }
+
+        debug($data['databases']);
 
         $this->set("data", $data);
         return $data;
@@ -436,18 +446,18 @@ class Common extends Controller
             $res = $db->sql_query($sql);
 
             $data['tag'] = array();
-            while ($ob  = $db->sql_fetch_object($res)) {
+            while ($ob          = $db->sql_fetch_object($res)) {
                 $tmp            = array();
                 $tmp['id']      = $ob->id;
                 $tmp['libelle'] = $ob->name;
-                $tmp['extra'] = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
+                $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
 
                 $data['tag'][] = $tmp;
             }
 
             self::$tags = $data['tag'];
-        } 
-        
+        }
+
         return self::$tags;
     }
 }
