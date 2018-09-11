@@ -246,7 +246,17 @@ class Server extends Controller
         }
 
 
-        //debug($data['extra']);
+        // get Tag
+        $sql          = "SELECT * FROM link__mysql_server__tag a 
+            INNER JOIN tag b ON b.id =a.id_tag";
+        $res          = $db->sql_query($sql);
+        $data['tags'] = array();
+        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['tag'][$arr['id_mysql_server']][] = $arr;
+        }
+
+
+        //debug($data['tag']);
 
 
         $this->set('data', $data);
@@ -851,11 +861,10 @@ var myChart = new Chart(ctx, {
 
 
         $sql = "SELECT * FROM link__mysql_server__tag";
-        $res         = $db->sql_query($sql);
-        while ($ob          = $db->sql_fetch_object($res)) {
+        $res = $db->sql_query($sql);
+        while ($ob  = $db->sql_fetch_object($res)) {
 
             $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
-
         }
 
 

@@ -39,29 +39,42 @@ echo '<tr>';
 echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("ID").'</th>';
 echo '<th>'.__("Available").'</th>';
-echo '<th>';
-?>
-<div class="form-group">
-    <div class="checkbox checbox-switch switch-success">
-        <label>
-            <?php
-            $computed = array("class" => "form-control", "type" => "checkbox", "title" => "Monitored");
-            echo Form::input("check", "all", $computed);
-            ?>
-            <span></span>
-            <b>Monitored</b>
-        </label>
-    </div>
-</div>
 
-<?php
-//<input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'
+/*
+  echo '<th>';
+  ?>
+  <div class="form-group">
+  <div class="checkbox checbox-switch switch-success">
+  <label>
+  <?php
+  $computed = array("class" => "form-control", "type" => "checkbox", "title" => "Monitored");
+  echo Form::input("check", "all", $computed);
+  ?>
+  <span></span>
+  <b>Monitored</b>
+  </label>
+  </div>
+  </div>
 
-echo '</th>';
+  <?php
+  //<input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'
+
+  echo '</th>';
+ *
+ */
 echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
 
 echo '<th>'.__("Name").'</th>';
+echo '<th>';
+
+
+
+echo __('Tags');
+
+echo '</th>';
+
+
 echo '<th>'.__("IP").'</th>';
 echo '<th>'.__("Port").'</th>';
 echo '<th>'.__("User").'</th>';
@@ -96,31 +109,35 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
         echo '<span class="glyphicon '.($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
         echo '</td>';
-        echo '<td style="'.$style.'">';
-        ?>
-        <div class="form-group">
-            <div class="checkbox checbox-switch switch-success">
-                <label>
-        <?php
-        if ($server['is_monitored'] === "1") {
-            $computed = array("class" => "form-control", "type" => "checkbox", "checked" => "checked");
-        } else {
-            $computed = array("class" => "form-control", "type" => "checkbox");
-        }
-
-        echo Form::input("monitored", $server['id'], $computed);
-        ?>
-                    <span></span>
-
-                </label>
-            </div>
-        </div>
-
-        <?php
-        //.'<input type="checkbox" name="monitored['.$server['id'].']" '.($server['is_monitored'] == 1 ? 'checked="checked"' : '').'" />'.
 
 
-        echo '</td>';
+        /*
+          echo '<td style="'.$style.'">';
+          ?>
+          <div class="form-group">
+          <div class="checkbox checbox-switch switch-success">
+          <label>
+          <?php
+          if ($server['is_monitored'] === "1") {
+          $computed = array("class" => "form-control", "type" => "checkbox", "checked" => "checked");
+          } else {
+          $computed = array("class" => "form-control", "type" => "checkbox");
+          }
+
+          echo Form::input("monitored", $server['id'], $computed);
+          ?>
+          <span></span>
+
+          </label>
+          </div>
+          </div>
+
+          <?php
+          //.'<input type="checkbox" name="monitored['.$server['id'].']" '.($server['is_monitored'] == 1 ? 'checked="checked"' : '').'" />'.
+          echo '</td>';
+          /* */
+
+
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
@@ -132,6 +149,17 @@ if (!empty($data['servers'])) {
         //echo $data['extra'][$server['id']]['']['hostname'];
 
         echo '</a></td>';
+
+        echo '<td style="'.$style.'">';
+
+        if (!empty($data['tag'][$server['id']])) {
+            foreach ($data['tag'][$server['id']] as $tag) {
+                echo '<span title="'.$tag['name'].'" class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].'">'.$tag['name'].'</span> ';
+            }
+        }
+
+        echo '</td>';
+
         echo '<td style="'.$style.'">'.$server['ip'].'</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';

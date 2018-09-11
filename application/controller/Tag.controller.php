@@ -12,14 +12,15 @@ class Tag extends Controller
 
 
         /*
-        $this->di['js']->addJavascript('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', 'colorpicker/Colorpicker.js');
+          $this->di['js']->addJavascript('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', 'colorpicker/Colorpicker.js');
 
-        $this->di['js']->code_javascript("$(function () {
-      // Basic instantiation:
-      $('#demo').colorpicker();    
-    });");
-*/
+          $this->di['js']->code_javascript("$(function () {
+          // Basic instantiation:
+          $('#demo').colorpicker();
+          });");
+         */
 
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -70,11 +71,27 @@ class Tag extends Controller
             }
         }
 
-
-
-
         $data = array();
-
         $this->set('data', $data);
+    }
+
+    public function update()
+    {
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            $sql = "UPDATE tag SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            $db->sql_query($sql);
+
+            if ($db->sql_affected_rows() === 1) {
+                echo "OK";
+            } else {
+                header("HTTP/1.0 503 Internal Server Error");
+            }
+        }
     }
 }
