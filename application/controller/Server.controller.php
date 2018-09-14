@@ -104,7 +104,7 @@ class Server extends Controller
         $data['menu']['cache']['name']  = __('Cache');
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
-
++
         /*         * ***** */
 
         $data['menu_select']['main']['name']  = __('Servers');

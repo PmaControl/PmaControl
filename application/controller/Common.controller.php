@@ -203,7 +203,7 @@ class Common extends Controller
             $data['databases'] = array();
         }
 
-        debug($data['databases']);
+        //debug($data['databases']);
 
         $this->set("data", $data);
         return $data;
