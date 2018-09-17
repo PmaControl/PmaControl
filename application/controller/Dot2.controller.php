@@ -865,15 +865,10 @@ class Dot2 extends Controller
                     Debug::debug($val['arrow'], 'ARROW');
 
                     if ($val['arrow'] == "double") {
-                        
-
                         $val['color'] = $val['color'].":white:".$val['color'];
-
-                        
                     }
 
                     
-
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
                         .$val['color']."\" label=\"".$val['label']."\" edgeURL=\"".LINK."slave/show/".$id_slave."/".$connection_name."/\" ".$extra."];\n";
