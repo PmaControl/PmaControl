@@ -11,6 +11,8 @@ class Common extends Controller
 {
 
     use \App\Library\Filter;
+    //list des tag pour eviter de faire la requete a chaque fois
+    static $tags = array();
 
     //dba_source
 
@@ -138,27 +140,70 @@ class Common extends Controller
 
         return $ret;
     }
+    /*
+     * @test : http://localhost/pmacontrol/en/common/getDatabaseByServer/35/ajax>true/
+     *
+     *
+     */
 
     function getDatabaseByServer($param)
     {
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
+
+
+        $data['ajax'] = false;
         if (IS_AJAX) {
             $this->layout_name = false;
+            $data['ajax']      = true;
         }
 
-        $id_mysql_server = $param[0];
-
-        $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-        $sql  = "SHOW DATABASES";
-        $res2 = $db_to_get_db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
-            $data['databases'][] = $tmp;
+        if (!empty($param[2]) && !empty($param[1]) && !empty($param[0])) {
+            $data['table']   = $param[0];
+            $data['field']   = $param[1];
+            $id_mysql_server = $param[2];
+        } else {
+            $id_mysql_server = $param[0];
         }
+
+        $options = array();
+        if (!empty($param[3])) {
+
+            $options = (array) $param[3];
+        }
+
+        $data['options'] = $options;
+
+        //$data['width'] = $param[2] ?? "auto";
+        //pour restreindre la liste des serveurs a ceux spécifier
+
+        $mysql_server_specify = array();
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "mysql_server_specify") {
+                $mysql_server_specify = $val;
+
+                unset($data['options'][$key]);
+            }
+        }
+
+        if (!empty($id_mysql_server)) {
+            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
+
+            $sql  = "SHOW DATABASES";
+            $res2 = $db_to_get_db->sql_query($sql);
+
+            $data['databases'] = [];
+            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
+                $tmp                 = [];
+                $tmp['id']           = $ob->Database;
+                $tmp['libelle']      = $ob->Database;
+                $data['databases'][] = $tmp;
+            }
+        } else {
+            $data['databases'] = array();
+        }
+
+        //debug($data['databases']);
 
         $this->set("data", $data);
         return $data;
@@ -176,6 +221,10 @@ class Common extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
             $db_link = $this->di['db']->sql($ob->name);
+        }
+
+        if (empty($db_link)) {
+            throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "'.$id_db.'".', 478);
         }
 
         return $db_link;
@@ -340,5 +389,75 @@ class Common extends Controller
 
 
         $this->set('data', $data);
+    }
+
+    function getTagByServer($param)
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
+
+
+        $data['ajax'] = false;
+        if (IS_AJAX) {
+            $this->layout_name = false;
+            $data['ajax']      = true;
+        }
+
+        $data['table'] = $param[0];
+        $data['field'] = $param[1];
+        $data['tags']  = $param[2];
+
+
+        $options = array();
+        if (!empty($param[3])) {
+
+            $options = (array) $param[3];
+        }
+
+        $data['options'] = $options;
+
+        //$data['width'] = $param[2] ?? "auto";
+        //pour restreindre la liste des serveurs a ceux spécifier
+
+        $mysql_server_specify = array();
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "mysql_server_specify") {
+                $mysql_server_specify = $val;
+
+                unset($data['options'][$key]);
+            }
+        }
+
+        $data['tag'] = self::getTagArray($db);
+
+        $this->set("data", $data);
+        return $data;
+    }
+
+    static public function getTagArray($db)
+    {
+        if (empty(self::$tags)) {
+            //$db = $this->di['db']->sql(DB_DEFAULT);
+
+            $sql = "SELECT * FROM tag order by name";
+
+            $res = $db->sql_query($sql);
+
+            $data['tag'] = array();
+            while ($ob          = $db->sql_fetch_object($res)) {
+                $tmp            = array();
+                $tmp['id']      = $ob->id;
+                $tmp['libelle'] = $ob->name;
+                $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
+
+                $data['tag'][] = $tmp;
+            }
+
+            self::$tags = $data['tag'];
+        }
+
+        return self::$tags;
     }
 }

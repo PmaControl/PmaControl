@@ -63,7 +63,10 @@ class PhpLiveRegex extends Controller
             $output_array = array();
             preg_match("/".$regex."/".$options, $line, $output_array);
 
-            $preg['preg_match']['data'] .= print_r($output_array, true);
+
+            $gg = array_map("htmlentities", $output_array);
+
+            $preg['preg_match']['data'] .= print_r($gg, true);
         }
 
         $output_array                   = array();
@@ -71,9 +74,20 @@ class PhpLiveRegex extends Controller
         $preg['preg_match_all']['data'] = $output_array;
 
 
+
+        foreach($preg['preg_match_all']['data'] as $key => $value)
+        {
+            $preg['preg_match_all']['data'][$key] = array_map("htmlentities", $preg['preg_match_all']['data'][$key]);
+        }
+
+        
+
+
         $out = preg_replace('/'.$regex.'/'.$options, $replace, $data);
 
         $preg['preg_replace']['data'] = htmlentities($out);
+
+
         $preg['preg_grep']['data']    = "dfgdfsgf";
         $preg['preg_split']['data']   = "dfgdfsgf";
 

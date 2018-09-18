@@ -44,9 +44,7 @@ class CheckConfig extends Controller
 
                     $db_link = $this->getDbLinkFromId($id_mysql_server);
 
-
                     $res = $db_link->sql_query("SHOW GLOBAL VARIABLES;");
-
 
                     while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
 

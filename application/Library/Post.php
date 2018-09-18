@@ -9,7 +9,7 @@ class Post
     {
         $ret = [];
 
-        debug($_POST);
+        //debug($_POST);
 
         foreach ($_POST as $main => $elems) {
             foreach ($elems as $key => $val) {

@@ -122,9 +122,9 @@ class Backup extends Controller
                 $dblink = $this->di['db']->sql($db);
 
 
-               
+
                 echo '#'.$dblink->host."\n";
-               
+
 
 
                 $path = "/data/backup/user/".$dblink->host."-".$dblink->port;
@@ -152,16 +152,16 @@ class Backup extends Controller
                     while ($ob = $dblink->sql_fetch_object($res)) {
 
                         /*
-                        if ($resolve === '1') {
+                          if ($resolve === '1') {
 
-                            if ($ob->hostname === "%" || filter_var($ob->hostname, FILTER_VALIDATE_IP) || $ob->hostname === "localhost") {
-                                
-                            } else {
-                                echo "REMOVED '".$ob->user."'@'".$ob->hostname."'\n";
-                                continue;
-                            }
-                        }*/
-                        
+                          if ($ob->hostname === "%" || filter_var($ob->hostname, FILTER_VALIDATE_IP) || $ob->hostname === "localhost") {
+
+                          } else {
+                          echo "REMOVED '".$ob->user."'@'".$ob->hostname."'\n";
+                          continue;
+                          }
+                          } */
+
                         $sql  = "show grants for '".$ob->user."'@'".$ob->hostname."'";
                         $res2 = $dblink->sql_query($sql);
 
@@ -259,71 +259,81 @@ class Backup extends Controller
 
 
 
+        $this->di['js']->code_javascript('$("#mysql-server-").change(function () {
+    data = $(this).val();
+    $("#rename-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+       function(){
+	$("#rename-database").selectpicker("refresh");
+    });
+});');
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        /*
+          if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
-            foreach ($_POST['backup_database']as $key => $elem) {
+          foreach ($_POST['backup_database']as $key => $elem) {
 
-                try {
-                    $db->sql_query('SET AUTOCOMMIT=0;');
-                    $db->sql_query('START TRANSACTION;');
+          try {
+          $db->sql_query('SET AUTOCOMMIT=0;');
+          $db->sql_query('START TRANSACTION;');
 
-                    $crontab            = [];
-                    $crontab['crontab'] = $_POST['crontab'][$key];
+          $crontab            = [];
+          $crontab['crontab'] = $_POST['crontab'][$key];
 
-                    $id_crontab = $db->sql_save($crontab);
-                    if (!$id_crontab) {
-                        debug($crontab);
-                        debug($db->sql_error());
-                        throw new Exception("PMACTRL-052 : impossible to save crontab");
-                    }
+          $id_crontab = $db->sql_save($crontab);
+          if (!$id_crontab) {
+          debug($crontab);
+          debug($db->sql_error());
+          throw new Exception("PMACTRL-052 : impossible to save crontab");
+          }
 
-                    $backup_database                                  = [];
-                    $backup_database['backup_database']               = $elem;
-                    $backup_database['backup_database']['id_crontab'] = $id_crontab;
-                    $backup_database['backup_database']['is_active']  = 1;
+          $backup_database                                  = [];
+          $backup_database['backup_database']               = $elem;
+          $backup_database['backup_database']['id_crontab'] = $id_crontab;
+          $backup_database['backup_database']['is_active']  = 1;
 
-                    if (!$id_backup_database = $db->sql_save($backup_database)) {
-                        debug($backup_database);
-                        debug($db->sql_error());
-                        throw new Exception("PMACTRL-053 : impossible to shedule this backup");
-                    }
+          if (!$id_backup_database = $db->sql_save($backup_database)) {
+          debug($backup_database);
+          debug($db->sql_error());
+          throw new Exception("PMACTRL-053 : impossible to shedule this backup");
+          }
 
-                    $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
+          $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
 
-                    Crontab::insert($crontab['crontab']['minutes'], $crontab['crontab']['hours'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'],
-                        $cmd, "Backup database with PmaControl", $id_crontab);
+          Crontab::insert($crontab['crontab']['minutes'], $crontab['crontab']['hours'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'],
+          $cmd, "Backup database with PmaControl", $id_crontab);
 
-                    $crontab                       = [];
-                    $crontab['crontab']['id']      = $id_crontab;
-                    $crontab['crontab']['command'] = $cmd;
+          $crontab                       = [];
+          $crontab['crontab']['id']      = $id_crontab;
+          $crontab['crontab']['command'] = $cmd;
 
-                    if (!$db->sql_save($crontab)) {
-                        debug($crontab);
-                        debug($db->sql_error());
-                        throw new Exception("PMACTRL-054 : impossible to set command into crontab");
-                    }
-
-
-                    $db->sql_query('COMMIT;');
-                } catch (\Exception $ex) {
-
-                    Crontab::delete($id_crontab);
-                    $db->sql_query('ROLLBACK;');
-                }
-            }
-        }
+          if (!$db->sql_save($crontab)) {
+          debug($crontab);
+          debug($db->sql_error());
+          throw new Exception("PMACTRL-054 : impossible to set command into crontab");
+          }
 
 
-        $sql = "SELECT *, c.name as server_name, b.libelle as nas, e.libelle as backup_type,a.id as id_backup_database
-            FROM backup_database a
-            INNER JOIN backup_storage_area b ON a.id_backup_storage_area = b.id
-            INNER JOIN mysql_server c ON c.id = a.id_mysql_server
-            INNER JOIN mysql_database d ON d.id = a.id_mysql_database
-            INNER JOIN backup_type e ON e.id = a.id_backup_type
-            INNER JOIN crontab f on f.id = a.id_crontab
-            ORDER BY c.name, d.name";
+          $db->sql_query('COMMIT;');
+          } catch (\Exception $ex) {
+
+          Crontab::delete($id_crontab);
+          $db->sql_query('ROLLBACK;');
+          }
+          }
+          }
+         */
+
+        $sql = "SELECT a.display_name,  b.id_mysql_server, d.*,b.id, c.ip,c.libelle as bakcup_server, f.minute,f.hour,b.database,
+            f.day_of_month, f.month, f.day_of_week, g.libelle as backup_type, b.is_active
+            FROM backup_main b
+            INNER JOIN mysql_server a ON a.id = b.id_mysql_server
+            INNER JOIN environment d ON d.id = a.id_environment
+            INNER JOIN backup_type g ON g.id = b.id_backup_type
+            INNER JOIN backup_storage_area c ON b.id_backup_storage_area = c.id
+            INNER JOIN crontab f on f.id = b.id_crontab
+            ORDER BY d.key";
 
 
         $data['backup_list'] = $db->sql_fetch_yield($sql);
@@ -441,6 +451,7 @@ class Backup extends Controller
 
     public function saveDb($param)
     {
+        Debug::parseDebug($param);
 
         //23 heures max pour effectuer le backup
         \set_time_limit(3600 * 23);
@@ -451,25 +462,24 @@ class Backup extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT *, c.name as server_name, b.libelle as nas, 
-            e.libelle as backup_type,a.id as id_backup_database,
-            c.name as id_connection, d.name as db_name, b.ip as ip_nas, b.port as port_nas,b.path as path_nas,
-            c.ssh_login as mysql_ssh_login,
-            c.ssh_password as mysql_ssh_password,
+        $sql = "SELECT c.`name` as `server_name`, b.`libelle` as nas,
+            e.`libelle` as backup_type,a.id as id_backup_database,
+            c.`name` as id_connection, b.`ip` as ip_nas, b.`port` as port_nas,b.`path` as path_nas,
+            
             b.ssh_login as nas_ssh_login,
             b.ssh_password as nas_ssh_password,
             c.ip as mysql_ip,
             c.port as mysql_port
-            FROM backup_database a
+            FROM backup_main a
             INNER JOIN backup_storage_area b ON a.id_backup_storage_area = b.id
             INNER JOIN mysql_server c ON c.id = a.id_mysql_server
-            INNER JOIN mysql_database d ON d.id = a.id_mysql_database
             INNER JOIN backup_type e ON e.id = a.id_backup_type
             INNER JOIN crontab f on f.id = a.id_crontab
-            WHERE a.id = '".$id_backup_database."'";
+            WHERE a.id = '".$id_backup_database."';";
 
         $res = $db->sql_query($sql);
 
+        Debug::sql($sql);
 
         if ($db->sql_num_rows($res) != 1) {
             throw new \Exception("PMACTRL-066 : Impossible to find this id in backup_database($id_backup_database)");
@@ -498,6 +508,12 @@ class Backup extends Controller
             case 'mysqldump':
 
                 $source = $this->mysqldump($backup);
+                break;
+
+
+            case 'mydumper':
+
+                $source = $this->mydumper($backup);
                 break;
 
             default:
@@ -571,13 +587,13 @@ class Backup extends Controller
         $db                = $this->di['db']->sql(DB_DEFAULT);
         $id                = $param[0];
 
-        $sql = "SELECT id_crontab FROM backup_database WHERE id ='".$id."'";
+        $sql = "SELECT id_crontab FROM backup_main WHERE id ='".$id."'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_crontab = $ob->id_crontab;
         }
-        $sql = "DELETE FROM backup_database WHERE id='".$id."'";
+        $sql = "DELETE FROM backup_main WHERE id='".$id."'";
         $db->sql_query($sql);
         Crontab::delete($id_crontab);
         $sql = "DELETE FROM crontab WHERE id='".$id_crontab."'";
@@ -594,36 +610,46 @@ class Backup extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
         $id = $param[0];
 
-        $sql = "SELECT * FROM backup_database a
+        $sql = "SELECT * FROM backup_main a
                 INNER JOIN crontab b ON a.id_crontab = b.id
                 WHERE a.id ='".$id."'";
+
+
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             if ($ob->is_active === "1") {
+
+                $is_active = 0;
                 Crontab::delete($ob->id_crontab);
             } else {
-                Crontab::insert($ob->minutes, $ob->hours, $ob->day_of_month, $ob->month, $ob->day_of_week, $ob->command, $ob->comment, $ob->id_crontab);
+
+                $is_active = 1;
+                Crontab::insert($ob->minute, $ob->hour, $ob->day_of_month, $ob->month, $ob->day_of_week, $ob->command, $ob->comment, $ob->id_crontab);
             }
 
-            $id_crontab = $ob->id_crontab;
-            $is_active  = $ob->is_active;
-        }
 
-        $backup_database                                 = [];
-        $backup_database['backup_database']['id']        = $id;
-        $backup_database['backup_database']['is_active'] = (empty($is_active)) ? 1 : 0;
-
-        if (!$db->sql_save($backup_database)) {
+            $backup_database                             = [];
+            $backup_database['backup_main']['id']        = $id;
+            $backup_database['backup_main']['is_active'] = $is_active;
 
             debug($backup_database);
 
-            throw new Exception('PMACTRL-025 : impossible to update is_active');
+            if (!$db->sql_save($backup_database)) {
+
+                debug($backup_database);
+
+                throw new Exception('PMACTRL-025 : impossible to update is_active');
+            }
+            header('location: '.LINK.'backup/settings');
         }
 
-        header('location: '.LINK.'backup/settings');
+
+        debug($sql);
+
+        throw new Exception('PMACTRL-026 : impossible to find line in backup_main');
     }
 
     function mysqldump($backup)
@@ -1303,6 +1329,299 @@ $(function () {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.colorbox-min.js", "timetable-script.min.js"));
+    }
+
+    public function add()
+    {
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            try {
+                $db->sql_query('SET AUTOCOMMIT=0;');
+                $db->sql_query('START TRANSACTION;');
+
+                $crontab            = [];
+                $crontab['crontab'] = $_POST['crontab'];
+
+                $cmd = "";
+
+                $crontab['crontab']['command'] = $cmd;
+                $crontab['crontab']['comment'] = "";
+
+
+                $id_crontab = $db->sql_save($crontab);
+                if (!$id_crontab) {
+                    debug($crontab);
+                    debug($db->sql_error());
+                    throw new Exception("PMACTRL-052 : impossible to save crontab");
+                }
+
+                $backup_database                                 = [];
+                $backup_database['backup_main']                  = $_POST['backup_main'];
+                $backup_database['backup_main']['id_crontab']    = $id_crontab;
+                $backup_database['backup_main']['is_active']     = 1;
+                $backup_database['backup_main']['database']      = implode(',', $backup_database['backup_main']['database']);
+                $backup_database['backup_main']['date_inserted'] = date('Y-m-d H:i:s');
+
+
+
+                if (!$id_backup_database = $db->sql_save($backup_database)) {
+                    debug($backup_database);
+                    debug($db->sql_error());
+                    throw new Exception("PMACTRL-053 : impossible to shedule this backup");
+                }
+
+                $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
+
+                Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
+                    "Backup database with PmaControl", $id_crontab);
+
+
+
+
+                $db->sql_query('COMMIT;');
+            } catch (\Exception $ex) {
+
+                Crontab::delete($id_crontab);
+                $db->sql_query('ROLLBACK;');
+            }
+        }
+
+
+        //select for type of backup
+        $sql                 = "SELECT * FROM backup_type order by libelle";
+        $res                 = $db->sql_query($sql);
+        $data['type_backup'] = [];
+        while ($ob                  = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->libelle;
+
+            $data['type_backup'][] = $tmp;
+        }
+
+
+        //select for storage area
+        $sql                  = "SELECT * FROM backup_storage_area order by libelle";
+        $res                  = $db->sql_query($sql);
+        $data['storage_area'] = [];
+        while ($ob                   = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->libelle." (".$ob->ip.")";
+
+            $data['storage_area'][] = $tmp;
+        }
+
+
+        $this->set('data', $data);
+    }
+
+    public function editShedule()
+    {
+        
+    }
+
+    function mydumper($backup)
+    {
+        //$this->backup_dir = $this->backup_dir;
+
+
+        Debug::debug($backup);
+
+
+        $db_to_backup = $this->di['db']->sql($backup['id_connection']);
+
+
+        
+
+        $server_config = $db_to_backup->getParams();
+
+
+        debug($backup['id_connection']);
+        debug($server_config);
+
+
+
+        $userpassword = " -h ".$server_config['hostname']." -P ".$backup['port']." -u ".$server_config['user']." -p ".$server_config['password'];
+
+
+        /*
+          if ($slave) {
+
+          $stop_slave = "STOP SLAVE;"; //because option --dump-slave restart replication after made the dump
+          if ($db_to_backup->isMultiMaster()) {
+          $stop_slave = "STOP ALL SLAVES;";
+          }
+          $cmd = "mysql ".$userpassword." -e '".$stop_slave.";'";
+          $this->cmd($cmd);
+
+
+          debug($slave);
+
+
+          $slave = $MS->isSlave();
+
+          $this->slave_data = json_encode($slave);
+          }
+
+          if ($master) {
+
+          debug($master);
+
+          $this->master_data = json_encode($master);
+          }
+          //$backup['path']
+         */
+
+        $directory = $id_backup_main."_".date("Y-m-d_His");
+        $this->checkDirectory($this->backup_dir);
+
+        $extra = " ";
+
+
+
+
+        $this->di['db']->sql(DB_DEFAULT)->sql_close();
+
+//$this->di['db']->sql(DB_DEFAULT);
+//echo $mysql_dump . "\n";
+
+        Crypt::$key         = CRYPT_KEY;
+        $mysql_ssh_login    = Crypt::decrypt($backup['mysql_ssh_login']);
+        $mysql_ssh_password = Crypt::decrypt($backup['mysql_ssh_password']);
+
+        $nas_ssh_login    = Crypt::decrypt($backup['nas_ssh_login']);
+        $nas_ssh_password = Crypt::decrypt($backup['nas_ssh_password']);
+
+        $pmauser   = 'pmacontrol';
+        $pmapasswd = Crypt::decrypt(PMACONTROL_PASSWD);
+
+
+        echo "{$backup['ip']}, 22, $pmauser, $pmapasswd);\n";
+
+        $ccc = new Ssh($backup['ip'], 22, $pmauser, $pmapasswd);
+        $ccc->connect();
+
+        $pwd = $ccc->exec('pwd');
+
+        debug($pwd);
+
+        $screen = $ccc->whereis("screen");
+        //$screen = "/usr/bin/screen";
+
+        $mysqldump = $ccc->whereis("mysqldump");
+
+        $cmd       = $mysqldump.$userpassword.$dumpoptions.$extra." ".$backup['db_name']." > ".$this->backup_dir."/".$file_name;
+        $id_backup = $backup['id_backup_database'];
+
+
+        echo "MYSQL_DUMP CMD : ".$cmd."\n";
+
+        $ccc->exec("echo \"#!/bin/sh\n$cmd\" > ".$this->backup_dir."/mysqldump.$id_backup.sh");
+
+        $ccc->exec("echo \"#!/bin/sh\n$screen -S backup_database_$id_backup -d -m ".$this->backup_dir."/mysqldump.$id_backup.sh\n"
+            ."$screen -list | grep backup_database_$id_backup | head -n1 | cut -f1 -d'.' | sed 's/\s//g' > ".$this->backup_dir."/pid.$id_backup.pid\n"
+            ."\" > ".$this->backup_dir."/backup.$id_backup.sh");
+
+        $ccc->exec("chmod +x ".$this->backup_dir."/mysqldump.".$backup['id_backup_database'].".sh");
+        $ccc->exec("chmod +x ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
+        $exec = $ccc->exec("sh ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
+
+
+        $pid = trim($ccc->exec("cat ".$this->backup_dir."/pid.".$backup['id_backup_database'].".pid"));
+
+
+        $waiting = ['/', '-', '\\', '|'];
+        $i       = 0;
+
+
+        echo "backup in progress ... ";
+        do {
+            $i++;
+
+            $mod = $i % 4;
+            echo " ".$waiting[$mod];
+            echo "\033[2D";
+            sleep(1);
+
+            $nb_thread = $ccc->exec("ps -p $pid | grep $pid | wc -l");
+
+            switch (trim($nb_thread)) {
+                case "1":
+                    $continue = true;
+                    break;
+                case "0":
+                    $continue = false;
+                    break;
+
+                default:
+
+
+                    throw new Exception("PMACTRL-085 : more than one thread ($nb_thread) have to audit code !");
+                    break;
+            }
+        } while ($continue);
+
+
+
+        if (!strpos("dump-slave", $extra) && $slave) {
+            $start_slave = "START SLAVE;"; //because option --dump-slave restart replication after made the dump
+            if ($db_to_backup->isMultiMaster()) {
+                $start_slave = "START ALL SLAVES;";
+            }
+            $cmd = "mysql ".$userpassword." -e '".$start_slave.";'";
+            $this->cmd($cmd);
+        }
+
+
+
+
+        $this->time_backup_end = microtime(true);
+        $full_path             = $this->backup_dir."/".$file_name;
+        $file_gz               = $this->backup_dir."/".$file_name.".gz";
+
+        //get md5 of file
+        $this->md5_file  = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
+        //get size of file
+        $this->size_file = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
+
+        $cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
+
+        $ret = $ccc->exec($cmd);
+
+        //get md5 of file
+        $this->md5_gz = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
+
+
+        $this->size_gz = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
+
+        $this->time_gzip = microtime(true);
+
+        //remove old backup
+
+
+        $grep  = $ccc->whereis("grep");
+        $ls    = $ccc->whereis("ls");
+        $sed   = $ccc->whereis("sed");
+        $xargs = $ccc->whereis("xargs");
+        $rm    = $ccc->whereis("rm");
+
+        $cmd = 'cd '.$this->backup_dir.' && '.$ls.' -t | '.$grep.' \'__'.$backup['db_name'].'.sql\' | '.$sed.' -e \'1,2d\' | '.$xargs.' -d \'\n\' '.$rm.''."\n";
+        $ret = $ccc->exec($cmd);
+
+        $ret = $ccc->exec("ls ".$file_gz." | wc -l");
+
+        if (trim($ret) === "1") {
+            return $file_gz;
+        }
+
+        throw new \Exception("PMACTRL-052 : file not found '".$file_gz."'");
+        echo "\n";
+
+        return false;
     }
 }
 /*

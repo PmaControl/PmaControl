@@ -29,8 +29,10 @@ foreach ($data['keys'] as $key) {
     //echo '<i class="fa fa-key fa-5a" aria-hidden="true"></i>';
 
     echo '<br /><span class="badge">SSH</span></div>';
+
+    echo '<div class="col-md-2"><b>Name :</b> '.$key['name'].'</div>';
     echo '<div class="col-md-2"><b>User :</b> '.$key['user'].'</div>';
-    echo '<div class="col-md-2"><b>Type :</b> '.$key['type'].'<br />';
+    echo '<div class="col-md-1"><b>Type :</b> '.$key['type'].'<br />';
 
     if (in_array($key['type'],$data['ssh_supported'] ))
     {
@@ -43,7 +45,7 @@ foreach ($data['keys'] as $key) {
 
 
     echo '</div>';
-    echo '<div class="col-md-5"><b>Fingerprint:</b> '.implode(':', str_split($key['fingerprint'], 2)).''
+    echo '<div class="col-md-4"><b>Fingerprint:</b> '.implode('-', str_split($key['fingerprint'], 4)).''
     .'<br />'
     .'Added on : '.$key['added_on']
     .'</div>';

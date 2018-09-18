@@ -89,15 +89,11 @@ foreach ($data['slave'] as $slaves) {
             }
 
 
-
-
-
-
             //echo $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['display_name'];
 
             echo ' ('.$slave['master_host'].')';
         } else {
-            echo $slave['master_host'].':'.$slave['master_port'].' <button type="button" class="btn btn-default btn-xs">Add this server to monitoring</button>';
+            echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }
 
 
@@ -108,6 +104,7 @@ foreach ($data['slave'] as $slaves) {
         if (empty($data['server']['master'][$slave['id_mysql_server']]['is_available'])) {
 
             $class = "pma pma-danger";
+
         }
 
 

@@ -330,7 +330,7 @@ var myChart = new Chart(ctx, {
 
         $this->layout_name = 'pmacontrol';
 
-        $this->title = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
+        $this->title = '<i class="glyphicon glyphicon-erase"></i> '.__("Cleaner");
 
 
 

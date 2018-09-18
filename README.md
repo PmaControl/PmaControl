@@ -9,7 +9,8 @@ This software is distribued under Free Software Lisense : GNU / GPL v3 (http://w
 
 **Distribution based on Linux. (don't work with windows!)**
 
-* Monitoring : Master/Slave, Galera Cluster, Graph
+* Automatic discovery and monitoring
+* Monitoring : Master/Slave, Galera Cluster, HA Proxy
 * Query analyzer
 * Backup system (Xtrabackup / mysqldump / mydumper) with different storage area
 * Manage array of servers (like it's was only one)

@@ -5,6 +5,7 @@
  * and open the template in the editor.
  */
 
+
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 echo '<tr>';
@@ -30,3 +31,6 @@ foreach ($data['alia_dns'] as $alias) {
 }
 
 echo '</table>';
+
+
+echo '';

@@ -369,4 +369,12 @@ PARTITION BY RANGE (to_days(`date`))
             $db->sql_query($sql);
         }
     }
+
+
+    public function updateConfig()
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        Mysql::generateMySQLConfig($db);
+    }
+
 }

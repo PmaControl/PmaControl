@@ -18,7 +18,7 @@ class Aspirateur extends Controller
 {
 
     use \App\Library\Filter;
-    var $shared;
+    var $shared = array();
 
     /*
      * (PmaControl 0.8)<br/>
@@ -56,7 +56,8 @@ class Aspirateur extends Controller
         $id_daemon  = $param[0];
         $date_start = microtime(true);
 
-        $this->allocate_shared_storage();
+        $this->allocate_shared_storage('answer');
+        $this->allocate_shared_storage('variable');
 
 
         Debug::parseDebug($param);
@@ -163,9 +164,7 @@ class Aspirateur extends Controller
 
             //$this->isGaleraCluster(array());
 
-
             foreach ($server_list as $server) {
-
                 Debug::debug($this->shared[$server['name']], $server['name']);
                 Debug::debug($this->shared[$server['name']], $server['name']);
             }
@@ -280,7 +279,6 @@ class Aspirateur extends Controller
 
         $fp = fopen($lock_file, "w");
 
-
         /*
           if (!is_writable($lock_file)) {
           throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
@@ -306,13 +304,37 @@ class Aspirateur extends Controller
 
 
         Debug::debug("Avant");
-        $data['variables'] = $mysql_tested->getVariables();
+
+
+        // traitement SHOW GLOBAL VARIABLES
+
+        $var['variables'] = $mysql_tested->getVariables();
+
+        if (!empty($var['variables']['gtid_binlog_pos'])) {
+            unset($var['variables']['gtid_binlog_pos']);
+        }
+
+        if (!empty($var['variables']['gtid_binlog_state'])) {
+            unset($var['variables']['gtid_binlog_state']);
+        }
+
+        if (!empty($var['variables']['gtid_current_pos'])) {
+            unset($var['variables']['gtid_current_pos']);
+        }
+
+        if (!empty($var['variables']['gtid_slave_pos'])) {
+            unset($var['variables']['gtid_slave_pos']);
+        }
+
+
+
+
         Debug::debug("apres Variables");
-        $data['status']    = $mysql_tested->getStatus();
+        $data['status'] = $mysql_tested->getStatus();
         Debug::debug("apres status");
-        $data['master']    = $mysql_tested->isMaster();
+        $data['master'] = $mysql_tested->isMaster();
         Debug::debug("apres master");
-        $data['slave']     = $mysql_tested->isSlave();
+        $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
 
 
@@ -340,7 +362,35 @@ class Aspirateur extends Controller
             throw new \Exception('PMACTRL-056 : '.$err['message'].' in '.$err['file'].' on line '.$err['line'], 80);
         }
 
-        $this->allocate_shared_storage();
+
+
+        $md5 = md5(json_encode($var));
+
+        $this->allocate_tmp_storage('server_'.$id_server);
+
+        $export_variables = false;
+
+        Debug::debug($md5, "NEW MD5");
+
+        if (!empty($this->shared['server_'.$id_server]->md5)) {
+
+            Debug::debug($this->shared['server_'.$id_server]->md5, "OLD MD5");
+
+            if ($this->shared['server_'.$id_server]->md5 != $md5) {
+                $export_variables                        = true;
+                $this->shared['server_'.$id_server]->md5 = $md5;
+            }
+        } else {
+            $this->shared['server_'.$id_server]->md5 = $md5;
+            $export_variables                        = true;
+        }
+
+        if ($export_variables) {
+            Debug::debug($export_variables, "SET VARIABLES");
+            $this->allocate_shared_storage('variable');
+        }
+
+        $this->allocate_shared_storage('answer');
 
         $lock_file = TMP."lock/".$name_server.".txt";
 
@@ -360,7 +410,14 @@ class Aspirateur extends Controller
         }
 
         //push data in memory
-        $this->shared->{$id_server} = $date;
+        $this->shared['answer']->{$id_server} = $date;
+
+        if ($export_variables) {
+            $this->shared['variable']->{$id_server} = $var;
+        }
+
+
+
 
         fflush($fp);            // libère le contenu avant d'enlever le verrou
         flock($fp, LOCK_UN);    // Enlève le verrou
@@ -380,8 +437,15 @@ class Aspirateur extends Controller
     public function allocate_shared_storage($name = 'answer')
     {
         //storage shared
-        $storage      = new StorageFile('/dev/shm/'.$name.'_'.time()); // to export in config ?
-        $this->shared = new SharedMemory($storage);
+        $storage             = new StorageFile('/dev/shm/'.$name.'_'.time()); // to export in config ?
+        $this->shared[$name] = new SharedMemory($storage);
+    }
+
+    public function allocate_tmp_storage($name = '')
+    {
+        //storage shared
+        $storage             = new StorageFile('/dev/shm/'.$name); // to export in config ?
+        $this->shared[$name] = new SharedMemory($storage);
     }
 
 // https://github.com/php-amqplib/php-amqplib
@@ -591,9 +655,6 @@ class Aspirateur extends Controller
 
 
 
-
-
-
             $id = $ob->id;
 
             $date = array();
@@ -604,7 +665,6 @@ class Aspirateur extends Controller
 
             $this->allocate_shared_storage('hardware');
             $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
-
 
             Debug::debug($date);
         }

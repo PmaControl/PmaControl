@@ -3,6 +3,7 @@
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use \Glial\Synapse\FactoryController;
 use \Glial\Security\Crypt\Crypt;
+use Glial\Html\Form\Form;
 
 function formatVersion($version)
 {
@@ -13,27 +14,21 @@ function formatVersion($version)
         $number = $version;
     }
 
-    $name = 'MySQL';
-
     switch (strtolower($fork)) {
-
-        case 'mysql':
-            $name = 'MySQL';
-            break;
-
         case 'mariadb':
-            $name = 'MariaDB';
+            $name = '<span class="geek">&#xF130;</span> MariaDB';
             break;
 
         case 'percona':
             $name = 'percona';
             break;
+
+        default:
+            $name = '<span class="geek">&#xF137;</span> MySQL';
     }
 
     return $name." ".$number;
 }
-
-
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -44,11 +39,42 @@ echo '<tr>';
 echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("ID").'</th>';
 echo '<th>'.__("Available").'</th>';
-echo '<th><input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'</th>';
+
+/*
+  echo '<th>';
+  ?>
+  <div class="form-group">
+  <div class="checkbox checbox-switch switch-success">
+  <label>
+  <?php
+  $computed = array("class" => "form-control", "type" => "checkbox", "title" => "Monitored");
+  echo Form::input("check", "all", $computed);
+  ?>
+  <span></span>
+  <b>Monitored</b>
+  </label>
+  </div>
+  </div>
+
+  <?php
+  //<input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'
+
+  echo '</th>';
+ *
+ */
 echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
 
 echo '<th>'.__("Name").'</th>';
+echo '<th>';
+
+
+
+echo __('Tags');
+
+echo '</th>';
+
+
 echo '<th>'.__("IP").'</th>';
 echo '<th>'.__("Port").'</th>';
 echo '<th>'.__("User").'</th>';
@@ -57,26 +83,24 @@ echo '<th>'.__("Password").'</th>';
 echo '<th>'.__("Version").'</th>';
 echo '<th>'.__("Date refresh").'</th>';
 
-
-
-echo '<th style="max-width:500px">'.__("Error").'</th>';
+echo '<th style="max-width:400px">'.__("Error").'</th>';
+echo '<th>'.__("Acknowledge").'</th>';
 echo '</tr>';
-
-
 
 $i = 0;
 
 if (!empty($data['servers'])) {
 
     foreach ($data['servers'] as $server) {
-
-
-
         $i++;
 
         $style = "";
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
             $style = 'background-color:#d9534f; color:#FFFFFF';
+        }
+
+        if ($server['is_acknowledged'] !== "0") {
+            $style = 'background-color:#cccccc; color:#999999';
         }
 
         echo '<tr>';
@@ -85,7 +109,35 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
         echo '<span class="glyphicon '.($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
         echo '</td>';
-        echo '<td style="'.$style.'">'.'<input type="checkbox" name="monitored['.$server['id'].']" '.($server['is_monitored'] == 1 ? 'checked="checked"' : '').'" />'.'</td>';
+
+
+        /*
+          echo '<td style="'.$style.'">';
+          ?>
+          <div class="form-group">
+          <div class="checkbox checbox-switch switch-success">
+          <label>
+          <?php
+          if ($server['is_monitored'] === "1") {
+          $computed = array("class" => "form-control", "type" => "checkbox", "checked" => "checked");
+          } else {
+          $computed = array("class" => "form-control", "type" => "checkbox");
+          }
+
+          echo Form::input("monitored", $server['id'], $computed);
+          ?>
+          <span></span>
+
+          </label>
+          </div>
+          </div>
+
+          <?php
+          //.'<input type="checkbox" name="monitored['.$server['id'].']" '.($server['is_monitored'] == 1 ? 'checked="checked"' : '').'" />'.
+          echo '</td>';
+          /* */
+
+
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
@@ -97,6 +149,17 @@ if (!empty($data['servers'])) {
         //echo $data['extra'][$server['id']]['']['hostname'];
 
         echo '</a></td>';
+
+        echo '<td style="'.$style.'">';
+
+        if (!empty($data['tag'][$server['id']])) {
+            foreach ($data['tag'][$server['id']] as $tag) {
+                echo '<span title="'.$tag['name'].'" class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].'">'.$tag['name'].'</span> ';
+            }
+        }
+
+        echo '</td>';
+
         echo '<td style="'.$style.'">'.$server['ip'].'</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
@@ -116,7 +179,6 @@ if (!empty($data['servers'])) {
             echo formatVersion($data['extra'][$server['id']]['']['version']);
         }
 
-
         echo '</td>';
         echo '<td style="'.$style.'">';
 
@@ -129,33 +191,75 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="max-width:600px;'.$style.'" class="">';
+        echo '<td style="max-width:400px;'.$style.'" class="">';
 
-        if (strstr($server['error'], '[0m') ) {
+        if (strstr($server['error'], '[0m')) {
             $converter = new AnsiToHtmlConverter();
             $html      = $converter->convert($server['error']);
 
-
-
             echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">'.$html.'</pre>';
-//$server['error'];
-        }
 
-        else if (strstr($server['error'], 'Call Stack:'))
-        {
+            if (!empty($data['last_date'][$server['id']]['date'])) {
+                echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
+            }
+
+//$server['error'];
+        } else if (strstr($server['error'], 'Call Stack:')) {
             //echo end(explode("\n", $server['error']));
             preg_match_all("/\[[\s0-9:_-]+\]\[ERROR\](.*)/", $server['error'], $output_array);
 
-            if (!empty($output_array[0][0]))
-            {
+            if (!empty($output_array[0][0])) {
                 echo $output_array[0][0];
             }
 
+            if (!empty($data['last_date'][$server['id']]['date'])) {
+                echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
+                //echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
+            }
             //echo $server['error'];
+        } else {
+            echo str_replace("\n", '<br>', trim($server['error']));
+
+            if (!empty(trim($server['error']))) {
+                if (!empty($data['last_date'][$server['id']]['date'])) {
+                    echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
+                }
+            }
+
+
+
+            /*
+              echo "   -   ".$y." years\n";
+              echo $d." days\n";
+              echo $h." hours\n";
+              echo $m." minutes\n"; */
         }
 
-        else {
-            echo str_replace("\n", '<br>', trim($server['error']));
+        $date1   = strtotime($data['last_date'][$server['id']]['date']);
+        $date2   = time();
+        $subTime = $date2 - $date1;
+
+        $d = ($subTime / (60 * 60 * 24));
+        $h = ($subTime / (60 * 60)) % 24;
+        $m = ($subTime / 60) % 60;
+
+        if ($d >= 1) {
+            echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
+        } else if ($subTime < 60) {
+            //echo ' <span class="label label-success" title="'.$data['last_date'][$server['id']]['date'].'">'.__("OK").'</span>';
+        } else if ($subTime >= 60 && $subTime < 3600) {
+            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'"><i class="glyphicon glyphicon-warning-sign"></i> '.$m.' '.__("Minutes").'</span>';
+        } else {
+            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
+        }
+
+
+
+        echo '</td>';
+        echo '<td style="'.$style.'">';
+
+        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';
         echo '</tr>';
@@ -163,8 +267,6 @@ if (!empty($data['servers'])) {
 }
 echo '</table>';
 
-
 echo '<input type="hidden" name="is_monitored" value="1" />';
 echo '<button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Update</button>';
-
 echo '</form>';

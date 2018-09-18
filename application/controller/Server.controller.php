@@ -6,9 +6,7 @@ use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-
 use App\Library\Chiffrement;
-
 
 class Server extends Controller
 {
@@ -106,7 +104,7 @@ class Server extends Controller
         $data['menu']['cache']['name']  = __('Cache');
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
-
++
         /*         * ***** */
 
         $data['menu_select']['main']['name']  = __('Servers');
@@ -184,7 +182,7 @@ class Server extends Controller
         $this->di['js']->addJavascript(array('clipboard.min.js'));
 
         $this->di['js']->code_javascript('
-        $("#checkAll").click(function(){
+        $("#check-all").click(function(){
     $("input:checkbox").not(this).prop("checked", this.checked);
 });
 
@@ -239,7 +237,26 @@ class Server extends Controller
         Extraction::setDb($db);
         $data['extra'] = Extraction::display(array("Version", "Hostname"));
 
-//debug($data['extra']);
+
+        $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
+        $res               = $db->sql_query($sql);
+        $data['last_date'] = array();
+        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['last_date'][$arr['id_mysql_server']] = $arr;
+        }
+
+
+        // get Tag
+        $sql          = "SELECT * FROM link__mysql_server__tag a 
+            INNER JOIN tag b ON b.id =a.id_tag";
+        $res          = $db->sql_query($sql);
+        $data['tags'] = array();
+        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['tag'][$arr['id_mysql_server']][] = $arr;
+        }
+
+
+        //debug($data['tag']);
 
 
         $this->set('data', $data);
@@ -506,46 +523,49 @@ class Server extends Controller
                 $i    = 0;
 
                 $old_date = "";
-                $points   = [];
+                $point    = [];
 
-                foreach ($data['graph'] as $value) {
 
-                    if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
+                if (!empty($data['graph'])) {
+
+                    foreach ($data['graph'] as $value) {
+
+                        if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
+
+                            $old_date  = $value['date'];
+                            $old_value = $value['value'];
+                            continue;
+                        } elseif ($_GET['ts_variable']['derivate'] == "1") {
+
+                            $datetime1 = strtotime($old_date);
+                            $datetime2 = strtotime($value['date']);
+
+                            $secs = $datetime2 - $datetime1; // == <seconds between the two times>
+//echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
+
+                            $derivate = round(($value['value'] - $old_value) / $secs, 2);
+
+                            if ($derivate < 0) {
+                                $derivate = 0;
+                            }
+
+                            $val = $derivate;
+
+//$points[] = "{ x: " . $datetime2 . ", y :" . $derivate . "}";
+                        } else {
+                            $val = $value['value'];
+                        }
+
+
+
+                        $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
+
+                        $dates[] = $value['date'];
 
                         $old_date  = $value['date'];
                         $old_value = $value['value'];
-                        continue;
-                    } elseif ($_GET['ts_variable']['derivate'] == "1") {
-
-                        $datetime1 = strtotime($old_date);
-                        $datetime2 = strtotime($value['date']);
-
-                        $secs = $datetime2 - $datetime1; // == <seconds between the two times>
-//echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
-
-                        $derivate = round(($value['value'] - $old_value) / $secs, 2);
-
-                        if ($derivate < 0) {
-                            $derivate = 0;
-                        }
-
-                        $val = $derivate;
-
-//$points[] = "{ x: " . $datetime2 . ", y :" . $derivate . "}";
-                    } else {
-                        $val = $value['value'];
                     }
-
-
-
-                    $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
-
-                    $dates[] = $value['date'];
-
-                    $old_date  = $value['date'];
-                    $old_value = $value['value'];
                 }
-
 
 
 //$point2[] = "{ x: new Date('2017-10-28 00:38:34'), y: 50}";
@@ -748,6 +768,7 @@ var myChart = new Chart(ctx, {
 
             if (!empty($_POST['settings'])) {
 
+
                 foreach ($_POST['id'] as $key => $value) {
 
                     if (empty($_POST['mysql_server'][$key]['is_monitored'])) {
@@ -770,6 +791,33 @@ var myChart = new Chart(ctx, {
                     if (!$ret) {
                         debug($server_main);
                         print_r($db->sql_error());
+                    }
+                }
+
+                if (!empty($_POST['link__mysql_server_tag'])) {
+
+                    $sql = "BEGIN";
+                    $db->sql_query($sql);
+
+                    try {
+
+                        $sql = "delete from link__mysql_server__tag where id_mysql_server in (".implode(",", $_POST['id']).")";
+                        $db->sql_query($sql);
+                        foreach ($_POST['link__mysql_server_tag'] as $key => $servers) {
+
+                            foreach ($servers as $tags) {
+                                foreach ($tags as $tag) {
+
+                                    $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('".$_POST['id'][$key]."','".$tag."')";
+                                    $db->sql_query($sql);
+                                }
+                            }
+                        }
+                        $sql = "COMMIT";
+                        $db->sql_query($sql);
+                    } catch (Exception $ex) {
+                        $sql = "ROLLBACK";
+                        $db->sql_query($sql);
                     }
                 }
 
@@ -796,6 +844,28 @@ var myChart = new Chart(ctx, {
         $data['clients']      = $this->getClients();
         $data['environments'] = $this->getEnvironments();
 
+
+
+        // tag
+        $sql         = "SELECT * FROM tag order by name";
+        $res         = $db->sql_query($sql);
+        $data['tag'] = array();
+        while ($ob          = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->name;
+            $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
+
+            $data['tag'][] = $tmp;
+        }
+
+
+        $sql = "SELECT * FROM link__mysql_server__tag";
+        $res = $db->sql_query($sql);
+        while ($ob  = $db->sql_fetch_object($res)) {
+
+            $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
+        }
 
 
         $this->set('data', $data);
@@ -933,7 +1003,7 @@ var myChart = new Chart(ctx, {
 
             if (!empty($_POST['mysql_server']['passwd'])) {
                 $server['mysql_server']['passwd'] = Chiffrement::encrypt($_POST['mysql_server']['passwd']);
-                $server['mysql_server']['login'] = $_POST['mysql_server']['login'];
+                $server['mysql_server']['login']  = $_POST['mysql_server']['login'];
                 $server['mysql_server']['id']     = $id_server;
 
                 $ret = $db->sql_save($server);
@@ -947,17 +1017,49 @@ var myChart = new Chart(ctx, {
 
 
                     header("location: ".LINK.__CLASS__.'/settings');
-
-
-
                 } else {
                     set_flash("error", "Error", "Password not updated !");
 
                     header("location: ".LINK.__CLASS__.'/'.__FUNCTION__.'/'.$id_server);
-                    
                 }
             }
         }
     }
 
+    public function acknowledge($param)
+    {
+        $this->view = false;
+
+        $id_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
+
+        debug($sql);
+        $db->sql_query($sql);
+
+        header("location: ".LINK.__CLASS__."/main/");
+    }
+
+    public function remove($param)
+    {
+        $this->view = false;
+
+        $id_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+        $db->sql_query($sql);
+
+        header("location: ".LINK.__CLASS__."/settings/");
+    }
+
+    public function acknowledgedBy($param)
+    {
+
+    }
 }

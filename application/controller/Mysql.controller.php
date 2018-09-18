@@ -9,6 +9,7 @@ use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 use \Glial\Cli\SetTimeLimit;
 use \App\Library\Debug;
+use \App\Library\Mysql as Mysql2;
 
 class Mysql extends Controller
 {
@@ -850,7 +851,7 @@ class Mysql extends Controller
 
         if ($fp = fopen($path.'/'.$file.'.dot', "w")) {
 
-            fwrite($fp, "digraph Replication {   ".PHP_EOL);
+            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho;  ".PHP_EOL);
 //fwrite($fp, "\t size=\"10,1000\";");
 
             fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);
@@ -858,6 +859,10 @@ class Mysql extends Controller
 
 
             foreach ($tables as $table) {
+
+
+
+
                 if (in_array($table['TABLE_NAME'], $this->table_to_purge)) {
                     fwrite($fp, "\t node [color=\"#337ab7\"];".PHP_EOL);
                 } else {
@@ -1329,6 +1334,9 @@ class Mysql extends Controller
                 if ($ret !== true) {
 
 
+                    debug($_POST);
+                    debug($ret);
+
                     $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
                     $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
 
@@ -1340,14 +1348,33 @@ class Mysql extends Controller
                     exit;
                 }
 
-
-
                 $table['mysql_server'] = $_POST['mysql_server'];
+
+                $table['mysql_server']['port']                = $data['port'] ?? 3306;
+                $table['mysql_server']['ip']                  = $table['mysql_server']['ip'];
+                $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
+                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
+                $table['mysql_server']['name']                = "server_".uniqid();
+                $table['mysql_server']['hostname']            = Mysql2::getHostname("@hostname",
+                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
+                $table['mysql_server']['passwd']              = Mysql2::crypt($table['mysql_server']['password']);
+                $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
+                $table['mysql_server']['is_password_crypted'] = "1";
+                $table['mysql_server']['id_environment']      = "1";
+
+                /*
+                  debug($table);
+                  debug($_POST);
+                  exit;
+                  /** */
 
                 $ret = $db->sql_save($table);
 
 
                 if (!$ret) {
+
+
+                    //debug($table);
 
                     $msg   = json_encode($db->sql_error());
                     $title = I18n::getTranslation(__("Error"));
@@ -1356,10 +1383,16 @@ class Mysql extends Controller
                     header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 } else {
-                    $msg   = I18n::getTranslation(__("Your MySQL server was successfully"));
+
+                    Mysql2::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+
+
+                    $msg   = I18n::getTranslation(__("Your MySQL server was successfully added !"));
                     $title = I18n::getTranslation(__("Success"));
                     set_flash("success", $title, $msg);
 
+
+                    //echo "OK !!!";
                     header("location: ".LINK."mysql/add/");
                     exit;
                 }
@@ -1413,7 +1446,7 @@ class Mysql extends Controller
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-        $this->link = @mysqli_connect($hostname.":".$port, $user, trim($password));
+        $this->link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
 
         if ($this->link) {
             return true;

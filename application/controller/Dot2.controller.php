@@ -13,7 +13,7 @@ use \App\Library\Debug;
 
 //add virtual_ip
 // ha proxy
-
+// https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
 class Dot2 extends Controller
 {
 
@@ -71,7 +71,7 @@ class Dot2 extends Controller
         Extraction::setDb($db);
         $this->slaves = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "slave::last_sql_error", "slave::last_sql_errno"));
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid"));
 
 
         $id_group  = 0;
@@ -92,8 +92,6 @@ class Dot2 extends Controller
                 $tmp_group[$id_group][] = $id_mysql_server;
 
                 $this->slaves[$id_mysql_server][$connection]['id_master'] = $id_master;
-
-
 
                 $id_group++;
             }
@@ -281,7 +279,7 @@ class Dot2 extends Controller
         $groups = $this->array_merge_group($groups);
 
 
-        Debug::debug($groups, "groups");
+        //Debug::debug($groups, "groups");
 
         $result['groups']  = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
@@ -335,7 +333,7 @@ class Dot2 extends Controller
     {
 //label=\"Step 2\";
         $graph = "digraph PmaControl {";
-        $graph .= "rankdir=LR; splines=ortho;";
+        $graph .= "rankdir=LR; splines=line;";
         $graph .= " graph [fontname = \"helvetica\"];
  node [fontname = \"helvetica\"];
  edge [fontname = \"helvetica\"];
@@ -406,8 +404,6 @@ class Dot2 extends Controller
         }
 
 //        Debug::debug($this->graph_node, "GENERATE NODE");
-
-
 //Debug::debug($this->graph_node);
     }
 
@@ -425,11 +421,23 @@ class Dot2 extends Controller
                 }
 
 
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "filled";
+
+                // case of GTID MariaDB
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['arrow'] = "simple";
+                if (!empty($slave['using_gtid'])) {
+                    if ($slave['using_gtid'] !== "No") {
+                        $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['arrow'] = "double";
+                    }
+                }
+
+
+
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style']           = "filled";
                 $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
 
                 if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_OK;
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "      ";
                 } else if ($slave['seconds_behind_master'] !== "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_DELAY;
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
@@ -440,8 +448,6 @@ class Dot2 extends Controller
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_BLACKOUT;
                 }
-
-
 
                 if ($slave['last_io_errno'] !== "0") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
@@ -484,7 +490,7 @@ class Dot2 extends Controller
         $cpl_count = array_count_values($couples);
 
 
-        Debug::debug($cpl_count, "cpl_count");
+        //Debug::debug($cpl_count, "cpl_count");
 
         $paires = array();
         foreach ($cpl_count as $key => $val) {
@@ -494,7 +500,7 @@ class Dot2 extends Controller
         }
 
 
-        Debug::debug($paires, "paires");
+        //Debug::debug($paires, "paires");
 
         foreach ($paires as $val) {
             $new_master_master[] = explode(":", $val);
@@ -506,7 +512,7 @@ class Dot2 extends Controller
             $new_master_master = $this->array_merge_group($new_master_master);
 
 
-            Debug::debug($new_master_master, "new_master_master");
+            //Debug::debug($new_master_master, "new_master_master");
 
 
             //$new_master_master = array();
@@ -850,12 +856,19 @@ class Dot2 extends Controller
 
                     //Debug::debug($this->graph_edge, "xfghbxfhg");
 
-                    if (!empty($this->graph_edge[$id_master][$id_slave]['connection_name']))
-                    {
+                    if (!empty($this->graph_edge[$id_master][$id_slave]['connection_name'])) {
                         $connection_name = $this->graph_edge[$id_master][$id_slave]['connection_name'];
                     }
 
 
+
+                    Debug::debug($val['arrow'], 'ARROW');
+
+                    if ($val['arrow'] == "double") {
+                        $val['color'] = $val['color'].":white:".$val['color'];
+                    }
+
+                    
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
                         .$val['color']."\" label=\"".$val['label']."\" edgeURL=\"".LINK."slave/show/".$id_slave."/".$connection_name."/\" ".$extra."];\n";
