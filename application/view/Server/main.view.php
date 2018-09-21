@@ -29,6 +29,28 @@ function formatVersion($version)
 
     return $name." ".$number;
 }
+
+
+function format_ping($microtime, $precision = 2) {
+    $units = array('ms', 's');
+    
+    $microtime = $microtime * 1000;
+    
+    $microtime = max($microtime, 0);
+    $pow = floor(($microtime ? log($microtime) : 0) / log(1000));
+    $pow = min($pow, count($units) - 1);
+    
+    // Uncomment one of the following alternatives
+    // $bytes /= pow(1024, $pow);
+    // $bytes /= (1 << (10 * $pow));
+
+
+    return round($microtime, $precision) . ' ' . $units[$pow];
+}
+    
+
+
+
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -64,17 +86,13 @@ echo '<th>'.__("Available").'</th>';
  */
 echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
-
 echo '<th>'.__("Name").'</th>';
 echo '<th>';
-
 
 
 echo __('Tags');
 
 echo '</th>';
-
-
 echo '<th>'.__("IP").'</th>';
 echo '<th>'.__("Port").'</th>';
 echo '<th>'.__("User").'</th>';
@@ -82,6 +100,7 @@ echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
 echo '<th>'.__("Date refresh").'</th>';
+echo '<th>'.__("Ping").'</th>';
 
 echo '<th style="max-width:400px">'.__("Error").'</th>';
 echo '<th>'.__("Acknowledge").'</th>';
@@ -110,7 +129,6 @@ if (!empty($data['servers'])) {
         echo '<span class="glyphicon '.($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
         echo '</td>';
 
-
         /*
           echo '<td style="'.$style.'">';
           ?>
@@ -137,19 +155,16 @@ if (!empty($data['servers'])) {
           echo '</td>';
           /* */
 
-
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
         echo '</td>';
         echo '<td style="'.$style.'"><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1 hour/ts_variable:derivate:1">';
 
-
         echo $server['display_name'];
         //echo $data['extra'][$server['id']]['']['hostname'];
 
         echo '</a></td>';
-
         echo '<td style="'.$style.'">';
 
         if (!empty($data['tag'][$server['id']])) {
@@ -157,22 +172,17 @@ if (!empty($data['servers'])) {
                 echo '<span title="'.$tag['name'].'" class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].'">'.$tag['name'].'</span> ';
             }
         }
-
         echo '</td>';
 
         echo '<td style="'.$style.'">'.$server['ip'].'</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
-
-
         echo '<td style="'.$style.'" title="">';
-
 
         \Glial\Synapse\FactoryController::addNode("Server", "passwd", array($server['passwd']));
 
         echo '</td>';
         //echo '<td style="'.$style.'">'.$server['hostname'].'</td>';
-
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
@@ -190,6 +200,18 @@ if (!empty($data['servers'])) {
             echo $server['date_refresh'];
         }
         echo '</td>';
+
+
+        echo '<td style="'.$style.'">';
+
+        if (!empty($data['extra'][$server['id']]['']['ping'])) {
+            echo format_ping($data['extra'][$server['id']]['']['ping']);
+        }
+
+
+        echo '</td>';
+
+
 
         echo '<td style="max-width:400px;'.$style.'" class="">';
 

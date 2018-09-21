@@ -78,7 +78,6 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-
         $sql = "SELECT * FROM daemon_main where id=".$id_daemon;
         $res = $db->sql_query($sql);
 
