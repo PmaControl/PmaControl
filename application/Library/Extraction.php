@@ -54,11 +54,14 @@ class Extraction
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) ";
             }
+
+
+            $INNER = " INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` ";
+            $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
         }
 
 
         $variable = self::getIdVariable($var);
-
 
 
         /*
@@ -83,18 +86,12 @@ class Extraction
 
                 //debug($radical);
 
-
-
-
                 if ($radical == "slave") {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,a.`value` ";
                 }
-
-
-
-
+                
                 $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
                     .$INNER."
                 WHERE id_ts_variable IN (".implode(",", $tab_ids).")

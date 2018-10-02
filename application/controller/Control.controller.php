@@ -20,8 +20,8 @@ class Control extends Controller
     var $tables      = array("ts_value_general", "ts_value_slave");
     var $ext         = array("int", "double", "text");
     var $field_value = array("int" => "bigint(20) unsigned NOT NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
-    var $primaty_key = array("ts_value_general" => "PRIMARY KEY (`date`,`id_mysql_server`,`id_ts_variable`)"
-        ,"ts_value_slave" => "PRIMARY KEY (`date`,`id_mysql_server`,`id_ts_variable`,`connection_name`)");
+    var $primaty_key = array("ts_value_general" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`, `date`)"
+        ,"ts_value_slave" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`,`date`,`connection_name`)");
 
     //var $primaty_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     var $index       = array();
