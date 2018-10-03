@@ -78,7 +78,6 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-
         $sql = "SELECT * FROM daemon_main where id=".$id_daemon;
         $res = $db->sql_query($sql);
 
@@ -166,7 +165,7 @@ class Aspirateur extends Controller
 
             foreach ($server_list as $server) {
                 Debug::debug($this->shared[$server['name']], $server['name']);
-                Debug::debug($this->shared[$server['name']], $server['name']);
+                
             }
 
 
@@ -292,7 +291,6 @@ class Aspirateur extends Controller
             fwrite($fp, getmypid());
         }
 
-
         Debug::checkPoint('avant query');
 
         $time_start             = microtime(true);
@@ -302,9 +300,7 @@ class Aspirateur extends Controller
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
-
         Debug::debug("Avant");
-
 
         // traitement SHOW GLOBAL VARIABLES
 
@@ -326,9 +322,6 @@ class Aspirateur extends Controller
             unset($var['variables']['gtid_slave_pos']);
         }
 
-
-
-
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
         Debug::debug("apres status");
@@ -336,7 +329,6 @@ class Aspirateur extends Controller
         Debug::debug("apres master");
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
-
 
         Debug::debug($data['slave']);
 
@@ -413,7 +405,10 @@ class Aspirateur extends Controller
         $this->shared['answer']->{$id_server} = $date;
 
         if ($export_variables) {
-            $this->shared['variable']->{$id_server} = $var;
+
+
+            $variables[date('Y-m-d H:i:s')][$id_server] = $var;
+            $this->shared['variable']->{$id_server}     = $variables;
         }
 
 
@@ -639,24 +634,16 @@ class Aspirateur extends Controller
 
         $res = $db->sql_query($sql);
 
-
-
         while ($ob = $db->sql_fetch_object($res)) {
-
 
             $time_start             = microtime(true);
             $ssh                    = Ssh::connect($ob->ip, 22, $ob->user, Chiffrement::decrypt($ob->private_key));
             $data['server']['ping'] = microtime(true) - $time_start;
 
-
-            $stats = $this->getStats($ssh, $data);
-
+            $stats    = $this->getStats($ssh, $data);
             $hardware = $this->getHardware($ssh, $data);
 
-
-
-            $id = $ob->id;
-
+            $id   = $ob->id;
             $date = array();
 
             $this->allocate_shared_storage('ssh_stats');
@@ -669,8 +656,6 @@ class Aspirateur extends Controller
             Debug::debug($date);
         }
 
-
-
         Debug::debug(SqlFormatter::highlight($sql));
         $db->sql_query($sql);
         $db->sql_close();
@@ -682,28 +667,23 @@ class Aspirateur extends Controller
         //$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
         $hardware['cpu_thread_count'] = trim($ssh->exec("cat /proc/cpuinfo | grep processor | wc -l"));
 
-
         $brut_memory = $ssh->exec("cat /proc/meminfo | grep MemTotal");
         preg_match("/[0-9]+/", $brut_memory, $memory);
 
         $mem    = $memory[0];
         $memory = sprintf('%.2f', $memory[0] / 1024 / 1024)." Go";
 
-
         $hardware['memory'] = $memory;
 
         $freq_brut                 = $ssh->exec("cat /proc/cpuinfo | grep 'cpu MHz'");
         preg_match("/[0-9]+\.[0-9]+/", $freq_brut, $freq);
         $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000))." GHz";
-
-
-        $hardware['os'] = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
-        $distributor    = trim($ssh->exec("lsb_release -si 2> /dev/null"));
+        $hardware['os']            = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
+        $distributor               = trim($ssh->exec("lsb_release -si 2> /dev/null"));
 
         if ($distributor === "RedHatEnterpriseServer") {
             $distributor = "RedHat";
         }
-
 
         if (empty($os)) {
             $os          = trim($ssh->exec("cat /etc/centos-release 2> /dev/null"));
@@ -765,16 +745,13 @@ class Aspirateur extends Controller
             $stats['user_connected'] = $output_array[1];
         }
 
-
         preg_match("/up\s+([0-9]+\s[a-z]+),/", $uptime, $output_array);
         if (!empty($output_array[1])) {
             $stats['uptime'] = $output_array[1];
         }
 
-
         $membrut = trim($ssh->exec("free -b"));
-
-        $lines = explode("\n", $membrut);
+        $lines   = explode("\n", $membrut);
 
         unset($lines[0]);
 
@@ -800,11 +777,8 @@ class Aspirateur extends Controller
 
         $dd    = trim($ssh->exec("df"));
         $lines = explode("\n", $dd);
-
         $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
-
         unset($lines[0]);
-
 
         $tmp = array();
         foreach ($lines as $line) {
@@ -815,16 +789,10 @@ class Aspirateur extends Controller
 
         $stats['disks'] = json_encode($tmp);
 
-
         $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
 
-
-
         $stats['ips'] = json_encode(explode("\n", $ips));
-
-
-
-        $cpus = trim($ssh->exec("grep 'cpu' /proc/stat"));
+        $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
         //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
 
         $cpu_lines = explode("\n", $cpus);
@@ -846,8 +814,6 @@ class Aspirateur extends Controller
         }
         $stats['cpu_detail'] = json_encode($cpu);
 
-
-
         /* io wait */
 
         /*
@@ -862,7 +828,8 @@ class Aspirateur extends Controller
 
           $stats[$title] = $elems[$i];
           $i++;
-          } */
+          }
+         */
 
 
         $mem = trim($ssh->exec("ps aux | grep mysqld | grep -v grep | awk '{print $5,$6}'"));
@@ -871,8 +838,6 @@ class Aspirateur extends Controller
 
         $stats['mysqld_mem_physical'] = $mysql[1];
         $stats['mysqld_mem_virtual']  = $mysql[0];
-
-
 
         //ifconfig
 
@@ -884,3 +849,22 @@ class Aspirateur extends Controller
         return $stats;
     }
 }
+
+
+/*
+ *
+ *
+                $sql2 = 'SELECT table_schema,
+sum( data_length ) as "data",
+sum( index_length ) as "index",
+sum( data_free ) as "data_free" ,
+count(1) as "tables",
+sum(TABLE_ROWS) as "rows",
+DEFAULT_CHARACTER_SET_NAME,
+DEFAULT_COLLATION_NAME
+FROM information_schema.TABLES a
+INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
+WHERE table_schema !="information_schema" AND table_schema !="performance_schema" AND table_schema !="mysql"
+GROUP BY table_schema ;';
+ *
+ */

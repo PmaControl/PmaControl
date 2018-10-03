@@ -33,7 +33,7 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.'Aurélien LEQUOY'.'</td>';
     echo '<td>'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
-    echo '<td>'.$daemon['class'].'/'.$daemon['method'].'</td>';
+    echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
     echo '<td>'.$daemon['log_file'].'</td>';
     echo '<td>';
 

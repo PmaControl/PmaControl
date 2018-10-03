@@ -46,9 +46,9 @@ class Server extends Controller
 
     public function listing($param)
     {
+        
 
-
-// doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
+        // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -104,10 +104,10 @@ class Server extends Controller
         $data['menu']['cache']['name']  = __('Cache');
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
-+
-        /*         * ***** */
+        +
+            /*             * ***** */
 
-        $data['menu_select']['main']['name']  = __('Servers');
+            $data['menu_select']['main']['name']  = __('Servers');
         $data['menu_select']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
         $data['menu_select']['main']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/main';
 
@@ -235,7 +235,9 @@ class Server extends Controller
 //debug($servers);
 
         Extraction::setDb($db);
-        $data['extra'] = Extraction::display(array("Version", "Hostname"));
+        $data['extra'] = Extraction::display(array("Version", "Hostname", "server::ping"));
+
+
 
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
@@ -251,7 +253,7 @@ class Server extends Controller
             INNER JOIN tag b ON b.id =a.id_tag";
         $res          = $db->sql_query($sql);
         $data['tags'] = array();
-        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['tag'][$arr['id_mysql_server']][] = $arr;
         }
 

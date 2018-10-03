@@ -16,16 +16,35 @@ class Integrate extends Controller
 
     var $shared;
     var $memory_file = "answer";
+    var $files       = array();
 
     public function evaluate($param)
     {
         Debug::parseDebug($param);
 
 
+
+        Debug::debug($param);
+
+
+        if (empty($param[1])) {
+            $memory_file = "answer";
+        }
+
+        $memory_file = $param[1];
+
+
+        // test if valid memory file (from ts_file)
+        $this->getIdMemoryFile($memory_file);
+
+
+
+
+
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $this->view = false;
 
-        $files = glob("/dev/shm/".$this->memory_file."_*");
+        $files = glob("/dev/shm/".$memory_file."_*");
         sleep(1);
 
         $variables           = $this->get_variable();
@@ -140,8 +159,6 @@ class Integrate extends Controller
                                                 $value = $db->sql_real_escape_string($value);
                                             }
 
-
-
                                             /*
                                               if ($this->convert($this->getTypeOfData($value)) != $variables[$type_metrics][$variable]['type']
                                               && $this->getTypeOfData($value) > $this->convert($variables[$type_metrics][$variable]['type'], true)) {
@@ -221,7 +238,7 @@ class Integrate extends Controller
         if (!empty($history)) {
 
 
-            $this->linkServerVariable($history);
+            $this->linkServerVariable($history, $memory_file);
         }
 
         Debug::debugQueriesOff();
@@ -292,9 +309,6 @@ class Integrate extends Controller
 
     private function insert_variable($variables_to_insert)
     {
-
-
-
         //Debug::debug($variables_to_insert, "dfgfgdg");
         //Debug::debug($variables_to_insert);
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -381,31 +395,42 @@ class Integrate extends Controller
         }
     }
 
-    private function linkServerVariable($history)
+    private function linkServerVariable($history, $memory_file)
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        switch ($this->memory_file) {
-            case 'answer':
-                $id_file_name = 3;
-                break;
-
-            case 'hardware':
-                $id_file_name = 2;
-                break;
-
-            case 'ssh_stats':
-                $id_file_name = 1;
-                break;
-        }
 
 
+        $id_file_name = $this->getIdMemoryFile($memory_file);
+
+
+
+        $sql3 = array();
         foreach ($history as $date => $is_servers) {
-            $sql = "UPDATE `ts_max_date`  SET `date_p4`=`date_p3`,`date_p3`=`date_p2`,`date_p2`=`date_p1`,`date_p1`=`date`,`date`= '".$date."' WHERE id_mysql_server IN (".implode(",", $is_servers).") AND id_ts_file=".$id_file_name.";";
 
-            Debug::debug($sql);
+            //Debug::debug($is_servers);
+
+
+            $sql = "UPDATE `ts_max_date`  SET `date_p4`=`date_p3`,`date_p3`=`date_p2`,`date_p2`=`date_p1`,`date_p1`=`date`,`date`= '".$date."' WHERE `id_mysql_server` IN (".implode(",", $is_servers).") AND `id_ts_file`=".$id_file_name.";";
+
+            Debug::sql($sql);
             $db->sql_query($sql);
+
+
+
+
+            foreach ($is_servers as $id_server) {
+                $sql3[] = "(".$id_server.", ".$id_file_name.", '".$date."')";
+            }
         }
+
+        $sql2 = "INSERT INTO `ts_date_by_server` (`id_mysql_server`,`id_ts_file`, `date`) VALUES ";
+        $sql4 = $sql2.implode(",", $sql3).";";
+
+        Debug::sql($sql4);
+
+
+        $db->sql_query($sql4);
     }
 
     private function convert($id, $revert = false)
@@ -419,5 +444,36 @@ class Integrate extends Controller
         }
 
         return $gg[$id];
+    }
+
+    private function getIdMemoryFile($memory_file)
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+
+        //on met en cache
+        if (empty($this->files)) {
+
+            $sql = "SELECT * FROM ts_file";
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $this->files[$ob->file_name] = $ob->id;
+            }
+        }
+
+        Debug::debug($this->files);
+
+
+        if (empty($this->files[$memory_file])) {
+            throw new Exception('PMACTRL-098 : Impossible to find this file name : "'.$memory_file.'"');
+        }
+        $id_file_name = $this->files[$memory_file];
+
+
+
+        return $id_file_name;
     }
 }
