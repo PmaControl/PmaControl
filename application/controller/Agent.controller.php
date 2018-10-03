@@ -14,6 +14,7 @@ use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use \Glial\Synapse\Config;
 use \App\Library\Debug;
+use App\Library\Mysql;
 
 class Agent extends Controller
 {
@@ -946,8 +947,9 @@ GROUP BY table_schema ;';
             echo "[Warning] Removed : ".$to_delete['name']." from monitoring\n";
         }
 
-        $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`, `date_previous`) SELECT 7,id, now(), now() from mysql_server;";
-        $db->sql_query($sql5);
+
+        Mysql::addMaxDate($this->di['db']->sql(DB_DEFAULT));
+
     }
 
     public function index()

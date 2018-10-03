@@ -37,6 +37,7 @@ class Extraction
         if (empty($date)) {
 
             $INNER = " INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
+            $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
             //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
         } else {
