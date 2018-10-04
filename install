@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 while getopts 'hc:d' flag; do
   case "${flag}" in
     h) 
@@ -182,7 +184,7 @@ else
 fi
 
 
-if [ -f $CONFIG_FILE ]; then
+if [ -f "$CONFIG_FILE" ]; then
 
 	php application/webroot/index.php install webroot $CONFIG_FILE
 	if [ $? != 0 ]; then
@@ -277,10 +279,12 @@ mkdir -p vendor/esysteme/mysql-sys/gen
 
 chown $user:$user -R .
 
-if [ -f $CONFIG_FILE ]; then
 
-	chown root:root $CONFIG_FILE
-	chmod 600 $CONFIG_FILE
+if [ -f "$CONFIG_FILE" ]; then
+        echo "Change chown and chmod for $CONFIG_FILE"
+        chown root:root $CONFIG_FILE
+        chmod 600 $CONFIG_FILE
 fi
+
 
 chmod 600 configuration/crypt.config.php
