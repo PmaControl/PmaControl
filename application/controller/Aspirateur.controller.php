@@ -163,10 +163,14 @@ class Aspirateur extends Controller
 
             //$this->isGaleraCluster(array());
 
+
+            /*
+            Debug::debug($server_list);
+
             foreach ($server_list as $server) {
                 Debug::debug($this->shared[$server['name']], $server['name']);
                 
-            }
+            }*/
 
 
             $time = microtime(true) - $date_start;
