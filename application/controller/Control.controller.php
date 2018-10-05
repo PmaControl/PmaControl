@@ -7,7 +7,6 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 
-
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
  * ./glial integrate evaluate --debug
@@ -15,21 +14,17 @@ use \App\Library\Mysql;
 
 class Control extends Controller
 {
-
-    
     var $tables      = array("ts_value_general", "ts_value_slave");
     var $ext         = array("int", "double", "text");
     var $field_value = array("int" => "bigint(20) unsigned NOT NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
-    var $primaty_key = array("ts_value_general" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`, `date`)"
-        ,"ts_value_slave" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`,`date`,`connection_name`)");
-
-    //var $primaty_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
+    var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`, `date`)"
+        , "ts_value_slave" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`,`date`,`connection_name`)");
+    //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     var $index       = array();
     var $engine      = "rocksdb";
     var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
-
-
     var $percent_max_disk_used = 80;
+
     /*
      *
      * return space used on partition where is datadir of MySQL / MariaDB
@@ -46,24 +41,24 @@ class Control extends Controller
         $percent = substr($size, 0, -1);
 
         /*
-        $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"');
-        Debug::debug($size);
+          $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"');
+          Debug::debug($size);
 
-        $resultats = preg_replace('`([ ]{2,})`', ' ', $size);
-        Debug::debug($resultats);
+          $resultats = preg_replace('`([ ]{2,})`', ' ', $size);
+          Debug::debug($resultats);
 
-        $results = explode(' ', trim($resultats));
+          $results = explode(' ', trim($resultats));
 
-        $data['size']      = $results['1'];
-        $data['used']      = $results['2'];
-        $data['available'] = $results['3'];
+          $data['size']      = $results['1'];
+          $data['used']      = $results['2'];
+          $data['available'] = $results['3'];
 
-        Debug::debug($data);
+          Debug::debug($data);
 
-        $percent = ceil($data['used'] / $data['size'] * 100);
+          $percent = ceil($data['used'] / $data['size'] * 100);
 
-        Debug::debug($percent);
-        */
+          Debug::debug($percent);
+         */
         return $percent;
     }
 
@@ -241,7 +236,7 @@ class Control extends Controller
   ".$this->extra_field[$table]."
   `date` datetime NOT NULL,
   `value` ".$this->field_value[$ext].",
-  ".$this->primaty_key[$table]."
+  ".$this->primary_key[$table]."
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1
 PARTITION BY RANGE (to_days(`date`))
 (";
@@ -263,14 +258,20 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function rebuildAll($param = "")
     {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
         Debug::parseDebug($param);
 
         $this->dropTsTable();
         $this->createTsTable();
 
+        $sql = "TRUNCATE TABLE ts_date_by_server;";
+        $db->sql_query($sql);
+
+
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-
-
     }
 
     public function statistique($param = "")
@@ -303,11 +304,17 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function updateLinkVariableServeur()
     {
+
+        Debug::debug("UPDATE link__ts_variable__mysql_server");
+
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server;";
-
         $res = $db->sql_query($sql);
+
+
+
 
         while ($ob = $db->sql_fetch_object($res)) {
             $this->updateLinkServeur(array($ob->id));
@@ -320,7 +327,14 @@ PARTITION BY RANGE (to_days(`date`))
 
         $id_mysql_server = $param[0];
 
+
+        Debug::debug($id_mysql_server, "id_mysql_server");
+
+
         $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =".$id_mysql_server;
+
+
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -329,10 +343,21 @@ PARTITION BY RANGE (to_days(`date`))
             $link1[] = $ob->id_ts_variable;
         }
 
-        $sql = "SELECT id_ts_variable FROM ts_max_date a
+        $sql = "(SELECT b.id_ts_variable FROM ts_max_date a
             INNER JOIN ts_value_general_int b ON a.date = b.date AND a.id_mysql_server = b.id_mysql_server
-            WHERE a.id_mysql_server=".$id_mysql_server;
+            INNER JOIN ts_variable c on c.id = b.id_ts_variable AND c.id_ts_file = a.id_ts_file
+            WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=3)
+                UNION ALL
+                (
+                SELECT b.id_ts_variable FROM ts_max_date a
+            INNER JOIN ts_value_general_int b ON a.date = b.date AND a.id_mysql_server = b.id_mysql_server
+            INNER JOIN ts_variable c on c.id = b.id_ts_variable AND c.id_ts_file = a.id_ts_file
+            WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=4
+                )
+            ";
 
+
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -342,7 +367,6 @@ PARTITION BY RANGE (to_days(`date`))
         }
 
         //$resultat = array_intersect($link1, $link2);
-
         //Debug::debug($link1, "link1");
         //Debug::debug($link2, "link2");
 
@@ -350,10 +374,10 @@ PARTITION BY RANGE (to_days(`date`))
         $to_delete = array_diff($link1, $link2);
         $to_create = array_diff($link2, $link1);
 
- 
 
-        Debug::debug($to_delete,"to delete");
-        Debug::debug($to_create,"to create");
+
+        //Debug::debug($to_delete, "to delete");
+        //Debug::debug($to_create, "to create");
 
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)
@@ -370,11 +394,9 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
-
     public function updateConfig()
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
         Mysql::generateMySQLConfig($db);
     }
-
 }

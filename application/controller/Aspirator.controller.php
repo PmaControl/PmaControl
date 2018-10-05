@@ -13,15 +13,12 @@ use \App\Library\Ssh;
 use App\Library\Chiffrement;
 
 //require ROOT."/application/library/Filter.php";
-//https://blog.programster.org/php-multithreading-pool-example
 
-
-class Aspirateur extends Controller
+class Aspirator extends Controller
 {
 
     use \App\Library\Filter;
-    var $shared   = array();
-    var $log_file = TMP."log/daemon.log";
+    var $shared = array();
 
     /*
      * (PmaControl 0.8)<br/>
@@ -55,9 +52,6 @@ class Aspirateur extends Controller
      */
     public function testAllMysql($param)
     {
-
-        Debug::debug($param, "PARAM");
-        
 
         $id_daemon  = $param[0];
         $date_start = microtime(true);
@@ -146,8 +140,6 @@ class Aspirateur extends Controller
 
                 // one thread to test each MySQL server
 
-
-                Debug::debug("Start server with id : ".$server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
                 $father = false;
@@ -173,12 +165,12 @@ class Aspirateur extends Controller
 
 
             /*
-              Debug::debug($server_list);
+            Debug::debug($server_list);
 
-              foreach ($server_list as $server) {
-              Debug::debug($this->shared[$server['name']], $server['name']);
-
-              } */
+            foreach ($server_list as $server) {
+                Debug::debug($this->shared[$server['name']], $server['name']);
+                
+            }*/
 
 
             $time = microtime(true) - $date_start;
@@ -228,14 +220,8 @@ class Aspirateur extends Controller
         //$max_execution_time = 20; // in seconds
         //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
-        $debug = "";
-        if (Debug::$debug) {
-            $debug = " --debug ";
-        }
-
-
         Debug::checkPoint("Avant TimeLimit");
-        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug", ">> ".$this->log_file), $max_execution_time, $this);
+        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug"), $max_execution_time, $this);
 
         Debug::checkPoint("Après TimeLimit");
 
@@ -296,29 +282,26 @@ class Aspirateur extends Controller
         //$this->allocate_shared_storage();
 
 
-
+        
         $lock_file = TMP."lock/".$name_server.".txt";
 
-
-
-        /*
-          $fp = fopen($lock_file, "w");
+        $fp = fopen($lock_file, "w");
           if (!is_writable($lock_file)) {
           throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
-          } */
-        // a deporter ??
+          } 
+          // a deporter ??
 
 
-        /*
-          if (!flock($fp, LOCK_EX | LOCK_NB)) {
-          Debug::debug("Un processus est déjà en cours");
-          fwrite(STDERR, 'Un processus est déjà en cours');
-          exit(15);
-          } else {
-          ftruncate($fp, 0);
-          fwrite($fp, getmypid());
-          } */
-
+        
+        if (!flock($fp, LOCK_EX | LOCK_NB)) {
+            Debug::debug("Un processus est déjà en cours");
+            fwrite(STDERR, 'Un processus est déjà en cours');
+            exit(15);
+        } else {
+            ftruncate($fp, 0);
+            fwrite($fp, getmypid());
+        }
+        
 
 
         Debug::checkPoint('avant query');
@@ -416,7 +399,7 @@ class Aspirateur extends Controller
 
 
 
-
+        
         $lock_file = TMP."lock/".$name_server.".txt";
 
 
@@ -446,14 +429,14 @@ class Aspirateur extends Controller
 
 
 
-        /*
-          fflush($fp);            // libère le contenu avant d'enlever le verrou
-          flock($fp, LOCK_UN);    // Enlève le verrou
+
+        fflush($fp);            // libère le contenu avant d'enlever le verrou
+        flock($fp, LOCK_UN);    // Enlève le verrou
 
 
-          fclose($fp);
-          //unlink($lock_file);
-         */
+        fclose($fp);
+        //unlink($lock_file);
+
 
         //$this->showQueries();
         $mysql_tested->sql_close();
@@ -882,6 +865,8 @@ class Aspirateur extends Controller
         return $stats;
     }
 }
+
+
 /*
  *
  *
