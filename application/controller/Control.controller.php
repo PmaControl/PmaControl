@@ -17,10 +17,12 @@ class Control extends Controller
     var $tables      = array("ts_value_general", "ts_value_slave");
     var $ext         = array("int", "double", "text");
     var $field_value = array("int" => "bigint(20) unsigned NOT NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
-    var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`, `date`)"
-        , "ts_value_slave" => "PRIMARY KEY (`id_mysql_server`,`id_ts_variable`,`date`,`connection_name`)");
+    var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)"
+        , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
     //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
-    var $index       = array();
+    var $index       = array("ts_value_general"=> " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_value_slave"=> "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
+        );
     var $engine      = "rocksdb";
     var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     var $percent_max_disk_used = 80;
@@ -197,6 +199,7 @@ class Control extends Controller
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
+
     public function dropTsTable()
     {
 
@@ -210,6 +213,14 @@ class Control extends Controller
 
             $this->logger->info($sql);
         }
+
+
+        shell_exec("rm /dev/shm/server_*");
+        shell_exec("rm /dev/shm/answer_*");
+        shell_exec("rm /dev/shm/variable_*");
+
+        //$to_clean = array('')
+
     }
 
     public function createTsTable()
@@ -231,6 +242,7 @@ class Control extends Controller
 
 
                 $sql = "CREATE TABLE `".$table_name."` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
   ".$this->extra_field[$table]."
@@ -250,6 +262,9 @@ PARTITION BY RANGE (to_days(`date`))
                 $sql .= implode(",", $partition).")";
 
                 $db->sql_query($sql);
+
+
+                $db->sql_query("ALTER TABLE `".$table_name."` ADD ".$this->index[$table].";");
 
                 $this->logger->info($sql);
             }
