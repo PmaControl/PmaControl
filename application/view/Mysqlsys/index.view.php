@@ -34,12 +34,21 @@ echo '<br />';
 echo '<form action="" method="POST">';
 echo __("Server")." : ";
 
-\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id",array("data-width"=>"auto")));
+\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "auto")));
 //echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
 echo ' ';
 
 
 echo '<button type="submit" class="btn btn-primary">Filter</button>';
+
+if (!empty($_GET['mysql_server']['id'])) {
+    echo ' ';
+    echo '<a href="'.LINK.'Mysqlsys/reset/'.$_GET['mysql_server']['id'].'" class="btn btn-warning" role="button" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys" aria-pressed="true">Reset Statistics</a>';
+    echo ' ';
+    echo '<a href="'.LINK.'Mysqlsys/drop/'.$_GET['mysql_server']['id'].'" class="btn btn-danger" role="button" aria-pressed="true" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</a>';
+}
+
+
 echo '</form>';
 echo '</div>';
 
@@ -144,38 +153,38 @@ if (!empty($_GET['mysql_server']['id'])) {
 
             </div>
         </div>
-                <?php
-            } elseif (version_compare($data['variables'], "5.6", "<=")) {
+        <?php
+    } elseif (version_compare($data['variables'], "5.6", "<=")) {
 
-                echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
+        echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
-                echo "This version of MySQL / MariaDB / Percona Server is not compatible with mysql-sys !<br />"
-                ." mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>".$data['variables']."</b>) at minimum.";
+        echo "This version of MySQL / MariaDB / Percona Server is not compatible with mysql-sys !<br />"
+        ." mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>".$data['variables']."</b>) at minimum.";
 
-                echo '</div>';
-            } elseif (empty($data['innodb'])) {
-                echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
+        echo '</div>';
+    } elseif (empty($data['innodb'])) {
+        echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
-                echo "InnoDB must be activated to install or use MySQL-sys<br />";
-                echo '</div>';
-            } else {
+        echo "InnoDB must be activated to install or use MySQL-sys<br />";
+        echo '</div>';
+    } else {
 
-                echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
+        echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Install:</b></p>';
 
-                echo 'Your version of MySQL / MariaDB / Percona Server: <b>'.$data['variables']."</b><br />";
-                echo 'mysql-sys is not yet installed on this server, do you want to install it ? ';
-                echo '<a href="'.LINK.'mysqlsys/install/mysql_server:id:'.$_GET['mysql_server']['id'].'" role="button" class="btn btn-primary">Install MySQL-sys</a>';
+        echo 'Your version of MySQL / MariaDB / Percona Server: <b>'.$data['variables']."</b><br />";
+        echo 'mysql-sys is not yet installed on this server, do you want to install it ? ';
+        echo '<a href="'.LINK.'mysqlsys/install/mysql_server:id:'.$_GET['mysql_server']['id'].'" role="button" class="btn btn-primary">Install MySQL-sys</a>';
 
-                echo '</div>';
-            }
-        } else {
-            echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
+        echo '</div>';
+    }
+} else {
+    echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
-            echo "Select the server";
+    echo "Select the server";
 
-            echo '</div>';
-        }
+    echo '</div>';
+}

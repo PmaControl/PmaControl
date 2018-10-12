@@ -22,7 +22,7 @@
         "alfallouji/php_multithread": "0.1.4",
         "hoa/console": "~3.0",
         "phpseclib/phpseclib": "^2.0",
-        "esysteme/mysql-sys": "1.6.2",
+        "esysteme/mysql-sys": "1.6.4",
         "ninsuo/php-shared-memory": "*",
         "geerlingguy/ping": "*",
 	"phpseclib/mcrypt_compat": "*",

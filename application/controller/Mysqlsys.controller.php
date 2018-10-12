@@ -2,23 +2,24 @@
 
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
+use \Glial\I18n\I18n;
+
 
 class Mysqlsys extends Controller
 {
 
+    use App\Library\Filter;
+
     public function index()
     {
 
-        $this->title  = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> '."MySQL-sys";
-        //$this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '.$this->title;
+        $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> '."MySQL-sys";
+//$this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '.$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $this->di['js']->code_javascript('
-
-
-');
+//$this->di['js']->code_javascript('');
 
 
 
@@ -38,8 +39,8 @@ class Mysqlsys extends Controller
 
             $data = [];
 
-            // get server available
-            $sql             = "SELECT * FROM mysql_server a WHERE error = '' ".$this->getFilter()." order by a.name ASC";
+// get server available
+            $sql             = "SELECT * FROM mysql_server a WHERE error = '' ".self::getFilter()." order by a.name ASC";
             $res             = $db->sql_query($sql);
             $data['servers'] = array();
             while ($ob              = $db->sql_fetch_object($res)) {
@@ -63,7 +64,7 @@ class Mysqlsys extends Controller
                     $data['view_available'][] = $ob->table_name;
                 }
 
-                //test if InnoDB activated
+//test if InnoDB activated
                 $sql = "select * from information_schema.engines where engine = 'InnoDB';";
                 $res = $remote->sql_query($sql);
 
@@ -74,17 +75,17 @@ class Mysqlsys extends Controller
                     }
                 }
 
-                //test if spider / rocksdb etc...
+//test if spider / rocksdb etc...
 
 
 
                 if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
 
 
-                    //patch
-                    //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
-                    //$remote->sql_query($sql);
-                    //fin patch
+//patch
+//$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
+//$remote->sql_query($sql);
+//fin patch
 
 
                     $sql           = "SELECT * FROM `sys`.`".$_GET['mysqlsys']."` LIMIT 200";
@@ -97,40 +98,41 @@ class Mysqlsys extends Controller
         $this->set('data', $data);
     }
 
-    //to mutualize
-    private function getFilter()
-    {
+//to mutualize
+    /* deprecated
+      private function getFilter()
+      {
 
-        $where = "";
-
-
-        if (!empty($_GET['environment']['libelle'])) {
-            $environment = $_GET['environment']['libelle'];
-        }
-        if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-            $environment                    = $_SESSION['environment']['libelle'];
-            $_GET['environment']['libelle'] = $environment;
-        }
-
-        if (!empty($_SESSION['client']['libelle'])) {
-            $client = $_SESSION['client']['libelle'];
-        }
-        if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-            $client                    = $_GET['client']['libelle'];
-            $_GET['client']['libelle'] = $client;
-        }
+      $where = "";
 
 
-        if (!empty($environment)) {
-            $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
-        }
+      if (!empty($_GET['environment']['libelle'])) {
+      $environment = $_GET['environment']['libelle'];
+      }
+      if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
+      $environment                    = $_SESSION['environment']['libelle'];
+      $_GET['environment']['libelle'] = $environment;
+      }
 
-        if (!empty($client)) {
-            $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
-        }
+      if (!empty($_SESSION['client']['libelle'])) {
+      $client = $_SESSION['client']['libelle'];
+      }
+      if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
+      $client                    = $_GET['client']['libelle'];
+      $_GET['client']['libelle'] = $client;
+      }
 
-        return $where;
-    }
+
+      if (!empty($environment)) {
+      $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
+      }
+
+      if (!empty($client)) {
+      $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
+      }
+
+      return $where;
+      } */
 
     public function install()
     {
@@ -142,7 +144,7 @@ class Mysqlsys extends Controller
         $sql = "SELECT * FROM mysql_server where id='".$_GET['mysql_server']['id']."'";
         $res = $db->sql_query($sql);
 
-        //test si "vendor/esysteme/mysql-sys/gen/" est crée et writable
+//test si "vendor/esysteme/mysql-sys/gen/" est crée et writable
 
 
         $data = [];
@@ -151,7 +153,7 @@ class Mysqlsys extends Controller
             $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\''.$ob->login.'\'@\'localhost\'" 2>&1';
             $ret = shell_exec($cmd);
 
-            //debug($ret);
+//debug($ret);
 
             $out               = explode("\n", $ret)[1];
             $data['file_name'] = trim(str_replace('Wrote file:', '', $out));
@@ -184,5 +186,70 @@ class Mysqlsys extends Controller
                 yield "gg";
             }
         }
+    }
+
+    public function reset($param)
+    {
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+
+        $id_mysql_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+// get server available
+        $sql = "SELECT name FROM mysql_server a WHERE error = '' ".self::getFilter()." AND id=".$id_mysql_server;
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $remote = $this->di['db']->sql($ob->name);
+
+            $sql = "set sql_log_bin=0; call `sys`.ps_truncate_all_tables(false);";
+            $remote->sql_multi_query($sql);
+        }
+
+        $msg   = I18n::getTranslation(__("The statistics has been reseted"));
+        $title = I18n::getTranslation(__("Success"));
+        set_flash("success", $title, $msg);
+
+        header("location: ".$_SERVER['HTTP_REFERER']);
+    }
+
+
+    public function drop($param)
+    {
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+
+        $id_mysql_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+// get server available
+        $sql = "SELECT name FROM mysql_server a WHERE error = '' ".self::getFilter()." AND id=".$id_mysql_server;
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $remote = $this->di['db']->sql($ob->name);
+
+            $sql = "set sql_log_bin=0; DROP DATABASE IF EXISTS `sys`;";
+            $remote->sql_multi_query($sql);
+        }
+
+        $msg   = I18n::getTranslation(__("MySQL-sys has been uninstalled"));
+        $title = I18n::getTranslation(__("Success"));
+        set_flash("success", $title, $msg);
+
+        header("location: ".$_SERVER['HTTP_REFERER']);
+
+        
     }
 }
