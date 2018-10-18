@@ -242,7 +242,7 @@ class Control extends Controller
 
 
                 $sql = "CREATE TABLE `".$table_name."` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) NOT NULL AUTO_INCREMENT ,
   `id_mysql_server` int(11) NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
   ".$this->extra_field[$table]."
