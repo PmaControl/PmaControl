@@ -23,7 +23,10 @@ class Control extends Controller
     var $index       = array("ts_value_general"=> " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave"=> "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
         );
-    var $engine      = "rocksdb";
+    var $engine      = "tokudb";
+    var $engine_preference = array("TokuDB","ROCKSDB");
+    
+    
     var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     var $percent_max_disk_used = 80;
 
@@ -72,6 +75,39 @@ class Control extends Controller
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
+        
+        $this->selectEngine();
+        
+    }
+    
+    
+    public function selectEngine()
+    {
+        $db               = $this->di['db']->sql(DB_DEFAULT);
+        
+        $sql ="select * from information_schema.ENGINES where SUPPORT = 'YES' and ENGINE in('".implode("','",$this->engine_preference)."');";
+        $res = $db->sql_query($sql);
+        
+        
+        $engine_possible = array();
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $engine_possible[] = $ob->ENGINE;
+        }
+        
+        
+        foreach($this->engine_preference as $engine)
+        {
+            if (in_array($engine, $engine_possible))
+            {
+                $this->engine = $engine;
+                return true;
+            }
+        }
+        
+        throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '".implode(",", $this->engine_preference)."'",80);
+        
+        
     }
 
     public function addPartition($param)
