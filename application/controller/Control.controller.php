@@ -12,21 +12,19 @@ use \App\Library\Mysql;
  * ./glial integrate evaluate --debug
  */
 
-class Control extends Controller
-{
-    var $tables      = array("ts_value_general", "ts_value_slave");
-    var $ext         = array("int", "double", "text");
+class Control extends Controller {
+
+    var $tables = array("ts_value_general", "ts_value_slave");
+    var $ext = array("int", "double", "text");
     var $field_value = array("int" => "bigint(20) unsigned NOT NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
     var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)"
         , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
     //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
-    var $index       = array("ts_value_general"=> " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_value_slave"=> "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
-        );
-    var $engine      = "tokudb";
-    var $engine_preference = array("TokuDB","ROCKSDB");
-    
-    
+    var $index = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
+    );
+    var $engine = "tokudb";
+    var $engine_preference = array("TokuDB", "ROCKSDB");
     var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     var $percent_max_disk_used = 80;
 
@@ -35,13 +33,12 @@ class Control extends Controller
      * return space used on partition where is datadir of MySQL / MariaDB
      */
 
-    private function checkSize()
-    {
+    private function checkSize() {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $datadir = $db->getVariables("datadir");
 
-        $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
+        $size = shell_exec('cd ' . $datadir . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
 
         $percent = substr($size, 0, -1);
 
@@ -67,123 +64,110 @@ class Control extends Controller
         return $percent;
     }
 
-    public function before($param = "")
-    {
-        $logger       = new Logger(__CLASS__);
-        $file_log     = LOG_FILE;
-        $handler      = new StreamHandler($file_log, Logger::DEBUG);
+    public function before($param = "") {
+        $logger = new Logger(__CLASS__);
+        $file_log = LOG_FILE;
+        $handler = new StreamHandler($file_log, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
-        
+
         $this->selectEngine();
-        
     }
-    
-    
-    public function selectEngine()
-    {
-        $db               = $this->di['db']->sql(DB_DEFAULT);
-        
-        $sql ="select * from information_schema.ENGINES where SUPPORT = 'YES' and ENGINE in('".implode("','",$this->engine_preference)."');";
+
+    public function selectEngine() {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "select * from information_schema.ENGINES where SUPPORT = 'YES' and ENGINE in('" . implode("','", $this->engine_preference) . "');";
         $res = $db->sql_query($sql);
-        
-        
+
+
         $engine_possible = array();
-        while($ob = $db->sql_fetch_object($res))
-        {
+        while ($ob = $db->sql_fetch_object($res)) {
             $engine_possible[] = $ob->ENGINE;
         }
-        
-        
-        foreach($this->engine_preference as $engine)
-        {
-            if (in_array($engine, $engine_possible))
-            {
+
+
+        foreach ($this->engine_preference as $engine) {
+            if (in_array($engine, $engine_possible)) {
                 $this->engine = $engine;
                 return true;
             }
         }
-        
-        throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '".implode(",", $this->engine_preference)."'",80);
-        
-        
+
+        throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '" . implode(",", $this->engine_preference) . "'", 80);
     }
 
-    public function addPartition($param)
-    {
+    public function addPartition($param) {
         $partition_number = $param[0];
-        $db               = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-            $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.");";
+            $sql = "ALTER TABLE `" . $table . "` ADD PARTITION (PARTITION `p" . $partition_number . "` VALUES LESS THAN (" . $partition_number . ") ENGINE = " . $this->engine . ");";
             $db->sql_query($sql);
             $this->logger->info($sql);
         }
     }
 
-    private function makeCombinaison()
-    {
+    private function makeCombinaison() {
         $combinaisons = array();
 
         foreach ($this->tables as $table) {
             foreach ($this->ext as $ext) {
-                $combinaisons[] = $table."_".$ext;
+                $combinaisons[] = $table . "_" . $ext;
             }
         }
 
         return $combinaisons;
     }
 
-    public function dropPartition($param)
-    {
+    public function dropPartition($param) {
         $partition_number = $param[0];
-        $db               = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-            $sql = "ALTER TABLE `".$table."` DROP PARTITION `p".$partition_number."`;";
+            $sql = "ALTER TABLE `" . $table . "` DROP PARTITION `p" . $partition_number . "`;";
             $db->sql_query($sql);
 
             $this->logger->info($sql);
         }
     }
+
     /*
      * récupérer la partition la plus vieille dans le but de l'effacé
      *
      * et la dernière
      */
 
-    public function getMinMaxPartition()
-    {
-        $db    = $this->di['db']->sql(DB_DEFAULT);
+    public function getMinMaxPartition() {
+        $db = $this->di['db']->sql(DB_DEFAULT);
         $combi = $this->makeCombinaison();
 
         $sql = "SELECT DISTINCT `PARTITION_NAME` FROM information_schema.partitions 
-            where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
+            where table_name IN ('" . implode("','", $combi) . "') AND `PARTITION_NAME` IS NOT NULL;";
         $res = $db->sql_query($sql);
 
         $partitions = array();
-        while ($ob         = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $partitions[] = substr($ob->PARTITION_NAME, 1);
         }
 
-        $older_partition['min']   = min($partitions);
-        $older_partition['max']   = max($partitions);
+        $older_partition['min'] = min($partitions);
+        $older_partition['max'] = max($partitions);
         $older_partition['other'] = $partitions;
 
         return $older_partition;
     }
 
-    public function getToDays($param)
-    {
+    public function getToDays($param) {
         $date = $param[0];
-        $db   = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT TO_DAYS('".$date."') as number";
+        $sql = "SELECT TO_DAYS('" . $date . "') as number";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -199,8 +183,7 @@ class Control extends Controller
      * and create new parttion
      */
 
-    public function service($param = "")
-    {
+    public function service($param = "") {
 
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
@@ -235,32 +218,45 @@ class Control extends Controller
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
-
-    public function dropTsTable()
-    {
+    public function dropTsTable() {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-            $sql = "DROP TABLE IF EXISTS `".$table."`;";
+            $sql = "DROP TABLE IF EXISTS `" . $table . "`;";
             $db->sql_query($sql);
 
             $this->logger->info($sql);
         }
 
+        $sql = "DROP TABLE IF EXISTS `ts_date_by_server`";
+        $db->sql_query($sql);
 
-        shell_exec("rm /dev/shm/server_*");
-        shell_exec("rm /dev/shm/answer_*");
-        shell_exec("rm /dev/shm/variable_*");
 
-        //$to_clean = array('')
-
+        Debug::sql($sql);
+        
+        
+        $to_delete = array("/dev/shm/server_*", "/dev/shm/answer_*", "/dev/shm/variable_*");
+        
+        
+        foreach($to_delete as $file_to_delete)
+        {
+            
+            $files = glob($file_to_delete);
+            
+            
+            if (count($files) > 0 )
+            {
+                shell_exec("rm ".$file_to_delete);
+            }
+        }
+        
+      
     }
 
-    public function createTsTable()
-    {
+    public function createTsTable() {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -269,7 +265,7 @@ class Control extends Controller
 
         foreach ($this->tables as $table) {
             foreach ($this->ext as $ext) {
-                $table_name = $table."_".$ext;
+                $table_name = $table . "_" . $ext;
 
                 /*
                  *
@@ -277,15 +273,15 @@ class Control extends Controller
                  */
 
 
-                $sql = "CREATE TABLE `".$table_name."` (
+                $sql = "CREATE TABLE `" . $table_name . "` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT ,
   `id_mysql_server` int(11) NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
-  ".$this->extra_field[$table]."
+  " . $this->extra_field[$table] . "
   `date` datetime NOT NULL,
-  `value` ".$this->field_value[$ext].",
-  ".$this->primary_key[$table]."
-) ENGINE=".$this->engine." DEFAULT CHARSET=latin1
+  `value` " . $this->field_value[$ext] . ",
+  " . $this->primary_key[$table] . "
+) ENGINE=" . $this->engine . " DEFAULT CHARSET=latin1
 PARTITION BY RANGE (to_days(`date`))
 (";
 
@@ -293,22 +289,48 @@ PARTITION BY RANGE (to_days(`date`))
                 foreach ($dates as $date) {
 
                     $partition_nb = $this->getToDays(array($date));
-                    $partition[]  = "PARTITION `p".$partition_nb."` VALUES LESS THAN (".$partition_nb.") ENGINE = ".$this->engine."";
+                    $partition[] = "PARTITION `p" . $partition_nb . "` VALUES LESS THAN (" . $partition_nb . ") ENGINE = " . $this->engine . "";
                 }
-                $sql .= implode(",", $partition).")";
+                $sql .= implode(",", $partition) . ")";
 
                 $db->sql_query($sql);
 
 
-                $db->sql_query("ALTER TABLE `".$table_name."` ADD ".$this->index[$table].";");
+                $db->sql_query("ALTER TABLE `" . $table_name . "` ADD " . $this->index[$table] . ";");
 
                 $this->logger->info($sql);
             }
         }
+
+
+
+        $sql = "CREATE TABLE `ts_date_by_server` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_file` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  PRIMARY KEY (`id`,`date`),
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)
+) ENGINE=" . $this->engine . " DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT
+            PARTITION BY RANGE (to_days(`date`))
+(";
+
+        $partition = array();
+        foreach ($dates as $date) {
+
+            $partition_nb = $this->getToDays(array($date));
+            $partition[] = "PARTITION `p" . $partition_nb . "` VALUES LESS THAN (" . $partition_nb . ") ENGINE = " . $this->engine . "";
+        }
+        $sql .= implode(",", $partition) . ")\n";
+        
+        echo Debug::sql($sql);
+        
+        $db->sql_query($sql);
+
+
     }
 
-    public function rebuildAll($param = "")
-    {
+    public function rebuildAll($param = "") {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -318,15 +340,11 @@ PARTITION BY RANGE (to_days(`date`))
         $this->dropTsTable();
         $this->createTsTable();
 
-        $sql = "TRUNCATE TABLE ts_date_by_server;";
-        $db->sql_query($sql);
-
 
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
-    public function statistique($param = "")
-    {
+    public function statistique($param = "") {
         Debug::parseDebug($param);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -334,16 +352,15 @@ PARTITION BY RANGE (to_days(`date`))
         $combi = $this->makeCombinaison();
 
         $sql = "SELECT `TABLE_NAME`,`PARTITION_NAME`,`SUBPARTITION_NAME` ,`TABLE_ROWS` FROM information_schema.partitions
-            where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
+            where table_name IN ('" . implode("','", $combi) . "') AND `PARTITION_NAME` IS NOT NULL;";
 
         Debug::debug(SqlFormatter::format($sql));
     }
 
-    private function getDates()
-    {
+    private function getDates() {
         $today = date("Y-m-d");
 
-        $date   = new DateTime($today);
+        $date = new DateTime($today);
         $date->modify('+1 day');
         $part[] = $date->format('Y-m-d');
         $date->modify('+1 day');
@@ -353,8 +370,7 @@ PARTITION BY RANGE (to_days(`date`))
         return $part;
     }
 
-    public function updateLinkVariableServeur()
-    {
+    public function updateLinkVariableServeur() {
 
         Debug::debug("UPDATE link__ts_variable__mysql_server");
 
@@ -372,8 +388,7 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
-    public function updateLinkServeur($param)
-    {
+    public function updateLinkServeur($param) {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $id_mysql_server = $param[0];
@@ -382,7 +397,7 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::debug($id_mysql_server, "id_mysql_server");
 
 
-        $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =".$id_mysql_server;
+        $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =" . $id_mysql_server;
 
 
         //Debug::sql($sql);
@@ -390,20 +405,20 @@ PARTITION BY RANGE (to_days(`date`))
         $res = $db->sql_query($sql);
 
         $link1 = array();
-        while ($ob    = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $link1[] = $ob->id_ts_variable;
         }
 
         $sql = "(SELECT b.id_ts_variable FROM ts_max_date a
             INNER JOIN ts_value_general_int b ON a.date = b.date AND a.id_mysql_server = b.id_mysql_server
             INNER JOIN ts_variable c on c.id = b.id_ts_variable AND c.id_ts_file = a.id_ts_file
-            WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=3)
+            WHERE a.id_mysql_server=" . $id_mysql_server . " AND a.id_ts_file=3)
                 UNION ALL
                 (
                 SELECT b.id_ts_variable FROM ts_max_date a
             INNER JOIN ts_value_general_int b ON a.date = b.date AND a.id_mysql_server = b.id_mysql_server
             INNER JOIN ts_variable c on c.id = b.id_ts_variable AND c.id_ts_file = a.id_ts_file
-            WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=4
+            WHERE a.id_mysql_server=" . $id_mysql_server . " AND a.id_ts_file=4
                 )
             ";
 
@@ -413,7 +428,7 @@ PARTITION BY RANGE (to_days(`date`))
         $res = $db->sql_query($sql);
 
         $link2 = array();
-        while ($ob    = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $link2[] = $ob->id_ts_variable;
         }
 
@@ -432,22 +447,22 @@ PARTITION BY RANGE (to_days(`date`))
 
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)
-            VALUES (".$id_mysql_server.",".implode("),(".$id_mysql_server.",", $to_create).")";
+            VALUES (" . $id_mysql_server . "," . implode("),(" . $id_mysql_server . ",", $to_create) . ")";
 
             $db->sql_query($sql);
         }
 
         if (count($to_delete) > 0) {
             $sql = "DELETE FROM link__ts_variable__mysql_server
-            WHERE `id_mysql_server`=".$id_mysql_server." AND id_ts_variable IN (".implode(",", $to_delete).")";
+            WHERE `id_mysql_server`=" . $id_mysql_server . " AND id_ts_variable IN (" . implode(",", $to_delete) . ")";
 
             $db->sql_query($sql);
         }
     }
 
-    public function updateConfig()
-    {
+    public function updateConfig() {
         $db = $this->di['db']->sql(DB_DEFAULT);
         Mysql::generateMySQLConfig($db);
     }
+
 }
