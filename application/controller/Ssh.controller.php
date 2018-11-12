@@ -69,7 +69,6 @@ class Ssh extends Controller {
                         $keys['public_key'] = $_POST['public_key'];
                         $keys['private_key'] = $_POST['private_key'];
 
-                        debug($keys);
 
                         $this->save($keys);
                     }
@@ -88,7 +87,6 @@ class Ssh extends Controller {
             $sql = "SELECT id from ssh_key WHERE fingerprint='" . $fingerprint . "'";
             $res = $db->sql_query($sql);
 
-
             $data = array();
             $data['ssh_key'] = $keys;
             while ($ob = $db->sql_fetch_object($res)) {
@@ -97,7 +95,7 @@ class Ssh extends Controller {
 
             preg_match("/ssh\-(\w+)/", $keys['public_key'], $output_array);
 
-
+            
             $ret = SshLib::isValid(str_replace('\n', "\n", $keys['public_key']));
             if ($ret === false) {
                 $msg = I18n::getTranslation(__("Your public key is not valid"));
@@ -106,19 +104,12 @@ class Ssh extends Controller {
 
                 header('location: ' . LINK . "ssh/add");
             }
-            
-            
+
             $data['ssh_key']['comment'] = $ret['name'];
             $data['ssh_key']['bit'] = $ret['bit'];
-
+            $data['ssh_key']['type'] = $ret['type'];
 
             $ret = SshLib::isValid(str_replace('\n', "\n", $keys['private_key']));
-
-            
-            
-            debug($ret);
-            
-            exit;
 
             if ($ret === false) {
                 $msg = I18n::getTranslation(__("Your private key is not valid"));
@@ -128,8 +119,6 @@ class Ssh extends Controller {
                 header('location: ' . LINK . "ssh/add");
             }
 
-
-            $data['ssh_key']['type'] = $output_array[1];
             $data['ssh_key']['added_on'] = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
             $data['ssh_key']['public_key'] = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public_key']));
@@ -137,9 +126,7 @@ class Ssh extends Controller {
             $data['ssh_key']['user'] = $keys['user'];
 
 
-
             $res = $db->sql_save($data);
-
             if (!$res) {
                 debug($data);
 
@@ -213,7 +200,7 @@ class Ssh extends Controller {
         }
 
 
-        $data['ssh_supported'] = array('rsa', 'dsa');
+        $data['ssh_supported'] = array('rsa', 'dsa', 'RSA', 'DSA');
 
         $this->set('data', $data);
     }
