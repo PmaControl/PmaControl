@@ -236,24 +236,19 @@ class Control extends Controller {
 
 
         Debug::sql($sql);
-        
-        
+
+
         $to_delete = array("/dev/shm/server_*", "/dev/shm/answer_*", "/dev/shm/variable_*");
-        
-        
-        foreach($to_delete as $file_to_delete)
-        {
-            
+
+
+        foreach ($to_delete as $file_to_delete) {
+
             $files = glob($file_to_delete);
-            
-            
-            if (count($files) > 0 )
-            {
-                shell_exec("rm ".$file_to_delete);
+
+            if (count($files) > 0) {
+                shell_exec("rm " . $file_to_delete);
             }
         }
-        
-      
     }
 
     public function createTsTable() {
@@ -322,12 +317,10 @@ PARTITION BY RANGE (to_days(`date`))
             $partition[] = "PARTITION `p" . $partition_nb . "` VALUES LESS THAN (" . $partition_nb . ") ENGINE = " . $this->engine . "";
         }
         $sql .= implode(",", $partition) . ")\n";
-        
+
         echo Debug::sql($sql);
-        
+
         $db->sql_query($sql);
-
-
     }
 
     public function rebuildAll($param = "") {
