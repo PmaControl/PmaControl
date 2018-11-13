@@ -72,15 +72,6 @@ plugin-load=ha_rocksdb
 ## Screenshots
 
 
-![Alt text](/documentation/images/tree.png?raw=true "Replication tree")
-
-![Alt text](/documentation/images/pluging cleaner.png?raw=true "Replication tree")
-
-![Alt text](/documentation/images/query analizer.png?raw=true "Replication tree")
-
-![Alt text](/documentation/images/storage area.png?raw=true "Replication tree")
-
-![Alt text](/documentation/images/backup.png?raw=true "Replication tree")
 
 ## To develop
 
