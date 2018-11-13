@@ -174,6 +174,16 @@ class Ssh extends Controller {
     }
 
     public function index() {
+        
+        
+        $this->di['js']->addJavascript(array('clipboard.min.js'));
+        
+                $this->di['js']->code_javascript('
+(function(){
+  new Clipboard(".copy-button");
+})();
+
+');
         $this->title = '<i class="fa fa-key" aria-hidden="true"></i> SSH keys';
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -185,7 +195,12 @@ class Ssh extends Controller {
 
         $data['keys'] = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            
+            $arr['public_key'] = Chiffrement::decrypt($arr['public_key']);
+            
             $data['keys'][] = $arr;
+            
+            
         }
 
 

@@ -162,15 +162,18 @@ $("#export_all-all2").click(function(){
                 $file = "/tmp/" . uniqid();
                 file_put_contents($file, $json);
 
-                $this->import(array($file));
+                $data = $this->import(array($file));
+                
+                
+                debug($data);
+                
+                $this->set('data', $data);
             }
         }
     }
 
     public function import($json) {
         $json[] = "--debug";
-
-
 
         Debug::parseDebug($json);
         //$file = $param[0];
@@ -184,20 +187,17 @@ $("#export_all-all2").click(function(){
         }
 
 
-        $arr = json_decode($json[0], true);
+        $data['arr'] = json_decode($json[0], true);
+        $data['options'] = $this->getExportOption();
+        
+        
+        return $data;
+        
+    }
 
-
-        Debug::debug($arr);
+    private function addMysql($arr) {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-
-
-
-        $options = $this->getExportOption();
-
-
-        debug($options);
-
 
         foreach ($arr['mysql'] as $mysql) {
 
@@ -206,11 +206,6 @@ $("#export_all-all2").click(function(){
             unset($mysql['id']);
 
             $mysql['error'] = '';
-
-
-
-
-
 
             $data['mysql_server'] = $mysql;
             $data['mysql_server']['id_client'] = 1;

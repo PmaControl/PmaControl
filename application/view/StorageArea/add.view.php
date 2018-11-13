@@ -89,10 +89,10 @@ use Glial\Html\Form\Form;
             <div class="row">
                 <div class="col-md-6">
 
-<?= __("Contry") ?> <a href="#" data-toggle="popover" title="<?= __("Name") ?>" data-content="<ul><li><?= __("Specify root if you have root credentials.") ?></li><li><?= __("If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.") ?></li></ul>">
+<?= __("Select the key") ?> <a href="#" data-toggle="popover" title="<?= __("Name") ?>" data-content="<ul><li><?= __("Specify root if you have root credentials.") ?></li><li><?= __("If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.") ?></li></ul>">
                         <i class="fa fa-info-circle" aria-hidden="true"></i>
                     </a>
-                    <?= Form::select("backup_storage_area", "id_geolocalisation_country", $data['geolocalisation_country'], "", array("class" => "form-control ac_input")) ?>
+                    <?= Form::select("backup_storage_area", "id_ssh_key", $data['ssh_key'], "", array("class" => "form-control ac_input")) ?>
                 </div>
                 <div class="col-md-6">
 

@@ -151,7 +151,27 @@ class StorageArea extends Controller
         $sql                                   = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
         $res                                   = $db->sql_query($sql);
         $this->data['geolocalisation_country'] = $db->sql_to_array($res);
-
+        
+        
+        
+        
+        
+        $sql = "SELECT * FROM ssh_key order by name";
+        
+        $res = $db->sql_query($sql);
+        
+        
+        $this->data['ssh_key'] = array();
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $tmp = array();
+            $tmp['id'] = $ob->id;
+            $tmp['libelle'] = $ob->name." (".$ob->type.":".$ob->bit." bit) ".$ob->fingerprint;
+            
+            $this->data['ssh_key'][] = $tmp;
+            
+        }
+        
         $this->set('data', $this->data);
     }
 
