@@ -12,7 +12,7 @@ use App\Library\Display;
 if (empty($data['storage_area'])) {
 
     echo "Before to schedule a backup, you must add an array of stockage : ";
-    echo '<a href="'.LINK.'backup/storageArea/add" type="button" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px" aria-hidden="true"></span> Add an storage area</a>';
+    echo '<a href="'.LINK.'StorageArea/index/" type="button" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px" aria-hidden="true"></span> Add an storage area</a>';
 } else {
 
     echo '<form action="" method="post">';

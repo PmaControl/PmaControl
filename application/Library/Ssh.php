@@ -73,6 +73,7 @@ class Ssh
 
         if (file_exists($pubkeyssh)) {
 
+            Debug::debug("get key from from file !");
             $pubkeyssh = file_get_contents($pubkeyssh);
         }
 
@@ -83,7 +84,12 @@ class Ssh
 
         file_put_contents($path_puplic_key, $pubkeyssh);
 
+        Debug::debug($path_puplic_key, "PATH of key");
 
+        
+        shell_exec("chmod 600 ".$path_puplic_key);
+        
+        
 
         $file_error = "/tmp/isvalid_error";
 
@@ -92,7 +98,7 @@ class Ssh
         }
 
         $cmd = "ssh-keygen -l -f ".$path_puplic_key."  2>".$file_error;
-        Debug::debug($cmd);
+        Debug::debug($cmd, "CMD");
 
         if (file_exists($file_error)) {
             Debug::debug(file_get_contents($file_error), "[ERROR]");
