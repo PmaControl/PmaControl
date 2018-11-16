@@ -883,6 +883,9 @@ if (! defined('WWW_ROOT'))
     {
         //echo "UPDATE site.config.php";
         shell_exec("cp -a config_sample/site.config.php configuration/site.config.php");
+        
+        
+        //load DB and compare => upgrade
     }
 
 
