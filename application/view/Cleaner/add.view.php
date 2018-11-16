@@ -27,7 +27,10 @@ use Glial\Html\Form\Form;
 
         <div class="row">
             <div class="col-md-4"><?= __("Server") ?></div>
-            <div class="col-md-4"><?= Form::select("cleaner_main", "id_mysql_server", $data['server'], "", array("class" => "form-control")) ?></div>
+            <div class="col-md-4">
+                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("cleaner_main", "id_mysql_server", array("data-width" => "100%"))); ?>
+
+            </div>
             <div class="col-md-4"></div>
         </div>
 

@@ -651,8 +651,6 @@ class Ldap extends Controller
         }
 
 
-
-
         $this->set('data', $data);
     }
 }

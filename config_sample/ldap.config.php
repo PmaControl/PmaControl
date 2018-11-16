@@ -41,3 +41,22 @@ if (!defined('LDAP_ROOT_DN_SEARCH')) {
 if (!defined('LDAP_CHECK')) {
     define("LDAP_CHECK", false);
 }
+
+
+/************************/
+
+// in case we can find contry and city in LDAP
+
+
+if (!defined('LDAP_DEFAULT_COUNTRY')) {
+    define("LDAP_DEFAULT_COUNTRY", '28');
+}
+
+
+if (!defined('LDAP_DEFAULT_CITY')) {
+    define("LDAP_DEFAULT_CITY", '192348');
+}
+
+
+
+
