@@ -15,7 +15,7 @@
         "ext-mysqlnd": "*",
         "ext-curl": "*",
         "ext-mbstring": "*",
-        "glial/glial": "4.2.*",
+        "glial/glial": ">4.2.4",
         "phpunit/phpunit": "3.7.*",
         "sensiolabs/ansi-to-html": "1.1.1",
         "alfallouji/php_multithread": "0.1.4",
