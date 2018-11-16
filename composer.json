@@ -1,12 +1,11 @@
 {
     "name": "glial/pmacontrol",
-    "version": "dev-master",
     "license": "GPL-3.0",
-    "description": "PmaControl 0.5 Beta",
+    "description": "A monitoring and administration tools to manage farm of MySQL server",
     "authors": [{
             "name": "Aurélien LEQUOY",
-            "email": "pmacontrol@esysteme.com",
-            "homepage": "http://www.esysteme.com",
+            "email": "pmacontrol@68koncept.com",
+            "homepage": "http://pmacontrol.68koncept.com",
             "role": "Expert MySQL / MariaDB"
         }
     ],
