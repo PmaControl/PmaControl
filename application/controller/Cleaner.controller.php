@@ -1844,7 +1844,7 @@ var myChart = new Chart(ctx, {
                 $fields = array();
                 foreach ($primary_keys as $primary_key) {
                     $join[]   = " `a`.`".$primary_key."` = b.`".$primary_key."` ";
-                    $fields[] = " b.`".$primary_key."` ";
+                    $fields[] = " `b`.`".$primary_key."` ";
                 }
 
                 $field = implode(" ", $join);
@@ -1852,7 +1852,7 @@ var myChart = new Chart(ctx, {
                 $sql = "DELETE a FROM ".$table." a
                   INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";";
 
-                //$db->sql_query($sql);
+                $db->sql_query($sql);
 
 
                 if (end($db->query)['rows'] == "-1") {
@@ -2763,8 +2763,10 @@ var myChart = new Chart(ctx, {
         }
 
 
-        $cmd = "cat ".LOG_FILE." | grep -F 'cleaner.' | grep -F '[id:".$id_cleaner."]' ".$filter."| tail -n 500";
+        $cmd = "cat ".LOG_FILE.' | tr -d \'\\000\' | grep -F \'cleaner.\' | grep -F \'[id:'.$id_cleaner."]' ".$filter."| tail -n 500";
 
+        //debug($cmd);
+        
         $lines              = shell_exec($cmd);
         $data['logs']       = $this->format($lines, $id_cleaner);
         $data['logs']       = array_reverse($data['logs']);
