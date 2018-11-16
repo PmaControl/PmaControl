@@ -877,6 +877,13 @@ if (! defined('WWW_ROOT'))
             file_put_contents("configuration/webroot.config.php", $webroot);
         }
     }
+    
+    
+    public function updateVersion()
+    {
+        //echo "UPDATE site.config.php";
+        shell_exec("cp -a config_sample/site.config.php configuration/site.config.php");
+    }
 
 
 }//https://www.programmez.com/actualites/yak-pro-php-obfuscator-cachez-ce-code-que-je-ne-saurais-voir-23454

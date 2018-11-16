@@ -27,11 +27,26 @@ class CheckConfig extends Controller
 
                 header('location: '.LINK.__CLASS__.'/'.__FUNCTION__.'/mysql_cluster:id:'.$_POST['mysql_cluster']['id']);
             }
+
+            if (!empty($_POST['mysql_server']['id'])) {
+
+                header('location: '.LINK.__CLASS__.'/'.__FUNCTION__.'/mysql_server:id:'.implode(',', $_POST['mysql_server']['id']));
+            }
         } else {
 
             if (!empty($_GET['mysql_cluster']['id'])) {
 
-                $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_cluster']['id'].")";
+
+                if (!empty($_GET['mysql_cluster']['id'])) {
+                    $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_cluster']['id'].")";
+                }
+
+                if (!empty($_GET['mysql_server']['id'])) {
+                    $sql = "SELECT * FROM mysql_server WHERE id in (".implode(',', $_GET['mysql_server']['id']).")";
+                }
+
+
+
                 $res = $db->sql_query($sql);
                 while ($ob  = $db->sql_fetch_object($res)) {
                     $data['mysql_server'][$ob->id] = $ob->display_name." (".$ob->ip.")";

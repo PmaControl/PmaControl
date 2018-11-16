@@ -54,7 +54,11 @@ class Extraction
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) ";
+
+                //https://jira.mariadb.org/browse/MDEV-17355?filter=-2
+                $extra_where .= " AND a.`date` <= now() ";
             }
+
 
 
             $INNER = " INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` ";
@@ -92,23 +96,30 @@ class Extraction
                 } else {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,a.`value` ";
                 }
-                
-                $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
-                    .$INNER."
-                WHERE id_ts_variable IN (".implode(",", $tab_ids).")
+
+
+                foreach ($tab_ids as $id_ts_variable) {
+
+
+                    // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
+                    $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
+                        .$INNER."
+                WHERE id_ts_variable = ".$id_ts_variable."
                     AND a.id_mysql_server IN (".implode(",", $server).") $extra_where)";
 
 
 
-
-                $sql2[] = $sql4;
+                    $sql2[] = $sql4;
+                }
             }
         }
 
         $sql3 = implode(" UNION ALL ", $sql2);
 
         if ($graph === true) {
-            $sql3 .= " ORDER BY id_mysql_server, id_ts_variable, date";
+
+            // quel est l'interet pour l'order by ?
+            //$sql3 .= " ORDER BY id_mysql_server, id_ts_variable, date";
         } else {
             //$sql3 .= "ORDER by date";
         }

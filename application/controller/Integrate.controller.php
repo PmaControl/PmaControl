@@ -8,6 +8,8 @@ use \App\Library\Debug;
 
 //require ROOT."/application/library/Filter.php";
 
+// ./glial control rebuildAll --debug
+
 class Integrate extends Controller
 {
 

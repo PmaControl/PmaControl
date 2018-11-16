@@ -11,20 +11,14 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\Chiffrement;
-use App\Library\Zmsg;
 
 //require ROOT."/application/library/Filter.php";
-//https://blog.programster.org/php-multithreading-pool-example
-// Aspirateur v2 avec zeroMQ
-// http://zeromq.org/intro:get-the-software
 
-
-class Aspirateur extends Controller
+class Aspirator extends Controller
 {
 
     use \App\Library\Filter;
-    var $shared   = array();
-    var $log_file = TMP."log/daemon.log";
+    var $shared = array();
 
     /*
      * (PmaControl 0.8)<br/>
@@ -58,9 +52,6 @@ class Aspirateur extends Controller
      */
     public function testAllMysql($param)
     {
-
-        Debug::debug($param, "PARAM");
-
 
         $id_daemon  = $param[0];
         $date_start = microtime(true);
@@ -149,8 +140,6 @@ class Aspirateur extends Controller
 
                 // one thread to test each MySQL server
 
-
-                Debug::debug("Start server with id : ".$server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
                 $father = false;
@@ -176,12 +165,12 @@ class Aspirateur extends Controller
 
 
             /*
-              Debug::debug($server_list);
+            Debug::debug($server_list);
 
-              foreach ($server_list as $server) {
-              Debug::debug($this->shared[$server['name']], $server['name']);
-
-              } */
+            foreach ($server_list as $server) {
+                Debug::debug($this->shared[$server['name']], $server['name']);
+                
+            }*/
 
 
             $time = microtime(true) - $date_start;
@@ -231,14 +220,8 @@ class Aspirateur extends Controller
         //$max_execution_time = 20; // in seconds
         //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
-        $debug = "";
-        if (Debug::$debug) {
-            $debug = " --debug ";
-        }
-
-
         Debug::checkPoint("Avant TimeLimit");
-        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug", ">> ".$this->log_file), $max_execution_time, $this);
+        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug"), $max_execution_time, $this);
 
         Debug::checkPoint("Après TimeLimit");
 
@@ -299,29 +282,26 @@ class Aspirateur extends Controller
         //$this->allocate_shared_storage();
 
 
-
+        
         $lock_file = TMP."lock/".$name_server.".txt";
 
-
-
-        /*
-          $fp = fopen($lock_file, "w");
+        $fp = fopen($lock_file, "w");
           if (!is_writable($lock_file)) {
           throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
-          } */
-        // a deporter ??
+          } 
+          // a deporter ??
 
 
-        /*
-          if (!flock($fp, LOCK_EX | LOCK_NB)) {
-          Debug::debug("Un processus est déjà en cours");
-          fwrite(STDERR, 'Un processus est déjà en cours');
-          exit(15);
-          } else {
-          ftruncate($fp, 0);
-          fwrite($fp, getmypid());
-          } */
-
+        
+        if (!flock($fp, LOCK_EX | LOCK_NB)) {
+            Debug::debug("Un processus est déjà en cours");
+            fwrite(STDERR, 'Un processus est déjà en cours');
+            exit(15);
+        } else {
+            ftruncate($fp, 0);
+            fwrite($fp, getmypid());
+        }
+        
 
 
         Debug::checkPoint('avant query');
@@ -419,7 +399,7 @@ class Aspirateur extends Controller
 
 
 
-
+        
         $lock_file = TMP."lock/".$name_server.".txt";
 
 
@@ -449,14 +429,14 @@ class Aspirateur extends Controller
 
 
 
-        /*
-          fflush($fp);            // libère le contenu avant d'enlever le verrou
-          flock($fp, LOCK_UN);    // Enlève le verrou
+
+        fflush($fp);            // libère le contenu avant d'enlever le verrou
+        flock($fp, LOCK_UN);    // Enlève le verrou
 
 
-          fclose($fp);
-          //unlink($lock_file);
-         */
+        fclose($fp);
+        //unlink($lock_file);
+
 
         //$this->showQueries();
         $mysql_tested->sql_close();
@@ -884,129 +864,9 @@ class Aspirateur extends Controller
 
         return $stats;
     }
-
-    public function test0mq()
-    {
-        $context = new ZMQContext();
-
-//  Socket to talk to server
-        echo "Connecting to hello world server…\n";
-        $requester = new ZMQSocket($context, ZMQ::SOCKET_REQ);
-        $requester->connect("tcp://localhost:5555");
-
-        for ($request_nbr = 0; $request_nbr != 10; $request_nbr++) {
-            printf("Sending request %d…\n", $request_nbr);
-            $requester->send("Hello");
-        }
-    }
-
-    public function rec()
-    {
-
-        //  Launch pool of worker threads
-        for ($thread_nbr = 0; $thread_nbr != 5; $thread_nbr++) {
-            $pid = pcntl_fork();
-            if ($pid == 0) {
-                $this->worker_routine();
-                exit();
-            }
-        }
-
-//  Prepare our context and sockets
-        $context = new ZMQContext();
-
-//  Socket to talk to clients
-        $clients = new ZMQSocket($context, ZMQ::SOCKET_ROUTER);
-        $clients->bind("tcp://*:5555");
-
-//  Socket to talk to workers
-        $workers = new ZMQSocket($context, ZMQ::SOCKET_DEALER);
-        $workers->bind("ipc://workers.ipc");
-
-//  Connect work threads to client threads via a queue
-        $device = new ZMQDevice($clients, $workers);
-        $device->run();
-    }
-
-    function worker_routine()
-    {
-        $context  = new ZMQContext();
-        // Socket to talk to dispatcher
-        $receiver = new ZMQSocket($context, ZMQ::SOCKET_REP);
-        $receiver->connect("ipc://workers.ipc");
-
-        while (true) {
-            $string = $receiver->recv();
-            printf("Received request: [%s]%s", $string, PHP_EOL);
-
-            // Do some 'work'
-            sleep(1);
-
-            // Send reply back to client
-            $receiver->send("World");
-        }
-    }
-
-    public function queue()
-    {
-        define("MAX_WORKERS", 100);
-
-        if(class_exists("ZMQ") && defined("ZMQ::LIBZMQ_VER")) {
-            echo ZMQ::LIBZMQ_VER, PHP_EOL;
-        }
-
-
-
-//  Prepare our context and sockets
-        $context           = new ZMQContext();
-        $frontend          = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $backend           = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $frontend->bind("tcp://*:5555");    //  For clients
-        $backend->bind("tcp://*:5556");    //  For workers
-//  Queue of available workers
-        $available_workers = 0;
-        $worker_queue      = array();
-        $read              = $write             = array();
-
-        while (true) {
-            $poll = new ZMQPoll();
-            $poll->add($backend, ZMQ::POLL_IN);
-
-            //  Poll frontend only if we have available workers
-            if ($available_workers) {
-                $poll->add($frontend, ZMQ::POLL_IN);
-            }
-
-            $events = $poll->poll($read, $write);
-
-            foreach ($read as $socket) {
-                $zmsg = new Zmsg($socket);
-                $zmsg->recv();
-
-                //  Handle worker activity on backend
-                if ($socket === $backend) {
-                    //  Use worker address for LRU routing
-                    assert($available_workers < MAX_WORKERS);
-                    array_push($worker_queue, $zmsg->unwrap());
-                    $available_workers++;
-
-                    //  Return reply to client if it's not a READY
-                    if ($zmsg->address() != "READY") {
-                        $zmsg->set_socket($frontend)->send();
-                    }
-                } elseif ($socket === $frontend) {
-                    //  Now get next client request, route to next worker
-                    //  REQ socket in worker needs an envelope delimiter
-                    //  Dequeue and drop the next worker address
-                    $zmsg->wrap(array_shift($worker_queue), "");
-                    $zmsg->set_socket($backend)->send();
-                    $available_workers--;
-                }
-            }
-            //  We never exit the main loop
-        }
-    }
 }
+
+
 /*
  *
  *
