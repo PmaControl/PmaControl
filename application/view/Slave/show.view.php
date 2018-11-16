@@ -188,11 +188,11 @@ if (empty($data['replication_name'])) {
     ?>
 </div>
 
-
+<!--
 <div class="panel panel-primary" style="background:#f5f5f5">
     <div class="panel-heading">
 
         <h3 class="panel-title"><?= __("Repliacation load average") ?> (By Mark LEITH)</h3>
     </div>
 
-</div>
+</div>-->

@@ -129,7 +129,7 @@ EOF
 
 chmod 777 -R tmp/
 
-
+chmod 777 -R data/
 
 #echo 'vm.swappiness = 1' >> /etc/sysctl.conf
 #sysctl -p

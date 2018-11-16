@@ -903,7 +903,9 @@ class Dot2 extends Controller
 
             $this->joiner = array();
 
-            //Debug::debug($members);
+            Debug::debug($this->galera_cluster, "GALERA TO CHECK");
+
+
 
             foreach ($members as $id_mysql_server => $member) {
                 $segment = $this->extractProviderOption($member['wsrep_provider_options'], "gmcast.segment");

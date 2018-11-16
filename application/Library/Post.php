@@ -5,8 +5,8 @@ namespace App\Library;
 class Post
 {
 
-    static public function getToPost()
-    {
+    static public function getToPost(
+)    {
         $ret = [];
 
         //debug($_POST);
@@ -19,7 +19,7 @@ class Post
                 }
 
 
-                $ret[] = $main.":".$key.":".($val);
+                $ret[] = $main.":".$key.":".(str_replace("/","[DS]", $val));
             }
         }
 

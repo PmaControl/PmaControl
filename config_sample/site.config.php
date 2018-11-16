@@ -2,7 +2,7 @@
 
 
 if (!defined('SITE_URL')) {
-    define("SITE_URL", "https://github.com/Glial/PmaControl");
+    define("SITE_URL", "https://github.com/PmaControl/PmaControl");
 }
 
 if (!defined('SITE_NAME')) {
@@ -24,9 +24,9 @@ if (!defined('SITE_LOGO')) {
 
 
 if (!defined('SITE_VERSION')) {
-    define("SITE_VERSION", "v1.2-Beta");
+    define("SITE_VERSION", "v1.3.0-Alpha");
 }
 
 if (!defined('SITE_LAST_UPDATE')) {
-    define("SITE_LAST_UPDATE", "2018-02-06");
+    define("SITE_LAST_UPDATE", "2018-11-16");
 }

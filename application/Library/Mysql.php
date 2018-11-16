@@ -71,6 +71,8 @@ class Mysql
 ;password => password who will be used to connect to the SGBD
 ;database => database / schema witch will be used to access to datas
 ';
+        
+        $delta = $config; 
 
         while ($ob = $db->sql_fetch_object($res)) {
             $string = "[".$ob->name."]\n";
@@ -86,8 +88,14 @@ class Mysql
 
             //Debug::debug($string);
         }
+        
+        
+        if ($config != $delta)
+        {
+            file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+        }
 
-        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+        
     }
 
     static public function addMaxDate($db)

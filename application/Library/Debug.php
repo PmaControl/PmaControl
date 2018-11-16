@@ -27,7 +27,7 @@ class Debug
                     self::$debug = true;
 
                     self::checkPoint("Start debug");
-                    self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
+                    //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
 
                     unset($param[$key]);
                 }
@@ -41,6 +41,10 @@ class Debug
         if (self::$debug) {
 
             $thread_sgbd = $di_link->getConnected();
+
+            self::debug($thread_sgbd);
+
+
 
             foreach ($thread_sgbd as $name_db) {
 
