@@ -105,7 +105,6 @@ class Integrate extends Controller
 
                                             if (empty($variables[$type_metrics][$slave_variable])) {
 
-
                                                 if ($slave_value === "-1") {
                                                     continue;
                                                 }
