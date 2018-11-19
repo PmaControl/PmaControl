@@ -9,7 +9,7 @@ echo "<head>\n";
 
 echo "<!--\n";
 echo SITE_LOGO;
-echo "Powered by Esysteme (www.esysteme.com)\n";
+echo "Powered by 68koncept (www.68koncept.com)\n";
 echo "-->";
 echo "<meta charset=utf-8 />\n";
 echo "<meta name=\"Keywords\" content=\"\" />\n";
