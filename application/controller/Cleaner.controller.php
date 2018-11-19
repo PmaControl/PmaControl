@@ -310,7 +310,7 @@ var myChart = new Chart(ctx, {
 
         /** new cleaner with UI * */
         $sql = "SELECT *,a.id as id_cleaner_main,
-            b.name as mysql_server_name,c.`libelle` as env, c.`class`
+            b.name as mysql_server_name,c.`libelle` as env, c.`class`, a.libelle as name_cleaner
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
         INNER JOIN environment c ON b.id_environment = c.id;";
