@@ -1817,6 +1817,9 @@ var myChart = new Chart(ctx, {
 
 
                 if (end($db->query)['rows'] == "-1") {
+                    
+                    
+                    $this->logger->error('[id:' . $this->id_cleaner . '][FOREIGN KEY][pid:' . getmypid() . '] have to update lib of cleaner or order of table set in param'.$sql);
                     throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
                 }
 
