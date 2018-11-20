@@ -37,10 +37,7 @@ class Integrate extends Controller
 
 
         // test if valid memory file (from ts_file)
-        $this->getIdMemoryFile($memory_file);
-
-
-
+        $id_ts_file = $this->getIdMemoryFile($memory_file);
 
 
         $db         = $this->di['db']->sql(DB_DEFAULT);
@@ -107,7 +104,6 @@ class Integrate extends Controller
                                             }
 
                                             if (empty($variables[$type_metrics][$slave_variable])) {
-
 
                                                 if ($slave_value === "-1") {
                                                     continue;
@@ -194,7 +190,7 @@ class Integrate extends Controller
 
                                             if (empty($var_index[$type_metrics][$variable])) {
                                                 $var_index[$type_metrics][$variable] = 1;
-                                                $variables_to_insert[]               = '("'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
+                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
                                                 //$variables_to_insert[$type_metrics][$variable]['type'] = $this->getTypeOfData($value);
                                             }
                                         }
@@ -316,7 +312,7 @@ class Integrate extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
-        $sql = "INSERT IGNORE INTO ts_variable (`name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
+        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
         $db->sql_query($sql);
     }
 

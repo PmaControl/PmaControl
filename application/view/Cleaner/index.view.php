@@ -17,7 +17,7 @@
         //$hightlight = ($cleaner['id_cleaner_main'] === $data['id_cleaner']) ? "highlight_row" : "";
         echo '<tr class="cleaner_main" data-id="' . $cleaner['id_cleaner_main'] . '" data-href="' . LINK . 'Cleaner/index/' . $cleaner['id_cleaner_main'] . '">';
         echo '<td>' . $cleaner['id_cleaner_main'] . '</td>';
-        echo '<td>' . $cleaner['libelle'] . '</td>';
+        echo '<td>' . $cleaner['name_cleaner'] . '</td>';
         echo '<td><big><span class="label label-'.$cleaner['class'].'">'. $cleaner['env'].'</span></big></td>';
         echo '<td>' . str_replace("_", "-", $cleaner['mysql_server_name']) . '</td>';
         echo '<td>' . $cleaner['ip'] . '</td>';
