@@ -39,7 +39,7 @@ trait Scp {
             
             
             if (!empty($ob->private_key)) {
-                $pv_key = Crypt::decrypt($ob->private_key);
+                $pv_key = Chiffrement::decrypt($ob->private_key);
             }
 
             $sftp = new SFTP($ob->ip);
@@ -67,9 +67,6 @@ trait Scp {
 
 
             $ssh->exec("mkdir -p " . $dst_dir);
-
-
-
 
             $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
             $data['execution_time'] = round(microtime(true) - $start, 0);
@@ -118,7 +115,7 @@ trait Scp {
 
             
             if (!empty($ob->private_key)) {
-                $pv_key = Crypt::decrypt($ob->private_key);
+                $pv_key = Chiffrement::decrypt($ob->private_key);
             }
 
             $sftp = new SFTP($ob->ip);
