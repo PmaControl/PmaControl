@@ -93,7 +93,7 @@ class Cleaner extends Controller {
 
         //https://github.com/chartjs/chartjs-plugin-zoom
 
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js"));
+        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
