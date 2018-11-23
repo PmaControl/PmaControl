@@ -21,7 +21,8 @@ class Control extends Controller {
         , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
     //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     var $index = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
+        "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
     var $engine = "tokudb";
     var $engine_preference = array("TokuDB", "ROCKSDB");
@@ -38,7 +39,15 @@ class Control extends Controller {
 
         $datadir = $db->getVariables("datadir");
 
+
+
+        // connect to ssh to sql server
+        //$ssh->
+        // or local
         $size = shell_exec('cd ' . $datadir . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
+
+
+
 
         $percent = substr($size, 0, -1);
 
@@ -106,6 +115,8 @@ class Control extends Controller {
 
         foreach ($combi as $table) {
             $sql = "ALTER TABLE `" . $table . "` ADD PARTITION (PARTITION `p" . $partition_number . "` VALUES LESS THAN (" . $partition_number . ") ENGINE = " . $this->engine . ");";
+            
+            Debug::sql($sql);
             $db->sql_query($sql);
             $this->logger->info($sql);
         }
@@ -119,6 +130,9 @@ class Control extends Controller {
                 $combinaisons[] = $table . "_" . $ext;
             }
         }
+        
+        $combinaisons[] = "ts_date_by_server";
+        
 
         return $combinaisons;
     }
@@ -215,7 +229,9 @@ class Control extends Controller {
         $this->updateLinkVariableServeur();
 
 
-        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+
+
+        //Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function dropTsTable() {
