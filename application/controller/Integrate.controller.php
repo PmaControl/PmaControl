@@ -216,6 +216,7 @@ class Integrate extends Controller
             }
         }
 
+        
 
 
         if (count($variables_to_insert) > 0) {

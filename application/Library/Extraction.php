@@ -154,7 +154,7 @@ class Extraction
 
 
 
-        echo \SqlFormatter::format($sql3)."\n";
+        //echo \SqlFormatter::format($sql3)."\n";
 
         $res2 = self::$db->sql_query($sql3);
 
@@ -234,7 +234,7 @@ class Extraction
 
         $res = self::$db->sql_query($sql);
 
-        echo \SqlFormatter::format($sql)."\n";
+        //echo \SqlFormatter::format($sql)."\n";
         $from     = array();
         $variable = array();
         while ($ob       = self::$db->sql_fetch_object($res)) {
