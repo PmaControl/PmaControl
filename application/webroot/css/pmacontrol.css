@@ -316,6 +316,9 @@ Release Dtae : 15 November, 2017
 div.pre pre{width:400px; overflow: auto; font-size: 12px}
 
 
+
+
+
 td.pma a, tr.pma td a{color:#fff;}
 td.pma-default {background:#ffffff !important; color:#000}
 td.pma-primary {background:#337ab7 !important; color:#fff}
@@ -323,6 +326,8 @@ td.pma-success {background:#449d44 !important; color:#fff}
 td.pma-info {background:#5bc0de !important; color:#fff}
 td.pma-warning {background:#f0ad4e !important; color:#fff}
 td.pma-danger {background:#c9302c !important; color:#fff}
+td.pma-grey {background:#e2e2e2 !important; color:#000; border:#fff 1px solid !important;}
+
 
 
 tr.pma-default td{background:#ffffff; color:#000}
@@ -333,11 +338,15 @@ tr.pma-warning td{background:#f0ad4e; color:#fff}
 tr.pma-danger td{background:#c9302c; color:#fff}
 
 
-
+tr.pma-grey td{background:#bebebe; color:#000}
 
 
 .tooltip-inner{text-align: left;}
 
+
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #eee !important;
+}
 
 
 

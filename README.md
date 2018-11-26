@@ -1,6 +1,7 @@
 # PmaControl
 
-https://avatars0.githubusercontent.com/u/34713040?s=200&v=4
+![Alt text](https://avatars0.githubusercontent.com/u/34713040?s=200&v=4 "Logo")
+
 
 _UI & CLI Tools for DBA (monitoring / backup / install / cleaner ...)_
 
@@ -69,7 +70,6 @@ plugin-load=ha_rocksdb
 * go to http://127.0.0.1/pmacontrol/
 
 ## Screenshots
-
 
 
 
