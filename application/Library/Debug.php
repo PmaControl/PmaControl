@@ -196,7 +196,7 @@ class Debug
             }
 
 
-            echo \SqlFormatter::format($sql);
+            echo \SqlFormatter::highlight($sql);
             //echo trim($string)."\n";
             
         }
