@@ -3,3 +3,4 @@ composer.lock
 /vendor/*
 version
 config.json
+/nbproject/private/

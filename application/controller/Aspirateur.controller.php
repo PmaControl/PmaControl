@@ -10,6 +10,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
+use App\Library\System2;
 use App\Library\Chiffrement;
 use App\Library\Zmsg;
 
@@ -59,7 +60,7 @@ class Aspirateur extends Controller
     public function testAllMysql($param)
     {
 
-        
+
         Debug::debug($param, "PARAM");
 
 
@@ -239,7 +240,8 @@ class Aspirateur extends Controller
 
 
         Debug::checkPoint("Avant TimeLimit");
-        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug", ">> ".$this->log_file), $max_execution_time, $this);
+        $ret = SetTimeLimit::run("Aspirateur", "tryMysqlConnection", array($name_server, $id_server, "--debug", ">> ".$this->log_file), $max_execution_time,
+                $this);
 
         Debug::checkPoint("Après TimeLimit");
 
@@ -327,8 +329,12 @@ class Aspirateur extends Controller
 
         Debug::checkPoint('avant query');
 
-        $time_start             = microtime(true);
-        $mysql_tested           = $this->di['db']->sql($name_server);
+        $time_start   = microtime(true);
+        $mysql_tested = $this->di['db']->sql($name_server);
+
+
+        Debug::debug("on est la !!!!!!!!");
+
         $data['server']['ping'] = microtime(true) - $time_start;
 
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
@@ -886,126 +892,250 @@ class Aspirateur extends Controller
         return $stats;
     }
 
-    public function test0mq()
+    public function addToQueue($param)
     {
-        $context = new ZMQContext();
 
-//  Socket to talk to server
-        echo "Connecting to hello world server…\n";
-        $requester = new ZMQSocket($context, ZMQ::SOCKET_REQ);
-        $requester->connect("tcp://localhost:5555");
+        Debug::parseDebug($param);
 
-        for ($request_nbr = 0; $request_nbr != 10; $request_nbr++) {
-            printf("Sending request %d…\n", $request_nbr);
-            $requester->send("Hello");
+
+        $id_daemon = $param[0];
+
+
+        if (Debug::$debug) {
+            echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
         }
-    }
 
-    public function rec()
-    {
+        $this->view = false;
+        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $sql        = "select id,name from mysql_server WHERE is_monitored =1;";
 
-        //  Launch pool of worker threads
-        for ($thread_nbr = 0; $thread_nbr != 5; $thread_nbr++) {
-            $pid = pcntl_fork();
-            if ($pid == 0) {
-                $this->worker_routine();
-                exit();
+        Debug::debug($sql);
+        $res = $db->sql_query($sql);
+
+        $server_list = array();
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $server_list[] = $ob;
+        }
+
+        $sql = "SELECT * FROM daemon_main where id=".$id_daemon;
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) !== 1) {
+            throw new \Exception("PMACTRL-874 : This daemon with id=".$id_daemon." doesn't exist !", 80);
+        }
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $maxThreads       = $ob->thread_concurency; // check MySQL server x by x
+            $maxExecutionTime = $ob->max_delay;
+        }
+
+        Debug::debug("max execution time : ".$maxExecutionTime);
+
+
+        //to prevent any trouble with fork
+        //$this->debugShowQueries();
+        $db->sql_close();
+
+        // filename: add_to_queue.php
+        //creating a queue requires we come up with an arbitrary number
+        define('QUEUE', 21671);
+
+        //add message to queue
+        $queue = msg_get_queue(QUEUE);
+
+
+        foreach ($server_list as $server) {
+
+            // Create dummy message object
+            $object       = new stdclass;
+            $object->name = $server['name'];
+            $object->id   = $server['id'];
+
+            //try to add message to queue
+            if (msg_send($queue, 1, $object)) {
+                echo "added to queue  \n";
+                // you can use the msg_stat_queue() function to see queue status
+                print_r(msg_stat_queue($queue));
+            } else {
+                echo "could not add message to queue \n";
             }
         }
 
-//  Prepare our context and sockets
-        $context = new ZMQContext();
 
-//  Socket to talk to clients
-        $clients = new ZMQSocket($context, ZMQ::SOCKET_ROUTER);
-        $clients->bind("tcp://*:5555");
 
-//  Socket to talk to workers
-        $workers = new ZMQSocket($context, ZMQ::SOCKET_DEALER);
-        $workers->bind("ipc://workers.ipc");
 
-//  Connect work threads to client threads via a queue
-        $device = new ZMQDevice($clients, $workers);
-        $device->run();
+        //$stats = msg_stat_queue($queue);
+        //debug($stats);
     }
 
-    function worker_routine()
+    public function worker()
     {
-        $context  = new ZMQContext();
-        // Socket to talk to dispatcher
-        $receiver = new ZMQSocket($context, ZMQ::SOCKET_REP);
-        $receiver->connect("ipc://workers.ipc");
+        // filename: worker.php
+        //getting our requires we supply the id number we created it with
+        define('QUEUE', 21671);
 
-        while (true) {
-            $string = $receiver->recv();
-            printf("Received request: [%s]%s", $string, PHP_EOL);
+        $queue = msg_get_queue(QUEUE);
 
-            // Do some 'work'
-            sleep(1);
+        $msg_type     = NULL;
+        $msg          = NULL;
+        $max_msg_size = 512;
 
-            // Send reply back to client
-            $receiver->send("World");
+        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
+            echo "[".date("Y-m-d H:i:s")."] Message pulled from queue - id:{$msg->id}, name:{$msg->name} \n";
+
+            $maxExecutionTime = 10;
+            $this->tryMysqlConnection(array($msg->name, $msg->id));
+
+
+
+            //do your business logic here and process this message!
+            //finally, reset our msg vars for when we loop and run again
+            $msg_type = NULL;
+            $msg      = NULL;
         }
     }
 
-    public function queue()
+    public function checkWorker($param)
     {
-        define("MAX_WORKERS", 100);
 
-        if(class_exists("ZMQ") && defined("ZMQ::LIBZMQ_VER")) {
-            echo ZMQ::LIBZMQ_VER, PHP_EOL;
-        }
+        $id_daemon_main = $param[0];
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main WHERE id =".$id_daemon_main;
+        $res = $db->sql_query($sql);
 
 
+        while ($ob = $db->sql_fetch_object($res)) {
 
-//  Prepare our context and sockets
-        $context           = new ZMQContext();
-        $frontend          = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $backend           = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $frontend->bind("tcp://*:5555");    //  For clients
-        $backend->bind("tcp://*:5556");    //  For workers
-//  Queue of available workers
-        $available_workers = 0;
-        $worker_queue      = array();
-        $read              = $write             = array();
 
-        while (true) {
-            $poll = new ZMQPoll();
-            $poll->add($backend, ZMQ::POLL_IN);
+            $sql2 = "SELECT * FROM daemon_worker where id_daemon_main = ".$ob->id;
+            $res2 = $db->sql_query($sql2);
 
-            //  Poll frontend only if we have available workers
-            if ($available_workers) {
-                $poll->add($frontend, ZMQ::POLL_IN);
+
+            $nb_thread = 0;
+            while ($ob2       = $db->sql_fetch_object($res2)) {
+
+
+                $available = System2::isRunningPid($ob2->pid);
+
+                Debug::debug($available, "Result of pid : ".$ob2->pid);
+
+                if ($available === false) {
+
+
+                    $file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
+                    debug($file, "FILE");
+
+                    $this->addWorker(array($ob2->id, $id_daemon_main));
+                }
+
+                $nb_thread++;
             }
 
-            $events = $poll->poll($read, $write);
 
-            foreach ($read as $socket) {
-                $zmsg = new Zmsg($socket);
-                $zmsg->recv();
+            Debug::debug($nb_thread, "\$nb_thread");
+            Debug::debug($ob->thread_concurency, "\$ob->thread_concurency");
 
-                //  Handle worker activity on backend
-                if ($socket === $backend) {
-                    //  Use worker address for LRU routing
-                    assert($available_workers < MAX_WORKERS);
-                    array_push($worker_queue, $zmsg->unwrap());
-                    $available_workers++;
+            if ($ob->thread_concurency > $nb_thread) {
+                $tocreate = $ob->thread_concurency - $nb_thread;
 
-                    //  Return reply to client if it's not a READY
-                    if ($zmsg->address() != "READY") {
-                        $zmsg->set_socket($frontend)->send();
-                    }
-                } elseif ($socket === $frontend) {
-                    //  Now get next client request, route to next worker
-                    //  REQ socket in worker needs an envelope delimiter
-                    //  Dequeue and drop the next worker address
-                    $zmsg->wrap(array_shift($worker_queue), "");
-                    $zmsg->set_socket($backend)->send();
-                    $available_workers--;
+                for ($i = 0; $i < $tocreate; $i++) {
+                    $this->addWorker(array("0", $id_daemon_main));
+
+                    Debug::debug("Add worker");
+                }
+            } elseif ($ob->thread_concurency < $nb_thread) {
+                $todelete = $nb_thread - $ob->thread_concurency;
+
+
+                for ($i = 0; $i < $todelete; $i++) {
+                    $this->removeWorker(array($id_daemon_main));
+
+                    Debug::debug("Remove worker");
                 }
             }
-            //  We never exit the main loop
         }
+    }
+
+    public function addWorker($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_daemon_worker = $param[0];
+        $id_daemon_main   = $param[1];
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        if (empty($id_daemon_worker)) {
+            $sql = "INSERT INTO daemon_worker (`id_daemon_main`, `pid`) VALUES (".$id_daemon_main.", 0);";
+            Debug::sql($sql);
+
+            $db->sql_query($sql);
+
+            $id_daemon_worker = $db->_insert_id();
+        }
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+        $cmd = $php." ".GLIAL_INDEX." Aspirateur worker > ".TMP."log/worker_".$id_daemon_main."_".$id_daemon_worker.".log 2>&1 & echo $!";
+        Debug::debug($cmd);
+
+        $pid = shell_exec($cmd);
+
+
+        $sql = "UPDATE daemon_worker SET pid=".$pid." WHERE id=".$id_daemon_worker;
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    }
+
+    public function removeWorker($param)
+    {
+        Debug::parseDebug($param);
+        $id_daemon_main = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_worker WHERE id_daemon_main=".$id_daemon_main." LIMIT 1";
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $cmd = "kill ".$ob->pid;
+            shell_exec($cmd);
+
+            
+            $file = TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log";
+
+            if (file_exists($file))
+            {
+                unlink($file);
+            }
+
+            $sql = "DELETE FROM daemon_worker WHERE id=".$ob->id;
+            Debug::sql($sql);
+            $db->sql_query($sql);
+        }
+    }
+
+    public function killAllWorker($param)
+    {
+        Debug::parseDebug($param);
+        $id_daemon_main = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_worker WHERE id_daemon_main=".$id_daemon_main;
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $this->removeWorker(array($id_daemon_main));
+        }
+
     }
 }
 /*
