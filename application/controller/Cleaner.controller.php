@@ -1,4 +1,5 @@
 <?php
+
 /*
  * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK
  *
@@ -22,53 +23,52 @@ use \App\Library\Debug;
 // Installation des gestionnaires de signaux
 declare(ticks = 1);
 
-class Cleaner extends Controller
-{
+class Cleaner extends Controller {
 
     use \App\Library\Scp;
-    var $id_cleaner  = 0;
+
+    var $id_cleaner = 0;
 //status to check
     private $com_status = array();
     private $connection = array();
 
     const FIELD_LOOP = "pmactrol_purge_loop";
 
-    public $color                  = true;
-    public $prefix                 = "DELETE_";
+    public $color = true;
+    public $prefix = "DELETE_";
     public $link_to_purge;
     public $libelle; //name of cleaner
     public $schema_to_purge;
     public $schema_main;
-    public $schema_delete          = "CLEANER";
-    public $table_to_purge         = array();
-    public $main_field             = array(); // => needed
+    public $schema_delete = "CLEANER";
+    public $table_to_purge = array();
+    public $main_field = array(); // => needed
     public $main_table;
     public $init_where;
-    private $table_in_error        = array();
-    private $rows_to_delete        = array();
-    public $foreign_keys           = array();
-    private $table_impacted        = array();
-    public $backup_dir             = DATA."cleaner/";
-    private $path_to_orderby_tmp   = "";
-    private $orderby               = array();
+    private $table_in_error = array();
+    private $rows_to_delete = array();
+    public $foreign_keys = array();
+    private $table_impacted = array();
+    public $backup_dir = DATA . "cleaner/";
+    private $path_to_orderby_tmp = "";
+    private $orderby = array();
     public $id_backup_storage_area = 0;
-    private $sql_hex_for_binary    = false;
-    private $fk_circulaire         = array();
+    private $sql_hex_for_binary = false;
+    private $fk_circulaire = array();
     var $logger;
-    private $cache_pk              = array();
-    private $cache_fk              = array();
-    private $cache_table           = array();
-    private $cache_alter           = array();
-    private $primary_key           = array();
-    private $com_to_check          = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
-    private $id_mysql_server       = 0;
-    private $limit                 = 1000;
+    private $cache_pk = array();
+    private $cache_fk = array();
+    private $cache_table = array();
+    private $cache_alter = array();
+    private $primary_key = array();
+    private $com_to_check = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
+    private $id_mysql_server = 0;
+    private $limit = 1000;
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
 
-    private function anonymous()
-    {
+    private function anonymous() {
         $fct = function() {
             $default = $this->di['db']->sql(DB_DEFAULT);
 
@@ -76,11 +76,10 @@ class Cleaner extends Controller
         };
     }
 
-    public function statistics($param)
-    {
+    public function statistics($param) {
 
 
-        $this->title = '<i class="fa fa-area-chart" aria-hidden="true"></i> '.__("Statistics");
+        $this->title = '<i class="fa fa-area-chart" aria-hidden="true"></i> ' . __("Statistics");
 
         $id_cleaner = $this->get_id_cleaner($param);
 
@@ -94,7 +93,7 @@ class Cleaner extends Controller
 
         //https://github.com/chartjs/chartjs-plugin-zoom
 
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js"));
+        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -102,14 +101,14 @@ class Cleaner extends Controller
 
         $sql = "select `table`  as t,sum(b.`row`),avg(b.`row`),min(b.`row`),max(b.`row`)  from pmacli_drain_process a
             INNER JOIN  pmacli_drain_item b ON a.id = b.id_pmacli_drain_process
-            WHERE a.id_cleaner_main = ".$data['id_cleaner']." AND a.item_deleted !=0
+            WHERE a.id_cleaner_main = " . $data['id_cleaner'] . " AND a.item_deleted !=0
            GROUP BY `table`";
 
         $res = $db->sql_query($sql);
 
 
         $labels = array();
-        while ($ob     = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $labels[] = $ob->t;
         }
 
@@ -117,8 +116,8 @@ class Cleaner extends Controller
 
         $sql2 = "SELECT a.date_start, a.time, b.`table` ,b.`row` as `row` FROM pmacli_drain_process a
             INNER JOIN pmacli_drain_item b ON b.id_pmacli_drain_process = a.id
-            WHERE a.id_cleaner_main=".$data['id_cleaner']."  "
-            ."AND a.date_start >= date_add(now(),INTERVAL-1 HOUR);";
+            WHERE a.id_cleaner_main=" . $data['id_cleaner'] . "  "
+                . "AND a.date_start >= date_add(now(),INTERVAL-1 HOUR);";
 
 
         /*
@@ -129,20 +128,20 @@ class Cleaner extends Controller
          */
 
         $datasets = array();
-        $res2     = $db->sql_query($sql2);
+        $res2 = $db->sql_query($sql2);
 
         $date = "";
-        while ($ob   = $db->sql_fetch_object($res2)) {
+        while ($ob = $db->sql_fetch_object($res2)) {
 
 
             if ($date !== $ob->date_start) { // pour focer le remplissage à 0 si la ligne n'existe pas
                 foreach ($labels as $label) {
-                    $data[$label][$ob->date_start] = "{ x: new Date('".$ob->date_start."'), y: 0}";
+                    $data[$label][$ob->date_start] = "{ x: new Date('" . $ob->date_start . "'), y: 0}";
                     //$data[$label][$ob->date_start] = "0";
                 }
             }
 
-            $data[$ob->table][$ob->date_start] = "{ x: new Date('".$ob->date_start."'), y: ".$ob->row."}";
+            $data[$ob->table][$ob->date_start] = "{ x: new Date('" . $ob->date_start . "'), y: " . $ob->row . "}";
 
             $date = $ob->date_start;
         }
@@ -155,13 +154,13 @@ class Cleaner extends Controller
                 $points[$label] = implode(',', $data[$label]);
 
                 $datajs .= '{
-    label: "'.$label.'",
-    data: ['.$points[$label].'],
+    label: "' . $label . '",
+    data: [' . $points[$label] . '],
 
-    backgroundColor: "'.$this->getrgba($label, 0.3).'",
-    borderColor: "'.$this->getrgba($label, 0.5).'",
-    pointBorderColor: "'.$this->getrgba($label, 0.1).'",
-    pointBackgroundColor: "'.$this->getrgba($label, 0.2).'",
+    backgroundColor: "' . $this->getrgba($label, 0.3) . '",
+    borderColor: "' . $this->getrgba($label, 0.5) . '",
+    pointBorderColor: "' . $this->getrgba($label, 0.1) . '",
+    pointBackgroundColor: "' . $this->getrgba($label, 0.2) . '",
     borderWidth: 1,
     pointBorderWidth: 2,
     pointRadius :3,
@@ -189,7 +188,7 @@ var ctx = document.getElementById("myChart").getContext("2d");
 var myChart = new Chart(ctx, {
     type: "line",
     data: {
-    datasets: ['.$datajs.']
+    datasets: [' . $datajs . ']
     },
     pan: {
         enabled: true,
@@ -266,15 +265,14 @@ var myChart = new Chart(ctx, {
         return $this->title;
     }
 
-    function getIdMysqlServer($name)
-    {
+    function getIdMysqlServer($name) {
 
         $default = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql                 = "SELECT id FROM mysql_server WHERE name ='".$name."';";
+        $sql = "SELECT id FROM mysql_server WHERE name ='" . $name . "';";
         $res_id_mysql_server = $default->sql_query($sql);
         if ($default->sql_num_rows($res_id_mysql_server) == 1) {
-            $ob              = $default->sql_fetch_object($res_id_mysql_server);
+            $ob = $default->sql_fetch_object($res_id_mysql_server);
             $id_mysql_server = $ob->id;
         } else {
             throw new \Exception("PMACTRL-001 : Impossible to find the MySQL server");
@@ -283,11 +281,10 @@ var myChart = new Chart(ctx, {
         return $id_mysql_server;
     }
 
-    function getMsgStartDaemon($ob)
-    {
+    function getMsgStartDaemon($ob) {
         $table = new Table(2);
 
-        echo "[".date("Y-m-d H:i:s")."] Starting deamon for cleaner ...".PHP_EOL;
+        echo "[" . date("Y-m-d H:i:s") . "] Starting deamon for cleaner ..." . PHP_EOL;
 
         $table->addHeader(array("Parameter", "Value"));
         $table->addLine(array("SERVER_TO_PURGE", $ob->link_to_purge));
@@ -300,37 +297,35 @@ var myChart = new Chart(ctx, {
         echo $table->display();
     }
 
-    public function showDaemon()
-    {
-        $db            = $this->di['db']->sql(DB_DEFAULT);
-        $sql           = "SELECT * FROM `pmacli_drain_process` order by date_start DESC LIMIT 5000;";
+    public function showDaemon() {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `pmacli_drain_process` order by date_start DESC LIMIT 5000;";
         $data['clean'] = $db->sql_fetch_yield($sql);
 
         $this->set('data', $data);
     }
 
-    public function index($param)
-    {
+    public function index($param) {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         /** new cleaner with UI * */
         $sql = "SELECT *,a.id as id_cleaner_main,
-            b.name as mysql_server_name,c.`libelle` as env, c.`class`
+            b.name as mysql_server_name,c.`libelle` as env, c.`class`, a.libelle as name_cleaner
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
         INNER JOIN environment c ON b.id_environment = c.id;";
 
         $data['cleaner_main'] = $db->sql_fetch_yield($sql);
-        $sql                  = "SELECT DISTINCT `name` FROM pmacli_drain_process;";
+        $sql = "SELECT DISTINCT `name` FROM pmacli_drain_process;";
         $data['cleaner_name'] = $db->sql_fetch_yield($sql);
         $data['cleaner_name'] = iterator_to_array($data['cleaner_name']);
-        $data['id_cleaner']   = empty($param[0]) ? 0 : $param[0];
-        $data['menu']         = empty($param[1]) ? "log" : $param[1];
+        $data['id_cleaner'] = empty($param[0]) ? 0 : $param[0];
+        $data['menu'] = empty($param[1]) ? "log" : $param[1];
 
 
         $this->layout_name = 'pmacontrol';
 
-        $this->title = '<i class="glyphicon glyphicon-erase"></i> '.__("Cleaner");
+        $this->title = '<i class="glyphicon glyphicon-erase"></i> ' . __("Cleaner");
 
 
 
@@ -368,29 +363,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function treatment($param)
-    {
+    public function treatment($param) {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql                = "SELECT * FROM `pmacli_drain_process` WHERE `id_cleaner_main`='".$param[0]."' ORDER BY date_start DESC LIMIT 100";
-        $data['treatment']  = $db->sql_fetch_yield($sql);
+        $sql = "SELECT * FROM `pmacli_drain_process` WHERE `id_cleaner_main`='" . $param[0] . "' ORDER BY date_start DESC LIMIT 100";
+        $data['treatment'] = $db->sql_fetch_yield($sql);
         $data['id_cleaner'] = $param[0];
         $this->set('data', $data);
     }
 
-    public function detail($param)
-    {
-        $db  = $this->di['db']->sql(DB_DEFAULT);
+    public function detail($param) {
+        $db = $this->di['db']->sql(DB_DEFAULT);
         $tmp = explode('/', $_GET['url']);
         $var = end($tmp);
 
-        $sql            = "SELECT * FROM pmacli_drain_item WHERE id_pmacli_drain_process = '".$var."' order by `table`";
+        $sql = "SELECT * FROM pmacli_drain_item WHERE id_pmacli_drain_process = '" . $var . "' order by `table`";
         $data['detail'] = $db->sql_fetch_yield($sql);
 
-        $sql         = "SELECT a.`table`, avg(row) as row FROM pmacli_drain_item a
+        $sql = "SELECT a.`table`, avg(row) as row FROM pmacli_drain_item a
         INNER JOIN pmacli_drain_process b ON a.id_pmacli_drain_process = b.id
-        WHERE b.id_cleaner_main = '".$param[0]."'
+        WHERE b.id_cleaner_main = '" . $param[0] . "'
         GROUP BY a.`table`";
         $data['avg'] = $db->sql_fetch_yield($sql);
 //var_dump($sql);
@@ -398,31 +391,30 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function add($param)
-    {
+    public function add($param) {
         $this->layout_name = 'pmacontrol';
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "cleaner/add.cleaner.js"));
 
-        $this->title  = '<i class="glyphicon glyphicon-plus"></i> '.__('Add a cleaner');
+        $this->title = '<i class="glyphicon glyphicon-plus"></i> ' . __('Add a cleaner');
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins'
-            .' <i class="glyphicon glyphicon-trash"></i> '.__("Cleaner")." > ".$this->title;
+                . ' <i class="glyphicon glyphicon-trash"></i> ' . __("Cleaner") . " > " . $this->title;
 
 
 
         if (!empty($param[0])) {
             $id_cleaner = $param[0];
-            $data       = $param[1];
+            $data = $param[1];
         } else {
             $data['databases'] = array();
-            $data['table']     = array();
+            $data['table'] = array();
         }
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
 
-            $cleaner_main['cleaner_main']                 = $_POST['cleaner_main'];
+            $cleaner_main['cleaner_main'] = $_POST['cleaner_main'];
             $cleaner_main['cleaner_main']['id_user_main'] = $this->di['auth']->getUser()->id;
 
             if (empty($cleaner_main['cleaner_main']['id'])) {
@@ -440,7 +432,7 @@ var myChart = new Chart(ctx, {
                 if (!empty($cleaner_main['cleaner_main']['id'])) {
 
 
-                    $sql = "SELECT * FROM cleaner_main WHERE id ".$id_cleaner_main;
+                    $sql = "SELECT * FROM cleaner_main WHERE id " . $id_cleaner_main;
                     $res = $db->sql_query($sql);
 
                     while ($ob = $db->sql_fetch_object($res)) {
@@ -456,54 +448,54 @@ var myChart = new Chart(ctx, {
                     }
                 }
 
-                $msg   = I18n::getTranslation(__("Cleaner updated with success"));
+                $msg = I18n::getTranslation(__("Cleaner updated with success"));
                 $title = I18n::getTranslation(__("Success"));
                 set_flash("success", $title, $msg);
 
-                header('location: '.LINK."cleaner");
+                header('location: ' . LINK . "cleaner");
                 //$this->exit();
             } else {
 
-                $msg   = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
+                $msg = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
                 $title = I18n::getTranslation(__("Error"));
                 set_flash("error", $title, $msg);
 
                 $elems = explode('/', $_GET['glial_path']);
                 unset($elems[0]);
-                header('location: '.LINK.implode('/', $elems));
+                header('location: ' . LINK . implode('/', $elems));
             }
         }
 
 
 
-        $sql     = "SELECT * FROM backup_storage_area order by `libelle`;";
+        $sql = "SELECT * FROM backup_storage_area order by `libelle`;";
         $servers = $db->sql_fetch_yield($sql);
 
         $data['storagearea'] = [];
         foreach ($servers as $server) {
-            $tmp                           = [];
-            $tmp['id']                     = $server['id'];
-            $tmp['libelle']                = $server['libelle']." (".$server['ip'].")";
+            $tmp = [];
+            $tmp['id'] = $server['id'];
+            $tmp['libelle'] = $server['libelle'] . " (" . $server['ip'] . ")";
             $data['backup_storage_area'][] = $tmp;
         }
 
-        $sql     = "SELECT * FROM mysql_server order by `name`";
+        $sql = "SELECT * FROM mysql_server order by `name`";
         $servers = $db->sql_fetch_yield($sql);
 
         $data['server'] = [];
         foreach ($servers as $server) {
-            $tmp              = [];
-            $tmp['id']        = $server['id'];
-            $tmp['libelle']   = str_replace('_', '-', $server['name'])." (".$server['ip'].")";
+            $tmp = [];
+            $tmp['id'] = $server['id'];
+            $tmp['libelle'] = str_replace('_', '-', $server['name']) . " (" . $server['ip'] . ")";
             $data['server'][] = $tmp;
         }
 
 
         $data['wait_time'] = [];
         for ($i = 1; $i < 101; $i++) {
-            $tmp                 = [];
-            $tmp['id']           = $i;
-            $tmp['libelle']      = $i;
+            $tmp = [];
+            $tmp['id'] = $i;
+            $tmp['libelle'] = $i;
             $data['wait_time'][] = $tmp;
         }
 
@@ -512,13 +504,12 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
-    function getDatabaseByServer($param)
-    {
+    function getDatabaseByServer($param) {
 
         $this->layout_name = false;
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($param[0])."';";
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($param[0]) . "';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -531,10 +522,10 @@ var myChart = new Chart(ctx, {
         $res = $db_to_get_db->sql_query($sql);
 
         $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
+        while ($ob = $db_to_get_db->sql_fetch_object($res)) {
+            $tmp = [];
+            $tmp['id'] = $ob->Database;
+            $tmp['libelle'] = $ob->Database;
             $data['databases'][] = $tmp;
         }
 
@@ -545,30 +536,29 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
-    function getTableByDatabase($param)
-    {
+    function getTableByDatabase($param) {
         $database = $param[0];
 
         $this->layout_name = false;
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($_GET['id_mysql_server'])."';";
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($_GET['id_mysql_server']) . "';";
         $res = $db->sql_query($sql);
 
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_server = $ob->id;
-            $db_clean  = $this->di['db']->sql($ob->name);
+            $db_clean = $this->di['db']->sql($ob->name);
         }
 
-        $sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '".$database."' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
+        $sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '" . $database . "' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
 
         $res = $db_clean->sql_query($sql);
 
         $data['table'] = [];
-        while ($ob            = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->TABLE_NAME;
+        while ($ob = $db->sql_fetch_object($res)) {
+            $tmp = [];
+            $tmp['id'] = $ob->TABLE_NAME;
             $tmp['libelle'] = $ob->TABLE_NAME;
 
             $data['table'][] = $tmp;
@@ -578,29 +568,28 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
-    function getColumnByTable($param)
-    {
+    function getColumnByTable($param) {
 
         $this->layout_name = false;
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($_GET['id_mysql_server'])."';";
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($_GET['id_mysql_server']) . "';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_server = $ob->id;
-            $db_clean  = $this->di['db']->sql($ob->name);
+            $db_clean = $this->di['db']->sql($ob->name);
         }
 
-        $sql = "show index from `".$_GET['schema']."`.`".$param[0]."`";
+        $sql = "show index from `" . $_GET['schema'] . "`.`" . $param[0] . "`";
 //$sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '".$database."' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
 
         $res = $db_clean->sql_query($sql);
 
         $data['column'] = [];
-        while ($ob             = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->Column_name;
+        while ($ob = $db->sql_fetch_object($res)) {
+            $tmp = [];
+            $tmp['id'] = $ob->Column_name;
             $tmp['libelle'] = $ob->Column_name;
 
             $data['column'][] = $tmp;
@@ -609,41 +598,39 @@ var myChart = new Chart(ctx, {
         $this->set("data", $data);
     }
 
-    function delete($param)
-    {
+    function delete($param) {
 
-        $this->view        = false;
+        $this->view = false;
         $this->layout_name = false;
 
 
         $id_cleaner = $param[0];
-        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM cleaner_main WHERE id ='".$id_cleaner."'";
+        $sql = "SELECT * FROM cleaner_main WHERE id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg   = I18n::getTranslation(__("The cleaner with the id :")." '".$id_cleaner."' ".__("doesn't exist"));
+            $msg = I18n::getTranslation(__("The cleaner with the id :") . " '" . $id_cleaner . "' " . __("doesn't exist"));
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
         } else {
 
             $ob = $db->sql_fetch_object($res);
 
-            $res = $sql = "DELETE FROM cleaner_main where id ='".$id_cleaner."'";
+            $res = $sql = "DELETE FROM cleaner_main where id ='" . $id_cleaner . "'";
             $db->sql_query($sql);
 
-            $msg   = I18n::getTranslation(__("The cleaner has been deleted : ")."'".$ob->libelle."'");
+            $msg = I18n::getTranslation(__("The cleaner has been deleted : ") . "'" . $ob->libelle . "'");
             $title = I18n::getTranslation(__("Cleaner deleted"));
             set_flash("success", $title, $msg);
         }
 
-        header("location: ".LINK."cleaner/index");
+        header("location: " . LINK . "cleaner/index");
     }
 
-    public function settings($param)
-    {
+    public function settings($param) {
         $this->layout_name = 'pmacontrol';
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -653,7 +640,7 @@ var myChart = new Chart(ctx, {
 
         $this->title = __('Add a cleaner');
 
-        $this->ariane = " > ".'<a href="'.LINK.'Cleaner/index/">'.__('Cleaner')."</a> > ".$this->title;
+        $this->ariane = " > " . '<a href="' . LINK . 'Cleaner/index/">' . __('Cleaner') . "</a> > " . $this->title;
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -663,7 +650,7 @@ var myChart = new Chart(ctx, {
 
             if ($id_cleaner_main) {
                 foreach ($_POST['cleaner_foreign_key'] as $data) {
-                    $ob_foreign_key['cleaner_foreign_key']                    = $data;
+                    $ob_foreign_key['cleaner_foreign_key'] = $data;
                     $ob_foreign_key['cleaner_foreign_key']['id_cleaner_main'] = $id_cleaner_main;
 
                     $id_cleaner_foreign_key = $db->sql_save($ob_foreign_key);
@@ -671,13 +658,13 @@ var myChart = new Chart(ctx, {
 
 
                 if ($id_cleaner_foreign_key) {
-                    header('location: '.LINK.'Cleaner/index/');
+                    header('location: ' . LINK . 'Cleaner/index/');
                 }
             }
         }
 
 
-        $sql     = "SELECT * FROM mysql_server order by `name`;";
+        $sql = "SELECT * FROM mysql_server order by `name`;";
         $servers = $db->sql_fetch_yield($sql);
 
 
@@ -685,8 +672,8 @@ var myChart = new Chart(ctx, {
         foreach ($servers as $server) {
             $tmp = [];
 
-            $tmp['id']      = $server['id'];
-            $tmp['libelle'] = str_replace('_', '-', $server['name'])." (".$server['ip'].")";
+            $tmp['id'] = $server['id'];
+            $tmp['libelle'] = str_replace('_', '-', $server['name']) . " (" . $server['ip'] . ")";
 
             $data['server'][] = $tmp;
         }
@@ -696,7 +683,7 @@ var myChart = new Chart(ctx, {
         for ($i = 1; $i < 101; $i++) {
             $tmp = [];
 
-            $tmp['id']      = $i;
+            $tmp['id'] = $i;
             $tmp['libelle'] = $i;
 
             $data['wait_time'][] = $tmp;
@@ -706,11 +693,10 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function daemon($param)
-    {
+    public function daemon($param) {
 
         $id_cleaner = $param[0];
-        $command    = $param[1];
+        $command = $param[1];
 
 
         switch ($command) {
@@ -730,15 +716,14 @@ var myChart = new Chart(ctx, {
         }
     }
 
-    public function launch($param)
-    {
+    public function launch($param) {
         Debug::parseDebug($param);
 
-        $id_cleaner       = $param[0];
+        $id_cleaner = $param[0];
         $this->id_cleaner = $id_cleaner;
 
-        $default           = $this->di['db']->sql(DB_DEFAULT);
-        $this->view        = false;
+        $default = $this->di['db']->sql(DB_DEFAULT);
+        $this->view = false;
         $this->layout_name = false;
         $this->schema_main = $default->getDb();
 
@@ -753,23 +738,23 @@ var myChart = new Chart(ctx, {
         $sql = "SELECT *,a.database, b.name as nameserver,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-                WHERE a.id = '".$id_cleaner."';";
+                WHERE a.id = '" . $id_cleaner . "';";
 
         $res = $default->sql_query($sql);
 
         while ($ob = $default->sql_fetch_object($res)) {
 
-            $this->link_to_purge          = $ob->nameserver;
-            $this->schema_to_purge        = $ob->database;
-            $this->schema_delete          = $ob->cleaner_db;
-            $this->prefix                 = $ob->prefix;
-            $this->main_table             = $ob->main_table;
+            $this->link_to_purge = $ob->nameserver;
+            $this->schema_to_purge = $ob->database;
+            $this->schema_delete = $ob->cleaner_db;
+            $this->prefix = $ob->prefix;
+            $this->main_table = $ob->main_table;
             $this->id_backup_storage_area = $ob->id_backup_storage_area;
-            $this->backup_dir             = DATA."cleaner/".$this->id_cleaner;
-            $this->init_where             = $ob->query;
-            $this->libelle                = $ob->libelle;
-            $this->WAIT_TIME              = $ob->wait_time_in_sec;
-            $this->id_mysql_server        = $ob->id_mysql_server;
+            $this->backup_dir = DATA . "cleaner/" . $this->id_cleaner;
+            $this->init_where = $ob->query;
+            $this->libelle = $ob->libelle;
+            $this->WAIT_TIME = $ob->wait_time_in_sec;
+            $this->id_mysql_server = $ob->id_mysql_server;
         }
 
         $i = 1;
@@ -802,15 +787,15 @@ var myChart = new Chart(ctx, {
 
             $default = $this->di['db']->sql(DB_DEFAULT);
 
-            $data                                            = array();
+            $data = array();
             $data['pmacli_drain_process']['id_mysql_server'] = $this->id_mysql_server;
-            $data['pmacli_drain_process']['date_start']      = $date_start;
-            $data['pmacli_drain_process']['date_end']        = $date_end;
-            $data['pmacli_drain_process']['time']            = round($time_end - $time_start, 2);
-            $data['pmacli_drain_process']['item_deleted']    = $ret[$this->main_table];
+            $data['pmacli_drain_process']['date_start'] = $date_start;
+            $data['pmacli_drain_process']['date_end'] = $date_end;
+            $data['pmacli_drain_process']['time'] = round($time_end - $time_start, 2);
+            $data['pmacli_drain_process']['item_deleted'] = $ret[$this->main_table];
             $data['pmacli_drain_process']['id_cleaner_main'] = $id_cleaner;
-            $data['pmacli_drain_process']['name']            = $this->libelle;
-            $data['pmacli_drain_process']['time_by_item']    = 1; //@todo to remove from DB
+            $data['pmacli_drain_process']['name'] = $this->libelle;
+            $data['pmacli_drain_process']['time_by_item'] = 1; //@todo to remove from DB
 
             $res = $default->sql_save($data);
 
@@ -818,7 +803,7 @@ var myChart = new Chart(ctx, {
                 debug($default->sql_error());
                 debug($data);
 
-                throw new \Exception("PMACTRL-002 : Impossible to insert stat for cleaner (ID : ".$id_cleaner.")");
+                throw new \Exception("PMACTRL-002 : Impossible to insert stat for cleaner (ID : " . $id_cleaner . ")");
             } else {
 
                 $id_pmacli_drain_process = $default->sql_insert_id();
@@ -827,10 +812,10 @@ var myChart = new Chart(ctx, {
 
                     if (!empty($val)) {
 
-                        $data                                                 = [];
+                        $data = [];
                         $data['pmacli_drain_item']['id_pmacli_drain_process'] = $id_pmacli_drain_process;
-                        $data['pmacli_drain_item']['row']                     = $val;
-                        $data['pmacli_drain_item']['table']                   = $table;
+                        $data['pmacli_drain_item']['row'] = $val;
+                        $data['pmacli_drain_item']['table'] = $table;
 
                         $res = $default->sql_save($data);
 
@@ -838,7 +823,7 @@ var myChart = new Chart(ctx, {
                             debug($default->sql_error());
                             debug($data);
 
-                            throw new \Exception("PMACTRL-003 : Impossible to insert an item for cleaner (ID : ".$id_cleaner.")");
+                            throw new \Exception("PMACTRL-003 : Impossible to insert an item for cleaner (ID : " . $id_cleaner . ")");
                         }
                     }
                 }
@@ -849,7 +834,7 @@ var myChart = new Chart(ctx, {
 
             Debug::checkPoint("End loop");
 
-            Debug::debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
+            Debug::debug("Execution time : " . round($time_end - $time_start, 2) . " sec - rows deleted : " . $ret[$this->main_table]);
 
             Debug::debugShowTime();
 
@@ -864,24 +849,23 @@ var myChart = new Chart(ctx, {
         } // end while
     }
 
-    function start($param)
-    {
+    function start($param) {
 
-        $id_cleaner        = $this->get_id_cleaner($param);
-        $db                = $this->di['db']->sql(DB_DEFAULT);
-        $this->view        = false;
+        $id_cleaner = $this->get_id_cleaner($param);
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $this->view = false;
         $this->layout_name = false;
 
 
-        $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
+        $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg   = I18n::getTranslation(__("Impossible to find the cleaner with the id : ")."'".$id_cleaner."'");
+            $msg = I18n::getTranslation(__("Impossible to find the cleaner with the id : ") . "'" . $id_cleaner . "'");
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
-            header("location: ".LINK."cleaner/index");
+            header("location: " . LINK . "cleaner/index");
             exit;
         }
 
@@ -893,77 +877,76 @@ var myChart = new Chart(ctx, {
 
 //todo add error flux in the log
 
-            $log_file = TMP."log/cleaner_".$ob->id.".log";
+            $log_file = TMP . "log/cleaner_" . $ob->id . ".log";
 
-            $cmd = $php." ".GLIAL_INDEX." Cleaner launch ".$id_cleaner." >> ".$log_file." & echo $!";
+            $cmd = $php . " " . GLIAL_INDEX . " Cleaner launch " . $id_cleaner . " >> " . $log_file . " & echo $!";
             $pid = shell_exec($cmd);
 
 
             if (IS_CLI) {
-                $this->logger->info('[id:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' [SYSTEM]');
+                $this->logger->info('[id:' . $ob->id . '][START][pid:' . getmypid() . '] "' . $ob->libelle . '" ' . __("by") . ' [SYSTEM]');
             } else {
-                $this->logger->info('[id:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' '
-                    .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id.")");
+                $this->logger->info('[id:' . $ob->id . '][START][pid:' . getmypid() . '] "' . $ob->libelle . '" ' . __("by") . ' '
+                        . $this->di['auth']->getUser()->firstname . " " . $this->di['auth']->getUser()->name . " (id:" . $this->di['auth']->getUser()->id . ")");
             }
 
-            $sql = "UPDATE cleaner_main SET pid ='".$pid."',log_file='".$log_file."' WHERE id = '".$id_cleaner."'";
+            $sql = "UPDATE cleaner_main SET pid ='" . $pid . "',log_file='" . $log_file . "' WHERE id = '" . $id_cleaner . "'";
             $db->sql_query($sql);
 
-            $msg   = I18n::getTranslation(__("The cleaner id (".$id_cleaner.") successfully started with")." pid : ".$pid);
+            $msg = I18n::getTranslation(__("The cleaner id (" . $id_cleaner . ") successfully started with") . " pid : " . $pid);
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
-            header("location: ".LINK."cleaner/index");
+            header("location: " . LINK . "cleaner/index");
         } else {
 
-            $this->logger->error('[id:'.$ob->id.'][ALREADY STARTED][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' [SYSTEM]');
+            $this->logger->error('[id:' . $ob->id . '][ALREADY STARTED][pid:' . getmypid() . '] "' . $ob->libelle . '" ' . __("by") . ' [SYSTEM]');
 
-            $msg   = I18n::getTranslation(__("Impossible to launch the cleaner with the id : ")."'".$id_cleaner."'"." (".__("Already running !").")");
+            $msg = I18n::getTranslation(__("Impossible to launch the cleaner with the id : ") . "'" . $id_cleaner . "'" . " (" . __("Already running !") . ")");
             $title = I18n::getTranslation(__("Error"));
             set_flash("caution", $title, $msg);
-            header("location: ".LINK."cleaner/index");
+            header("location: " . LINK . "cleaner/index");
         }
     }
 
-    function stop($param)
-    {
+    function stop($param) {
 
-        $id_cleaner        = $this->get_id_cleaner($param);
-        $db                = $this->di['db']->sql(DB_DEFAULT);
-        $this->view        = false;
+        $id_cleaner = $this->get_id_cleaner($param);
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $this->view = false;
         $this->layout_name = false;
 
-        $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
+        $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg   = I18n::getTranslation(__("Impossible to find the cleaner with the id : ")."'".$id_cleaner."'");
+            $msg = I18n::getTranslation(__("Impossible to find the cleaner with the id : ") . "'" . $id_cleaner . "'");
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
-            header("location: ".LINK."cleaner/index");
+            header("location: " . LINK . "cleaner/index");
             exit;
         }
 
         $ob = $db->sql_fetch_object($res);
 
         if ($this->isRunning($ob->pid) === true) {
-            $msg   = I18n::getTranslation(__("The cleaner with pid : '".$ob->pid."' successfully stopped "));
+            $msg = I18n::getTranslation(__("The cleaner with pid : '" . $ob->pid . "' successfully stopped "));
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
 
-            $cmd = "kill ".$ob->pid;
+            $cmd = "kill " . $ob->pid;
             shell_exec($cmd);
-            shell_exec("echo '[".date("Y-m-d H:i:s")."] CLEANER STOPED !' >> ".$ob->log_file);
+            shell_exec("echo '[" . date("Y-m-d H:i:s") . "] CLEANER STOPED !' >> " . $ob->log_file);
 
-            $this->log('info', 'STOP', $ob->libelle." was stopped");
+            $this->log('info', 'STOP', $ob->libelle . " was stopped");
         } else {
 
-            $this->log('info', 'ACKNOWLEDGE', $ob->libelle." was acknowledge");
+            $this->log('info', 'ACKNOWLEDGE', $ob->libelle . " was acknowledge");
 
 
             if (!IS_CLI) {
 
-                $msg   = I18n::getTranslation(__("Impossible to find the cleaner with the pid : ")."'".$ob->pid."'");
+                $msg = I18n::getTranslation(__("Impossible to find the cleaner with the pid : ") . "'" . $ob->pid . "'");
                 $title = I18n::getTranslation(__("Cleaner was already stopped or in error"));
                 set_flash("caution", $title, $msg);
             }
@@ -978,47 +961,45 @@ var myChart = new Chart(ctx, {
         if ($this->isRunning($ob->pid) === false) {
 
 
-            $sql = "UPDATE cleaner_main SET pid ='0' WHERE id = '".$id_cleaner."'";
+            $sql = "UPDATE cleaner_main SET pid ='0' WHERE id = '" . $id_cleaner . "'";
             $res = $db->sql_query($sql);
 
             $this->log('debug', 'SQL', $sql);
-            $this->log('info', 'TRIED_KILL', $ob->libelle.'" CLEANER with pid ('.$ob->pid.') was killed');
+            $this->log('info', 'TRIED_KILL', $ob->libelle . '" CLEANER with pid (' . $ob->pid . ') was killed');
         } else {
 
 
-            $this->log('error', 'TRIED_KILL', $ob->libelle.'" IMPOSSIBLE TO KILL CLEANER with pid ('.$ob->pid.')');
+            $this->log('error', 'TRIED_KILL', $ob->libelle . '" IMPOSSIBLE TO KILL CLEANER with pid (' . $ob->pid . ')');
             //$this->logger->error('[id:'.$ob->id.'][KILL][pid:'.getmypid().'] );
-            throw new \Exception('PMACTRL-875 : Impossible to stop cleaner with pid : "'.$ob->pid.'"');
+            throw new \Exception('PMACTRL-875 : Impossible to stop cleaner with pid : "' . $ob->pid . '"');
         }
 
-        header("location: ".LINK."cleaner/index");
+        header("location: " . LINK . "cleaner/index");
     }
 
-    public function restart($param)
-    {
+    public function restart($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $db  = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
         $ob = $db->sql_fetch_object($res);
 
         if (IS_CLI) {
-            $this->logger->info('[id:'.$ob->id.'][RESTART][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' '."[SYSTEM]");
+            $this->logger->info('[id:' . $ob->id . '][RESTART][pid:' . getmypid() . '] "' . $ob->libelle . '" ' . __("by") . ' ' . "[SYSTEM]");
         }
         $this->stop(array($id_cleaner));
         $this->start(array($id_cleaner));
     }
 
-    private function isRunning($pid)
-    {
+    private function isRunning($pid) {
 
         if (empty($pid)) {
             return false;
         }
 
-        $cmd   = "ps -p ".$pid;
+        $cmd = "ps -p " . $pid;
         $alive = shell_exec($cmd);
 
         if (strpos($alive, $pid) !== false) {
@@ -1027,8 +1008,7 @@ var myChart = new Chart(ctx, {
         return false;
     }
 
-    public function stats_for_log($data)
-    {
+    public function stats_for_log($data) {
         $table = new Table(0);
 
         $table->addHeader(array("Table", "Rows deleted"));
@@ -1041,33 +1021,33 @@ var myChart = new Chart(ctx, {
 
         //echo "errror : ".pcntl_strerror(pcntl_get_last_error())." : ".pcntl_get_last_error()."\n";
 
-        Debug::debug("mypid : ".getmypid());
+        Debug::debug("mypid : " . getmypid());
     }
+
     /*
      * utiliser seulement pour par le MPD
      */
 
-    public function getTableImpacted($param)
-    {
+    public function getTableImpacted($param) {
         $id_cleaner = $param[0];
         $this->view = false; // required cannot be call directly from navigator
-        $default    = $this->di['db']->sql(DB_DEFAULT);
+        $default = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT *, b.name as nameserver,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-                WHERE a.id = '".$id_cleaner."'";
+                WHERE a.id = '" . $id_cleaner . "'";
 
         $res = $default->sql_query($sql);
 
         while ($ob = $default->sql_fetch_object($res)) {
-            $this->id_cleaner      = $id_cleaner;
-            $this->link_to_purge   = $ob->nameserver;
+            $this->id_cleaner = $id_cleaner;
+            $this->link_to_purge = $ob->nameserver;
             $this->schema_to_purge = $ob->database;
-            $this->schema_delete   = $ob->cleaner_db;
-            $this->prefix          = $ob->prefix;
-            $this->debug           = false;
-            $this->main_table      = $ob->main_table;
+            $this->schema_delete = $ob->cleaner_db;
+            $this->prefix = $ob->prefix;
+            $this->debug = false;
+            $this->main_table = $ob->main_table;
         }
 
 
@@ -1075,12 +1055,11 @@ var myChart = new Chart(ctx, {
         return $this->getImpactedTable();
     }
 
-    private function checkFileToPush($path)
-    {
-        $files = glob($path."/*_log.sql");
+    private function checkFileToPush($path) {
+        $files = glob($path . "/*_log.sql");
 
         foreach ($files as $key => $file) {
-            if (pathinfo($file)['basename'] === date('Y-m-d')."_log.sql") {
+            if (pathinfo($file)['basename'] === date('Y-m-d') . "_log.sql") {
                 unset($files[$key]);
             }
         }
@@ -1090,74 +1069,67 @@ var myChart = new Chart(ctx, {
         return $files;
     }
 
-    private function compressAndCrypt($file)
-    {
+    private function compressAndCrypt($file) {
         $stats['normal'] = $this->getFileinfo($file);
 
 //compression
-        $time_start      = microtime(true);
+        $time_start = microtime(true);
         $file_compressed = $this->compressFile($file);
 
-        $stats['compressed']                   = $this->getFileinfo($file_compressed);
+        $stats['compressed'] = $this->getFileinfo($file_compressed);
         $stats['compressed']['execution_time'] = round(microtime(true) - $time_start, 0);
 
 //chiffrement
-        $time_start2                        = microtime(true);
-        $file_crypted                       = $this->cryptFile($file_compressed);
-        $stats['crypted']                   = $this->getFileinfo($file_crypted);
+        $time_start2 = microtime(true);
+        $file_crypted = $this->cryptFile($file_compressed);
+        $stats['crypted'] = $this->getFileinfo($file_crypted);
         $stats['crypted']['execution_time'] = round(microtime(true) - $time_start2, 0);
-        $stats['file_path']                 = $file_crypted;
+        $stats['file_path'] = $file_crypted;
 
         return $stats;
     }
 
-    private function getFileinfo($filename)
-    {
+    private function getFileinfo($filename) {
         $data['size'] = filesize($filename);
-        $data['md5']  = md5_file($filename);
+        $data['md5'] = md5_file($filename);
 
         return $data;
     }
 
-    public function cryptFile($file_name)
-    {
+    public function cryptFile($file_name) {
         $this->view = false;
-        $chiffre    = new Chiffrement(CRYPT_KEY);
+        $chiffre = new Chiffrement(CRYPT_KEY);
         $chiffre->chiffre_fichier($file_name);
         return $file_name;
     }
 
-    public function decryptFile($file_name)
-    {
+    public function decryptFile($file_name) {
         $this->view = false;
-        $chiffre    = new Chiffrement(CRYPT_KEY);
+        $chiffre = new Chiffrement(CRYPT_KEY);
         $chiffre->dechiffre_fichier($file_name);
 
         return $file_name;
     }
 
-    public function compressFile($path_file)
-    {
-        $path      = pathinfo($path_file)['dirname'];
+    public function compressFile($path_file) {
+        $path = pathinfo($path_file)['dirname'];
         $file_name = pathinfo($path_file)['basename'];
 
-        shell_exec("cd ".$path." && nice gzip ".$file_name);
+        shell_exec("cd " . $path . " && nice gzip " . $file_name);
 
-        return $path."/".$file_name.".gz";
+        return $path . "/" . $file_name . ".gz";
     }
 
-    public function unCompressFile($path_file)
-    {
-        $path      = pathinfo($path_file)['dirname'];
+    public function unCompressFile($path_file) {
+        $path = pathinfo($path_file)['dirname'];
         $file_name = pathinfo($path_file)['basename'];
 
-        shell_exec("cd ".$path." && nice gzip -d ".$file_name);
+        shell_exec("cd " . $path . " && nice gzip -d " . $file_name);
 
         return substr($path_file, 0, -3);
     }
 
-    public function uncc($param)
-    {
+    public function uncc($param) {
         if (IS_CLI) {
             $file = $param[0];
 
@@ -1165,26 +1137,25 @@ var myChart = new Chart(ctx, {
                 $this->decryptFile($file);
                 $this->unCompressFile($file);
             } else {
-                echo "Impossible to find the file : ".$file;
+                echo "Impossible to find the file : " . $file;
             }
         }
     }
 
-    public function purge_clean_db($param = array())
-    {
+    public function purge_clean_db($param = array()) {
 
         Debug::parseDebug($param);
         $this->get_id_cleaner($param);
 
-        $db                = $this->di['db']->sql(DB_DEFAULT);
-        $this->view        = false;
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $this->view = false;
         $this->layout_name = false;
 
         $db->sql_select_db($this->schema_main);
         $sql = "SELECT a.`cleaner_db`, a.`prefix`, b.`name` as nameserver,a.`id` as id_cleaner_main
             FROM `cleaner_main` a
                 INNER JOIN `mysql_server` b ON a.`id_mysql_server` = b.`id`
-                WHERE a.`id` = '".$this->id_cleaner."'";
+                WHERE a.`id` = '" . $this->id_cleaner . "'";
 
         $res = $db->sql_query($sql);
 
@@ -1196,18 +1167,18 @@ var myChart = new Chart(ctx, {
 
             $db_to_clean = $this->di['db']->sql($ob->nameserver);
             $db_to_clean->sql_select_db($ob->cleaner_db);
-            $tables      = $db_to_clean->getListTable();
+            $tables = $db_to_clean->getListTable();
 
             if (!empty($tables['table'])) {
                 foreach ($tables['table'] as $table) {
 
                     if (substr($table, 0, strlen($ob->prefix)) === $ob->prefix) {
-                        $sql = "DROP TABLE IF EXISTS `".$ob->cleaner_db."`.`".$table."`;";
+                        $sql = "DROP TABLE IF EXISTS `" . $ob->cleaner_db . "`.`" . $table . "`;";
 
                         Debug::debug($sql);
                         $db_to_clean->sql_query($sql);
                     } else {
-                        Debug::debug("We keep the table : '".$table."'");
+                        Debug::debug("We keep the table : '" . $table . "'");
                     }
                 }
             }
@@ -1219,18 +1190,17 @@ var myChart = new Chart(ctx, {
     }
 
 // gestionnaire de signaux système
-    private function sig_handler($signo)
-    {
+    private function sig_handler($signo) {
 
         switch ($signo) {
             case SIGTERM:
 
                 if (empty($this->di['auth'])) {
-                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '.__("by").' '
-                        ."[SYSTEM]");
+                    $this->logger->warning('[id:' . $this->id_cleaner . '][SIGTERM][pid:' . getmypid() . '] "' . $this->libelle . '" ' . __("by") . ' '
+                            . "[SYSTEM]");
                 } else {
-                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '.__("by").' '
-                        .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id);
+                    $this->logger->warning('[id:' . $this->id_cleaner . '][SIGTERM][pid:' . getmypid() . '] "' . $this->libelle . '" ' . __("by") . ' '
+                            . $this->di['auth']->getUser()->firstname . " " . $this->di['auth']->getUser()->name . " (id:" . $this->di['auth']->getUser()->id);
                 }
                 echo "Reçu le signe SIGTERM...\n";
                 //$this->purge_clean_db(array());
@@ -1242,7 +1212,7 @@ var myChart = new Chart(ctx, {
 
             case SIGUSR1:
 
-                $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR1][pid:'.getmypid().'] DEBUG : ON');
+                $this->logger->debug('[id:' . $this->id_cleaner . '][SIGUSR1][pid:' . getmypid() . '] DEBUG : ON');
                 $this->debug = true;
                 Debug::debug("DEBUG : [ON] OFF");
                 break;
@@ -1250,7 +1220,7 @@ var myChart = new Chart(ctx, {
             case SIGUSR2:
 
                 //toggle active // desactive le mode debug
-                $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR2][pid:'.getmypid().'] DEBUG : OFF');
+                $this->logger->debug('[id:' . $this->id_cleaner . '][SIGUSR2][pid:' . getmypid() . '] DEBUG : OFF');
                 $this->debug = false;
                 Debug::debug("DEBUG : ON [OFF]");
                 break;
@@ -1267,13 +1237,12 @@ var myChart = new Chart(ctx, {
 
             default:
 
-                echo "RECU LE SIGNAL : ".$signo;
+                echo "RECU LE SIGNAL : " . $signo;
 // gestion des autres signaux
         }
     }
 
-    private function get_id_cleaner($param)
-    {
+    private function get_id_cleaner($param) {
         if (empty($param[0])) {
 
             if (empty($this->id_cleaner)) {
@@ -1282,15 +1251,14 @@ var myChart = new Chart(ctx, {
 
             $id_cleaner = $this->id_cleaner;
         } else {
-            $id_cleaner       = $param[0];
+            $id_cleaner = $param[0];
             $this->id_cleaner = $id_cleaner;
         }
 
         return $id_cleaner;
     }
 
-    private function get_infos(array $variables)
-    {
+    private function get_infos(array $variables) {
 
         if (empty($this->id_cleaner)) {
             throw new \Exception("PMACTRL-257 : id_cleaner is required", 80);
@@ -1302,7 +1270,7 @@ var myChart = new Chart(ctx, {
             $sql = "SELECT a.cleaner_db, a.prefix, b.name as nameserver,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-                WHERE a.id = '".$this->id_cleaner."'";
+                WHERE a.id = '" . $this->id_cleaner . "'";
 
             $res = $db->sql_query($sql);
 
@@ -1316,12 +1284,13 @@ var myChart = new Chart(ctx, {
             if (!empty($this->connection[$this->id_cleaner][$var])) {
                 $ret[$var] = $this->connection[$this->id_cleaner][$var];
             } else {
-                throw new \Exception("PMACTRL-258 : this field '".$var."' is unknow", 80);
+                throw new \Exception("PMACTRL-258 : this field '" . $var . "' is unknow", 80);
             }
         }
 
         return $ret;
     }
+
     /*     * *********************************** */
     /*     * *********************************** */
     /*     * *********************************** */
@@ -1333,8 +1302,7 @@ var myChart = new Chart(ctx, {
     /*     * *********************************** */
     /*     * *********************************** */
 
-    public function purge()
-    {
+    public function purge() {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
@@ -1347,20 +1315,20 @@ var myChart = new Chart(ctx, {
 
 
 //feed id with main table
-        $pri         = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
-        $primary_key = "`".implode('`,`', $pri)."`";
+        $pri = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
+        $primary_key = "`" . implode('`,`', $pri) . "`";
 
-        $sql = "SELECT ".$primary_key." FROM `".$this->main_table."` WHERE ".$this->init_where." LIMIT ".$this->limit.";"; // LOCK IN SHARE MODE
+        $sql = "SELECT " . $primary_key . " FROM `" . $this->main_table . "` WHERE " . $this->init_where . " LIMIT " . $this->limit . ";"; // LOCK IN SHARE MODE
         $res = $db->sql_query($sql);
 
 
 
         $have_data = false;
 
-        $sql = "REPLACE INTO `".$this->schema_delete."`.`".$this->prefix.$this->main_table."` (".$primary_key.") VALUES ";
+        $sql = "REPLACE INTO `" . $this->schema_delete . "`.`" . $this->prefix . $this->main_table . "` (" . $primary_key . ") VALUES ";
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $have_data = true;
-            $sql       .= "('".implode("','", $arr)."'),";
+            $sql .= "('" . implode("','", $arr) . "'),";
         }
 
         $this->compareComStatus();
@@ -1412,8 +1380,7 @@ var myChart = new Chart(ctx, {
         return $this->rows_to_delete;
     }
 
-    public function createTemporaryTable($table)
-    {
+    public function createTemporaryTable($table) {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
@@ -1421,42 +1388,41 @@ var myChart = new Chart(ctx, {
 
         if (count($fields) === 0) {
 
-            $this->logger->emergency('[id:'.$this->id_cleaner.'][INIT][pid:'.getmypid().'] No primary key found on table "'.$table.'"');
+            $this->logger->emergency('[id:' . $this->id_cleaner . '][INIT][pid:' . getmypid() . '] No primary key found on table "' . $table . '"');
 
-            throw new \Exception('GLI-071 : No primary key found on table "'.$table.'"');
+            throw new \Exception('GLI-071 : No primary key found on table "' . $table . '"');
 
             $this->table_in_error[] = $table;
             return false;
         }
 
-        $line  = array();
+        $line = array();
         $index = array();
 
         foreach ($fields as $field) {
-            $line[]  = "`".$field['name']."` ".$field['type'];
-            $index[] = "`".$field['name']."`";
+            $line[] = "`" . $field['name'] . "` " . $field['type'];
+            $index[] = "`" . $field['name'] . "`";
         }
 
-        $sql = "CREATE TABLE `".$this->schema_delete."`.`".$this->prefix.$table."`(";
+        $sql = "CREATE TABLE `" . $this->schema_delete . "`.`" . $this->prefix . $table . "`(";
         $sql .= implode(",", $line);
 
         if (in_array($table, $this->fk_circulaire)) {
-            $sql .= ", `".self::FIELD_LOOP."` int(11) DEFAULT 0";
-            $sql .= ", KEY `idx_".uniqid()."` (`".self::FIELD_LOOP."`)";
+            $sql .= ", `" . self::FIELD_LOOP . "` int(11) DEFAULT 0";
+            $sql .= ", KEY `idx_" . uniqid() . "` (`" . self::FIELD_LOOP . "`)";
         }
-        $sql .= ", PRIMARY KEY (".implode(",", $index)."));";
+        $sql .= ", PRIMARY KEY (" . implode(",", $index) . "));";
 
         $db->sql_query($sql);
     }
 
-    public function feedDeleteTableWithFk()
-    {
+    public function feedDeleteTableWithFk() {
         Debug::checkPoint("FEED FROM FK");
 
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-        $list_tables     = $this->getOrderBy();
+        $list_tables = $this->getOrderBy();
         $tables_impacted = $this->getAffectedTables();
 
         foreach ($list_tables as $sub_array) {
@@ -1468,9 +1434,9 @@ var myChart = new Chart(ctx, {
                 }
 
                 $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
-                    ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
-                    ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
-                    ."AND `TABLE_NAME` ='".$table_name."';";
+                        . "WHERE `CONSTRAINT_SCHEMA` ='" . $this->schema_to_purge . "' "
+                        . "AND `REFERENCED_TABLE_SCHEMA`='" . $this->schema_to_purge . "' "
+                        . "AND `TABLE_NAME` ='" . $table_name . "';";
 
                 $res = $db->sql_query($sql);
                 $fks = $db->sql_to_array($res);
@@ -1483,11 +1449,11 @@ var myChart = new Chart(ctx, {
                     foreach ($this->foreign_keys[$this->schema_to_purge][$table_name] as $constraint_column => $line) {
                         $tab = explode("-", $line);
 
-                        $tmp                            = [];
+                        $tmp = [];
                         $tmp['REFERENCED_TABLE_SCHEMA'] = $tab[0];
-                        $tmp['REFERENCED_TABLE_NAME']   = $tab[1];
-                        $tmp['REFERENCED_COLUMN_NAME']  = $tab[2];
-                        $tmp['COLUMN_NAME']             = $constraint_column;
+                        $tmp['REFERENCED_TABLE_NAME'] = $tab[1];
+                        $tmp['REFERENCED_COLUMN_NAME'] = $tab[2];
+                        $tmp['COLUMN_NAME'] = $constraint_column;
 
 //cas des deifinition circulaire à gérer en dernier (afin de remplir toute la table avant de boucler sur elle même)
                         if ($table_name !== $tmp['REFERENCED_TABLE_NAME']) {
@@ -1512,14 +1478,14 @@ var myChart = new Chart(ctx, {
                         continue;
                     }
 
-                    $pri          = $this->getPrimaryKey($table_name, $this->schema_to_purge);
-                    $primary_key  = "a.`".implode('`,a.`', $pri)."`";
-                    $primary_keys = "`".implode('`,`', $pri)."`";
+                    $pri = $this->getPrimaryKey($table_name, $this->schema_to_purge);
+                    $primary_key = "a.`" . implode('`,a.`', $pri) . "`";
+                    $primary_keys = "`" . implode('`,`', $pri) . "`";
 
                     if ($fk['REFERENCED_TABLE_NAME'] == $table_name) {
                         $circular = true;
 
-                        Debug::debug("detected Circular FK on table '".$table_name."'");
+                        Debug::debug("detected Circular FK on table '" . $table_name . "'");
                     } else {
                         $circular = false;
                     }
@@ -1527,41 +1493,41 @@ var myChart = new Chart(ctx, {
                     $loop = 1;
                     do {
 
-                        $sql = "SELECT ".$primary_key." FROM `".$this->schema_to_purge."`.`".$table_name."` a
-                    INNER JOIN `".$this->schema_delete."`.`".$this->prefix.$fk['REFERENCED_TABLE_NAME']."` b ON b.`".$fk['REFERENCED_COLUMN_NAME']."` = a.`".$fk['COLUMN_NAME']."`";
+                        $sql = "SELECT " . $primary_key . " FROM `" . $this->schema_to_purge . "`.`" . $table_name . "` a
+                    INNER JOIN `" . $this->schema_delete . "`.`" . $this->prefix . $fk['REFERENCED_TABLE_NAME'] . "` b ON b.`" . $fk['REFERENCED_COLUMN_NAME'] . "` = a.`" . $fk['COLUMN_NAME'] . "`";
 
                         if ($circular) {
-                            $sql .= " WHERE b.`".self::FIELD_LOOP."` = ".($loop - 1).";";
+                            $sql .= " WHERE b.`" . self::FIELD_LOOP . "` = " . ($loop - 1) . ";";
 
-                            $circular_field = ",`".self::FIELD_LOOP."`";
-                            $circular_data  = ",".$loop;
+                            $circular_field = ",`" . self::FIELD_LOOP . "`";
+                            $circular_data = "," . $loop;
                         } else {
                             $circular_field = "";
-                            $circular_data  = "";
-                            $sql            .= ";";
+                            $circular_data = "";
+                            $sql .= ";";
                         }
 
 
                         $data = $db->sql_fetch_yield($sql);
 
                         $have_data = false;
-                        $sql       = "INSERT IGNORE INTO `".$this->schema_delete."`.`".$this->prefix.$table_name."` (".$primary_keys."".$circular_field.") VALUES ";
+                        $sql = "INSERT IGNORE INTO `" . $this->schema_delete . "`.`" . $this->prefix . $table_name . "` (" . $primary_keys . "" . $circular_field . ") VALUES ";
 
                         $count = 0;
                         foreach ($data as $line) {
 
                             $have_data = true;
-                            $sql       .= "('".implode("','", $line)."'".$circular_data."),";
+                            $sql .= "('" . implode("','", $line) . "'" . $circular_data . "),";
                             $count++;
                         }
 
                         if ($circular) {
-                            Debug::debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
+                            Debug::debug(Color::getColoredString("COUNT(1) = " . $count . " - LOOP = " . $loop, "yellow"));
                         }
 
                         // archivation en fichier plat
                         if ($have_data) {
-                            $sql = rtrim($sql, ",").";";
+                            $sql = rtrim($sql, ",") . ";";
                             $db->sql_query($sql);
 
                             $this->setAffectedRows($table_name);
@@ -1580,9 +1546,8 @@ var myChart = new Chart(ctx, {
         Debug::checkPoint("Feed delete tables from FKs");
     }
 
-    public function createAllTemporaryTable()
-    {
-        $db     = $this->di['db']->sql($this->link_to_purge);
+    public function createAllTemporaryTable() {
+        $db = $this->di['db']->sql($this->link_to_purge);
         $tables = $this->getImpactedTable();
         $db->getTypeOfPrimaryKey($tables, $this->schema_to_purge);
 
@@ -1595,28 +1560,26 @@ var myChart = new Chart(ctx, {
         Debug::debug("Create all temporary tables.");
     }
 
-    public function getTableError()
-    {
+    public function getTableError() {
         return $this->table_in_error;
     }
 
-    private function getForeignKeys()
-    {
+    private function getForeignKeys() {
 //get list of FK and put in array
         $db = $this->di['db']->sql($this->link_to_purge);
 
 //$db->sql_select_db($this->schema_to_purge);
 
         $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
-            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
+                . "WHERE `CONSTRAINT_SCHEMA` ='" . $this->schema_to_purge . "' "
+                . "AND `REFERENCED_TABLE_SCHEMA`='" . $this->schema_to_purge . "' "
+                . "AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
 
         if (!empty($this->prefix)) {
-            $sql .= "AND TABLE_NAME not like '".$this->prefix."%';";
+            $sql .= "AND TABLE_NAME not like '" . $this->prefix . "%';";
         }
 
-        $res           = $db->sql_query($sql);
+        $res = $db->sql_query($sql);
         $order_to_feed = array();
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -1629,8 +1592,7 @@ var myChart = new Chart(ctx, {
         return $order_to_feed;
     }
 
-    private function getVirtualForeignKeys()
-    {
+    private function getVirtualForeignKeys() {
 
         Debug::debug("get the virtual foreign keys");
 
@@ -1638,7 +1600,7 @@ var myChart = new Chart(ctx, {
 
 //get and set virtual Foreign keys.
         $params = $this->di['db']->sql(DB_DEFAULT)->getParams();
-        $sql    = "SELECT * FROM `".$params['database']."`.`cleaner_foreign_key` WHERE `id_cleaner_main` = ".$this->id_cleaner.";";
+        $sql = "SELECT * FROM `" . $params['database'] . "`.`cleaner_foreign_key` WHERE `id_cleaner_main` = " . $this->id_cleaner . ";";
 
         $foreign_keys = $default->sql_fetch_yield($sql);
 
@@ -1649,7 +1611,7 @@ var myChart = new Chart(ctx, {
                 throw new \Exception("PMACTRL-334 : Value empty in virtual FK");
             }
 
-            $fk[$line['constraint_schema']][$line['constraint_table']][$line['constraint_column']] = $line['referenced_schema']."-".$line['referenced_table']."-".$line['referenced_column'];
+            $fk[$line['constraint_schema']][$line['constraint_table']][$line['constraint_column']] = $line['referenced_schema'] . "-" . $line['referenced_table'] . "-" . $line['referenced_column'];
         }
 
         if (count($fk) != 0) {
@@ -1662,7 +1624,7 @@ var myChart = new Chart(ctx, {
             foreach ($tab_table as $constraint_table => $lines) {
 
                 foreach ($lines as $line) {
-                    $tab_referenced                      = explode('-', $line);
+                    $tab_referenced = explode('-', $line);
                     $order_to_feed[$tab_referenced[1]][] = $constraint_table;
                 }
             }
@@ -1673,21 +1635,21 @@ var myChart = new Chart(ctx, {
 
         return $order_to_feed;
     }
+
     /*
      * return the list of table in order where
      *
      *
      */
 
-    private function getOrderBy($order = 'ASC')
-    {
+    private function getOrderBy($order = 'ASC') {
 
         $this->setCacheFile();
 
         if (!file_exists($this->path_to_orderby_tmp)) {
 
             $virtual_fk = $this->getVirtualForeignKeys();
-            $real_fk    = $this->getForeignKeys();
+            $real_fk = $this->getForeignKeys();
 
             $fks = array_merge_recursive($real_fk, $virtual_fk);
             $tmp = $fks;
@@ -1701,7 +1663,7 @@ var myChart = new Chart(ctx, {
             //remove all tables with no father from $this->main_table
             $fks = $this->removeTableNotImpacted($fks);
 
-            $level   = array();
+            $level = array();
             $level[] = $this->table_to_purge;
 
             $array = $fks;
@@ -1715,14 +1677,14 @@ var myChart = new Chart(ctx, {
 
                         $this->fk_circulaire[] = $table_name;
                         unset($array[$table_name][$key]);
-                        $cas_found             = true;
+                        $cas_found = true;
                     }
                 }
             }
 
 //debug($array);
 
-            $i    = 0;
+            $i = 0;
             while ($last = count($array) != 0) {
 
 //echo "level " . $i . PHP_EOL;
@@ -1810,8 +1772,8 @@ var myChart = new Chart(ctx, {
 
 //on load le fichier précédement enregistré
             if (is_file($this->path_to_orderby_tmp)) {
-                $s             = implode('', file($this->path_to_orderby_tmp));
-                $tmp           = unserialize($s);
+                $s = implode('', file($this->path_to_orderby_tmp));
+                $tmp = unserialize($s);
                 $this->orderby = $tmp->orderby;
             }
         }
@@ -1829,9 +1791,8 @@ var myChart = new Chart(ctx, {
         return $this->orderby;
     }
 
-    private function delete_rows()
-    {
-        $db          = $this->di['db']->sql($this->link_to_purge);
+    private function delete_rows() {
+        $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
         $list_tables = $this->getOrderBy("DESC");
 
@@ -1840,26 +1801,29 @@ var myChart = new Chart(ctx, {
 
                 $primary_keys = $this->getPrimaryKey($table, $this->schema_to_purge);
 
-                $join   = array();
+                $join = array();
                 $fields = array();
                 foreach ($primary_keys as $primary_key) {
-                    $join[]   = " `a`.`".$primary_key."` = b.`".$primary_key."` ";
-                    $fields[] = " b.`".$primary_key."` ";
+                    $join[] = " `a`.`" . $primary_key . "` = b.`" . $primary_key . "` ";
+                    $fields[] = " `b`.`" . $primary_key . "` ";
                 }
 
                 $field = implode(" ", $join);
 
-                $sql = "DELETE a FROM ".$table." a
-                  INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";";
+                $sql = "DELETE a FROM " . $table . " a
+                  INNER JOIN `" . $this->schema_delete . "`." . $this->prefix . $table . " as b ON  " . implode(" AND ", $join) . ";";
 
-                //$db->sql_query($sql);
+                $db->sql_query($sql);
 
 
                 if (end($db->query)['rows'] == "-1") {
+                    
+                    
+                    $this->logger->error('[id:' . $this->id_cleaner . '][FOREIGN KEY][pid:' . getmypid() . '] have to update lib of cleaner or order of table set in param'.$sql);
                     throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
                 }
 
-                $sql = "TRUNCATE TABLE `".$this->schema_delete."`.`".$this->prefix.$table."`;";
+                $sql = "TRUNCATE TABLE `" . $this->schema_delete . "`.`" . $this->prefix . $table . "`;";
                 $db->sql_query($sql);
             }
         }
@@ -1867,8 +1831,7 @@ var myChart = new Chart(ctx, {
         Debug::checkPoint("On efface les données et on purge les tables de travail");
     }
 
-    private function setAffectedRows($table)
-    {
+    private function setAffectedRows($table) {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
@@ -1878,13 +1841,13 @@ var myChart = new Chart(ctx, {
             $this->rows_to_delete[$table] += end($db->query)['rows'];
         }
     }
+
     /*
      * liste des tables impacté par la purge (en rapport avec les FK réel et virtuel)
      *
      */
 
-    private function getAffectedTables()
-    {
+    private function getAffectedTables() {
         if (count($this->table_impacted) === 0) {
             $list_tables = $this->getOrderBy();
 
@@ -1896,11 +1859,10 @@ var myChart = new Chart(ctx, {
         return $this->table_impacted;
     }
 
-    private function removeTableNotImpacted($fks)
-    {
+    private function removeTableNotImpacted($fks) {
         do {
-            $tmp     = $fks;
-            $tmp2    = $fks;
+            $tmp = $fks;
+            $tmp2 = $fks;
             $nbfound = 0;
             foreach ($fks as $table => $data) {
 
@@ -1917,7 +1879,7 @@ var myChart = new Chart(ctx, {
                 }
                 if (!$found) {
 
-                    Debug::debug(Color::getColoredString("We removed this table (Not a child of : `".$this->schema_to_purge."`.`".$this->main_table."`) : ".$table, 'yellow'));
+                    Debug::debug(Color::getColoredString("We removed this table (Not a child of : `" . $this->schema_to_purge . "`.`" . $this->main_table . "`) : " . $table, 'yellow'));
                     unset($tmp2[$table]);
                     $nbfound++;
                 }
@@ -1927,8 +1889,7 @@ var myChart = new Chart(ctx, {
         return $tmp2;
     }
 
-    private function exportToFile($table)
-    {
+    private function exportToFile($table) {
         if (!empty($this->id_backup_storage_area)) {
 
             $db = $this->di['db']->sql($this->link_to_purge);
@@ -1937,14 +1898,14 @@ var myChart = new Chart(ctx, {
 
             $primary_keys = $this->getPrimaryKey($table, $this->schema_to_purge);
 
-            $max      = 0;
+            $max = 0;
             $circular = false;
             if (in_array($table, $this->fk_circulaire)) {
                 $circular = true;
-                $loop     = 0;
+                $loop = 0;
 
 // moyen d'enregistrer le nombre en cash au lieu de refaire une requette
-                $sql = "SELECT MAX(`".self::FIELD_LOOP."`) as max FROM `".$this->schema_delete."`.".$this->prefix.$table."";
+                $sql = "SELECT MAX(`" . self::FIELD_LOOP . "`) as max FROM `" . $this->schema_delete . "`." . $this->prefix . $table . "";
                 $res = $db->sql_query($sql);
 
 
@@ -1959,14 +1920,14 @@ var myChart = new Chart(ctx, {
 
                 $join = array();
                 foreach ($primary_keys as $primary_key) {
-                    $join[] = " `a`.`".$primary_key."` = b.`".$primary_key."` ";
+                    $join[] = " `a`.`" . $primary_key . "` = b.`" . $primary_key . "` ";
                 }
 
-                $sql = "SELECT a.* FROM ".$table." a
-                    INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join)."";
+                $sql = "SELECT a.* FROM " . $table . " a
+                    INNER JOIN `" . $this->schema_delete . "`." . $this->prefix . $table . " as b ON  " . implode(" AND ", $join) . "";
 
                 if ($circular) {
-                    $sql .= " WHERE `".self::FIELD_LOOP."`=".$loop.";";
+                    $sql .= " WHERE `" . self::FIELD_LOOP . "`=" . $loop . ";";
                 }
 
                 $res = $db->sql_query($sql);
@@ -1974,16 +1935,16 @@ var myChart = new Chart(ctx, {
                 $tab_fields = $db->getFieldsMeta($res);
 
                 foreach ($tab_fields as $field) {
-                    $fields[] = "`".$field->name."`";
+                    $fields[] = "`" . $field->name . "`";
                 }
 
                 $fields_list = implode(",", $fields);
 
-                $query = "INSERT IGNORE INTO ".$table." (".$fields_list.") VALUES ".$this->get_rows($res).";\n";
+                $query = "INSERT IGNORE INTO " . $table . " (" . $fields_list . ") VALUES " . $this->get_rows($res) . ";\n";
 
                 $this->testDirectory($this->backup_dir);
 
-                $file = $this->backup_dir."/".date('Y-m-d')."_log.sql";
+                $file = $this->backup_dir . "/" . date('Y-m-d') . "_log.sql";
 
                 $this->initFileWithCreateTable($file);
 
@@ -1998,21 +1959,22 @@ var myChart = new Chart(ctx, {
             } while ($circular && $loop >= 0);
         }
     }
+
     /*
      * this have to move in glial (static)
      */
 
-    private function testDirectory($path)
-    {
+    private function testDirectory($path) {
 
         if (!is_dir($path)) {
             mkdir($path, 0700, true);
         }
 
         if (!is_writable($path)) {
-            throw new \Exception("GLI-985 : Impossible to write in directory : (".$path.")", 80);
+            throw new \Exception("GLI-985 : Impossible to write in directory : (" . $path . ")", 80);
         }
     }
+
     /*
      * return an array with data to serialize
      * @since Glial 4.2.11
@@ -2023,19 +1985,18 @@ var myChart = new Chart(ctx, {
      * @access public
      */
 
-    public function __sleep()
-    {
+    public function __sleep() {
         return array('orderby');
     }
+
     /*
      * get type of mysql field, the goal is to know where we have to put quotes and save a lot of space
      * move to glial / mysql
      */
 
-    private function get_rows($result)
-    {
+    private function get_rows($result) {
 
-        $db          = $this->di['db']->sql($this->link_to_purge);
+        $db = $this->di['db']->sql($this->link_to_purge);
         $current_row = 0;
 
         $fields_cnt = $db->sql_num_fields($result);
@@ -2072,43 +2033,43 @@ var myChart = new Chart(ctx, {
                     if (empty($row[$j]) && $row[$j] != '0') {
                         $values[] = '\'\'';
                     } else {
-                        $values[] = '0x'.bin2hex($row[$j]);
+                        $values[] = '0x' . bin2hex($row[$j]);
                     }
                 } elseif ($fields_meta[$j]->type == 'bit') {
 // detection of 'bit' works only on mysqli extension
-                    $values[] = "b'".$db->sql_real_escape_string(
-                            $this->printableBitValue(
-                                $row[$j], $fields_meta[$j]->length
+                    $values[] = "b'" . $db->sql_real_escape_string(
+                                    $this->printableBitValue(
+                                            $row[$j], $fields_meta[$j]->length
+                                    )
                             )
-                        )
-                        ."'";
+                            . "'";
                 } else {
 // something else -> treat as a string
-                    $values[] = '\''.$db->sql_real_escape_string($row[$j]).'\'';
+                    $values[] = '\'' . $db->sql_real_escape_string($row[$j]) . '\'';
                 } // end if
             } // end for
 
-            $insert_elem[] = '('.implode(',', $values).')';
+            $insert_elem[] = '(' . implode(',', $values) . ')';
         }
 
         $insert_line = implode(',', $insert_elem);
 
         return $insert_line;
     }
+
     /*
      *
      * this function should move
      *
      */
 
-    private static function printableBitValue($value, $length)
-    {
+    private static function printableBitValue($value, $length) {
 // if running on a 64-bit server or the length is safe for decbin()
         if (PHP_INT_SIZE == 8 || $length < 33) {
             $printable = decbin($value);
         } else {
 // FIXME: does not work for the leftmost bit of a 64-bit value
-            $i         = 0;
+            $i = 0;
             $printable = '';
             while ($value >= pow(2, $i)) {
                 ++$i;
@@ -2119,10 +2080,10 @@ var myChart = new Chart(ctx, {
 
             while ($i >= 0) {
                 if ($value - pow(2, $i) < 0) {
-                    $printable = '0'.$printable;
+                    $printable = '0' . $printable;
                 } else {
-                    $printable = '1'.$printable;
-                    $value     = $value - pow(2, $i);
+                    $printable = '1' . $printable;
+                    $value = $value - pow(2, $i);
                 }
                 --$i;
             }
@@ -2132,8 +2093,7 @@ var myChart = new Chart(ctx, {
         return $printable;
     }
 
-    private function getImpactedTable()
-    {
+    private function getImpactedTable() {
         $list = $this->getOrderby();
 
         $tables = array();
@@ -2142,36 +2102,35 @@ var myChart = new Chart(ctx, {
         }
         return $tables;
     }
+
     /*
      * log file Daemon
      */
 
-    public function before($param)
-    {
-        $logger       = new Logger('cleaner');
-        $file_log     = LOG_FILE;
-        $handler      = new StreamHandler($file_log, Logger::DEBUG);
+    public function before($param) {
+        $logger = new Logger('cleaner');
+        $file_log = LOG_FILE;
+        $handler = new StreamHandler($file_log, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
     }
 
 // move to archive controller ? avec toute les fonctions qui sont appeller dedant
-    public function pushArchive($param = array())
-    {
+    public function pushArchive($param = array()) {
         $this->view = false;
         $id_cleaner = $this->get_id_cleaner($param);
 
         Debug::parseDebug($param);
 
-        $default                      = $this->di['db']->sql(DB_DEFAULT);
-        $storage_area                 = $this->getIdStorageArea($id_cleaner);
+        $default = $this->di['db']->sql(DB_DEFAULT);
+        $storage_area = $this->getIdStorageArea($id_cleaner);
         $this->id_backup_storage_area = $storage_area->id;
 
         if (!empty($this->id_backup_storage_area)) {
 
-            $this->backup_dir = DATA."cleaner/".$this->id_cleaner;
-            $files            = $this->checkFileToPush($this->backup_dir);
+            $this->backup_dir = DATA . "cleaner/" . $this->id_cleaner;
+            $files = $this->checkFileToPush($this->backup_dir);
 
             Debug::debug($files, "Files to push");
 
@@ -2181,8 +2140,8 @@ var myChart = new Chart(ctx, {
 
                 $stats = $this->compressAndCrypt($file);
 
-                $path = "pmacontrol/cleaner/".$id_cleaner."/";
-                $dst  = $path.pathinfo($stats['file_path'])['basename'];
+                $path = "pmacontrol/cleaner/" . $id_cleaner . "/";
+                $dst = $path . pathinfo($stats['file_path'])['basename'];
 
                 // to prevent MySQL timeout ?
                 $default->sql_close();
@@ -2193,23 +2152,23 @@ var myChart = new Chart(ctx, {
                 $default->sql_close();
                 $default = $this->di['db']->sql(DB_DEFAULT);
 
-                $archive                                      = array();
-                $archive['archive']['id_cleaner_main']        = (int) $id_cleaner;
+                $archive = array();
+                $archive['archive']['id_cleaner_main'] = (int) $id_cleaner;
                 $archive['archive']['id_backup_storage_area'] = (int) $this->id_backup_storage_area;
-                $archive['archive']['md5_sql']                = $stats['normal']['md5'];
-                $archive['archive']['size_sql']               = $stats['normal']['size'];
-                $archive['archive']['md5_compressed']         = $stats['compressed']['md5'];
-                $archive['archive']['size_compressed']        = $stats['compressed']['size'];
-                $archive['archive']['md5_crypted']            = $stats['crypted']['md5'];
-                $archive['archive']['size_crypted']           = $stats['crypted']['size'];
+                $archive['archive']['md5_sql'] = $stats['normal']['md5'];
+                $archive['archive']['size_sql'] = $stats['normal']['size'];
+                $archive['archive']['md5_compressed'] = $stats['compressed']['md5'];
+                $archive['archive']['size_compressed'] = $stats['compressed']['size'];
+                $archive['archive']['md5_crypted'] = $stats['crypted']['md5'];
+                $archive['archive']['size_crypted'] = $stats['crypted']['size'];
 
-                $archive['archive']['md5_remote']        = $scp['md5'];
-                $archive['archive']['size_remote']       = $scp['size'];
-                $archive['archive']['time_to_compress']  = $stats['compressed']['execution_time'];
-                $archive['archive']['time_to_crypt']     = $stats['crypted']['execution_time'];
+                $archive['archive']['md5_remote'] = $scp['md5'];
+                $archive['archive']['size_remote'] = $scp['size'];
+                $archive['archive']['time_to_compress'] = $stats['compressed']['execution_time'];
+                $archive['archive']['time_to_crypt'] = $stats['crypted']['execution_time'];
                 $archive['archive']['time_to_transfert'] = $scp['execution_time'];
-                $archive['archive']['date']              = date('Y-m-d H:i:s');
-                $archive['archive']['pathfile']          = $scp['pathfile'];
+                $archive['archive']['date'] = date('Y-m-d H:i:s');
+                $archive['archive']['pathfile'] = $scp['pathfile'];
 
                 $err = $default->sql_save($archive);
 
@@ -2222,20 +2181,19 @@ var myChart = new Chart(ctx, {
 
                 if ($archive['archive']['md5_remote'] === $archive['archive']['md5_crypted'] && (int) $archive['archive']['size_crypted'] === (int) $archive['archive']['size_remote']) {
 
-                    $this->logger->info('[id:'.$id_cleaner.'][ARCHIVE][pid:'.getmypid().'] push file to (StorageArea:'.$this->id_backup_storage_area.') '.$storage_area->ip.":".$storage_area->path.'/'.$dst);
+                    $this->logger->info('[id:' . $id_cleaner . '][ARCHIVE][pid:' . getmypid() . '] push file to (StorageArea:' . $this->id_backup_storage_area . ') ' . $storage_area->ip . ":" . $storage_area->path . '/' . $dst);
                 }
             }
         }
     }
 
-    private function getIdStorageArea($id_cleaner)
-    {
+    private function getIdStorageArea($id_cleaner) {
         $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_select_db($this->schema_main);
 
         $sql = "SELECT b.* FROM cleaner_main a
             INNER JOIN backup_storage_area b ON a.id_backup_storage_area = b.id
-            where a.id ='".$id_cleaner."'";
+            where a.id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -2243,10 +2201,9 @@ var myChart = new Chart(ctx, {
         }
     }
 
-    private function init()
-    {
+    private function init() {
 
-        $this->logger->info('[id:'.$this->id_cleaner.'][INIT][pid:'.getmypid().'] Init of cleaner');
+        $this->logger->info('[id:' . $this->id_cleaner . '][INIT][pid:' . getmypid() . '] Init of cleaner');
         Debug::debug("REAL INIT !");
 
         $db = $this->di['db']->sql($this->link_to_purge);
@@ -2255,10 +2212,10 @@ var myChart = new Chart(ctx, {
         $sql = "SET @@skip_replication = ON;";
         $db->sql_query($sql);
 
-        $sql = "CREATE DATABASE IF NOT EXISTS `".$this->schema_delete."`;";
+        $sql = "CREATE DATABASE IF NOT EXISTS `" . $this->schema_delete . "`;";
         $db->sql_query($sql);
 
-        Debug::checkPoint("Create database `".$this->schema_delete."`");
+        Debug::checkPoint("Create database `" . $this->schema_delete . "`");
 
 
         $this->purge_clean_db();
@@ -2281,15 +2238,14 @@ var myChart = new Chart(ctx, {
         $this->initDdlOnDisk();
     }
 
-    private function generateCreateTable()
-    {
+    private function generateCreateTable() {
 
         $db = $this->di['db']->sql($this->link_to_purge);
 
         $tables = $this->getImpactedTable();
 
         foreach ($tables as $table) {
-            $sql = "SHOW CREATE TABLE `".$this->schema_to_purge."`.`".$table."`";
+            $sql = "SHOW CREATE TABLE `" . $this->schema_to_purge . "`.`" . $table . "`";
             $res = $db->sql_query($sql);
 
             // we test object type in case of lock or drop table
@@ -2304,35 +2260,35 @@ var myChart = new Chart(ctx, {
 
         return $this->cache_table[$this->schema_to_purge];
     }
+
     /*
      * On garde les derniers create table en cache pour les comparer aux nouvelles pour générer les ALTER TABLE en cas de divergence
      */
 
-    public function cacheDdlOnDisk()
-    {
-        $path_dir = $this->backup_dir."/DDL";
+    public function cacheDdlOnDisk() {
+        $path_dir = $this->backup_dir . "/DDL";
 
         if (!is_dir($path_dir)) {
-            shell_exec("mkdir -p ".$path_dir);
+            shell_exec("mkdir -p " . $path_dir);
         }
 
         //c'est pas sexy
         $tables = $this->generateCreateTable();
 
         foreach ($tables as $table => $create) {
-            file_put_contents($path_dir."/".$table.".sql", $create);
+            file_put_contents($path_dir . "/" . $table . ".sql", $create);
         }
 
         //debug($this->cacheComStatus());
 
-        file_put_contents($path_dir."/global_status.json", $this->cacheComStatus());
+        file_put_contents($path_dir . "/global_status.json", $this->cacheComStatus());
     }
+
     /*
      * On ajoute les create table au début de chaque nouveau fichier (dans le cas où elles n'existeraient pas)
      */
 
-    private function initFileWithCreateTable($file)
-    {
+    private function initFileWithCreateTable($file) {
         if (!file_exists($file)) {
 
             if (!$handle = fopen($file, "a")) {
@@ -2340,13 +2296,13 @@ var myChart = new Chart(ctx, {
                 exit;
             }
 
-            $data        = "";
+            $data = "";
             $list_tables = $this->getOrderBy();
 
             foreach ($list_tables as $sub_array) {
 
                 foreach ($sub_array as $table) {
-                    $data .= $this->cleanTableFromNoNeedConstraint($this->cache_table[$this->schema_to_purge][$table]).";\n";
+                    $data .= $this->cleanTableFromNoNeedConstraint($this->cache_table[$this->schema_to_purge][$table]) . ";\n";
                 }
             }
 
@@ -2359,7 +2315,7 @@ var myChart = new Chart(ctx, {
 
             $user = trim(shell_exec("ps -ef | egrep '(httpd|apache2|apache)' | grep -v `whoami` | grep -v root | head -n1 | awk '{print $1}'"));
 
-            shell_exec("chown ".$user.". ".$file);
+            shell_exec("chown " . $user . ". " . $file);
             //chown($file, $user);
 
             $this->log("INFO", "TABLES", "Création des tables en cas de leur non présence");
@@ -2367,12 +2323,12 @@ var myChart = new Chart(ctx, {
             Debug::checkPoint("Création des tables en cas de leur non présence");
         }
     }
+
     /*
      * On retire les contraintes sur les tables qui ne sont pas concerné par la purge
      */
 
-    private function cleanTableFromNoNeedConstraint($tableCreate)
-    {
+    private function cleanTableFromNoNeedConstraint($tableCreate) {
         $tables = $this->getImpactedTable();
 
         $lines = explode("\n", $tableCreate);
@@ -2397,34 +2353,32 @@ var myChart = new Chart(ctx, {
                     if (substr($trimed, -1) === ",") {
                         $trimed = substr($trimed, 0, -1);
                     }
-                    $new_table = $trimed."\n";
+                    $new_table = $trimed . "\n";
                 }
-                $new_table .= $line."\n";
+                $new_table .= $line . "\n";
             }
         }
 
         return trim($new_table);
     }
 
-    private function cacheComStatus()
-    {
+    private function cacheComStatus() {
 
         Debug::debug("Refresh GLOBAL STATUS");
 
         $db = $this->di['db']->sql($this->link_to_purge);
 
         $this->com_status['Com_create_table'] = $db->getStatus("Com_create_table", true);
-        $this->com_status['Com_alter_table']  = $db->getStatus("Com_alter_table");
+        $this->com_status['Com_alter_table'] = $db->getStatus("Com_alter_table");
         $this->com_status['Com_rename_table'] = $db->getStatus("Com_rename_table");
-        $this->com_status['Com_drop_table']   = $db->getStatus("Com_drop_table");
+        $this->com_status['Com_drop_table'] = $db->getStatus("Com_drop_table");
 
         $this->com_status['Uptime'] = $db->getStatus("Uptime");
 
         return json_encode($this->com_status);
     }
 
-    private function compareComStatus()
-    {
+    private function compareComStatus() {
         $db = $this->di['db']->sql($this->link_to_purge);
 
         $Coms = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
@@ -2436,8 +2390,8 @@ var myChart = new Chart(ctx, {
             if ($this->com_status[$com] != $db->getStatus($com)) {
 
                 $tmp[$com]['before'] = $this->com_status[$com];
-                $tmp[$com]['after']  = $db->getStatus($com);
-                $restart             = true;
+                $tmp[$com]['after'] = $db->getStatus($com);
+                $restart = true;
 
                 break;
             }
@@ -2446,9 +2400,9 @@ var myChart = new Chart(ctx, {
         if ($restart) {
 
             $this->cacheComStatus();
-            $this->logger->info('[id:'.$this->id_cleaner.'][DDL_UPDATE][pid:'.getmypid().'] DDL updated', $tmp);
+            $this->logger->info('[id:' . $this->id_cleaner . '][DDL_UPDATE][pid:' . getmypid() . '] DDL updated', $tmp);
 
-            echo "Call SIGHUP ".getmypid()."\n";
+            echo "Call SIGHUP " . getmypid() . "\n";
 
             $this->sighup();
 
@@ -2462,27 +2416,25 @@ var myChart = new Chart(ctx, {
         }
     }
 
-    public function sighup()
-    {
+    public function sighup() {
         $pid = getmypid();
 
         if (empty($this->di['auth'])) {
-            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '.__("by").' '
-                ."[SYSTEM]");
+            $this->logger->info('[id:' . $this->id_cleaner . '][SIGHUP][pid:' . $pid . '] "' . $this->libelle . '" ' . __("by") . ' '
+                    . "[SYSTEM]");
         } else {
-            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '.__("by").' '
-                .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id);
+            $this->logger->info('[id:' . $this->id_cleaner . '][SIGHUP][pid:' . $pid . '] "' . $this->libelle . '" ' . __("by") . ' '
+                    . $this->di['auth']->getUser()->firstname . " " . $this->di['auth']->getUser()->name . " (id:" . $this->di['auth']->getUser()->id);
         }
 
-        $log_file = TMP."log/cleaner_".$this->id_cleaner.".log";
+        $log_file = TMP . "log/cleaner_" . $this->id_cleaner . ".log";
 
         $php = explode(" ", shell_exec("whereis php"))[1];
-        $cmd = $php." ".GLIAL_INDEX." Cleaner restart ".$this->id_cleaner." >> ".$log_file." & echo $!";
+        $cmd = $php . " " . GLIAL_INDEX . " Cleaner restart " . $this->id_cleaner . " >> " . $log_file . " & echo $!";
         shell_exec($cmd);
     }
 
-    public function getPrimaryKey($table, $database)
-    {
+    public function getPrimaryKey($table, $database) {
         $db = $this->di['db']->sql($this->link_to_purge);
 
 
@@ -2490,11 +2442,11 @@ var myChart = new Chart(ctx, {
 
         if (empty($this->primary_key[$database][$table])) {
 
-            $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` ='PRIMARY';";
+            $sql = "SHOW INDEX FROM `" . $database . "`.`" . $table . "` WHERE `Key_name` ='PRIMARY';";
             $res = $db->sql_query($sql);
 
             if ($db->sql_num_rows($res) == "0") {
-                throw new \Exception("CLEANER-067 : this table '".$table."' haven't primary key !");
+                throw new \Exception("CLEANER-067 : this table '" . $table . "' haven't primary key !");
             } else {
 
                 $index = array();
@@ -2508,8 +2460,7 @@ var myChart = new Chart(ctx, {
         return $this->primary_key[$database][$table];
     }
 
-    public function end_loop()
-    {
+    public function end_loop() {
         $db = $this->di['db']->sql($this->link_to_purge);
 
 
@@ -2517,14 +2468,14 @@ var myChart = new Chart(ctx, {
         Debug::checkPoint("[DEBUG] Time to generate showQueries");
         $db->sql_close();
     }
+
     /*
      * Dans le cas d'un répertoire vide (utiliser une fois par cleaner à l'init
      */
 
-    public function initDdlOnDisk()
-    {
-        $path_dir = $this->backup_dir."/DDL";
-        $files    = glob($path_dir."/*.sql");
+    public function initDdlOnDisk() {
+        $path_dir = $this->backup_dir . "/DDL";
+        $files = glob($path_dir . "/*.sql");
 
         if (count($files) == 0) {
             $this->cacheDdlOnDisk();
@@ -2533,11 +2484,10 @@ var myChart = new Chart(ctx, {
         $this->compareComStatus();
     }
 
-    private function compareDdl()
-    {
-        $path_dir = $this->backup_dir."/DDL";
+    private function compareDdl() {
+        $path_dir = $this->backup_dir . "/DDL";
 
-        $json = file_get_contents($path_dir."/global_status.json");
+        $json = file_get_contents($path_dir . "/global_status.json");
 
         $data_ori = json_decode($json, true);
         $data_new = json_decode($this->cacheComStatus(), true);
@@ -2558,13 +2508,13 @@ var myChart = new Chart(ctx, {
 
         if (count($sqls) > 0) {
 
-            $file = $this->backup_dir."/".date('Y-m-d')."_log.sql";
+            $file = $this->backup_dir . "/" . date('Y-m-d') . "_log.sql";
             $this->initFileWithCreateTable($file);
-            $fp   = fopen($file, "a");
+            $fp = fopen($file, "a");
             if ($fp) {
                 foreach ($sqls as $query) {
-                    $this->logger->warning('[id:'.$this->id_cleaner.'][ALTER][pid:'.getmypid().'] '.$query);
-                    fwrite($fp, $query."\n");
+                    $this->logger->warning('[id:' . $this->id_cleaner . '][ALTER][pid:' . getmypid() . '] ' . $query);
+                    fwrite($fp, $query . "\n");
                 }
                 fclose($fp);
             }
@@ -2573,10 +2523,9 @@ var myChart = new Chart(ctx, {
         $this->cacheDdlOnDisk();
     }
 
-    private function compareTables()
-    {
+    private function compareTables() {
 
-        $sql    = array();
+        $sql = array();
         $tables = $this->getImpactedTable();
         foreach ($tables as $table) {
             $sql = array_merge($this->compareTable($table), $sql);
@@ -2585,22 +2534,20 @@ var myChart = new Chart(ctx, {
         return $sql;
     }
 
-    private function compareTable($table)
-    {
-        $path_dir    = $this->backup_dir."/DDL";
-        $file_to_cmp = file_get_contents($path_dir."/".$table.".sql");
+    private function compareTable($table) {
+        $path_dir = $this->backup_dir . "/DDL";
+        $file_to_cmp = file_get_contents($path_dir . "/" . $table . ".sql");
 
         $updater = new Compare;
-        $sql     = $updater->getUpdates($file_to_cmp, $this->cache_table[$this->schema_to_purge][$table]);
+        $sql = $updater->getUpdates($file_to_cmp, $this->cache_table[$this->schema_to_purge][$table]);
 
         return $sql;
     }
 
-    public function edit($param)
-    {
+    public function edit($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $this->title = '<span class="glyphicon glyphicon-edit"></span> '.__('Edit');
+        $this->title = '<span class="glyphicon glyphicon-edit"></span> ' . __('Edit');
 
         if (Basic::from(__FILE__)) {
 
@@ -2611,22 +2558,22 @@ var myChart = new Chart(ctx, {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM cleaner_main WHERE id = ".$id_cleaner;
+        $sql = "SELECT * FROM cleaner_main WHERE id = " . $id_cleaner;
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $_GET['cleaner_main']['id']                     = $ob->id;
-            $_GET['cleaner_main']['libelle']                = $ob->libelle;
-            $_GET['cleaner_main']['id_mysql_server']        = $ob->id_mysql_server;
-            $_GET['cleaner_main']['database']               = $ob->database;
-            $_GET['cleaner_main']['main_table']             = $ob->main_table;
-            $_GET['cleaner_main']['query']                  = $ob->query;
-            $_GET['cleaner_main']['wait_time_in_sec']       = $ob->wait_time_in_sec;
-            $_GET['cleaner_main']['cleaner_db']             = $ob->cleaner_db;
-            $_GET['cleaner_main']['prefix']                 = $ob->prefix;
+            $_GET['cleaner_main']['id'] = $ob->id;
+            $_GET['cleaner_main']['libelle'] = $ob->libelle;
+            $_GET['cleaner_main']['id_mysql_server'] = $ob->id_mysql_server;
+            $_GET['cleaner_main']['database'] = $ob->database;
+            $_GET['cleaner_main']['main_table'] = $ob->main_table;
+            $_GET['cleaner_main']['query'] = $ob->query;
+            $_GET['cleaner_main']['wait_time_in_sec'] = $ob->wait_time_in_sec;
+            $_GET['cleaner_main']['cleaner_db'] = $ob->cleaner_db;
+            $_GET['cleaner_main']['prefix'] = $ob->prefix;
             $_GET['cleaner_main']['id_backup_storage_area'] = $ob->id_backup_storage_area;
-            $_GET['cleaner_main']['limit']                  = $ob->limit;
+            $_GET['cleaner_main']['limit'] = $ob->limit;
 
             $_GET['id_mysql_server'] = $ob->id_mysql_server;
 
@@ -2638,26 +2585,23 @@ var myChart = new Chart(ctx, {
 
         $data2 = $this->add(array($id_cleaner, $data));
 
-        $data               = array_merge($data2, $data);
+        $data = array_merge($data2, $data);
         $data['id_cleaner'] = $id_cleaner;
         $this->set('data', $data);
     }
 
-    public function install()
-    {
-
-    }
-
-    public function uninstall()
-    {
+    public function install() {
         
     }
 
-    public function view($param)
-    {
+    public function uninstall() {
+        
+    }
+
+    public function view($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $this->title = '<span class="glyphicon glyphicon-eye-open"></span> '.__('View');
+        $this->title = '<span class="glyphicon glyphicon-eye-open"></span> ' . __('View');
 
 
         if (Basic::from(__FILE__)) {
@@ -2672,7 +2616,7 @@ var myChart = new Chart(ctx, {
         $sql = "SELECT *,a.database, b.name as nameserver,b.ip, b.display_name,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-                WHERE a.id = '".$id_cleaner."';";
+                WHERE a.id = '" . $id_cleaner . "';";
 
 
 
@@ -2680,32 +2624,32 @@ var myChart = new Chart(ctx, {
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $data['id']                     = $ob->id;
-            $data['libelle']                = $ob->libelle;
-            $data['id_mysql_server']        = $ob->id_mysql_server;
-            $data['database']               = $ob->database;
-            $data['main_table']             = $ob->main_table;
-            $data['query']                  = $ob->query;
-            $data['wait_time_in_sec']       = $ob->wait_time_in_sec;
-            $data['cleaner_db']             = $ob->cleaner_db;
-            $data['prefix']                 = $ob->prefix;
+            $data['id'] = $ob->id;
+            $data['libelle'] = $ob->libelle;
+            $data['id_mysql_server'] = $ob->id_mysql_server;
+            $data['database'] = $ob->database;
+            $data['main_table'] = $ob->main_table;
+            $data['query'] = $ob->query;
+            $data['wait_time_in_sec'] = $ob->wait_time_in_sec;
+            $data['cleaner_db'] = $ob->cleaner_db;
+            $data['prefix'] = $ob->prefix;
             $data['id_backup_storage_area'] = $ob->id_backup_storage_area;
-            $data['limit']                  = $ob->limit;
-            $data['display_name']           = $ob->display_name;
-            $data['ip']                     = $ob->ip;
+            $data['limit'] = $ob->limit;
+            $data['display_name'] = $ob->display_name;
+            $data['ip'] = $ob->ip;
 
             $this->link_to_purge = $ob->nameserver;
         }
 
-        $pri         = $this->getPrimaryKey($data['main_table'], $data['database']);
-        $primary_key = "`".implode('`,`', $pri)."`";
+        $pri = $this->getPrimaryKey($data['main_table'], $data['database']);
+        $primary_key = "`" . implode('`,`', $pri) . "`";
 
-        $sql         = "SELECT ".$primary_key." FROM `".$data['database']."`.`".$data['main_table']."` WHERE ".$data['query']." LIMIT ".$data['limit'].";";
+        $sql = "SELECT " . $primary_key . " FROM `" . $data['database'] . "`.`" . $data['main_table'] . "` WHERE " . $data['query'] . " LIMIT " . $data['limit'] . ";";
         $data['sql'] = SqlFormatter::format($sql);
 
-        $db2  = $this->di['db']->sql($this->link_to_purge);
-        $sql2 = "explain ".$sql;
-        $res  = $db2->sql_query($sql2);
+        $db2 = $this->di['db']->sql($this->link_to_purge);
+        $sql2 = "explain " . $sql;
+        $res = $db2->sql_query($sql2);
 
 
         while ($arr = $db2->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -2719,16 +2663,16 @@ var myChart = new Chart(ctx, {
 
 
 
-        $sql = "SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` WHERE ".$data['query'];
+        $sql = "SELECT COUNT(1) as cpt FROM `" . $data['database'] . "`.`" . $data['main_table'] . "` WHERE " . $data['query'];
 
         $res = $db2->sql_query($sql);
-        while ($ob  = $db2->sql_fetch_object($res)) {
+        while ($ob = $db2->sql_fetch_object($res)) {
             $data['nb_line_to_purge'] = $ob->cpt;
         }
 
-        $sql = "SELECT TABLE_ROWS FROM `information_schema`.`tables` WHERE table_name = '".$data['main_table']."' and table_schema = '".$data['database']."'";
+        $sql = "SELECT TABLE_ROWS FROM `information_schema`.`tables` WHERE table_name = '" . $data['main_table'] . "' and table_schema = '" . $data['database'] . "'";
         $res = $db2->sql_query($sql);
-        while ($ob  = $db2->sql_fetch_object($res)) {
+        while ($ob = $db2->sql_fetch_object($res)) {
             $data['nb_line_total'] = $ob->TABLE_ROWS;
         }
 
@@ -2748,36 +2692,36 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function logs($param)
-    {
+    public function logs($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $this->title = '<span class="glyphicon glyphicon-file"></span> '.__('Logs');
+        $this->title = '<span class="glyphicon glyphicon-file"></span> ' . __('Logs');
         if (Basic::from(__FILE__)) {
             return $this->title;
         }
 
         $filter = "";
         if (!empty($param[1])) {
-            $filter = "| grep -F '[".$param[1]."]' ";
+            $filter = "| grep -F '[" . $param[1] . "]' ";
         }
 
 
-        $cmd = "cat ".LOG_FILE." | grep -F 'cleaner.' | grep -F '[id:".$id_cleaner."]' ".$filter."| tail -n 500";
+        $cmd = "cat " . LOG_FILE . ' | tr -d \'\\000\' | grep -F \'cleaner.\' | grep -F \'[id:' . $id_cleaner . "]' " . $filter . "| tail -n 500";
 
-        $lines              = shell_exec($cmd);
-        $data['logs']       = $this->format($lines, $id_cleaner);
-        $data['logs']       = array_reverse($data['logs']);
+        //debug($cmd);
+
+        $lines = shell_exec($cmd);
+        $data['logs'] = $this->format($lines, $id_cleaner);
+        $data['logs'] = array_reverse($data['logs']);
         $data['id_cleaner'] = $id_cleaner;
 
         $this->set('data', $data);
     }
 
-    public function details($param)
-    {
+    public function details($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $this->title = '<i class="fa fa-file-text-o" aria-hidden="true"></i> '.__('Details');
+        $this->title = '<i class="fa fa-file-text-o" aria-hidden="true"></i> ' . __('Details');
         if (Basic::from(__FILE__)) {
 
             return $this->title;
@@ -2788,12 +2732,12 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
+        $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
         $ob = $db->sql_fetch_object($res);
 
-        $data['log']      = shell_exec("tail -n2000 ".$ob->log_file);
+        $data['log'] = shell_exec("tail -n2000 " . $ob->log_file);
         $data['log_file'] = $ob->log_file;
 
 
@@ -2805,8 +2749,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->set('data', $data);
     }
 
-    public function menu($param)
-    {
+    public function menu($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
         $menu = array("view", "edit", "statistics", "logs", "details", "impacted");
@@ -2814,19 +2757,18 @@ objDiv.scrollTop = objDiv.scrollHeight;
         foreach ($menu as $elem) {
 
             $data['menu'][$elem]['title'] = $this->$elem($param);
-            $data['menu'][$elem]['url']   = LINK.__CLASS__."/".$elem."/".$id_cleaner;
+            $data['menu'][$elem]['url'] = LINK . __CLASS__ . "/" . $elem . "/" . $id_cleaner;
         }
 
 
         $this->set('data', $data);
     }
 
-    private function format($lines, $id_cleaner)
-    {
+    private function format($lines, $id_cleaner) {
         // cette fonction a besoin d'être optimisé !!
 
         $tab_line = explode("\n", trim($lines));
-        $data     = array();
+        $data = array();
 
         foreach ($tab_line as $line) {
 
@@ -2837,11 +2779,20 @@ objDiv.scrollTop = objDiv.scrollHeight;
             $tmp = array();
 
             preg_match("/\[id:\d+\]\[(\w+)\]/", $line, $output_array);
-            $tmp['type'] = $output_array[1];
-            $input_line  = str_replace('[id:'.$id_cleaner.']', '', $line);
+
+
+            if (!empty($output_array[1])) {
+
+                $tmp['type'] = $output_array[1];
+            } else {
+                $tmp['type'] = "UNKNOW !!!";
+            }
+
+
+            $input_line = str_replace('[id:' . $id_cleaner . ']', '', $line);
             preg_match("/^\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\] cleaner\.([a-zA-Z]+)/", $input_line, $output_array);
 
-            $tmp['date']  = $output_array[1];
+            $tmp['date'] = $output_array[1];
             $tmp['level'] = $output_array[2];
 
             preg_match("/\[pid:(\d+)\](.*)/", $input_line, $output_array);
@@ -2859,9 +2810,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             if (!empty($output_array[2])) {
                 $tmp['msg'] = str_replace($output_array[0], '', $tmp['msg']);
-
-                $tmp['msg'] = $tmp['msg'].$this->getUser($output_array[1]);
+                $tmp['msg'] = $tmp['msg'] . $this->getUser($output_array[1]);
             }
+
 
             $data[] = $tmp;
         }
@@ -2869,8 +2820,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $data;
     }
 
-    private function setColor($type)
-    {
+    private function setColor($type) {
         $hex = substr(md5($type), 0, 6);
 
         return $this->hexToRgb($hex);
@@ -2878,17 +2828,15 @@ objDiv.scrollTop = objDiv.scrollHeight;
         //return $hex['background'];
     }
 
-    private function label($text)
-    {
+    private function label($text) {
         $hex = $this->setColor($text);
 
-        return '<span class="label" style="background:rgb('.$hex[0].', '.$hex[1].', '.$hex[2].',0.1);">'.$text.'</span>';
+        return '<span class="label" style="background:rgb(' . $hex[0] . ', ' . $hex[1] . ', ' . $hex[2] . ',0.1);">' . $text . '</span>';
     }
 
-    private function hexToRgb($colorName)
-    {
+    private function hexToRgb($colorName) {
         list($r, $g, $b) = array_map(
-            function($c) {
+                function($c) {
             return hexdec(str_pad($c, 2, $c));
         }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
         );
@@ -2896,8 +2844,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return array($r, $g, $b);
     }
 
-    private function getUser($id)
-    {
+    private function getUser($id) {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT *,a.id as id_user FROM user_main a
@@ -2907,35 +2854,32 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            return 'by <img class="country" src="'.IMG.'country/type1/'.strtolower($ob->iso).'.gif" width="18" height="12"> <a href="'.LINK.'user/id/'.$ob->id_user.'">'.$ob->firstname." ".$ob->name.'</a> ('.$ob->email.')';
+            return 'by <img class="country" src="' . IMG . 'country/type1/' . strtolower($ob->iso) . '.gif" width="18" height="12"> <a href="' . LINK . 'user/id/' . $ob->id_user . '">' . $ob->firstname . " " . $ob->name . '</a> (' . $ob->email . ')';
         }
     }
 
-    private function log($level, $type, $msg)
-    {
+    private function log($level, $type, $msg) {
         if (empty($this->id_cleaner)) {
             throw new \Exception("CLEANER-001 : Impossible to get id_cleaner");
         }
 
         if (IS_CLI) {
-            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '.__("by").' [CLI]');
+            $this->logger->{$level}('[id:' . $this->id_cleaner . '][' . $type . '][pid:' . getmypid() . '] ' . $msg . ' ' . __("by") . ' [CLI]');
         } else {
-            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '.__("by").' '
-                .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id.")");
+            $this->logger->{$level}('[id:' . $this->id_cleaner . '][' . $type . '][pid:' . getmypid() . '] ' . $msg . ' ' . __("by") . ' '
+                    . $this->di['auth']->getUser()->firstname . " " . $this->di['auth']->getUser()->name . " (id:" . $this->di['auth']->getUser()->id . ")");
         }
     }
 
-    private function getrgba($label, $alpha)
-    {
+    private function getrgba($label, $alpha) {
         list($r, $g, $b) = $this->setColor($label);
-        return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
+        return "rgba(" . $r . ", " . $g . ", " . $b . ", " . $alpha . ")";
     }
 
-    public function impacted($param)
-    {
+    public function impacted($param) {
         $data['id_cleaner'] = $this->get_id_cleaner($param);
 
-        $this->title = '<i class="fa fa-table" aria-hidden="true"></i> '.__('Tables impacted');
+        $this->title = '<i class="fa fa-table" aria-hidden="true"></i> ' . __('Tables impacted');
         if (Basic::from(__FILE__)) {
 
             return $this->title;
@@ -2947,22 +2891,20 @@ objDiv.scrollTop = objDiv.scrollHeight;
             b.name as mysql_server_name
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-        WHERE a.id = ".$data['id_cleaner'].";";
+        WHERE a.id = " . $data['id_cleaner'] . ";";
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $data['database']    = $ob->database;
+            $data['database'] = $ob->database;
             $data['server_name'] = $ob->mysql_server_name;
         }
 
         $this->set('data', $data);
     }
 
-    private function setCacheFile()
-    {
-        $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".ser";
+    private function setCacheFile() {
+        $this->path_to_orderby_tmp = TMP . "cleaner/orderby_" . $this->id_cleaner . ".ser";
     }
-
 
 }

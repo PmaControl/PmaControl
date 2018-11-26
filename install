@@ -129,7 +129,7 @@ EOF
 
 chmod 777 -R tmp/
 
-
+chmod 777 -R data/
 
 #echo 'vm.swappiness = 1' >> /etc/sysctl.conf
 #sysctl -p
@@ -276,6 +276,7 @@ if [ $? != 0 ]; then
 fi
 
 mkdir -p vendor/esysteme/mysql-sys/gen
+chown www-data. -R vendor/esysteme/mysql-sys/gen
 
 chown $user:$user -R .
 
@@ -285,6 +286,8 @@ if [ -f "$CONFIG_FILE" ]; then
         chown root:root $CONFIG_FILE
         chmod 600 $CONFIG_FILE
 fi
+
+
 
 
 chmod 600 configuration/crypt.config.php

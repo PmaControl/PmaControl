@@ -7,7 +7,8 @@
 $("#cleaner_main-id_mysql_server").change(function () {
     data = $(this).val();
     
-    $(this).parent().parent().next().find("select").load(GLIAL_LINK+"cleaner/getDatabaseByServer/" + data + "/ajax>true/");
+    //$(this).parent().parent().next().find("select").load(GLIAL_LINK+"cleaner/getDatabaseByServer/" + data + "/ajax>true/");
+    $("#cleaner_main-database").load(GLIAL_LINK+"cleaner/getDatabaseByServer/" + data + "/ajax>true/");
 
     $(".table").find("select.schema").each(function () {
         $(this).load(GLIAL_LINK+"cleaner/getDatabaseByServer/" + data + "/ajax>true/");

@@ -1,4 +1,5 @@
 <?php
+
 use Glial\Html\Form\Form;
 ?>
 <form action="" method="post">
@@ -8,8 +9,14 @@ use Glial\Html\Form\Form;
         </div>
         <div class="well">
             <div class="row">
+
+                <div class="col-md-4">
+                    <?= __("Name") ?> 
+                    <?= Form::input("ssh_key", "name", array("class" => "form-control", "placeholder" => "Name of this key ssh (to remember)")) ?>
+                </div>
                 <div class="col-md-4"><?= __("User") ?>
-                    <?= Form::input("ssh_key", "user", array("class" => "form-control", "placeholder" => "User who is linked with this publickey")) ?></div>
+                    <?= Form::input("ssh_key", "user", array("class" => "form-control", "placeholder" => "User who is linked with this publickey")) ?>
+                </div>
                 <div class="col-md-4"></div>
                 <div class="col-md-4"></div>
             </div>
