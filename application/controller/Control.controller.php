@@ -234,8 +234,11 @@ class Control extends Controller {
         //Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
-    public function dropTsTable() {
+    public function dropTsTable($param = array()) {
 
+        Debug::parseDebug($param);
+        
+        
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
@@ -243,15 +246,18 @@ class Control extends Controller {
         foreach ($combi as $table) {
             $sql = "DROP TABLE IF EXISTS `" . $table . "`;";
             $db->sql_query($sql);
+            Debug::sql($sql);
 
             $this->logger->info($sql);
         }
 
+        
+        /*
         $sql = "DROP TABLE IF EXISTS `ts_date_by_server`";
         $db->sql_query($sql);
+        */
 
-
-        Debug::sql($sql);
+        
 
 
         $to_delete = array("/dev/shm/server_*", "/dev/shm/answer_*", "/dev/shm/variable_*");

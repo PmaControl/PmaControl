@@ -33,7 +33,7 @@ function formatVersion($version)
 
 function format_ping($microtime, $precision = 2) {
     $units = array('ms', 's');
-    
+    $units[-1] = 'ms';
     $microtime = $microtime * 1000;
     
     $microtime = max($microtime, 0);
