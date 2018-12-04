@@ -44,7 +44,8 @@ class System {
 
     static public function deleteFiles($file = "") {
 
-        $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*", "variable" => "/dev/shm/variable_*");
+        $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*", 
+            "variable" => "/dev/shm/variable_*","worker" => "/dev/shm/worker" );
 
         if (!empty($file)) {
             if (!empty($to_delete[$file])) {
