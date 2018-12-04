@@ -10,7 +10,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
-use App\Library\System2;
+use App\Library\System;
 use App\Library\Chiffrement;
 use App\Library\Zmsg;
 
@@ -102,11 +102,11 @@ class Aspirateur extends Controller {
         Debug::debug("max execution time : " . $maxExecutionTime);
 
 
-        //to prevent any trouble with fork
-        //$this->debugShowQueries();
+//to prevent any trouble with fork
+//$this->debugShowQueries();
         $db->sql_close();
 
-        //$maxThreads = \Glial\System\Cpu::getCpuCores();
+//$maxThreads = \Glial\System\Cpu::getCpuCores();
 
         Debug::debug("Nombre de threads : " . $maxThreads);
 
@@ -118,7 +118,7 @@ class Aspirateur extends Controller {
 
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             sleep(1);
-            //throw new Exception("List of server to test is empty", 20);
+//throw new Exception("List of server to test is empty", 20);
         }
 
 
@@ -126,8 +126,8 @@ class Aspirateur extends Controller {
 
         $father = false;
         foreach ($server_list as $server) {
-            //
-            //echo str_repeat("#", count($child_processes)) . "\n";
+//
+//echo str_repeat("#", count($child_processes)) . "\n";
 
             $pid = pcntl_fork();
             $child_processes[$pid] = 1;
@@ -147,18 +147,18 @@ class Aspirateur extends Controller {
                 $father = true;
             } else {
 
-                // one thread to test each MySQL server
+// one thread to test each MySQL server
 
 
                 Debug::debug("Start server with id : " . $server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
                 $father = false;
-                //we want that child exit the foreach
+//we want that child exit the foreach
                 break;
             }
             usleep(500);
-            //Debug::debug($child_processes);
+//Debug::debug($child_processes);
         }
 
         if ($father) {
@@ -172,7 +172,7 @@ class Aspirateur extends Controller {
                 unset($child_processes[$childPid]);
             }
 
-            //$this->isGaleraCluster(array());
+//$this->isGaleraCluster(array());
 
 
             /*
@@ -193,7 +193,7 @@ class Aspirateur extends Controller {
 
         Debug::debugShowQueries($this->di['db']);
 
-        //Debug::debugQueriesOff();
+//Debug::debugQueriesOff();
     }
 
     /**
@@ -216,8 +216,8 @@ class Aspirateur extends Controller {
         $name_server = $param[0];
         $id_server = $param[1];
 
-        //Debug::debug($name_server, "Name server");
-        //Debug::debug($id_server, "Id server");
+//Debug::debug($name_server, "Name server");
+//Debug::debug($id_server, "Id server");
 
         if (empty($param[2])) {
             $max_execution_time = 3;
@@ -225,10 +225,10 @@ class Aspirateur extends Controller {
             $max_execution_time = $param[2];
         }
 
-        //Debug::debug($max_execution_time, "Max execution time");
-        //execute a process with a timelimit (in case of MySQL don't answer and keep connection)
-        //$max_execution_time = 20; // in seconds
-        //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
+//Debug::debug($max_execution_time, "Max execution time");
+//execute a process with a timelimit (in case of MySQL don't answer and keep connection)
+//$max_execution_time = 20; // in seconds
+//Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
         $debug = "";
         if (Debug::$debug) {
@@ -241,7 +241,7 @@ class Aspirateur extends Controller {
 
         Debug::checkPoint("Après TimeLimit");
 
-        //Debug::debug($ret, "RET");
+//Debug::debug($ret, "RET");
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
             /* in case of somthing wrong :
@@ -252,7 +252,7 @@ class Aspirateur extends Controller {
              */
             $db = $this->di['db']->sql(DB_DEFAULT);
 
-            //in case of no answer provided we create a msg of error
+//in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[" . date("Y-m-d H:i:s") . "]" . " Server MySQL didn't answer in time (delay max : " . $max_execution_time . " seconds)";
             }
@@ -266,11 +266,11 @@ class Aspirateur extends Controller {
             (Debug::$debug) ? print_r($ret) : '';
             return false;
         } else {
-            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
+//echo (Debug::$debug) ? $server['name']." OK \n" : "";
 
             return $ret;
 
-            //return true;
+//return true;
         }
     }
 
@@ -292,7 +292,7 @@ class Aspirateur extends Controller {
         $name_server = $param[0];
         $id_server = $param[1];
 
-        //$this->allocate_shared_storage();
+//$this->allocate_shared_storage();
 
 
 
@@ -334,12 +334,12 @@ class Aspirateur extends Controller {
 
         $data['server']['ping'] = microtime(true) - $time_start;
 
-        //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
-        // SHOW /*!50000 ENGINE*/ INNODB STATUS
+//$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
+// SHOW /*!50000 ENGINE*/ INNODB STATUS
 
         Debug::debug("Avant");
 
-        // traitement SHOW GLOBAL VARIABLES
+// traitement SHOW GLOBAL VARIABLES
 
         $var['variables'] = $mysql_tested->getVariables();
 
@@ -358,6 +358,11 @@ class Aspirateur extends Controller {
         if (!empty($var['variables']['gtid_slave_pos'])) {
             unset($var['variables']['gtid_slave_pos']);
         }
+        
+        if (!empty($var['variables']['timestamp'])) {
+            unset($var['variables']['timestamp']);
+        }
+        
 
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
@@ -367,7 +372,7 @@ class Aspirateur extends Controller {
         $data['slave'] = $mysql_tested->isSlave();
         Debug::debug("apres slave");
 
-        //Debug::debug($data['slave']);
+//Debug::debug($data['slave']);
 
         Debug::checkPoint('apres query');
 
@@ -380,9 +385,9 @@ class Aspirateur extends Controller {
           } */
 
         $date[date('Y-m-d H:i:s')][$id_server] = $data;
-        //Debug::debug($date);
-        //$json                                  = json_encode($date);
-        //Debug::debug($data['server']['ping'], "ping");
+//Debug::debug($date);
+//$json                                  = json_encode($date);
+//Debug::debug($data['server']['ping'], "ping");
 
 
 
@@ -428,48 +433,25 @@ class Aspirateur extends Controller {
         }
 
         if ($export_variables) {
-            //Debug::debug($export_variables, "SET VARIABLES");
+//Debug::debug($export_variables, "SET VARIABLES");
             $this->allocate_shared_storage('variable');
         }
 
         $this->allocate_shared_storage('answer');
 
 
-        //Debug::debugShowTime();
-
-
-
-        /*
-          $lock_file = TMP . "lock/" . $name_server . ".txt";
-
-
-          $fp = fopen($lock_file, "w");
-
-          if (!is_writable($lock_file)) {
-          throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
-          }
-
-          if (!flock($fp, LOCK_EX | LOCK_NB)) {
-          fwrite(STDERR, 'Un processus est déjà en cours');
-          exit(15);
-          } else {
-          ftruncate($fp, 0);
-          fwrite($fp, getmypid());
-          }
-         */
-
-
-        //push data in memory
+        
+//push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
-        
-        
+
+
         echo "save : ";
         if ($export_variables) {
 
 
             echo "saved VARIABLES ";
-            
+
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server} = $variables;
         }
@@ -485,27 +467,29 @@ class Aspirateur extends Controller {
           //unlink($lock_file);
          */
 
-        //$this->showQueries();
+//$this->showQueries();
         $mysql_tested->sql_close();
 
 
-        //Debug::debugQueriesOff();
+//Debug::debugQueriesOff();
     }
 
     public function allocate_shared_storage($name = 'answer') {
-        //storage shared
+//storage shared
         $storage = new StorageFile('/dev/shm/' . $name . '_' . time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
 
     public function allocate_tmp_storage($name = '') {
-        //storage shared
+//storage shared
         $storage = new StorageFile('/dev/shm/' . $name); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
+
+        return $this->shared[$name];
     }
 
 // https://github.com/php-amqplib/php-amqplib
-    //each minute ?
+//each minute ?
 
 
     public function TrySystemSsh() {
@@ -550,10 +534,10 @@ class Aspirateur extends Controller {
             $maxExecutionTime = $ob->max_delay;
         }
 
-        //to prevent any trouble with fork
+//to prevent any trouble with fork
         $db->sql_close();
 
-        //$maxThreads = \Glial\System\Cpu::getCpuCores();
+//$maxThreads = \Glial\System\Cpu::getCpuCores();
 
         $openThreads = 0;
         $child_processes = array();
@@ -561,11 +545,11 @@ class Aspirateur extends Controller {
         if (empty($server_list)) {
             sleep(10);
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
-            //throw new Exception("List of server to test is empty", 20);
+//throw new Exception("List of server to test is empty", 20);
         }
 
 
-        //to prevent collision at first running (the first run is not made in multi thread
+//to prevent collision at first running (the first run is not made in multi thread
         if ($this->loop == 0) {
 
             $maxThreads = 1;
@@ -575,7 +559,7 @@ class Aspirateur extends Controller {
 
         $father = false;
         foreach ($server_list as $server) {
-            //echo str_repeat("#", count($child_processes)) . "\n";
+//echo str_repeat("#", count($child_processes)) . "\n";
 
             $pid = pcntl_fork();
             $child_processes[$pid] = 1;
@@ -593,11 +577,11 @@ class Aspirateur extends Controller {
                 $father = true;
             } else {
 
-                // one thread to test each MySQL server
-                //$this->logger->info("Test SSH server (" . $server['id'].")");
+// one thread to test each MySQL server
+//$this->logger->info("Test SSH server (" . $server['id'].")");
                 $this->testSshServer($server['id'], $this->loop, $maxExecutionTime);
                 $father = false;
-                //we want that child exit the foreach
+//we want that child exit the foreach
                 break;
             }
             usleep(50);
@@ -619,8 +603,8 @@ class Aspirateur extends Controller {
     }
 
     public function testSshServer($server_id, $id_loop, $max_execution_time = 20) {
-        //exeute a process with a timelimit (in case of SSH server don't answer and keep connection)
-        //$max_execution_time = 20; // in seconds
+//exeute a process with a timelimit (in case of SSH server don't answer and keep connection)
+//$max_execution_time = 20; // in seconds
 
 
 
@@ -629,7 +613,7 @@ class Aspirateur extends Controller {
             $debug = " --debug ";
         }
 
-        //$this->logger->info("trySshConnection (" . $server_id.")");
+//$this->logger->info("trySshConnection (" . $server_id.")");
 
         $ret = SetTimeLimit::run("Aspirateur", "trySshConnection", array($server_id, $id_loop, $debug), $max_execution_time);
 
@@ -647,16 +631,16 @@ class Aspirateur extends Controller {
              */
 
 
-            //in case of no answer provided we create a msg of error
+//in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[" . date("Y-m-d H:i:s") . "]" . " Server Ssh didn't answer in time (delay max : " . $max_execution_time . " seconds)";
 
                 Debug::debug($ret['stdout']);
             }
 
-            //echo $sql . "\n";
-            //$sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
-            //$db->sql_query($sql);
+//echo $sql . "\n";
+//$sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
+//$db->sql_query($sql);
 
             Debug::debug("Server ID : " . $server_id . "(FAILED !)");
 
@@ -665,11 +649,11 @@ class Aspirateur extends Controller {
             return false;
         } else {
 
-            //$sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
-            //$db->sql_query($sql);
+//$sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
+//$db->sql_query($sql);
 
             Debug::debug("Server ID : " . $server_id . " (answered in time)");
-            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
+//echo (Debug::$debug) ? $server['name']." OK \n" : "";
             return true;
         }
     }
@@ -720,7 +704,7 @@ class Aspirateur extends Controller {
 
     private function getHardware($ssh) {
 
-        //$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
+//$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
         $hardware['cpu_thread_count'] = trim($ssh->exec("cat /proc/cpuinfo | grep processor | wc -l"));
 
         $brut_memory = $ssh->exec("cat /proc/meminfo | grep MemTotal");
@@ -848,7 +832,7 @@ class Aspirateur extends Controller {
 
         $stats['ips'] = json_encode(explode("\n", $ips));
         $cpus = trim($ssh->exec("grep 'cpu' /proc/stat"));
-        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
+//$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
 
         $cpu_lines = explode("\n", $cpus);
 
@@ -858,8 +842,8 @@ class Aspirateur extends Controller {
 
             $elems = preg_split('/\s+/', $line);
 
-            //debug($elems);
-            //system + user + idle
+//debug($elems);
+//system + user + idle
             if ($i === 0) {
                 $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
             } else {
@@ -894,7 +878,7 @@ class Aspirateur extends Controller {
         $stats['mysqld_mem_physical'] = $mysql[1];
         $stats['mysqld_mem_virtual'] = $mysql[0];
 
-        //ifconfig
+//ifconfig
 
         /*
          * SELECT sum( data_length + index_length) / 1024 / 1024 " Taille en Mo" FROM information_schema.TABLES WHERE table_schema = "WORDPRESS" GROUP BY table_schema;
@@ -916,11 +900,81 @@ class Aspirateur extends Controller {
             echo "[" . date('Y-m-d H:i:s') . "]" . " Start all tests\n";
         }
 
+
+        define('QUEUE', 21671);
+
+//add message to queue
+        $queue = msg_get_queue(QUEUE);
+
+
+
+
+        $msg_qnum = (int) msg_stat_queue($queue)['msg_qnum'];
+
+
+
+
+        // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
+        if ($msg_qnum != 0) {
+            for ($i = 0; $i < 10; $i++) {
+                $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+                if ($msg_qnum == 0) {
+                    break;
+                }
+                sleep(1);
+            }
+        }
+
+
+
+        echo "############### Nombre de message en attente : " . $msg_qnum . "\n";
+
+
+
+        $mysql_servers = array();
+
+        if ($msg_qnum > 0) {
+
+            //mémoire partagé 
+            $this->allocate_tmp_storage('worker');
+            $elems = $this->shared['worker']->getData();
+
+            debug($elems);
+
+            $list = array();
+            $mysql_servers = array();
+
+            foreach ($elems as $server) {
+                $mysql_servers[] = $server['id'];
+                $list[] = "MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'];
+            }
+
+            echo implode("\n", $list) . "\n";
+            
+            
+            
+            // UPDATE is_available X => YELLOW  (not answered)
+        }
+        
+        
+        
+
         $this->view = false;
         $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "select id,name from mysql_server WHERE is_monitored =1;";
+        $sql = "select id,name from mysql_server WHERE is_monitored =1 ";
+        
+        
+        if (! empty($mysql_servers))
+        {
+            $sql .= " AND id NOT IN (".implode(',',$mysql_servers).")";
+        }
+        
+        $sql .= " ORDER by is_available ASC;";
 
-        Debug::debug($sql);
+        
+        echo \SqlFormatter::format($sql);
+        
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $server_list = array();
@@ -949,10 +1003,6 @@ class Aspirateur extends Controller {
 
         // filename: add_to_queue.php
         //creating a queue requires we come up with an arbitrary number
-        define('QUEUE', 21671);
-
-        //add message to queue
-        $queue = msg_get_queue(QUEUE);
 
 
         foreach ($server_list as $server) {
@@ -964,9 +1014,9 @@ class Aspirateur extends Controller {
 
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
-                //echo "added to queue  \n";
-                // you can use the msg_stat_queue() function to see queue status
-                //print_r(msg_stat_queue($queue));
+            //echo "added to queue  \n";
+            // you can use the msg_stat_queue() function to see queue status
+            //print_r(msg_stat_queue($queue));
             } else {
                 echo "could not add message to queue \n";
             }
@@ -975,16 +1025,24 @@ class Aspirateur extends Controller {
 
 
 
-        //$stats = msg_stat_queue($queue);
-        //debug($stats);
+//$stats = msg_stat_queue($queue);
+//debug($stats);
     }
 
     public function worker() {
-        // filename: worker.php
-        //getting our requires we supply the id number we created it with
+
+
+        //mémoire partagé 
+        $shared_mem = $this->allocate_tmp_storage('worker');
+
+        
         define('QUEUE', 21671);
 
 
+        $pid = getmypid();
+
+        //get mypid
+        //start worker => pid / id_mysql_server
 
         $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_close();
@@ -995,19 +1053,43 @@ class Aspirateur extends Controller {
         $msg = NULL;
         $max_msg_size = 512;
 
-        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
-            //echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} \n";
 
+
+
+        $data = array();
+
+        $data['pid'] = $pid;
+
+
+        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
+            //echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} [[" . $pid . "]]\n";
+
+            $id_mysql_server = $msg->id;
+
+            //$this->shared['worker']->mysql = NULL;
+
+            $data['id'] = $id_mysql_server;
+            $data['microtime'] = microtime(true);
+
+            $var = "mysql_server{$id_mysql_server}";
+            $this->shared['worker']->$var = $data;
 
             $this->tryMysqlConnection(array($msg->name, $msg->id));
 
+            unset($this->shared['worker']->$var);
 
 
+
+
+            //$this->shared['worker']->mysql_server->{"$msg->id"} = NULL;
             //do your business logic here and process this message!
             //finally, reset our msg vars for when we loop and run again
             $msg_type = NULL;
             $msg = NULL;
         }
+
+
+//remove pid and id_mysql_server
     }
 
     public function checkWorker($param) {
@@ -1032,7 +1114,7 @@ class Aspirateur extends Controller {
             while ($ob2 = $db->sql_fetch_object($res2)) {
 
 
-                $available = System2::isRunningPid($ob2->pid);
+                $available = System::isRunningPid($ob2->pid);
 
                 Debug::debug($available, "Result of pid : " . $ob2->pid);
 
@@ -1173,22 +1255,68 @@ class Aspirateur extends Controller {
         }
     }
 
+    public function shm() {
+
+        $shm_key = ftok(__FILE__, 't');
+        $shm_id = shmop_open($shm_key, "c", 0644, 100);
+
+
+        $shm_size = shmop_size($shm_id);
+        echo "Un bloc de SHM de taille " . $shm_size . " a été créé.\n";
+
+
+
+        if (!empty($shm_id)) {
+            echo "... shared memory exists\n";
+        } else {
+            echo "... shared memory doesn't exist\n";
+        }
+
+
+
+        $string = "Mon bloc dexvfgcnbxfghndtyj dtyj dtyj dtj dty jyj dtyj dtyjo_idytjh dtyhj yj mémoire partagée";
+
+
+        $shm_bytes_written = shmop_write($shm_id, $string, 0);
+
+        if ($shm_bytes_written != strlen($string)) {
+
+            throw new Exception("GLI");
+            echo "Impossible d'écrire toutes les données en mémoire\n";
+        }
+
+// Lecture du segment
+        $my_string = shmop_read($shm_id, 0, $shm_size);
+        if (!$my_string) {
+            echo "Impossible de lire toutes les données en mémoire\n";
+        }
+
+
+        echo "Les données mises en mémoire partagées sont : " . $my_string . "\n";
+
+// Maintenant, effaçons le bloc, et fermons le segment de mémoire
+        if (!shmop_delete($shm_id)) {
+            echo "Impossible d'effacer le segment de mémoire";
+        }
+    }
+
 }
 
 /*
  *
  *
                 $sql2 = 'SELECT table_schema,
-sum( data_length ) as "data",
-sum( index_length ) as "index",
-sum( data_free ) as "data_free" ,
-count(1) as "tables",
-sum(TABLE_ROWS) as "rows",
-DEFAULT_CHARACTER_SET_NAME,
-DEFAULT_COLLATION_NAME
+ sum( data_length ) as "data",
+ sum( index_length ) as "index",
+ sum( data_free ) as "data_free",
+ count(1) as "tables",
+ sum(TABLE_ROWS) as "rows",
+ DEFAULT_CHARACTER_SET_NAME,
+ DEFAULT_COLLATION_NAME
 FROM information_schema.TABLES a
 INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
-WHERE table_schema !="information_schema" AND table_schema !="performance_schema" AND table_schema !="mysql"
-GROUP BY table_schema ;';
+WHERE table_schema != "information_schema" AND table_schema != "performance_schema" AND table_schema != "mysql"
+GROUP BY table_schema;
+';
  *
  */
