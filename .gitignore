@@ -4,3 +4,8 @@ composer.lock
 version
 config.json
 /nbproject/private/
+workers.ipc
+openvpn-status.log
+phpunit.xml
+packages.json
+1

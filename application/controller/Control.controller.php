@@ -6,7 +6,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-
+use \App\Library\System;
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
  * ./glial integrate evaluate --debug
@@ -149,6 +149,7 @@ class Control extends Controller {
 
             $this->logger->info($sql);
         }
+        
     }
 
     /*
@@ -207,6 +208,15 @@ class Control extends Controller {
             Debug::debug($partitions['min'], "Drop Partition");
 
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
+                
+                
+                //delete server_*
+                
+                System::deleteFiles("server");
+                
+                //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+                Sleep(5);
+                
                 $this->dropPartition(array($partitions['min']));
             }
         }
@@ -251,26 +261,8 @@ class Control extends Controller {
             $this->logger->info($sql);
         }
 
-        
-        /*
-        $sql = "DROP TABLE IF EXISTS `ts_date_by_server`";
-        $db->sql_query($sql);
-        */
+       System::deleteFiles("server");
 
-        
-
-
-        $to_delete = array("/dev/shm/server_*", "/dev/shm/answer_*", "/dev/shm/variable_*");
-
-
-        foreach ($to_delete as $file_to_delete) {
-
-            $files = glob($file_to_delete);
-
-            if (count($files) > 0) {
-                shell_exec("rm " . $file_to_delete);
-            }
-        }
     }
 
     public function createTsTable() {
@@ -283,11 +275,6 @@ class Control extends Controller {
         foreach ($this->tables as $table) {
             foreach ($this->ext as $ext) {
                 $table_name = $table . "_" . $ext;
-
-                /*
-                 *
-                 *
-                 */
 
 
                 $sql = "CREATE TABLE `" . $table_name . "` (
@@ -354,6 +341,8 @@ PARTITION BY RANGE (to_days(`date`))
 
         $this->dropTsTable();
         $this->createTsTable();
+        
+        
 
 
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));

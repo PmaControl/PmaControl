@@ -774,9 +774,20 @@ class Dot2 extends Controller
         return $node;
     }
 
+    
+    
+    /*
+     * 
+     * 
+     * to move in library
+     */
     private function formatVersion($version)
     {
 
+        if (empty($version))
+        {
+            return "Unknow";
+        }
 
         if (strpos($version, "-")) {
             $number   = explode("-", $version)[0];
