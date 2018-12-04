@@ -1095,9 +1095,10 @@ class Aspirateur extends Controller {
             $this->tryMysqlConnection(array($msg->name, $msg->id));
 
 
+            /*
             if ($msg->id == "16") {
                 sleep(60);
-            }
+            }*/
 
 
 
