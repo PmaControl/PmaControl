@@ -13,6 +13,7 @@ use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Chiffrement;
 use App\Library\Zmsg;
+use \Glial\Cli\Color;
 
 //require ROOT."/application/library/Filter.php";
 //https://blog.programster.org/php-multithreading-pool-example
@@ -358,11 +359,11 @@ class Aspirateur extends Controller {
         if (!empty($var['variables']['gtid_slave_pos'])) {
             unset($var['variables']['gtid_slave_pos']);
         }
-        
+
         if (!empty($var['variables']['timestamp'])) {
             unset($var['variables']['timestamp']);
         }
-        
+
 
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
@@ -440,7 +441,7 @@ class Aspirateur extends Controller {
         $this->allocate_shared_storage('answer');
 
 
-        
+
 //push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
@@ -927,53 +928,70 @@ class Aspirateur extends Controller {
 
 
 
-        echo "############### Nombre de message en attente : " . $msg_qnum . "\n";
-
-
 
         $mysql_servers = array();
 
-        if ($msg_qnum > 0) {
 
-            //mémoire partagé 
-            $this->allocate_tmp_storage('worker');
-            $elems = $this->shared['worker']->getData();
 
-            debug($elems);
 
-            $list = array();
-            $mysql_servers = array();
 
-            foreach ($elems as $server) {
-                $mysql_servers[] = $server['id'];
-                $list[] = "MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'];
+
+        //mémoire partagé 
+        $this->allocate_tmp_storage('worker');
+        $elems = $this->shared['worker']->getData();
+
+        debug($elems);
+
+        $list = array();
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        foreach ($elems as $server) {
+            $mysql_servers[] = $server['id'];
+            $list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
+
+            $time = microtime(true) - $server['microtime'];
+
+
+
+            //special case for timeout 60 seconds, else we see working since ... and not the real error
+            $sql = "SELECT error,is_available from mysql_server WHERE id = " . $server['id'] . ";";
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                if ($ob->is_available != 0) {
+                    // UPDATE is_available X => YELLOW  (not answered)
+                    $sql = "UPDATE `mysql_server` SET is_available = -1, `error`= 'Worker still runnig since " . round($time, 2) . " seconds' WHERE `id` =" . $server['id'] . ";";
+                    echo \SqlFormatter::format($sql);
+                    $db->sql_query($sql);
+                }
             }
-
-            echo implode("\n", $list) . "\n";
-            
-            
-            
-            // UPDATE is_available X => YELLOW  (not answered)
         }
-        
-        
-        
+
+        echo implode("\n", $list) . "\n";
+
+
+
+
+
+
+
 
         $this->view = false;
         $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "select id,name from mysql_server WHERE is_monitored =1 ";
-        
-        
-        if (! empty($mysql_servers))
-        {
-            $sql .= " AND id NOT IN (".implode(',',$mysql_servers).")";
+        $sql = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
+
+
+        if (!empty($mysql_servers)) {
+            $sql .= " AND id NOT IN (" . implode(',', $mysql_servers) . ")";
         }
-        
+
         $sql .= " ORDER by is_available ASC;";
 
-        
+
         echo \SqlFormatter::format($sql);
-        
+
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -1014,9 +1032,9 @@ class Aspirateur extends Controller {
 
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
-            //echo "added to queue  \n";
-            // you can use the msg_stat_queue() function to see queue status
-            //print_r(msg_stat_queue($queue));
+                //echo "added to queue  \n";
+                // you can use the msg_stat_queue() function to see queue status
+                //print_r(msg_stat_queue($queue));
             } else {
                 echo "could not add message to queue \n";
             }
@@ -1035,7 +1053,7 @@ class Aspirateur extends Controller {
         //mémoire partagé 
         $shared_mem = $this->allocate_tmp_storage('worker');
 
-        
+
         define('QUEUE', 21671);
 
 
@@ -1075,6 +1093,13 @@ class Aspirateur extends Controller {
             $this->shared['worker']->$var = $data;
 
             $this->tryMysqlConnection(array($msg->name, $msg->id));
+
+
+            if ($msg->id == "16") {
+                sleep(60);
+            }
+
+
 
             unset($this->shared['worker']->$var);
 
@@ -1239,6 +1264,8 @@ class Aspirateur extends Controller {
         while ($ob = $db->sql_fetch_object($res)) {
             $this->removeWorker(array($ob->id_daemon_main));
         }
+
+        System::deleteFiles('worker');
     }
 
     public function checkAllWorker($param) {
