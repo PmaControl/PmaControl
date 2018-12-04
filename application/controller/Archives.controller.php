@@ -12,13 +12,15 @@ use \Monolog\Handler\StreamHandler;
 use App\Library\Chiffrement;
 use \App\Library\Debug;
 
+use App\Library\System;
+
 class Archives extends Controller
 {
 
     use App\Library\Filter;
     use App\Library\Scp;
     use App\Library\File;
-    use App\Library\System;
+    
     var $id_user_main    = 0;
     var $id_archive_load = 0;
     var $user            = array();
@@ -540,10 +542,9 @@ ORDER BY a.id DESC";
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            if (!$this->isRunningPid($ob->pid)) {
+            if (!System::isRunningPid($ob->pid)) {
 
-                $sql = "UPDATE `archive_load` SET status = 'ERROR' WHERE id = ".$ob->id.";
-";
+                $sql = "UPDATE `archive_load` SET status = 'ERROR' WHERE id = ".$ob->id.";";
                 //debug($sql);
                 $db->sql_query($sql);
             }
