@@ -948,23 +948,29 @@ class Aspirateur extends Controller {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         foreach ($elems as $server) {
-            $mysql_servers[] = $server['id'];
-            $list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
-
-            $time = microtime(true) - $server['microtime'];
 
 
+            if (System::isRunningPid($server['pid'])) {
 
-            //special case for timeout 60 seconds, else we see working since ... and not the real error
-            $sql = "SELECT error,is_available from mysql_server WHERE id = " . $server['id'] . ";";
-            $res = $db->sql_query($sql);
 
-            while ($ob = $db->sql_fetch_object($res)) {
-                if ($ob->is_available != 0) {
-                    // UPDATE is_available X => YELLOW  (not answered)
-                    $sql = "UPDATE `mysql_server` SET is_available = -1, `error`= 'Worker still runnig since " . round($time, 2) . " seconds' WHERE `id` =" . $server['id'] . ";";
-                    echo \SqlFormatter::format($sql);
-                    $db->sql_query($sql);
+                $mysql_servers[] = $server['id'];
+                $list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
+
+                $time = microtime(true) - $server['microtime'];
+
+
+
+                //special case for timeout 60 seconds, else we see working since ... and not the real error
+                $sql = "SELECT error,is_available from mysql_server WHERE id = " . $server['id'] . ";";
+                $res = $db->sql_query($sql);
+
+                while ($ob = $db->sql_fetch_object($res)) {
+                    if ($ob->is_available != 0) {
+                        // UPDATE is_available X => YELLOW  (not answered)
+                        $sql = "UPDATE `mysql_server` SET is_available = -1, `error`= 'Worker still runnig since " . round($time, 2) . " seconds' WHERE `id` =" . $server['id'] . ";";
+                        echo \SqlFormatter::format($sql);
+                        $db->sql_query($sql);
+                    }
                 }
             }
         }
@@ -1096,9 +1102,9 @@ class Aspirateur extends Controller {
 
 
             /*
-            if ($msg->id == "16") {
-                sleep(60);
-            }*/
+              if ($msg->id == "16") {
+              sleep(60);
+              } */
 
 
 
