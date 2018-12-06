@@ -950,6 +950,7 @@ class Aspirateur extends Controller {
         foreach ($elems as $server) {
 
 
+            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid'])) {
 
 
