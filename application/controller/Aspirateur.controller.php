@@ -929,16 +929,13 @@ class Aspirateur extends Controller {
 
         foreach ($elems as $server) {
 
-
             // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid'])) {
-
 
                 $mysql_servers[] = $server['id'];
                 $list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
 
                 $time = microtime(true) - $server['microtime'];
-
 
 
                 //special case for timeout 60 seconds, else we see working since ... and not the real error
@@ -948,7 +945,9 @@ class Aspirateur extends Controller {
                 while ($ob = $db->sql_fetch_object($res)) {
                     if ($ob->is_available != 0) {
                         // UPDATE is_available X => YELLOW  (not answered)
-                        $sql = "UPDATE `mysql_server` SET is_available = -1, `error`= 'Worker still runnig since " . round($time, 2) . " seconds' WHERE `id` =" . $server['id'] . ";";
+                        $sql = "UPDATE `mysql_server` SET is_available = -1,
+                            `date_refresh` = '" . date("Y-m-d H:i:s") . "',
+                            `error`= 'Worker still runnig since " . round($time, 2) . " seconds' WHERE `id` =" . $server['id'] . ";";
                         echo \SqlFormatter::format($sql);
                         $db->sql_query($sql);
                     }
@@ -957,12 +956,6 @@ class Aspirateur extends Controller {
         }
 
         echo implode("\n", $list) . "\n";
-
-
-
-
-
-
 
 
         $this->view = false;
@@ -1026,9 +1019,6 @@ class Aspirateur extends Controller {
                 echo "could not add message to queue \n";
             }
         }
-
-
-
 
 //$stats = msg_stat_queue($queue);
 //debug($stats);
