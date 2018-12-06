@@ -320,7 +320,9 @@ class Aspirateur extends Controller {
             echo $name_server . " : " . $error_msg . "\n";
 
             $db = $this->di['db']->sql(DB_DEFAULT);
-            $sql = "UPDATE `mysql_server` SET `error` ='" . $db->sql_real_escape_string($error_msg) . "', `is_available` = 0 WHERE id =" . $id_server;
+            $sql = "UPDATE `mysql_server` SET `error` ='" . $db->sql_real_escape_string($error_msg) . "', 
+                `date_refresh` = '" . date("Y-m-d H:i:s") . "',
+                    `is_available` = 0 WHERE id =" . $id_server;
             $db->sql_query($sql);
             $db->sql_close();
 
@@ -402,15 +404,6 @@ class Aspirateur extends Controller {
 
 
 
-        /*
-          $err = error_get_last();
-
-
-          if ($err !== NULL) {
-          throw new \Exception('PMACTRL-056 : ' . $err['message'] . ' in ' . $err['file'] . ' on line ' . $err['line'], 80);
-          } */
-
-
 
         $md5 = md5(json_encode($var));
 
@@ -459,20 +452,7 @@ class Aspirateur extends Controller {
 
 
 
-        /*
-          fflush($fp);            // libère le contenu avant d'enlever le verrou
-          flock($fp, LOCK_UN);    // Enlève le verrou
-
-
-          fclose($fp);
-          //unlink($lock_file);
-         */
-
-//$this->showQueries();
         $mysql_tested->sql_close();
-
-
-//Debug::debugQueriesOff();
     }
 
     public function allocate_shared_storage($name = 'answer') {

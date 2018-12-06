@@ -999,6 +999,13 @@ var myChart = new Chart(ctx, {
     {
         $id_server = $param[0];
 
+        if (empty($id_server))
+        {
+            throw new \Exception("PMACTRL-748 : Impossible to get id_server, wrong URL ?");
+        }
+        
+        
+        
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -1013,7 +1020,7 @@ var myChart = new Chart(ctx, {
                 if ($ret) {
 
                     Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-                    Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+                    
 
                     set_flash("success", "Success", "Password updated !");
 
@@ -1026,6 +1033,27 @@ var myChart = new Chart(ctx, {
                 }
             }
         }
+        
+        $sql = "SELECT * FROM mysql_server WHERE id =".$id_server;
+        
+        $res = $db->sql_query($sql);
+        
+        $data['server'] = array();
+        while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['server'] = $ob;
+        }
+        
+        
+        $this->set('data', $data);
+    }
+    
+    
+    public function upd()
+    {
+        
+        
+        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function acknowledge($param)
