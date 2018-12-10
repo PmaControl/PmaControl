@@ -1107,30 +1107,29 @@ class Aspirateur extends Controller
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
 
 
-            if (!file_exists($lock_file)) {
 
-                $fp = fopen($lock_file, "w+");
+            $fp = fopen($lock_file, "w+");
 
-                fwrite($fp, json_encode($data));
-                fflush($fp);            // libère le contenu avant d'enlever le verrou
-                fclose($fp);
-
-
-
-                $this->tryMysqlConnection(array($msg->name, $msg->id));
+            fwrite($fp, json_encode($data));
+            fflush($fp);            // libère le contenu avant d'enlever le verrou
+            fclose($fp);
 
 
 
-                if ($msg->id == "16") {
-                    sleep(60);
-                }
-                /**
-                 * test retard reponse mysql
-                 */
-                if (file_exists($lock_file)) {
-                    unlink($lock_file);
-                }
+            $this->tryMysqlConnection(array($msg->name, $msg->id));
+
+
+
+            if ($msg->id == "16") {
+                sleep(60);
             }
+            /**
+             * test retard reponse mysql
+             */
+            if (file_exists($lock_file)) {
+                unlink($lock_file);
+            }
+
 
 
 
