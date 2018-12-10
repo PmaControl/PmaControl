@@ -181,47 +181,13 @@ class Server extends Controller
 
         $this->di['js']->addJavascript(array('clipboard.min.js'));
 
-        $this->di['js']->code_javascript('
-        $("#check-all").click(function(){
-    $("input:checkbox").not(this).prop("checked", this.checked);
-});
-
-
-(function(){
-  new Clipboard(".copy-button");
-})();
-
-');
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-
-            if (!empty($_POST['is_monitored'])) {
-
-//start transaction !
-                $sql = "UPDATE mysql_server a SET is_monitored='0' WHERE 1 ".$this->getFilter();
-
-                $db->sql_query($sql);
-
-                if (!empty($_POST['monitored'])) {
-                    foreach ($_POST['monitored'] as $key => $val) {
-//ugly to optimize but no time now
-                        if ($val == "on") {
-                            $sql = "UPDATE mysql_server a SET is_monitored='1' WHERE id='".$key."' ".$this->getFilter();
-                            $db->sql_query($sql);
-                        }
-                    }
-                }
-            }
-
-//header
-        }
 
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class` FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by d.`libelle`;";
+                 ORDER by a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
 
         $res = $db->sql_query($sql);
 

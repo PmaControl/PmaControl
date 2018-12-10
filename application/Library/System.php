@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -8,20 +7,22 @@
 
 namespace App\Library;
 
-class System {
+class System
+{
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
      * @return boolean Success
      * @package Controller
      * @since 0.8 First time this was introduced.
+     * @since pmacontrol 1.5.7 updated with /proc/pid
      * @description test if daemon is launched or not according with pid saved in table daemon_main
      * @access public
      * 
      */
 
-    static public function isRunningPid($param) {
-
+    static public function isRunningPid($param)
+    {
         if (is_array($param)) {
             $pid = $param[0];
         } else {
@@ -32,20 +33,22 @@ class System {
             return false;
         }
 
-        $cmd = "ps -p " . $pid;
-        $alive = shell_exec($cmd);
+        $pid = intval($pid);
 
-        if (strpos($alive, $pid) !== false) {
+
+        if (file_exists("/proc/".$pid)) {
+            //process with a pid = $pid is running
             return true;
         }
 
         return false;
     }
 
-    static public function deleteFiles($file = "") {
+    static public function deleteFiles($file = "")
+    {
 
-        $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*", 
-            "variable" => "/dev/shm/variable_*","worker" => "/dev/shm/worker" );
+        $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*",
+            "variable" => "/dev/shm/variable_*", "worker" => "/dev/shm/worker");
 
         if (!empty($file)) {
             if (!empty($to_delete[$file])) {
@@ -63,9 +66,8 @@ class System {
             $files = glob($file_to_delete);
 
             if (count($files) > 0) {
-                shell_exec("rm " . $file_to_delete);
+                shell_exec("rm ".$file_to_delete);
             }
         }
     }
-
 }
