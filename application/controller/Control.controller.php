@@ -25,7 +25,7 @@ class Control extends Controller {
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
     var $engine = "tokudb";
-    var $engine_preference = array("TokuDB", "ROCKSDB");
+    var $engine_preference = array( "ROCKSDB", "TokuDB");
     var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     var $percent_max_disk_used = 80;
 
