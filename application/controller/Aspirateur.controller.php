@@ -893,11 +893,7 @@ class Aspirateur extends Controller
     public function addToQueue($param)
     {
 
-        $date_start = microtime(true);
-
-
-        $param[] = "--debug";
-
+        $param[] = '--debug';
         Debug::parseDebug($param);
 
 
@@ -909,10 +905,25 @@ class Aspirateur extends Controller
         }
 
 
+        $db         = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main WHERE id=".$id_daemon.";";
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $queue_key = intval($ob->queue_key);
+
+        }
+
+
+        Debug::debug($queue_key,"QUEUE");
+
         define('QUEUE', 21671);
 
 //add message to queue
-        $queue    = msg_get_queue(QUEUE);
+        $queue    = msg_get_queue($queue_key);
         $msg_qnum = (int) msg_stat_queue($queue)['msg_qnum'];
 
         // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
@@ -955,10 +966,7 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
 
 
-            if ($server['id'] == "16") {
-                Debug::debug($server['pid']);
-                Debug::debug(System::isRunningPid($server['pid']), "pid running");
-            }
+            
 
 
             // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
@@ -989,6 +997,14 @@ class Aspirateur extends Controller
                     }
                 }
             }
+            else
+            {
+                //si pid n'existe plus alors on efface le fichier de lock
+                $lock_file = TMP."lock/worker/".$server['id'].".lock";
+
+                unlink($lock_file);
+
+            }
         }
 
         echo implode("\n", $list)."\n";
@@ -998,7 +1014,7 @@ class Aspirateur extends Controller
 
 
         $this->view = false;
-        $db         = $this->di['db']->sql(DB_DEFAULT);
+        
         $sql        = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
 
 
@@ -1006,7 +1022,7 @@ class Aspirateur extends Controller
             $sql .= " AND id NOT IN (".implode(',', $mysql_servers).")";
         }
 
-        $sql .= " ORDER by is_available ASC;";
+        $sql .= " ORDER by is_available ASC, date_refresh DESC;";
 
 
         echo \SqlFormatter::format($sql);
