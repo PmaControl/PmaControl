@@ -1062,7 +1062,7 @@ class Dot2 extends Controller
             $count_by_type['0']  = $count_by_type['0'] ?? 0;
             $count_by_type['1']  = $count_by_type['1'] ?? 0;
 
-            debug($count_by_type);
+            //debug($count_by_type);
 
 
             if ($count_by_type['1'] === $nb_node) {
@@ -1124,6 +1124,9 @@ class Dot2 extends Controller
 //		ksort($nodes);
 
                 if (count($nodes) > 1) {
+
+
+                    //$cluster .= "{".implode(";", $nodes_ordered)."; } ;\n";
                     $cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n";
                 } else {
                     $cluster .= end($nodes).";\n"; // [constraint=false]
@@ -1131,7 +1134,7 @@ class Dot2 extends Controller
 
                 foreach ($nodes as $id_mysql_server) {
 
-                    // $cluster .= $id_mysql_server.";\n";
+                     $cluster .= $id_mysql_server.";\n";
                 }
 
 

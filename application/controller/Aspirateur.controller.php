@@ -899,26 +899,31 @@ class Aspirateur extends Controller
 
         $id_daemon = $param[0];
 
+        if (empty($id_daemon)) {
+            throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
+        }
+
+
+
 
         if (Debug::$debug) {
             echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
         }
 
 
-        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main WHERE id=".$id_daemon.";";
 
         $res = $db->sql_query($sql);
 
-        while($ob = $db->sql_fetch_object($res))
-        {
-            $queue_key = intval($ob->queue_key);
-
+        while ($ob = $db->sql_fetch_object($res)) {
+            $queue_key        = intval($ob->queue_key);
+            $maxExecutionTime = $ob->max_delay;
         }
 
 
-        Debug::debug($queue_key,"QUEUE");
+        Debug::debug($queue_key, "QUEUE");
 
         define('QUEUE', 21671);
 
@@ -928,7 +933,7 @@ class Aspirateur extends Controller
 
         // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
         if ($msg_qnum != 0) {
-            for ($i = 0; $i < 10; $i++) {
+            for ($i = 0; $i < $maxExecutionTime; $i++) {
                 $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
                 if ($msg_qnum == 0) {
                     break;
@@ -948,6 +953,7 @@ class Aspirateur extends Controller
         $elems = array();
         foreach (glob($lock_directory) as $filename) {
 
+            Debug::debug($filename, "filename");
 
             $json = file_get_contents($filename);
 
@@ -966,11 +972,11 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
 
 
-            
-
+            //on verifie avec le double buffer qu'on est bien sur le même pid et ce dernier est toujours sur le serveur MySQL qui pose problème
+            $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
 
             // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
-            if (System::isRunningPid($server['pid']) === true) {
+            if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
 
                 Debug::debug($server['pid'], "GOOD");
@@ -996,14 +1002,11 @@ class Aspirateur extends Controller
                         $db->sql_query($sql);
                     }
                 }
-            }
-            else
-            {
+            } else {
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker/".$server['id'].".lock";
 
                 unlink($lock_file);
-
             }
         }
 
@@ -1014,8 +1017,8 @@ class Aspirateur extends Controller
 
 
         $this->view = false;
-        
-        $sql        = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
+
+        $sql = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
 
 
         if (!empty($mysql_servers)) {
@@ -1036,21 +1039,7 @@ class Aspirateur extends Controller
         }
 
 
-        /*
-          $sql = "SELECT * FROM daemon_main where id=".$id_daemon;
-          $res = $db->sql_query($sql);
 
-          if ($db->sql_num_rows($res) !== 1) {
-          throw new \Exception("PMACTRL-874 : This daemon with id=".$id_daemon." doesn't exist !", 80);
-          }
-
-          while ($ob = $db->sql_fetch_object($res)) {
-          $maxThreads       = $ob->thread_concurency; // check MySQL server x by x
-          $maxExecutionTime = $ob->max_delay;
-          }
-
-          Debug::debug("max execution time : ".$maxExecutionTime);
-         */
 
         //to prevent any trouble with fork
         //$this->debugShowQueries();
@@ -1122,13 +1111,18 @@ class Aspirateur extends Controller
 
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
 
+            $double_buffer = TMP."lock/worker/".$pid.".pid";
 
 
             $fp = fopen($lock_file, "w+");
-
             fwrite($fp, json_encode($data));
             fflush($fp);            // libère le contenu avant d'enlever le verrou
             fclose($fp);
+
+            $fp2 = fopen($double_buffer, "w+");
+            fwrite($fp2, $id_mysql_server);
+            fflush($fp2);            // libère le contenu avant d'enlever le verrou
+            fclose($fp2);
 
 
 
@@ -1272,6 +1266,14 @@ class Aspirateur extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $cmd = "kill ".$ob->pid;
             shell_exec($cmd);
+
+
+            $double_buffer = TMP."lock/worker/".$ob->pid.".pid";
+
+
+            if (file_exists($file)) {
+                unlink($double_buffer);
+            }
 
 
             $file = TMP."log/worker_".$id_daemon_main."_".$ob->id.".log";
