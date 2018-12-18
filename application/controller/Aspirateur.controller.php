@@ -455,20 +455,13 @@ class Aspirateur extends Controller
 //push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
-
-
-        echo "save : ";
+        
         if ($export_variables) {
 
             $variables = array();
-
-            echo "saved VARIABLES ";
-
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server}     = $variables;
         }
-
-
 
         $mysql_tested->sql_close();
     }

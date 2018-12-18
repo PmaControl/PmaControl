@@ -103,7 +103,7 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',6594,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',6598,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',6602,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',6609,64,'log/daemon_11.log',10,3,20,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',6622,64,'log/daemon_12.log',10,1,2,'Aspirateur','checkAllWorker','',0,0,0);
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',24953,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',24905,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',24917,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',24929,64,'log/daemon_11.log',4,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',24941,64,'log/daemon_12.log',10,1,2,'Aspirateur','checkAllWorker','',0,0,0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1931,7 +1931,11 @@ CREATE TABLE `ts_date_by_server` (
  PARTITION `p737406` VALUES LESS THAN (737406) ENGINE = ROCKSDB,
  PARTITION `p737407` VALUES LESS THAN (737407) ENGINE = ROCKSDB,
  PARTITION `p737408` VALUES LESS THAN (737408) ENGINE = ROCKSDB,
- PARTITION `p737409` VALUES LESS THAN (737409) ENGINE = ROCKSDB);
+ PARTITION `p737409` VALUES LESS THAN (737409) ENGINE = ROCKSDB,
+ PARTITION `p737410` VALUES LESS THAN (737410) ENGINE = ROCKSDB,
+ PARTITION `p737411` VALUES LESS THAN (737411) ENGINE = ROCKSDB,
+ PARTITION `p737412` VALUES LESS THAN (737412) ENGINE = ROCKSDB,
+ PARTITION `p737413` VALUES LESS THAN (737413) ENGINE = ROCKSDB);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
