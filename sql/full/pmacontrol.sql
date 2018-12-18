@@ -1908,37 +1908,6 @@ CREATE TABLE `tag` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `ts_date_by_server`
---
-
-DROP TABLE IF EXISTS `ts_date_by_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ts_date_by_server` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `id_ts_file` int(11) NOT NULL,
-  `date` datetime NOT NULL,
-  PRIMARY KEY (`id`,`date`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)
-) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT
- PARTITION BY RANGE (to_days(`date`))
-(PARTITION `p737401` VALUES LESS THAN (737401) ENGINE = ROCKSDB,
- PARTITION `p737402` VALUES LESS THAN (737402) ENGINE = ROCKSDB,
- PARTITION `p737403` VALUES LESS THAN (737403) ENGINE = ROCKSDB,
- PARTITION `p737404` VALUES LESS THAN (737404) ENGINE = ROCKSDB,
- PARTITION `p737405` VALUES LESS THAN (737405) ENGINE = ROCKSDB,
- PARTITION `p737406` VALUES LESS THAN (737406) ENGINE = ROCKSDB,
- PARTITION `p737407` VALUES LESS THAN (737407) ENGINE = ROCKSDB,
- PARTITION `p737408` VALUES LESS THAN (737408) ENGINE = ROCKSDB,
- PARTITION `p737409` VALUES LESS THAN (737409) ENGINE = ROCKSDB,
- PARTITION `p737410` VALUES LESS THAN (737410) ENGINE = ROCKSDB,
- PARTITION `p737411` VALUES LESS THAN (737411) ENGINE = ROCKSDB,
- PARTITION `p737412` VALUES LESS THAN (737412) ENGINE = ROCKSDB,
- PARTITION `p737413` VALUES LESS THAN (737413) ENGINE = ROCKSDB);
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ts_max_date`
 --
 
