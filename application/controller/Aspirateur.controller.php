@@ -25,8 +25,9 @@ class Aspirateur extends Controller
 {
 
     use \App\Library\Filter;
-    var $shared   = array();
-    var $log_file = TMP."log/daemon.log";
+    var $shared        = array();
+    var $log_file      = TMP."log/daemon.log";
+    var $lock_variable = TMP."lock/variable/{id_mysql_server}.md5";
 
     /*
      * (PmaControl 0.8)<br/>
@@ -406,23 +407,40 @@ class Aspirateur extends Controller
 
         $md5 = md5(json_encode($var));
 
-        $this->allocate_tmp_storage('server_'.$id_server);
+
+        //$this->allocate_tmp_storage('server_'.$id_server);
+
+        $file_md5 = str_replace('{id_mysql_server}', $id_server, $this->lock_variable);
+
+
+
 
         $export_variables = false;
 
         Debug::debug($md5, "NEW MD5");
 
-        if (!empty($this->shared['server_'.$id_server]->md5)) {
+        if (file_exists($file_md5)) {
 
-            Debug::debug($this->shared['server_'.$id_server]->md5, "OLD MD5");
 
-            if ($this->shared['server_'.$id_server]->md5 != $md5) {
-                $export_variables                        = true;
-                $this->shared['server_'.$id_server]->md5 = $md5;
+            $cmp_md5 = file_get_contents($file_md5);
+
+            Debug::debug($cmp_md5, "OLD MD5");
+
+            if ($cmp_md5 != $md5) {
+                $export_variables = true;
+
+                file_put_contents($file_md5, $md5);
             }
         } else {
-            $this->shared['server_'.$id_server]->md5 = $md5;
-            $export_variables                        = true;
+
+
+            /*
+            if (!is_writable(dirname($file_md5))) {
+                Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+            }*/
+
+            file_put_contents($file_md5, $md5);
+            $export_variables = true;
         }
 
         if ($export_variables) {
