@@ -27,7 +27,7 @@ echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
-echo '<form action="" method="post" class="form-inline">';
+echo '<form action="" method="post" class="form-inline" autocomplete="off">';
 
 
 echo '<div class="panel panel-primary">
@@ -45,7 +45,7 @@ echo '<div class="col-md-4 stackem">';
 
 echo '<div>';
 echo "Login SSH<br />";
-echo Form::input("mysql_server", "login_ssh", array("class" => "form-control", "style" => "width:100%"));
+echo Form::input("mysql_server", "login_ssh", array("class" => "form-control", "style" => "width:100%", "autocomplete" => "off"));
 echo '</div>';
 
 
@@ -53,7 +53,7 @@ echo '</div>';
 
 echo '<div>';
 echo "Password SSH<br />";
-echo Form::input("mysql_server", "password_ssh", array("class" => "form-control", "style" => "width:100%", "type" => "password"));
+echo Form::input("mysql_server", "password_ssh", array("class" => "form-control", "style" => "width:100%", "type" => "password" , "autocomplete" => "off"));
 echo '</div>';
 
 echo '</div>';
