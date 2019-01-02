@@ -153,7 +153,7 @@ class Mysqlsys extends Controller
             $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\''.$ob->login.'\'@\'localhost\'" 2>&1';
             $ret = shell_exec($cmd);
 
-//debug($ret);
+          
 
             $out               = explode("\n", $ret)[1];
             $data['file_name'] = trim(str_replace('Wrote file:', '', $out));

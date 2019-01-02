@@ -16,6 +16,8 @@ echo '<th>'.__('By').'</th>';
 echo '<th>'.__("Each").'</th>';
 echo '<th>'.__("Thread concurrency").'</th>';
 echo '<th>'.__("Maximum Delay").'</th>';
+echo '<th>'.__("Queue number").'</th>';
+echo '<th>'.__("Queue msg").'</th>';
 echo '<th>'.__("Path").'</th>';
 echo '<th>'.__("File log").'</th>';
 echo '<th>'.__("Command").'</th>';
@@ -33,6 +35,8 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.'Aurélien LEQUOY'.'</td>';
     echo '<td>'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
+    echo '<td>'.$daemon['queue_number'].'</td>';
+    echo '<td>'.$daemon['nb_msg'].'</td>';
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
     echo '<td>'.$daemon['log_file'].'</td>';
     echo '<td>';
@@ -66,6 +70,6 @@ foreach ($data['daemon'] as $daemon) {
 echo '</table>';
 
 echo ' <div class="btn-group" role="group" aria-label="Default button group">';
-echo '&nbsp;<a href="'.LINK.'Agent/stop/'.$daemon['pid'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
-echo '<a href="'.LINK.'Agent/start" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
+echo '&nbsp;<a href="'.LINK.'Daemon/stopAll/" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
+echo '<a href="'.LINK.'Daemon/startAll" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
 echo '</div>';
