@@ -1,13 +1,13 @@
--- MySQL dump 10.16  Distrib 10.3.10-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.17  Distrib 10.3.11-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 127.0.0.1    Database: pma_new
+-- Host: 127.0.0.1    Database: pma4
 -- ------------------------------------------------------
--- Server version	10.3.10-MariaDB-1:10.3.10+maria~bionic-log
+-- Server version	10.3.11-MariaDB-1:10.3.11+maria~xenial-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -102,7 +102,7 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',22544,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',22496,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',22508,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',22520,64,'log/daemon_11.log',10,10,20,'Aspirateur','addToQueue','',0,21671,0),(12,'check all queue','2018-11-27 18:15:54',22532,64,'log/daemon_12.log',10,0,2,'Aspirateur','checkAllWorker','',0,0,0);
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',11341,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',11347,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',11357,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',11367,64,'log/daemon_11.log',10,10,20,'Aspirateur','addToQueue','',0,21671,0),(12,'check all queue','2018-11-27 18:15:54',11377,64,'log/daemon_12.log',10,0,2,'Aspirateur','checkAllWorker','',0,0,0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -565,16 +565,16 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MySQL dump 10.16  Distrib 10.3.10-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.17  Distrib 10.3.11-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 127.0.0.1    Database: pma_new
+-- Host: 127.0.0.1    Database: pma4
 -- ------------------------------------------------------
--- Server version	10.3.10-MariaDB-1:10.3.10+maria~bionic-log
+-- Server version	10.3.11-MariaDB-1:10.3.11+maria~xenial-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -1889,26 +1889,6 @@ CREATE TABLE `tag` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `ts_date_by_server`
---
-
-DROP TABLE IF EXISTS `ts_date_by_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ts_date_by_server` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `id_ts_file` int(11) NOT NULL,
-  `date` datetime NOT NULL,
-  PRIMARY KEY (`id`,`date`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)
-) ENGINE=TokuDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT
- PARTITION BY RANGE (to_days(`date`))
-(PARTITION `p737398` VALUES LESS THAN (737398) ENGINE = TokuDB,
- PARTITION `p737399` VALUES LESS THAN (737399) ENGINE = TokuDB);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
