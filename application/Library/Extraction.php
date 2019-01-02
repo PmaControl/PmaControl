@@ -243,7 +243,6 @@ class Extraction
             //$radical                              = $ob->radical;
         }
 
-
         return $variable;
     }
 

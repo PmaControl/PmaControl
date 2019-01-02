@@ -11,19 +11,19 @@ namespace App\Library;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
-use \Glial\Security\Crypt\Crypt;
+use App\Library\Chiffrement;
 
 trait Scp {
-
-
 
     public function sendFile($id_backup_storage_area, $src, $dst) {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * FROM backup_storage_area a WHERE a.id = " . $id_backup_storage_area;
+        $sql = "SELECT *, b.id FROM backup_storage_area a 
+                INNER JOIN ssh_key b ON a.id_ssh_key = b.id
+                WHERE a.id = " . $id_backup_storage_area;
         $res = $db->sql_query($sql);
 
-        Crypt::$key = CRYPT_KEY;
+
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -36,17 +36,11 @@ trait Scp {
 
             $dst = $ob->path . "/" . $dst;
 
-            $login = Crypt::decrypt($ob->ssh_login);
-
-
-            if (!empty($ob->ssh_password)) {
-                $password = Crypt::decrypt($ob->ssh_password);
+            
+            
+            if (!empty($ob->private_key)) {
+                $pv_key = Chiffrement::decrypt($ob->private_key);
             }
-
-            if (!empty($ob->ssh_key)) {
-                $pv_key = Crypt::decrypt($ob->ssh_key);
-            }
-
 
             $sftp = new SFTP($ob->ip);
             $ssh = new SSH2($ob->ip);
@@ -55,15 +49,14 @@ trait Scp {
             if (!empty($pv_key)) {
                 $key = new RSA();
                 $key->loadKey($pv_key);
-                $password = $key;
             }
 
-            if (!$sftp->login($login, $password)) {
+            if (!$sftp->login($ob->user, $key)) {
                 echo 'SCP Login Failed';
                 return false;
             }
 
-            if (!$ssh->login($login, $password)) {
+            if (!$ssh->login($ob->user, $key)) {
                 echo 'SSH Login Failed';
                 return false;
             }
@@ -74,9 +67,6 @@ trait Scp {
 
 
             $ssh->exec("mkdir -p " . $dst_dir);
-
-
-
 
             $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
             $data['execution_time'] = round(microtime(true) - $start, 0);
@@ -107,7 +97,9 @@ trait Scp {
     private function getFile($id_backup_storage_area, $src, $dst) {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * FROM backup_storage_area a WHERE a.id = " . $id_backup_storage_area;
+        $sql = "SELECT *, b.id FROM backup_storage_area a 
+                INNER JOIN ssh_key b ON a.id_ssh_key = b.id
+            WHERE a.id = " . $id_backup_storage_area;
         $res = $db->sql_query($sql);
 
         Crypt::$key = CRYPT_KEY;
@@ -121,17 +113,10 @@ trait Scp {
                 exit;
             }
 
-            $login = Crypt::decrypt($ob->ssh_login);
-
-
-            if (!empty($ob->ssh_password)) {
-                $password = Crypt::decrypt($ob->ssh_password);
+            
+            if (!empty($ob->private_key)) {
+                $pv_key = Chiffrement::decrypt($ob->private_key);
             }
-
-            if (!empty($ob->ssh_key)) {
-                $pv_key = Crypt::decrypt($ob->ssh_key);
-            }
-
 
             $sftp = new SFTP($ob->ip);
             $ssh = new SSH2($ob->ip);
@@ -140,34 +125,30 @@ trait Scp {
             if (!empty($pv_key)) {
                 $key = new RSA();
                 $key->loadKey($pv_key);
-                $password = $key;
             }
 
-            if (!$sftp->login($login, $password)) {
+            if (!$sftp->login($ob->user, $key)) {
                 echo 'SCP Login Failed';
                 return false;
             }
 
-            if (!$ssh->login($login, $password)) {
+            if (!$ssh->login($ob->user, $key)) {
                 echo 'SSH Login Failed';
                 return false;
             }
+            
 
-
-            $sftp->get( $src, $dst);
+            $sftp->get($src, $dst);
             $data['execution_time'] = round(microtime(true) - $start, 0);
 
 
             $data['size'] = $sftp->size($src);
 
-            $md5 = $ssh->exec("md5sum " . $src. " 2>1 >> /dev/null");
+            $md5 = $ssh->exec("md5sum " . $src . " 2>1 >> /dev/null");
 
             $data['md5'] = explode(" ", $md5)[0];
-            
-            return $data;
-                
-            
 
+            return $data;
         } //end while
     }
 

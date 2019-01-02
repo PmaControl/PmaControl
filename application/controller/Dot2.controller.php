@@ -398,7 +398,7 @@ class Dot2 extends Controller
                 $this->graph_node[$id_mysql_server]['color'] = self::NODE_AVAILABLE;
             } else if ($this->servers[$id_mysql_server]['is_available'] === "0") {
                 $this->graph_node[$id_mysql_server]['color'] = self::NODE_ERROR;
-            } else if ($this->servers[$id_mysql_server]['is_available'] === "2") {
+            } else if ($this->servers[$id_mysql_server]['is_available'] === "-1") {
                 $this->graph_node[$id_mysql_server]['color'] = self::NODE_NOT_ANSWERED;
             }
         }
@@ -553,7 +553,6 @@ class Dot2 extends Controller
         $this->pushServer();
         $this->pushUpdateMS();
         $this->pushMasterMaster();
-
         $this->pushGaleraCluster();
 
 //Debug::debug($this->slaves, "graph_edge");
@@ -774,9 +773,20 @@ class Dot2 extends Controller
         return $node;
     }
 
+    
+    
+    /*
+     * 
+     * 
+     * to move in library
+     */
     private function formatVersion($version)
     {
 
+        if (empty($version))
+        {
+            return "Unknow";
+        }
 
         if (strpos($version, "-")) {
             $number   = explode("-", $version)[0];

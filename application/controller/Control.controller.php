@@ -6,7 +6,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-
+use \App\Library\System;
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
  * ./glial integrate evaluate --debug
@@ -21,7 +21,8 @@ class Control extends Controller {
         , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
     //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     var $index = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)"
+        "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
     var $engine = "tokudb";
     var $engine_preference = array("TokuDB", "ROCKSDB");
@@ -38,7 +39,15 @@ class Control extends Controller {
 
         $datadir = $db->getVariables("datadir");
 
+
+
+        // connect to ssh to sql server
+        //$ssh->
+        // or local
         $size = shell_exec('cd ' . $datadir . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
+
+
+
 
         $percent = substr($size, 0, -1);
 
@@ -106,6 +115,8 @@ class Control extends Controller {
 
         foreach ($combi as $table) {
             $sql = "ALTER TABLE `" . $table . "` ADD PARTITION (PARTITION `p" . $partition_number . "` VALUES LESS THAN (" . $partition_number . ") ENGINE = " . $this->engine . ");";
+            
+            Debug::sql($sql);
             $db->sql_query($sql);
             $this->logger->info($sql);
         }
@@ -119,6 +130,9 @@ class Control extends Controller {
                 $combinaisons[] = $table . "_" . $ext;
             }
         }
+        
+        $combinaisons[] = "ts_date_by_server";
+        
 
         return $combinaisons;
     }
@@ -135,6 +149,7 @@ class Control extends Controller {
 
             $this->logger->info($sql);
         }
+        
     }
 
     /*
@@ -193,6 +208,15 @@ class Control extends Controller {
             Debug::debug($partitions['min'], "Drop Partition");
 
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
+                
+                
+                //delete server_*
+                
+                System::deleteFiles("server");
+                
+                //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+                Sleep(5);
+                
                 $this->dropPartition(array($partitions['min']));
             }
         }
@@ -215,11 +239,16 @@ class Control extends Controller {
         $this->updateLinkVariableServeur();
 
 
-        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+
+
+        //Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
-    public function dropTsTable() {
+    public function dropTsTable($param = array()) {
 
+        Debug::parseDebug($param);
+        
+        
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
@@ -227,28 +256,13 @@ class Control extends Controller {
         foreach ($combi as $table) {
             $sql = "DROP TABLE IF EXISTS `" . $table . "`;";
             $db->sql_query($sql);
+            Debug::sql($sql);
 
             $this->logger->info($sql);
         }
 
-        $sql = "DROP TABLE IF EXISTS `ts_date_by_server`";
-        $db->sql_query($sql);
+       System::deleteFiles("server");
 
-
-        Debug::sql($sql);
-
-
-        $to_delete = array("/dev/shm/server_*", "/dev/shm/answer_*", "/dev/shm/variable_*");
-
-
-        foreach ($to_delete as $file_to_delete) {
-
-            $files = glob($file_to_delete);
-
-            if (count($files) > 0) {
-                shell_exec("rm " . $file_to_delete);
-            }
-        }
     }
 
     public function createTsTable() {
@@ -261,11 +275,6 @@ class Control extends Controller {
         foreach ($this->tables as $table) {
             foreach ($this->ext as $ext) {
                 $table_name = $table . "_" . $ext;
-
-                /*
-                 *
-                 *
-                 */
 
 
                 $sql = "CREATE TABLE `" . $table_name . "` (
@@ -332,6 +341,8 @@ PARTITION BY RANGE (to_days(`date`))
 
         $this->dropTsTable();
         $this->createTsTable();
+        
+        
 
 
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
