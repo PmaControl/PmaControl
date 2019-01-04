@@ -78,13 +78,6 @@ class Database extends Controller
             }
         }
 
-
-
-
-
-
-
-
         //a déporté dans une librairy ?
         $sql = "SELECT * FROM mysql_privilege ORDER BY `type`, `privilege`";
         $res = $db->sql_query($sql);
@@ -119,5 +112,34 @@ class Database extends Controller
         }
 
         return $result;
+    }
+
+    public function refresh()
+    {
+
+
+        $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
+    data = $(this).val();
+    $("#id_mysql_server__from-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+       function(){
+	$("#id_mysql_server__from-database").selectpicker("refresh");
+    });
+});
+
+
+$("#database-id_mysql_server__target").change(function () {
+    data = $(this).val();
+    $("#id_mysql_server__target-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+       function(){
+	$("#id_mysql_server__target-database").selectpicker("refresh");
+    });
+});
+
+
+
+');
+        $data['listdb1'] = array();
+
+        $this->set('data', $data);
     }
 }
