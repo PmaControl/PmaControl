@@ -81,3 +81,10 @@ use Glial\Html\Form\Form;
         </div>
     </div>
 </form>
+
+
+
+<?php
+
+\Glial\Synapse\FactoryController::addNode("Database", "refresh", array());
+?>

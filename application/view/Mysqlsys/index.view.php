@@ -67,19 +67,20 @@ if (!empty($_GET['mysql_server']['id'])) {
                 echo '<tr>';
                 echo '<th>'.__("Reporting").'</th>';
                 echo '</tr>';
-
-
                 echo '<tr>';
                 echo '<td>';
+
+                $i = 0;
                 foreach ($data['view_available'] as $view) {
                     //$url = $_GET['url'];
 
+                    $i++;
                     $url = remove(array("mysqlsys"));
 
                     if (!empty($_GET['mysqlsys']) && $view == $_GET['mysqlsys']) {
-                        echo '<a href="'.LINK.$url.'/mysqlsys:'.$view.'"><b>'.$view.'</b></a><br/>';
+                        echo '<a href="'.LINK.$url.'/mysqlsys:'.$view.'"><b>'.$i.'. '.$view.'</b></a><br/>';
                     } else {
-                        echo '<a href="'.LINK.$url.'/mysqlsys:'.$view.'">'.$view.'</a><br/>';
+                        echo '<a href="'.LINK.$url.'/mysqlsys:'.$view.'">'.$i.'. '.$view.'</a><br/>';
                     }
                 }
 
@@ -92,7 +93,6 @@ if (!empty($_GET['mysql_server']['id'])) {
             <div class="col-md-10">
                 <?php
                 $i = 0;
-
 
                 if (!empty($data['table'])) {
 
@@ -110,6 +110,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                             echo '</tr>';
                         }
 
+
                         echo '<tr>';
                         echo '<td>'.$i.'</td>';
                         foreach ($line as $var => $val) {
@@ -117,20 +118,29 @@ if (!empty($_GET['mysql_server']['id'])) {
                             echo '<td>';
                             if ($var == "query") {
 
-
-                                echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample'.$i.'"><i class="fa fa-plus"></i></button>';
+                                echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample'.$i.'">'
+                                .'<i class="fa fa-plus"></i></button>';
                                 echo ' <span>';
 
-                                if (strlen($val) > 64) {
+                                $nb_length = intval(strlen($val));
+
+                                if ($nb_length > 64) {
+                                    
                                     echo substr($val, 0, 32)."...".substr($val, -32);
                                 } else {
                                     echo $val;
                                 }
                                 echo '</span>';
+                            } else if ($var == "percent" || $var =="auto_increment_ratio") {
+                                $percent = round($val * 100, 2);
+                                $with    = ceil($val * 100);
+
+                                echo '<div class="progress" style="width:100px">';
+                                echo '<div class="progress-bar progress-bar-striped progress-bar-warning" role="progressbar" style="width: '.$with.'%; color:#000" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">'.$percent.'&nbsp;%</div>';
+                                echo '</div>';
                             } else {
                                 echo $val;
                             }
-
 
                             echo '<div class="collapse" id="collapseExample'.$i.'">
                             
