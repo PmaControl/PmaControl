@@ -18,7 +18,7 @@ class Export extends Controller {
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
         "home_box", "backup_type", "export_option");
     
-    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*");
+    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
     function generateDump($param) {
         Debug::parseDebug($param);

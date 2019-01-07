@@ -13,6 +13,8 @@ class Server extends Controller
 
     use \App\Library\Filter;
 
+
+    var $clip = 0;
 //dba_source
     public function hardware()
     {
@@ -46,7 +48,7 @@ class Server extends Controller
 
     public function listing($param)
     {
-        
+
 
         // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
@@ -104,10 +106,10 @@ class Server extends Controller
         $data['menu']['cache']['name']  = __('Cache');
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
-        
-            /*             * ***** */
 
-            $data['menu_select']['main']['name']  = __('Servers');
+        /*         * ***** */
+
+        $data['menu_select']['main']['name']  = __('Servers');
         $data['menu_select']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
         $data['menu_select']['main']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/main';
 
@@ -181,47 +183,15 @@ class Server extends Controller
 
         $this->di['js']->addJavascript(array('clipboard.min.js'));
 
-        $this->di['js']->code_javascript('
-        $("#check-all").click(function(){
-    $("input:checkbox").not(this).prop("checked", this.checked);
-});
-
-
-(function(){
-  new Clipboard(".copy-button");
-})();
-
-');
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-
-            if (!empty($_POST['is_monitored'])) {
-
-//start transaction !
-                $sql = "UPDATE mysql_server a SET is_monitored='0' WHERE 1 ".$this->getFilter();
-
-                $db->sql_query($sql);
-
-                if (!empty($_POST['monitored'])) {
-                    foreach ($_POST['monitored'] as $key => $val) {
-//ugly to optimize but no time now
-                        if ($val == "on") {
-                            $sql = "UPDATE mysql_server a SET is_monitored='1' WHERE id='".$key."' ".$this->getFilter();
-                            $db->sql_query($sql);
-                        }
-                    }
-                }
-            }
-
-//header
-        }
-
+        $this->di['js']->code_javascript('(function() {
+            new Clipboard(".copy-button");
+        })();');
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class` FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by d.`libelle`;";
+                 ORDER by a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
 
         $res = $db->sql_query($sql);
 
@@ -430,6 +400,9 @@ class Server extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            debug($_POST);
+
             $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
             $res = $db->sql_query($sql);
             while ($ob  = $db->sql_fetch_object($res)) {
@@ -723,44 +696,6 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-//DEPRECATED
-    /*
-      private function getFilter()
-      {
-
-      trigger_error("Use trait use \App\Library\Filter::getFilter();", E_USER_DEPRECATED);
-      $where = "";
-
-
-      if (!empty($_GET['environment']['libelle'])) {
-      $environment = $_GET['environment']['libelle'];
-      }
-      if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-      $environment                    = $_SESSION['environment']['libelle'];
-      $_GET['environment']['libelle'] = $environment;
-      }
-
-      if (!empty($_SESSION['client']['libelle'])) {
-      $client = $_SESSION['client']['libelle'];
-      }
-      if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-      $client                    = $_GET['client']['libelle'];
-      $_GET['client']['libelle'] = $client;
-      }
-
-
-      if (!empty($environment)) {
-      $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
-      }
-
-      if (!empty($client)) {
-      $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
-      }
-
-
-      return $where;
-      } */
-
     public function settings()
     {
 
@@ -932,6 +867,24 @@ var myChart = new Chart(ctx, {
 
     public function passwd($param)
     {
+
+        $this->di['js']->addJavascript(array('clipboard.min.js'));
+
+
+        /**
+         * @todo Add a new version code_javascript  => Once
+         */
+
+        /*
+        $this->di['js']->code_javascript('(function() {
+            new Clipboard(".copy-button");
+        })();');
+        */
+
+
+
+
+
         Crypt::$key       = CRYPT_KEY;
         $data['password'] = Crypt::decrypt($param[0]);
 
@@ -999,6 +952,12 @@ var myChart = new Chart(ctx, {
     {
         $id_server = $param[0];
 
+        if (empty($id_server)) {
+            throw new \Exception("PMACTRL-748 : Impossible to get id_server, wrong URL ?");
+        }
+
+
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -1013,7 +972,7 @@ var myChart = new Chart(ctx, {
                 if ($ret) {
 
                     Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-                    Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+
 
                     set_flash("success", "Success", "Password updated !");
 
@@ -1026,6 +985,25 @@ var myChart = new Chart(ctx, {
                 }
             }
         }
+
+        $sql = "SELECT * FROM mysql_server WHERE id =".$id_server;
+
+        $res = $db->sql_query($sql);
+
+        $data['server'] = array();
+        while ($ob             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['server'] = $ob;
+        }
+
+
+        $this->set('data', $data);
+    }
+
+    public function upd()
+    {
+
+
+        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function acknowledge($param)
