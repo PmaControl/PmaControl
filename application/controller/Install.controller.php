@@ -859,6 +859,8 @@ if (! defined('WWW_ROOT'))
         $cmd = $php . " " . GLIAL_INDEX . " administration all";
         shell_exec($cmd);
 
+        
+        shell_exec("rm tmp/acl/acl.ser");
 
         //load DB and compare => upgrade
     }

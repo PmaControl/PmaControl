@@ -56,6 +56,9 @@ class Mysql
 
         self::addMaxDate($db);
         self::generateMySQLConfig($db);
+        
+        //stopAll daemon
+        //startAll daemon
     }
 
     static public function generateMySQLConfig($db)
@@ -92,7 +95,13 @@ class Mysql
         
         if ($config != $delta)
         {
+            
             file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+        }
+        else
+        {
+            echo 'VGCFGXDNGFX';
+            exit;
         }
 
         

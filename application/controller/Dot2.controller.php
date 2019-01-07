@@ -18,30 +18,46 @@ class Dot2 extends Controller
 {
 
     use \App\Library\Filter;
-    CONST NODE_AVAILABLE         = "green";
-    CONST NODE_NOT_ANSWERED      = "orange";
-    CONST NODE_ERROR             = "red";
-//for galera
-    CONST NODE_NOT_PRIMARY       = "orange"; //galera cluster
-    CONST NODE_DONOR             = "blue";
-    CONST NODE_DONOR_DESYNCED    = "yellow";
-    CONST NODE_MANUAL_DESYNC     = "brown";
-    CONST NODE_RECEIVE_SST       = "yellow";
-    CONST NODE_BUG               = "pink";
-    CONST REPLICATION_OK         = "green";
-    CONST REPLICATION_IST        = "yellow";
-    CONST REPLICATION_SST        = "grey";
-    CONST REPLICATION_STOPPED    = "blue";
-    CONST REPLICATION_ERROR      = "red";
-    CONST REPLICATION_BLACKOUT   = "pink";
-    CONST REPLICATION_DELAY      = "orange";
-    CONST REPLICATION_NA         = "grey";
-    CONST REPLICATION_CONNECTING = "yellow";
-    CONST GALERA_SPLIT_BRAIN     = "orange";
-    CONST GALERA_AVAILABLE       = "green";
-    CONST GALERA_UNAVAILABLE     = "red";
-    CONST GALERA_NON_PRIMARY     = "blue";
+    /**
+     *
+     * select * from architecture_legend;
+      +----+---------------------------+------------------+------------+--------+-------+-------------+
+      | id | const                     | name             | color      | style  | order | type        |
+      +----+---------------------------+------------------+------------+--------+-------+-------------+
+      |  1 | REPLICATION_OK            | Healty           | #008000    | filled |     1 | REPLICATION |
+      |  2 | REPLICATION_IST           | Galera IST       | turquoise4 | filled |    20 | REPLICATION |
+      |  3 | REPLICATION_SST           | Galera SST       | #e3ea12    | dashed |    12 | REPLICATION |
+      |  4 | REPLICATION_STOPPED       | Stopped          | #0000FF    | filled |     3 | REPLICATION |
+      |  5 | REPLICATION_ERROR_SQL     | Error SQL        | #FF0000    | filled |     3 | REPLICATION |
+      |  7 | REPLICATION_DELAY         | Delay            | #FFA500    | filled |     2 | REPLICATION |
+      |  8 | REPLICATION_NA            | Not allowed      | grey       | filled |     8 | REPLICATION |
+      |  9 | REPLICATION_CONNECTING    | Connecting       | peachpuff3 | filled |     9 | REPLICATION |
+      | 10 | REPLICATION_ERROR_IO      | Error IO         | #FF0000    | dashed |     3 | REPLICATION |
+      | 11 | REPLICATION_ERROR_CONNECT | Error connecting | #FF0000    | dotted |     3 | REPLICATION |
+      | 12 | REPLICATION_BUG           | Bug              | black      | filled |    21 | REPLICATION |
+      | 13 | NODE_OK                   | Healty           | #008000    | filled |     1 | NODE        |
+      | 14 | NODE_KO                   | Out of order     | #FF0000    | filled |     2 | NODE        |
+      | 15 | NODE_BUSY                 | Going down       | #FFA500    | filled |     3 | NODE        |
+      +----+---------------------------+------------------+------------+--------+-------+-------------+
+      14 rows in set (0.001 sec)
 
+     */
+    /*
+      CONST NODE_AVAILABLE      = "green";
+      CONST NODE_NOT_ANSWERED   = "orange";
+      CONST NODE_ERROR          = "red";
+      //for galera
+      CONST NODE_NOT_PRIMARY    = "orange"; //galera cluster
+      CONST NODE_DONOR          = "blue";
+      CONST NODE_DONOR_DESYNCED = "yellow";
+      CONST NODE_MANUAL_DESYNC  = "brown";
+      CONST NODE_RECEIVE_SST    = "yellow";
+      CONST NODE_BUG            = "pink";
+      CONST GALERA_SPLIT_BRAIN  = "orange";
+      CONST GALERA_AVAILABLE    = "green";
+      CONST GALERA_UNAVAILABLE  = "red";
+      CONST GALERA_NON_PRIMARY  = "blue";
+     */
     var $maping_master           = array();
     var $master_slave            = array();
     var $galera_cluster          = array();
@@ -59,6 +75,12 @@ class Dot2 extends Controller
     var $graph_arbitrator        = array(); // containt all id of arbitrator
     var $joiner                  = array();
     var $galera_border           = array();
+    //used for legend from architecture_legend
+
+    var $edge    = array();
+    var $node    = array();
+    var $galera  = array();
+    var $segment = array();
 
     public function getMasterSlave($param)
     {
@@ -261,6 +283,8 @@ class Dot2 extends Controller
         foreach ($temp as $id_mysql_server => $servers) {
 
             $server = $servers[''];
+
+
             if (!empty($this->servers[$id_mysql_server])) {
                 $this->servers[$id_mysql_server] = array_merge($server, $this->servers[$id_mysql_server]);
             } else {
@@ -331,6 +355,10 @@ class Dot2 extends Controller
 
     public function generateGraph($group)
     {
+
+
+
+
 //label=\"Step 2\";
         $graph = "digraph PmaControl {";
         $graph .= "rankdir=LR; splines=line;";
@@ -395,11 +423,11 @@ class Dot2 extends Controller
 //$this->graph_node[$id_mysql_server] = $server;
 
             if ($this->servers[$id_mysql_server]['is_available'] === "1") {
-                $this->graph_node[$id_mysql_server]['color'] = self::NODE_AVAILABLE;
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_OK'];
             } else if ($this->servers[$id_mysql_server]['is_available'] === "0") {
-                $this->graph_node[$id_mysql_server]['color'] = self::NODE_ERROR;
-            } else if ($this->servers[$id_mysql_server]['is_available'] === "2") {
-                $this->graph_node[$id_mysql_server]['color'] = self::NODE_NOT_ANSWERED;
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_ERROR'];
+            } else if ($this->servers[$id_mysql_server]['is_available'] === "-1") {
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_BUSY'];
             }
         }
 
@@ -420,49 +448,52 @@ class Dot2 extends Controller
                     continue;
                 }
 
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style']           = "filled";
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
+
+                if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_OK'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "";
+                } else if ($slave['seconds_behind_master'] !== "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
+
+
+
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_DELAY'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
+                } elseif ($slave['slave_io_running'] === "No" && $slave['slave_sql_running'] === "No") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_STOPPED'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "STOPPED";
+                } else {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = "pink";
+                }
+
+                if ($slave['last_io_errno'] !== "0") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_IO'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_io_errno'];
+                }
+
+                if ($slave['last_sql_errno'] !== "0") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_SQL'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
+                }
+
+                if ($slave['slave_io_running'] == "Connecting") {
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_CONNECT'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "wrong password";
+                }
+
 
 
                 // case of GTID MariaDB
                 $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['arrow'] = "simple";
+
                 if (!empty($slave['using_gtid'])) {
                     if ($slave['using_gtid'] !== "No") {
                         $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['arrow'] = "double";
                     }
                 }
 
-
-
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style']           = "filled";
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
-
-                if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_OK;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "      ";
-                } else if ($slave['seconds_behind_master'] !== "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_DELAY;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
-                } elseif ($slave['slave_io_running'] === "No" && $slave['slave_sql_running'] === "No") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_STOPPED;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "STOPPED";
-                } else {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_BLACKOUT;
-                }
-
-                if ($slave['last_io_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_io_errno'];
-                }
-
-                if ($slave['last_sql_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_ERROR;
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
-                }
-
-                if ($slave['slave_io_running'] == "Connecting") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "dashed";
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = self::REPLICATION_NA;
-                }
 
 //debug($this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color']);
             }
@@ -513,8 +544,6 @@ class Dot2 extends Controller
 
 
             //Debug::debug($new_master_master, "new_master_master");
-
-
             //$new_master_master = array();
             //Debug::debug($new_master_master, "MASTER / MASTER");
 
@@ -530,6 +559,10 @@ class Dot2 extends Controller
         Debug::debugQueriesOff();
 
         $this->view = false;
+
+
+
+        $this->getColor();
 
 // extract data
         $this->mappingMaster($param);
@@ -553,7 +586,6 @@ class Dot2 extends Controller
         $this->pushServer();
         $this->pushUpdateMS();
         $this->pushMasterMaster();
-
         $this->pushGaleraCluster();
 
 //Debug::debug($this->slaves, "graph_edge");
@@ -565,6 +597,10 @@ class Dot2 extends Controller
 //        debug($this->servers);
 
         Debug::checkPoint("Push data");
+
+
+        $this->getColor();
+
 
         $this->generateAllGraph();
         Debug::checkPoint("generateAllGraph");
@@ -585,13 +621,28 @@ class Dot2 extends Controller
 
     public function getRenderer($dot)
     {
-        file_put_contents(TMP."tmp.dot", $dot);
+        $file_id = uniqid();
 
-        $cmd = "dot ".TMP."/tmp.dot -Tsvg -o ".TMP."/image.svg";
-//$cmd = "neato ".TMP."/tmp.dot -Tsvg -o ".TMP."/image.svg";
-        shell_exec($cmd);
+        $tmp_in  = TMP."tmp".$file_id.".dot";
+        $tmp_out = TMP."tmp".$file_id.".svg";
 
-        return file_get_contents(TMP."/image.svg");
+        file_put_contents($tmp_in, $dot);
+
+        $cmd = "dot ".$tmp_in." -Tsvg -o ".$tmp_out." 2>&1";
+
+        $ret = shell_exec($cmd);
+
+
+        if (!empty($ret)) {
+            throw new \Exception('PMACTRL-842 : Dot2/getRenderer '.trim($ret), 70);
+        }
+
+        $svg = file_get_contents($tmp_out);
+
+        unlink($tmp_in);
+        unlink($tmp_out);
+
+        return $svg;
     }
 
     public function saveCache($code2D, $view2D, $group)
@@ -673,7 +724,7 @@ class Dot2 extends Controller
 
 
         $node = "";
-        $node .= "node [color = \"".self::NODE_AVAILABLE."\"];\n";
+        $node .= "node [color = \"".$this->node['NODE_OK']['color']."\"];\n";
         $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
         $node .= $this->nodeHead("Arbitrator");
 
@@ -728,8 +779,19 @@ class Dot2 extends Controller
         $lines[] = "IP : ".$server['ip'].":".$server['port'];
         $lines[] = "Date : ".$server['date'];
         $lines[] = "Time zone : ".$server['system_time_zone'];
+
         $lines[] = "Binlog : ".$server['binlog_format'];
         $lines[] = $this->formatVersion($server['version']);
+
+        if (!empty($server['wsrep_local_state_comment'])) {
+
+            if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
+                $lines[] = "Galera status : ".$server['wsrep_local_state_comment'];
+            } else {
+                $lines[] = "Galera status : ".__("Out of order");
+            }
+        }
+
 
         foreach ($lines as $line) {
             $node .= $this->nodeLine($line);
@@ -773,10 +835,18 @@ class Dot2 extends Controller
 
         return $node;
     }
+    /*
+     * 
+     * 
+     * to move in library
+     */
 
     private function formatVersion($version)
     {
 
+        if (empty($version)) {
+            return "Unknow";
+        }
 
         if (strpos($version, "-")) {
             $number   = explode("-", $version)[0];
@@ -811,13 +881,7 @@ class Dot2 extends Controller
         $label = " ";
         $style = "filled";
 
-
         $edges = "";
-
-
-
-
-
 
         //debug($this->graph_edge);
 
@@ -830,17 +894,16 @@ class Dot2 extends Controller
                         $val['label'] = " ";
                     }
 
-
                     // si le serveur est HS on surcharge la replication
 
                     if ($this->servers[$id_slave]['is_available'] === "0") {
 
                         if ($val['label'] != "SST") {
-                            $val['color'] = self::REPLICATION_ERROR;
+
+                            $val['color'] = $this->edge['REPLICATION_BLACKOUT']['color'];
                             $val['label'] = "HS";
                         }
                     }
-
 
                     if (!empty($val['style'])) {
                         $style = $val['style'];
@@ -853,14 +916,15 @@ class Dot2 extends Controller
 
                     $connection_name = "";
 
-
                     //Debug::debug($this->graph_edge, "xfghbxfhg");
 
                     if (!empty($this->graph_edge[$id_master][$id_slave]['connection_name'])) {
                         $connection_name = $this->graph_edge[$id_master][$id_slave]['connection_name'];
                     }
 
-
+                    if (empty($val['arrow'])) {
+                        $val['arrow'] = 'double';
+                    }
 
                     Debug::debug($val['arrow'], 'ARROW');
 
@@ -868,7 +932,7 @@ class Dot2 extends Controller
                         $val['color'] = $val['color'].":white:".$val['color'];
                     }
 
-                    
+
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
                         .$val['color']."\" label=\"".$val['label']."\" edgeURL=\"".LINK."slave/show/".$id_slave."/".$connection_name."/\" ".$extra."];\n";
@@ -952,16 +1016,89 @@ class Dot2 extends Controller
     public function generateGaleraCluster($group)
     {
         $galera = "";
+
+
+        /**
+         * @todo à optimisé
+         * on passe fait X fois les X cluster
+         */
+        $cluster_check = array();
+
+        foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
+
+            foreach ($segments as $segment => $nodes) {
+
+                foreach ($nodes as $node) {
+
+
+
+                    $cluster_check[$cluster_name][$node] = $this->servers[$node]['is_available'];
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
 
             ksort($segments);
 
-            $list_servers = array();
-            $cluster      = "";
-            $cluster      .= 'subgraph cluster_'.str_replace('-', '', $cluster_name).' {'."\n";
-            $cluster      .= 'rankdir="LR";';
-            $cluster      .= 'style=solid;penwidth=2; color="'.self::GALERA_AVAILABLE.'";'."\n";
-            $cluster      .= 'label = "Galera : '.$cluster_name.'";';
+
+            $nb_node = count($cluster_check[$cluster_name]);
+
+            $count_by_type = array_count_values($cluster_check[$cluster_name]);
+
+
+            $count_by_type['-1'] = $count_by_type['-1'] ?? 0;
+            $count_by_type['0']  = $count_by_type['0'] ?? 0;
+            $count_by_type['1']  = $count_by_type['1'] ?? 0;
+
+            //debug($count_by_type);
+
+
+            if ($count_by_type['1'] === $nb_node) {
+                $galera_style = $this->galera['GALERA_AVAILABLE'];
+
+            } else {
+                $galera_style = $this->galera['GALERA_DEGRADED'];
+            }
+
+            if ($nb_node % 2 == 0) {
+                $galera_style = $this->galera['GALERA_WARNING'];
+            }
+
+            if ($count_by_type['1'] === 2) {
+                $galera_style = $this->galera['GALERA_CRITICAL'];
+            }
+
+            if ($count_by_type['1'] === 1) {
+                $galera_style = $this->galera['GALERA_EMERGENCY'];
+            }
+
+            if ($count_by_type['1'] === 0) {
+                $galera_style = $this->galera['GALERA_OUTOFORDER'];
+            }
+
+
+
+
+            $cluster = "";
+            $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name).' {'."\n";
+            $cluster .= 'rankdir="TB";';
+
+
+            //style='.$galera_style['style'].';
+            $cluster .= 'style=solid;penwidth=2; color="'.$galera_style['color'].'";'."\n";
+            $cluster .= 'label = " Galera : '.$cluster_name.'";';
 
             //Debug::debug($nodes_ordered, "nodes_ordered");
             //$cluster .= implode(" -> ", $all_segment)."[color=grey arrowhead=none];\n"; // [constraint=false]
@@ -975,17 +1112,21 @@ class Dot2 extends Controller
                 $nodes_ordered = $this->orderyBy($nodes, 'hostname');
 
 
+
                 $first_from_segment[$segment] = end($nodes_ordered);
 
                 $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name)."_".$segment." {\n";
                 $cluster .= 'label = "Segment : '.$segment.'";'."\n";
                 $cluster .= 'rankdir="LR";';
                 $cluster .= 'rank="same"; penwidth=2;';
-                $cluster .= 'color="'.self::GALERA_AVAILABLE.'";style=dashed;penwidth=2;fontname="arial";'."\n";
+                $cluster .= 'color="'.$this->galera['GALERA_AVAILABLE']['color'].'";style=dashed;penwidth=2;fontname="arial";'."\n";
 
 //		ksort($nodes);
 
                 if (count($nodes) > 1) {
+
+
+                    //$cluster .= "{".implode(";", $nodes_ordered)."; } ;\n";
                     $cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n";
                 } else {
                     $cluster .= end($nodes).";\n"; // [constraint=false]
@@ -993,7 +1134,7 @@ class Dot2 extends Controller
 
                 foreach ($nodes as $id_mysql_server) {
 
-                    // $cluster .= $id_mysql_server.";\n";
+                     $cluster .= $id_mysql_server.";\n";
                 }
 
 
@@ -1008,7 +1149,7 @@ class Dot2 extends Controller
 
 
                 if (count($first_from_segment) > 1) { // evite que la fleche entre segement si un seul segment
-                    $cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
+                    //$cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
                     //Debug::debug($this->servers);
                 }
 
@@ -1025,6 +1166,8 @@ class Dot2 extends Controller
                 }
             }
         }
+
+
 
 
 
@@ -1048,11 +1191,13 @@ class Dot2 extends Controller
     {
         $ret = "";
 
+
+
         foreach ($galera as $segment_name => $segment) {
 
             $ret .= 'subgraph cluster_'.str_replace('-', '', $name_galera)."_".$segment_name." {\n";
             $ret .= 'label = "Segment : '.$segment_name.'";'."\n";
-            $ret .= 'color='.self::COLOR_SUCCESS.';style=dotted;penwidth=2;fontname="arial";'."\n";
+            $ret .= 'color='.$this->segment['SEGMENT_OK']['color'].';style=dotted;penwidth=2;fontname="arial";'."\n";
 
 
             $ret .= $this->display_node_galera($segment);
@@ -1128,16 +1273,17 @@ class Dot2 extends Controller
                 $row = $this->servers[$this->maping_master[$joiner]];
 
 
-                $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = self::REPLICATION_SST;
+                $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = $this->arrow['REPLICATION_SST']['color'];
                 $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['label'] = "SST";
 
                 if ($data['wsrep_sst_method'] === "xtrabackup-v2" || $data['wsrep_sst_method'] === "mariabackup") {
-                    $this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR;
+                    $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR']['color'];
                 } else {
-                    $this->graph_node[$data['id_mysql_server']]['color'] = self::NODE_DONOR_DESYNCED;
+                    $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR_DESYNCED']['color'];
                 }
 
-                $this->graph_node[$row['id_mysql_server']]['color'] = self::NODE_RECEIVE_SST;
+                $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_JOINER']['color'];
+
 
                 $this->joiner[] = $joiner;
                 break;
@@ -1165,7 +1311,7 @@ class Dot2 extends Controller
     public function legend()
     {
 
-        $sql = "SELECT * FROM `architecture_legend` order by `order`;";
+        $sql = "SELECT * FROM `architecture_legend` WHERE `type`= 'REPLICATION' order by `order`;";
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -1191,9 +1337,21 @@ class Dot2 extends Controller
 
         $i = 1;
         foreach ($edges as $edge) {
-            $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'</td></tr>'."\n";
+            $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>'."\n";
             $i++;
         }
+
+
+        // GTID
+
+        $legend .= '<tr><td align="right" port="j'.$i.'"> '." ".' </td></tr>'."\n";
+
+
+        $legend .= '<tr><td align="right" port="i'.$i.'"> '."GTID".' </td></tr>'."\n";
+        $i++;
+        $legend .= '<tr><td align="right" port="i'.$i.'"> '."Standard".' </td></tr>'."\n";
+
+
         $legend .= '</table>>]
 		    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">'."\n";
 
@@ -1204,14 +1362,30 @@ class Dot2 extends Controller
             $i++;
         }
 
+        $legend .= '<tr><td port="j'.$i.'">&nbsp;</td></tr>'."\n";
+
+        $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
+        $i++;
+        $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
+
+
+
 
         $legend .= '</table>>]'."\n";
 
         $i = 1;
         foreach ($edges as $edge) {
-            $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color='.$edge['color'].' arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
+            $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
             $i++;
         }
+
+
+        $edge['color'] = "#000000";
+
+        $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].':#ffffff:'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
+        $i++;
+        $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
+        $i++;
 
         /*
           key:i1:e -> key2:i1:w [color=blue]
@@ -1269,5 +1443,37 @@ class Dot2 extends Controller
 
 
         return $to_order;
+    }
+
+    public function getColor()
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM `architecture_legend` order by `order`;";
+        $res = $db->sql_query($sql);
+
+
+
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            switch ($ob['type']) {
+                case 'REPLICATION':
+                    $this->edge[$ob['const']] = $ob;
+
+                    break;
+
+                case 'NODE':
+                    $this->node[$ob['const']] = $ob;
+                    break;
+
+                case 'GALERA':
+                    $this->galera[$ob['const']] = $ob;
+                    break;
+
+                case 'SEGMENT':
+                    $this->segment[$ob['const']] = $ob;
+                    break;
+            }
+        }
     }
 }
