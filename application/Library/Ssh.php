@@ -134,4 +134,22 @@ class Ssh
 
         return $data;
     }
+
+    static function generate($type, $bit)
+    {
+
+        $key = "/tmp/".uniqid();
+
+        $cmd = "ssh-keygen -t ".$type." -C 'PmaControl' -N \"\" -f ".$key." -b ".$bit;
+        shell_exec($cmd);
+
+        $data['key_priv'] = trim(file_get_contents($key));
+        $data['key_pub'] = trim(file_get_contents($key.".pub"));
+
+        unlink($key);
+        unlink($key.".pub");
+
+
+        return $data;
+    }
 }

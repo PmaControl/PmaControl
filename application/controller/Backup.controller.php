@@ -1351,6 +1351,8 @@ $(function () {
                 $crontab['crontab']['comment'] = "";
 
 
+
+
                 $id_crontab = $db->sql_save($crontab);
                 if (!$id_crontab) {
                     debug($crontab);
@@ -1358,11 +1360,23 @@ $(function () {
                     throw new Exception("PMACTRL-052 : impossible to save crontab");
                 }
 
-                $backup_database                                 = [];
-                $backup_database['backup_main']                  = $_POST['backup_main'];
-                $backup_database['backup_main']['id_crontab']    = $id_crontab;
-                $backup_database['backup_main']['is_active']     = 1;
-                $backup_database['backup_main']['database']      = implode(',', $backup_database['backup_main']['database']);
+
+
+
+                $backup_database                              = [];
+                $backup_database['backup_main']               = $_POST['backup_main'];
+                $backup_database['backup_main']['id_crontab'] = $id_crontab;
+                $backup_database['backup_main']['is_active']  = 1;
+
+
+                if (empty($backup_database['backup_main']['database'])) {
+                    $backup_database['backup_main']['database'] = 0;
+                } else {
+                    $backup_database['backup_main']['database'] = implode(',', $backup_database['backup_main']['database']);
+                }
+
+
+                $backup_database['backup_main']['database']      = $backup_database['backup_main']['database'];
                 $backup_database['backup_main']['date_inserted'] = date('Y-m-d H:i:s');
 
 
@@ -1373,12 +1387,16 @@ $(function () {
                     throw new Exception("PMACTRL-053 : impossible to shedule this backup");
                 }
 
+
+
+
+
+
+
                 $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
 
                 Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
                     "Backup database with PmaControl", $id_crontab);
-
-
 
 
                 $db->sql_query('COMMIT;');
@@ -1435,7 +1453,7 @@ $(function () {
         $db_to_backup = $this->di['db']->sql($backup['id_connection']);
 
 
-        
+
 
         $server_config = $db_to_backup->getParams();
 
