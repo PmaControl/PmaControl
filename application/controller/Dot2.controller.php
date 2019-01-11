@@ -1331,7 +1331,7 @@ class Dot2 extends Controller
 
 	    subgraph cluster_01 {
 
-	    label = "Repplication : Legend";
+	    label = "Replication : Legend";
 
 	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">';
 
