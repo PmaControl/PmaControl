@@ -7,6 +7,7 @@
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use App\Library\Chiffrement;
 use \Glial\I18n\I18n;
 
 class Database extends Controller
@@ -120,26 +121,159 @@ class Database extends Controller
 
         $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
     data = $(this).val();
-    $("#id_mysql_server__from-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+    $("#database-list").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
        function(){
-	$("#id_mysql_server__from-database").selectpicker("refresh");
+	$("#database-list").selectpicker("refresh");
     });
 });
-
-
-$("#database-id_mysql_server__target").change(function () {
-    data = $(this).val();
-    $("#id_mysql_server__target-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
-       function(){
-	$("#id_mysql_server__target-database").selectpicker("refresh");
-    });
-});
-
-
 
 ');
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+
+            if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list'])) {
+
+            }
+        }
+
+
+
+
+
         $data['listdb1'] = array();
 
+
+
+
         $this->set('data', $data);
+    }
+
+    public function databaseRefresh($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        $id_mysql_server__source = $param[0];
+        $id_mysql_server__target = $param[1];
+        $databases               = explode(",", $param[2]);
+        $path                    = $param[3];
+
+
+        $directory = $path."/".uniqid();
+
+
+        if (count($databases) > 1) {
+
+            $database = "ALL";
+        } else {
+            $database = end($databases);
+        }
+
+        $this->database_dump($id_mysql_server__source, $database, $directory);
+
+
+
+
+        //shell_exec("cd ".$directory." && rename 's///g' ".);
+
+
+
+        $this->database_load($id_mysql_server__target, implode(",", $databases), $directory);
+    }
+
+    public function databaseDump($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+        $path            = $param[2];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
+
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $password = Chiffrement::decrypt($ob->passwd);
+
+
+            $to_dump = "";
+
+            if ($database != "ALL") {
+                $to_dump = " -B '".$database."' ";
+            }
+            $cmd = "mydumper -h ".$ob->ip." -u ".$ob->login." -p ".$password." ".$to_dump." -G -E -R -o ".$path." ";
+            shell_exec($cmd);
+
+            return true;
+        }
+
+        throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
+    }
+
+    public function databaseLoad($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $databases       = $param[1];
+        $path            = $param[2];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
+
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $password = Chiffrement::decrypt($ob->passwd);
+
+
+            if ($databases != "ALL") {
+
+                $db_to_import = explode(",", $databases);
+                $specify_db   = true;
+            } else {
+
+                shell_exec("rm ".$path."/mysql.*.sql");
+
+                $specify_db   = false;
+                $db_to_import = array('NA');
+            }
+
+
+            foreach ($db_to_import as $db_to_load) {
+
+
+                $to_dump = "";
+                if ($specify_db === true) {
+
+                    if (empty($db_to_load)) {
+                        continue;
+                    }
+
+                    $to_dump = '-B '.$db_to_load;
+                }
+
+                $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." $to_dump -d ".$path." ";
+                Debug::debug($cmd, "cmd");
+                shell_exec($cmd);
+            }
+
+
+            return true;
+        }
+
+        throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
     }
 }
