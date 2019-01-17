@@ -13,6 +13,8 @@ use \Glial\I18n\I18n;
 
 class Ssh extends Controller
 {
+    const KEY_WORKER_ASSOCIATE = 435665;
+    const NB_WORKER            = 10;
 
     public function keys()
     {
@@ -220,8 +222,6 @@ class Ssh extends Controller
 })();
 
 ');
-
-
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -284,33 +284,128 @@ class Ssh extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT a.* FROM mysql_server a
-            LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
-            LEFT JOIN `ssh_key` c ON c.id = b.id_ssh_key
-            WHERE (`active`=0 OR `active` IS NULL)";
+
+
+        $sql = "WITH z as (SELECT a.id
+FROM mysql_server a
+INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
+WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
+SELECT b.* FROM mysql_server b, ssh_key c
+WHERE c.id in (".$id_ssh_key.")
+AND b.id NOT IN (select id from z)
+AND b.is_available = 1;";
+
+
+
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
 
+        // old version
+        /*
+          while ($server = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+          foreach ($keys as $key) {
+          $this->tryAssociate($server, $key);
+          }
+          } */
+
+
         // system de queue
-        while ($server = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        // démarage des worker
+        $pids = array();
+
+        if (msg_queue_exists(self::KEY_WORKER_ASSOCIATE)) {
+
+
+            $queue = msg_get_queue(self::KEY_WORKER_ASSOCIATE);
+            msg_remove_queue($queue);
+        }
+
+        //ajout de tout les messages a traiter :
+        $queue = msg_get_queue(self::KEY_WORKER_ASSOCIATE);
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+
+        for ($id_worker = 1; $id_worker < self::NB_WORKER; $id_worker++) {
+
+            $cmd = $php." ".GLIAL_INDEX." Ssh workerAssociate >> ".TMP."log/".__FUNCTION__."_".$id_worker.".log 2>&1 & echo $!";
+            Debug::debug($cmd);
+
+            $pids[] = shell_exec($cmd);
+        }
+
+        Debug::debug("Démarage des ".$id_worker." workers terminé");
+        /* */
+
+
+        $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+
+
+        Debug::debug($msg_qnum, "msg dans la liste d'attente : ".$msg_qnum);
+
+
+        $i  = 0;
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
 
             foreach ($keys as $key) {
+                $i++;
+
+                // Create dummy message object
+                $object         = new stdclass;
+                $object->server = $ob;
+                $object->key    = $key;
 
 
-                $this->tryAssociate($server, $key);
+
+
+
+
+                //try to add message to queue
+                if (msg_send($queue, 1, $object)) {
+                    Debug::debug("Added to queue - msg n°".$i);
+                    // you can use the msg_stat_queue() function to see queue status
+                    //print_r(msg_stat_queue($queue));
+                } else {
+
+                    Debug::debug("[ERROR] Could not add message to queue !");
+                }
             }
         }
 
-        header("location: ".LINK.__CLASS__."/index");
+
+        // attend la fin des worker
+        // on attend d'avoir vider la file d'attente
+        do {
+            $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+
+
+            Debug::debug("Nombre de msg en attente : ".$msg_qnum);
+            if ($msg_qnum == 0) {
+                break;
+            }
+            sleep(1);
+        } while (true);
+
+        // kill des workers !
+        foreach ($pids as $pid) {
+
+            $cmd = "kill ".$pid;
+            shell_exec($cmd);
+        }
+
+
+
+        if (!IS_CLI) {
+            header("location: ".LINK.__CLASS__."/index");
+        }
     }
 
     private function getSshKeys($id_ssh_key = "")
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
-
-
 
         $where = "";
 
@@ -457,9 +552,49 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         $bit  = $param[1];
 
 
-        $key = SshLib::generate("rsa", "4096");
+        $key = SshLib::generate($type,$bit);
 
 
         echo json_encode($key);
+    }
+    /*
+     * (PmaControl 1.3.8)<br/>
+     * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
+     * @return none
+     * @package Controller
+     * @since 1.3.8 First time this was introduced.
+     * @description worker to
+     * @access public
+
+
+      If you are getting this message on your *NIX box:
+
+      Warning: msg_get_queue() [function.msg-get-queue]: failed for key 0x12345678: No space left on device in /path/to/script.php on line 1
+
+      you may use the command "ipcrm" as root to clear the message queue. Use "man ipcrm" to get more info on it.
+      The default setting for maximum messages in the queue is stored in /proc/sys/fs/mqueue/msg_max. To increase it to a maximum of 100 messages, just run:
+      echo 100 > /proc/sys/fs/mqueue/msg_max
+
+      ipcs to see the process
+      Please ensure to follow a good programming style and close/free all your message queues before your script exits to avoid those warning messages.
+     */
+
+    public function workerAssociate()
+    {
+        $pid = getmypid();
+
+        $queue = msg_get_queue(self::KEY_WORKER_ASSOCIATE);
+
+        $msg_type     = NULL;
+        $msg          = NULL;
+        $max_msg_size = 20480;
+
+        $data        = array();
+        $data['pid'] = $pid;
+
+        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
+            $data = json_decode(json_encode($msg), true);
+            $this->tryAssociate($data['server'], $data['key']);
+        }
     }
 }

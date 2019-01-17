@@ -141,6 +141,9 @@ class Ssh
         $key = "/tmp/".uniqid();
 
         $cmd = "ssh-keygen -t ".$type." -C 'PmaControl' -N \"\" -f ".$key." -b ".$bit;
+
+        Debug::debug($cmd);
+
         shell_exec($cmd);
 
         $data['key_priv'] = trim(file_get_contents($key));
