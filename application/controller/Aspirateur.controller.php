@@ -435,9 +435,9 @@ class Aspirateur extends Controller
 
 
             /*
-            if (!is_writable(dirname($file_md5))) {
-                Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
-            }*/
+              if (!is_writable(dirname($file_md5))) {
+              Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+              } */
 
             file_put_contents($file_md5, $md5);
             $export_variables = true;
@@ -455,10 +455,10 @@ class Aspirateur extends Controller
 //push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
-        
+
         if ($export_variables) {
 
-            $variables = array();
+            $variables                                  = array();
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server}     = $variables;
         }
@@ -1105,9 +1105,7 @@ class Aspirateur extends Controller
 
 
 
-
-        $data = array();
-
+        $data        = array();
         $data['pid'] = $pid;
 
 
@@ -1141,10 +1139,10 @@ class Aspirateur extends Controller
 
 
             /*
-            if ($msg->id == "16") {
-                sleep(60);
-            }
-            /**
+              if ($msg->id == "16") {
+              sleep(60);
+              }
+              /**
              * test retard reponse mysql
              */
             if (file_exists($lock_file)) {

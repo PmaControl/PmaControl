@@ -37,10 +37,12 @@ wyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C
                 <div class="col-md-2">
                     Generating key :<br /><br />
                     <a href="<?= LINK ?>ssh/generate/rsa/2048" type="button" class="btn btn-info link">RSA 2048</a>
-                    <a href="<?= LINK ?>ssh/generate/rsa/4096" type="button" class="btn btn-info link">RSA 4096</a>
+                    <a href="<?= LINK ?>ssh/generate/rsa/4096" type="button" class="btn btn-primary link">RSA 4096</a>
                     <br /><br />
-                    <a href="<?= LINK ?>ssh/generate/dsa/2048" type="button" class="btn btn-info link">DSA 2048</a>
-                    <a href="<?= LINK ?>ssh/generate/dsa/4096" type="button" class="btn btn-info link">DSA 4096</a>
+                    <a href="<?= LINK ?>ssh/generate/ecdsa/256" type="button" class="btn btn-info link">ecdsa 256</a>
+                    <a href="<?= LINK ?>ssh/generate/dsa/1024" type="button" class="btn btn-info link">DSA 1024</a>
+                    <br /><br />
+                    <a href="<?= LINK ?>ssh/generate/ed25519/256" type="button" class="btn btn-info link">ed25519 256</a>
                 </div>
             </div>
             <br />
