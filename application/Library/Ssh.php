@@ -68,7 +68,9 @@ class Ssh
     {
         // check public key
 
+        Debug::$debug = true;
 
+        Debug::debug(str_repeat("#", 80));
         Debug::debug($pubkeyssh);
 
         if (file_exists($pubkeyssh)) {
@@ -80,40 +82,52 @@ class Ssh
         Debug::debug($pubkeyssh, "public key");
 
 
-        $path_puplic_key = "/tmp/".uniqid();
+        $path_puplic_key = TMP."trash/key".uniqid();
 
-        file_put_contents($path_puplic_key, $pubkeyssh);
+        file_put_contents($path_puplic_key, $pubkeyssh."\n");
 
+
+        //sleep(10);
         Debug::debug($path_puplic_key, "PATH of key");
 
-        
+
         shell_exec("chmod 600 ".$path_puplic_key);
-        
-        
 
-        $file_error = "/tmp/isvalid_error";
+
+        echo "\n".file_get_contents($path_puplic_key)."\n\n";
+
+        $file_error = TMP."trash/generate_key.error";
 
         if (file_exists($file_error)) {
             unlink($file_error);
         }
 
-        $cmd = "ssh-keygen -l -f ".$path_puplic_key."  2>".$file_error;
+        $cmd = "ssh-keygen -l -f ".$path_puplic_key."  2> ".$file_error;
         Debug::debug($cmd, "CMD");
-
-        if (file_exists($file_error)) {
-            Debug::debug(file_get_contents($file_error), "[ERROR]");
-            unlink($file_error);
-        }
 
         $result = shell_exec($cmd);
 
         Debug::debug($result, "RESULT");
 
+
+        if (file_exists($file_error)) {
+
+            $error = file_get_contents($file_error);
+
+            if (!empty($error)) {
+                Debug::debug($error, "[ERROR]");
+
+                //throw new \Exception("PMACTRL-145 : ".$error);
+            }
+            unlink($file_error);
+        }
+
+
         unlink($path_puplic_key);
 
         if (empty($result)) {
 
-            
+
             return false;
         } else {
 
@@ -123,11 +137,11 @@ class Ssh
             $data['pubkey'] = $elems[1];
             $data['type']   = substr(end($elems), 1, -2);
 
-            unset($elems[count($elems)-1]);
+            unset($elems[count($elems) - 1]);
             unset($elems[0]);
             unset($elems[1]);
 
-            $data['name'] = implode(" ",$elems);
+            $data['name'] = implode(" ", $elems);
         }
 
         Debug::debug($data);
@@ -138,7 +152,7 @@ class Ssh
     static function generate($type, $bit)
     {
 
-        $key = "/tmp/".uniqid();
+        $key = TMP."trash/key".uniqid();
 
         $cmd = "ssh-keygen -t ".$type." -C 'PmaControl' -N \"\" -f ".$key." -b ".$bit;
 
@@ -147,7 +161,7 @@ class Ssh
         shell_exec($cmd);
 
         $data['key_priv'] = trim(file_get_contents($key));
-        $data['key_pub'] = trim(file_get_contents($key.".pub"));
+        $data['key_pub']  = trim(file_get_contents($key.".pub"));
 
         unlink($key);
         unlink($key.".pub");
