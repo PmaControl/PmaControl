@@ -68,7 +68,7 @@ class Ssh
     {
         // check public key
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
 
         Debug::debug(str_repeat("#", 80));
         Debug::debug($pubkeyssh);

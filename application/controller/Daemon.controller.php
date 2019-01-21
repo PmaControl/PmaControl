@@ -34,8 +34,6 @@ class Daemon extends Controller
                 $arr['nb_msg'] = "N/A";
             }
 
-
-
             $data['daemon'][] = $arr;
         }
 
