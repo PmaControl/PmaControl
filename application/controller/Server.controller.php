@@ -18,10 +18,7 @@ class Server extends Controller
 //dba_source
     public function hardware()
     {
-
-
         $db = $this->di['db']->sql(DB_DEFAULT);
-
         $this->title  = __("Hardware");
         $this->ariane = " > ".$this->title;
 

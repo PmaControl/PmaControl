@@ -118,6 +118,7 @@ foreach ($data['slave'] as $slaves) {
         //echo $data['server']['slave'][]['display_name'];
 
 
+//        echo $slave['id_mysql_server'];
         echo '<a href="">'.$data['hostname'][$slave['id_mysql_server']]['']['hostname'].'</a>';
         echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
         echo '</td>';
