@@ -14,7 +14,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#" style="color:#fff"><i class="fa fa-database fa-lg"></i> <?=SITE_NAME ?> <span class="badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7" title="<?=SITE_LAST_UPDATE ?>"><?=SITE_VERSION ?> (<?=SITE_LAST_UPDATE ?>)</span></a>
+                    <a class="navbar-brand" href="<?=LINK ?>home/index" style="color:#fff"><i class="fa fa-database fa-lg"></i> <?=SITE_NAME ?> <span class="badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7" title="<?=SITE_LAST_UPDATE ?>"><?=SITE_VERSION ?> (<?=SITE_LAST_UPDATE ?>)</span></a>
                 </div>
                 <?php
             endif;
@@ -46,7 +46,7 @@
                             }
                         }
 
-                        if ($item['bd'] - $item['bg'] > 1) {
+                        if ( ($item['bd'] - $item['bg'] > 1) && ( !empty($item['dropdown']) ) ) {
                             echo '
                                 <li class="dropdown">
                                 <a id="drop' . $i . '" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">

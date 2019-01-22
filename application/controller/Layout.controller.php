@@ -2,6 +2,7 @@
 
 use \Glial\Synapse\Controller;
 use \App\Library\Ariane;
+use \App\Library\Debug;
 
 class Layout extends Controller {
 
@@ -13,7 +14,9 @@ class Layout extends Controller {
         
     }
 
-    function headerPma($title) {
+    function headerPma($param) {
+
+        $title = $param[0];
 
         $data['auth'] = $this->di['auth']->getAccess();
 
@@ -45,22 +48,7 @@ class Layout extends Controller {
         $ariane = new Ariane($db);
         $body = $ariane->buildAriane($this->getMethod());
 
-        /* if (count($body) === 0) {
-          $body = $ariane->buildAriane($this->replaceIndex($this->getMethod()));
-          }
-         */
-        //if (count($body) === 0) {
-        //          $root = array('<a href="'.WWW_ROOT.'"><span class="glyphicon glyphicon glyphicon-home"></span> '.__("Home").'</a>');
-        //}
-        //if (trim(strtolower(strip_tags(end($body)))) === trim(strtolower(strip_tags(end($title))))) {
-        //        $title = array();
-        //}
-        //$breadcrumb     = array_merge($root, $body, $title);
-        $breadcrumb = array_merge($body);
-
-
-        //$data['ariane'] = $this->buildHtml($ariane->cleanupArianeLastEntry($breadcrumb));
-        $data['ariane'] = $this->buildHtml($breadcrumb);
+        $data['ariane'] = $this->buildHtml($body);
 
         $this->set('data', $data);
     }
@@ -93,10 +81,13 @@ class Layout extends Controller {
         return implode("::", $elems);
     }
 
-    public function title($param) {
+    public function title($params) {
+
+        $param = \Glial\Synapse\FactoryController::GetRootNode();
+
         $controller = $param[0];
         $method = $param[1];
-        
+
         $this->view = false;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -106,11 +97,10 @@ class Layout extends Controller {
 
         $res = $db->sql_query($sql);
 
-        while ($data['title'] = $db->sql_fetch_array($res)) {
-            
+        while ($data['title'] = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+
+            return $data['title']['icon'] . " " . $data['title']['title'];
         }
-
-        $this->set('data', $data);
     }
-
 }

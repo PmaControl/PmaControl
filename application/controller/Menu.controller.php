@@ -17,7 +17,11 @@ class Menu extends Controller
         //debug($id_menu);
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `menu_group` a INNER JOIN `menu` b ON a.id = b.group_id WHERE b.active = 1 and parent_id is not null and a.id='" . $id_menu . "' ORDER BY b.bg";
+        $sql = "SELECT b.*, MAX(c.id) AS dropdown FROM `menu_group` a
+INNER JOIN `menu` b ON a.id = b.group_id
+LEFT JOIN `menu` c ON b.bg < c.bg AND b.bd > c.bd AND c.active = 1
+WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP BY b.id "
+                . "ORDER BY b.bg";
         $data['sql'] = $sql;
         $data['menu'] = $db->sql_fetch_yield($sql);
 

@@ -7,7 +7,9 @@ use \App\Library\Ariane;
 use \App\Library\Title;
 
 
-$title = FactoryController::addNode("Layout", "Title",array());
+$title = FactoryController::addNode("Layout", "title",array());
+
+//debug($title);
 
 FactoryController::addNode("Layout", "headerPma",array($title));
 

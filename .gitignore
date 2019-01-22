@@ -3,7 +3,7 @@ composer.lock
 /vendor/*
 version
 config.json
-/nbproject/private/
+/nbproject/*
 workers.ipc
 openvpn-status.log
 phpunit.xml

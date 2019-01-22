@@ -5,7 +5,12 @@ use \Glial\I18n\I18n;
 
 use \App\Library\Ariane;
 
+
+$title = FactoryController::addNode("Layout", "title",array(), FactoryController::EXPORT);
+
 FactoryController::addNode("Layout", "headerPma",$GLIALE_TITLE);
+
+
 
 
 echo '<div id="page">';
