@@ -96,7 +96,7 @@ use Glial\Html\Form\Form;
                         <a href="<?= LINK ?>tree/up/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></a>
                         - <a href="<?= LINK ?>tree/delete/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
                     </td>
-                    <td><?= $line['active'] ?></td>
+                    <td class="line-edit" data-name="active" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter URL"><?= $line['active'] ?></td>
 
                 </tr>
 
