@@ -1350,13 +1350,12 @@ class Mysql extends Controller
 
                 $table['mysql_server'] = $_POST['mysql_server'];
 
-                $table['mysql_server']['port']                = $data['port'] ?? 3306;
+                $table['mysql_server']['port']                = $_POST['mysql_server']['port'] ?? 3306;
                 $table['mysql_server']['ip']                  = $table['mysql_server']['ip'];
                 $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
                         array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
-                $table['mysql_server']['hostname']            = Mysql2::getHostname("@hostname",
-                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
+                $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
                 $table['mysql_server']['passwd']              = Mysql2::crypt($table['mysql_server']['password']);
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
