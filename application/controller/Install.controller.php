@@ -240,7 +240,7 @@ class Install extends Controller {
         wrong_db:
         $good = false;
         do {
-            echo "Name of database who will be used by PmaConrol\n";
+            echo "Name of database who will be used by PmaControl\n";
 
 
             $rl = new Hoa\Console\Readline\Readline ();
@@ -596,20 +596,19 @@ database=" . $server['database'] . "";
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if (!empty($filename) && file_exists($filename)) {
-
             $config = $this->parseConfig($filename);
             $orgas = $config['organization'];
         } else {
 
-            createOragnisation:
-            $this->cadre("create oraganisation");
+            createOrganization:
+            $this->cadre("create organization");
 
             do {
                 $rl = new Hoa\Console\Readline\Readline();
-                $oraganisation = $rl->readLine('Your Oraganization : ');
-            } while (strlen($oraganisation) < 3);
+                $oraganization = $rl->readLine('Your Organization : ');
+            } while (strlen($organization) < 3);
 
-            $orgas = array($oraganisation);
+            $orgas = array($organization);
         }
 
 

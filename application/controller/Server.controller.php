@@ -428,7 +428,7 @@ class Server extends Controller
             }
 
 
-// get server available
+// get variable available
             $sql            = "SELECT name FROM ts_variable WHERE `from` in('status','slave','server') order by name ASC";
             $res            = $db->sql_query($sql);
             $data['status'] = array();
@@ -572,7 +572,7 @@ var myChart = new Chart(ctx, {
         bezierCurve: false,
         title: {
             display: true,
-            text: "Nombre de select par secondes ",
+            text: " ",
             position: "top",
             padding: "0"
         },
