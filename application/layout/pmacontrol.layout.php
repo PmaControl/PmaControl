@@ -4,15 +4,19 @@ use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 
 use \App\Library\Ariane;
+use \App\Library\Title;
 
-FactoryController::addNode("Layout", "headerPma",$GLIALE_TITLE);
+
+$title = FactoryController::addNode("Layout", "Title",array());
+
+FactoryController::addNode("Layout", "headerPma",array($title));
 
 
 echo '<div id="page">';
 echo "<div id=\"glial-title\">";
-echo "<h2>".$GLIALE_TITLE."</h2>";
+echo "<h2>".$title ."</h2>";
 
-FactoryController::addNode("Layout", "ariane", array($GLIALE_ARIANE, $GLIALE_TITLE));
+FactoryController::addNode("Layout", "ariane", array($GLIALE_ARIANE, $title));
 
 echo "</div>";
 

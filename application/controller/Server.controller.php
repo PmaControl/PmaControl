@@ -178,7 +178,7 @@ class Server extends Controller
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->title  = __("Dashboard");
+        //$this->title  = __("Dashboard");
         $this->ariane = " > ".$this->title;
 
         $this->di['js']->addJavascript(array('clipboard.min.js'));
