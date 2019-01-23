@@ -169,9 +169,7 @@ class Mysql extends Controller
 
     public function user($params)
     {
-
         $this->view        = false;
-        $this->layout_name = false;
 
         $users          = array();
         $user_to_update = array();
@@ -1290,16 +1288,10 @@ class Mysql extends Controller
 
     public function after($param)
     {
-        if (!IS_CLI) {
-            $this->layout_name = 'pmacontrol';
-//$this->di['js']->addJavascript(array("https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"));
-        }
     }
 
     public function generate_config()
     {
-
-        $this->layout_name = 'pmacontrol';
         $db                = $this->di['db']->sql(DB_DEFAULT);
         $this->db_default  = $db;
         $this->title       = __("Configurator");

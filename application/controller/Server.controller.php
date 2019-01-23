@@ -40,7 +40,6 @@ class Server extends Controller
 
     public function before($param)
     {
-        $this->layout_name = 'pmacontrol';
     }
 
     public function listing($param)
@@ -327,7 +326,6 @@ class Server extends Controller
 
     public function memory()
     {
-        $this->layout_name = 'pmacontrol';
         $this->title       = __("Memory");
         $this->ariane      = " > ".__("Tools Box")." > ".$this->title;
 
@@ -349,8 +347,6 @@ class Server extends Controller
 
     public function index()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Index usage");
         $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
