@@ -16,9 +16,7 @@ class Replication extends Controller
 
     public function status()
     {
-        $this->layout_name = 'pmacontrol';
-
-        //$this->layout_name = 'default';
+        $this->layout_name = 'default';
         $this->title = __("Status");
 
 

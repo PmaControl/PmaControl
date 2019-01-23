@@ -22,6 +22,7 @@
 
             
             <?php
+            
             $class="";
             if ($data['position'] === "bottom")
             {
@@ -48,7 +49,10 @@
 
                         if ( ($item['bd'] - $item['bg'] > 1) && ( !empty($item['dropdown']) ) ) {
                             echo '
-                                <li class="dropdown">
+                                <li class="dropdown';
+                            if($data['selectedmenu']==$item["id"])
+                                echo ' active';
+                            echo '">
                                 <a id="drop' . $i . '" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">
                                 ' . $item['icon'] . ' ' . __($item['title']) . '
                                 <span class="caret"></span>

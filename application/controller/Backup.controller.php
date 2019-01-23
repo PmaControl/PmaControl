@@ -42,7 +42,6 @@ class Backup extends Controller
     function before($param)
     {
         if (!IS_CLI) {
-            $this->layout_name = 'pmacontrol';
         }
     }
 
@@ -182,8 +181,6 @@ class Backup extends Controller
 
     public function listing()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Backup's list");
         $this->ariane = " > ".__("Backup management")." > ".$this->title;
 
@@ -878,8 +875,6 @@ class Backup extends Controller
 
     public function dump()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Backup's list");
         $this->ariane = " > ".__("Backup management")." > ".$this->title;
 

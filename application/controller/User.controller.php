@@ -12,9 +12,6 @@ class User extends Controller
 
     function before($param)
     {
-        if (!IS_CLI) {
-            $this->layout_name = 'pmacontrol';
-        }
     }
 
     function after($param)
@@ -28,7 +25,6 @@ class User extends Controller
     function index()
     {
         //$this->di['js']->addJavascript(array("jquery-latest.min.js"));
-        $this->layout_name = 'pmacontrol';
         $this->title       = __("Members");
         $this->ariane      = "> ".$this->title;
 
@@ -189,8 +185,6 @@ class User extends Controller
 
     function register()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Registration");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
 
@@ -348,14 +342,10 @@ class User extends Controller
 
     function lost_password()
     {
-
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-
-        $this->layout_name = 'pmacontrol';
 
         $this->title  = __("Password forgotten ?");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
