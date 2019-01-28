@@ -21,6 +21,10 @@ class Debug
 
 
         if (!empty($param)) {
+
+
+            debug($param);
+
             foreach ($param as $key => $elem) {
                 if ($elem == "--debug") {
                     self::$debug = true;

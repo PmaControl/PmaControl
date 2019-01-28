@@ -45,7 +45,7 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
 
     public function getSelectedLevelOneMenu($id_menu)
     {
-        $Array = FactoryController::GetRootNode();
+        $Array = FactoryController::getRootNode();
 
         $db = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT IFNULL(e.id,IFNULL(d.id,IFNULL(c.id,IFNULL(b.id,a.id)))) AS levelonemenu_id "
