@@ -6,7 +6,10 @@ use \Glial\I18n\I18n;
 use \App\Library\Ariane;
 
 
-$title = FactoryController::addNode("Layout", "title",array(), FactoryController::EXPORT);
+//$title = FactoryController::addNode("Layout", "title",array(), FactoryController::DISPLAY);
+
+//debug($title);
+
 
 FactoryController::addNode("Layout", "headerPma",$GLIALE_TITLE);
 

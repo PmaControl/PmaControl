@@ -102,5 +102,7 @@ class Layout extends Controller {
 
             return $data['title']['icon'] . " " . $data['title']['title'];
         }
+
+        echo $data['title']['icon'] . " " . $data['title']['title'];
     }
 }
