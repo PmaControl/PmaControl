@@ -12,6 +12,7 @@ class User extends Controller
 
     function before($param)
     {
+
     }
 
     function after($param)
@@ -25,8 +26,8 @@ class User extends Controller
     function index()
     {
         //$this->di['js']->addJavascript(array("jquery-latest.min.js"));
-        $this->title       = __("Members");
-        $this->ariane      = "> ".$this->title;
+        $this->title  = __("Members");
+        $this->ariane = "> ".$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -775,7 +776,6 @@ GROUP BY d.id";
     {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
-        $this->layout_name = 'pmacontrol';
 
         $this->title  = __("Log on");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
@@ -824,8 +824,6 @@ GROUP BY d.id";
         header("Location: ".LINK."user/connection/");
         exit;
     }
-
-
 
     function updateGroup()
     {
@@ -893,7 +891,6 @@ GROUP BY d.id";
 
 
             header('location: '.LINK.'user/index/');
-            
         }
     }
 }
