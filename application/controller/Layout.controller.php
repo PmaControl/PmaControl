@@ -16,11 +16,15 @@ class Layout extends Controller {
 
     function headerPma($param) {
 
+      
         $title = $param[0];
 
         $data['auth'] = $this->di['auth']->getAccess();
 
         $this->set('data', $data);
+
+
+
         $this->set('GLIALE_TITLE', $title);
     }
 
