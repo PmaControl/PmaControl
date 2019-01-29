@@ -11,9 +11,7 @@ use \App\Library\Ariane;
 //debug($title);
 
 
-FactoryController::addNode("Layout", "headerPma",$GLIALE_TITLE);
-
-
+FactoryController::addNode("Layout", "headerPma",array($GLIALE_TITLE));
 
 
 echo '<div id="page">';
