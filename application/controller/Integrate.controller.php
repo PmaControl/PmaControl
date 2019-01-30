@@ -44,7 +44,7 @@ class Integrate extends Controller
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $this->view = false;
 
-        $files = glob("/dev/shm/".$memory_file."_*");
+        $files = glob(TMP."tmp_file/".$memory_file."_*");
         sleep(1);
 
         $variables           = $this->get_variable();
