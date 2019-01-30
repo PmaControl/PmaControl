@@ -33,7 +33,7 @@
 
 
 
-                echo '                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 Services-tab item">
+                echo '                <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12 Services-tab item">
                     <div class="folded-corner service_tab_1">
                         <div class="text">
                             <div class="row">
