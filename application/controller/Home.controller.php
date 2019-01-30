@@ -12,9 +12,6 @@ class Home extends Controller
 
     function index()
     {
-        $this->layout_name = 'pmacontrol';
-
-
         $this->title = __("Home");
         $this->ariane = " > " . __("Welcome to PmaControl !");
 

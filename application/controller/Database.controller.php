@@ -126,12 +126,9 @@ class Database extends Controller
 	$("#database-list").selectpicker("refresh");
     });
 });
-
 ');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-
             if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list'])) {
 
             }
@@ -148,9 +145,16 @@ class Database extends Controller
 
         $this->set('data', $data);
     }
+    /*
+     * example : ./glial database databaseRefresh  82 83 drupal_home '/mysql/backup'
+     *
+     *
+     */
 
     public function databaseRefresh($param)
     {
+
+
 
         Debug::parseDebug($param);
 
@@ -171,7 +175,11 @@ class Database extends Controller
             $database = end($databases);
         }
 
-        $this->database_dump($id_mysql_server__source, $database, $directory);
+
+
+
+        $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+
 
 
 
@@ -180,8 +188,14 @@ class Database extends Controller
 
 
 
-        $this->database_load($id_mysql_server__target, implode(",", $databases), $directory);
+        $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
     }
+    /*
+     * example
+     *
+     *
+     *
+     */
 
     public function databaseDump($param)
     {
@@ -200,8 +214,15 @@ class Database extends Controller
         $res = $db->sql_query($sql);
 
 
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ar = $db->sql_fetch_object($res)) {
 
+            $ob = $ar;
+        }
+
+        $db->sql_close();
+
+
+        if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
 
 
@@ -210,7 +231,9 @@ class Database extends Controller
             if ($database != "ALL") {
                 $to_dump = " -B '".$database."' ";
             }
-            $cmd = "mydumper -h ".$ob->ip." -u ".$ob->login." -p ".$password." ".$to_dump." -G -E -R -o ".$path." ";
+            $cmd = "mydumper -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." ".$to_dump." -G -E -R -o ".$path." ";
+            Debug::debug($cmd);
+
             shell_exec($cmd);
 
             return true;
@@ -218,6 +241,11 @@ class Database extends Controller
 
         throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
     }
+    /*
+     *
+     *
+     * example : 
+     */
 
     public function databaseLoad($param)
     {
@@ -234,7 +262,14 @@ class Database extends Controller
         $res = $db->sql_query($sql);
 
 
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ar = $db->sql_fetch_object($res)) {
+            $ob = $ar;
+        }
+
+
+        if (!empty($ob)) {
+
+            $db_to_load = $this->di['db']->sql($ob->name);
 
             $password = Chiffrement::decrypt($ob->passwd);
 
@@ -251,9 +286,7 @@ class Database extends Controller
                 $db_to_import = array('NA');
             }
 
-
             foreach ($db_to_import as $db_to_load) {
-
 
                 $to_dump = "";
                 if ($specify_db === true) {
@@ -265,11 +298,10 @@ class Database extends Controller
                     $to_dump = '-B '.$db_to_load;
                 }
 
-                $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." $to_dump -d ".$path." ";
+                $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." -o $to_dump -d ".$path." ";
                 Debug::debug($cmd, "cmd");
                 shell_exec($cmd);
             }
-
 
             return true;
         }

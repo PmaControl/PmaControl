@@ -32,8 +32,6 @@ class CompareConfig extends Controller
          * SHOW COLUMNS FROM table_name
          *
          */
-
-        $this->layout_name = 'pmacontrol';
         $db                = $this->di['db']->sql(DB_DEFAULT);
         $this->db_default  = $db;
         $this->title       = __("Compare");
