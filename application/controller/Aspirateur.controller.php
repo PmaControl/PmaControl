@@ -469,7 +469,7 @@ class Aspirateur extends Controller
     public function allocate_shared_storage($name = 'answer')
     {
 //storage shared
-        $storage             = new StorageFile('/dev/shm/'.$name.'_'.time()); // to export in config ?
+        $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
 
@@ -901,10 +901,18 @@ class Aspirateur extends Controller
         return $stats;
     }
 
+
+    /**
+     * @example : ./glial aspirateur addToQueue 11 --debug
+     *
+     * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
+     * 
+     */
+
     public function addToQueue($param)
     {
 
-        $param[] = '--debug';
+        //$param[] = '--debug';
         Debug::parseDebug($param);
 
 
@@ -983,7 +991,8 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
 
 
-            //on verifie avec le double buffer qu'on est bien sur le même pid et ce dernier est toujours sur le serveur MySQL qui pose problème
+            //on verifie avec le double buffer qu'on est bien sur le même pid
+            //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
 
             // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
@@ -1280,7 +1289,7 @@ class Aspirateur extends Controller
             $double_buffer = TMP."lock/worker/".$ob->pid.".pid";
 
 
-            if (file_exists($file)) {
+            if (file_exists($double_buffer)) {
                 unlink($double_buffer);
             }
 

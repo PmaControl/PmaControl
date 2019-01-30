@@ -48,7 +48,6 @@ class Daemon extends Controller
 
     public function stopAll($param)
     {
-
         Debug::parseDebug($param);
         $this->manageDaemon("stop");
     }
