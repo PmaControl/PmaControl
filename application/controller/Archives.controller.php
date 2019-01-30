@@ -56,6 +56,11 @@ class Archives extends Controller
 
         $cleaner = array();
 
+
+
+        $size = array();
+
+
         while ($row = $db->sql_fetch_row($res)) {
             $data['cleaner'][] = $row;
             $cleaner[]         = $row[5];
