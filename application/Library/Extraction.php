@@ -154,7 +154,7 @@ class Extraction
 
 
 
-        echo \SqlFormatter::format($sql3)."\n";
+        //echo \SqlFormatter::format($sql3)."\n";
 
         $res2 = self::$db->sql_query($sql3);
 
