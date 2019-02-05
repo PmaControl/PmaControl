@@ -154,7 +154,7 @@ class Extraction
 
 
 
-        //echo \SqlFormatter::format($sql3)."\n";
+        echo \SqlFormatter::format($sql3)."\n";
 
         $res2 = self::$db->sql_query($sql3);
 
@@ -163,22 +163,28 @@ class Extraction
 
     static private function getServerList()
     {
-        $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
 
-        //debug($sql);
-        $res = self::$db->sql_query($sql);
 
-        $server = array();
-        while ($ob     = self::$db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $server[]       = $ob['id'];
-            self::$server[] = $ob;
+        if (empty(self::$server)) {
+            $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
+
+            //debug($sql);
+            $res = self::$db->sql_query($sql);
+
+            $server = array();
+            while ($ob     = self::$db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $server[]       = $ob['id'];
+                self::$server[] = $ob;
+            }
+
+            if (count($server) === 0) {//int negatif pour être sur de rien remonté
+                $server[] = "-999";
+            }
+
+            self::$server = $server;
         }
 
-        if (count($server) === 0) {//int negatif pour être sur de rien remonté
-            $server[] = "-999";
-        }
-
-        return $server;
+        return self::$server;
     }
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
