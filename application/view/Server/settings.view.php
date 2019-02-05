@@ -22,7 +22,7 @@ echo '<div class="col-md-10">';
 echo '</div>';
 
 echo '<div class="col-md-2" style="text-align: right">';
-echo '<a href="' . LINK . 'Mysql/add/" class="btn btn-primary" style="font-size:12px"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a MySQL server</a>';
+echo '<a href="' . LINK . 'mysql/add/" class="btn btn-primary" style="font-size:12px"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a MySQL server</a>';
 echo '</div>';
 
 
