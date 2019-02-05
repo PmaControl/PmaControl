@@ -56,6 +56,9 @@ class Mysql
 
         self::addMaxDate($db);
         self::generateMySQLConfig($db);
+
+        //stopAll daemon
+        //startAll daemon
     }
 
     static public function generateMySQLConfig($db)
@@ -71,8 +74,8 @@ class Mysql
 ;password => password who will be used to connect to the SGBD
 ;database => database / schema witch will be used to access to datas
 ';
-        
-        $delta = $config; 
+
+        $delta = $config;
 
         while ($ob = $db->sql_fetch_object($res)) {
             $string = "[".$ob->name."]\n";
@@ -88,14 +91,15 @@ class Mysql
 
             //Debug::debug($string);
         }
-        
-        
-        if ($config != $delta)
-        {
-            file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
-        }
 
-        
+
+        if ($config != $delta) {
+
+            file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+        } else {
+            echo 'VGCFGXDNGFX';
+            exit;
+        }
     }
 
     static public function addMaxDate($db)
@@ -177,10 +181,18 @@ class Mysql
 
         if (empty($name) || $name == "@hostname") {
 
+            debug($data);
 
-            $db = new \mysqli($data['0'], $data['1'], $data['2'], "mysql", $data['3']);
 
-            if ($db) {
+
+            $db = mysqli_init();
+            if (!$db) {
+                die('mysqli_init failed');
+            }
+
+
+
+            if ($db->real_connect($data['0'], $data['1'], $data['2'], "mysql", $data['3'])) {
                 $res = $db->query('SELECT @@hostname as hostname;');
 
                 while ($ob = $res->fetch_object()) {

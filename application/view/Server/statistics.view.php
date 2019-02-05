@@ -6,8 +6,6 @@ function secondsToTime($seconds) {
     return $dtF->diff($dtT)->format('%a days, %h hours, %i minutes and %s seconds');
 }
 
-
-
 echo '<table class="table table-bordered table-striped" id="table">';
 
 
@@ -69,8 +67,14 @@ foreach ($data['servers'] as $id_mysql_server => $gg) {
     echo '<td style="' . $style . '">';
 
 
+    if ($server['com_delete'] + $server['com_select'] + $server['com_insert'] + $server['com_update'] != 0) {
+        $percent = $server['com_select'] / ($server['com_delete'] + $server['com_select'] + $server['com_insert'] + $server['com_update']) * 100;
+    } else {
+        $percent = "N/A";
+    }
 
-    $percent = $server['com_select'] / ($server['com_delete'] + $server['com_select'] + $server['com_insert'] + $server['com_update']) * 100;
+
+
     echo '<div class="progress" style="margin-bottom:0">
 
   <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="' . $percent . '" aria-valuemin="0" aria-valuemax="100" style="width: '

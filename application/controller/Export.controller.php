@@ -7,7 +7,6 @@
  */
 
 use \Glial\Synapse\Controller;
-use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
@@ -16,8 +15,10 @@ class Export extends Controller {
 
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country", "history_etat", "ts_file",
-        "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend", "home_box", "backup_type", "export_option");
-    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*");
+        "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
+        "home_box", "backup_type", "export_option");
+    
+    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
     function generateDump($param) {
         Debug::parseDebug($param);
@@ -54,7 +55,7 @@ class Export extends Controller {
         Debug::debug($table_without_data);
 
         $connect = $db->getParams();
-        Crypt::$key = CRYPT_KEY;
+
 
         if (empty($connect['port'])) {
             $connect['port'] = 3306;
@@ -64,7 +65,7 @@ class Export extends Controller {
         $cmd = "mysqldump --skip-dump-date -h " . $connect['hostname']
                 . " -u " . $connect['user']
                 . " -P " . $connect['port']
-                . " -p'" . Crypt::decrypt($connect['password'])
+                . " -p'" . Chiffrement::decrypt($connect['password'])
                 . "' " . $connect['database'] . " " . implode(" ", $table_with_data) . " | sed 's/ AUTO_INCREMENT=[0-9]*\b//' > " . ROOT . "/sql/full/pmacontrol.sql 2>&1";
 
 
@@ -74,7 +75,7 @@ class Export extends Controller {
                 . " -u " . $connect['user']
                 . " -P " . $connect['port']
                 . " -d "
-                . " -p'" . Crypt::decrypt($connect['password'])
+                . " -p'" . Chiffrement::decrypt($connect['password'])
                 . "' " . $connect['database'] . " " . implode(" ", $table_without_data) . " | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> " . ROOT . "/sql/full/pmacontrol.sql 2>&1";
 
 
@@ -128,7 +129,7 @@ $("#export_all-all2").click(function(){
             $compressed = gzcompress($json, 9);
 
 
-            $crypted = Crypt::encrypt($compressed, $_POST['export']['password']);
+            $crypted = Chiffrement::encrypt($compressed, $_POST['export']['password']);
             $file_name = $_POST['export']['name_file'];
 
             file_put_contents("/tmp/export", $crypted);
@@ -155,7 +156,7 @@ $("#export_all-all2").click(function(){
             if (!empty($_FILES['export']['tmp_name']['file'])) {
 
                 $crypted = file_get_contents($_FILES['export']['tmp_name']['file']);
-                $compressed = Crypt::decrypt($crypted, $_POST['export']['password']);
+                $compressed = Chiffrement::decrypt($crypted, $_POST['export']['password']);
 
                 $json = gzuncompress($compressed);
 
@@ -189,7 +190,8 @@ $("#export_all-all2").click(function(){
 
         $data['arr'] = json_decode($json[0], true);
         $data['options'] = $this->getExportOption();
-        
+
+        $this->addMysql($data);
         
         return $data;
         
@@ -199,14 +201,20 @@ $("#export_all-all2").click(function(){
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        foreach ($arr['mysql'] as $mysql) {
 
-            $option = $options['mysql'];
+
+        debug($arr);
+
+        foreach ($arr['arr']['mysql'] as $mysql) {
+
+            $option = $arr['options']['mysql'];
 
             unset($mysql['id']);
 
             $mysql['error'] = '';
 
+
+            $data = array();
             $data['mysql_server'] = $mysql;
             $data['mysql_server']['id_client'] = 1;
             $data['mysql_server']['id_environment'] = 1;
@@ -214,7 +222,7 @@ $("#export_all-all2").click(function(){
             $data['mysql_server']['is_password_crypted'] = 1;
 
             foreach ($option['crypted_fields'] as $crypted_field) {
-                $data['mysql_server'][$crypted_field] = Crypt::encrypt($data['mysql_server'][$crypted_field], CRYPT_KEY);
+                $data['mysql_server'][$crypted_field] = Chiffrement::encrypt($data['mysql_server'][$crypted_field]);
             }
 
             unset($data['mysql_server']['key_private_path']);
@@ -409,6 +417,14 @@ $("#export_all-all2").click(function(){
             $export_option[$arr['key']] = $arr;
         }
 
+
+        if (count($export_option) == 0)
+        {
+            throw new \Exception('PMACTRL-158 : The table export_option is empty !');
+        }
+
+
+
         return $export_option;
     }
 
@@ -427,6 +443,30 @@ $("#export_all-all2").click(function(){
 
         return $unique;
     }
+
+
+
+    public function encrypt()
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT id,passwd from mysql_server where id !=1";
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $sql  = "UPDATE mysql_server SET passwd = '".Chiffrement::encrypt($ob->passwd)."' WHERE id=".$ob->id;
+            $db->sql_query($sql);
+        }
+
+    }
+
+
+   
+
+
 
     //a mettre dans une librairy
 }

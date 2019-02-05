@@ -16,12 +16,12 @@ class Debug
     static $microtime   = array();
     static $display_sql = true;
 
-
     static function parseDebug(& $param)
     {
 
 
         if (!empty($param)) {
+
             foreach ($param as $key => $elem) {
                 if ($elem == "--debug") {
                     self::$debug = true;
@@ -135,8 +135,6 @@ class Debug
         }
     }
 
-
-
     static function debugPurge()
     {
         self::$microtime = array();
@@ -146,7 +144,6 @@ class Debug
     {
         self::$display_sql = false;
     }
-
 
     static function debug($string, $var = "")
     {
@@ -160,10 +157,16 @@ class Debug
 
             echo "#".self::$count++."\t";
             echo $file.":".$line."\t";
-            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+
+            echo self::getDate();
 
             if (!empty($var)) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+
+                if (IS_CLI) {
+                    echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+                } else {
+                    echo $var." ";
+                }
             }
 
 
@@ -175,8 +178,7 @@ class Debug
         }
     }
 
-
-    static function sql($sql, $var ="")
+    static function sql($sql, $var = "")
     {
         if (self::$debug) {
 
@@ -189,16 +191,32 @@ class Debug
 
             echo "#".self::$count++."\t";
             echo $file.":".$line."\t";
-            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+
+            echo self::getDate();
+            //echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
 
             if (!empty($var)) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+
+
+                if (IS_CLI) {
+                    echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+                } else {
+                    echo $var." ";
+                }
             }
 
 
-            echo \SqlFormatter::format($sql);
+            echo \SqlFormatter::highlight($sql);
             //echo trim($string)."\n";
-            
+        }
+    }
+
+    static function getDate()
+    {
+        if (IS_CLI) {
+            return \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+        } else {
+            return "[".date('Y-m-d H:i:s')."] ";
         }
     }
 }

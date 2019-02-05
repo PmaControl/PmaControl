@@ -4,7 +4,6 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 
-
 class Mysqlsys extends Controller
 {
 
@@ -57,10 +56,12 @@ class Mysqlsys extends Controller
             if (!empty($link_name)) {
 
                 $remote                 = $this->di['db']->sql($link_name);
-                $sql                    = "select table_name from information_schema.tables WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
+                $sql                    = "select table_name from information_schema.tables "
+                    ."WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
                 $res                    = $remote->sql_query($sql);
                 $data['view_available'] = [];
                 while ($ob                     = $remote->sql_fetch_object($res)) {
+                    //$data['view_available'][] = str_replace('x$','',$ob->table_name);
                     $data['view_available'][] = $ob->table_name;
                 }
 
@@ -153,8 +154,6 @@ class Mysqlsys extends Controller
             $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\''.$ob->login.'\'@\'localhost\'" 2>&1';
             $ret = shell_exec($cmd);
 
-//debug($ret);
-
             $out               = explode("\n", $ret)[1];
             $data['file_name'] = trim(str_replace('Wrote file:', '', $out));
 
@@ -219,7 +218,6 @@ class Mysqlsys extends Controller
         header("location: ".$_SERVER['HTTP_REFERER']);
     }
 
-
     public function drop($param)
     {
 
@@ -249,7 +247,5 @@ class Mysqlsys extends Controller
         set_flash("success", $title, $msg);
 
         header("location: ".$_SERVER['HTTP_REFERER']);
-
-        
     }
 }

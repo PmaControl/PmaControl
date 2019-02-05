@@ -3,3 +3,9 @@ composer.lock
 /vendor/*
 version
 config.json
+/nbproject/*
+workers.ipc
+openvpn-status.log
+phpunit.xml
+packages.json
+1

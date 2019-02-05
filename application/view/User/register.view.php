@@ -17,7 +17,7 @@ echo "<table style=\"margin-bottom: 0px;\" class=\"form table\" width=\"100%\">"
 
 
 echo "<tr>";
-echo "<td colspan=\"2\"><h3 class=\"item\">".__("Signalétique","fr")." :</h3></td>";
+echo "<td colspan=\"2\"><h3 class=\"item\">".__("Identity","fr")." :</h3></td>";
 echo "</tr>";
 
 
@@ -33,7 +33,7 @@ echo "<td>".Form::input("user_main","firstname",array("class" => "form-control")
 echo "</tr>";
 
 echo "<tr>";
-echo "<td class=\"first\">".__("Last name")." :</td>";
+echo "<td class=\"first\">".__("Lastname")." :</td>";
 echo "<td>".Form::input("user_main","name",array("class" => "form-control"))."</td>";
 echo "</tr>";
 
