@@ -7,22 +7,69 @@
 
 namespace App\Library;
 
-
-trait System
+class System
 {
+    /*
+     * (PmaControl 0.8)<br/>
+     * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
+     * @return boolean Success
+     * @package Controller
+     * @since 0.8 First time this was introduced.
+     * @since pmacontrol 1.5.7 updated with /proc/pid
+     * @description test if daemon is launched or not according with pid saved in table daemon_main
+     * @access public
+     * 
+     */
 
-    private function isRunningPid($pid)
+    static public function isRunningPid($param)
     {
-        $cmd   = "ps -p ".$pid;
-        $alive = shell_exec($cmd);
+        if (is_array($param)) {
+            $pid = $param[0];
+        } else {
+            $pid = $param;
+        }
 
-        if (strpos($alive, $pid) !== false) {
+        if (empty($pid)) {
+            return false;
+        }
+
+        $pid = intval($pid);
+
+
+
+        $res = shell_exec("ps -p $pid | tail -n +2");
+        if (! empty($res)) {
+            //process with a pid = $pid is running
             return true;
         }
 
         return false;
     }
 
+    static public function deleteFiles($file = "")
+    {
+
+        $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*",
+            "variable" => "/dev/shm/variable_*", "worker" => "/dev/shm/worker");
+
+        if (!empty($file)) {
+            if (!empty($to_delete[$file])) {
+                $files_to_delete[] = $to_delete[$file];
+            }
+        } else {
+            foreach ($to_delete as $ff) {
+                $files_to_delete[] = $ff;
+            }
+        }
 
 
+
+        foreach ($files_to_delete as $file_to_delete) {
+            $files = glob($file_to_delete);
+
+            if (count($files) > 0) {
+                shell_exec("rm ".$file_to_delete);
+            }
+        }
+    }
 }

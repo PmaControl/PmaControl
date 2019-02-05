@@ -51,8 +51,11 @@ class Webservice extends Controller
                 //echo "KO\n";
             }
 
+            Mysql::onAddMysqlServer($db);
             $this->saveHistory($id_user_main);
         }
+        
+        
 
         //echo "\n";
     }
@@ -179,6 +182,9 @@ class Webservice extends Controller
         } else {
             echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "KO"}';
         }
+        
+        
+        
 
 
 

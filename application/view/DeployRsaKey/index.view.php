@@ -1,9 +1,7 @@
 <?php
 
 use Glial\Html\Form\Form;
-
 use App\Library\Display;
-
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -27,7 +25,7 @@ echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
-echo '<form action="" method="post" class="form-inline">';
+echo '<form action="" method="post" class="form-inline" autocomplete="off">';
 
 
 echo '<div class="panel panel-primary">
@@ -45,7 +43,7 @@ echo '<div class="col-md-4 stackem">';
 
 echo '<div>';
 echo "Login SSH<br />";
-echo Form::input("mysql_server", "login_ssh", array("class" => "form-control", "style" => "width:100%"));
+echo Form::input("mysql_server", "login_ssh", array("class" => "form-control", "style" => "width:100%", "autocomplete" => "nop"));
 echo '</div>';
 
 
@@ -53,7 +51,7 @@ echo '</div>';
 
 echo '<div>';
 echo "Password SSH<br />";
-echo Form::input("mysql_server", "password_ssh", array("class" => "form-control", "style" => "width:100%", "type" => "password"));
+echo Form::input("mysql_server", "password_ssh", array("class" => "form-control", "style" => "width:100%", "type" => "password", "autocomplete" => "off"));
 echo '</div>';
 
 echo '</div>';
@@ -120,6 +118,7 @@ echo '</th>';
 echo '<th>'.__('Top').'</th>';
 echo '<th>'.__('ID').'</th>';
 echo '<th>'.__('MySQL').'</th>';
+echo '<th>'.__('Key').'</th>';
 echo '<th>'.__('SSH').'</th>';
 echo '<th>'.__('Organization').'</th>';
 echo '<th>'.__('Environment').'</th>';
@@ -161,14 +160,25 @@ foreach ($data['servers'] as $server) {
     echo '</td>';
 
     echo '<td>'.$i.'</td>';
-    echo '<td>'.$server['id'];
+    echo '<td>'.$server['id_mysql_server'];
     //print_r($server);
-    echo '<input type = "hidden" name = "id['.($i - 1).']" value = "'.$server['id'].'" />';
+    echo '<input type = "hidden" name = "id['.($i - 1).']" value = "'.$server['id_mysql_server'].'" />';
 
     echo '</td>';
 
     echo '<td style = "'.$style.'">';
     echo '<span class = "glyphicon '.(empty($server['error']) ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden = "true"></span>';
+    echo '</td>';
+
+
+    echo '<td style = "'.$style.'">';
+
+
+
+    echo array_sum(explode(",",$server['active']));
+    
+    
+    //echo $server['cpt'];
     echo '</td>';
 
     echo '<td style = "'.$style.'">';
@@ -195,4 +205,4 @@ echo '</table>';
 
 echo '<input type = "hidden" name = "settings" value = "1" />';
 echo '<button type = "submit" class = "btn btn-primary">'.__("Deploy").'</button>';
-echo '</form>      ';
+echo '</form>';

@@ -17,9 +17,6 @@
 
   echo '</div>';
 
-
-
-
   FactoryController::addNode("Home", "list_server", array());
  */
 ?>
@@ -33,26 +30,37 @@
 
 
 
-                echo '                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 Services-tab item">
+                echo '<div class="col-lg-6 col-md-12 col-sm-12 col-xs-12 Services-tab item">
                     <div class="folded-corner service_tab_1">
                         <div class="text">
                             <div class="row">
-                                <div class="col-md-3"> <i class="icon-puzzle-piece"></i>
+                                <div class="col-md-1"> <i class="icon-puzzle-piece"></i>
 
                             '.$item['icon'].'</div>
-                                <div class="col-md-9">
+                                <div class="col-md-7">
                                     <p class="item-title">
                                     <h3> '.$item['title'].'</h3>
                                     </p><!-- /.item-title -->
                                 </div>
+
+<div class="col-md-3" style="text-align:right">';
+
+
+                if (!empty($item['button_url'])) {
+                    echo '<a href="'.str_replace('{LINK}', LINK, $item['button_url']).'" class="btn btn-primary">'.$item['button_msg'].'</a>';
+                }
+
+
+                echo '</div><div class="col-md-1"></div>
+
                             </div>
                             <p><br /></p>
                             <p>
                                 ';
 
                 \Glial\Synapse\FactoryController::addNode($item['class'], $item['method'], array());
-                    echo '
-                            </p>
+                echo $item['class'].", ".$item['method'];
+                echo '  </p>
                         </div>
                     </div>
                 </div>';

@@ -4,12 +4,12 @@ use \Glial\Synapse\Controller;
 use \Glial\Tools\Recursive;
 use \Glial\Shell\Color;
 use \App\Library\Debug;
-
+//use \App\Library\System;
 
 class Exctractor extends Controller
 {
     
-    use \App\Library\System;
+    
     var $debug    = false;
     var $url      = "Daemon/index/";
     var $log_file = TMP."log/daemon.log";

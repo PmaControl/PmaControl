@@ -13,7 +13,6 @@ class ToolsBox extends Controller
 
     public function memory()
     {
-        $this->layout_name = 'pmacontrol';
         $this->title = __("Memory");
         $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
 
@@ -34,8 +33,6 @@ class ToolsBox extends Controller
 
     public function indexUsage()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title = __("Index usage");
         $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
 

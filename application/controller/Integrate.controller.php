@@ -7,7 +7,6 @@ use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
 
 //require ROOT."/application/library/Filter.php";
-
 // ./glial control rebuildAll --debug
 
 class Integrate extends Controller
@@ -31,22 +30,21 @@ class Integrate extends Controller
 
         if (empty($param[1])) {
             $memory_file = "answer";
+        } else {
+            $memory_file = $param[1];
         }
 
-        $memory_file = $param[1];
+
 
 
         // test if valid memory file (from ts_file)
-        $this->getIdMemoryFile($memory_file);
-
-
-
+        $id_ts_file = $this->getIdMemoryFile($memory_file);
 
 
         $db         = $this->di['db']->sql(DB_DEFAULT);
         $this->view = false;
 
-        $files = glob("/dev/shm/".$memory_file."_*");
+        $files = glob(TMP."tmp_file/".$memory_file."_*");
         sleep(1);
 
         $variables           = $this->get_variable();
@@ -102,12 +100,13 @@ class Integrate extends Controller
                                             }
 
                                             //correction bidon, mais nécessaire
-                                            if ($slave_variable === "seconds_behind_master" && empty($slave_value)) {
-                                                $slave_value = "0";
-                                            }
+
+                                            /*
+                                              if ($slave_variable === "seconds_behind_master" && empty($slave_value)) {
+                                              $slave_value = "";
+                                              } */
 
                                             if (empty($variables[$type_metrics][$slave_variable])) {
-
 
                                                 if ($slave_value === "-1") {
                                                     continue;
@@ -136,13 +135,34 @@ class Integrate extends Controller
 
                                                 if ($variables[$type_metrics][$slave_variable]['type'] == "TEXT") {
                                                     $slave_value = $db->sql_real_escape_string($slave_value);
-                                                }
 
-                                                $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
-                                                    .'"'.$connection_name.'", '
-                                                    .$variables[$type_metrics][$slave_variable]['id'].', "'
-                                                    .$date.'", "'
-                                                    .$slave_value.'")';
+                                                    $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
+                                                        .'"'.$connection_name.'", '
+                                                        .$variables[$type_metrics][$slave_variable]['id'].', "'
+                                                        .$date.'", "'
+                                                        .$slave_value.'")';
+                                                } else {
+
+                                                    if ($slave_value == "") {
+                                                        $slave_value = 'NULL';
+                                                    }
+
+
+                                                    if ($variables[$type_metrics][$slave_variable]['type'] == "DOUBLE") {
+                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
+                                                            .'"'.$connection_name.'", '
+                                                            .$variables[$type_metrics][$slave_variable]['id'].', "'
+                                                            .$date.'", "'
+                                                            .$slave_value.'")';
+                                                    } else {
+
+                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
+                                                            .'"'.$connection_name.'", '
+                                                            .$variables[$type_metrics][$slave_variable]['id'].', "'
+                                                            .$date.'", '
+                                                            .$slave_value.')';
+                                                    }
+                                                }
                                             }
                                         } // END SLAVE
                                         //Debug::debug($slave);
@@ -194,7 +214,7 @@ class Integrate extends Controller
 
                                             if (empty($var_index[$type_metrics][$variable])) {
                                                 $var_index[$type_metrics][$variable] = 1;
-                                                $variables_to_insert[]               = '("'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
+                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
                                                 //$variables_to_insert[$type_metrics][$variable]['type'] = $this->getTypeOfData($value);
                                             }
                                         }
@@ -219,6 +239,7 @@ class Integrate extends Controller
                 break;
             }
         }
+
 
 
 
@@ -316,7 +337,7 @@ class Integrate extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
-        $sql = "INSERT IGNORE INTO ts_variable (`name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
+        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
         $db->sql_query($sql);
     }
 
@@ -364,20 +385,18 @@ class Integrate extends Controller
 
         foreach ($values as $type => $elems) {
 
-            if (Debug::$debug) {
 
-                foreach ($elems as $elem) {
-                    $sql = "INSERT INTO `ts_value_".$val."_".strtolower($type)."` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES ".$elem.";";
-                    $gg  = $db->sql_query($sql);
-                }
-            } else {
 
-                $sql = "INSERT INTO `ts_value_".$val."_".strtolower($type)."` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES ".implode(",", $elems).";";
-                $gg  = $db->sql_query($sql);
-            }
-            if (!$gg) {
-                debug($db->sql_error());
-            }
+            $sql = "INSERT INTO `ts_value_".$val."_".strtolower($type)."` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES ".implode(",\n", $elems).";";
+
+            Debug::sql($sql);
+            $gg = $db->sql_query($sql);
+
+
+            /*
+              if (!$gg) {
+              debug($db->sql_error());
+              } */
 
             Debug::checkPoint("saved ".$type." elems : ".count($elems));
         }
@@ -427,7 +446,7 @@ class Integrate extends Controller
         }
 
         $sql2 = "INSERT INTO `ts_date_by_server` (`id_mysql_server`,`id_ts_file`, `date`) VALUES ";
-        $sql4 = $sql2.implode(",", $sql3).";";
+        $sql4 = $sql2.implode(",\n", $sql3).";";
 
         Debug::sql($sql4);
 

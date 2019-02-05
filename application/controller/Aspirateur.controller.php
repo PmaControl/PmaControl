@@ -10,8 +10,10 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
+use App\Library\System;
 use App\Library\Chiffrement;
 use App\Library\Zmsg;
+use \Glial\Cli\Color;
 
 //require ROOT."/application/library/Filter.php";
 //https://blog.programster.org/php-multithreading-pool-example
@@ -23,8 +25,9 @@ class Aspirateur extends Controller
 {
 
     use \App\Library\Filter;
-    var $shared   = array();
-    var $log_file = TMP."log/daemon.log";
+    var $shared        = array();
+    var $log_file      = TMP."log/daemon.log";
+    var $lock_variable = TMP."lock/variable/{id_mysql_server}.md5";
 
     /*
      * (PmaControl 0.8)<br/>
@@ -47,6 +50,7 @@ class Aspirateur extends Controller
     }
 
     /**
+     * @deprecated
      * (PmaControl 2.0)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
      * @return boolean Success
@@ -58,6 +62,7 @@ class Aspirateur extends Controller
      */
     public function testAllMysql($param)
     {
+
 
         Debug::debug($param, "PARAM");
 
@@ -102,11 +107,11 @@ class Aspirateur extends Controller
         Debug::debug("max execution time : ".$maxExecutionTime);
 
 
-        //to prevent any trouble with fork
-        //$this->debugShowQueries();
+//to prevent any trouble with fork
+//$this->debugShowQueries();
         $db->sql_close();
 
-        //$maxThreads = \Glial\System\Cpu::getCpuCores();
+//$maxThreads = \Glial\System\Cpu::getCpuCores();
 
         Debug::debug("Nombre de threads : ".$maxThreads);
 
@@ -118,7 +123,7 @@ class Aspirateur extends Controller
 
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             sleep(1);
-            //throw new Exception("List of server to test is empty", 20);
+//throw new Exception("List of server to test is empty", 20);
         }
 
 
@@ -126,8 +131,8 @@ class Aspirateur extends Controller
 
         $father = false;
         foreach ($server_list as $server) {
-            //
-            //echo str_repeat("#", count($child_processes)) . "\n";
+//
+//echo str_repeat("#", count($child_processes)) . "\n";
 
             $pid                   = pcntl_fork();
             $child_processes[$pid] = 1;
@@ -147,18 +152,18 @@ class Aspirateur extends Controller
                 $father = true;
             } else {
 
-                // one thread to test each MySQL server
+// one thread to test each MySQL server
 
 
                 Debug::debug("Start server with id : ".$server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
                 $father = false;
-                //we want that child exit the foreach
+//we want that child exit the foreach
                 break;
             }
             usleep(500);
-            //Debug::debug($child_processes);
+//Debug::debug($child_processes);
         }
 
         if ($father) {
@@ -172,7 +177,7 @@ class Aspirateur extends Controller
                 unset($child_processes[$childPid]);
             }
 
-            //$this->isGaleraCluster(array());
+//$this->isGaleraCluster(array());
 
 
             /*
@@ -193,10 +198,11 @@ class Aspirateur extends Controller
 
         Debug::debugShowQueries($this->di['db']);
 
-        //Debug::debugQueriesOff();
+//Debug::debugQueriesOff();
     }
 
     /**
+     *  @deprecated since version 1.3.6
      * (PmaControl 1.0)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
      * @return boolean Success
@@ -217,8 +223,8 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_server   = $param[1];
 
-        //Debug::debug($name_server, "Name server");
-        //Debug::debug($id_server, "Id server");
+//Debug::debug($name_server, "Name server");
+//Debug::debug($id_server, "Id server");
 
         if (empty($param[2])) {
             $max_execution_time = 3;
@@ -226,10 +232,10 @@ class Aspirateur extends Controller
             $max_execution_time = $param[2];
         }
 
-        //Debug::debug($max_execution_time, "Max execution time");
-        //execute a process with a timelimit (in case of MySQL don't answer and keep connection)
-        //$max_execution_time = 20; // in seconds
-        //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
+//Debug::debug($max_execution_time, "Max execution time");
+//execute a process with a timelimit (in case of MySQL don't answer and keep connection)
+//$max_execution_time = 20; // in seconds
+//Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
         $debug = "";
         if (Debug::$debug) {
@@ -242,7 +248,7 @@ class Aspirateur extends Controller
 
         Debug::checkPoint("Après TimeLimit");
 
-        //Debug::debug($ret, "RET");
+//Debug::debug($ret, "RET");
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
             /* in case of somthing wrong :
@@ -253,7 +259,7 @@ class Aspirateur extends Controller
              */
             $db = $this->di['db']->sql(DB_DEFAULT);
 
-            //in case of no answer provided we create a msg of error
+//in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[".date("Y-m-d H:i:s")."]"." Server MySQL didn't answer in time (delay max : ".$max_execution_time." seconds)";
             }
@@ -267,11 +273,11 @@ class Aspirateur extends Controller
             (Debug::$debug) ? print_r($ret) : '';
             return false;
         } else {
-            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
+//echo (Debug::$debug) ? $server['name']." OK \n" : "";
 
             return $ret;
 
-            //return true;
+//return true;
         }
     }
 
@@ -294,48 +300,49 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_server   = $param[1];
 
-
-
-        //$this->allocate_shared_storage();
-
-
-
-        $lock_file = TMP."lock/".$name_server.".txt";
-
-
-
-        /*
-          $fp = fopen($lock_file, "w");
-          if (!is_writable($lock_file)) {
-          throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
-          } */
-        // a deporter ??
-
-
-        /*
-          if (!flock($fp, LOCK_EX | LOCK_NB)) {
-          Debug::debug("Un processus est déjà en cours");
-          fwrite(STDERR, 'Un processus est déjà en cours');
-          exit(15);
-          } else {
-          ftruncate($fp, 0);
-          fwrite($fp, getmypid());
-          } */
-
-
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db->sql_close();
 
         Debug::checkPoint('avant query');
 
-        $time_start             = microtime(true);
-        $mysql_tested           = $this->di['db']->sql($name_server);
+        $time_start   = microtime(true);
+        $mysql_tested = $this->di['db']->sql($name_server);
+
+        $err = error_get_last();
+        error_clear_last();
+
+        $error_msg = "";
+        if ($err !== NULL) {
+            $error_msg = $err['message'];
+        }
+
+        if (!empty($error_msg)) {
+            echo $name_server." : ".$error_msg."\n";
+
+            $db  = $this->di['db']->sql(DB_DEFAULT);
+            $sql = "UPDATE `mysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."', 
+                `date_refresh` = '".date("Y-m-d H:i:s")."',
+                    `is_available` = 0 WHERE id =".$id_server;
+            $db->sql_query($sql);
+            $db->sql_close();
+
+            return true;
+        } else {
+            echo $name_server." : OK\n";
+        }
+
+
+
+        Debug::debug("on est la !!!!!!!!");
+
         $data['server']['ping'] = microtime(true) - $time_start;
 
-        //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
-        // SHOW /*!50000 ENGINE*/ INNODB STATUS
+//$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
+// SHOW /*!50000 ENGINE*/ INNODB STATUS
 
         Debug::debug("Avant");
 
-        // traitement SHOW GLOBAL VARIABLES
+// traitement SHOW GLOBAL VARIABLES
 
         $var['variables'] = $mysql_tested->getVariables();
 
@@ -355,6 +362,11 @@ class Aspirateur extends Controller
             unset($var['variables']['gtid_slave_pos']);
         }
 
+        if (!empty($var['variables']['timestamp'])) {
+            unset($var['variables']['timestamp']);
+        }
+
+
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
         Debug::debug("apres status");
@@ -363,7 +375,7 @@ class Aspirateur extends Controller
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
 
-        Debug::debug($data['slave']);
+//Debug::debug($data['slave']);
 
         Debug::checkPoint('apres query');
 
@@ -376,42 +388,63 @@ class Aspirateur extends Controller
           } */
 
         $date[date('Y-m-d H:i:s')][$id_server] = $data;
-        //Debug::debug($date);
-        //$json                                  = json_encode($date);
-        //Debug::debug($data['server']['ping'], "ping");
-
-        $err = error_get_last();
+//Debug::debug($date);
+//$json                                  = json_encode($date);
+//Debug::debug($data['server']['ping'], "ping");
 
 
-        if ($err !== NULL) {
-            throw new \Exception('PMACTRL-056 : '.$err['message'].' in '.$err['file'].' on line '.$err['line'], 80);
+
+
+
+        if ($mysql_tested->is_connected === false) {
+
+
+            echo "XFGHFGXHXFGHXFGHXFGHXFGH";
         }
+
 
 
 
         $md5 = md5(json_encode($var));
 
-        $this->allocate_tmp_storage('server_'.$id_server);
+
+        //$this->allocate_tmp_storage('server_'.$id_server);
+
+        $file_md5 = str_replace('{id_mysql_server}', $id_server, $this->lock_variable);
+
+
+
 
         $export_variables = false;
 
         Debug::debug($md5, "NEW MD5");
 
-        if (!empty($this->shared['server_'.$id_server]->md5)) {
+        if (file_exists($file_md5)) {
 
-            Debug::debug($this->shared['server_'.$id_server]->md5, "OLD MD5");
 
-            if ($this->shared['server_'.$id_server]->md5 != $md5) {
-                $export_variables                        = true;
-                $this->shared['server_'.$id_server]->md5 = $md5;
+            $cmp_md5 = file_get_contents($file_md5);
+
+            Debug::debug($cmp_md5, "OLD MD5");
+
+            if ($cmp_md5 != $md5) {
+                $export_variables = true;
+
+                file_put_contents($file_md5, $md5);
             }
         } else {
-            $this->shared['server_'.$id_server]->md5 = $md5;
-            $export_variables                        = true;
+
+
+            /*
+              if (!is_writable(dirname($file_md5))) {
+              Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+              } */
+
+            file_put_contents($file_md5, $md5);
+            $export_variables = true;
         }
 
         if ($export_variables) {
-            Debug::debug($export_variables, "SET VARIABLES");
+//Debug::debug($export_variables, "SET VARIABLES");
             $this->allocate_shared_storage('variable');
         }
 
@@ -419,70 +452,41 @@ class Aspirateur extends Controller
 
 
 
-
-        $lock_file = TMP."lock/".$name_server.".txt";
-
-
-        $fp = fopen($lock_file, "w");
-
-        if (!is_writable($lock_file)) {
-            throw new \Exception("PMACTRL-068 lock file : ".$lock_file." is not writable !", 80);
-        }
-
-        if (!flock($fp, LOCK_EX | LOCK_NB)) {
-            fwrite(STDERR, 'Un processus est déjà en cours');
-            exit(15);
-        } else {
-            ftruncate($fp, 0);
-            fwrite($fp, getmypid());
-        }
-
-        //push data in memory
+//push data in memory
         $this->shared['answer']->{$id_server} = $date;
+
 
         if ($export_variables) {
 
-
+            $variables                                  = array();
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server}     = $variables;
         }
 
-
-
-        /*
-          fflush($fp);            // libère le contenu avant d'enlever le verrou
-          flock($fp, LOCK_UN);    // Enlève le verrou
-
-
-          fclose($fp);
-          //unlink($lock_file);
-         */
-
-        //$this->showQueries();
         $mysql_tested->sql_close();
-
-
-        Debug::debugQueriesOff();
     }
 
     public function allocate_shared_storage($name = 'answer')
     {
-        //storage shared
-        $storage             = new StorageFile('/dev/shm/'.$name.'_'.time()); // to export in config ?
+//storage shared
+        $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
 
     public function allocate_tmp_storage($name = '')
     {
-        //storage shared
+//storage shared
         $storage             = new StorageFile('/dev/shm/'.$name); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
+
+        return $this->shared[$name];
     }
-
 // https://github.com/php-amqplib/php-amqplib
-    //each minute ?
+//each minute ?
 
-
+    /**
+     * @deprecated
+     */
     public function TrySystemSsh()
     {
         $ret = ParseCnf::getCnf("/etc/mysql/my.cnf");
@@ -490,6 +494,10 @@ class Aspirateur extends Controller
         debug($ret);
     }
 
+    /**
+     *
+     * @deprecated
+     */
     public function testAllSsh($param)
     {
         $this->view = false;
@@ -527,10 +535,10 @@ class Aspirateur extends Controller
             $maxExecutionTime = $ob->max_delay;
         }
 
-        //to prevent any trouble with fork
+//to prevent any trouble with fork
         $db->sql_close();
 
-        //$maxThreads = \Glial\System\Cpu::getCpuCores();
+//$maxThreads = \Glial\System\Cpu::getCpuCores();
 
         $openThreads     = 0;
         $child_processes = array();
@@ -538,11 +546,11 @@ class Aspirateur extends Controller
         if (empty($server_list)) {
             sleep(10);
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
-            //throw new Exception("List of server to test is empty", 20);
+//throw new Exception("List of server to test is empty", 20);
         }
 
 
-        //to prevent collision at first running (the first run is not made in multi thread
+//to prevent collision at first running (the first run is not made in multi thread
         if ($this->loop == 0) {
 
             $maxThreads = 1;
@@ -552,7 +560,7 @@ class Aspirateur extends Controller
 
         $father = false;
         foreach ($server_list as $server) {
-            //echo str_repeat("#", count($child_processes)) . "\n";
+//echo str_repeat("#", count($child_processes)) . "\n";
 
             $pid                   = pcntl_fork();
             $child_processes[$pid] = 1;
@@ -570,11 +578,11 @@ class Aspirateur extends Controller
                 $father = true;
             } else {
 
-                // one thread to test each MySQL server
-                //$this->logger->info("Test SSH server (" . $server['id'].")");
+// one thread to test each MySQL server
+//$this->logger->info("Test SSH server (" . $server['id'].")");
                 $this->testSshServer($server['id'], $this->loop, $maxExecutionTime);
                 $father = false;
-                //we want that child exit the foreach
+//we want that child exit the foreach
                 break;
             }
             usleep(50);
@@ -595,10 +603,14 @@ class Aspirateur extends Controller
         }
     }
 
+    /**
+     *
+     * @deprecated
+     */
     public function testSshServer($server_id, $id_loop, $max_execution_time = 20)
     {
-        //exeute a process with a timelimit (in case of SSH server don't answer and keep connection)
-        //$max_execution_time = 20; // in seconds
+//exeute a process with a timelimit (in case of SSH server don't answer and keep connection)
+//$max_execution_time = 20; // in seconds
 
 
 
@@ -607,7 +619,7 @@ class Aspirateur extends Controller
             $debug = " --debug ";
         }
 
-        //$this->logger->info("trySshConnection (" . $server_id.")");
+//$this->logger->info("trySshConnection (" . $server_id.")");
 
         $ret = SetTimeLimit::run("Aspirateur", "trySshConnection", array($server_id, $id_loop, $debug), $max_execution_time);
 
@@ -625,16 +637,16 @@ class Aspirateur extends Controller
              */
 
 
-            //in case of no answer provided we create a msg of error
+//in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[".date("Y-m-d H:i:s")."]"." Server Ssh didn't answer in time (delay max : ".$max_execution_time." seconds)";
 
                 Debug::debug($ret['stdout']);
             }
 
-            //echo $sql . "\n";
-            //$sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
-            //$db->sql_query($sql);
+//echo $sql . "\n";
+//$sql = "UPDATE mysql_server SET ssh_available=0 where id = '".$server_id."'";
+//$db->sql_query($sql);
 
             Debug::debug("Server ID : ".$server_id."(FAILED !)");
 
@@ -643,15 +655,19 @@ class Aspirateur extends Controller
             return false;
         } else {
 
-            //$sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
-            //$db->sql_query($sql);
+//$sql = "UPDATE mysql_server SET ssh_available=1 where id = '".$server_id."'";
+//$db->sql_query($sql);
 
             Debug::debug("Server ID : ".$server_id." (answered in time)");
-            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
+//echo (Debug::$debug) ? $server['name']." OK \n" : "";
             return true;
         }
     }
 
+    /**
+     *
+     * @deprecated
+     */
     public function trySshConnection($param)
     {
         $this->view = false;
@@ -700,7 +716,7 @@ class Aspirateur extends Controller
     private function getHardware($ssh)
     {
 
-        //$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
+//$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
         $hardware['cpu_thread_count'] = trim($ssh->exec("cat /proc/cpuinfo | grep processor | wc -l"));
 
         $brut_memory = $ssh->exec("cat /proc/meminfo | grep MemTotal");
@@ -829,7 +845,7 @@ class Aspirateur extends Controller
 
         $stats['ips'] = json_encode(explode("\n", $ips));
         $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
-        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
+//$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
 
         $cpu_lines = explode("\n", $cpus);
 
@@ -839,8 +855,8 @@ class Aspirateur extends Controller
 
             $elems = preg_split('/\s+/', $line);
 
-            //debug($elems);
-            //system + user + idle
+//debug($elems);
+//system + user + idle
             if ($i === 0) {
                 $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
             } else {
@@ -875,7 +891,7 @@ class Aspirateur extends Controller
         $stats['mysqld_mem_physical'] = $mysql[1];
         $stats['mysqld_mem_virtual']  = $mysql[0];
 
-        //ifconfig
+//ifconfig
 
         /*
          * SELECT sum( data_length + index_length) / 1024 / 1024 " Taille en Mo" FROM information_schema.TABLES WHERE table_schema = "WORDPRESS" GROUP BY table_schema;
@@ -885,125 +901,508 @@ class Aspirateur extends Controller
         return $stats;
     }
 
-    public function test0mq()
+
+    /**
+     * @example : ./glial aspirateur addToQueue 11 --debug
+     *
+     * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
+     * 
+     */
+
+    public function addToQueue($param)
     {
-        $context = new ZMQContext();
 
-//  Socket to talk to server
-        echo "Connecting to hello world server…\n";
-        $requester = new ZMQSocket($context, ZMQ::SOCKET_REQ);
-        $requester->connect("tcp://localhost:5555");
+        //$param[] = '--debug';
+        Debug::parseDebug($param);
 
-        for ($request_nbr = 0; $request_nbr != 10; $request_nbr++) {
-            printf("Sending request %d…\n", $request_nbr);
-            $requester->send("Hello");
+
+        $id_daemon = $param[0];
+
+        if (empty($id_daemon)) {
+            throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
         }
-    }
 
-    public function rec()
-    {
 
-        //  Launch pool of worker threads
-        for ($thread_nbr = 0; $thread_nbr != 5; $thread_nbr++) {
-            $pid = pcntl_fork();
-            if ($pid == 0) {
-                $this->worker_routine();
-                exit();
+
+
+        if (Debug::$debug) {
+            echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
+        }
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main WHERE id=".$id_daemon.";";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $queue_key        = intval($ob->queue_key);
+            $maxExecutionTime = $ob->max_delay;
+        }
+
+
+        Debug::debug($queue_key, "QUEUE");
+
+        define('QUEUE', 21671);
+
+//add message to queue
+        $queue    = msg_get_queue($queue_key);
+        $msg_qnum = (int) msg_stat_queue($queue)['msg_qnum'];
+
+        // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
+        if ($msg_qnum != 0) {
+            for ($i = 0; $i < $maxExecutionTime; $i++) {
+                $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+                if ($msg_qnum == 0) {
+                    break;
+                }
+                sleep(1);
             }
         }
 
-//  Prepare our context and sockets
-        $context = new ZMQContext();
 
-//  Socket to talk to clients
-        $clients = new ZMQSocket($context, ZMQ::SOCKET_ROUTER);
-        $clients->bind("tcp://*:5555");
+        $mysql_servers = array();
 
-//  Socket to talk to workers
-        $workers = new ZMQSocket($context, ZMQ::SOCKET_DEALER);
-        $workers->bind("ipc://workers.ipc");
+        //mémoire partagé 
 
-//  Connect work threads to client threads via a queue
-        $device = new ZMQDevice($clients, $workers);
-        $device->run();
-    }
+        $lock_directory = TMP."lock/worker/*.lock";
 
-    function worker_routine()
-    {
-        $context  = new ZMQContext();
-        // Socket to talk to dispatcher
-        $receiver = new ZMQSocket($context, ZMQ::SOCKET_REP);
-        $receiver->connect("ipc://workers.ipc");
 
-        while (true) {
-            $string = $receiver->recv();
-            printf("Received request: [%s]%s", $string, PHP_EOL);
+        $elems = array();
+        foreach (glob($lock_directory) as $filename) {
 
-            // Do some 'work'
-            sleep(1);
+            Debug::debug($filename, "filename");
 
-            // Send reply back to client
-            $receiver->send("World");
-        }
-    }
+            $json = file_get_contents($filename);
 
-    public function queue()
-    {
-        define("MAX_WORKERS", 100);
-
-        if(class_exists("ZMQ") && defined("ZMQ::LIBZMQ_VER")) {
-            echo ZMQ::LIBZMQ_VER, PHP_EOL;
+            $data    = json_decode($json, true);
+            $elems[] = $data;
         }
 
 
+        Debug::debug($elems, "liste des serveur en retard !");
 
-//  Prepare our context and sockets
-        $context           = new ZMQContext();
-        $frontend          = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $backend           = $context->getSocket(ZMQ::SOCKET_ROUTER);
-        $frontend->bind("tcp://*:5555");    //  For clients
-        $backend->bind("tcp://*:5556");    //  For workers
-//  Queue of available workers
-        $available_workers = 0;
-        $worker_queue      = array();
-        $read              = $write             = array();
+        $list = array();
 
-        while (true) {
-            $poll = new ZMQPoll();
-            $poll->add($backend, ZMQ::POLL_IN);
 
-            //  Poll frontend only if we have available workers
-            if ($available_workers) {
-                $poll->add($frontend, ZMQ::POLL_IN);
-            }
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-            $events = $poll->poll($read, $write);
+        foreach ($elems as $server) {
 
-            foreach ($read as $socket) {
-                $zmsg = new Zmsg($socket);
-                $zmsg->recv();
 
-                //  Handle worker activity on backend
-                if ($socket === $backend) {
-                    //  Use worker address for LRU routing
-                    assert($available_workers < MAX_WORKERS);
-                    array_push($worker_queue, $zmsg->unwrap());
-                    $available_workers++;
+            //on verifie avec le double buffer qu'on est bien sur le même pid
+            //et ce dernier est toujours sur le serveur MySQL qui pose problème
+            $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
 
-                    //  Return reply to client if it's not a READY
-                    if ($zmsg->address() != "READY") {
-                        $zmsg->set_socket($frontend)->send();
+            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
+            if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
+
+
+                Debug::debug($server['pid'], "GOOD");
+
+
+                $mysql_servers[] = $server['id'];
+                $list[]          = Color::getColoredString("MySQL server with id : ".$server['id']." is late !!! pid : ".$server['pid'], "grey", "red");
+
+                $time = microtime(true) - $server['microtime'];
+
+
+                //special case for timeout 60 seconds, else we see working since ... and not the real error
+                $sql = "SELECT error,is_available from mysql_server WHERE id = ".$server['id'].";";
+                $res = $db->sql_query($sql);
+
+                while ($ob = $db->sql_fetch_object($res)) {
+                    if ($ob->is_available != 0) {
+                        // UPDATE is_available X => YELLOW  (not answered)
+                        $sql = "UPDATE `mysql_server` SET is_available = -1,
+                            `date_refresh` = '".date("Y-m-d H:i:s")."',
+                            `error`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
+                        echo \SqlFormatter::format($sql);
+                        $db->sql_query($sql);
                     }
-                } elseif ($socket === $frontend) {
-                    //  Now get next client request, route to next worker
-                    //  REQ socket in worker needs an envelope delimiter
-                    //  Dequeue and drop the next worker address
-                    $zmsg->wrap(array_shift($worker_queue), "");
-                    $zmsg->set_socket($backend)->send();
-                    $available_workers--;
+                }
+            } else {
+                //si pid n'existe plus alors on efface le fichier de lock
+                $lock_file = TMP."lock/worker/".$server['id'].".lock";
+
+                unlink($lock_file);
+            }
+        }
+
+        echo implode("\n", $list)."\n";
+
+
+        Debug::debug($list, "list");
+
+
+        $this->view = false;
+
+        $sql = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
+
+
+        if (!empty($mysql_servers)) {
+            $sql .= " AND id NOT IN (".implode(',', $mysql_servers).")";
+        }
+
+        $sql .= " ORDER by is_available ASC, date_refresh DESC;";
+
+
+        echo \SqlFormatter::format($sql);
+
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        $server_list = array();
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $server_list[] = $ob;
+        }
+
+
+
+
+        //to prevent any trouble with fork
+        //$this->debugShowQueries();
+        $db->sql_close();
+
+        // filename: add_to_queue.php
+        //creating a queue requires we come up with an arbitrary number
+
+
+        foreach ($server_list as $server) {
+
+            // Create dummy message object
+            $object       = new stdclass;
+            $object->name = $server['name'];
+            $object->id   = $server['id'];
+
+            //try to add message to queue
+            if (msg_send($queue, 1, $object)) {
+                //echo "added to queue  \n";
+                // you can use the msg_stat_queue() function to see queue status
+                //print_r(msg_stat_queue($queue));
+            } else {
+                echo "could not add message to queue \n";
+            }
+        }
+
+//$stats = msg_stat_queue($queue);
+//debug($stats);
+    }
+
+    public function worker()
+    {
+
+
+
+        define('QUEUE', 21671);
+
+
+        $pid = getmypid();
+
+        //get mypid
+        //start worker => pid / id_mysql_server
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db->sql_close();
+
+        $queue = msg_get_queue(QUEUE);
+
+        $msg_type     = NULL;
+        $msg          = NULL;
+        $max_msg_size = 512;
+
+
+
+        $data        = array();
+        $data['pid'] = $pid;
+
+
+        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
+            //echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} [[" . $pid . "]]\n";
+
+            $id_mysql_server = $msg->id;
+
+            $data['id']        = $id_mysql_server;
+            $data['microtime'] = microtime(true);
+
+
+            $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
+
+            $double_buffer = TMP."lock/worker/".$pid.".pid";
+
+
+            $fp = fopen($lock_file, "w+");
+            fwrite($fp, json_encode($data));
+            fflush($fp);            // libère le contenu avant d'enlever le verrou
+            fclose($fp);
+
+            $fp2 = fopen($double_buffer, "w+");
+            fwrite($fp2, $id_mysql_server);
+            fflush($fp2);            // libère le contenu avant d'enlever le verrou
+            fclose($fp2);
+
+
+
+            $this->tryMysqlConnection(array($msg->name, $msg->id));
+
+
+            /*
+              if ($msg->id == "16") {
+              sleep(60);
+              }
+              /**
+             * test retard reponse mysql
+             */
+            if (file_exists($lock_file)) {
+                unlink($lock_file);
+            }
+
+
+
+
+
+            //$this->shared['worker']->mysql_server->{"$msg->id"} = NULL;
+            //do your business logic here and process this message!
+            //finally, reset our msg vars for when we loop and run again
+            $msg_type = NULL;
+            $msg      = NULL;
+        }
+
+
+
+//remove pid and id_mysql_server
+    }
+
+    public function checkWorker($param)
+    {
+
+        $id_daemon_main = $param[0];
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main WHERE id =".$id_daemon_main;
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+
+            $sql2 = "SELECT * FROM daemon_worker where id_daemon_main = ".$ob->id;
+            $res2 = $db->sql_query($sql2);
+
+
+            $nb_thread = 0;
+            while ($ob2       = $db->sql_fetch_object($res2)) {
+
+
+                $available = System::isRunningPid($ob2->pid);
+
+                Debug::debug($available, "Result of pid : ".$ob2->pid);
+
+                if ($available === false) {
+
+
+                    $file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
+                    debug($file, "FILE");
+
+                    $this->addWorker(array($ob2->id, $id_daemon_main));
+                }
+
+                $nb_thread++;
+            }
+
+
+            Debug::debug($nb_thread, "\$nb_thread");
+            Debug::debug($ob->thread_concurency, "\$ob->thread_concurency");
+
+            if ($ob->thread_concurency > $nb_thread) {
+                $tocreate = $ob->thread_concurency - $nb_thread;
+
+                for ($i = 0; $i < $tocreate; $i++) {
+                    $this->addWorker(array("0", $id_daemon_main));
+
+                    Debug::debug("Add worker");
+                }
+            } elseif ($ob->thread_concurency < $nb_thread) {
+                $todelete = $nb_thread - $ob->thread_concurency;
+
+
+                for ($i = 0; $i < $todelete; $i++) {
+                    $this->removeWorker(array($id_daemon_main));
+
+                    Debug::debug("Remove worker");
                 }
             }
-            //  We never exit the main loop
+        }
+    }
+
+    public function addWorker($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_daemon_worker = $param[0];
+        $id_daemon_main   = $param[1];
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        if (empty($id_daemon_worker)) {
+            $sql = "INSERT INTO daemon_worker (`id_daemon_main`, `pid`) VALUES (".$id_daemon_main.", 0);";
+            Debug::sql($sql);
+
+            $db->sql_query($sql);
+
+            $id_daemon_worker = $db->_insert_id();
+        }
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+        $cmd = $php." ".GLIAL_INDEX." Aspirateur worker > ".TMP."log/worker_".$id_daemon_main."_".$id_daemon_worker.".log 2>&1 & echo $!";
+        Debug::debug($cmd);
+
+        $pid = shell_exec($cmd);
+
+
+        $sql = "UPDATE daemon_worker SET pid=".$pid." WHERE id=".$id_daemon_worker;
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    }
+
+    public function removeWorker($param)
+    {
+        Debug::parseDebug($param);
+        $id_daemon_main = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_worker WHERE id_daemon_main=".$id_daemon_main." LIMIT 1";
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $cmd = "kill ".$ob->pid;
+            shell_exec($cmd);
+
+
+            $double_buffer = TMP."lock/worker/".$ob->pid.".pid";
+
+
+            if (file_exists($double_buffer)) {
+                unlink($double_buffer);
+            }
+
+
+            $file = TMP."log/worker_".$id_daemon_main."_".$ob->id.".log";
+
+            if (file_exists($file)) {
+                unlink($file);
+            }
+
+            $sql = "DELETE FROM daemon_worker WHERE id=".$ob->id;
+            Debug::sql($sql);
+            $db->sql_query($sql);
+        }
+    }
+
+    public function killAllWorker($param)
+    {
+        Debug::parseDebug($param);
+
+        if (!empty($param[0])) {
+            $id_daemon_main = $param[0];
+        } else {
+            $id_daemon_main = 0;
+        }
+
+
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `daemon_worker` ";
+
+        if ($id_daemon_main != 0) {
+            $sql .= "WHERE `id_daemon_main`=".$id_daemon_main;
+        }
+
+        $sql .= ";";
+
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $this->removeWorker(array($ob->id_daemon_main));
+        }
+
+        System::deleteFiles('worker');
+
+
+        array_map('unlink', glob(TMP."tmp/lock/worker/*.lock"));
+    }
+
+    public function checkAllWorker($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main where queue_number != 0";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $this->checkWorker(array($ob->id));
+        }
+    }
+
+    /**
+     *
+     * @deprecated
+     * @test test semaphore (mémoire partagé)
+     */
+    public function shm()
+    {
+
+        $shm_key = ftok(__FILE__, 't');
+        $shm_id  = shmop_open($shm_key, "c", 0644, 100);
+
+
+        $shm_size = shmop_size($shm_id);
+        echo "Un bloc de SHM de taille ".$shm_size." a été créé.\n";
+
+
+
+        if (!empty($shm_id)) {
+            echo "... shared memory exists\n";
+        } else {
+            echo "... shared memory doesn't exist\n";
+        }
+
+
+
+        $string = "Mon bloc dexvfgcnbxfghndtyj dtyj dtyj dtj dty jyj dtyj dtyjo_idytjh dtyhj yj mémoire partagée";
+
+
+        $shm_bytes_written = shmop_write($shm_id, $string, 0);
+
+        if ($shm_bytes_written != strlen($string)) {
+
+            throw new Exception("GLI");
+            echo "Impossible d'écrire toutes les données en mémoire\n";
+        }
+
+// Lecture du segment
+        $my_string = shmop_read($shm_id, 0, $shm_size);
+        if (!$my_string) {
+            echo "Impossible de lire toutes les données en mémoire\n";
+        }
+
+
+        echo "Les données mises en mémoire partagées sont : ".$my_string."\n";
+
+// Maintenant, effaçons le bloc, et fermons le segment de mémoire
+        if (!shmop_delete($shm_id)) {
+            echo "Impossible d'effacer le segment de mémoire";
         }
     }
 }
@@ -1011,16 +1410,17 @@ class Aspirateur extends Controller
  *
  *
                 $sql2 = 'SELECT table_schema,
-sum( data_length ) as "data",
-sum( index_length ) as "index",
-sum( data_free ) as "data_free" ,
-count(1) as "tables",
-sum(TABLE_ROWS) as "rows",
-DEFAULT_CHARACTER_SET_NAME,
-DEFAULT_COLLATION_NAME
+ sum( data_length ) as "data",
+ sum( index_length ) as "index",
+ sum( data_free ) as "data_free",
+ count(1) as "tables",
+ sum(TABLE_ROWS) as "rows",
+ DEFAULT_CHARACTER_SET_NAME,
+ DEFAULT_COLLATION_NAME
 FROM information_schema.TABLES a
 INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
-WHERE table_schema !="information_schema" AND table_schema !="performance_schema" AND table_schema !="mysql"
-GROUP BY table_schema ;';
+WHERE table_schema != "information_schema" AND table_schema != "performance_schema" AND table_schema != "mysql"
+GROUP BY table_schema;
+';
  *
  */
