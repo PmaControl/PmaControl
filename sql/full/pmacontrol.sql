@@ -1,6 +1,6 @@
 -- MySQL dump 10.17  Distrib 10.3.12-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 127.0.0.1    Database: pma_new
+-- Host: 127.0.0.1    Database: pma4
 -- ------------------------------------------------------
 -- Server version	10.3.12-MariaDB-1:10.3.12+maria~bionic-log
 
@@ -568,9 +568,8 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MySQL dump 10.17  Distrib 10.3.12-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 127.0.0.1    Database: pma_new
+-- Host: 127.0.0.1    Database: pma4
 -- ------------------------------------------------------
 -- Server version	10.3.12-MariaDB-1:10.3.12+maria~bionic-log
 
