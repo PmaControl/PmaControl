@@ -7,71 +7,25 @@
 
 use Glial\Html\Form\Form;
 
+
+
+
+
+
+
+
+
+
+\Glial\Synapse\FactoryController::addNode("Database", "create", array());
 ?>
 
 
-<form action="" method="POST">
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-
-            <h3 class="panel-title"><?= __('Create database') ?></h3>
-        </div>
-
-        <div class="well">
-            <div class="row">
-                <div class="col-md-3">
-                    <?php
-                    echo __("Server")."<br />";
-
-                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server","100%"));
-
-
-
-                    echo '</div><div class="col-md-3">';
-
-
-                    echo __("Database")."<br />";
-                    $data['listdb1'] = array();
-
-                    echo Form::select("rename", "database", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker","data-width"=>"100%"));
-
-
-
-                    echo '</div><div class="col-md-3">';
-
-                    echo __('Rename database to');
-                    echo Form::input("rename", "new_name", array("class" => "form-control"));
-
-
-                    echo '</div><div class="col-md-3">';
-
-
-                    echo '<div class="form-group"><br />
-    <div class="checkbox checbox-switch switch-success">
-        <label>
-            '.Form::input("rename", "adjust_privileges", array("class" => "form-control", "type" => "checkbox", "checked" => "checked")).'
-            <span></span>
-            '.__('Adjust privileges').'
-        </label>
-    </div>
-</div>';
-                    ?>
-                </div>
-            </div>
-
-
-            <br />
-
-            <button type="submit" class="btn btn-primary">Go</button>
-        </div>
-    </div>
-</form>
 
 
 
 
 
-<form action="" method="POST">
+<form action="<?=LINK ?>database/create" method="POST">
     <div class="panel panel-primary">
         <div class="panel-heading">
 
@@ -84,7 +38,7 @@ use Glial\Html\Form\Form;
                     <?php
                     echo __("Server")."<br />";
 
-                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server","100%"));
+                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server", "100%"));
 
 
 
@@ -94,7 +48,7 @@ use Glial\Html\Form\Form;
                     echo __("Database")."<br />";
                     $data['listdb1'] = array();
 
-                    echo Form::select("rename", "database", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker","data-width"=>"100%"));
+                    echo Form::select("rename", "database", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "100%"));
 
 
 
@@ -127,3 +81,10 @@ use Glial\Html\Form\Form;
         </div>
     </div>
 </form>
+
+
+
+<?php
+
+\Glial\Synapse\FactoryController::addNode("Database", "refresh", array());
+?>

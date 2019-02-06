@@ -22,7 +22,7 @@ use Glial\Html\Form\Form;
                     <?php
                     echo __("Server")."<br />";
 
-                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server","100%"));
+                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server", array("data-width"=>"100%")));
 
 
 

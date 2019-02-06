@@ -23,7 +23,7 @@ class Agent extends Controller {
 
     var $debug = false;
     var $url = "Daemon/index/";
-    var $log_file = TMP . "log/daemon.log";
+    var $log_file = TMP . "log/glial.log";
     var $logger;
     var $loop = 0;
 
@@ -158,6 +158,8 @@ class Agent extends Controller {
         $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
         $res = $db->sql_query($sql);
 
+        $this->logger->emergency($sql);
+
         if ($db->sql_num_rows($res) !== 1) {
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the id : ") . "'" . $id_daemon . "'");
             $title = I18n::getTranslation(__("Error"));
@@ -208,7 +210,7 @@ class Agent extends Controller {
             $db->sql_query($sql);
             
             $this->logger->info(Color::getColoredString('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid, "grey", "red"));
-            throw new Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
+            //throw new Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
         }
 
         header("location: " . LINK . $this->url);
@@ -659,6 +661,9 @@ class Agent extends Controller {
 
         $sql = "SELECT * FROM daemon_main WHERE queue_key != 0 and id = " . $id_daemon;
         $res = $db->sql_query($sql);
+
+
+        Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $queue = msg_get_queue($ob->queue_key);

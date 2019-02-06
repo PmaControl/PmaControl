@@ -1,0 +1,65 @@
+-- MySQL dump 10.17  Distrib 10.3.12-MariaDB, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: tt
+-- ------------------------------------------------------
+-- Server version	10.3.12-MariaDB-1:10.3.12+maria~xenial-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `daemon_main`
+--
+
+DROP TABLE IF EXISTS `daemon_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `daemon_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `date` datetime NOT NULL,
+  `pid` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `log_file` varchar(255) NOT NULL,
+  `refresh_time` int(11) NOT NULL,
+  `thread_concurency` int(11) NOT NULL,
+  `max_delay` int(11) NOT NULL,
+  `class` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `params` varchar(255) NOT NULL,
+  `debug` int(11) NOT NULL,
+  `queue_number` int(11) NOT NULL,
+  `queue_key` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `daemon_main`
+--
+
+LOCK TABLES `daemon_main` WRITE;
+/*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',24953,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',24905,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',24917,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',24929,64,'log/daemon_11.log',4,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',24941,64,'log/daemon_12.log',10,1,2,'Aspirateur','checkAllWorker','',0,0,0);
+/*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2019-01-30 16:33:52
