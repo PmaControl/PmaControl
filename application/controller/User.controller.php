@@ -12,9 +12,7 @@ class User extends Controller
 
     function before($param)
     {
-        if (!IS_CLI) {
-            $this->layout_name = 'pmacontrol';
-        }
+
     }
 
     function after($param)
@@ -28,9 +26,8 @@ class User extends Controller
     function index()
     {
         //$this->di['js']->addJavascript(array("jquery-latest.min.js"));
-        $this->layout_name = 'pmacontrol';
-        $this->title       = __("Members");
-        $this->ariane      = "> ".$this->title;
+        $this->title  = __("Members");
+        $this->ariane = "> ".$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -189,8 +186,6 @@ class User extends Controller
 
     function register()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Registration");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
 
@@ -348,14 +343,10 @@ class User extends Controller
 
     function lost_password()
     {
-
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-
-        $this->layout_name = 'pmacontrol';
 
         $this->title  = __("Password forgotten ?");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
@@ -785,7 +776,6 @@ GROUP BY d.id";
     {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
-        $this->layout_name = 'pmacontrol';
 
         $this->title  = __("Log on");
         $this->ariane = "> <a href=\"".LINK."user/\">".__("Members")."</a> > ".$this->title;
@@ -834,8 +824,6 @@ GROUP BY d.id";
         header("Location: ".LINK."user/connection/");
         exit;
     }
-
-
 
     function updateGroup()
     {
@@ -903,7 +891,6 @@ GROUP BY d.id";
 
 
             header('location: '.LINK.'user/index/');
-            
         }
     }
 }
