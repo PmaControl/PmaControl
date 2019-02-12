@@ -88,8 +88,8 @@ use Glial\Html\Form\Form;
                     <td><?php \Glial\Synapse\FactoryController::addNode("tree", "getCountFather", array($data['id_menu'], $line['id'])); ?><?= $line['icon'] ?></td>
                     <td class="line-edit" data-name="title" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Title"><?= $line['title'] ?></td>
                     <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter URL"> <?= $line['url'] ?></td>
-                    <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Class"> <?= $line['class'] ?></td>
-                    <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Method"> <?= $line['method'] ?></td>
+                    <td class="line-edit" data-name="class" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Class"> <?= $line['class'] ?></td>
+                    <td class="line-edit" data-name="method" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Method"> <?= $line['method'] ?></td>
                     <td nowrap>
                         <a href="<?= LINK ?>tree/add/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
                         <a role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span></a>
