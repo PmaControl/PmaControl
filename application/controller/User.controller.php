@@ -791,8 +791,8 @@ GROUP BY d.id";
                     $this->log($id_user, true);
                 }
 
-                $title = I18n::getTranslation(__("Login successfull !"));
-                $msg   = I18n::getTranslation(__("Congratulations you have successfully loged in."));
+                $title = I18n::getTranslation(__("Login successful !"));
+                $msg   = I18n::getTranslation(__("Congratulations, you have successfully logged in."));
 
                 set_flash("success", $title, $msg);
                 header("Location: ".LINK.ROUTE_DEFAULT);
