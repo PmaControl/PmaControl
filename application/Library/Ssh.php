@@ -226,4 +226,14 @@ class Ssh
 
         return false;
     }
+
+
+    static function spaceAvailable($param)
+    {
+
+
+
+
+        
+    }
 }
