@@ -6,12 +6,8 @@
  */
 
 use Glial\Html\Form\Form;
-?>
 
 
-
-
-<?php
 if (!empty($data['compte'])) {
     echo '<ul class="list-group">';
 
@@ -57,7 +53,7 @@ $data['listdb1'] = array();
 
 
 echo Form::input("database", "user", array("class" => "form-control"));
-
+echo Form::input("database", "create", array("type" => "hidden", "value"=>"1"));
 
 echo '</div>';
 

@@ -50,8 +50,8 @@ class Ariane
             $count++;
         }
 
-        if ($count == 0) {
-            set_flash("error", "error", "PMACTRL-500 : Menu error (".$method.") ");
+        if (($count == 0)&&($method != 'error_web::error404')) {
+            set_flash("error", "Error 501", "Menu error : No menu entry for ".$method.". ");
         } else {
             $ariane[$count - 1] = $ariane2[$count - 1];
         }
