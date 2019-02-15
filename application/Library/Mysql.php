@@ -178,19 +178,14 @@ class Mysql
     static function getHostname($name, $data)
     {
 
-
         if (empty($name) || $name == "@hostname") {
 
             debug($data);
-
-
 
             $db = mysqli_init();
             if (!$db) {
                 die('mysqli_init failed');
             }
-
-
 
             if ($db->real_connect($data['0'], $data['1'], $data['2'], "mysql", $data['3'])) {
                 $res = $db->query('SELECT @@hostname as hostname;');
