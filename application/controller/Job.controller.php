@@ -1,42 +1,38 @@
 <?php
 
 use \Glial\Synapse\Controller;
-use \Glial\Cli\SetTimeLimit;
-use \Glial\Cli\Color;
-use \Glial\Security\Crypt\Crypt;
-use \Glial\I18n\I18n;
-use \Glial\Synapse\Basic;
-use \Monolog\Logger;
-use \Monolog\Formatter\LineFormatter;
-use \Monolog\Handler\StreamHandler;
-//use phpseclib\Crypt;
-use phpseclib\Crypt\RSA;
-use phpseclib\Net\SSH2;
-use \Glial\Synapse\Config;
-use \App\Library\Debug;
-use App\Library\Mysql;
-use \App\Library\System;
 use App\Library\Mydumper;
+use App\Library\System;
 
 class Job extends Controller
 {
 
     public function index()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
+        $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * from `job`;";
-
         $res = $db->sql_query($sql);
 
         $data['jobs'] = array();
         while ($ob           = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
+            if (!System::isRunningPid($ob['pid']) && $ob['status'] === "RUNNING") {
+                $gg                    = array();
+                $gg['job']['id']       = $ob['id'];
+                $gg['job']['status']   = "INTERRUPTED";
+                $gg['job']['date_end'] = date("Y-m-d H:i:s");
+
+                $res = $db->sql_save($gg);
+
+                if ($res) {
+                    $ob['status']   = $gg['job']['status'];
+                    $ob['date_end'] = $gg['job']['date_end'];
+                }
+            }
 
             $ob['log_msg']  = Mydumper::ParseLog($ob['log']);
             $data['jobs'][] = $ob;
         }
-
 
         $this->set('data', $data);
     }
@@ -59,8 +55,7 @@ class Job extends Controller
             } else {
                 $status = "ERROR";
             }
-
-
+            
             $upt['job']['id']       = $ob->id;
             $upt['job']['status']   = $status;
             $upt['job']['date_end'] = date('Y-m-d H:i:s');

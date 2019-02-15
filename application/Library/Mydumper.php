@@ -40,4 +40,13 @@ class Mydumper
         $log2 = str_replace("WARNING", '<big><span class="label label-warning">WARNING</span></big>', $log1);
         return $log2;
     }
+
+
+
+    function getLevel($file_log)
+    {
+        preg_match_all('/\*\*\s\(mydumper\:[0-9]+\)\: ([A-Z]+)\s/', $input_line, $output_array);
+
+        
+    }
 }
