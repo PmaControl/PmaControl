@@ -22,14 +22,21 @@ class Debug
 
         if (!empty($param)) {
 
-            foreach ($param as $key => $elem) {
-                if ($elem == "--debug") {
+
+            if (is_array($param)) {
+                foreach ($param as $key => $elem) {
+                    if ($elem == "--debug") {
+                        self::$debug = true;
+                        self::checkPoint("Start debug");
+                        //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
+
+                        unset($param[$key]);
+                    }
+                }
+            } else {
+                if ($param == "--debug") {
                     self::$debug = true;
-
                     self::checkPoint("Start debug");
-                    //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
-
-                    unset($param[$key]);
                 }
             }
         }
@@ -180,19 +187,13 @@ class Debug
                     print_r($string);
                     echo "</pre>4";
                 }
-
-
             } else {
 
                 if (IS_CLI) {
                     echo trim($string)."\n";
-                }
-                else
-                {
+                } else {
                     echo "<b>".trim(str_replace("\n", "<br>", $string))."</b><br>";
                 }
-
-                
             }
         }
     }

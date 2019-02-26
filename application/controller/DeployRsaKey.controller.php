@@ -25,7 +25,7 @@ class DeployRsaKey extends Controller
     public function index()
     {
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
 
 
         $this->di['js']->code_javascript('
@@ -37,14 +37,23 @@ class DeployRsaKey extends Controller
 $("#mysql_server-login_ssh").val("");
 $("#mysql_server-password_ssh").val("");
 
+
+/* pour griser les ligne ou on a deja deployer la clef */
 $("#ssh_key-id").change(function() {
 
 id_ssh_key = $(this).val();
 $rows = $(".row-server");
-$rows.show();
+$rows.removeClass("pma-grey");
+$rows.find("input:checkbox").removeClass("disabled");
+
+
 $rows.filter(".key-"+id_ssh_key).each(function(i) {
-  $(this).hide();
-  $(this).find("input:checkbox").prop("checked", false);
+
+ 
+
+  $(this).addClass("pma-grey");
+  $(this).find("input:checkbox").addClass("disabled");
+  /* .prop("checked", true); */
 });
 });
 ');
@@ -65,36 +74,110 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
 
 
+                if (!empty($POST['mysql_server']['login_ssh'])) {
+                    $login = $POST['mysql_server']['login_ssh'];
+                    if (!empty($POST['mysql_server']['password_ssh'])) {
+                        $private = $login."@".$POST['mysql_server']['password_ssh'];
+                    }
+                    if (!empty($POST['mysql_server']['key_ssh'])) {
+                        $private = $login."@".$POST['mysql_server']['key_ssh'];
+                    }
+                }
 
-                $path_private_key = $_POST['mysql_server']['key_ssh'];
+                if (!empty($_POST['ssh_key_pv']['id'])) {
+                    $private = $_POST['ssh_key_pv']['id'];
+                }
+
+
+
+                if (!empty($_POST['ssh_key']['id'])) {
+                    $public = $_POST['ssh_key']['id'];
+                }
+
+                if (empty($public)) {
+                    //error
+                }
+
+
+                if (empty($private)) {
+                    //error
+                }
+
 
                 $list_id = [];
-                foreach ($_POST['id'] as $key => $value) {
+                foreach ($_POST['link__mysql_server__ssh_key'] as $key => $value) {
 
-                    if (!empty($_POST['mysql_server'][$key]["is_monitored"]) && $_POST['mysql_server'][$key]["is_monitored"] === "on") {
-                        $list_id[] = $value;
+                    if (!empty($value["deploy"])) {
+                        $list_id[] = $value['id_mysql_server'];
                     }
                 }
 
                 $ids = implode(",", $list_id);
 
+
+
+
                 $sql = "SELECT * FROM mysql_server WHERE id IN (".$ids.");";
                 $res = $db->sql_query($sql);
 
+                $retour_ok = array();
+                $retour_ko = array();
+
                 while ($ob = $db->sql_fetch_object($res)) {
 
-                    $this->deploy2($ob->ip, $_POST['mysql_server']['login_ssh'], $_POST['mysql_server']['password_ssh'], $path_puplic_key, $_POST['mysql_server']['key_ssh']);
 
-                    if ($this->testConnection($ob->ip, "root", $path_private_key) === true) {
+                    /*
+                      array($ob->ip,
+                      $_POST['mysql_server']['login_ssh'],
+                      $_POST['mysql_server']['password_ssh'],
+                      $path_puplic_key,
+                      $_POST['mysql_server']['key_ssh'])
+                     */
 
 
+
+                    $this->deploy2(array($ob->ip, $public, $private));
+
+                    if ($this->testConnection($ob->ip, $public) === true) {
                         Debug::debug($_POST['mysql_server']['login_ssh']."@".$ob->ip." : ".'CONNECTION OK !');
                         //Debug::debug($path_private_key);
+
+
+
+                        $tmp                                                   = array();
+                        $tmp['link__mysql_server__ssh_key']['id_mysql_server'] = $ob->id;
+                        $tmp['link__mysql_server__ssh_key']['id_ssh_key']      = $public;
+                        $tmp['link__mysql_server__ssh_key']['added_on']        = date("Y-m-d H:i:s");
+                        $tmp['link__mysql_server__ssh_key']['active']          = 1;
+
+                        $gg = $db->sql_save($tmp);
+
+                        if ($gg) {
+                            $retour_ok[] = $ob->display_name;
+                        } else {
+                            $retour_ko[] = $ob->display_name;
+                        }
+                    } else {
+                        $retour_ko[] = $ob->display_name;
                     }
                 }
 
+                if (!empty($retour_ok)) {
+                    $msg   = I18n::getTranslation(implode(',',$retour_ok));
+                    $title = I18n::getTranslation(__("The public key has been added on these servers :"));
+                    set_flash("success", $title, $msg);
+                }
+
+                if (!empty($retour_ko)) {
+                    $msg   = I18n::getTranslation(implode(',',$retour_ko));
+                    $title = I18n::getTranslation(__("The public key cannot been added to these servers :"));
+                    set_flash("error", $title, $msg);
+                }
+
+
+
 //debug($list_id);
-//header("location: ".LINK."DeployRsaKey/index/");
+                header("location: ".LINK."DeployRsaKey/index/");
                 exit;
             }
         }
@@ -111,7 +194,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
             LEFT JOIN link__mysql_server__ssh_key d ON a.id = d.id_mysql_server
             WHERE 1=1 ".$this->getFilter()." AND d.active=1
             GROUP BY d.`id_mysql_server`
-            ORDER by cpt";
+            ";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
 
@@ -192,157 +275,30 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
      *
      */
 
-    private function deploy($ip, $login, $password, $path_public_key, $pv_key)
-    {
-        //echo "$ip, $login, $password<br />";
-
-        define('NET_SFTP_LOGGING', SFTP::LOG_COMPLEX);
-
-
-
-//deploy public key by SCP
-        $sftp = new SFTP($ip);
-
-        $rsa = new RSA();
-
-
-        if (file_exists($pv_key)) {
-            $privatekey = file_get_contents($pv_key);
-        } else {
-            $privatekey = $pv_key;
-        }
-
-
-        if ($rsa->loadKey($privatekey) === false) {
-
-            if (!$sftp->login($login, $rsa)) {
-
-                Debug::debug($login."@".$ip." : SCP Login Failed !");
-                //Debug::debug($pv_key);
-                return false;
-            } else {
-                Debug::debug($login."@".$ip." : SCP successfull !");
-            }
-        }
-
-        if (file_exists($path_public_key)) {
-            Debug::debug("Loaded key from file");
-            $data = file_get_contents($path_public_key);
-        } else {
-            $data = $path_public_key;
-        }
-
-
-        $file_name = pathinfo($path_public_key)['basename'];
-        $sftp->put($file_name, $data);
-
-        $files = $sftp->rawlist();
-
-        Debug::debug($files);
-
-        $found = false;
-
-
-
-        foreach ($files as $file) {
-            if ($file['filename'] === $file_name) {
-
-
-                debug($file['filename']);
-                debug("found KEY SSH");
-                $found = true;
-                break;
-            }
-        }
-
-        if ($found === false) {
-            return false;
-        }
-
-
-
-//connect with user and then with sudo su - and move key to root
-        $ssh2 = new SSH2($ip);
-
-
-        if (!$ssh2->login($login, $key)) {
-
-            debug('FAILED !!!!!!!!');
-        }
-
-
-
-        $res1 = $ssh2->exec("getent passwd root  > /dev/null 2&>1");
-
-        debug($res1);
-
-        $res2 = $ssh2->exec("cat /etc/passwd | grep root");
-
-        debug($res2);
-
-
-
-
-        if ($login === "root") {
-            $cmd = "mkdir -p /root/.ssh && cat /".$login."/".$file_name." >> /root/.ssh/authorized_keys\n";
-
-            debug($cmd);
-            $res = $ssh2->exec($cmd);
-
-            debug($res);
-        } else {
-
-            $ssh2->setTimeout(1);
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-
-            $ssh2->write("sudo su -\n");
-            $ssh2->setTimeout(1);
-
-            $ssh2->write($password."\n");
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-
-            $ssh2->write("whoami\n");
-            $ssh2->write("mkdir -p /root/.ssh && cat /home/".$login."/".$file_name." >> /root/.ssh/authorized_keys\n");
-
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-        }
-
-        if ($login === "root") {
-            $cmd = "rm /root/".$file_name;
-        } else {
-            $cmd = "rm /home/".$login."/".$file_name."";
-        }
-        $output = $ssh2->exec($cmd);
-        debug($output);
-
-        return true;
-    }
-
-    private function testConnection($ip, $login, $path_private_key)
+    private function testConnection($ip, $path_private_key)
     {
         $ssh2 = new SSH2($ip);
         $rsa  = new RSA();
 
 
-        if (file_exists($path_private_key)) {
+        Debug::debug($path_private_key);
 
-            $privatekey = file_get_contents($path_private_key);
-        } else {
-            $privatekey = $path_private_key;
-        }
+        $priv_key = $this->parseUserKey($path_private_key, self::KEY_PRIVATE);
 
 
-        if ($rsa->loadKey($privatekey) === false) {
+        Debug::debug($priv_key);
 
-            if (!$ssh2->login($login, $rsa)) {
-                return false;
+        if ($priv_key !== false) {
+
+            if ($rsa->loadKey($priv_key['key']) === false) {
+
+                if (!$ssh2->login($priv_key['user'], $rsa)) {
+                    return false;
+                }
             }
+        } else {
+            return false;
         }
-
-
 
         return true;
     }
@@ -425,10 +381,10 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
         //# Get Parameters
         // port SSH par défaut
-        $is_private_key = false;
-        $port           = 22;
-        $elems          = explode(":", $server);
-        $nb_elems       = count($elems);
+
+        $port     = 22;
+        $elems    = explode(":", $server);
+        $nb_elems = count($elems);
 
         if ($nb_elems === 2) {
             $port = intval($elems[1]);
@@ -471,8 +427,8 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
 
         $tmp_file          = uniqid();
-        $file_name_pub_key = "/tmp/".$tmp_file;
-        file_put_contents($file_name_pub_key."\n", $pubkey['key']);
+        $file_name_pub_key = TMP.$tmp_file;
+        file_put_contents($file_name_pub_key, $pubkey['key']."\n");
 
         if ($pubkey['user'] === "root") {
             $dest_path = '/root/'.$tmp_file;
@@ -493,7 +449,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
             $cmd = "mkdir -p /root/.ssh && cat ".$dest_path." >> /root/.ssh/authorized_keys\n";
 
-            Debug::debug($cmd, "CMD");
+            Debug::debug($prikey['user']."@".$ip."> ".$cmd, "CMD");
             $res = Ssh::$ssh->exec($cmd, "return");
 
             Debug::debug($res);
@@ -593,6 +549,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
             }
         }
 
+        $data['type'] = $type_key;
         $data['info'] = $ret;
         $data['key']  = $key;
         $data['user'] = $login;

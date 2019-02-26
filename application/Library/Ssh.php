@@ -30,6 +30,12 @@ class Ssh
 
     static function connect($ip, $port = 22, $user, $password)
     {
+
+        /*
+        $debug = Debug::$debug;
+        Debug::$debug = false;
+        */
+
         Debug::Debug($ip, "ip");
         Debug::Debug($port, "port");
         Debug::Debug($user, "user");
@@ -66,6 +72,8 @@ class Ssh
         self::$ssh = $ssh;
 
 
+        //Debug::$debug = $debug;
+
         //Debug::debug($ssh->exec("ls -l"), "ls -l");
 
         return $login_successfull;
@@ -82,7 +90,7 @@ class Ssh
         //Debug::$debug = true;
 
         Debug::debug(str_repeat("#", 80));
-        Debug::debug($pubkeyssh);
+        //Debug::debug($pubkeyssh);
 
         if (file_exists($pubkeyssh)) {
 
@@ -90,7 +98,7 @@ class Ssh
             $pubkeyssh = file_get_contents($pubkeyssh);
         }
 
-        Debug::debug($pubkeyssh, "public key");
+        //Debug::debug($pubkeyssh, "public key");
 
         $path_puplic_key = TMP."trash/key".uniqid();
         file_put_contents($path_puplic_key, $pubkeyssh."\n");
@@ -100,7 +108,7 @@ class Ssh
         Debug::debug($path_puplic_key, "PATH of key");
         shell_exec("chmod 600 ".$path_puplic_key);
 
-        echo "\n".file_get_contents($path_puplic_key)."\n\n";
+        //echo "\n".file_get_contents($path_puplic_key)."\n\n";
 
         $file_error = TMP."trash/generate_key.error";
 
