@@ -10,6 +10,7 @@ use Glial\Html\Form\Form;
 ?>
 
 <form action="" method="POST">
+    <?= Form::input("database", "rename", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
 
@@ -24,8 +25,6 @@ use Glial\Html\Form\Form;
 
                     \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("rename", "id_mysql_server", array("data-width"=>"100%")));
 
-
-
                     echo '</div><div class="col-md-3">';
 
 
@@ -33,8 +32,6 @@ use Glial\Html\Form\Form;
                     $data['listdb1'] = array();
 
                     echo Form::select("rename", "database", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker","data-width"=>"100%"));
-
-
 
                     echo '</div><div class="col-md-3">';
 

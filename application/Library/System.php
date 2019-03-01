@@ -36,7 +36,9 @@ class System
         $pid = intval($pid);
 
 
-        if (file_exists("/proc/".$pid)) {
+
+        $res = shell_exec("ps -p $pid | tail -n +2");
+        if (! empty($res)) {
             //process with a pid = $pid is running
             return true;
         }

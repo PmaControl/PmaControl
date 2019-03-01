@@ -359,6 +359,8 @@ class Server extends Controller
 
 
         Extraction::setDb($db);
+
+
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
                 "status::handler_read_next", "status::handler_read_key", "status::handler_read_prev"));
 

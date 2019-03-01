@@ -9,11 +9,14 @@ namespace App\Library;
 
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
+use phpseclib\Net\SFTP;
 use \App\Library\Chiffrement;
 use \App\Library\Debug;
 
 class Ssh
 {
+
+    static $ssh;
 
     static function formatPrivateKey($key)
     {
@@ -27,19 +30,23 @@ class Ssh
 
     static function connect($ip, $port = 22, $user, $password)
     {
+        Debug::Debug($ip, "ip");
+        Debug::Debug($port, "port");
+        Debug::Debug($user, "user");
+        Debug::Debug($password, "password / private key");
 
         $ssh = new SSH2($ip);
         $rsa = new RSA();
 
         $login_successfull = true;
 
-
         // debug(Chiffrement::decrypt($key['private_key']));
 
-
-
-
         $private_key = self::formatPrivateKey($password);
+
+        //$private_key = $password;
+
+        Debug::debug($private_key, "Formated private key");
 
         if ($rsa->loadKey($private_key) === false) {
             $login_successfull = false;
@@ -56,7 +63,12 @@ class Ssh
 
         Debug::debug($ret);
 
-        return $ssh;
+        self::$ssh = $ssh;
+
+
+        //Debug::debug($ssh->exec("ls -l"), "ls -l");
+
+        return $login_successfull;
     }
 
     static function close()
@@ -67,7 +79,6 @@ class Ssh
     static function isValid($pubkeyssh)
     {
         // check public key
-
         //Debug::$debug = true;
 
         Debug::debug(str_repeat("#", 80));
@@ -81,18 +92,13 @@ class Ssh
 
         Debug::debug($pubkeyssh, "public key");
 
-
         $path_puplic_key = TMP."trash/key".uniqid();
-
         file_put_contents($path_puplic_key, $pubkeyssh."\n");
 
 
         //sleep(10);
         Debug::debug($path_puplic_key, "PATH of key");
-
-
         shell_exec("chmod 600 ".$path_puplic_key);
-
 
         echo "\n".file_get_contents($path_puplic_key)."\n\n";
 
@@ -108,7 +114,6 @@ class Ssh
         $result = shell_exec($cmd);
 
         Debug::debug($result, "RESULT");
-
 
         if (file_exists($file_error)) {
 
@@ -168,5 +173,67 @@ class Ssh
 
 
         return $data;
+    }
+
+    static function put($server, $port, $login, $private_key, $src, $dst)
+    {
+
+        $start = microtime(true);
+
+        $sftp = new SFTP($server.":".$port);
+        $ssh  = new SSH2($server.":".$port);
+        $rsa  = new RSA();
+
+
+        // priorité a la clef privé si les 2 sont remplie
+        if (!empty($private_key)) {
+            $key = new RSA();
+            $key->loadKey($private_key);
+        }
+
+        if (!$sftp->login($login, $key)) {
+            Debug::debug("SCP Login Failed");
+            return false;
+        }
+
+        if (!$ssh->login($login, $key)) {
+            Debug::debug('SSH Login Failed');
+            return false;
+        }
+
+        $file_name = pathinfo($dst)['basename'];
+        $dst_dir   = pathinfo($dst)['dirname'];
+
+        $ssh->exec("mkdir -p ".$dst_dir);
+
+        $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
+        $data['execution_time'] = round(microtime(true) - $start, 0);
+        $data['size']           = $sftp->size($dst);
+
+        $md5 = $ssh->exec("md5sum ".$dst);
+
+        $data['md5']      = explode(" ", $md5)[0];
+        $data['pathfile'] = $dst;
+
+        $files = $sftp->rawlist($dst_dir);
+
+        foreach ($files as $file) {
+            if ($file['filename'] === $file_name) {
+
+                return $data;
+            }
+        }
+
+        return false;
+    }
+
+
+    static function spaceAvailable($param)
+    {
+
+
+
+
+        
     }
 }

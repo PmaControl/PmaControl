@@ -619,7 +619,7 @@ database=".$server['database']."";
 
             do {
                 $rl            = new Hoa\Console\Readline\Readline();
-                $oraganization = $rl->readLine('Your Organization : ');
+                $organization = $rl->readLine('Your Organization : ');
             } while (strlen($organization) < 3);
 
             $orgas = array($organization);
