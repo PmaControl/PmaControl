@@ -25,36 +25,33 @@ class DeployRsaKey extends Controller
     public function index()
     {
 
-        //Debug::$debug = true;
+        Debug::$debug = true;
 
 
         $this->di['js']->code_javascript('
-        $("#check-all").click(function(){
+$("#check-all").click(function(){
     $("input:checkbox").not(this).prop("checked", this.checked);
 });
 
 /* c est dégeu mais FF ne supporte pas l autocomplète */
+
 $("#mysql_server-login_ssh").val("");
 $("#mysql_server-password_ssh").val("");
 
 
 /* pour griser les ligne ou on a deja deployer la clef */
+
 $("#ssh_key-id").change(function() {
 
-id_ssh_key = $(this).val();
-$rows = $(".row-server");
-$rows.removeClass("pma-grey");
-$rows.find("input:checkbox").removeClass("disabled");
+    id_ssh_key = $(this).val();
+    $rows = $(".row-server");
+    $rows.removeClass("pma-success");
+    $rows.find("input:checkbox").removeAttr("disabled");
 
-
-$rows.filter(".key-"+id_ssh_key).each(function(i) {
-
- 
-
-  $(this).addClass("pma-grey");
-  $(this).find("input:checkbox").addClass("disabled");
-  /* .prop("checked", true); */
-});
+    $rows.filter(".key-"+id_ssh_key).each(function(i) {
+        $(this).addClass("pma-success");
+        $(this).find("input:checkbox").attr("disabled", true);
+    });
 });
 ');
 
@@ -71,16 +68,21 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
                 Debug::debug($_POST, "POST");
 
+                $error_form = false;
 
 
 
-                if (!empty($POST['mysql_server']['login_ssh'])) {
-                    $login = $POST['mysql_server']['login_ssh'];
-                    if (!empty($POST['mysql_server']['password_ssh'])) {
-                        $private = $login."@".$POST['mysql_server']['password_ssh'];
+                $private = '';
+
+                if (!empty($_POST['mysql_server']['login_ssh'])) {
+
+                    $login = $_POST['mysql_server']['login_ssh'];
+
+                    if (!empty($_POST['mysql_server']['password_ssh'])) {
+                        $private = $login."@".$_POST['mysql_server']['password_ssh'];
                     }
-                    if (!empty($POST['mysql_server']['key_ssh'])) {
-                        $private = $login."@".$POST['mysql_server']['key_ssh'];
+                    if (!empty($_POST['mysql_server']['key_ssh'])) {
+                        $private = $login."@".$_POST['mysql_server']['key_ssh'];
                     }
                 }
 
@@ -88,21 +90,25 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
                     $private = $_POST['ssh_key_pv']['id'];
                 }
 
-
-
                 if (!empty($_POST['ssh_key']['id'])) {
                     $public = $_POST['ssh_key']['id'];
                 }
 
                 if (empty($public)) {
                     //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('The public key has not been selected.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
                 }
-
 
                 if (empty($private)) {
                     //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('The credentials to connect in SSH has not been provided.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
                 }
-
 
                 $list_id = [];
                 foreach ($_POST['link__mysql_server__ssh_key'] as $key => $value) {
@@ -112,10 +118,20 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
                     }
                 }
 
+                if (count($list_id) === 0) {
+                    //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('A server must be selected at least.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
+                }
+
+                if ($error_form === true) {
+                    header("location: ".LINK."DeployRsaKey/index/");
+                    exit;
+                }
+
                 $ids = implode(",", $list_id);
-
-
-
 
                 $sql = "SELECT * FROM mysql_server WHERE id IN (".$ids.");";
                 $res = $db->sql_query($sql);
@@ -125,18 +141,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
                 while ($ob = $db->sql_fetch_object($res)) {
 
-
-                    /*
-                      array($ob->ip,
-                      $_POST['mysql_server']['login_ssh'],
-                      $_POST['mysql_server']['password_ssh'],
-                      $path_puplic_key,
-                      $_POST['mysql_server']['key_ssh'])
-                     */
-
-
-
-                    $this->deploy2(array($ob->ip, $public, $private));
+                    $this->deploy(array($ob->ip, $public, $private));
 
                     if ($this->testConnection($ob->ip, $public) === true) {
                         Debug::debug($_POST['mysql_server']['login_ssh']."@".$ob->ip." : ".'CONNECTION OK !');
@@ -163,13 +168,13 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
                 }
 
                 if (!empty($retour_ok)) {
-                    $msg   = I18n::getTranslation(implode(',',$retour_ok));
+                    $msg   = I18n::getTranslation(implode(',', $retour_ok));
                     $title = I18n::getTranslation(__("The public key has been added on these servers :"));
                     set_flash("success", $title, $msg);
                 }
 
                 if (!empty($retour_ko)) {
-                    $msg   = I18n::getTranslation(implode(',',$retour_ko));
+                    $msg   = I18n::getTranslation(implode(',', $retour_ko));
                     $title = I18n::getTranslation(__("The public key cannot been added to these servers :"));
                     set_flash("error", $title, $msg);
                 }
@@ -186,15 +191,15 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
         /* $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
           .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
          */
-        $sql             = "SELECT *, b.libelle as organization, a.id as id_mysql_server,
-            count(1) as cpt, group_concat(d.id_ssh_key) as id_ssh_key
+        $sql             = "
+            WITH z as (SELECT id_mysql_server, group_concat(id_ssh_key) as id_ssh_key,max(active) as active, count(1) from link__mysql_server__ssh_key
+            GROUP BY id_mysql_server)
+            SELECT a.*, z.id_ssh_key,z.active, b.libelle as organization,c.*, a.id as id_mysql_server
             FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
-            LEFT JOIN link__mysql_server__ssh_key d ON a.id = d.id_mysql_server
-            WHERE 1=1 ".$this->getFilter()." AND d.active=1
-            GROUP BY d.`id_mysql_server`
-            ";
+            LEFT JOIN z ON a.id = z.id_mysql_server
+            WHERE 1=1 ".$this->getFilter()."";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
 
@@ -353,7 +358,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
      * @from cli or graphical
      * @param string server, under form ip:port or id_mysql_server or id_mysql_server:port, with id_mysql_server from mysql_server, if not requested the port will 22
-     * @param string secret, login@key can be private key / file where to find private key, id_ssh_key in PmaControl or password used to connect remotely in SSH
+     * @param string secret, login@key / login@password / id_ssh_key can be private key / file where to find private key, id_ssh_key in PmaControl or password used to connect remotely in SSH
      * @param string public, login@public key, can be public key / file where to find public key to deploy, id_ssh_key in PmaControl / or id from table key_ssh to remote server
      * @return boolean true or error msg, if called directly write error msg with error return else nothing
 
@@ -361,12 +366,12 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
      * @access public
      *
      * @examples :
-     * - ./glial DeployRsaKey deploy2 10.10.10.1:22 root@password 'pmacontrol@ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNMSqI5qyTcoRXZ8LbVhx+uUTtau2rm2VxjKBbgAQu2Ozh2EByFoev+q8j1QaefKvWWFTGBjt8EKL8K5MxhjQgQ= PmaControl'
-     * - ./glial DeployRsaKey deploy2 10.10.10.1:22 root@password 'pmacontrol@/path/to/pub/key.pub'
-     * - ./glial DeployRsaKey deploy2 5 root@/path/to/private/key 5
-     * - ./glial DeployRsaKey deploy2 127.0.0.1:22 root@/root/id_rsa root@/root/id_rsa.pub
+     * - ./glial DeployRsaKey deploy 10.10.10.1:22 root@password 'pmacontrol@ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNMSqI5qyTcoRXZ8LbVhx+uUTtau2rm2VxjKBbgAQu2Ozh2EByFoev+q8j1QaefKvWWFTGBjt8EKL8K5MxhjQgQ= PmaControl'
+     * - ./glial DeployRsaKey deploy 10.10.10.1:22 root@password 'pmacontrol@/path/to/pub/key.pub'
+     * - ./glial DeployRsaKey deploy 5 root@/path/to/private/key 5
+     * - ./glial DeployRsaKey deploy 127.0.0.1:22 root@/root/id_rsa root@/root/id_rsa.pub
      */
-    public function deploy2($param)
+    public function deploy($param)
     {
 
         Debug::parseDebug($param);
@@ -412,6 +417,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
         $prikey = $this->parseUserKey($public, self::KEY_PRIVATE);
 
 
+
         if (!empty($pubkey['id_ssh_key']) && !empty($prikey['id_ssh_key']) && $prikey['id_ssh_key'] == $pubkey['id_ssh_key']) {
             return "You cannot push the same public / private key";
         }
@@ -427,7 +433,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
 
 
         $tmp_file          = uniqid();
-        $file_name_pub_key = TMP.$tmp_file;
+        $file_name_pub_key = "/tmp/".$tmp_file;
         file_put_contents($file_name_pub_key, $pubkey['key']."\n");
 
         if ($pubkey['user'] === "root") {
@@ -537,7 +543,7 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
         }
 
         $ret = Ssh::isValid($key);
-        if ($ret === false) {
+        if ($ret === false && $type_key == self::KEY_PUBLIC) {
 
             Debug::debug($ret, "ERROR !!!!!!!!!!!");
 
@@ -545,12 +551,16 @@ $rows.filter(".key-"+id_ssh_key).each(function(i) {
             if (self::KEY_PUBLIC === $type_key) {
                 return __("This public key is not valid");
             } else {
-                return __("This private key is not valid");
+
+                $data['warning'] = __("This private key is not valid, considering password");
+                $data['password'] = $key;
             }
+        } else {
+            $data['info'] = $ret;
         }
 
         $data['type'] = $type_key;
-        $data['info'] = $ret;
+
         $data['key']  = $key;
         $data['user'] = $login;
 

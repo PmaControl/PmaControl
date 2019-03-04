@@ -341,6 +341,10 @@ tr.pma-danger td{background:#c9302c !important; color:#fff}
 tr.pma-grey td{background:#bebebe !important; color:#000}
 
 
+tr.pma-success td a{ color:#eee; text-decoration: underline;}
+tr.pma-success td .text-muted{ color:#ddd;}
+
+
 .tooltip-inner{text-align: left;}
 
 
