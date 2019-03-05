@@ -55,6 +55,7 @@ function getBadge($status)
         </tr>
 
         <?php
+        $i = 0;
         foreach ($data['jobs'] as $job):
             $i++;
             ?>
