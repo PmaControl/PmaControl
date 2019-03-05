@@ -33,11 +33,9 @@ class Archives extends Controller
         ));
 
         $this->di['js']->addJavascript(array("Chart.min.js"));
-
         $this->title  = '<span class="glyphicon glyphicon-book" aria-hidden="true"></span> '.__("Archives");
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-puzzle-piece"></i> '
             .__("Plugins").'</a> > '.$this->title;
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -50,11 +48,9 @@ class Archives extends Controller
 
         $res = $db->sql_query($sql);
 
-
-
         $data = array();
-
         $cleaner = array();
+        $size = array();
 
         while ($row = $db->sql_fetch_row($res)) {
             $data['cleaner'][] = $row;
@@ -63,7 +59,6 @@ class Archives extends Controller
         }
 
 //        $data['list_server'] = $this->getSelectServerAvailable();
-
 
         $data['databases'] = array();
         if (!empty($_GET['spider']['database'])) {

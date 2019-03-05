@@ -478,7 +478,7 @@ var myChart = new Chart(ctx, {
         $sql     = "SELECT * FROM backup_storage_area order by `libelle`;";
         $servers = $db->sql_fetch_yield($sql);
 
-        $data['storagearea'] = [];
+        $data['backup_storage_area'] = [];
         foreach ($servers as $server) {
             $tmp                           = [];
             $tmp['id']                     = $server['id'];
