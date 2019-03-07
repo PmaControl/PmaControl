@@ -432,7 +432,6 @@ var myChart = new Chart(ctx, {
 
             $id_cleaner_main = $db->sql_save($cleaner_main);
 
-
             if ($id_cleaner_main) {
 
 
@@ -536,9 +535,6 @@ var myChart = new Chart(ctx, {
             $tmp['libelle']      = $ob->Database;
             $data['databases'][] = $tmp;
         }
-
-
-
 
         $this->set("data", $data);
         return $data;
