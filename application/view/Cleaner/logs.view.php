@@ -14,9 +14,12 @@ function colorLevel($level) {
             $color = "primary";
             break;
 
+
+        case 'EMERGENCY':
         case 'ERROR':
             $color = "danger";
             break;
+
 
         default :
             $color = $level;

@@ -432,7 +432,6 @@ var myChart = new Chart(ctx, {
 
             $id_cleaner_main = $db->sql_save($cleaner_main);
 
-
             if ($id_cleaner_main) {
 
 
@@ -478,7 +477,7 @@ var myChart = new Chart(ctx, {
         $sql     = "SELECT * FROM backup_storage_area order by `libelle`;";
         $servers = $db->sql_fetch_yield($sql);
 
-        $data['storagearea'] = [];
+        $data['backup_storage_area'] = [];
         foreach ($servers as $server) {
             $tmp                           = [];
             $tmp['id']                     = $server['id'];
@@ -536,9 +535,6 @@ var myChart = new Chart(ctx, {
             $tmp['libelle']      = $ob->Database;
             $data['databases'][] = $tmp;
         }
-
-
-
 
         $this->set("data", $data);
         return $data;

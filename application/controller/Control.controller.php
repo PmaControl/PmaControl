@@ -48,9 +48,6 @@ class Control extends Controller
         // or local
         $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
 
-
-
-
         $percent = substr($size, 0, -1);
 
         /*

@@ -114,7 +114,7 @@ use App\Library\Display;
         echo '<th>';
         ?>
         <div class="form-group">
-            <div class="checkbox checbox-switch switch-success">
+            <div class="checkbox checbox-switch switch-primary">
                 <label>
                     <?= Form::input("check", "all", array("class" => "form-control", "type" => "checkbox", "onClick" => "toggle(this)")) ?>
                     <span></span>
@@ -133,6 +133,7 @@ use App\Library\Display;
         echo '<th>'.__('ID').'</th>';
         echo '<th>'.__('MySQL').'</th>';
         echo '<th>'.__('Key').'</th>';
+        echo '<th>'.__('Active').'</th>';
         echo '<th>'.__('SSH').'</th>';
         echo '<th>'.__('Organization').'</th>';
         echo '<th>'.__('Environment').'</th>';
@@ -152,17 +153,15 @@ use App\Library\Display;
         foreach ($data['servers'] as $server) {
 
             $i++;
-            echo '<tr>';
+            echo '<tr class="row-server key-'.implode(" key-", explode(',',$server['id_ssh_key'])).'">';
 
-            $checked = $server['is_monitored'] == 1 ? 'checked = "checked"' : '';
-            $checked = '';
 
             echo '<td style = "'.$style.'">';
             ?>
             <div class="form-group">
-                <div class="checkbox checbox-switch switch-success">
+                <div class="checkbox checbox-switch switch-primary">
                     <label>
-                        <?= Form::input("mysql_server", "is_monitored", array("class" => "form-control", "type" => "checkbox")) ?>
+                        <?= Form::input("link__mysql_server__ssh_key", "deploy", array("class" => "form-control", "type" => "checkbox")) ?>
                         <span></span>
                     </label>
                 </div>
@@ -176,8 +175,8 @@ use App\Library\Display;
             echo '<td>'.$i.'</td>';
             echo '<td>'.$server['id_mysql_server'];
             //print_r($server);
-            echo '<input type = "hidden" name = "id['.($i - 1).']" value = "'.$server['id_mysql_server'].'" />';
 
+            echo Form::input("link__mysql_server__ssh_key", "id_mysql_server", array("value"=> $server['id_mysql_server'], "type"=>"hidden"));
             echo '</td>';
 
             echo '<td style = "'.$style.'">';
@@ -194,6 +193,8 @@ use App\Library\Display;
 
             //echo $server['cpt'];
             echo '</td>';
+
+            echo '<td>'.$server['id_ssh_key'].'</td>';
 
             echo '<td style = "'.$style.'">';
             echo '<span class = "glyphicon '.(empty($server['ssh_available']) ? "glyphicon-remove" : "glyphicon-ok").'" aria-hidden = "true"></span>';
