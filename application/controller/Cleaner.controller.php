@@ -459,7 +459,7 @@ var myChart = new Chart(ctx, {
                 $title = I18n::getTranslation(__("Success"));
                 set_flash("success", $title, $msg);
 
-                header('location: '.LINK."cleaner");
+                header('location: '.LINK."cleaner/index");
                 //$this->exit();
             } else {
 
@@ -1359,17 +1359,19 @@ var myChart = new Chart(ctx, {
 
 
 //feed id with main table
-        $pri         = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
-        $primary_key = "`".implode('`,`', $pri)."`";
 
-        $sql = "SELECT ".$primary_key." FROM `".$this->main_table."` WHERE ".$this->init_where." LIMIT ".$this->limit.";"; // LOCK IN SHARE MODE
+        $pri         = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
+        $primary_key = "a.`".implode('`, a.`', $pri)."`";
+        $primary_key2 = "`".implode('`, `', $pri)."`";
+
+        $sql = "SELECT ".$primary_key." FROM `".$this->main_table."` a ".$this->init_where." LIMIT ".$this->limit.";"; // LOCK IN SHARE MODE
         $res = $db->sql_query($sql);
 
 
 
         $have_data = false;
 
-        $sql = "REPLACE INTO `".$this->schema_delete."`.`".$this->prefix.$this->main_table."` (".$primary_key.") VALUES ";
+        $sql = "REPLACE INTO `".$this->schema_delete."`.`".$this->prefix.$this->main_table."` (".$primary_key2.") VALUES ";
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $have_data = true;
             $sql       .= "('".implode("','", $arr)."'),";
@@ -2715,12 +2717,16 @@ var myChart = new Chart(ctx, {
         }
 
         $pri         = $this->getPrimaryKey($data['main_table'], $data['database']);
-        $primary_key = "`".implode('`,`', $pri)."`";
+        $primary_key = "a.`".implode('`,a.`', $pri)."`";
 
-        $sql         = "SELECT ".$primary_key." FROM `".$data['database']."`.`".$data['main_table']."` WHERE ".$data['query']." LIMIT ".$data['limit'].";";
+        $sql         = "SELECT ".$primary_key." FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query']." LIMIT ".$data['limit'].";";
         $data['sql'] = SqlFormatter::format($sql);
 
         $db2  = $this->di['db']->sql($this->link_to_purge);
+
+
+        $db2->sql_select_db($data['database']);
+
         $sql2 = "explain ".$sql;
         $res  = $db2->sql_query($sql2);
 
@@ -2735,8 +2741,7 @@ var myChart = new Chart(ctx, {
         }
 
 
-
-        $sql = "SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` WHERE ".$data['query'];
+        $sql = "SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query'];
 
         $res = $db2->sql_query($sql);
         while ($ob  = $db2->sql_fetch_object($res)) {
