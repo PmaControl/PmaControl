@@ -7,6 +7,7 @@
  */
 
 use Glial\Synapse\Controller;
+use Glial\Synapse\FactoryController;
 use Glial\Cli\Table;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Color;
@@ -513,8 +514,13 @@ var myChart = new Chart(ctx, {
     function getDatabaseByServer($param)
     {
 
-        $this->layout_name = false;
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $data = array();
+
+        if (FactoryController::getRootNode()[1] === __FUNCTION__) {
+            $this->layout_name = false;
+        }
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($param[0])."';";
         $res = $db->sql_query($sql);
@@ -536,6 +542,7 @@ var myChart = new Chart(ctx, {
             $data['databases'][] = $tmp;
         }
 
+
         $this->set("data", $data);
         return $data;
     }
@@ -544,8 +551,18 @@ var myChart = new Chart(ctx, {
     {
         $database = $param[0];
 
-        $this->layout_name = false;
-        $db                = $this->di['db']->sql(DB_DEFAULT);
+
+
+
+
+        if (FactoryController::getRootNode()[1] === __FUNCTION__) {
+            $this->layout_name = false;
+        }
+
+
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($_GET['id_mysql_server'])."';";
         $res = $db->sql_query($sql);
@@ -2600,10 +2617,13 @@ var myChart = new Chart(ctx, {
 
         $this->title = '<span class="glyphicon glyphicon-edit"></span> '.__('Edit');
 
+
+
         if (Basic::from(__FILE__)) {
 
             return $this->title;
         }
+
 
 
 
@@ -2631,7 +2651,6 @@ var myChart = new Chart(ctx, {
             $data = $this->getDatabaseByServer(array($ob->id_mysql_server));
             $data = array_merge($data, $this->getTableByDatabase(array($ob->database)));
         }
-
 
 
         $data2 = $this->add(array($id_cleaner, $data));
