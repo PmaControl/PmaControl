@@ -150,55 +150,147 @@ $("#export_all-all2").click(function(){
         $this->view = false;
 
 
+        Debug::parseDebug($param);
+
 //debug($_FILES);
 //debug($_POST);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        $data = array();
 
-            if (!empty($_FILES['export']['tmp_name']['file'])) {
+        $error = false;
 
-                $crypted    = file_get_contents($_FILES['export']['tmp_name']['file']);
-                $compressed = Chiffrement::decrypt($crypted, $_POST['export']['password']);
+        if (IS_CLI) {
 
-                $json = gzuncompress($compressed);
+            $file     = $param[0];
+            $password = $param[1];
 
-                $file = "/tmp/".uniqid();
-                file_put_contents($file, $json);
+            Debug::debug($file, "file");
+        } else {
 
-                $data = $this->import(array($file));
+            if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+                if (!empty($_FILES['export']['tmp_name']['file'])) {
+                    $file     = $_FILES['export']['tmp_name']['file'];
+                    $password = $_POST['export']['password'];
+                }
 
 
-                //debug($data);
+                if (empty($file)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please select the config file"));
+                }
 
-                $this->set('data', $data);
+                if (empty($password)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please request the password to uncrypt file"));
+                }
+
+                if ($error == true) {
+                    header("location: ".LINK.strtolower(__CLASS__)."/index");
+                    exit;
+                }
             }
         }
+
+
+        if (!empty($file) && !empty($password)) {
+            $crypted    = file_get_contents($file);
+            $compressed = Chiffrement::decrypt($crypted, $password);
+
+            $json = gzuncompress($compressed);
+
+            $file2 = TMP."tmp_file/".uniqid();
+            file_put_contents($file2, $json);
+
+            $data = $this->import(array($file2));
+
+
+
+            if (!empty($data['mysql']['updated'])) {
+
+                $msg = implode(", ", $data['mysql']['updated']);
+                set_flash("success", __('Server updated'), $msg);
+            }
+
+
+            if (!empty($data['mysql']['inserted'])) {
+
+                $msg = implode(", ", $data['mysql']['inserted']);
+                set_flash("success", __('Server inserted'), $msg);
+            }
+
+
+            if (!empty($data['error'])) {
+                $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
+                set_flash("error", __('Error'), $msg);
+            }
+
+            header("location: ".LINK.strtolower(__CLASS__)."/index");
+            exit;
+        }
+
+
+
+
+
+        //debug($data);
+
+        $this->set('data', $data);
     }
 
-    public function import($json)
+    public function import($param)
     {
-        $json[] = "--debug";
+        //$param[] = "--debug";
 
-        Debug::parseDebug($json);
-//$file = $param[0];
+        Debug::parseDebug($param);
+        $json_file = $param[0];
 
-        if (file_exists($json[0])) {
+        if (file_exists($json_file)) {
 
-            $file    = $json[0];
-            $json[0] = file_get_contents($file);
+            $json = file_get_contents($json_file);
 
-            unlink($file);
+
+            Debug::debug($json, $json);
+
+
+            //curl -v -K /tmp/conf_pma_control.tmp -F 'conf=@{{salt['pillar.get']('mysql:data_dir')}}/pma_control_post.json' "{{ pma_url }}"
+
+
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            $sql = "SELECT * from webservice_user where is_enabled = 1 limit 1";
+
+
+            $res = $db->sql_query($sql);
+            while($ob = $db->sql_fetch_object($res))
+            {
+                $login = $ob->user;
+                $password = Chiffrement::decrypt($ob->password);
+            }
+
+            $cmd = "curl -u ".$login.":".$password." -F 'data=@".$json_file."' '".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].LINK."Webservice/pushServer'";
+
+            Debug::debug($cmd);
+            $rep = shell_exec($cmd);
+
+
+            //echo "reponse : ".$rep."\n";
+            //unlink($json_file);
         }
 
 
         $data['arr']     = json_decode($json[0], true);
         $data['options'] = $this->getExportOption();
 
-
-
+        //Debug::debug($data);
         //$this->addMysql($data);
 
-        return $data;
+
+        if (IS_CLI == true) {
+            echo $rep;
+        }
+
+        return json_decode($rep, true);
     }
 
     private function addMysql($arr)
