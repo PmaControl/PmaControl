@@ -19,6 +19,8 @@ class Webservice extends Controller
         $this->layout_name = false;
 
 
+
+
         Debug::parseDebug($param);
 
 
@@ -51,11 +53,12 @@ class Webservice extends Controller
                 //echo "KO\n";
             }
 
+            $db = $this->di['db']->sql(DB_DEFAULT);
             Mysql::onAddMysqlServer($db);
             $this->saveHistory($id_user_main);
         }
-        
-        
+
+
 
         //echo "\n";
     }
@@ -166,7 +169,7 @@ class Webservice extends Controller
 
         Debug::debug($server, "new MySQL");
 
-        $ret = $db->sql_save($server);
+        $id_mysql_server = $db->sql_save($server);
 
         if ($ret) {
 
@@ -174,18 +177,21 @@ class Webservice extends Controller
                 echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - INSERTED"}';
             } else {
                 echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - UPDATED"}';
+
+
+                $this->insertTag($id_mysql_server, $server['mysql_server']['tag']);
             }
 
 
 
             Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
         } else {
+
+            debug($server);
+            debug($db->sql_error());
+
             echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "KO"}';
         }
-        
-        
-        
-
 
 
         return $server;
@@ -312,6 +318,10 @@ END IF;";
 
     private function getIp($hostname)
     {
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            return trim($hostname);
+        }
+
         $ip = shell_exec("dig +short ".$hostname);
 
         return trim($ip);
@@ -453,5 +463,61 @@ END IF;";
         } else {
             //show that we don't sert webservice
         }
+    }
+
+    private function insertTag($id_mysql_server, $all_tags)
+    {
+
+
+        if (empty($all_tags)) {
+            return true;
+        }
+
+
+        $tags = explode(',', $all_tags);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        foreach ($tags as $tag) {
+
+            $id_tag = $this->getId($tag, "tag", "name", array("font" => $this->setBackgroundColor($tag), "color" => $this->setFontColor($tag)));
+
+            $sql ="INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (".$id_mysql_server.", ".$id_tag.");";
+            $db->sql_query($sql);
+        }
+
+        /*id_mysql_server
+          $sql = "DELETE FROM `link__mysql_server__tag` WHERE `id_mysql_server` = '".$id_mysql_server."'";
+          $res = $db->sql_query($sql);
+         */
+    }
+
+    private function setFontColor($type)
+    {
+        $hex = substr(md5($type), 0, 6);
+
+        return $hex;
+
+        //return $hex['background'];
+    }
+
+    private function setBackgroundColor($type)
+    {
+        $hex = $this->setFontColor($type);
+
+        $ret = hex2bin('ffffff') ^ hex2bin($hex);
+
+        return bin2hex($ret);
+
+        //return $hex['background'];
+    }
+
+
+    public function testColor($param)
+    {
+        $text = $param[0];
+
+
+        echo $text ." : #".$this->setFontColor($text)." : #".$this->setBackgroundColor($text)."\n";
     }
 }
