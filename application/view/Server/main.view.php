@@ -5,10 +5,11 @@ use \Glial\Synapse\FactoryController;
 use \Glial\Security\Crypt\Crypt;
 use Glial\Html\Form\Form;
 
-function formatVersion($version) {
+function formatVersion($version)
+{
     if (strpos($version, "-")) {
         $number = explode("-", $version)[0];
-        $fork = explode("-", $version)[1];
+        $fork   = explode("-", $version)[1];
     } else {
         $number = $version;
     }
@@ -26,26 +27,30 @@ function formatVersion($version) {
             $name = '<span class="geek">&#xF137;</span> MySQL';
     }
 
-    return $name . " " . $number;
+    return $name." ".$number;
 }
 
-function format_ping($microtime, $precision = 2) {
+function format_ping($microtime, $precision = 2)
+{
     $units = array('ms', 's');
-    $units[-1] = 'ms';
+
     $microtime = $microtime * 1000;
 
-    $microtime = max($microtime, 0);
-    $pow = floor(($microtime ? log($microtime) : 0) / log(1000));
-    $pow = min($pow, count($units) - 1);
+    if ($microtime > 1000) {
+        $microtime = $microtime / 1000;
+        $pow       = 1;
+    } else {
+        $pow = 0;
+    }
+
 
     // Uncomment one of the following alternatives
     // $bytes /= pow(1024, $pow);
     // $bytes /= (1 << (10 * $pow));
 
 
-    return round($microtime, $precision) . ' ' . $units[$pow];
+    return round($microtime, $precision).' '.$units[$pow];
 }
-
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -53,9 +58,9 @@ echo '<form action="" method="POST">';
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
 
-echo '<th>' . __("Top") . '</th>';
-echo '<th>' . __("ID") . '</th>';
-echo '<th>' . __("Available") . '</th>';
+echo '<th>'.__("Top").'</th>';
+echo '<th>'.__("ID").'</th>';
+echo '<th>'.__("Available").'</th>';
 
 /*
   echo '<th>';
@@ -79,26 +84,26 @@ echo '<th>' . __("Available") . '</th>';
   echo '</th>';
  *
  */
-echo '<th>' . __("Client") . '</th>';
-echo '<th>' . __("Environment") . '</th>';
-echo '<th>' . __("Name") . '</th>';
+echo '<th>'.__("Client").'</th>';
+echo '<th>'.__("Environment").'</th>';
+echo '<th>'.__("Name").'</th>';
 echo '<th>';
 
 
 echo __('Tags');
 
 echo '</th>';
-echo '<th>' . __("IP") . '</th>';
-echo '<th>' . __("Port") . '</th>';
-echo '<th>' . __("User") . '</th>';
-echo '<th>' . __("Password") . '</th>';
+echo '<th>'.__("IP").'</th>';
+echo '<th>'.__("Port").'</th>';
+echo '<th>'.__("User").'</th>';
+echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
-echo '<th>' . __("Version") . '</th>';
-echo '<th>' . __("Date refresh") . '</th>';
-echo '<th>' . __("Ping") . '</th>';
+echo '<th>'.__("Version").'</th>';
+echo '<th>'.__("Date refresh").'</th>';
+echo '<th>'.__("Ping").'</th>';
 
-echo '<th style="max-width:400px">' . __("Error") . '</th>';
-echo '<th>' . __("Acknowledge") . '</th>';
+echo '<th style="max-width:400px">'.__("Error").'</th>';
+echo '<th>'.__("Acknowledge").'</th>';
 echo '</tr>';
 
 $i = 0;
@@ -123,10 +128,10 @@ if (!empty($data['servers'])) {
         }
 
         echo '<tr>';
-        echo '<td style="' . $style . '">' . $i . '</td>';
-        echo '<td style="' . $style . '">' . $server['id'] . '</td>';
-        echo '<td style="' . $style . '">';
-        echo '<span class="glyphicon ' . ($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove") . '" aria-hidden="true"></span>';
+        echo '<td style="'.$style.'">'.$i.'</td>';
+        echo '<td style="'.$style.'">'.$server['id'].'</td>';
+        echo '<td style="'.$style.'">';
+        echo '<span class="glyphicon '.($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
         echo '</td>';
 
         /*
@@ -155,42 +160,42 @@ if (!empty($data['servers'])) {
           echo '</td>';
           /* */
 
-        echo '<td style="' . $style . '">' . $server['client'] . '</td>';
-        echo '<td style="' . $style . '">';
-        echo '<big><span class="label label-' . $server['class'] . '">' . $server['environment'] . '</span></big>';
+        echo '<td style="'.$style.'">'.$server['client'].'</td>';
+        echo '<td style="'.$style.'">';
+        echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
         echo '</td>';
-        echo '<td style="' . $style . '"><a href="' . LINK . 'Server/listing/id/mysql_server:id:' . $server['id'] . '/ts_variable:name:com_select/ts_variable:date:1 hour/ts_variable:derivate:1">';
+        echo '<td style="'.$style.'"><a href="'.LINK.'server/listing/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1 hour/ts_variable:derivate:1">';
 
         echo $server['display_name'];
         //echo $data['extra'][$server['id']]['']['hostname'];
 
         echo '</a></td>';
-        echo '<td style="' . $style . '">';
+        echo '<td style="'.$style.'">';
 
         if (!empty($data['tag'][$server['id']])) {
             foreach ($data['tag'][$server['id']] as $tag) {
-                echo '<span title="' . $tag['name'] . '" class="label" style="color:' . $tag['color'] . '; background:' . $tag['background'] . '">' . $tag['name'] . '</span> ';
+                echo '<span title="'.$tag['name'].'" class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].'">'.$tag['name'].'</span> ';
             }
         }
         echo '</td>';
 
-        echo '<td style="' . $style . '">' . $server['ip'] . '</td>';
-        echo '<td style="' . $style . '">' . $server['port'] . '</td>';
-        echo '<td style="' . $style . '">' . $server['login'] . '</td>';
-        echo '<td style="' . $style . '" title="">';
+        echo '<td style="'.$style.'">'.$server['ip'].'</td>';
+        echo '<td style="'.$style.'">'.$server['port'].'</td>';
+        echo '<td style="'.$style.'">'.$server['login'].'</td>';
+        echo '<td style="'.$style.'" title="">';
 
         \Glial\Synapse\FactoryController::addNode("Server", "passwd", array($server['passwd']));
 
         echo '</td>';
         //echo '<td style="'.$style.'">'.$server['hostname'].'</td>';
-        echo '<td style="' . $style . '">';
+        echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
             echo formatVersion($data['extra'][$server['id']]['']['version']);
         }
 
         echo '</td>';
-        echo '<td style="' . $style . '">';
+        echo '<td style="'.$style.'">';
 
         if (!empty($server['is_available'])) {
             if (!empty($data['extra'][$server['id']]['']['date'])) {
@@ -202,7 +207,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
 
 
-        echo '<td style="' . $style . '">';
+        echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['ping'])) {
             echo format_ping($data['extra'][$server['id']]['']['ping']);
@@ -213,16 +218,16 @@ if (!empty($data['servers'])) {
 
 
 
-        echo '<td style="max-width:400px;' . $style . '" class="">';
+        echo '<td style="max-width:400px;'.$style.'" class="">';
 
         if (strstr($server['error'], '[0m')) {
             $converter = new AnsiToHtmlConverter();
-            $html = $converter->convert($server['error']);
+            $html      = $converter->convert($server['error']);
 
-            echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">' . $html . '</pre>';
+            echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">'.$html.'</pre>';
 
             if (!empty($data['last_date'][$server['id']]['date'])) {
-                echo "<br>Last online : " . $data['last_date'][$server['id']]['date'];
+                echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
             }
 
 //$server['error'];
@@ -235,7 +240,7 @@ if (!empty($data['servers'])) {
             }
 
             if (!empty($data['last_date'][$server['id']]['date'])) {
-                echo '<br><span class="label label-primary">Last online : ' . $data['last_date'][$server['id']]['date'] . "</span>";
+                echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
                 //echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
             }
             //echo $server['error'];
@@ -244,7 +249,7 @@ if (!empty($data['servers'])) {
 
             if (!empty(trim($server['error']))) {
                 if (!empty($data['last_date'][$server['id']]['date'])) {
-                    echo '<br><span class="label label-primary">Last online : ' . $data['last_date'][$server['id']]['date'] . "</span>";
+                    echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
                 }
             }
 
@@ -257,8 +262,8 @@ if (!empty($data['servers'])) {
               echo $m." minutes\n"; */
         }
 
-        $date1 = strtotime($data['last_date'][$server['id']]['date']);
-        $date2 = time();
+        $date1   = strtotime($data['last_date'][$server['id']]['date']);
+        $date2   = time();
         $subTime = $date2 - $date1;
 
         $d = ($subTime / (60 * 60 * 24));
@@ -266,22 +271,22 @@ if (!empty($data['servers'])) {
         $m = ($subTime / 60) % 60;
 
         if ($d >= 1) {
-            echo ' <span class="label label-danger" title="' . $data['last_date'][$server['id']]['date'] . '">' . round($d, 0) . ' ' . __("Days") . '</span>';
+            echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
         } else if ($subTime < 60) {
             //echo ' <span class="label label-success" title="'.$data['last_date'][$server['id']]['date'].'">'.__("OK").'</span>';
         } else if ($subTime >= 60 && $subTime < 3600) {
-            echo ' <span class="label label-warning" title="' . $data['last_date'][$server['id']]['date'] . '"><i class="glyphicon glyphicon-warning-sign"></i> ' . $m . ' ' . __("Minutes") . '</span>';
+            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'"><i class="glyphicon glyphicon-warning-sign"></i> '.$m.' '.__("Minutes").'</span>';
         } else {
-            echo ' <span class="label label-warning" title="' . $data['last_date'][$server['id']]['date'] . '">' . $h . ' ' . __("hours") . '</span>';
+            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
 
 
         echo '</td>';
-        echo '<td style="' . $style . '">';
+        echo '<td style="'.$style.'">';
 
         if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['is_acknowledged'] === "0") {
-            echo '<a href="' . LINK . 'server/acknowledge/' . $server['id'] . '" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
+            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';
         echo '</tr>';

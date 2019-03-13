@@ -6,6 +6,7 @@
  */
 
 use \Glial\Synapse\Controller;
+use App\Library\Post;
 
 class Environment extends Controller
 {
@@ -53,7 +54,6 @@ class Environment extends Controller
         }
     }
 
-
     public function up($param)
     {
 
@@ -66,5 +66,50 @@ class Environment extends Controller
 
 
         header("location: ".LINK."environment/index/");
+    }
+
+    public function add($param)
+    {
+        $this->di['js']->addJavascript(array("bootstrap-select.min.js"));
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $variable['environment'] = $_POST['environment'];
+
+            //if ((empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle'])))
+
+            $return = $db->sql_save($variable);
+            if (!$return)
+            {
+                $error = $db->sql_error();
+                $_SESSION['ERROR'] = $error;
+
+                $msg = "<ul><li>".implode("</li><li>", $error['environment'])."</li></ul>";
+
+                set_flash("error", "Error", $msg);
+
+                header("location: ".LINK."environment/add/".Post::getToPost());
+            }
+            else
+            {
+                debug($db->sql_error());
+                //header("location: ".LINK."environment/index/");
+            }
+        }
+
+        $colors = array("danger", "warning", "default", "info", "success", "primary");
+
+        $data['colors']=array();
+        foreach ($colors as $color) {
+            $temp=[];
+            $temp['id']=$color;
+            $temp['libelle']=$color;
+            
+            $temp['extra'] = array("data-content" => "<span title='".$color."' class='label label-".$color."'>".strtoupper($color)."</span>");
+
+            $data['colors'][] =$temp;
+        }
+
+        $this->set('data',$data);
     }
 }
