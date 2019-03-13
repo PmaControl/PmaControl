@@ -124,7 +124,7 @@ class Tree extends Controller
 
         $tree->up($id);
 
-        $this->debugShowQueries();
+        Debug::debugShowQueries($db); // <= ici
 
         header("location: ".LINK."tree/index/".$id_menu);
     }

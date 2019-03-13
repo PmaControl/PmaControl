@@ -48,9 +48,6 @@ class Control extends Controller
         // or local
         $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
 
-
-
-
         $percent = substr($size, 0, -1);
 
         /*
@@ -368,8 +365,10 @@ PARTITION BY RANGE (to_days(`date`))
         $this->dropLock();
 
 
-        $cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        Debug::debug($cmd);
+
+
+        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
+        //Debug::debug($cmd);
         //shell_exec($cmd);
 
         sleep(1);
@@ -505,7 +504,7 @@ PARTITION BY RANGE (to_days(`date`))
     public function dropLock()
     {
         // drop variables
-        $files_to_drop = array(TMP."lock/variable/*.md5", TMP."lock/worker/*.pid");
+        $files_to_drop = array(TMP."lock/variable/*.md5", TMP."lock/worker/*.pid", TMP."tmp_file/*");
 
 
         foreach ($files_to_drop as $file_to_drop) {
