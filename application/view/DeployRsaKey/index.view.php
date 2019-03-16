@@ -114,7 +114,7 @@ use App\Library\Display;
         echo '<th>';
         ?>
         <div class="form-group">
-            <div class="checkbox checbox-switch switch-success">
+            <div class="checkbox checbox-switch switch-primary">
                 <label>
                     <?= Form::input("check", "all", array("class" => "form-control", "type" => "checkbox", "onClick" => "toggle(this)")) ?>
                     <span></span>
@@ -159,7 +159,7 @@ use App\Library\Display;
             echo '<td style = "'.$style.'">';
             ?>
             <div class="form-group">
-                <div class="checkbox checbox-switch switch-success">
+                <div class="checkbox checbox-switch switch-primary">
                     <label>
                         <?= Form::input("link__mysql_server__ssh_key", "deploy", array("class" => "form-control", "type" => "checkbox")) ?>
                         <span></span>

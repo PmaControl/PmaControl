@@ -12,13 +12,12 @@ class Server extends Controller
 {
 
     use \App\Library\Filter;
-
-
     var $clip = 0;
+
 //dba_source
     public function hardware()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db           = $this->di['db']->sql(DB_DEFAULT);
         $this->title  = __("Hardware");
         $this->ariane = " > ".$this->title;
 
@@ -40,6 +39,7 @@ class Server extends Controller
 
     public function before($param)
     {
+
     }
 
     public function listing($param)
@@ -326,8 +326,8 @@ class Server extends Controller
 
     public function memory()
     {
-        $this->title       = __("Memory");
-        $this->ariane      = " > ".__("Tools Box")." > ".$this->title;
+        $this->title  = __("Memory");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -765,10 +765,6 @@ var myChart = new Chart(ctx, {
             .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
 
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-        }
-
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
@@ -869,12 +865,11 @@ var myChart = new Chart(ctx, {
         /**
          * @todo Add a new version code_javascript  => Once
          */
-
         /*
-        $this->di['js']->code_javascript('(function() {
-            new Clipboard(".copy-button");
-        })();');
-        */
+          $this->di['js']->code_javascript('(function() {
+          new Clipboard(".copy-button");
+          })();');
+         */
 
 
 
@@ -1020,6 +1015,8 @@ var myChart = new Chart(ctx, {
 
     public function remove($param)
     {
+
+        Debug::parseDebug($param);
         $this->view = false;
 
         $id_server = $param[0];
@@ -1027,8 +1024,20 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
-        $db->sql_query($sql);
+
+        // pour eviter d'effacer la base de PmaControl !!!
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
+        $res = $db->sql_query($sql);
+        Debug::sql($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->name != DB_DEFAULT) {
+                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+                $db->sql_query($sql);
+                Debug::sql($sql);
+            }
+        }
 
         header("location: ".LINK.__CLASS__."/settings/");
     }

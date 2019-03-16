@@ -15,7 +15,7 @@
     foreach ($data['cleaner_main'] as $cleaner) {
         
         //$hightlight = ($cleaner['id_cleaner_main'] === $data['id_cleaner']) ? "highlight_row" : "";
-        echo '<tr class="cleaner_main" data-id="' . $cleaner['id_cleaner_main'] . '" data-href="' . LINK . 'Cleaner/index/' . $cleaner['id_cleaner_main'] . '">';
+        echo '<tr class="cleaner_main" data-id="' . $cleaner['id_cleaner_main'] . '" data-href="' . LINK . 'cleaner/index/' . $cleaner['id_cleaner_main'] . '">';
         echo '<td>' . $cleaner['id_cleaner_main'] . '</td>';
         echo '<td>' . $cleaner['name_cleaner'] . '</td>';
         echo '<td><big><span class="label label-'.$cleaner['class'].'">'. $cleaner['env'].'</span></big></td>';
@@ -67,5 +67,5 @@
 
 </table>
 
-<a href='<?= LINK ?>Cleaner/add/' id="add" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a cleaner</a>
+<a href='<?= LINK ?>cleaner/add/' id="add" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a cleaner</a>
 
