@@ -20,7 +20,7 @@
  * @license       MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
-include ("exception.php");
+//include ("exception.php");
 $ScreenError = 1;
 
 try {
