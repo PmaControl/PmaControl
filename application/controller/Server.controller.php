@@ -1015,6 +1015,8 @@ var myChart = new Chart(ctx, {
 
     public function remove($param)
     {
+
+        Debug::parseDebug($param);
         $this->view = false;
 
         $id_server = $param[0];
@@ -1026,17 +1028,16 @@ var myChart = new Chart(ctx, {
         // pour eviter d'effacer la base de PmaControl !!!
         $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
         $res = $db->sql_query($sql);
+        Debug::sql($sql);
+
+
         while ($ob = $db->sql_fetch_object($res)) {
-            if ($ob->id == $id_server) {
-                header("location: ".LINK.__CLASS__."/settings/");
-                exit;
+            if ($ob->name != DB_DEFAULT) {
+                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+                $db->sql_query($sql);
+                Debug::sql($sql);
             }
         }
-
-
-
-        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
-        $db->sql_query($sql);
 
         header("location: ".LINK.__CLASS__."/settings/");
     }
