@@ -167,7 +167,7 @@ class Database extends Controller
                     $php = explode(" ", shell_exec("whereis php"))[1];
 
                     $uuid = Uuid::uuid4()->toString();
-                    $log = $this->log_file.__CLASS__."-".__FUNCTION__."-".uniqid().".log";
+                    $log = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
 
                     $callback = $php." ".GLIAL_INDEX." job callback ".$uuid."\n";
                     $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";

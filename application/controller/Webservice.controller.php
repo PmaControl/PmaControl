@@ -12,12 +12,12 @@ use App\Library\Mysql;
 
 class Webservice extends Controller
 {
+    var $return = array();
 
     public function pushServer($param)
     {
         $this->view        = false;
         $this->layout_name = false;
-
 
         Debug::parseDebug($param);
 
@@ -31,31 +31,45 @@ class Webservice extends Controller
 
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {
 
             if ($id_user_main !== false) {
 
                 if (!empty(end($_FILES)['tmp_name'])) {
 
+
+                    $this->return['authenticate']          = "ok";
                     $this->parseServer(end($_FILES)['tmp_name']);
 
 
                     //$this->pushFile(trim(file_get_contents()));
 
-                    echo '{"authenticate": "ok"}'."\n";
+
+                    
+                    
                 } else {
-                    echo '{"authenticate": "ok","json":"not loaded"}'."\n";
+
+                    $this->return['authenticate']  = "ok";
+                    $this->return['error'][] = "Impossible to load json";
                 }
             } else {
-                echo '{"authenticate": "ko"}'."\n";
+                $this->return['authenticate'] = "ko";
+                $this->return['error'][] = "Unauthorized access";
+
                 //echo "KO\n";
             }
 
+            $db = $this->di['db']->sql(DB_DEFAULT);
             Mysql::onAddMysqlServer($db);
+
             $this->saveHistory($id_user_main);
+        } else {
+
+            $this->return['error'][] = "This request method is not allowed : ".$_SERVER['REQUEST_METHOD'];
         }
-        
-        
+
+
+        echo json_encode($this->return,JSON_PRETTY_PRINT)."\n";
 
         //echo "\n";
     }
@@ -166,26 +180,42 @@ class Webservice extends Controller
 
         Debug::debug($server, "new MySQL");
 
-        $ret = $db->sql_save($server);
 
-        if ($ret) {
+        if ($this->isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
+            
+
+            $this->return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
+
+            return false;
+        }
+
+
+
+        $id_mysql_server = $db->sql_save($server);
+
+        if ($id_mysql_server) {
 
             if (empty($server['mysql_server']['id'])) {
-                echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - INSERTED"}';
+
+                $this->return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
             } else {
-                echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - UPDATED"}';
+
+                $this->return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+
+
+
+                if (!empty($server['mysql_server']['tag'])) {
+                    $this->insertTag($id_mysql_server, $server['mysql_server']['tag']);
+                }
             }
-
-
 
             Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
         } else {
-            echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "KO"}';
-        }
-        
-        
-        
 
+            unset($server['mysql_server']['passwd']);
+       
+            $this->return['mysql']['failed'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : ".json_encode(array($db->sql_error(),$server));
+        }
 
 
         return $server;
@@ -312,6 +342,10 @@ END IF;";
 
     private function getIp($hostname)
     {
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            return trim($hostname);
+        }
+
         $ip = shell_exec("dig +short ".$hostname);
 
         return trim($ip);
@@ -453,5 +487,81 @@ END IF;";
         } else {
             //show that we don't sert webservice
         }
+    }
+
+    private function insertTag($id_mysql_server, $all_tags)
+    {
+
+
+        if (empty($all_tags)) {
+            return true;
+        }
+
+
+        $tags = explode(',', $all_tags);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        foreach ($tags as $tag) {
+
+            $id_tag = $this->getId($tag, "tag", "name", array("font" => $this->setBackgroundColor($tag), "color" => $this->setFontColor($tag)));
+
+            $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (".$id_mysql_server.", ".$id_tag.");";
+            $db->sql_query($sql);
+        }
+
+        /* id_mysql_server
+          $sql = "DELETE FROM `link__mysql_server__tag` WHERE `id_mysql_server` = '".$id_mysql_server."'";
+          $res = $db->sql_query($sql);
+         */
+    }
+
+    private function setFontColor($type)
+    {
+        $hex = substr(md5($type), 0, 6);
+
+        return $hex;
+
+        //return $hex['background'];
+    }
+
+    private function setBackgroundColor($type)
+    {
+        $hex = $this->setFontColor($type);
+
+        $ret = hex2bin('ffffff') ^ hex2bin($hex);
+
+        return bin2hex($ret);
+
+        //return $hex['background'];
+    }
+
+    public function testColor($param)
+    {
+        $text = $param[0];
+
+
+        echo $text." : #".$this->setFontColor($text)." : #".$this->setBackgroundColor($text)."\n";
+    }
+
+    public function isPmaControl($ip, $port)
+    {
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
+
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            if ($ob->ip === $ip && $ob->port == $port) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
