@@ -294,6 +294,9 @@ class Aspirateur extends Controller
     public function tryMysqlConnection($param)
     {
 
+        $display_error = ini_get('display_errors');
+        ini_set("display_errors", 0);
+
         Debug::parseDebug($param);
         $this->view = false;
 
@@ -326,7 +329,7 @@ class Aspirateur extends Controller
             $db->sql_query($sql);
             $db->sql_close();
 
-            return true;
+            return false;
         } else {
             echo $name_server." : OK\n";
         }
@@ -399,7 +402,8 @@ class Aspirateur extends Controller
         if ($mysql_tested->is_connected === false) {
 
 
-            echo "XFGHFGXHXFGHXFGHXFGHXFGH";
+            echo "PAS BON DU TOUT ! ask creator of PmaControl";
+            return false;
         }
 
 
@@ -443,6 +447,8 @@ class Aspirateur extends Controller
             $export_variables = true;
         }
 
+
+
         if ($export_variables) {
 //Debug::debug($export_variables, "SET VARIABLES");
             $this->allocate_shared_storage('variable');
@@ -464,6 +470,11 @@ class Aspirateur extends Controller
         }
 
         $mysql_tested->sql_close();
+
+
+        Debug::debugShowTime();
+                
+        ini_set("display_errors", $display_error);
     }
 
     public function allocate_shared_storage($name = 'answer')
