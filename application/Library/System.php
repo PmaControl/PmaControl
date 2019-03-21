@@ -38,10 +38,22 @@ class System
 
 
         $res = shell_exec("ps -p $pid | tail -n +2");
-        if (! empty($res)) {
+        if (!empty($res)) {
             //process with a pid = $pid is running
-            return true;
+
+
+            $elems = explode(" ", $res);
+
+            $cmd = end($elems);
+
+            //test si un process à été récupérer par autre chose que php
+            if (substr($cmd, 0, 3) === "php") {
+                return true;
+            } else {
+                return false;
+            }
         }
+
 
         return false;
     }
