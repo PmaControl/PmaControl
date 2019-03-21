@@ -147,18 +147,13 @@ var myChart = new Chart(ctx, {
 
     public function file_available($param)
     {
-
-
-
         $this->title  = '<span class="glyphicon glyphicon-book" aria-hidden="true"></span> '.__("Archives");
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-puzzle-piece"></i> '
             .__("Plugins").'</a> > '.$this->title;
 
-
         $id_cleaner = $param[0];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-
 
         $sql = "select a.`id`,a.`md5_sql`,a.size_sql,a.`date`, b.`ip`, a.pathfile,
             a.size_remote , a. time_to_compress, a.time_to_crypt, a.time_to_transfert
