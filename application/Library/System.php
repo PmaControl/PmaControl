@@ -48,6 +48,7 @@ class System
 
             //test si un process à été récupérer par autre chose que php
             if (substr($cmd, 0, 3) === "php") {
+                echo $cmd;
                 return true;
             } else {
                 return false;
