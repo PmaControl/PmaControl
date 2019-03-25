@@ -5,8 +5,7 @@ use \App\Library\Debug;
 
 class Audit extends Controller
 {
-    var $log_files = array("/data/www/hb01-mariacommon01.log.1", "/data/www/hb01-mariacommon01.log.2",
-        "/data/www/hb01-mariacommon01.log.3","/data/www/hb01-mariacommon01.log.4",  "/data/www/hb03-mariacommon01.log.1", "/data/www/hb03-mariacommon01.log.2");
+    var $log_files = array("/data/www/hb01-mariaforge01.log");
     var $login_host = array();
 
     public function getuser($param)
