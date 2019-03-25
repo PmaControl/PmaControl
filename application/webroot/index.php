@@ -18,6 +18,9 @@
  * @since         Gliale(tm) v 0.1
  * @license       MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
+
+
+//to know if we are in cli
 define('IS_CLI', PHP_SAPI === 'cli');
 
 
@@ -40,8 +43,8 @@ try {
 
     define("TIME_START", microtime(true));
 
-//to know if we are in cli
-    define('IS_CLI', PHP_SAPI === 'cli');
+
+    
 
 //Use the DS to separate the directories in other defines
     define('DS', DIRECTORY_SEPARATOR);
