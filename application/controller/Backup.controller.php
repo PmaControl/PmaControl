@@ -32,6 +32,12 @@ class Backup extends Controller
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
 
+
+
+    //droit minima pour backup : GRANT SELECT, RELOAD, LOCK TABLES, EXECUTE, REPLICATION CLIENT, SHOW VIEW, EVENT, TRIGGER
+    //ON *.* TO 'backup'@'%' IDENTIFIED BY PASSWORD '*';
+
+
     /*
      * 
      *  mysql -h 10.243.4.44 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql

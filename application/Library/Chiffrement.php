@@ -113,21 +113,21 @@ class Chiffrement
     }
 
 
-    static function encrypt($password)
+    static function encrypt($msg , $password= CRYPT_KEY)
     {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::encrypt($password);
+        Crypt::$key = $password;
+        $msg_chiffre     = Crypt::encrypt($msg);
         
-        return $passwd;
+        return $msg_chiffre;
     }
 
 
-    static function decrypt($password_crypted)
+    static function decrypt($password_crypted, $password = CRYPT_KEY)
     {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::decrypt($password_crypted);
+        Crypt::$key = $password;
+        $en_clair     = Crypt::decrypt($password_crypted);
         
-        return $passwd;
+        return $en_clair;
     }
     
     
