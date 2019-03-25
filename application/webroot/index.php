@@ -25,7 +25,7 @@ define('IS_CLI', PHP_SAPI === 'cli');
 
 
 if (!IS_CLI) {
-    include ("exception.php");
+    //include ("exception.php");
     $ScreenError = 1;
 }
 

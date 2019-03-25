@@ -11,7 +11,6 @@ use phpseclib\Crypt\AES;
 use phpseclib\Crypt\Random;
 use \Glial\Security\Crypt\Crypt;
 
-
 class Chiffrement
 {
     const CHIFFRE   = 1;
@@ -112,23 +111,20 @@ class Chiffrement
         return $written;
     }
 
-
-    static function encrypt($msg , $password= CRYPT_KEY)
+    static function encrypt($msg, $password = CRYPT_KEY)
     {
-        Crypt::$key = $password;
-        $msg_chiffre     = Crypt::encrypt($msg);
-        
+
+        //Crypt::$key = $password;
+        $msg_chiffre = Crypt::encrypt($msg, $password);
+
         return $msg_chiffre;
     }
 
-
     static function decrypt($password_crypted, $password = CRYPT_KEY)
     {
-        Crypt::$key = $password;
-        $en_clair     = Crypt::decrypt($password_crypted);
-        
+        //Crypt::$key = $password;
+        $en_clair = Crypt::decrypt($password_crypted, $password);
+
         return $en_clair;
     }
-    
-    
 }
