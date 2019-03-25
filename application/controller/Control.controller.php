@@ -241,7 +241,7 @@ class Control extends Controller
         $this->updateLinkVariableServeur();
 
 
-        $this->refreshVariable();
+        $this->refreshVariable(array());
 
 
 //Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
