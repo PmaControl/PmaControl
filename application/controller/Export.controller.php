@@ -197,6 +197,10 @@ $("#export_all-all2").click(function(){
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
+
+
+            //$compressed  test if good
+
             $json = gzuncompress($compressed);
 
             $file2 = TMP."tmp_file/".uniqid();
@@ -262,9 +266,8 @@ $("#export_all-all2").click(function(){
 
 
             $res = $db->sql_query($sql);
-            while($ob = $db->sql_fetch_object($res))
-            {
-                $login = $ob->user;
+            while ($ob  = $db->sql_fetch_object($res)) {
+                $login    = $ob->user;
                 $password = Chiffrement::decrypt($ob->password);
             }
 
@@ -607,7 +610,63 @@ $("#export_all-all2").click(function(){
 
         $this->set('data', $data);
     }
+
 //a mettre dans une librairy
+
+
+    public function test_dechiffrement()
+    {
+        if (IS_CLI) {
+
+            $file     = $param[0];
+            $password = $param[1];
+
+            Debug::debug($file, "file");
+        } else {
+
+            if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+                if (!empty($_FILES['export']['tmp_name']['file'])) {
+                    $file     = $_FILES['export']['tmp_name']['file'];
+                    $password = $_POST['export']['password'];
+                }
+
+                $error=false;
+
+                if (empty($file)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please select the config file"));
+                }
+
+                if (empty($password)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please request the password to uncrypt file"));
+                }
+
+                if ($error == true) {
+                    header("location: ".LINK.strtolower(__CLASS__)."/".__FUNCTION__);
+                    exit;
+                }
+            }
+        }
+
+        $data = array();
+
+        if (!empty($file) && !empty($password)) {
+            $crypted    = file_get_contents($file);
+            $compressed = Chiffrement::decrypt($crypted, $password);
+
+            $json = gzuncompress($compressed);
+
+
+            $data['json'] = $json;
+        }
+
+
+
+
+        $this->set('data', $data);
+    }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);
