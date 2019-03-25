@@ -197,8 +197,18 @@ $("#export_all-all2").click(function(){
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
+            if ($this->is_gzipped($compressed) === true) {
+                $json         = gzuncompress($compressed);
+                $data['json'] = $json;
+            } else {
+                set_flash("error", __('Error'), __("The password is not good"));
+                header("location: ".LINK.strtolower(__CLASS__)."/index");
+                exit;
+            }
 
 
+
+            
             //$compressed  test if good
 
             $json = gzuncompress($compressed);
@@ -211,14 +221,12 @@ $("#export_all-all2").click(function(){
 
 
             if (!empty($data['mysql']['updated'])) {
-
                 $msg = implode(", ", $data['mysql']['updated']);
                 set_flash("success", __('Server updated'), $msg);
             }
 
 
             if (!empty($data['mysql']['inserted'])) {
-
                 $msg = implode(", ", $data['mysql']['inserted']);
                 set_flash("success", __('Server inserted'), $msg);
             }
@@ -631,7 +639,7 @@ $("#export_all-all2").click(function(){
                     $password = $_POST['export']['password'];
                 }
 
-                $error=false;
+                $error = false;
 
                 if (empty($file)) {
                     $error = true;
@@ -656,16 +664,37 @@ $("#export_all-all2").click(function(){
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
-            $json = gzuncompress($compressed);
 
 
-            $data['json'] = $json;
+            if ($this->is_gzipped($compressed) === true) {
+
+                $json         = gzuncompress($compressed);
+                $data['json'] = $json;
+            } else {
+
+
+                set_flash("error", __('Error'), __("The password is not good"));
+                header("location: ".LINK.strtolower(__CLASS__)."/".__FUNCTION__);
+                exit;
+            }
+            //false
         }
 
-
-
-
         $this->set('data', $data);
+    }
+
+    function is_gzipped($in)
+    {
+
+        if (mb_strpos($in, "\x1f"."\x8b"."\x08") === 0) {
+            return true;
+        } else if (@gzuncompress($in) !== false) {
+            return true;
+        } else if (@gzinflate($in) !== false) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);

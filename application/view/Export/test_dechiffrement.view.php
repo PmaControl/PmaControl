@@ -23,13 +23,13 @@ use Glial\Html\Form\Form;
 
             <div class="row">
                 <div class="col-md-6">File to import
-<?= Form::input("export", "file", array("type" => "file")) ?>
+                    <?= Form::input("export", "file", array("type" => "file")) ?>
                 </div>
 
                 <div class="col-md-6">Password
-<?=
-Form::input("export", "password", array("class" => "form-control", "type" => "password", "placeholder" => "Password to decrypt the export file"))
-?>
+                    <?=
+                    Form::input("export", "password", array("class" => "form-control", "type" => "password", "placeholder" => "Password to decrypt the export file"))
+                    ?>
                 </div>
 
 
@@ -44,6 +44,6 @@ Form::input("export", "password", array("class" => "form-control", "type" => "pa
     </div>
 </form>
 <?php
-
-
-echo "<pre>".json_encode(json_decode($data['json']), JSON_PRETTY_PRINT) ."</pre>";
+if (!empty($data['json'])) {
+    echo "<pre>".json_encode(json_decode($data['json']), JSON_PRETTY_PRINT)."</pre>";
+}
