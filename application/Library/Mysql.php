@@ -12,6 +12,7 @@ use \Glial\Security\Crypt\Crypt;
 
 class Mysql
 {
+    static $db;
 
     static function exportAllUser($db_link)
     {
@@ -173,6 +174,183 @@ class Mysql
         $passwd     = Crypt::decrypt($password_crypted);
 
         return $passwd;
+    }
+
+    static function addMysqlServer($data)
+    {
+        //Debug::debug($data);
+
+        $db = self::$db;
+
+
+        $server                              = array();
+        $server['mysql_server']['id_client'] = $this->getId($data['organization'] ?? "none", "client", "libelle");
+
+
+
+        $server['mysql_server']['id_environment']      = $this->getId($data['environment'], "environment", "key",
+            array("libelle" => ucfirst($data['environment']), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
+        $server['mysql_server']['name']                = str_replace(array('-', '.'), "_", $data['fqdn']);
+        $server['mysql_server']['display_name']        = $this->getHostname($data['display_name'], $data);
+        $server['mysql_server']['ip']                  = $this->getIp($data['fqdn']);
+        $server['mysql_server']['hostname']            = $data['fqdn'];
+        $server['mysql_server']['login']               = $data['login'];
+        $server['mysql_server']['passwd']              = $this->crypt($data['password']);
+        $server['mysql_server']['database']            = $data['database'] ?? "mysql";
+        $server['mysql_server']['is_password_crypted'] = "1";
+        $server['mysql_server']['port']                = $data['port'] ?? 3306;
+
+
+        $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            if (!empty($ob->id)) {
+                $server['mysql_server']['id'] = $ob->id;
+            }
+        }
+
+        Debug::debug($server, "new MySQL");
+
+
+        if ($this->isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
+
+
+            $this->return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
+
+            return false;
+        }
+
+
+
+        $id_mysql_server = $db->sql_save($server);
+
+        if ($id_mysql_server) {
+
+            if (empty($server['mysql_server']['id'])) {
+
+                $this->return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+            } else {
+
+                $this->return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+
+
+                if (!empty($server['mysql_server']['tag'])) {
+                    $this->insertTag($id_mysql_server, $server['mysql_server']['tag']);
+                }
+            }
+
+            Mysql::onAddMysqlServer($db);
+        } else {
+
+            unset($server['mysql_server']['passwd']);
+
+            $this->return['mysql']['failed'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : ".json_encode(array($db->sql_error(),
+                    $server));
+        }
+
+
+        return $server;
+    }
+
+    static public function set_db($db)
+    {
+
+        self::$db = $db;
+    }
+    /*
+     * to export in Glial::MySQL ?
+     *
+     */
+
+    static function getId($value, $table_name, $field, $list = array())
+    {
+
+        $list_key = '';
+        $list_val = '';
+
+
+        if (count($list) > 0) {
+            $keys   = array_keys($list);
+            $values = array_values($list);
+
+            $list_key = ",`".implode('`,`', $keys)."`";
+            $list_val = ",'".implode("','", $values)."'";
+        }
+        $db = self::get_db();
+
+        $sql = "IF (SELECT 1 = 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
+BEGIN
+    SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
+END;
+ELSE
+BEGIN
+    INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
+    SELECT LAST_INSERT_ID() AS id;
+END;
+END IF;";
+
+        Debug::debug(SqlFormatter::highlight($sql), "SQL");
+
+
+        if ($db->sql_multi_query($sql)) {
+
+
+            $i = 1;
+            do {
+
+                if ($i != 1) {
+                    $db->sql_next_result();
+                }
+                $i++;
+
+
+                /* Stockage du premier jeu de résultats */
+                $result = $db->sql_use_result();
+                if ($result) {
+
+                    while ($row = $db->sql_fetch_array($result, MYSQLI_ASSOC)) {
+
+                        if (!empty($row['id'])) {
+                            $id = $row['id'];
+                        }
+                    }
+                }
+            } while ($db->sql_more_results());
+        }
+
+        return $id;
+
+
+        //debug($row['id']);
+        //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
+    }
+
+    public static function get_db()
+    {
+        if (!empty(self::$db)) {
+            return self::$db;
+        } else {
+            throw new Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
+        }
+    }
+
+    public function isPmaControl($ip, $port)
+    {
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            if ($ob->ip === $ip && $ob->port == $port) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static function getHostname($name, $data)
