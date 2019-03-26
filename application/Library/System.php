@@ -85,4 +85,15 @@ class System
             }
         }
     }
+
+    static public function getIp($hostname)
+    {
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            return trim($hostname);
+        }
+
+        $ip = shell_exec("dig +short ".$hostname);
+
+        return trim($ip);
+    }
 }

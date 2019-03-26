@@ -46,11 +46,11 @@ class PhpLiveRegex extends Controller
     public function pregView($regex, $options, $replace, $data)
     {
 
-        $preg['preg_match']['cmd']     = "preg_match('/".htmlentities($regex)."/'".$options.", \$input_line, \$output_array);";
-        $preg['preg_match_all']['cmd'] = "preg_match_all('/".htmlentities($regex)."/'".$options.", \$input_line, \$output_array);";
-        $preg['preg_replace']['cmd']   = "\$result = preg_replace('/".htmlentities($regex)."/'".$options.",'".$replace."' ,\$input_line);";
-        $preg['preg_grep']['cmd']      = "preg_replace('/".$regex."/'".$options.",'\$replace' ,\$input_line);";
-        $preg['preg_split']['cmd']     = "preg_replace('/".$regex."/'".$options.",'\$replace' ,\$input_line);";
+        $preg['preg_match']['cmd']     = "preg_match('/".htmlentities(str_replace("'", "\'",$regex))."/'".$options.", \$input_line, \$output_array);";
+        $preg['preg_match_all']['cmd'] = "preg_match_all('/".htmlentities(str_replace("'", "\'",$regex))."/'".$options.", \$input_line, \$output_array);";
+        $preg['preg_replace']['cmd']   = "\$result = preg_replace('/".htmlentities(str_replace("'", "\'",$regex))."/'".$options.",'".$replace."' ,\$input_line);";
+        $preg['preg_grep']['cmd']      = "preg_replace('/".str_replace("'", "\'",$regex)."/'".$options.",'\$replace' ,\$input_line);";
+        $preg['preg_split']['cmd']     = "preg_replace('/".str_replace("'", "\'",$regex)."/'".$options.",'\$replace' ,\$input_line);";
 
 
         $lines = explode("\n", $data);

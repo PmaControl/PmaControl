@@ -197,28 +197,33 @@ $("#export_all-all2").click(function(){
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
+
             if ($this->is_gzipped($compressed) === true) {
                 $json         = gzuncompress($compressed);
                 $data['json'] = $json;
             } else {
+
+                if (IS_CLI) {
+                    throw new \Exception("PMACTRL-546 : Password not good");
+                    exit;
+                }
                 set_flash("error", __('Error'), __("The password is not good"));
                 header("location: ".LINK.strtolower(__CLASS__)."/index");
                 exit;
             }
 
-
-
-            
             //$compressed  test if good
 
+
+
             $json = gzuncompress($compressed);
+            Debug::debug($json, "json");
 
-            $file2 = TMP."tmp_file/".uniqid();
-            file_put_contents($file2, $json);
-
-            $data = $this->import(array($file2));
+            $data = $this->import(array($json));
 
 
+
+            /*
 
             if (!empty($data['mysql']['updated'])) {
                 $msg = implode(", ", $data['mysql']['updated']);
@@ -237,7 +242,9 @@ $("#export_all-all2").click(function(){
                 set_flash("error", __('Error'), $msg);
             }
 
-            header("location: ".LINK.strtolower(__CLASS__)."/index");
+
+            /****/
+            //header("location: ".LINK.strtolower(__CLASS__)."/index");
             exit;
         }
 
@@ -254,39 +261,33 @@ $("#export_all-all2").click(function(){
     {
         //$param[] = "--debug";
 
+
+        Debug::debug(DB_DEFAULT, "debug");
+
+        Mysql::set_db($this->di['db']->sql(DB_DEFAULT));
+
+
         Debug::parseDebug($param);
-        $json_file = $param[0];
-
-        if (file_exists($json_file)) {
-
-            $json = file_get_contents($json_file);
+        $json = $param[0];
 
 
-            Debug::debug($json, $json);
+        $data = Json::isJson($json);
 
 
-            //curl -v -K /tmp/conf_pma_control.tmp -F 'conf=@{{salt['pillar.get']('mysql:data_dir')}}/pma_control_post.json' "{{ pma_url }}"
 
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
 
-            $sql = "SELECT * from webservice_user where is_enabled = 1 limit 1";
+        /*
 
 
-            $res = $db->sql_query($sql);
-            while ($ob  = $db->sql_fetch_object($res)) {
-                $login    = $ob->user;
-                $password = Chiffrement::decrypt($ob->password);
+        foreach ($data as $server_type => $servers) {
+            foreach ($servers as $server) {
+                switch ($server_type) {
+                    case 'mysql':
+                        Mysql::addMysqlServer($server);
+                        break;
+                }
             }
-
-            $cmd = "curl -u ".$login.":".$password." -F 'data=@".$json_file."' '".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].LINK."Webservice/pushServer'";
-
-            Debug::debug($cmd);
-            $rep = shell_exec($cmd);
-
-
-            //echo "reponse : ".$rep."\n";
-            //unlink($json_file);
         }
 
 
@@ -302,6 +303,8 @@ $("#export_all-all2").click(function(){
         }
 
         return json_decode($rep, true);
+
+        /***/
     }
 
     private function addMysql($arr)
