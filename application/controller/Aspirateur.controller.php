@@ -20,10 +20,8 @@ use \Glial\Cli\Color;
 // Aspirateur v2 avec zeroMQ
 // http://zeromq.org/intro:get-the-software
 
-
 class Aspirateur extends Controller
 {
-
     use \App\Library\Filter;
     var $shared        = array();
     var $log_file      = TMP."log/daemon.log";

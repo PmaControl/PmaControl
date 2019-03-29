@@ -5,27 +5,43 @@
  * and open the template in the editor.
  */
 
+
+namespace App\Library;
+
+
+use App\Library\Mysql;
+use App\Library\Color;
+
 class Tag
 {
 
-    static public function insertTag($id_mysql_server, $all_tags)
+    static $db;
+
+    static public function insertTag($id_mysql_server, $tags)
     {
 
-        if (empty($all_tags)) {
+        Debug::debug($tags);
+
+        if (empty($tags)) {
             return true;
         }
 
-
-        $tags = explode(',', $all_tags);
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        //$tags = explode(',', $all_tags);
 
         foreach ($tags as $tag) {
 
-            $id_tag = $this->getId($tag, "tag", "name", array("font" => $this->setBackgroundColor($tag), "color" => $this->setFontColor($tag)));
+            $id_tag = Mysql::selectOrInsert($tag, "tag", "name", array("background" => "#".Color::setBackgroundColor($tag), "color" => "#".Color::setFontColor($tag)));
+
+            Debug($id_tag,"TAG");
+
 
             $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (".$id_mysql_server.", ".$id_tag.");";
-            $db->sql_query($sql);
+            $res = self::$db->sql_query($sql);
+
+            if (! $res)
+            {
+                throw new \Exception("PMACTRL-845 : Impossible to link tags");
+            }
         }
 
         /* id_mysql_server
@@ -34,11 +50,16 @@ class Tag
          */
     }
 
-
     //a deporter dans les test
     function testa()
     {
         $id = $this->getId("galera", "tag", "name");
         debug($id);
+    }
+
+    static public function set_db($db)
+    {
+
+        self::$db = $db;
     }
 }

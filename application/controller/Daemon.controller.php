@@ -85,8 +85,6 @@ class Daemon extends Controller
             $title = I18n::getTranslation(__("Success"));
         }
 
-
-
         if (!IS_CLI) {
             set_flash("success", $title, $msg);
             header("location: ".LINK.__CLASS__."/index");

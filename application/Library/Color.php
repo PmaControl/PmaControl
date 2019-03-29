@@ -5,10 +5,13 @@
  * and open the template in the editor.
  */
 
+
+namespace App\Library;
+
 class Color
 {
 
-    private function setFontColor($type)
+    static function setFontColor($type)
     {
         $hex = substr(md5($type), 0, 6);
 
@@ -17,9 +20,9 @@ class Color
         //return $hex['background'];
     }
 
-    private function setBackgroundColor($type)
+    static function setBackgroundColor($type)
     {
-        $hex = $this->setFontColor($type);
+        $hex = self::setFontColor($type);
         $ret = hex2bin('ffffff') ^ hex2bin($hex);
         return bin2hex($ret);
 
