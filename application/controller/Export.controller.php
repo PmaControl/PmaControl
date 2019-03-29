@@ -10,6 +10,7 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 
+
 class Export extends Controller
 {
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
@@ -107,8 +108,6 @@ $("#export_all-all2").click(function(){
         while ($arr             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['options'][] = $arr;
         }
-
-
 
         $this->set('data', $data);
     }
@@ -217,7 +216,10 @@ $("#export_all-all2").click(function(){
 
 
             $json = gzuncompress($compressed);
-            Debug::debug($json, "json");
+            //Debug::debug($json, "json");
+
+
+
 
             $data = $this->import(array($json));
 
@@ -262,11 +264,19 @@ $("#export_all-all2").click(function(){
         //$param[] = "--debug";
 
 
-        Debug::debug(DB_DEFAULT, "debug");
+//        debug($param);
 
-        Mysql::set_db($this->di['db']->sql(DB_DEFAULT));
+        Debug::debug(DB_DEFAULT, "DB");
 
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        Mysql::set_db($db);
+
+
+
+        
         Debug::parseDebug($param);
         $json = $param[0];
 
@@ -277,7 +287,7 @@ $("#export_all-all2").click(function(){
 
 
 
-        /*
+        
 
 
         foreach ($data as $server_type => $servers) {
@@ -291,6 +301,7 @@ $("#export_all-all2").click(function(){
         }
 
 
+        /*
         $data['arr']     = json_decode($json[0], true);
         $data['options'] = $this->getExportOption();
 

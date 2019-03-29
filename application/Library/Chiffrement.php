@@ -11,6 +11,8 @@ use phpseclib\Crypt\AES;
 use phpseclib\Crypt\Random;
 use \Glial\Security\Crypt\Crypt;
 
+
+
 class Chiffrement
 {
     const CHIFFRE   = 1;
@@ -116,14 +118,21 @@ class Chiffrement
 
         //Crypt::$key = $password;
         $msg_chiffre = Crypt::encrypt($msg, $password);
+        Crypt::$key  = CRYPT_KEY;
 
         return $msg_chiffre;
     }
 
     static function decrypt($password_crypted, $password = CRYPT_KEY)
     {
-        //Crypt::$key = $password;
-        $en_clair = Crypt::decrypt($password_crypted, $password);
+        //;
+
+        if (empty($password)) {
+            throw new \Exception("PMACTRL-478 : Empty password");
+        }
+
+        $en_clair   = Crypt::decrypt($password_crypted, $password);
+        Crypt::$key = CRYPT_KEY;
 
         return $en_clair;
     }

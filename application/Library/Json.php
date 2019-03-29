@@ -21,9 +21,9 @@ class Json
 
 
     
-    static function isJson()
+    static function isJson($json)
     {
-        $array = json_decode($file, true);
+        $array = json_decode($json, true);
 
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
