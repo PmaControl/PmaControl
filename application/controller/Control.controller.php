@@ -149,6 +149,8 @@ class Control extends Controller
 
         foreach ($combi as $table) {
             $sql = "ALTER TABLE `".$table."` DROP PARTITION `p".$partition_number."`;";
+            Debug::sql($sql);
+
             $db->sql_query($sql);
 
             $this->logger->info($sql);
@@ -212,6 +214,7 @@ class Control extends Controller
         if ($this->checkSize() > $this->percent_max_disk_used) {
             Debug::debug($partitions['min'], "Drop Partition");
 
+
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
 //delete server_*
                 System::deleteFiles("server");
@@ -221,6 +224,20 @@ class Control extends Controller
 
                 $this->dropPartition(array($partitions['min']));
             }
+        }
+
+
+
+        Debug::debug(count($partitions['other']), "nombre de partitions");
+
+        //On drop les partitions supérieur a 14 jours
+        if (count($partitions['other']) > 14) {
+            System::deleteFiles("server");
+
+//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+            Sleep(5);
+
+            $this->dropPartition(array($partitions['min']));
         }
 
         $part = $this->getDates();
@@ -430,7 +447,7 @@ PARTITION BY RANGE (to_days(`date`))
         $id_mysql_server = $param[0];
 
 
-        Debug::debug($id_mysql_server, "id_mysql_server");
+        //Debug::debug($id_mysql_server, "id_mysql_server");
 
 
         $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =".$id_mysql_server;
