@@ -125,49 +125,110 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             Throw new \Exception("Error while loading plugin in database");
         }
 
-
+        //Copy Plugin ungeneric files
         $ThisPluginDirectory = $LOCALPLUGIN."extracted/".$plugin["nom"]."-".substr($plugin["version"], 1);
         $scanned_directory   = array_diff(scandir($ThisPluginDirectory), array('..', '.', '.gitmodules', 'sql', 'install.php', 'uninstall.php', 'README.md', 'image.jpg'));
 
-        $Retour = true;
+        $Return = array();
+        $Return[0] = true;
+
+        $source = $ThisPluginDirectory."/";
+        $target = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT;
+
         foreach ($scanned_directory AS $value) {
-            /*
-            if (copyfile($handle, $source, $target) === false)
+            if ($Return[0]==true)
             {
-                $Retour = false;
+                $Return = $this->copyfile($value, $source, $target);
             }
-            */
         }
 
-        if ($Retour === false)
-        {
-            Throw new \Exception("Error while copying plugin files");
+        if ($Return[0] == false) {
+            Throw new \Exception("Error while copying plugin files : ".$Return[1]);
         }
+
+        //Log plugin file to database
+        foreach ($scanned_directory AS $value) {
+            $this->logpluginfile($value, $param[0], $source, $target);
+        }
+
+        //On met en base le fait que le plugin est installé.
+        $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0];
+        $db->sql_query($sql);
     }
 
-    public function copyfile($handle, $source, $target)
+    public function copyfile($file, $source, $target, $nest = 1)
     {
-        if (is_dir($source."/".$handle)) {
-            if (!file_exists($target."/".$handle)) {
-                mkdir($target."/".$handle);
+        $Return = array();
+        $Return[0] = true;
+        $Mode = "";
+
+        if (is_dir($source.$file)) {
+            echo $nest." DIR ".$source.$file." -> ".$target.$file."<br>";
+            //Fonctionnement si répertoire
+            if (!file_exists($target.$file)) {
+                mkdir($target.$file);
+                $Mode = "DirMaking";
             }
 
+            //On scan l'archive pour faire les copy de fichier.
+            $scanned_directory = array_diff(scandir($source.$file), array('..', '.', '.gitmodules', 'sql', 'install.php', 'uninstall.php', 'README.md', 'image.jpg'));
+
+            foreach ($scanned_directory AS $value) {
+                if ($Return[0]==true)
+                {
+                    $Return = $this->copyfile($value, $source.$file."/", $target.$file."/", $nest+1);
+                }
+            }
+        } else {
+            echo $nest." FILE ".$source.$file." -> ".$target.$file."<br>";
+            //Fonction si fichier
+            if (!file_exists($target.$file)) {
+                if (false === copy($source.$file, $target.$file)) {
+                    $Return[0] = false;
+                    $Return[1] = "Abort : error during copy of ".$target.$file;
+                }
+                else
+                {
+                    $Mode = "FileCoping";
+                }
+            } else {
+                $Return[0] = false;
+                $Return[1] = "Abort : a file already exists ".$target.$file;
+            }
+        }
+
+        if ($Return[0] == false) {
+            //if false on efface si on a ajouter
+            if ($Mode == "DirMaking")
+            {
+                rmdir($target.$file);
+            }
+            if ($Mode == "FileCoping")
+            {
+                unlink($target.$file);
+            }
+        }
+
+        return $Return;
+    }
+
+    public function logpluginfile($handle, $pluginid, $source, $target)
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        if (is_dir($source."/".$handle)) {
+            //Fonctionnement si répertoire
+            //On scan l'archive pour faire les inserts dans la date de données de fichier.
             $scanned_directory = array_diff(scandir($source."/".$handle), array('..', '.', '.gitmodules', 'sql', 'install.php', 'uninstall.php', 'README.md', 'image.jpg'));
 
             foreach ($scanned_directory AS $value) {
-                $Retour = copyfile($value, $source."/".$handle, $target."/".$handle);
+                $this->logpluginfile($value, $pluginid, $source.$handle."/", $target.$handle."/");
             }
         } else {
-            if (!file_exists($target."/".$handle)) {
-                return copy($source."/".$handle, $target."/".$handle);
-            } else {
-                return false;
-            }
+            //Fonctionnement si fichier
+            $sql = "REPLACE INTO plugin_file (id_plugin_main, file, md5) SELECT ".$pluginid.", '".$target.$handle."', '".md5_file($target.$handle)."'";
+            $db->sql_query($sql);
         }
 
-        if ($Retour === false) {
-            //if false on efface
-        }
-        
     }
 }
