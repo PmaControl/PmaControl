@@ -38,10 +38,23 @@ class System
 
 
         $res = shell_exec("ps -p $pid | tail -n +2");
-        if (! empty($res)) {
+        if (!empty($res)) {
             //process with a pid = $pid is running
-            return true;
+
+
+            $elems = explode(" ", $res);
+
+            $cmd = end($elems);
+
+            //test si un process à été récupérer par autre chose que php
+            if (substr($cmd, 0, 3) === "php") {
+                echo $cmd;
+                return true;
+            } else {
+                return false;
+            }
         }
+
 
         return false;
     }
@@ -71,5 +84,16 @@ class System
                 shell_exec("rm ".$file_to_delete);
             }
         }
+    }
+
+    static public function getIp($hostname)
+    {
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            return trim($hostname);
+        }
+
+        $ip = shell_exec("dig +short ".$hostname);
+
+        return trim($ip);
     }
 }

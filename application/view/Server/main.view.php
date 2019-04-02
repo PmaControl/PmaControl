@@ -99,6 +99,7 @@ echo '<th>'.__("User").'</th>';
 echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
+echo '<th>'."general_log".'</th>';
 echo '<th>'.__("Date refresh").'</th>';
 echo '<th>'.__("Ping").'</th>';
 
@@ -191,10 +192,45 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
+
+
+
             echo formatVersion($data['extra'][$server['id']]['']['version']);
         }
 
         echo '</td>';
+
+        echo '<td style="'.$style.'">';
+
+        if (!empty($data['extra'][$server['id']]['']['general_log'])) {
+
+
+            $checked = array();
+
+            if ($data['extra'][$server['id']]['']['general_log'] === "ON") {
+                $checked = array("checked" => "checked");
+            }
+            ?>
+            <div class="form-group" style="margin: 0">
+                <div class="checkbox checbox-switch switch-success" style="margin: 0">
+                    <label>
+            <?php
+            $computed = array_merge(array("class" => "form-control", "type" => "checkbox", "title" => "Monitored"), $checked);
+
+
+
+            echo Form::input("check", "all", $computed);
+            ?>
+                        <span></span>
+                    </label>
+                </div>
+            </div>
+
+            <?php
+        }
+
+        echo '</td>';
+
         echo '<td style="'.$style.'">';
 
         if (!empty($server['is_available'])) {

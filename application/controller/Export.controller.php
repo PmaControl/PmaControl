@@ -10,6 +10,7 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 
+
 class Export extends Controller
 {
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
@@ -108,8 +109,6 @@ $("#export_all-all2").click(function(){
             $data['options'][] = $arr;
         }
 
-
-
         $this->set('data', $data);
     }
 
@@ -197,24 +196,44 @@ $("#export_all-all2").click(function(){
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
+
+            if ($this->is_gzipped($compressed) === true) {
+                $json         = gzuncompress($compressed);
+                $data['json'] = $json;
+            } else {
+
+                if (IS_CLI) {
+                    throw new \Exception("PMACTRL-546 : Password not good");
+                    exit;
+                }
+                set_flash("error", __('Error'), __("The password is not good"));
+                header("location: ".LINK.strtolower(__CLASS__)."/index");
+                exit;
+            }
+
+            //$compressed  test if good
+
+
+
             $json = gzuncompress($compressed);
-
-            $file2 = TMP."tmp_file/".uniqid();
-            file_put_contents($file2, $json);
-
-            $data = $this->import(array($file2));
+            //Debug::debug($json, "json");
 
 
+
+
+            $data = $this->import(array($json));
+
+
+
+            /*
 
             if (!empty($data['mysql']['updated'])) {
-
                 $msg = implode(", ", $data['mysql']['updated']);
                 set_flash("success", __('Server updated'), $msg);
             }
 
 
             if (!empty($data['mysql']['inserted'])) {
-
                 $msg = implode(", ", $data['mysql']['inserted']);
                 set_flash("success", __('Server inserted'), $msg);
             }
@@ -225,7 +244,9 @@ $("#export_all-all2").click(function(){
                 set_flash("error", __('Error'), $msg);
             }
 
-            header("location: ".LINK.strtolower(__CLASS__)."/index");
+
+            /****/
+            //header("location: ".LINK.strtolower(__CLASS__)."/index");
             exit;
         }
 
@@ -242,43 +263,45 @@ $("#export_all-all2").click(function(){
     {
         //$param[] = "--debug";
 
+
+//        debug($param);
+
+        Debug::debug(DB_DEFAULT, "DB");
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        Mysql::set_db($db);
+
+
+
+        
         Debug::parseDebug($param);
-        $json_file = $param[0];
-
-        if (file_exists($json_file)) {
-
-            $json = file_get_contents($json_file);
+        $json = $param[0];
 
 
-            Debug::debug($json, $json);
+        $data = Json::isJson($json);
 
 
-            //curl -v -K /tmp/conf_pma_control.tmp -F 'conf=@{{salt['pillar.get']('mysql:data_dir')}}/pma_control_post.json' "{{ pma_url }}"
 
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
 
-            $sql = "SELECT * from webservice_user where is_enabled = 1 limit 1";
+        
 
 
-            $res = $db->sql_query($sql);
-            while($ob = $db->sql_fetch_object($res))
-            {
-                $login = $ob->user;
-                $password = Chiffrement::decrypt($ob->password);
+        foreach ($data as $server_type => $servers) {
+            foreach ($servers as $server) {
+                switch ($server_type) {
+                    case 'mysql':
+                        Mysql::addMysqlServer($server);
+                        break;
+                }
             }
-
-            $cmd = "curl -u ".$login.":".$password." -F 'data=@".$json_file."' '".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].LINK."Webservice/pushServer'";
-
-            Debug::debug($cmd);
-            $rep = shell_exec($cmd);
-
-
-            //echo "reponse : ".$rep."\n";
-            //unlink($json_file);
         }
 
 
+        /*
         $data['arr']     = json_decode($json[0], true);
         $data['options'] = $this->getExportOption();
 
@@ -291,6 +314,8 @@ $("#export_all-all2").click(function(){
         }
 
         return json_decode($rep, true);
+
+        /***/
     }
 
     private function addMysql($arr)
@@ -607,7 +632,84 @@ $("#export_all-all2").click(function(){
 
         $this->set('data', $data);
     }
+
 //a mettre dans une librairy
+
+
+    public function test_dechiffrement()
+    {
+        if (IS_CLI) {
+
+            $file     = $param[0];
+            $password = $param[1];
+
+            Debug::debug($file, "file");
+        } else {
+
+            if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+                if (!empty($_FILES['export']['tmp_name']['file'])) {
+                    $file     = $_FILES['export']['tmp_name']['file'];
+                    $password = $_POST['export']['password'];
+                }
+
+                $error = false;
+
+                if (empty($file)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please select the config file"));
+                }
+
+                if (empty($password)) {
+                    $error = true;
+                    set_flash("error", __('Error'), __("Please request the password to uncrypt file"));
+                }
+
+                if ($error == true) {
+                    header("location: ".LINK.strtolower(__CLASS__)."/".__FUNCTION__);
+                    exit;
+                }
+            }
+        }
+
+        $data = array();
+
+        if (!empty($file) && !empty($password)) {
+            $crypted    = file_get_contents($file);
+            $compressed = Chiffrement::decrypt($crypted, $password);
+
+
+
+            if ($this->is_gzipped($compressed) === true) {
+
+                $json         = gzuncompress($compressed);
+                $data['json'] = $json;
+            } else {
+
+
+                set_flash("error", __('Error'), __("The password is not good"));
+                header("location: ".LINK.strtolower(__CLASS__)."/".__FUNCTION__);
+                exit;
+            }
+            //false
+        }
+
+        $this->set('data', $data);
+    }
+
+    function is_gzipped($in)
+    {
+
+        if (mb_strpos($in, "\x1f"."\x8b"."\x08") === 0) {
+            return true;
+        } else if (@gzuncompress($in) !== false) {
+            return true;
+        } else if (@gzinflate($in) !== false) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);

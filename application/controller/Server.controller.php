@@ -201,7 +201,7 @@ class Server extends Controller
 //debug($servers);
 
         Extraction::setDb($db);
-        $data['extra'] = Extraction::display(array("Version", "Hostname", "server::ping"));
+        $data['extra'] = Extraction::display(array("version", "hostname", "server::ping","general_log"));
 
 
 

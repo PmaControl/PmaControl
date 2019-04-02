@@ -39,9 +39,9 @@
     ]
   },
   "webservice": [{
-    "user": "salt",
+    "user": "webservice",
     "host": "%",
-    "password": "secret_password",
+    "password": "QDRWSHGqdrtwhqetrHthTH",
     "organization": "68Koncept"
   }]
 ,

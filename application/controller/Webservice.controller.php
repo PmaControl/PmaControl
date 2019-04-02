@@ -9,6 +9,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
 use App\Library\Mysql;
+use App\Library\Json;
 
 class Webservice extends Controller
 {
@@ -38,23 +39,19 @@ class Webservice extends Controller
                 if (!empty(end($_FILES)['tmp_name'])) {
 
 
-                    $this->return['authenticate']          = "ok";
+                    $this->return['authenticate'] = "ok";
                     $this->parseServer(end($_FILES)['tmp_name']);
 
 
                     //$this->pushFile(trim(file_get_contents()));
-
-
-                    
-                    
                 } else {
 
-                    $this->return['authenticate']  = "ok";
-                    $this->return['error'][] = "Impossible to load json";
+                    $this->return['authenticate'] = "ok";
+                    $this->return['error'][]      = "Impossible to load json";
                 }
             } else {
                 $this->return['authenticate'] = "ko";
-                $this->return['error'][] = "Unauthorized access";
+                $this->return['error'][]      = "Unauthorized access";
 
                 //echo "KO\n";
             }
@@ -69,7 +66,7 @@ class Webservice extends Controller
         }
 
 
-        echo json_encode($this->return,JSON_PRETTY_PRINT)."\n";
+        echo json_encode($this->return, JSON_PRETTY_PRINT)."\n";
 
         //echo "\n";
     }
@@ -106,25 +103,24 @@ class Webservice extends Controller
     {
 
 
-        $data = $this->parseConfig($filename);
+        $data = Json::getDataFromFile($filename);
 
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        Mysql::set_db($db);
 
 
         foreach ($data as $server_type => $servers) {
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
-                        $this->addMysqlServer($server);
-                        break;
-                    case 'haproxy':
-                        $this->addHaproxyServer($server);
+                        Mysql::addMysqlServer($server);
                         break;
                 }
             }
         }
 
-
-        Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+        Mysql::generateMySQLConfig($db);
 
         return true;
     }
@@ -141,230 +137,6 @@ class Webservice extends Controller
         echo json_encode(json_decode($json));
 
         //$this->parseServer($json);
-    }
-
-    private function addMysqlServer($data)
-    {
-        //Debug::debug($data);
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-
-        $server                              = array();
-        $server['mysql_server']['id_client'] = $this->getId($data['organization'] ?? "none", "client", "libelle");
-
-
-
-        $server['mysql_server']['id_environment']      = $this->getId($data['environment'], "environment", "key",
-            array("libelle" => ucfirst($data['environment']), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
-        $server['mysql_server']['name']                = str_replace(array('-', '.'), "_", $data['fqdn']);
-        $server['mysql_server']['display_name']        = $this->getHostname($data['display_name'], $data);
-        $server['mysql_server']['ip']                  = $this->getIp($data['fqdn']);
-        $server['mysql_server']['hostname']            = $data['fqdn'];
-        $server['mysql_server']['login']               = $data['login'];
-        $server['mysql_server']['passwd']              = $this->crypt($data['password']);
-        $server['mysql_server']['database']            = $data['database'] ?? "mysql";
-        $server['mysql_server']['is_password_crypted'] = "1";
-        $server['mysql_server']['port']                = $data['port'] ?? 3306;
-
-
-        $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-
-            if (!empty($ob->id)) {
-                $server['mysql_server']['id'] = $ob->id;
-            }
-        }
-
-        Debug::debug($server, "new MySQL");
-
-
-        if ($this->isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
-            
-
-            $this->return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
-
-            return false;
-        }
-
-
-
-        $id_mysql_server = $db->sql_save($server);
-
-        if ($id_mysql_server) {
-
-            if (empty($server['mysql_server']['id'])) {
-
-                $this->return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
-            } else {
-
-                $this->return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
-
-
-
-                if (!empty($server['mysql_server']['tag'])) {
-                    $this->insertTag($id_mysql_server, $server['mysql_server']['tag']);
-                }
-            }
-
-            Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-        } else {
-
-            unset($server['mysql_server']['passwd']);
-       
-            $this->return['mysql']['failed'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : ".json_encode(array($db->sql_error(),$server));
-        }
-
-
-        return $server;
-    }
-
-    private function addHaproxyServer()
-    {
-        
-    }
-
-    private function addMaxscaleServer()
-    {
-        
-    }
-
-    private function addProxysqlServer()
-    {
-        
-    }
-    /*
-     * to export in Glial::MySQL ?
-     * 
-     */
-
-    private function getId($value, $table_name, $field, $list = array())
-    {
-
-        $list_key = '';
-        $list_val = '';
-
-
-        if (count($list) > 0) {
-            $keys   = array_keys($list);
-            $values = array_values($list);
-
-            $list_key = ",`".implode('`,`', $keys)."`";
-            $list_val = ",'".implode("','", $values)."'";
-        }
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-        $sql = "IF (SELECT 1 = 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
-BEGIN
-    SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
-END;
-ELSE
-BEGIN
-    INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
-    SELECT LAST_INSERT_ID() AS id;
-END;
-END IF;";
-
-        Debug::debug(SqlFormatter::highlight($sql), "SQL");
-
-
-        if ($db->sql_multi_query($sql)) {
-
-
-            $i = 1;
-            do {
-
-                if ($i != 1) {
-                    $db->sql_next_result();
-                }
-                $i++;
-
-
-                /* Stockage du premier jeu de résultats */
-                $result = $db->sql_use_result();
-                if ($result) {
-
-                    while ($row = $db->sql_fetch_array($result, MYSQLI_ASSOC)) {
-
-                        if (!empty($row['id'])) {
-                            $id = $row['id'];
-                        }
-                    }
-                }
-            } while ($db->sql_more_results());
-        }
-
-        return $id;
-
-
-        //debug($row['id']);
-        //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
-    }
-
-    function testa()
-    {
-        $id = $this->getId("dgwdfg", "client", "libelle");
-        debug($id);
-    }
-
-    private function getHostname($name, $data)
-    {
-
-
-        if (Debug::$debug) {
-            return $name;
-        }
-
-
-
-        if ($name == "@hostname") {
-
-
-            $db = new mysqli($data['fqdn'], $data['login'], $data['password'], "mysql", $data['port']);
-
-            if ($db) {
-                $res = $db->query('SELECT @@hostname as hostname;');
-
-                while ($ob = $res->fetch_object()) {
-                    $hostname = $ob->hostname;
-                }
-
-                $db->close();
-            }
-        } else {
-            $hostname = $name;
-        }
-
-        return $hostname;
-    }
-
-    private function getIp($hostname)
-    {
-        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
-            return trim($hostname);
-        }
-
-        $ip = shell_exec("dig +short ".$hostname);
-
-        return trim($ip);
-    }
-
-    private function crypt($password)
-    {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::encrypt($password);
-
-        return $passwd;
-    }
-
-    private function unCrypt($password_crypted)
-    {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::decrypt($password_crypted);
-
-        return $passwd;
     }
 
     private function saveHistory($id_user_main)
@@ -395,44 +167,7 @@ END IF;";
     }
     /*     * ************************ */
 
-    public function parseConfig($configFile)
-    {
-
-        if (empty($configFile) || !file_exists($configFile)) {
-            throw new \Exception('PMACTRL-255 : The file '.$configFile.' doesn\'t exit !');
-        }
-
-        $file   = file_get_contents($configFile);
-        $config = json_decode($file, true);
-
-
-        switch (json_last_error()) {
-            case JSON_ERROR_NONE:
-                return $config;
-                break;
-            case JSON_ERROR_DEPTH:
-                $error = 'Maximum stack depth exceeded';
-                break;
-            case JSON_ERROR_STATE_MISMATCH:
-                $error = 'Underflow or the modes mismatch';
-                break;
-            case JSON_ERROR_CTRL_CHAR:
-                $error = 'Unexpected control character found';
-                break;
-            case JSON_ERROR_SYNTAX:
-                $error = 'Syntax error, malformed JSON';
-                break;
-            case JSON_ERROR_UTF8:
-                $error = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-                break;
-            default:
-                $error = 'Unknown error';
-                break;
-        }
-
-
-        throw new \Exception("PMACTRL-254 : JSON : ".$error, 80);
-    }
+    
 
     public function addAccount($param)
     {
@@ -489,79 +224,9 @@ END IF;";
         }
     }
 
-    private function insertTag($id_mysql_server, $all_tags)
+    public function index()
     {
 
-
-        if (empty($all_tags)) {
-            return true;
-        }
-
-
-        $tags = explode(',', $all_tags);
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-        foreach ($tags as $tag) {
-
-            $id_tag = $this->getId($tag, "tag", "name", array("font" => $this->setBackgroundColor($tag), "color" => $this->setFontColor($tag)));
-
-            $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (".$id_mysql_server.", ".$id_tag.");";
-            $db->sql_query($sql);
-        }
-
-        /* id_mysql_server
-          $sql = "DELETE FROM `link__mysql_server__tag` WHERE `id_mysql_server` = '".$id_mysql_server."'";
-          $res = $db->sql_query($sql);
-         */
-    }
-
-    private function setFontColor($type)
-    {
-        $hex = substr(md5($type), 0, 6);
-
-        return $hex;
-
-        //return $hex['background'];
-    }
-
-    private function setBackgroundColor($type)
-    {
-        $hex = $this->setFontColor($type);
-
-        $ret = hex2bin('ffffff') ^ hex2bin($hex);
-
-        return bin2hex($ret);
-
-        //return $hex['background'];
-    }
-
-    public function testColor($param)
-    {
-        $text = $param[0];
-
-
-        echo $text." : #".$this->setFontColor($text)." : #".$this->setBackgroundColor($text)."\n";
-    }
-
-    public function isPmaControl($ip, $port)
-    {
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-
-        $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
-
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-
-            if ($ob->ip === $ip && $ob->port == $port) {
-                return true;
-            }
-        }
-
-        return false;
+        //ecran pour gérer les webservice // password
     }
 }
