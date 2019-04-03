@@ -59,7 +59,7 @@
                                 ';
 
                 \Glial\Synapse\FactoryController::addNode($item['class'], $item['method'], array());
-                echo $item['class'].", ".$item['method'];
+                //echo $item['class'].", ".$item['method'];
                 echo '  </p>
                         </div>
                     </div>
