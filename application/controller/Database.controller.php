@@ -272,7 +272,7 @@ class Database extends Controller
         $ob = Mysql::getServerInfo($id_mysql_server__source);
 
         echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
-            MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;";
+            MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
         
 
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
