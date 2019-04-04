@@ -10,14 +10,10 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use \Glial\I18n\I18n;
 use App\Library\Mysql;
-
-
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
-
-
 
 class Database extends Controller
 {
@@ -167,18 +163,18 @@ class Database extends Controller
                     $php = explode(" ", shell_exec("whereis php"))[1];
 
                     $uuid = Uuid::uuid4()->toString();
-                    $log = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
+                    $log  = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
 
                     $callback = $php." ".GLIAL_INDEX." job callback ".$uuid."\n";
-                    $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";
+                    $cmd      = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";
 
                     $cmd_file = TMP.$uuid.".sh";
 
-                    file_put_contents($cmd_file,"#!/bin/sh\n" .$cmd.$callback );
+                    file_put_contents($cmd_file, "#!/bin/sh\n".$cmd.$callback);
 
 
                     shell_exec("chmod +x ".$cmd_file);
-                    
+
                     debug(file_get_contents($cmd_file));
 
                     //su - www-data -s /bin/bas
@@ -197,15 +193,15 @@ class Database extends Controller
 
                     $db = $this->di['db']->sql(DB_DEFAULT);
 
-                    $job                  = array();
-                    $job['job']['uuid']  = $uuid;
-                    $job['job']['class']  = __CLASS__;
-                    $job['job']['method'] = __FUNCTION__;
-                    $job['job']['param']  = json_encode($_POST);
-                    $job['job']['date_start']  = date("Y-m-d H:i:s");
-                    $job['job']['pid']    = $pid;
-                    $job['job']['log']    = $log;
-                    $job['job']['status']    = "RUNNING";
+                    $job                      = array();
+                    $job['job']['uuid']       = $uuid;
+                    $job['job']['class']      = __CLASS__;
+                    $job['job']['method']     = __FUNCTION__;
+                    $job['job']['param']      = json_encode($_POST);
+                    $job['job']['date_start'] = date("Y-m-d H:i:s");
+                    $job['job']['pid']        = $pid;
+                    $job['job']['log']        = $log;
+                    $job['job']['status']     = "RUNNING";
 
 
                     Debug::debug($job);
@@ -267,7 +263,6 @@ class Database extends Controller
 
 
         shell_exec("rm -rvf ".$directory);
-
     }
     /*
      * example
@@ -384,7 +379,6 @@ class Database extends Controller
                 $msg = shell_exec($cmd);
 
                 echo $msg;
-
             }
 
             return true;

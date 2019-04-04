@@ -566,4 +566,64 @@ WHERE b.file_name = 'variable' and  c.id is null;";
             }
         }
     }
+
+    public function purgefrm($param)
+    {
+
+
+
+        Debug::parseDebug($param);
+
+        shell_exec("apt purge mariadb-plugin-rocksdb");
+
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SHOW GLOBAL VARIABLES LIKE 'datadir'";
+
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res)) {
+            $datadir = $arr[1];
+        }
+
+
+        $sql = "SELECT `database` FROM mysql_server where name ='".DB_DEFAULT."';";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $database = $ob->database;
+        }
+
+        $combi = $this->makeCombinaison();
+
+        foreach ($combi as $table) {
+
+            $file = $datadir.$database."/".$table.".frm";
+
+            if (file_exists($file)) {
+                $cmd = "rm ".$file;
+
+                Debug::debug($cmd);
+
+
+                shell_exec($cmd);
+            }
+        }
+
+
+        $file = $datadir.'#rocksdb';
+        
+
+        if (is_dir($file)) {
+            $cmd = "rm -rvf ".$file;
+
+            Debug::debug($cmd);
+            shell_exec($cmd);
+        }
+
+
+        $cmd2 = "apt install mariadb-plugin-rocksdb";
+        Debug::debug($cmd2);
+        shell_exec($cmd2);
+    }
 }
