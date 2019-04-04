@@ -245,6 +245,9 @@ class Database extends Controller
         $path                    = $param[3];
 
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        
+
         $directory = $path."/".uniqid();
 
 
@@ -264,6 +267,7 @@ class Database extends Controller
         echo $metadata."\n";
 
 
+        Mysql::set_db($db);
 
         $ob = Mysql::getServerInfo($id_mysql_server__source);
 
