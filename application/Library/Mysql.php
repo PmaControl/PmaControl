@@ -507,9 +507,9 @@ SET autocommit = 1;";
         return $id;
     }
 
-    public function getServerInfo($id_mysql_server)
+    static public function getServerInfo($id_mysql_server)
     {
-        $db = self::$db;
+        $db = self::get_db();
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
