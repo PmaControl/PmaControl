@@ -267,12 +267,12 @@ class Database extends Controller
         echo $metadata."\n";
 
 
-        Mysql::set_db($db);
+        //Mysql::set_db($db);
 
-        $ob = Mysql::getServerInfo($id_mysql_server__source);
+        //$ob = Mysql::getServerInfo($id_mysql_server__source);
 
-        echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
-            MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
+        //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
+        //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
         
 
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
