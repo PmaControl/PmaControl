@@ -259,6 +259,11 @@ class Database extends Controller
 
         //shell_exec("cd ".$directory." && rename 's///g' ".);
 
+        $metadata = file_get_contents($directory."/metadata");
+
+        echo $metadata."\n";
+
+
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
 
