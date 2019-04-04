@@ -264,7 +264,18 @@ class Database extends Controller
         echo $metadata."\n";
 
 
+
+        $ob = Mysql::getServerInfo($id_mysql_server__source);
+
+        echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
+            MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;";
+        
+
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
+
+
+
+
 
 
         shell_exec("rm -rvf ".$directory);
@@ -289,12 +300,8 @@ class Database extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
-
         $res = $db->sql_query($sql);
-
-
         while ($ar = $db->sql_fetch_object($res)) {
-
             $ob = $ar;
         }
 
