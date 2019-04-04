@@ -513,11 +513,12 @@ SET autocommit = 1;";
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
+
         while ($ar  = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
 
-        $db->sql_close();
+        
 
         return $ob;
     }
