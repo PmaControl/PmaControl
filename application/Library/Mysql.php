@@ -223,7 +223,6 @@ class Mysql
 
                     Tag::set_db(self::$db);
                     Tag::insertTag($id_mysql_server, $data['tag']);
-                    
                 }
             }
 
@@ -506,5 +505,20 @@ SET autocommit = 1;";
         }
 
         return $id;
+    }
+
+    public function getServerInfo($id_mysql_server)
+    {
+        $db = self::$db;
+
+        $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+        while ($ar  = $db->sql_fetch_object($res)) {
+            $ob = $ar;
+        }
+
+        $db->sql_close();
+
+        return $ob;
     }
 }
