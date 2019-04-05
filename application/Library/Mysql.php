@@ -170,7 +170,7 @@ class Mysql
 
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
-        $server['mysql_server']['name']                = str_replace(array('-', '.'), "_", $data['fqdn']);
+        $server['mysql_server']['name']                = "server_".uniqid();
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], $data);
         $server['mysql_server']['ip']                  = System::getIp($data['fqdn']);
         $server['mysql_server']['hostname']            = $data['fqdn'];
