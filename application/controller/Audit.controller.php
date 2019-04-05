@@ -5,7 +5,7 @@ use \App\Library\Debug;
 
 class Audit extends Controller
 {
-    var $log_files = array("/data/www/hb03-mariaforge01.log");
+    var $log_files = array("/data/www/hb01-mariaar01.log");
     var $granted   = array();
     var $denied    = array();
 
@@ -21,7 +21,9 @@ class Audit extends Controller
 
 
                     $output_array = array();
-                    preg_match('/(\S+)@(\S+) as anonymous on (\S+)/', $buffer, $output_array);
+                    preg_match(' /(\S+)@(\S+) as anonymous on\s?(\S+)?/', $buffer, $output_array);
+                    //preg_match_all('/(\S+)@(\S+) as anonymous on\s?(\S+)?/', $input_line, $output_array);
+                    //preg_match('/(\S+)@(\S+) as anonymous on\s?(\S+)/', $buffer, $output_array);
 
 
                     //preg_match('/\w+@\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $buffer, $output_array);
