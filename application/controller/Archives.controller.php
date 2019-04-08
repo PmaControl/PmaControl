@@ -474,7 +474,7 @@ ORDER BY a.id DESC";
 
                     $this->load_archive(array($arr['id'], $arr['database'], $_POST['id_cleaner_main']));
 
-                    header("location: " . LINK . 'archives/');
+                    header("location: " . LINK . 'archives/index');
                     exit;
                 }
             }
