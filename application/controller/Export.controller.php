@@ -10,7 +10,6 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 
-
 class Export extends Controller
 {
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
@@ -124,15 +123,16 @@ $("#export_all-all2").click(function(){
 
             $json = json_encode($backup);
 
-            file_put_contents("/tmp/json", $json);
+            //file_put_contents("/tmp/json", $json);
 
-            $compressed = gzcompress($json, 9);
+            //$compressed = gzcompress($json, 9);
 
 
-            $crypted   = Chiffrement::encrypt($compressed, $_POST['export']['password']);
+            //$crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
             $file_name = $_POST['export']['name_file'];
 
-            file_put_contents("/tmp/export", $crypted);
+            file_put_contents("/tmp/export", $json);
+
 
             header("Content-Disposition: attachment; filename=\"".$file_name."\"");
             header("Content-Length: ".filesize("/tmp/export"));
@@ -193,26 +193,33 @@ $("#export_all-all2").click(function(){
 
 
         if (!empty($file) && !empty($password)) {
-            $crypted    = file_get_contents($file);
-            $compressed = Chiffrement::decrypt($crypted, $password);
 
 
-            if ($this->is_gzipped($compressed) === true) {
-                $json         = gzuncompress($compressed);
-                $data['json'] = $json;
-            } else {
 
-                if (IS_CLI) {
-                    throw new \Exception("PMACTRL-546 : Password not good");
-                    exit;
-                }
-                set_flash("error", __('Error'), __("The password is not good"));
-                header("location: ".LINK.strtolower(__CLASS__)."/index");
-                exit;
-            }
+            $crypted = file_get_contents($file);
 
-            //$compressed  test if good
 
+
+            $json = Chiffrement::decrypt($crypted, $password);
+
+
+            /*
+              if ($this->is_gzipped($compressed) === true) {
+              $json         = gzuncompress($compressed);
+              $data['json'] = $json;
+              } else {
+
+              if (IS_CLI) {
+              throw new \Exception("PMACTRL-546 : Password not good");
+              exit;
+              }
+              set_flash("error", __('Error'), __("The password is not good"));
+              header("location: ".LINK.strtolower(__CLASS__)."/index");
+              exit;
+              }
+
+              //$compressed  test if good
+             */
 
 
             $json = gzuncompress($compressed);
@@ -227,25 +234,25 @@ $("#export_all-all2").click(function(){
 
             /*
 
-            if (!empty($data['mysql']['updated'])) {
-                $msg = implode(", ", $data['mysql']['updated']);
-                set_flash("success", __('Server updated'), $msg);
-            }
+              if (!empty($data['mysql']['updated'])) {
+              $msg = implode(", ", $data['mysql']['updated']);
+              set_flash("success", __('Server updated'), $msg);
+              }
 
 
-            if (!empty($data['mysql']['inserted'])) {
-                $msg = implode(", ", $data['mysql']['inserted']);
-                set_flash("success", __('Server inserted'), $msg);
-            }
+              if (!empty($data['mysql']['inserted'])) {
+              $msg = implode(", ", $data['mysql']['inserted']);
+              set_flash("success", __('Server inserted'), $msg);
+              }
 
 
-            if (!empty($data['error'])) {
-                $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
-                set_flash("error", __('Error'), $msg);
-            }
+              if (!empty($data['error'])) {
+              $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
+              set_flash("error", __('Error'), $msg);
+              }
 
 
-            /****/
+              /*** */
             //header("location: ".LINK.strtolower(__CLASS__)."/index");
             exit;
         }
@@ -262,8 +269,6 @@ $("#export_all-all2").click(function(){
     public function import($param)
     {
         //$param[] = "--debug";
-
-
 //        debug($param);
 
         Debug::debug(DB_DEFAULT, "DB");
@@ -276,7 +281,7 @@ $("#export_all-all2").click(function(){
 
 
 
-        
+
         Debug::parseDebug($param);
         $json = $param[0];
 
@@ -287,7 +292,7 @@ $("#export_all-all2").click(function(){
 
 
 
-        
+
 
 
         foreach ($data as $server_type => $servers) {
@@ -302,20 +307,20 @@ $("#export_all-all2").click(function(){
 
 
         /*
-        $data['arr']     = json_decode($json[0], true);
-        $data['options'] = $this->getExportOption();
+          $data['arr']     = json_decode($json[0], true);
+          $data['options'] = $this->getExportOption();
 
-        //Debug::debug($data);
-        //$this->addMysql($data);
+          //Debug::debug($data);
+          //$this->addMysql($data);
 
 
-        if (IS_CLI == true) {
-            echo $rep;
-        }
+          if (IS_CLI == true) {
+          echo $rep;
+          }
 
-        return json_decode($rep, true);
+          return json_decode($rep, true);
 
-        /***/
+          /** */
     }
 
     private function addMysql($arr)
