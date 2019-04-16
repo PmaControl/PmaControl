@@ -213,16 +213,9 @@ class Database extends Controller
                 }
             }
         }
-
-
-
-
+        
 
         $data['listdb1'] = array();
-
-
-
-
         $this->set('data', $data);
     }
     /*
