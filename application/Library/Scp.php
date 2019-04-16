@@ -102,7 +102,7 @@ trait Scp {
             WHERE a.id = " . $id_backup_storage_area;
         $res = $db->sql_query($sql);
 
-        Crypt::$key = CRYPT_KEY;
+        
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -115,7 +115,7 @@ trait Scp {
 
             
             if (!empty($ob->private_key)) {
-                $pv_key = Chiffrement::decrypt($ob->private_key);
+                $pv_key = Chiffrement::decrypt($ob->private_key, CRYPT_KEY);
             }
 
             $sftp = new SFTP($ob->ip);
