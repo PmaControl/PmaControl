@@ -5,7 +5,7 @@ use \App\Library\Debug;
 
 class Audit extends Controller
 {
-    var $log_files = array("/data/www/hb01-mariaar01.log");
+    var $log_files = array("/data/www/staging-mysqlpayment01.log");
     var $granted   = array();
     var $denied    = array();
 

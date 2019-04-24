@@ -29,7 +29,7 @@ class Webservice extends Controller
             echo '{"error": "Vous n\'êtes pas autorisé à acceder à la ressource requise"}'."\n";
             exit;
         }
-
+        
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {
@@ -38,10 +38,8 @@ class Webservice extends Controller
 
                 if (!empty(end($_FILES)['tmp_name'])) {
 
-
                     $this->return['authenticate'] = "ok";
                     $this->parseServer(end($_FILES)['tmp_name']);
-
 
                     //$this->pushFile(trim(file_get_contents()));
                 } else {
@@ -65,7 +63,6 @@ class Webservice extends Controller
             $this->return['error'][] = "This request method is not allowed : ".$_SERVER['REQUEST_METHOD'];
         }
 
-
         echo json_encode($this->return, JSON_PRETTY_PRINT)."\n";
 
         //echo "\n";
@@ -73,11 +70,9 @@ class Webservice extends Controller
 
     public function importFile($param)
     {
-
         Debug::parseDebug($param);
 
         $filename = $param[0] ?? "";
-
         $this->parseServer($filename);
     }
 
