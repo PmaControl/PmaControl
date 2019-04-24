@@ -8,6 +8,8 @@
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
+
+use Glial\Security\Crypt\Crypt;
 use App\Library\Mysql;
 
 class Export extends Controller
@@ -124,22 +126,17 @@ $("#export_all-all2").click(function(){
             $json = json_encode($backup);
 
             //file_put_contents("/tmp/json", $json);
-
             //$compressed = gzcompress($json, 9);
-
-
             //$crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
             $file_name = $_POST['export']['name_file'];
 
             file_put_contents("/tmp/export", $json);
 
-
             header("Content-Disposition: attachment; filename=\"".$file_name."\"");
             header("Content-Length: ".filesize("/tmp/export"));
             header("Content-Type: application/octet-stream;");
-
             readfile("/tmp/export");
-
+            
 //debug($backup);
         }
     }
@@ -199,6 +196,9 @@ $("#export_all-all2").click(function(){
             $crypted = file_get_contents($file);
 
 
+            Crypt::$key = CRYPT_KEY;
+            debug(Crypt::$key,"crypted_key");
+
 
             $json = Chiffrement::decrypt($crypted, $password);
 
@@ -219,11 +219,12 @@ $("#export_all-all2").click(function(){
               }
 
               //$compressed  test if good
+             * $json = gzuncompress($compressed);
              */
 
 
-            $json = gzuncompress($compressed);
-            //Debug::debug($json, "json");
+            
+            Debug::debug($json, "json");
 
 
 
@@ -274,7 +275,9 @@ $("#export_all-all2").click(function(){
         Debug::debug(DB_DEFAULT, "DB");
 
 
+        Crypt::$key = CRYPT_KEY;
         $db = $this->di['db']->sql(DB_DEFAULT);
+        //$db = $this->di['db']->sql(DB_DEFAULT);
 
 
         Mysql::set_db($db);
