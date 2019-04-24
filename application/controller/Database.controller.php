@@ -5,15 +5,18 @@
  * and open the template in the editor.
  */
 
-use \Glial\Synapse\Controller;
+
 use \App\Library\Debug;
 use App\Library\Chiffrement;
-use \Glial\I18n\I18n;
+
 use App\Library\Mysql;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
+
+use \Glial\Synapse\Controller;
+
 
 class Database extends Controller
 {
