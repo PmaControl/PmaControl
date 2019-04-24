@@ -127,17 +127,20 @@ $("#export_all-all2").click(function(){
 
             //file_put_contents("/tmp/json", $json);
             //$compressed = gzcompress($json, 9);
-            //$crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
+
+
+            Debug::debug($json, "JSON");
+
+
+            $crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
             $file_name = $_POST['export']['name_file'];
 
-            file_put_contents("/tmp/export", $json);
+            file_put_contents("/tmp/export", $crypted);
 
             header("Content-Disposition: attachment; filename=\"".$file_name."\"");
             header("Content-Length: ".filesize("/tmp/export"));
             header("Content-Type: application/octet-stream;");
             readfile("/tmp/export");
-            
-//debug($backup);
         }
     }
 
