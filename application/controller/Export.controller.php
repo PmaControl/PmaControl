@@ -131,7 +131,10 @@ $("#export_all-all2").click(function(){
 
 
             $crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
-            $file_name = $_POST['export']['name_file'];
+
+
+            //$file_name = $_POST['export']['name_file'];
+            $file_name = "export_".date('Y-m-d').".pmactrl";
 
             file_put_contents("/tmp/export", $crypted);
 
@@ -150,14 +153,9 @@ $("#export_all-all2").click(function(){
     {
         $this->view = false;
 
-
         Debug::parseDebug($param);
 
-//debug($_FILES);
-//debug($_POST);
-
-        $data = array();
-
+        $data  = array();
         $error = false;
 
         if (IS_CLI) {
@@ -174,7 +172,6 @@ $("#export_all-all2").click(function(){
                     $file     = $_FILES['export']['tmp_name']['file'];
                     $password = $_POST['export']['password'];
                 }
-
 
                 if (empty($file)) {
                     $error = true;
@@ -196,72 +193,36 @@ $("#export_all-all2").click(function(){
 
         if (!empty($file) && !empty($password)) {
 
-
-
             $crypted = file_get_contents($file);
+            $json    = Chiffrement::decrypt($crypted, $password);
+            Debug::debug($json, "json");
+            $data    = $this->import(array($json));
 
 
-
-            $json = Chiffrement::decrypt($crypted, $password);
-
-
-            /*
-              if ($this->is_gzipped($compressed) === true) {
-              $json         = gzuncompress($compressed);
-              $data['json'] = $json;
-              } else {
-
-              if (IS_CLI) {
-              throw new \Exception("PMACTRL-546 : Password not good");
-              exit;
-              }
-              set_flash("error", __('Error'), __("The password is not good"));
-              header("location: ".LINK.strtolower(__CLASS__)."/index");
-              exit;
-              }
-
-              //$compressed  test if good
-             */
-
-
-            $json = gzuncompress($compressed);
-            //Debug::debug($json, "json");
-
-
-
-
-            $data = $this->import(array($json));
-
-
-
-            /*
-
-              if (!empty($data['mysql']['updated'])) {
-              $msg = implode(", ", $data['mysql']['updated']);
-              set_flash("success", __('Server updated'), $msg);
-              }
-
-
-              if (!empty($data['mysql']['inserted'])) {
-              $msg = implode(", ", $data['mysql']['inserted']);
-              set_flash("success", __('Server inserted'), $msg);
-              }
-
-
-              if (!empty($data['error'])) {
-              $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
-              set_flash("error", __('Error'), $msg);
-              }
-
-
-              /*** */
-            //header("location: ".LINK.strtolower(__CLASS__)."/index");
-            exit;
+            /*             * * */
         }
 
 
+        if (!IS_CLI) {
 
+            if (!empty($data['mysql']['updated'])) {
+                $msg = implode(", ", $data['mysql']['updated']);
+                set_flash("success", __('Server updated'), $msg);
+            }
 
+            if (!empty($data['mysql']['inserted'])) {
+                $msg = implode(", ", $data['mysql']['inserted']);
+                set_flash("success", __('Server inserted'), $msg);
+            }
+
+            if (!empty($data['error'])) {
+                $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
+                set_flash("error", __('Error'), $msg);
+            }
+
+            header("location: ".LINK.strtolower(__CLASS__)."/index");
+            exit;
+        }
 
         //debug($data);
 
@@ -288,19 +249,21 @@ $("#export_all-all2").click(function(){
         $json = $param[0];
 
 
+        debug(json_decode($json,JSON_PRETTY_PRINT));
+
         $data = Json::isJson($json);
 
 
-
-
-
-
+        
 
 
         foreach ($data as $server_type => $servers) {
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
+
+
+
                         Mysql::addMysqlServer($server);
                         break;
                 }

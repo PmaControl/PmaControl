@@ -5,7 +5,6 @@
  * and open the template in the editor.
  */
 
-use Glial\Html\Form\Form;
 
 \Glial\Synapse\FactoryController::addNode("Database", "create", array());
 \Glial\Synapse\FactoryController::addNode("Database", "rename", array());

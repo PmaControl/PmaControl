@@ -304,11 +304,8 @@ class Database extends Controller
 
         $db->sql_close();
 
-
         if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
-
-
             $to_dump = "";
 
             if ($database != "ALL") {
@@ -400,7 +397,6 @@ class Database extends Controller
     {
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Rename database");
-
 
         $this->di['js']->code_javascript('$("#rename-id_mysql_server").change(function () {
     data = $(this).val();
