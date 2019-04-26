@@ -6,6 +6,8 @@
  */
 
 use \Glial\Synapse\Controller;
+use \App\Library\Debug;
+use App\Library\Extraction;
 
 class Binlog extends Controller
 {
@@ -43,6 +45,30 @@ class Binlog extends Controller
         while ($arr = $db->sql_fetch_object($res)) {
             $data['binlog'] = $arr;
         }
+    }
+
+    public function getMaxBinlogSize($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        
+        Extraction::setDb($db);
+        $res  = Extraction::extract(array("variables::max_binlog_size"),array($id_mysql_server));
+
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $data['max_binlog_size'] = $ob->value;
+        }
+
+        Debug::debug($data);
+
+        
+
     }
 }
 //glyphicon glyphicon-list
