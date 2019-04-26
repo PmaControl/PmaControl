@@ -163,6 +163,9 @@ class Mysql
         $db = self::$db;
 
 
+
+	debug($data);
+
         $server                              = array();
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
