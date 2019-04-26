@@ -8,6 +8,8 @@
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
+
+use Glial\Security\Crypt\Crypt;
 use App\Library\Mysql;
 
 class Export extends Controller
@@ -138,14 +140,10 @@ $("#export_all-all2").click(function(){
 
             file_put_contents("/tmp/export", $crypted);
 
-
             header("Content-Disposition: attachment; filename=\"".$file_name."\"");
             header("Content-Length: ".filesize("/tmp/export"));
             header("Content-Type: application/octet-stream;");
-
             readfile("/tmp/export");
-
-            //debug($backup);
         }
     }
 
@@ -199,8 +197,26 @@ $("#export_all-all2").click(function(){
             $data    = $this->import(array($json));
 
 
-            /*             * * */
         }
+
+
+            $json = Chiffrement::decrypt($crypted, $password);
+
+            
+            Debug::debug($json, "json");
+
+
+
+
+            $data = $this->import(array($json));
+
+
+
+
+              if (!empty($data['mysql']['updated'])) {
+              $msg = implode(", ", $data['mysql']['updated']);
+              set_flash("success", __('Server updated'), $msg);
+              }
 
 
         if (!IS_CLI) {
@@ -237,7 +253,9 @@ $("#export_all-all2").click(function(){
         Debug::debug(DB_DEFAULT, "DB");
 
 
+        Crypt::$key = CRYPT_KEY;
         $db = $this->di['db']->sql(DB_DEFAULT);
+        //$db = $this->di['db']->sql(DB_DEFAULT);
 
 
         Mysql::set_db($db);
