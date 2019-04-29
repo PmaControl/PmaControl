@@ -53,6 +53,7 @@ echo '<th rowspan="2">'.__("Date end").'</th>';
 echo '<th rowspan="2">'.__("Progression").'</th>';
 echo '<th rowspan="2">'.__("Time").'</th>';
 echo '<th rowspan="2">'.__("Status").'</th>';
+echo '<th rowspan="2">'.__("Details").'</th>';
 echo '</tr>';
 
 echo '<tr>';
@@ -60,7 +61,7 @@ echo '<th>'.__("Server").'</th>';
 echo '<th>'.__("Database").'</th>';
 echo '<th>'.__("Server").'</th>';
 echo '<th>'.__("Database").'</th>';
-echo '<th>'.__("Details").'</th>';
+
 
 echo '</tr>';
 

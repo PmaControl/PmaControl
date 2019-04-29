@@ -42,22 +42,7 @@ class Dot2 extends Controller
       14 rows in set (0.001 sec)
 
      */
-    /*
-      CONST NODE_AVAILABLE      = "green";
-      CONST NODE_NOT_ANSWERED   = "orange";
-      CONST NODE_ERROR          = "red";
-      //for galera
-      CONST NODE_NOT_PRIMARY    = "orange"; //galera cluster
-      CONST NODE_DONOR          = "blue";
-      CONST NODE_DONOR_DESYNCED = "yellow";
-      CONST NODE_MANUAL_DESYNC  = "brown";
-      CONST NODE_RECEIVE_SST    = "yellow";
-      CONST NODE_BUG            = "pink";
-      CONST GALERA_SPLIT_BRAIN  = "orange";
-      CONST GALERA_AVAILABLE    = "green";
-      CONST GALERA_UNAVAILABLE  = "red";
-      CONST GALERA_NON_PRIMARY  = "blue";
-     */
+
     var $maping_master           = array();
     var $master_slave            = array();
     var $galera_cluster          = array();
@@ -1437,9 +1422,6 @@ class Dot2 extends Controller
         }
 
         krsort($to_order, SORT_REGULAR);
-
-
-
 
 
         return $to_order;
