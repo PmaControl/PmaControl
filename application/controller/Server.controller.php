@@ -201,7 +201,7 @@ class Server extends Controller
 //debug($servers);
 
         Extraction::setDb($db);
-        $data['extra'] = Extraction::display(array("version", "hostname", "server::ping","general_log"));
+        $data['extra'] = Extraction::display(array("version", "hostname", "server::ping", "general_log"));
 
 
 
@@ -1044,6 +1044,39 @@ var myChart = new Chart(ctx, {
 
     public function acknowledgedBy($param)
     {
+        
+    }
 
+    public function toggleGeneralLog($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        $id_mysql_server = $param[0];
+        $general_log     = $param[1];
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
+        Debug::sql($sql);
+
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $name = $ob->name;
+        }
+
+        $remote = $this->di['db']->sql($name);
+
+        if ($general_log === "true") {
+
+            $sql2 = "SET GLOBAL `general_log`=ON;";
+        } else {
+            $sql2 = "SET GLOBAL `general_log`=OFF;";
+        }
+        Debug::sql($sql2);
+
+        $remote->sql_query($sql2);
     }
 }

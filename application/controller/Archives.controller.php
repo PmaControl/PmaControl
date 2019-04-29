@@ -248,11 +248,6 @@ var myChart = new Chart(ctx, {
             ///find id mysql server
 
 
-
-
-
-
-
             Debug::sql($sql2, "sql2");
 
             $res2 = $db->sql_query($sql2);
