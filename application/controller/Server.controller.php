@@ -1049,9 +1049,7 @@ var myChart = new Chart(ctx, {
 
     public function toggleGeneralLog($param)
     {
-
         Debug::parseDebug($param);
-
 
         $id_mysql_server = $param[0];
         $general_log     = $param[1];
