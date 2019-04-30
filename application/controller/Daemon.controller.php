@@ -145,7 +145,7 @@ class Daemon extends Controller
         if (!IS_CLI) {
 
 
-            $msg   = I18n::getTranslation(__("All lock/pid/md5 has beend deleted and partions has been updated"));
+            $msg   = I18n::getTranslation(__("All lock/pid/md5 has been deleted and partions has been updated"));
             $title = I18n::getTranslation(__("Success"));
 
 
