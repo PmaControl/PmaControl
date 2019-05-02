@@ -13,3 +13,6 @@ ALTER TABLE `plugin_main` CHANGE `numero_licence` `numero_licence` INT(11) NOT N
 
 ALTER TABLE `plugin_main` CHANGE `numero_licence` `numero_licence` VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL;
 ALTER TABLE `plugin_main` CHANGE `md5_zip` `md5_zip` VARCHAR(32) NOT NULL;
+
+
+ALTER TABLE `plugin_file` CHANGE `md5` `md5` VARCHAR(32) NOT NULL;

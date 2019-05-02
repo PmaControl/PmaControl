@@ -18,8 +18,8 @@ class Daemon extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js',  'Tree/index.js'));
-        
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+
 
         $sql = "SELECT * from daemon_main order by id";
         $res = $db->sql_query($sql);
@@ -108,6 +108,78 @@ class Daemon extends Controller
                 echo "OK";
             } else {
                 header("HTTP/1.0 503 Internal Server Error");
+            }
+        }
+    }
+
+    public function refresh($param)
+    {
+
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+
+        if (Debug::$debug === true) {
+            $debug = " --debug";
+        } else {
+            $debug = "";
+        }
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." stopAll".$debug;
+        Debug::debug($cmd);
+        $pid = shell_exec($cmd);
+
+        $this->purgeLock(array());
+
+        $cmd = $php." ".GLIAL_INDEX." control service".$debug;
+        Debug::debug($cmd);
+        $pid = shell_exec($cmd);
+
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." startAll".$debug;
+        Debug::debug($cmd);
+        $pid = shell_exec($cmd);
+
+
+        if (!IS_CLI) {
+
+
+            $msg   = I18n::getTranslation(__("All lock/pid/md5 has been deleted and partions has been updated"));
+            $title = I18n::getTranslation(__("Success"));
+
+
+            set_flash("success", $title, $msg);
+            header("location: ".LINK.__CLASS__."/index");
+            exit;
+        }
+    }
+
+    public function purgeLock($param)
+    {
+        Debug::parseDebug($param);
+
+        $directories = array(TMP."lock/variable", TMP."lock/worker");
+
+        Debug::debug($directories);
+
+        foreach ($directories as $directory) {
+
+
+            if (is_dir($directory)) {
+                if ($dh = opendir($directory)) {
+                    while (($file = readdir($dh)) !== false) {
+
+                        if (substr($file, 0, 1) == '.') {
+                            continue;
+                        }
+
+                        unlink($directory."/".$file);
+
+                        Debug::debug($directory."/".$file, "file deleted");
+                    }
+                    closedir($dh);
+                }
             }
         }
     }

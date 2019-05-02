@@ -5,18 +5,17 @@
  * and open the template in the editor.
  */
 
-use \Glial\Synapse\Controller;
+
 use \App\Library\Debug;
 use App\Library\Chiffrement;
-use \Glial\I18n\I18n;
+
 use App\Library\Mysql;
-
-
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 
+use \Glial\Synapse\Controller;
 
 
 class Database extends Controller
@@ -167,18 +166,18 @@ class Database extends Controller
                     $php = explode(" ", shell_exec("whereis php"))[1];
 
                     $uuid = Uuid::uuid4()->toString();
-                    $log = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
+                    $log  = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
 
                     $callback = $php." ".GLIAL_INDEX." job callback ".$uuid."\n";
-                    $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";
+                    $cmd      = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";
 
                     $cmd_file = TMP.$uuid.".sh";
 
-                    file_put_contents($cmd_file,"#!/bin/sh\n" .$cmd.$callback );
+                    file_put_contents($cmd_file, "#!/bin/sh\n".$cmd.$callback);
 
 
                     shell_exec("chmod +x ".$cmd_file);
-                    
+
                     debug(file_get_contents($cmd_file));
 
                     //su - www-data -s /bin/bas
@@ -197,15 +196,15 @@ class Database extends Controller
 
                     $db = $this->di['db']->sql(DB_DEFAULT);
 
-                    $job                  = array();
-                    $job['job']['uuid']  = $uuid;
-                    $job['job']['class']  = __CLASS__;
-                    $job['job']['method'] = __FUNCTION__;
-                    $job['job']['param']  = json_encode($_POST);
-                    $job['job']['date_start']  = date("Y-m-d H:i:s");
-                    $job['job']['pid']    = $pid;
-                    $job['job']['log']    = $log;
-                    $job['job']['status']    = "RUNNING";
+                    $job                      = array();
+                    $job['job']['uuid']       = $uuid;
+                    $job['job']['class']      = __CLASS__;
+                    $job['job']['method']     = __FUNCTION__;
+                    $job['job']['param']      = json_encode($_POST);
+                    $job['job']['date_start'] = date("Y-m-d H:i:s");
+                    $job['job']['pid']        = $pid;
+                    $job['job']['log']        = $log;
+                    $job['job']['status']     = "RUNNING";
 
 
                     Debug::debug($job);
@@ -217,16 +216,9 @@ class Database extends Controller
                 }
             }
         }
-
-
-
-
+        
 
         $data['listdb1'] = array();
-
-
-
-
         $this->set('data', $data);
     }
     /*
@@ -249,6 +241,9 @@ class Database extends Controller
         $path                    = $param[3];
 
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        
+
         $directory = $path."/".uniqid();
 
 
@@ -263,11 +258,27 @@ class Database extends Controller
 
         //shell_exec("cd ".$directory." && rename 's///g' ".);
 
+        $metadata = file_get_contents($directory."/metadata");
+
+        echo $metadata."\n";
+
+
+        //Mysql::set_db($db);
+
+        //$ob = Mysql::getServerInfo($id_mysql_server__source);
+
+        //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
+        //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
+        
+
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
 
-        shell_exec("rm -rvf ".$directory);
 
+
+
+
+        shell_exec("rm -rvf ".$directory);
     }
     /*
      * example
@@ -289,22 +300,15 @@ class Database extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
-
         $res = $db->sql_query($sql);
-
-
         while ($ar = $db->sql_fetch_object($res)) {
-
             $ob = $ar;
         }
 
         $db->sql_close();
 
-
         if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
-
-
             $to_dump = "";
 
             if ($database != "ALL") {
@@ -384,7 +388,6 @@ class Database extends Controller
                 $msg = shell_exec($cmd);
 
                 echo $msg;
-
             }
 
             return true;
@@ -397,7 +400,6 @@ class Database extends Controller
     {
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Rename database");
-
 
         $this->di['js']->code_javascript('$("#rename-id_mysql_server").change(function () {
     data = $(this).val();

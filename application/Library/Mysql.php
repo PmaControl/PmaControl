@@ -163,6 +163,9 @@ class Mysql
         $db = self::$db;
 
 
+
+	debug($data);
+
         $server                              = array();
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
@@ -170,7 +173,7 @@ class Mysql
 
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
-        $server['mysql_server']['name']                = str_replace(array('-', '.'), "_", $data['fqdn']);
+        $server['mysql_server']['name']                = "server_".uniqid();
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], $data);
         $server['mysql_server']['ip']                  = System::getIp($data['fqdn']);
         $server['mysql_server']['hostname']            = $data['fqdn'];
@@ -223,7 +226,6 @@ class Mysql
 
                     Tag::set_db(self::$db);
                     Tag::insertTag($id_mysql_server, $data['tag']);
-                    
                 }
             }
 
@@ -506,5 +508,21 @@ SET autocommit = 1;";
         }
 
         return $id;
+    }
+
+    static public function getServerInfo($id_mysql_server)
+    {
+        $db = self::get_db();
+
+        $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+
+        while ($ar  = $db->sql_fetch_object($res)) {
+            $ob = $ar;
+        }
+
+        
+
+        return $ob;
     }
 }

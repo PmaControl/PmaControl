@@ -11,7 +11,6 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use App\Library\Chiffrement;
 use \App\Library\Debug;
-
 use App\Library\System;
 
 class Archives extends Controller
@@ -20,7 +19,6 @@ class Archives extends Controller
     use App\Library\Filter;
     use App\Library\Scp;
     use App\Library\File;
-    
     var $id_user_main    = 0;
     var $id_archive_load = 0;
     var $user            = array();
@@ -48,9 +46,9 @@ class Archives extends Controller
 
         $res = $db->sql_query($sql);
 
-        $data = array();
+        $data    = array();
         $cleaner = array();
-        $size = array();
+        $size    = array();
 
         while ($row = $db->sql_fetch_row($res)) {
             $data['cleaner'][] = $row;
@@ -235,10 +233,19 @@ var myChart = new Chart(ctx, {
                 $db->sql_query($sql3);
             }
 
-            $sql2 = "SELECT `a`.*,`ssh_login`,`ssh_password`,`ssh_key`,`c`.`ip`,`c`.`port`
-                from `archive` `a`
-                INNER JOIN `backup_storage_area` `c` on `c`.`id` = `a`.`id_backup_storage_area`
-            where `a`.`id_cleaner_main` = ".$id_cleaner_main.";";
+
+            /*
+              $sql2 = "SELECT `a`.*,`ssh_login`,`ssh_password`,`ssh_key`,`c`.`ip`,`c`.`port`
+              from `archive` `a`
+              INNER JOIN `backup_storage_area` `c` on `c`.`id` = `a`.`id_backup_storage_area`
+              where `a`.`id_cleaner_main` = " . $id_cleaner_main . ";";
+             */
+
+            $sql2 = "SELECT * FROM `backup_storage_area` a
+                INNER JOIN ssh_key b ON a.id_ssh_key = b.id
+                INNER JOIN archive c ON c.id_backup_storage_area = a.id
+                where `c`.`id_cleaner_main` = ".$id_cleaner_main.";";
+            ///find id mysql server
 
 
             Debug::sql($sql2, "sql2");
@@ -345,7 +352,8 @@ var myChart = new Chart(ctx, {
                 $stats = $this->unCompressAndUnCrypt($file);
 
                 if ($archive['md5_compressed'] !== $stats['uncompressed']['md5']) {
-                    $this->log("error", "MD5_FILE", "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")");
+                    $this->log("error", "MD5_FILE",
+                        "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")");
                     continue;
                 }
 
@@ -479,7 +487,7 @@ ORDER BY a.id DESC";
 
                     $this->load_archive(array($arr['id'], $arr['database'], $_POST['id_cleaner_main']));
 
-                    header("location: ".LINK.'archives/');
+                    header("location: ".LINK.'archives/index');
                     exit;
                 }
             }
@@ -597,6 +605,11 @@ ORDER BY a.id DESC";
         $_GET['path'] = "detail";
 
         $id_archive_load = $param[0];
+
+
+        if (empty($id_archive_load)) {
+            header("location: ".LINK."archives/index");
+        }
 
         $sql = "SELECT * FROM archive_load a
             INNER JOIN archive_load_detail b ON a.id = b.id_archive_load

@@ -21,7 +21,7 @@ class Extraction
         self::$db = $db;
     }
 
-    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false, $order_by = '')
+    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         /*
           debug($var);
