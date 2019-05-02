@@ -8,8 +8,9 @@
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
-use App\Library\Mysql;
 
+use Glial\Security\Crypt\Crypt;
+use App\Library\Mysql;
 
 class Export extends Controller
 {
@@ -124,23 +125,25 @@ $("#export_all-all2").click(function(){
 
             $json = json_encode($backup);
 
-            file_put_contents("/tmp/json", $json);
+            //file_put_contents("/tmp/json", $json);
+            //$compressed = gzcompress($json, 9);
 
-            $compressed = gzcompress($json, 9);
+
+            Debug::debug($json, "JSON");
 
 
-            $crypted   = Chiffrement::encrypt($compressed, $_POST['export']['password']);
-            $file_name = $_POST['export']['name_file'];
+            $crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
+
+
+            //$file_name = $_POST['export']['name_file'];
+            $file_name = "export_".date('Y-m-d').".pmactrl";
 
             file_put_contents("/tmp/export", $crypted);
 
             header("Content-Disposition: attachment; filename=\"".$file_name."\"");
             header("Content-Length: ".filesize("/tmp/export"));
             header("Content-Type: application/octet-stream;");
-
             readfile("/tmp/export");
-
-//debug($backup);
         }
     }
 
@@ -148,14 +151,9 @@ $("#export_all-all2").click(function(){
     {
         $this->view = false;
 
-
         Debug::parseDebug($param);
 
-//debug($_FILES);
-//debug($_POST);
-
-        $data = array();
-
+        $data  = array();
         $error = false;
 
         if (IS_CLI) {
@@ -172,7 +170,6 @@ $("#export_all-all2").click(function(){
                     $file     = $_FILES['export']['tmp_name']['file'];
                     $password = $_POST['export']['password'];
                 }
-
 
                 if (empty($file)) {
                     $error = true;
@@ -193,30 +190,20 @@ $("#export_all-all2").click(function(){
 
 
         if (!empty($file) && !empty($password)) {
-            $crypted    = file_get_contents($file);
-            $compressed = Chiffrement::decrypt($crypted, $password);
+
+            $crypted = file_get_contents($file);
+            $json    = Chiffrement::decrypt($crypted, $password);
+            Debug::debug($json, "json");
+            $data    = $this->import(array($json));
 
 
-            if ($this->is_gzipped($compressed) === true) {
-                $json         = gzuncompress($compressed);
-                $data['json'] = $json;
-            } else {
-
-                if (IS_CLI) {
-                    throw new \Exception("PMACTRL-546 : Password not good");
-                    exit;
-                }
-                set_flash("error", __('Error'), __("The password is not good"));
-                header("location: ".LINK.strtolower(__CLASS__)."/index");
-                exit;
-            }
-
-            //$compressed  test if good
+        }
 
 
+            $json = Chiffrement::decrypt($crypted, $password);
 
-            $json = gzuncompress($compressed);
-            //Debug::debug($json, "json");
+            
+            Debug::debug($json, "json");
 
 
 
@@ -225,34 +212,33 @@ $("#export_all-all2").click(function(){
 
 
 
-            /*
+
+              if (!empty($data['mysql']['updated'])) {
+              $msg = implode(", ", $data['mysql']['updated']);
+              set_flash("success", __('Server updated'), $msg);
+              }
+
+
+        if (!IS_CLI) {
 
             if (!empty($data['mysql']['updated'])) {
                 $msg = implode(", ", $data['mysql']['updated']);
                 set_flash("success", __('Server updated'), $msg);
             }
 
-
             if (!empty($data['mysql']['inserted'])) {
                 $msg = implode(", ", $data['mysql']['inserted']);
                 set_flash("success", __('Server inserted'), $msg);
             }
-
 
             if (!empty($data['error'])) {
                 $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
                 set_flash("error", __('Error'), $msg);
             }
 
-
-            /****/
-            //header("location: ".LINK.strtolower(__CLASS__)."/index");
+            header("location: ".LINK.strtolower(__CLASS__)."/index");
             exit;
         }
-
-
-
-
 
         //debug($data);
 
@@ -262,29 +248,28 @@ $("#export_all-all2").click(function(){
     public function import($param)
     {
         //$param[] = "--debug";
-
-
 //        debug($param);
 
         Debug::debug(DB_DEFAULT, "DB");
 
 
+        Crypt::$key = CRYPT_KEY;
         $db = $this->di['db']->sql(DB_DEFAULT);
+        //$db = $this->di['db']->sql(DB_DEFAULT);
 
 
         Mysql::set_db($db);
 
 
 
-        
+
         Debug::parseDebug($param);
         $json = $param[0];
 
 
+        debug(json_decode($json,JSON_PRETTY_PRINT));
+
         $data = Json::isJson($json);
-
-
-
 
 
         
@@ -294,6 +279,9 @@ $("#export_all-all2").click(function(){
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
+
+
+
                         Mysql::addMysqlServer($server);
                         break;
                 }
@@ -302,20 +290,20 @@ $("#export_all-all2").click(function(){
 
 
         /*
-        $data['arr']     = json_decode($json[0], true);
-        $data['options'] = $this->getExportOption();
+          $data['arr']     = json_decode($json[0], true);
+          $data['options'] = $this->getExportOption();
 
-        //Debug::debug($data);
-        //$this->addMysql($data);
+          //Debug::debug($data);
+          //$this->addMysql($data);
 
 
-        if (IS_CLI == true) {
-            echo $rep;
-        }
+          if (IS_CLI == true) {
+          echo $rep;
+          }
 
-        return json_decode($rep, true);
+          return json_decode($rep, true);
 
-        /***/
+          /** */
     }
 
     private function addMysql($arr)

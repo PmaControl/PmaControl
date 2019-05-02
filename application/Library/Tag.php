@@ -20,7 +20,7 @@ class Tag
     static public function insertTag($id_mysql_server, $tags)
     {
 
-        Debug::debug($tags);
+        //Debug::debug($tags);
 
         if (empty($tags)) {
             return true;
@@ -32,7 +32,7 @@ class Tag
 
             $id_tag = Mysql::selectOrInsert($tag, "tag", "name", array("background" => "#".Color::setBackgroundColor($tag), "color" => "#".Color::setFontColor($tag)));
 
-            Debug($id_tag,"TAG");
+            //Debug::debug($id_tag,"TAG");
 
 
             $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (".$id_mysql_server.", ".$id_tag.");";

@@ -132,7 +132,7 @@ if (! empty($data['variables'])) {
         echo '<td style="' . $style2 . '">' . format($totalmemoryused) . '</td>';
 
 
-        debug($data['status'][$server]);
+        //debug($data['status'][$server]);
         
         echo '<td>' . $data['status'][$server]['max_used_connections'] . '</td>';
         echo '<td>' . $mem_kb . '</td>';

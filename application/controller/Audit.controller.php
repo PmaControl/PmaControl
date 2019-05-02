@@ -5,7 +5,11 @@ use \App\Library\Debug;
 
 class Audit extends Controller
 {
+<<<<<<< HEAD
     var $log_files = array("/data/www/rt.log");
+=======
+    var $log_files = array("/data/www/staging-mysqlpayment01.log");
+>>>>>>> 251c5b3554a9e0cfe2fa9765be219283b7b9a8b0
     var $granted   = array();
     var $denied    = array();
 
@@ -21,7 +25,13 @@ class Audit extends Controller
 
 
                     $output_array = array();
+<<<<<<< HEAD
                     preg_match('/Connect\s+(\S+)@(\S+)/', $buffer, $output_array);
+=======
+                    preg_match(' /(\S+)@(\S+) as anonymous on\s?(\S+)?/', $buffer, $output_array);
+                    //preg_match_all('/(\S+)@(\S+) as anonymous on\s?(\S+)?/', $input_line, $output_array);
+                    //preg_match('/(\S+)@(\S+) as anonymous on\s?(\S+)/', $buffer, $output_array);
+>>>>>>> 251c5b3554a9e0cfe2fa9765be219283b7b9a8b0
 
 
                     //Debug::debug($output_array);
