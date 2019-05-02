@@ -5,7 +5,7 @@ use \App\Library\Debug;
 
 class Audit extends Controller
 {
-    var $log_files = array("/data/www/hb03-mariaforge01.log");
+    var $log_files = array("/data/www/rt.log");
     var $granted   = array();
     var $denied    = array();
 
@@ -21,21 +21,44 @@ class Audit extends Controller
 
 
                     $output_array = array();
-                    preg_match('/(\S+)@(\S+) as anonymous on (\S+)/', $buffer, $output_array);
+                    preg_match('/Connect\s+(\S+)@(\S+)/', $buffer, $output_array);
 
 
-                    //preg_match('/\w+@\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $buffer, $output_array);
+                    //Debug::debug($output_array);
+
+
+                    preg_match('/(\S+)@(\S+) (as anonymous\s)?on (\S+)/', $buffer, $output_array3);
+
+
+
+
+                    if (!empty($output_array3[0])) {
+                        //Debug::debug($output_array3);
+                    }
+                    
 
                     if (count($output_array) > 0) {
 
 
                         $buffer2 = fgets($handle, 4096);
 
+                        preg_match('/Access\sdenied for\suser\s\'([\w-]+)\'@\'(\S+)\'\s/', $buffer2, $output_array2);
+                        //preg_match('/Access\sdenied for\suser\s\'([\w-]+)\'@\'(\S+)\'\sto\sdatabase\s\'([\w-]+)\'/', $buffer2, $output_array2);
 
-                        preg_match('/Access\sdenied for\suser\s\'([\w-]+)\'@\'(\S+)\'\sto\sdatabase\s\'([\w-]+)\'/', $buffer2, $output_array2);
+
+                        if (!empty($output_array3[4])) {
+                            $output_array[3] = $output_array3[4];
+                        } else {
+                            $output_array[3] = "N/A";
+                        }
+
 
 
                         if (count($output_array2) > 0) {
+
+
+
+
 
                             if (empty($this->denied[$output_array[3]][$output_array[1]][$output_array[2]])) {
                                 $this->denied[$output_array[3]][$output_array[1]][$output_array[2]] = 1;
