@@ -177,7 +177,7 @@ class Server extends Controller
         //$this->title  = __("Dashboard");
         $this->ariane = " > ".$this->title;
 
-        $this->di['js']->addJavascript(array('clipboard.min.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
             new Clipboard(".copy-button");
@@ -1049,9 +1049,7 @@ var myChart = new Chart(ctx, {
 
     public function toggleGeneralLog($param)
     {
-
         Debug::parseDebug($param);
-
 
         $id_mysql_server = $param[0];
         $general_log     = $param[1];
