@@ -32,8 +32,6 @@ class Backup extends Controller
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
 
-
-
     //droit minima pour backup : GRANT SELECT, RELOAD, LOCK TABLES, EXECUTE, REPLICATION CLIENT, SHOW VIEW, EVENT, TRIGGER
     //ON *.* TO 'backup'@'%' IDENTIFIED BY PASSWORD '*';
 
@@ -48,6 +46,7 @@ class Backup extends Controller
     function before($param)
     {
         if (!IS_CLI) {
+
         }
     }
 
@@ -1641,6 +1640,57 @@ $(function () {
         echo "\n";
 
         return false;
+    }
+
+    public function myloader($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $this->layout_name = false;
+        $this->view        = false;
+
+
+        $id_mysql_server  = $param[0];
+        $directory_backup = $param[1];
+
+
+        if (!is_dir($directory_backup)) {
+            throw new Exception('PMACTRL-914 : This directory is not valid');
+        }
+        //SET FOREIGN_KEY_CHECKS=0;
+
+
+        $db_list     = glob($directory_backup."/*-schema-create.sql");
+        $db_elems     = glob($directory_backup."/*-schema-post.sql");
+        //$tables = glob($directory_backup."/*-schema.sql");
+        //$data     = glob($directory_backup."/*.sql");
+
+
+        foreach ($db_list as $file) {
+            $elems    = explode('-', $file);
+            
+            Debug::debug($elems);
+
+            $split = explode('/',$elems[0]);
+            $database = end($split);
+
+            $sql = "DROP DATABASE IF EXISTS `".$database."`;";
+            $db->sql_query($sql);
+            Debug::sql($sql);
+
+            $sql = file_get_contents($file);
+            $db->sql_query($sql);
+
+            Debug::sql($sql);
+        }
+
+
+
+
+
     }
 }
 /*
