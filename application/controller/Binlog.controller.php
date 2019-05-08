@@ -14,12 +14,7 @@ class Binlog extends Controller
 
     public function index()
     {
-
-
-
         $data = array();
-
-
         $this->set('data', $data);
     }
 
@@ -53,22 +48,26 @@ class Binlog extends Controller
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-
         $db = $this->di['db']->sql(DB_DEFAULT);
-        
+
+        $this->layout_name = false;
+        $this->view        = false;
+
         Extraction::setDb($db);
-        $res  = Extraction::extract(array("variables::max_binlog_size"),array($id_mysql_server));
+        $res = Extraction::extract(array("variables::max_binlog_size"), array($id_mysql_server));
 
 
-        while($ob = $db->sql_fetch_object($res))
-        {
+        $data = array();
+        while ($ob   = $db->sql_fetch_object($res)) {
             $data['max_binlog_size'] = $ob->value;
         }
 
-        Debug::debug($data);
 
-        
-
+        if (!empty($data['max_binlog_size'])) {
+            echo $data['max_binlog_size'];
+        } else {
+            echo "N/A";
+        }
     }
 }
 //glyphicon glyphicon-list
