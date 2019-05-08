@@ -14,5 +14,21 @@ ALTER TABLE `plugin_main` CHANGE `numero_licence` `numero_licence` INT(11) NOT N
 ALTER TABLE `plugin_main` CHANGE `numero_licence` `numero_licence` VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL;
 ALTER TABLE `plugin_main` CHANGE `md5_zip` `md5_zip` VARCHAR(32) NOT NULL;
 
-
 ALTER TABLE `plugin_file` CHANGE `md5` `md5` VARCHAR(32) NOT NULL;
+
+
+
+CREATE TABLE `plugin_menu` (
+  `id` int(11) NOT NULL,
+  `id_plugin_main` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+ALTER TABLE `plugin_menu`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_plugin_main` (`id_plugin_main`);
+ALTER TABLE `plugin_menu`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `plugin_menu`
+  ADD CONSTRAINT `plugin_menu_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`);
+
+

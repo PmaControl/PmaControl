@@ -119,6 +119,8 @@ class Tree
             debug($menu);
             exit;
         }
+
+        return $id_menu;
     }
 
     public function up($id) // remonte d'un cran un item dans le menu sans effet dans l'arbre recursif

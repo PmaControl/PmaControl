@@ -6,6 +6,7 @@
  */
 
 use \Glial\Synapse\Controller;
+use App\Library\Tree as TreeInterval;
 
 class Plugin extends Controller
 {
@@ -17,11 +18,10 @@ class Plugin extends Controller
         $JSONURL       = $PMAPLUGINURL."extracted/plugin.json";
 
         if ((!file_exists($LOCALJSONFILE)) || (filectime($LOCALJSONFILE) < date_timestamp_get(date_create('-1 day')))) {
-            if ((file_exists($JSONURL)) && ($file = file_get_contents($JSONURL))) {
+            if ($file = file_get_contents($JSONURL)) {
                 $Array = json_decode($file, true);
                 $this->jsontodatabase($file);
 
-                unlink($LOCALJSONFILE);
                 $fp = fopen($LOCALJSONFILE, 'w');
                 fwrite($fp, $file);
                 fclose($fp);
@@ -33,7 +33,7 @@ class Plugin extends Controller
         $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif, maxversion
         FROM plugin_main ";
         $Query .= " INNER JOIN"
-            ." (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GrOUP BY nom)"
+            ." (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GROUP BY nom)"
             ." AS Temp ON plugin_main.nom = Temp.tempnom";
 
         if (isset($param[0])) {
@@ -70,9 +70,21 @@ class Plugin extends Controller
             foreach ($line as $key2 => $line2):
 
                 $date  = DateTime::createFromFormat('d/m/Y', $line2['CreationDate']);
-                $Query = "REPLACE INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence )
+
+                $Query = "SELECT * FROM plugin_main WHERE nom = '".addslashes($key)."' AND version = '".addslashes($key2)."'";
+                $res = $db->sql_query($Query);
+
+                if ($db->sql_num_rows($res)>0)
+                {
+                    $Query = "UPDATE plugin_main SET description = '".addslashes($line2['Description'])."', auteur = '".addslashes($line2['Contributor'])."', image = '".addslashes($line2['Picture'])."', fichier = '".addslashes($line2["URL"])."', date_installation = '".$date->format('Y-m-d')."', md5_zip = '".addslashes($line2['MD5'])."', type_licence = '".addslashes($line2['LicenceType'])."' WHERE nom = '".addslashes($key)."' AND version = '".addslashes($key2)."'";
+                    $db->sql_query($Query);
+                }
+                else
+                {
+                    $Query = "INSERT INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence )
 SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addslashes($line2['Contributor'])."','".addslashes($line2['Picture'])."','".addslashes($line2["URL"])."','".$date->format('Y-m-d')."','".addslashes($line2['MD5'])."','".addslashes($key2)."','".addslashes($line2['LicenceType'])."'";
-                $res   = $db->sql_query($Query);
+                    $db->sql_query($Query);
+                }
             endforeach;
         endforeach;
     }
@@ -127,13 +139,14 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
 
         //Copy Plugin ungeneric files
         $ThisPluginDirectory = $LOCALPLUGIN."extracted/".$plugin["nom"]."-".substr($plugin["version"], 1);
-        $scanned_directory   = array_diff(scandir($ThisPluginDirectory), array('..', '.', '.gitmodules', 'sql', 'install.php', 'uninstall.php', 'README.md', 'image.jpg'));
+        $scanned_directory   = array_diff(scandir($ThisPluginDirectory), array('..', '.', '.gitmodules', 'sql', 'install.php', 'upgrade.php', 'uninstall.php', 'README.md', 'image.jpg'));
 
         $Return = array();
         $Return[0] = true;
 
         $source = $ThisPluginDirectory."/";
         $target = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT;
+
 
         foreach ($scanned_directory AS $value) {
             if ($Return[0]==true)
@@ -151,9 +164,47 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             $this->logpluginfile($value, $param[0], $source, $target);
         }
 
+        //Installation INSTALL.SQL
+        if (file_exists($ThisPluginDirectory."/sql/install.sql")) {
+            $this->sqlexecute($ThisPluginDirectory."/sql/install.sql");
+        }
+        if (file_exists($ThisPluginDirectory."/SQL/install.sql")) {
+            $this->sqlexecute($ThisPluginDirectory."/SQL/install.sql");
+        }
+        if (file_exists($ThisPluginDirectory."/sql/INSTALL.SQL")) {
+            $this->sqlexecute($ThisPluginDirectory."/sql/INSTALL.SQL");
+        }
+        if (file_exists($ThisPluginDirectory."/SQL/INSTALL.SQL")) {
+            $this->sqlexecute($ThisPluginDirectory."/SQL/INSTALL.SQL");
+        }
+
+        $Query = "SELECT group_id, id FROM menu WHERE title = 'Plugins'";
+        $res = $db->sql_query($Query);
+
+        $ids = array();
+        $ids = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $ids["group_id"]));
+
+        include($ThisPluginDirectory."/"."install.php");
+
+        $ThisInstallation = new install();
+
+        $sql = "START TRANSACTION;";
+        foreach ($ThisInstallation->menu_install() AS $key => $value)
+        {
+            $tree->add($value , $ids["id"]);
+
+            //On met en base le fait que le plugin est installé.
+            $sql .= "INSERT INTO plugin_menu (id_plugin_main, url) SELECT ".$ids["group_id"].", '".$value["url"]."';";
+        }
+
         //On met en base le fait que le plugin est installé.
-        $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0];
+        $sql .= "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0].";";
+        $sql .= "COMMIT;";
         $db->sql_query($sql);
+
+        echo "Installation OK !";
     }
 
     public function copyfile($file, $source, $target, $nest = 1)
@@ -230,5 +281,22 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             $db->sql_query($sql);
         }
 
+    }
+
+    private function sqlexecute($filename)
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = file_get_contents($filename);
+        $db->sql_query($sql);
+    }
+
+    public function remove($param)
+    {
+        if (!isset($param[0])) {
+            Throw new \Exception("No plugin Id provided");
+        }
+
+        
     }
 }
