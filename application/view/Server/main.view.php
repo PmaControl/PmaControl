@@ -214,13 +214,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-            <?php
-            $computed = array_merge(array("class" => "form-control", "type" => "checkbox", "title" => "Monitored"), $checked);
+                        <?php
+                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-            echo Form::input("check", "all", $computed);
-            ?>
+                        echo Form::input("check", "all", $computed);
+                        ?>
                         <span></span>
                     </label>
                 </div>
