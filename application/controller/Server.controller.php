@@ -1049,6 +1049,8 @@ var myChart = new Chart(ctx, {
 
     public function toggleGeneralLog($param)
     {
+        $this->view = false;
+
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
@@ -1076,5 +1078,10 @@ var myChart = new Chart(ctx, {
         Debug::sql($sql2);
 
         $remote->sql_query($sql2);
+
+        $data['return'] ='ok';
+
+
+        echo json_encode($data);
     }
 }
