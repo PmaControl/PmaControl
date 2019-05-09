@@ -95,7 +95,7 @@ if (!is_null($data))
                                 echo '<i class="fa fa-fire" aria-hidden="true"></i> Installé </a>';
                             }
 
-                            echo '<a href="'.LINK.'plugin/install/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="icon-remove"></i> Remove </a>';
+                            echo '<a href="'.LINK.'plugin/remove/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="icon-remove"></i> Remove </a>';
                         }
                         ?>
                     </div>
