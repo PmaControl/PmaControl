@@ -395,6 +395,16 @@ class Backup extends Controller
     }
     /* used for ajax */
 
+
+
+
+    /*
+     *
+     *
+     * DEPRECATED
+     */
+
+
     function getDatabaseByServer($param)
     {
 
@@ -419,6 +429,14 @@ class Backup extends Controller
         $this->set("data", $data);
     }
 
+
+
+        /*
+     *
+     *
+     * DEPRECATED
+     */
+
     function getServerByName($param)
     {
         $this->layout_name = false;
@@ -435,6 +453,14 @@ class Backup extends Controller
         }
     }
     /* used for ajax */
+
+
+
+        /*
+     *
+     *
+     * DEPRECATED
+     */
 
     function getServerByIp($server)
     {
@@ -616,8 +642,6 @@ class Backup extends Controller
         $sql = "SELECT * FROM backup_main a
                 INNER JOIN crontab b ON a.id_crontab = b.id
                 WHERE a.id ='".$id."'";
-
-
 
         $res = $db->sql_query($sql);
 
@@ -985,8 +1009,6 @@ class Backup extends Controller
         $servers = $db->sql_fetch_yield($sql);
 
 
-        Crypt::$key = CRYPT_KEY;
-
 
         $account_valided = [];
 
@@ -994,8 +1016,8 @@ class Backup extends Controller
         foreach ($servers as $server) {
 
             fwrite(STDOUT, "try to connect in ssh to ".$server['ip']." \n");
-            $login    = Crypt::decrypt($server['ssh_login']);
-            $password = Crypt::decrypt($server['ssh_password']);
+            $login    = Crypt::decrypt($server['ssh_login'], CRYPT_KEY);
+            $password = Crypt::decrypt($server['ssh_password'], CRYPT_KEY);
 
             $failed = true;
             $run    = 1;

@@ -1349,7 +1349,7 @@ class Mysql extends Controller
                         array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
                 $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
-                $table['mysql_server']['passwd']              = Mysql2::crypt($table['mysql_server']['password']);
+                $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = "1";
