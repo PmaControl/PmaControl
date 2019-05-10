@@ -75,8 +75,6 @@ class System
             }
         }
 
-
-
         foreach ($files_to_delete as $file_to_delete) {
             $files = glob($file_to_delete);
 
