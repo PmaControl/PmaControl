@@ -58,6 +58,8 @@ class Tree
             WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}.$this->extraWhere();
 
         $this->db->sql_query($sql4);
+
+        $this->removeaclfile();
     }
 
     private function extraWhere()
@@ -112,7 +114,8 @@ class Tree
         }
 
         $id_menu = $this->db->sql_save($menu);
-
+        
+        $this->removeaclfile();
 
         if (!$id_menu) {
             debug($this->db->sql_error());
@@ -254,6 +257,11 @@ class Tree
         } catch (Exception $ex) {
             $this->db->sql_query("ROLLBACK;");
         }
+    }
+
+    public function removeaclfile()
+    {
+        unlink($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser");
     }
 
     public function getFirstFather($id)
