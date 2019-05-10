@@ -13,8 +13,8 @@ class Plugin extends Controller
 
     public function index($param)
     {
-        $LOCALJSONFILE = "/data/www/pmacontrol/plugins/plugin.json";
-        $PMAPLUGINURL  = "http://localhost/plugins/";
+        $LOCALJSONFILE = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT."plugins/plugin.json";
+        $PMAPLUGINURL  = "http://localhost/plugins/"; //Il faut mettre dans un fichier de conf
         $JSONURL       = $PMAPLUGINURL."extracted/plugin.json";
 
         if ((!file_exists($LOCALJSONFILE)) || (filectime($LOCALJSONFILE) < date_timestamp_get(date_create('-1 day')))) {
@@ -95,8 +95,8 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             Throw new \Exception("No plugin Id provided");
         }
 
-        $LOCALPLUGIN      = "/data/www/pmacontrol/plugins/";
-        $LOCALAPPLICATION = "/data/www/pmacontrol/application/";
+        $LOCALPLUGIN      = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT."plugins/";
+        $LOCALAPPLICATION = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT."application/";
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -145,8 +145,7 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
         $Return[0] = true;
 
         $source = $ThisPluginDirectory."/";
-        $target = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT;
-
+        $target = $LOCALAPPLICATION;
 
         foreach ($scanned_directory AS $value) {
             if ($Return[0]==true)
@@ -191,17 +190,20 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
         $ThisInstallation = new install();
 
         $sql = "START TRANSACTION;";
+        $db->sql_query($sql);
         foreach ($ThisInstallation->menu_install() AS $key => $value)
         {
             $tree->add($value , $ids["id"]);
 
             //On met en base le fait que le plugin est installé.
-            $sql .= "INSERT INTO plugin_menu (id_plugin_main, url) SELECT ".$ids["group_id"].", '".$value["url"]."';";
+            $sql = "INSERT INTO plugin_menu (id_plugin_main, url) SELECT ".$param[0].", '".$value["url"]."';";
+            $db->sql_query($sql);
         }
 
         //On met en base le fait que le plugin est installé.
-        $sql .= "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0].";";
-        $sql .= "COMMIT;";
+        $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0].";";
+        $db->sql_query($sql);
+        $sql = "COMMIT;";
         $db->sql_query($sql);
 
         echo "Installation OK !";
@@ -214,7 +216,7 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
         $Mode = "";
 
         if (is_dir($source.$file)) {
-            echo $nest." DIR ".$source.$file." -> ".$target.$file."<br>";
+            //echo $nest." DIR ".$source.$file." -> ".$target.$file."<br>";
             //Fonctionnement si répertoire
             if (!file_exists($target.$file)) {
                 mkdir($target.$file);
@@ -231,7 +233,7 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
                 }
             }
         } else {
-            echo $nest." FILE ".$source.$file." -> ".$target.$file."<br>";
+            //echo $nest." FILE ".$source.$file." -> ".$target.$file."<br>";
             //Fonction si fichier
             if (!file_exists($target.$file)) {
                 if (false === copy($source.$file, $target.$file)) {
