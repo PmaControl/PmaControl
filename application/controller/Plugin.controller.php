@@ -167,13 +167,13 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
         if (file_exists($ThisPluginDirectory."/sql/install.sql")) {
             $this->sqlexecute($ThisPluginDirectory."/sql/install.sql");
         }
-        if (file_exists($ThisPluginDirectory."/SQL/install.sql")) {
+        elseif (file_exists($ThisPluginDirectory."/SQL/install.sql")) {
             $this->sqlexecute($ThisPluginDirectory."/SQL/install.sql");
         }
-        if (file_exists($ThisPluginDirectory."/sql/INSTALL.SQL")) {
+        elseif (file_exists($ThisPluginDirectory."/sql/INSTALL.SQL")) {
             $this->sqlexecute($ThisPluginDirectory."/sql/INSTALL.SQL");
         }
-        if (file_exists($ThisPluginDirectory."/SQL/INSTALL.SQL")) {
+        elseif (file_exists($ThisPluginDirectory."/SQL/INSTALL.SQL")) {
             $this->sqlexecute($ThisPluginDirectory."/SQL/INSTALL.SQL");
         }
 
@@ -189,8 +189,8 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
 
         $ThisInstallation = new install();
 
-        $sql = "START TRANSACTION;";
-        $db->sql_query($sql);
+        $lastinstallmenu = "";
+
         foreach ($ThisInstallation->menu_install() AS $key => $value)
         {
             $tree->add($value , $ids["id"]);
@@ -198,15 +198,15 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             //On met en base le fait que le plugin est installé.
             $sql = "INSERT INTO plugin_menu (id_plugin_main, url) SELECT ".$param[0].", '".$value["url"]."';";
             $db->sql_query($sql);
+
+            $lastinstallmenu = $value["url"];
         }
 
         //On met en base le fait que le plugin est installé.
         $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = ".$param[0].";";
         $db->sql_query($sql);
-        $sql = "COMMIT;";
-        $db->sql_query($sql);
 
-        echo "Installation OK !";
+        echo '<SCRIPT type="text/javascript">window.location.replace("'.str_replace("{LINK}", LINK, $lastinstallmenu).'")</SCRIPT>';
     }
 
     public function copyfile($file, $source, $target, $nest = 1)
@@ -299,6 +299,73 @@ SELECT '".addslashes($key)."', '".addslashes($line2['Description'])."','".addsla
             Throw new \Exception("No plugin Id provided");
         }
 
-        
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $Query = "SELECT id, file FROM plugin_file WHERE id_plugin_main = ".$param[0];
+
+        $res = $db->sql_query($Query);
+
+        $plugin = array();
+        while ($plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            // On efface
+            unlink($plugin["file"]);
+            // On purge le fichier effacé de la base de données.
+            $QueryDelete = "DELETE FROM plugin_file WHERE id = ".$plugin["id"];
+            $db->sql_query($QueryDelete);
+        }
+
+        //On charge le bon menu pour pouvoir l'administrer
+        $Query = "SELECT group_id, id, url FROM menu WHERE title = 'Plugins'";
+        $res = $db->sql_query($Query);
+
+        $ids = array();
+        $ids = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $ids["group_id"]));
+
+        //On charge les entrées menus à retirer
+        $Query = "SELECT menu.id AS menuid, plugin_menu.id AS pluginmenuid FROM plugin_menu INNER JOIN menu ON menu.url = plugin_menu.url WHERE plugin_menu.id_plugin_main = ".$param[0];
+        $res = $db->sql_query($Query);
+
+        $menu = array();
+        while ($menu = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            //On efface le menu
+            $tree->delete($menu["menuid"]);
+            // On purge le menu effacé de la base de données.
+            $QueryDelete = "DELETE FROM plugin_menu WHERE id = ".$menu["pluginmenuid"];
+            $db->sql_query($QueryDelete);
+        }
+
+        $Query = "SELECT nom, version FROM plugin_main WHERE id = ".$param[0];
+        $res = $db->sql_query($Query);
+
+        $plugin = array();
+        $plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $LOCALPLUGIN      = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT."plugins/";
+        $ThisPluginDirectory = $LOCALPLUGIN."extracted/".$plugin["nom"]."-".substr($plugin["version"], 1);
+
+        //on a pas spécifié ce que l'on voulait faire avec ca.
+        //include($ThisPluginDirectory."/"."uninstall.php");
+            
+        //On met en base le fait que le plugin est installé.
+        $sql = "UPDATE plugin_main SET est_actif = 0 WHERE id = ".$param[0].";";
+        $db->sql_query($sql);
+
+        //execution du script SQL de UNINSTALL.
+        if (file_exists($ThisPluginDirectory."/sql/uninstall.sql")) {
+            $this->sqlexecute($ThisPluginDirectory."/sql/uninstall.sql");
+        }
+        elseif (file_exists($ThisPluginDirectory."/SQL/uninstall.sql")) {
+            $this->sqlexecute($ThisPluginDirectory."/SQL/uninstall.sql");
+        }
+        elseif (file_exists($ThisPluginDirectory."/sql/UNINSTALL.SQL")) {
+            $this->sqlexecute($ThisPluginDirectory."/sql/UNINSTALL.SQL");
+        }
+        elseif (file_exists($ThisPluginDirectory."/SQL/UNINSTALL.SQL")) {
+            $this->sqlexecute($ThisPluginDirectory."/SQL/UNINSTALL.SQL");
+        }
+
+        echo '<SCRIPT type="text/javascript">window.history.back();</SCRIPT>';
     }
 }
