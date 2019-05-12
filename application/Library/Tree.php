@@ -261,7 +261,9 @@ class Tree
 
     public function removeaclfile()
     {
-        unlink($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser");
+        if (file_exists($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser")) {
+            unlink($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser");
+        }
     }
 
     public function getFirstFather($id)
