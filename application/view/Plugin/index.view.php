@@ -83,7 +83,7 @@ if (!is_null($data))
                             if ($line2['version'] != $line3) echo $line3." ";
                         endforeach;
 
-                        if ($line2["est_actif"] == 0) {
+                        if ($line2["est_actif"] <= 0) {
                             echo '<a href="'.LINK.'plugin/install/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="fa fa-cloud-download" aria-hidden="true"></i> Installation </a>';
                         }
                         else
