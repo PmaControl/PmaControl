@@ -117,18 +117,25 @@ class Binlog extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql = "SELECT a.*, b.libelle as organization,c.*, a.id as id_mysql_server, d.*
-            FROM mysql_server a
-            INNER JOIN binlog_max d on a.id = d.id_mysql_server
-            INNER JOIN client b ON a.id_client = b.id
-            INNER JOIN environment c ON a.id_environment = c.id";
+        
 
+//
+        $sql = "SELECT a.*, b.libelle as organization,c.*, a.id as id_mysql_server, d.*
+            FROM mysql_server a            
+            INNER JOIN client b ON a.id_client = b.id
+            INNER JOIN environment c ON a.id_environment = c.id
+            INNER JOIN binlog_max d on a.id = d.id_mysql_server";
+
+        //$sql ="select 1;";
 
         $res = $db->sql_query($sql);
 
 
         $data['extra'] = array();
         $mysql_server  = array();
+
+
+        $data['max_bin_log'] = array();
         while ($arr           = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
 
@@ -154,7 +161,7 @@ class Binlog extends Controller
         }
 
 
-
+       /* */
 
 
         Extraction::setDb($db);
