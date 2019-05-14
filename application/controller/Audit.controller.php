@@ -60,14 +60,7 @@ class Audit extends Controller
                             $output_array[3] = "N/A";
                         }
 
-
-
                         if (count($output_array2) > 0) {
-
-
-
-
-
                             if (empty($this->denied[$output_array[3]][$output_array[1]][$output_array[2]])) {
                                 $this->denied[$output_array[3]][$output_array[1]][$output_array[2]] = 1;
 
