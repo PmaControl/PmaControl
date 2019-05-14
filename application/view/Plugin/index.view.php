@@ -83,7 +83,7 @@ if (!is_null($data))
                             if ($line2['version'] != $line3) echo $line3." ";
                         endforeach;
 
-                        if ($line2["est_actif"] == 0) {
+                        if ($line2["est_actif"] <= 0) {
                             echo '<a href="'.LINK.'plugin/install/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="fa fa-cloud-download" aria-hidden="true"></i> Installation </a>';
                         }
                         else
@@ -95,7 +95,7 @@ if (!is_null($data))
                                 echo '<i class="fa fa-fire" aria-hidden="true"></i> Installé </a>';
                             }
 
-                            echo '<a href="'.LINK.'plugin/install/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="icon-remove"></i> Remove </a>';
+                            echo '<a href="'.LINK.'plugin/remove/'.$line2["id"].'" type="button" class="btn btn-primary" style="font-size:12px"> <i class="icon-remove"></i> Remove </a>';
                         }
                         ?>
                     </div>

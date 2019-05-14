@@ -230,16 +230,12 @@ class Database extends Controller
     public function databaseRefresh($param)
     {
 
-
-
         Debug::parseDebug($param);
-
 
         $id_mysql_server__source = $param[0];
         $id_mysql_server__target = $param[1];
         $databases               = explode(",", $param[2]);
         $path                    = $param[3];
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
         

@@ -4,16 +4,14 @@
  * and open the template in the editor.
  */
 
-
-
 $(".general_log").change(function () {
-    if (this.checked) {
-        //Do stuff
-        //alert("gg");
+    id_mysql_server = $(this).attr("data-id");
+    url = GLIAL_LINK + 'server/toggleGeneralLog/' + id_mysql_server;
 
-        $.get({url: GLIAL_LINK + 'server/toggleGeneralLog/' + $(this).attr("data-id") + '/true'});
+    if (this.checked) {
+        $.get(url + '/true/');
     } else
     {
-        $.get({url: GLIAL_LINK + 'server/toggleGeneralLog/' + $(this).attr("data-id") + '/false'});
+        $.get(url + '/false/');
     }
 });

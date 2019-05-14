@@ -1,0 +1,3 @@
+[submodule "sql"]
+	path = sql
+	url = git@github.com:Esysteme/mysql-sys.git

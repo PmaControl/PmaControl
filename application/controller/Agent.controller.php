@@ -17,15 +17,15 @@ use \App\Library\Debug;
 use App\Library\Mysql;
 use \App\Library\System;
 
-class Agent extends Controller {
+class Agent extends Controller
+{
 
     use \App\Library\Decoupage;
-
-    var $debug = false;
-    var $url = "Daemon/index/";
-    var $log_file = TMP . "log/glial.log";
+    var $debug    = false;
+    var $url      = "Daemon/index/";
+    var $log_file = TMP."log/glial.log";
     var $logger;
-    var $loop = 0;
+    var $loop     = 0;
 
     /*
      * (PmaControl 0.8)<br/>
@@ -37,15 +37,15 @@ class Agent extends Controller {
      * @access public
      */
 
-    public function before($param) {
-        $logger = new Logger('Daemon');
-        $file_log = $this->log_file;
-        $handler = new StreamHandler($file_log, Logger::INFO);
+    public function before($param)
+    {
+        $logger       = new Logger('Daemon');
+        $file_log     = $this->log_file;
+        $handler      = new StreamHandler($file_log, Logger::INFO);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
     }
-
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -56,7 +56,8 @@ class Agent extends Controller {
      * @access public
      */
 
-    public function start($param) {
+    public function start($param)
+    {
         if (empty($param[0])) {
             Throw new \Exception("No idea set for this Daemon", 80);
         }
@@ -64,9 +65,9 @@ class Agent extends Controller {
         Debug::parseDebug($param);
 
 
-        $id_daemon = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $this->view = false;
+        $id_daemon         = $param[0];
+        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $this->view        = false;
         $this->layout_name = false;
 
 
@@ -74,24 +75,24 @@ class Agent extends Controller {
         if (!$this->checkAllEngines()) {
 
 
-            $msg = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
+            $msg   = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
             //header("location: ".LINK.$this->url);
             exit;
         }
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $sql = "SELECT * FROM daemon_main where id ='".$id_daemon."'";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg = I18n::getTranslation(__("Impossible to find the daemon with the id : ") . "'" . $id_daemon . "'");
+            $msg   = I18n::getTranslation(__("Impossible to find the daemon with the id : ")."'".$id_daemon."'");
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
 
 
             if (!IS_CLI) {
-                header("location: " . LINK . $this->url);
+                header("location: ".LINK.$this->url);
             }
 
             exit;
@@ -109,33 +110,32 @@ class Agent extends Controller {
             }
 
 
-            $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $id_daemon . " " . $debug . " >> " . $this->log_file . " & echo $!";
+            $cmd = $php." ".GLIAL_INDEX." Agent launch ".$id_daemon." ".$debug." >> ".$this->log_file." & echo $!";
             Debug::debug($cmd);
             $pid = shell_exec($cmd);
 
-            $this->logger->info("CMD : " . $cmd);
+            $this->logger->info("CMD : ".$cmd);
 
 
-            $this->logger->info(Color::getColoredString('Started daemon with pid : ' . $pid, "grey", "green"));
+            $this->logger->info(Color::getColoredString('Started daemon with pid : '.$pid, "grey", "green"));
 
-            $sql = "UPDATE daemon_main SET pid ='" . $pid . "' WHERE id = '" . $id_daemon . "'";
+            $sql   = "UPDATE daemon_main SET pid ='".$pid."' WHERE id = '".$id_daemon."'";
             $db->sql_query($sql);
-            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") successfully started with") . " pid : " . $pid);
+            $msg   = I18n::getTranslation(__("The daemon (id=".$id_daemon.") successfully started with")." pid : ".$pid);
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
         } else {
             $this->logger->info(Color::getColoredString('Impossible to start daemon (Already running)', "yellow"));
-            $msg = I18n::getTranslation(__("Impossible to launch the daemon ") . "(" . __("Already running !") . ")");
+            $msg   = I18n::getTranslation(__("Impossible to launch the daemon ")."(".__("Already running !").")");
             $title = I18n::getTranslation(__("Error"));
             set_flash("caution", $title, $msg);
         }
 
 
         if (!IS_CLI) {
-            header("location: " . LINK . $this->url);
+            header("location: ".LINK.$this->url);
         }
     }
-
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -147,75 +147,78 @@ class Agent extends Controller {
      * 
      */
 
-    function stop($param) {
+    function stop($param)
+    {
         $id_daemon = $param[0];
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $this->view = false;
+        $db                = $this->di['db']->sql(DB_DEFAULT);
+        $this->view        = false;
         $this->layout_name = false;
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $sql = "SELECT * FROM daemon_main where id ='".$id_daemon."'";
         $res = $db->sql_query($sql);
 
         $this->logger->emergency($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the id : ") . "'" . $id_daemon . "'");
+            $msg   = I18n::getTranslation(__("Impossible to find the daemon (id=".$id_daemon.") with the id : ")."'".$id_daemon."'");
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
-            header("location: " . LINK . $this->url);
+            header("location: ".LINK.$this->url);
             exit;
         }
 
         $ob = $db->sql_fetch_object($res);
 
         if (System::isRunningPid($ob->pid)) {
-            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") with pid : '" . $ob->pid . "' successfully stopped "));
+            $msg   = I18n::getTranslation(__("The daemon (id=".$id_daemon.") with pid : '".$ob->pid."' successfully stopped "));
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
-            $cmd = "kill " . $ob->pid;
+            $cmd = "kill ".$ob->pid;
             shell_exec($cmd);
             //shell_exec("echo '[" . date("Y-m-d H:i:s") . "] DAEMON STOPPED !' >> " . $ob->log_file);
-            
-            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
-            $db->sql_query($sql);
-            
-            
 
-            $this->logger->info(Color::getColoredString('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid, "grey", "red"));
+            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '".$id_daemon."'";
+            $db->sql_query($sql);
+
+
+
+            $this->logger->info(Color::getColoredString('Stopped daemon (id='.$id_daemon.') with the pid : '.$ob->pid, "grey", "red"));
         } else {
 
             if (!empty($pid)) {
-                $this->logger->info(Color::getColoredString('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid, "yellow"));
+                $this->logger->info(Color::getColoredString('Impossible to find the daemon (id='.$id_daemon.') with the pid : '.$pid, "yellow"));
             }
 
-            $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
-            $title = I18n::getTranslation(__("Daemon (id=" . $id_daemon . ") was already stopped or in error"));
+            $msg   = I18n::getTranslation(__("Impossible to find the daemon (id=".$id_daemon.") with the pid : ")."'".$ob->pid."'");
+            $title = I18n::getTranslation(__("Daemon (id=".$id_daemon.") was already stopped or in error"));
             set_flash("caution", $title, $msg);
         }
 
         usleep(5000);
-        
+
 
         if (!System::isRunningPid($ob->pid)) {
             
         } else {
-            
+
             //on double UPDATE dans le cas le contrab passerait dans l'interval du sleep
             // (ce qui crée un process zombie dont on perdrait le PID vis a vis de pmacontrol)
             // impossible a killed depuis l'IHM
-            $sql = "UPDATE daemon_main SET pid =".$ob->pid." WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid =".$ob->pid." WHERE id = '".$id_daemon."'";
             $db->sql_query($sql);
-            
-            $this->logger->info(Color::getColoredString('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid, "grey", "red"));
+
+            $this->logger->info(Color::getColoredString('Impossible to stop daemon (id='.$id_daemon.') with pid : '.$pid, "grey", "red"));
             //throw new Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
         }
 
-        header("location: " . LINK . $this->url);
-    }
 
+        if (!IS_CLI) {
+            header("location: ".LINK.$this->url);
+        }
+    }
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -227,7 +230,8 @@ class Agent extends Controller {
      * 
      */
 
-    public function launch($params) {
+    public function launch($params)
+    {
 
         Debug::parseDebug($params);
         $id = $params[0];
@@ -240,9 +244,9 @@ class Agent extends Controller {
         if ($id == "6") {
             // to prevent inactive daemon or crontab failure (to move to right place
             $php = explode(" ", shell_exec("whereis php"))[1];
-            $cmd = $php . " " . GLIAL_INDEX . " control service";
+            $cmd = $php." ".GLIAL_INDEX." control service";
 
-            $this->logger->info('Cmd : ' . $cmd);
+            $this->logger->info('Cmd : '.$cmd);
             Debug::debug($cmd);
             shell_exec($cmd);
         }
@@ -252,8 +256,8 @@ class Agent extends Controller {
 
             $id_loop++;
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
-            $sql = "SELECT * FROM daemon_main where id=" . $id;
+            $db  = $this->di['db']->sql(DB_DEFAULT);
+            $sql = "SELECT * FROM daemon_main where id=".$id;
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
@@ -261,9 +265,9 @@ class Agent extends Controller {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . "";
+                $cmd = $php." ".GLIAL_INDEX." ".$ob->class." ".$ob->method." ".$ob->id." ".$ob->params." loop:".$id_loop." ".$debug." 2>&1 >> ".$this->log_file."";
 
-                $this->logger->info('Cmd loop : ' . $cmd);
+                $this->logger->info('Cmd loop : '.$cmd);
 
                 Debug::debug($cmd);
                 shell_exec($cmd);
@@ -271,7 +275,7 @@ class Agent extends Controller {
                 $refresh_time = $ob->refresh_time;
             }
 
-            Debug::debug("refresh time : " . $refresh_time);
+            Debug::debug("refresh time : ".$refresh_time);
 
 
             // in case of mysql gone away, like this daemon restart when mysql is back
@@ -287,7 +291,6 @@ class Agent extends Controller {
             $db->sql_close();
         }
     }
-
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -298,12 +301,13 @@ class Agent extends Controller {
      * @access public
      */
 
-    public function updateServerList() {
-        $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_server`";
+    public function updateServerList()
+    {
+        $this->view    = false;
+        $db            = $this->di['db']->sql(DB_DEFAULT);
+        $sql           = "SELECT * FROM `mysql_server`";
         $servers_mysql = $db->sql_fetch_yield($sql);
-        $all_server = array();
+        $all_server    = array();
         foreach ($servers_mysql as $mysql) {
             $all_server[$mysql['name']] = $mysql;
         }
@@ -312,39 +316,39 @@ class Agent extends Controller {
         $all = array();
         foreach ($this->di['db']->getAll() as $server) {
 
-            $all[] = $server;
+            $all[]       = $server;
             $info_server = $this->di['db']->getParam($server);
-            $data = array();
+            $data        = array();
 
             if (!empty($all_server[$server])) {
                 $data['mysql_server']['id'] = $all_server[$server]['id'];
 
                 unset($all_server[$server]);
             } else {
-                echo "Add : " . $server . " to monitoring\n";
+                echo "Add : ".$server." to monitoring\n";
 
                 //to update
-                $data['mysql_server']['id_client'] = 1;
+                $data['mysql_server']['id_client']      = 1;
                 $data['mysql_server']['id_environment'] = 1;
             }
 
-            $data['mysql_server']['name'] = $server;
+            $data['mysql_server']['name']         = $server;
             $data['mysql_server']['display_name'] = $server;
-            $data['mysql_server']['ip'] = $info_server['hostname'];
-            $data['mysql_server']['login'] = $info_server['user'];
+            $data['mysql_server']['ip']           = $info_server['hostname'];
+            $data['mysql_server']['login']        = $info_server['user'];
 
             if (!empty($info_server['crypted']) && $info_server['crypted'] == 1) {
-                $passwd = $info_server['password'];
+                $passwd                                      = $info_server['password'];
                 $data['mysql_server']['is_password_crypted'] = 1;
             } else {
-                $passwd = Crypt::encrypt($info_server['password']);
+                $passwd                                      = Crypt::encrypt($info_server['password']);
                 $data['mysql_server']['is_password_crypted'] = 0;
             }
 
-            $data['mysql_server']['passwd'] = $passwd;
-            $data['mysql_server']['port'] = empty($info_server['port']) ? 3306 : $info_server['port'];
+            $data['mysql_server']['passwd']       = $passwd;
+            $data['mysql_server']['port']         = empty($info_server['port']) ? 3306 : $info_server['port'];
             $data['mysql_server']['date_refresh'] = date('Y-m-d H:i:s');
-            $data['mysql_server']['database'] = $info_server['database'];
+            $data['mysql_server']['database']     = $info_server['database'];
 
             //$data['mysql_server']['is_monitored'] = 1;
 
@@ -368,18 +372,19 @@ class Agent extends Controller {
         }
 
         foreach ($all_server as $to_delete) {
-            $sql = "DELETE FROM `mysql_server` WHERE id=" . $to_delete['id'] . "";
+            $sql = "DELETE FROM `mysql_server` WHERE id=".$to_delete['id']."";
             $db->sql_query($sql);
 
-            echo "[Warning] Removed : " . $to_delete['name'] . " from monitoring\n";
+            echo "[Warning] Removed : ".$to_delete['name']." from monitoring\n";
         }
 
 
         Mysql::addMaxDate($this->di['db']->sql(DB_DEFAULT));
     }
 
-    public function index() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+    public function index()
+    {
+        $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * FROM `daemon_main` order by id";
         $res = $db->sql_query($sql);
 
@@ -390,7 +395,8 @@ class Agent extends Controller {
         $this->set('data', $data);
     }
 
-    public function logs() {
+    public function logs()
+    {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -398,17 +404,17 @@ class Agent extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
             if (!empty($_POST['daemon_main']['refresh_time']) && !empty($_POST['daemon_main']['thread_concurency']) && !empty($_POST['daemon_main']['max_delay'])) {
-                $table = [];
-                $table['daemon_main'] = $_POST['daemon_main'];
+                $table                      = [];
+                $table['daemon_main']       = $_POST['daemon_main'];
                 $table['daemon_main']['id'] = 1;
-                $gg = $db->sql_save($table);
+                $gg                         = $db->sql_save($table);
 
                 if (!$gg) {
                     set_flash("error", "Error", "Impossible to update the params of Daemon");
                 } else {
                     set_flash("success", "Success", "The params of Daemon has been updated");
                 }
-                header("location: " . LINK . "Server/listing/logs");
+                header("location: ".LINK."Server/listing/logs");
             }
         }
 
@@ -417,10 +423,10 @@ class Agent extends Controller {
 
         $sql = "SELECT * FROM `daemon_main` WHERE id =1";
         $res = $db->sql_query($sql);
-        $ob = $db->sql_fetch_object($res);
+        $ob  = $db->sql_fetch_object($res);
 
 
-        $data['log_file'] = TMP . $ob->log_file;
+        $data['log_file'] = TMP.$ob->log_file;
 
         $data['log'] = __("Log file doens't exist yet !");
 
@@ -438,7 +444,7 @@ class Agent extends Controller {
         for ($i = 1; $i <= 128; $i++) {
             $tmp = [];
 
-            $tmp['id'] = $i;
+            $tmp['id']      = $i;
             $tmp['libelle'] = $i;
 
             $data['thread_concurency'][] = $tmp;
@@ -451,7 +457,7 @@ class Agent extends Controller {
         for ($i = 1; $i <= 60; $i++) {
             $tmp = [];
 
-            $tmp['id'] = $i;
+            $tmp['id']      = $i;
             $tmp['libelle'] = $i;
 
             $data['refresh_time'][] = $tmp;
@@ -463,7 +469,7 @@ class Agent extends Controller {
         for ($i = 1; $i <= 60; $i++) {
             $tmp = [];
 
-            $tmp['id'] = $i;
+            $tmp['id']      = $i;
             $tmp['libelle'] = $i;
 
             $data['max_delay'][] = $tmp;
@@ -474,7 +480,6 @@ class Agent extends Controller {
 
         $this->set('data', $data);
     }
-
     /*
 
       public function updateHaProxy()
@@ -498,12 +503,13 @@ class Agent extends Controller {
       }
       } */
 
-    public function checkAllEngines() {
+    public function checkAllEngines()
+    {
 
         return true; // time to fix with mariadb 10.3.2
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "select distinct a.engine from information_schema.tables a
                 LEFT JOIN information_schema.engines b ON a.engine = b.engine
@@ -529,39 +535,36 @@ class Agent extends Controller {
      * @link http://stackoverflow.com/a/15025877/995958
      * @license http://creativecommons.org/licenses/by/3.0/
      */
-    function tailCustom($filepath, $lines = 1, $adaptive = true) {
+    function tailCustom($filepath, $lines = 1, $adaptive = true)
+    {
         // Open file
-        $f = @fopen($filepath, "rb");
-        if ($f === false)
-            return false;
+        $f      = @fopen($filepath, "rb");
+        if ($f === false) return false;
         // Sets buffer size, according to the number of lines to retrieve.
         // This gives a performance boost when reading a few lines from the file.
-        if (!$adaptive)
-            $buffer = 4096;
-        else
-            $buffer = ($lines < 2 ? 64 : ($lines < 10 ? 512 : 4096));
+        if (!$adaptive) $buffer = 4096;
+        else $buffer = ($lines < 2 ? 64 : ($lines < 10 ? 512 : 4096));
         // Jump to last character
         fseek($f, -1, SEEK_END);
         // Read it and adjust line number if necessary
         // (Otherwise the result would be wrong if file doesn't end with a blank line)
-        if (fread($f, 1) != "\n")
-            $lines -= 1;
+        if (fread($f, 1) != "\n") $lines  -= 1;
 
         // Start reading
         $output = '';
-        $chunk = '';
+        $chunk  = '';
         // While we would like more
         while (ftell($f) > 0 && $lines >= 0) {
             // Figure out how far back we should jump
-            $seek = min(ftell($f), $buffer);
+            $seek   = min(ftell($f), $buffer);
             // Do the jump (backwards, relative to where we are)
             fseek($f, -$seek, SEEK_CUR);
             // Read a chunk and prepend it to our output
-            $output = ($chunk = fread($f, $seek)) . $output;
+            $output = ($chunk  = fread($f, $seek)).$output;
             // Jump back to where we started reading
             fseek($f, -mb_strlen($chunk, '8bit'), SEEK_CUR);
             // Decrease our line counter
-            $lines -= substr_count($chunk, "\n");
+            $lines  -= substr_count($chunk, "\n");
         }
         // While we have too many lines
         // (Because of buffer size we might have read too many)
@@ -573,7 +576,6 @@ class Agent extends Controller {
         fclose($f);
         return trim($output);
     }
-
     /*
       private function addIpVirtuel($ssh, $id_mysql_server)
       {
@@ -619,11 +621,12 @@ class Agent extends Controller {
       }
      */
 
-    public function check_daemon() {
+    public function check_daemon()
+    {
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT id, name, pid, log_file FROM daemon_main WHERE pid != 0";
+        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $sql        = "SELECT id, name, pid, log_file FROM daemon_main WHERE pid != 0";
 
         $res = $db->sql_query($sql);
 
@@ -632,34 +635,34 @@ class Agent extends Controller {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $ob->id . " >> " . TMP . $ob->log_file . " & echo $!";
+                $cmd = $php." ".GLIAL_INDEX." Agent launch ".$ob->id." >> ".TMP.$ob->log_file." & echo $!";
                 $pid = shell_exec($cmd);
 
-                $sql = "UPDATE daemon_main SET pid=" . $pid . " WHERE id=" . $ob->id;
+                $sql = "UPDATE daemon_main SET pid=".$pid." WHERE id=".$ob->id;
                 $db->sql_query($sql);
 
-                $this->logger->warning(Color::getColoredString('Daemon ' . $ob->name
-                                . ' with pid (' . $ob->pid . ') was down, crontab restart it with pid : ' . $pid, "black", "yellow"));
+                $this->logger->warning(Color::getColoredString('Daemon '.$ob->name
+                        .' with pid ('.$ob->pid.') was down, crontab restart it with pid : '.$pid, "black", "yellow"));
             }
         }
     }
-
     /*
      * 
      * 
      * Check queue
      */
 
-    public function check_queue($param) {
+    public function check_queue($param)
+    {
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = $this->di['db']->sql(DB_DEFAULT);
 
         Debug::parseDebug($param);
 
         $id_daemon = $param[0];
 
 
-        $sql = "SELECT * FROM daemon_main WHERE queue_key != 0 and id = " . $id_daemon;
+        $sql = "SELECT * FROM daemon_main WHERE queue_key != 0 and id = ".$id_daemon;
         $res = $db->sql_query($sql);
 
 
@@ -678,7 +681,7 @@ class Agent extends Controller {
 
 
                     $time = microtime(true) - $time_start;
-                    Debug::debug("All tests termined : " . round($time, 2) . " sec");
+                    Debug::debug("All tests termined : ".round($time, 2)." sec");
                 }
 
 
@@ -687,7 +690,7 @@ class Agent extends Controller {
                 }
 
                 if ($last_value !== $msg_qnum) {
-                    echo "[" . date("Y-m-d H:i:s") . "] Nombre de message de la file d'attente : ";
+                    echo "[".date("Y-m-d H:i:s")."] Nombre de message de la file d'attente : ";
                     echo Color::getColoredString($msg_qnum, "grey", "green");
                     echo "\n";
                 }
@@ -698,9 +701,7 @@ class Agent extends Controller {
             }
         }
     }
-
 }
-
 /*
  *
  *
