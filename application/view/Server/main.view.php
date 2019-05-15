@@ -5,6 +5,10 @@ use \Glial\Synapse\FactoryController;
 use \Glial\Security\Crypt\Crypt;
 use Glial\Html\Form\Form;
 
+
+use App\Library\Format;
+
+/*
 function formatVersion($version)
 {
     if (strpos($version, "-")) {
@@ -51,6 +55,11 @@ function format_ping($microtime, $precision = 2)
 
     return round($microtime, $precision).' '.$units[$pow];
 }
+
+*/
+
+
+
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -208,7 +217,7 @@ if (!empty($data['servers'])) {
 
 
 
-            echo formatVersion($data['extra'][$server['id']]['']['version']);
+            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version']);
         }
 
         echo '</td>';
@@ -259,7 +268,7 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['ping'])) {
-            echo format_ping($data['extra'][$server['id']]['']['ping']);
+            echo Format::ping($data['extra'][$server['id']]['']['ping']);
         }
 
 
