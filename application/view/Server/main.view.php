@@ -115,24 +115,37 @@ if (!empty($data['servers'])) {
         $i++;
 
         $style = "";
+        
+        //$style = 'background-color:#EEE; color:#000';
+        // cas des erreur
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
-            $style = 'background-color:#d9534f; color:#FFFFFF';
+            $style = 'background-color:#F2DEDE; color:#000';
         }
 
-
+        // cas des warning
         if ($server['is_available'] == -1 && $server['is_monitored'] === "1") {
-            $style = 'background-color:#F0AD4E; color:#000000';
+            $style = 'background-color:#FCF8E3; color:#000000';
         }
 
+        // acknoledge
         if ($server['is_acknowledged'] !== "0") {
-            $style = 'background-color:#cccccc; color:#999999';
+            $style = 'background-color:#DFF0D8; color:#999999';
+        }
+
+        // serveur non monitoré
+        if (empty($server['is_monitored'])) {
+            $style = 'background-color:#D9EDF7; color:#999';
+        }
+
+        if (!empty($style)) {
+            $style .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
         }
 
         echo '<tr>';
         echo '<td style="'.$style.'">'.$i.'</td>';
         echo '<td style="'.$style.'">'.$server['id'].'</td>';
         echo '<td style="'.$style.'">';
-        echo '<span class="glyphicon '.($server['is_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
+        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : ($server['is_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
         echo '</td>';
 
         /*

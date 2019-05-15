@@ -1075,6 +1075,9 @@ class Aspirateur extends Controller
 
 
 
+        Debug::debug($server_list, "Liste des serveurs monitoré");
+
+
 
         //to prevent any trouble with fork
         //$this->debugShowQueries();
@@ -1093,10 +1096,14 @@ class Aspirateur extends Controller
 
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
+
+                Debug::debug($server, "Ajout dans la file d'attente");
                 //echo "added to queue  \n";
                 // you can use the msg_stat_queue() function to see queue status
                 //print_r(msg_stat_queue($queue));
             } else {
+
+                
                 echo "could not add message to queue \n";
             }
         }
