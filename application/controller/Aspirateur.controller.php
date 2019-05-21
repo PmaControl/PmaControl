@@ -12,7 +12,7 @@ use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Chiffrement;
-use App\Library\Zmsg;
+use App\Library\Mysql;
 use \Glial\Cli\Color;
 
 //require ROOT."/application/library/Filter.php";
@@ -377,6 +377,15 @@ class Aspirateur extends Controller
         Debug::debug("apres master");
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
+
+        if ($var['variables']['log_bin'] === "ON") {
+            $data['binlog'] = $this->BinaryLog($mysql_tested);
+        }
+
+        Debug::debug("apres la récupération de la liste des binlogs");
+
+
+
 
 //Debug::debug($data['slave']);
 
@@ -967,9 +976,7 @@ class Aspirateur extends Controller
                 $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
                 if ($msg_qnum == 0) {
                     break;
-                }
-                else
-                {
+                } else {
                     Debug::debug($msg_qnum, "Nombre de message en attente");
                 }
                 sleep(1);
@@ -1103,7 +1110,7 @@ class Aspirateur extends Controller
                 //print_r(msg_stat_queue($queue));
             } else {
 
-                
+
                 echo "could not add message to queue \n";
             }
         }
@@ -1423,6 +1430,59 @@ class Aspirateur extends Controller
         if (!shmop_delete($shm_id)) {
             echo "Impossible d'effacer le segment de mémoire";
         }
+    }
+
+    private function BinaryLog($mysql_tested)
+    {
+
+        //$grants = $this->getGrants();
+
+        if ($mysql_tested->testAccess()) {
+
+            $sql = "SHOW BINARY LOGS;";
+            if ($res = $mysql_tested->sql_query($sql)) {
+
+                if ($mysql_tested->sql_num_rows($res) > 0) {
+
+                    $files = array();
+                    $sizes = array();
+
+                    while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_NUM)) {
+
+
+                        $files[] = $arr[0];
+                        $sizes[] = $arr[1];
+                    }
+
+                    $data['file_first'] = $files[0];
+                    $data['file_last']  = end($files);
+                    $data['files']      = json_encode($files);
+                    $data['sizes']      = json_encode($sizes);
+                    $data['total_size'] = array_sum($sizes);
+                    $data['nb_files']   = count($files);
+
+                    return $data;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function testBinaryLog($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $remote = Mysql::getDbLink($db, $id_mysql_server);
+
+        $db_remote = $this->di['db']->sql($remote);
+
+        $ret = $this->BinaryLog($db_remote);
+
+        Debug::debug($ret, "Resultat");
     }
 }
 /*

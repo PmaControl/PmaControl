@@ -20,3 +20,7 @@ echo '</div>';
 
 
 \Glial\Synapse\FactoryController::addNode("Binlog", "backup", array());
+
+
+
+\Glial\Synapse\FactoryController::addNode("Binlog", "liste", array());
