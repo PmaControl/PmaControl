@@ -162,11 +162,23 @@ class Mysql
 
         $db = self::$db;
 
+        //debug($data);
+
+        $server = array();
 
 
-	debug($data);
+        $ip   = System::getIp($data['fqdn']);
+        $port = $data['port'] ?? 3306;
 
-        $server                              = array();
+
+        $sql = "SELECT id from mysql_server where ip='".$ip."' and port =".$port;
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $server['mysql_server']['id'] = $ob->id;
+        }
+
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
 
@@ -175,13 +187,13 @@ class Mysql
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], $data);
-        $server['mysql_server']['ip']                  = System::getIp($data['fqdn']);
+        $server['mysql_server']['ip']                  = $ip;
         $server['mysql_server']['hostname']            = $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
         $server['mysql_server']['passwd']              = Crypt::encrypt($data['password'], CRYPT_KEY);
         $server['mysql_server']['database']            = $data['database'] ?? "mysql";
         $server['mysql_server']['is_password_crypted'] = "1";
-        $server['mysql_server']['port']                = $data['port'] ?? 3306;
+        $server['mysql_server']['port']                = $port;
 
 
         $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
@@ -517,11 +529,11 @@ SET autocommit = 1;";
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
 
-        while ($ar  = $db->sql_fetch_object($res)) {
+        while ($ar = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
 
-        
+
 
         return $ob;
     }

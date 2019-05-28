@@ -216,14 +216,29 @@ class Binlog extends Controller
 
         $res = $db->sql_query($sql);
 
-
         //get available binlogs
 
-        $bin_backup = array();
-        while ($ob         = $db->sql_fetch_object($res)) {
+
+        $last_binlog_file = array();
+        $bin_backup       = array();
+
+        $last_file = '';
+        $last_id   = '';
+
+        while ($ob = $db->sql_fetch_object($res)) {
 
             $bin_backup[$ob->logfile_name] = $ob->logfile_size;
+            $last_file = $ob->logfile_name;
+            $last_id   = $ob->id;
         }
+
+
+        if (!empty($last_file)) {
+            $last_binlog_file[$last_file] = $last_id;
+        }
+
+        array_pop($bin_backup);
+        Debug::debug($last_binlog_file, "last element");
 
 
         Extraction::setDb($db);
@@ -232,8 +247,6 @@ class Binlog extends Controller
 
         $binarylogs = $result[$id_mysql_server][''];
         $bin_logs   = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
-
-
 
 
 
@@ -266,11 +279,49 @@ class Binlog extends Controller
 
                     $password = Crypt::decrypt($server->passwd, CRYPT_KEY);
 
-                    $cmd = "mysqlbinlog -R --host=".$server->ip." -u ".$server->login." -p".$password." ".$file." > ".$directory.$file;
+                    $cmd = "cd ".$directory." && mysqlbinlog -R --raw --host=".$server->ip." -u ".$server->login." -p".$password." ".$file;
                     Debug::debug($cmd);
 
 
-                    shell_exec($cmd);
+                    $db->sql_close();
+
+                    $gg = shell_exec($cmd);
+
+
+                    if (empty($gg)) {
+
+                        $db  = $this->di['db']->sql(DB_DEFAULT);
+                        $bck = array();
+
+
+                        if (!empty($last_binlog_file[$file])) {
+
+                            $bck['binlog_backup']['id'] = $last_binlog_file[$file];
+                        }
+
+                        $bck['binlog_backup']['id_mysql_server'] = $id_mysql_server;
+                        $bck['binlog_backup']['logfile_name']    = $file;
+                        $bck['binlog_backup']['logfile_size']    = $size;
+                        $bck['binlog_backup']['md5']             = md5_file($directory.$file);
+                        $bck['binlog_backup']['date_backup']     = date('Y-m-d H:i:s');
+
+
+
+                        $err = $db->sql_save($bck);
+
+
+                        if (!$err) {
+
+                            Debug::debug($db->sql_error(), "Error Insert / update");
+                        }
+
+                        if (!empty($last_binlog_file[$file])) {
+                            Debug($bck, $bck);
+                        }
+
+
+                        $db->sql_close();
+                    }
                 }
             }
         }
