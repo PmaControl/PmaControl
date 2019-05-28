@@ -409,8 +409,6 @@ var myChart = new Chart(ctx, {
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins'
             .' <i class="glyphicon glyphicon-trash"></i> '.__("Cleaner")." > ".$this->title;
 
-
-
         if (!empty($param[0])) {
             $id_cleaner = $param[0];
             $data       = $param[1];
@@ -421,7 +419,6 @@ var myChart = new Chart(ctx, {
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
-
             $cleaner_main['cleaner_main']                 = $_POST['cleaner_main'];
             $cleaner_main['cleaner_main']['id_user_main'] = $this->di['auth']->getUser()->id;
 
@@ -429,6 +426,11 @@ var myChart = new Chart(ctx, {
                 unset($cleaner_main['cleaner_main']['id']);
             }
 
+            if (!empty($cleaner_main['cleaner_main']['is_crypted']) && $cleaner_main['cleaner_main']['is_crypted'] === "on") {
+                $cleaner_main['cleaner_main']['is_crypted'] = 1;
+            } else {
+                $cleaner_main['cleaner_main']['is_crypted'] = 0;
+            }
 
 
             $id_cleaner_main = $db->sql_save($cleaner_main);
@@ -1102,7 +1104,7 @@ var myChart = new Chart(ctx, {
         return $files;
     }
 
-    private function compressAndCrypt($file)
+    private function compressAndCrypt($file, $is_cryted = true)
     {
         $stats['normal'] = $this->getFileinfo($file);
 
@@ -1113,12 +1115,22 @@ var myChart = new Chart(ctx, {
         $stats['compressed']                   = $this->getFileinfo($file_compressed);
         $stats['compressed']['execution_time'] = round(microtime(true) - $time_start, 0);
 
+        $stats['file_path'] = $file_compressed;
 //chiffrement
-        $time_start2                        = microtime(true);
-        $file_crypted                       = $this->cryptFile($file_compressed);
-        $stats['crypted']                   = $this->getFileinfo($file_crypted);
-        $stats['crypted']['execution_time'] = round(microtime(true) - $time_start2, 0);
-        $stats['file_path']                 = $file_crypted;
+
+        if ($is_cryted === true) {
+
+
+
+            $time_start2                        = microtime(true);
+            $file_crypted                       = $this->cryptFile($file_compressed);
+            $stats['crypted']                   = $this->getFileinfo($file_crypted);
+            $stats['crypted']['execution_time'] = round(microtime(true) - $time_start2, 0);
+            $stats['file_path']                 = $file_crypted;
+
+            Debug::debug("File has been crypted !");
+        }
+
 
         return $stats;
     }
@@ -1360,8 +1372,8 @@ var myChart = new Chart(ctx, {
 
 //feed id with main table
 
-        $pri         = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
-        $primary_key = "a.`".implode('`, a.`', $pri)."`";
+        $pri          = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
+        $primary_key  = "a.`".implode('`, a.`', $pri)."`";
         $primary_key2 = "`".implode('`, `', $pri)."`";
 
         $sql = "SELECT ".$primary_key." FROM `".$this->main_table."` a ".$this->init_where." LIMIT ".$this->limit.";"; // LOCK IN SHARE MODE
@@ -1392,8 +1404,6 @@ var myChart = new Chart(ctx, {
 
             $this->end_loop();
             sleep(1);
-
-
 
             return $this->rows_to_delete;
         }
@@ -2188,7 +2198,11 @@ var myChart = new Chart(ctx, {
         if (!empty($this->id_backup_storage_area)) {
 
             $this->backup_dir = DATA."cleaner/".$this->id_cleaner;
-            $files            = $this->checkFileToPush($this->backup_dir);
+
+
+            Debug::debug($this->backup_dir, "Backup directory");
+
+            $files = $this->checkFileToPush($this->backup_dir);
 
             Debug::debug($files, "Files to push");
 
@@ -2196,7 +2210,7 @@ var myChart = new Chart(ctx, {
             foreach ($files as $file) {
 
 
-                $stats = $this->compressAndCrypt($file);
+                $stats = $this->compressAndCrypt($file, $storage_area->is_crypted);
 
                 $path = "pmacontrol/cleaner/".$id_cleaner."/";
                 $dst  = $path.pathinfo($stats['file_path'])['basename'];
@@ -2217,13 +2231,24 @@ var myChart = new Chart(ctx, {
                 $archive['archive']['size_sql']               = $stats['normal']['size'];
                 $archive['archive']['md5_compressed']         = $stats['compressed']['md5'];
                 $archive['archive']['size_compressed']        = $stats['compressed']['size'];
-                $archive['archive']['md5_crypted']            = $stats['crypted']['md5'];
-                $archive['archive']['size_crypted']           = $stats['crypted']['size'];
 
-                $archive['archive']['md5_remote']        = $scp['md5'];
-                $archive['archive']['size_remote']       = $scp['size'];
-                $archive['archive']['time_to_compress']  = $stats['compressed']['execution_time'];
-                $archive['archive']['time_to_crypt']     = $stats['crypted']['execution_time'];
+
+                if ($storage_area->is_crypted === "1") {
+                    $archive['archive']['md5_crypted']   = $stats['crypted']['md5'];
+                    $archive['archive']['size_crypted']  = $stats['crypted']['size'];
+                    $archive['archive']['time_to_crypt'] = $stats['crypted']['execution_time'];
+                    $archive['archive']['is_crypted']    = 1;
+                } else {
+                    $archive['archive']['md5_crypted']   = '0';
+                    $archive['archive']['size_crypted']  = 0;
+                    $archive['archive']['time_to_crypt'] = 0;
+                    $archive['archive']['is_crypted']    = 0;
+                }
+
+                $archive['archive']['md5_remote']       = $scp['md5'];
+                $archive['archive']['size_remote']      = $scp['size'];
+                $archive['archive']['time_to_compress'] = $stats['compressed']['execution_time'];
+
                 $archive['archive']['time_to_transfert'] = $scp['execution_time'];
                 $archive['archive']['date']              = date('Y-m-d H:i:s');
                 $archive['archive']['pathfile']          = $scp['pathfile'];
@@ -2250,7 +2275,7 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_select_db($this->schema_main);
 
-        $sql = "SELECT b.* FROM cleaner_main a
+        $sql = "SELECT b.*, a.is_crypted FROM cleaner_main a
             INNER JOIN backup_storage_area b ON a.id_backup_storage_area = b.id
             where a.id ='".$id_cleaner."'";
         $res = $db->sql_query($sql);
@@ -2620,14 +2645,9 @@ var myChart = new Chart(ctx, {
         $this->title = '<span class="glyphicon glyphicon-edit"></span> '.__('Edit');
 
 
-
         if (Basic::from(__FILE__)) {
-
             return $this->title;
         }
-
-
-
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -2647,6 +2667,7 @@ var myChart = new Chart(ctx, {
             $_GET['cleaner_main']['prefix']                 = $ob->prefix;
             $_GET['cleaner_main']['id_backup_storage_area'] = $ob->id_backup_storage_area;
             $_GET['cleaner_main']['limit']                  = $ob->limit;
+            $_GET['cleaner_main']['is_crypted']             = $ob->is_crypted;
 
             $_GET['id_mysql_server'] = $ob->id_mysql_server;
 
@@ -2722,7 +2743,7 @@ var myChart = new Chart(ctx, {
         $sql         = "SELECT ".$primary_key." FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query']." LIMIT ".$data['limit'].";";
         $data['sql'] = SqlFormatter::format($sql);
 
-        $db2  = $this->di['db']->sql($this->link_to_purge);
+        $db2 = $this->di['db']->sql($this->link_to_purge);
 
 
         $db2->sql_select_db($data['database']);
