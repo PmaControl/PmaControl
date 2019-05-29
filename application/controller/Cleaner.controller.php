@@ -2629,8 +2629,14 @@ var myChart = new Chart(ctx, {
 
     private function compareTable($table)
     {
-        $path_dir    = $this->backup_dir."/DDL";
-        $file_to_cmp = file_get_contents($path_dir."/".$table.".sql");
+        $path_dir = $this->backup_dir."/DDL";
+
+        $file = $path_dir."/".$table.".sql";
+
+        $file_to_cmp = '';
+        if (file_exists($file)) {
+            $file_to_cmp = file_get_contents();
+        }
 
         $updater = new Compare;
         $sql     = $updater->getUpdates($file_to_cmp, $this->cache_table[$this->schema_to_purge][$table]);
