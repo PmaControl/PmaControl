@@ -4,7 +4,8 @@
         <th><?= __('Name') ?> </th>
         <th><?= __('Environment') ?> </th>
         <th><?= __('Server') ?> </th>
-        <th><?= __('IP') ?> </th>
+        //<th><?= __('IP') ?> </th>
+        <th><?= __('Database') ?> </th>
         <th><?= __('Main table') ?> </th>
         <th><?= __('Tools') ?> </th>
         <th><?= __('Status') ?> </th>
@@ -19,8 +20,9 @@
         echo '<td>' . $cleaner['id_cleaner_main'] . '</td>';
         echo '<td>' . $cleaner['name_cleaner'] . '</td>';
         echo '<td><big><span class="label label-'.$cleaner['class'].'">'. $cleaner['env'].'</span></big></td>';
-        echo '<td>' . str_replace("_", "-", $cleaner['mysql_server_name']) . '</td>';
-        echo '<td>' . $cleaner['ip'] . '</td>';
+        echo '<td>' . $cleaner['display_name'] . '</td>';
+        //echo '<td>' . $cleaner['ip'] . '</td>';
+        echo '<td>' . $cleaner['db'] . '</td>';
         echo '<td>' . $cleaner['main_table'] . '</td>';
         echo '<td>';
 

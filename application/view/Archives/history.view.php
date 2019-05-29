@@ -78,8 +78,8 @@ foreach ($data['history'] as $ob) {
     echo '<td><img class="country" src="/pmacontrol/image/country/type1/'.$ob->iso.'.gif" width="18" height="12"> <a href="'.LINK.'user/profil/'.$ob->id_user_main.'/">'.$ob->firstname.' '.$ob->name.'</a></td>';
     echo '<td><a href="'.LINK.'Cleaner/index/">'.$ob->libelle.'</a></td>';
     echo '<td>'.$ob->main_table.'</td>';
-    echo '<td><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$ob->id_mysql_server.'/ts_variable:name:com_select/ts_variable:date:6 hour/ts_variable:derivate:1">'.$ob->display_name.'</a></td>';
-    echo '<td><a href="'.LINK.'Server/listing"> '.$ob->database.'</td>';
+    echo '<td><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$ob->id_mysql_server.'/ts_variable:name:com_select/ts_variable:date:6 hour/ts_variable:derivate:1">'.$ob->src.'</a></td>';
+    echo '<td><a href="'.LINK.'Server/listing"> '.$ob->db_src.'</td>';
     echo '<td><a href="'.LINK.'Server/listing/id/mysql_server:id:'.$ob->id_mysql_server.'/ts_variable:name:com_select/ts_variable:date:6 hour/ts_variable:derivate:1">'.$ob->display_name.'</a></td>';
     echo '<td><a href="'.LINK.'Server/listing"> '.$ob->database.'</td>';
 
