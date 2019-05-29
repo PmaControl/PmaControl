@@ -16,6 +16,7 @@ use App\Library\System;
 class Archives extends Controller
 {
 
+    // a sortir d'ici
     use App\Library\Filter;
     use App\Library\Scp;
     use App\Library\File;
@@ -91,8 +92,14 @@ var myChart = new Chart(ctx, {
             backgroundColor: [
                 'rgba(54, 162, 235, 0.5)',
                 'rgba(54, 162, 235, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
             ],
             borderColor: [
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
                 'rgba(54, 162, 235, 1)',
                 'rgba(54, 162, 235, 1)',
 
@@ -182,6 +189,10 @@ var myChart = new Chart(ctx, {
         Debug::parseDebug($param);
 
         if (IS_CLI) {
+
+
+            $time_begin        = microtime(true);
+
             $id_archive_load = (int) $param[0];
             $this->view      = false;
 
@@ -191,8 +202,8 @@ var myChart = new Chart(ctx, {
             $db = $this->di['db']->sql(DB_DEFAULT);
 
 // to delete
-            $db->sql_query("update archive_load set status='NOT_STARTED' WHERE id=15;");
-            $db->sql_query("delete from archive_load_detail where id_archive_load=15;");
+            $db->sql_query("update archive_load set status='NOT_STARTED' WHERE id=".$id_archive_load.";");
+            $db->sql_query("delete from archive_load_detail where id_archive_load=".$id_archive_load.";");
 
             $this->id_archive_load = $id_archive_load;
 
@@ -224,11 +235,9 @@ var myChart = new Chart(ctx, {
 
                 Debug::debug("The load of archive is started");
                 $this->log("info", "START", "The load of archive is started");
-                $sql3 = "UPDATE archive_load SET status = 'STARTED' WHERE id = ".$id_archive_load."";
+                $sql3 = "UPDATE `archive_load` SET `status` = 'STARTED' WHERE `id` = ".$id_archive_load.";";
 
-                Debug::debug($sql3, "sql3");
-
-
+                Debug::sql($sql3, "sql3");
 
                 $db->sql_query($sql3);
             }
@@ -242,8 +251,8 @@ var myChart = new Chart(ctx, {
              */
 
             $sql2 = "SELECT * FROM `backup_storage_area` a
-                INNER JOIN ssh_key b ON a.id_ssh_key = b.id
-                INNER JOIN archive c ON c.id_backup_storage_area = a.id
+                INNER JOIN `ssh_key` b ON a.`id_ssh_key` = b.`id`
+                INNER JOIN `archive` c ON c.`id_backup_storage_area` = a.`id`
                 where `c`.`id_cleaner_main` = ".$id_cleaner_main.";";
             ///find id mysql server
 
@@ -261,6 +270,10 @@ var myChart = new Chart(ctx, {
 
 
             while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+
+
+                Debug::debug($arr, "files");
+
                 $save                                           = array();
                 $save['archive_load_detail']['id_archive']      = $arr['id'];
                 $save['archive_load_detail']['id_archive_load'] = $id_archive_load;
@@ -281,15 +294,7 @@ var myChart = new Chart(ctx, {
             }
 
 
-
-
-
-
             foreach ($archives as $archive) {
-
-
-
-
                 Debug::debug($archive);
 
                 $start     = microtime(true);
@@ -297,6 +302,9 @@ var myChart = new Chart(ctx, {
 
                 $file = TMP."trash/".$id_cleaner_main."_".$file_name;
 
+
+                Debug::debug("####################################");
+                Debug::debug($file, "Début de traitement du fichier");
 
                 $save                                           = array();
                 $save['archive_load_detail']['id']              = $archive['id_archive_load_detail'];
@@ -310,8 +318,6 @@ var myChart = new Chart(ctx, {
 
 
 
-                Debug::debug($file, "FILE");
-
 
                 $remote = $this->getFile($archive['id_backup_storage_area'], $archive['pathfile'], $file);
 
@@ -321,12 +327,10 @@ var myChart = new Chart(ctx, {
 
                 Debug::debug($remote);
 
-
-
                 if (!file_exists($file)) {
 
 
-                    $msg = "The remote file is not found (".$file.")";
+                    $msg = "SCP : The remote file is not found (".$file.")";
 
                     $save['archive_load_detail']['error_msg'] = $msg;
                     $save['archive_load_detail']['status']    = "FILE_NOT_FOUND";
@@ -338,22 +342,39 @@ var myChart = new Chart(ctx, {
                     continue;
                 } else {
 
-                    $msg = "We donwloaded the file from : ".$archive['pathfile'];
+                    $msg = "SCP : We donwloaded the file from : ".$archive['pathfile'];
                     $this->log("info", "SCP", $msg);
                 }
 
                 Debug::debug($msg, "SCP");
 
-                if ($archive['md5_crypted'] !== md5_file($file)) {
-                    $this->log("error", "CMP_MD5_REMOTE", "The remote file is corrupted the md5 don't correspond (".$archive['md5_crypted']." != ".md5_file($file).")");
+                if ($archive['md5_remote'] !== md5_file($file)) {
+
+
+                    $msg = "The remote file is corrupted the md5 don't correspond (".$archive['md5_remote']." != ".md5_file($file).")";
+                    $this->log("error", "CMP_MD5_REMOTE", $msg);
+
+                    Debug::error($msg);
+
                     continue;
                 }
+                else
+                {
+                    Debug::success("The file has been fully download and have the same md5");
+                }
 
-                $stats = $this->unCompressAndUnCrypt($file);
+                $stats = $this->unCompressAndUnCrypt($file, $arr['is_crypted']);
+
+                Debug::debug($stats, "unCompressAndUnCrypt");
 
                 if ($archive['md5_compressed'] !== $stats['uncompressed']['md5']) {
-                    $this->log("error", "MD5_FILE",
-                        "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")");
+
+
+                    $msg = "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")";
+
+                    Debug::error($msg);
+
+                    $this->log("error", "MD5_FILE", $msg);
                     continue;
                 }
 
@@ -362,8 +383,7 @@ var myChart = new Chart(ctx, {
 
                 $conf = $this->di['db']->getParam($mysqlservertoload);
 
-
-                Debug::debug($conf);
+                Debug::debug($conf, "Conf from getParam");
 
                 if (!empty($conf['crypted']) && $conf['crypted'] === "1") {
                     $conf['password'] = Crypt::decrypt($conf['password']);
@@ -382,8 +402,11 @@ var myChart = new Chart(ctx, {
 
                 Debug::debug($cmd);
                 $cmd = str_replace("{password}", $conf['password'], $cmd);
-                passthru($cmd, $exit);
 
+
+                $db->sql_close(); // to prevent lost of connextion for inactivity
+                passthru($cmd, $exit);
+                $db = $this->di['db']->sql(DB_DEFAULT);
 
                 if ($exit !== 0) {
 
@@ -414,27 +437,35 @@ var myChart = new Chart(ctx, {
                 $sql6 = "SELECT * FROM `archive_load_detail` WHERE id= ".$id_archive_load_detail.";";
                 $res6 = $db->sql_query($sql6);
 
+
+                $error_msg;
                 while ($ob6 = $db->sql_fetch_object($res6)) {
                     $error_msg = $ob6->error_msg;
                 }
 
-                if (empty($ob->error_msg)) {
+                if (empty($error_msg)) {
                     $status = "COMPLETED";
                 } else {
                     $status = "ERROR";
                 }
 
-                $save['archive_load_detail']['status']   = $status;
-                $save['archive_load_detail']['date_end'] = date('Y-m-d H:i:s');
+                $save =array();
+
+                
+                $save['archive_load']['id']   = $id_archive_load;
+                $save['archive_load']['status']   = $status;
+                $save['archive_load']['date_end'] = date('Y-m-d H:i:s');
+                $save['archive_load']['duration'] = round(microtime(true) - $time_begin, 0);
                 $db->sql_save($save);
-
-
 
 
                 Debug::checkPoint("traitement : ".$stats['file_path']);
             }
 
-            $this->log("info", "COMPLETED", "The load of archive is completed");
+            $msg = "The load of archive is completed";
+
+            Debug::success($msg);
+            $this->log("info", "COMPLETED", $msg);
         }
     }
 
@@ -454,7 +485,7 @@ var myChart = new Chart(ctx, {
 
 
         $sql = "SELECT a.*, b.libelle, c.display_name, b.main_table, d.firstname, d.name,
- e.id as id_mysql_server_src, e.display_name as src, lower(iso) as iso, a.id_user_main
+ e.id as id_mysql_server_src, e.display_name as src, e.database as db_src, lower(iso) as iso, a.id_user_main
 FROM `archive_load` a
 INNER JOIN cleaner_main b ON a.id_cleaner_main = b.id
 INNER JOIN mysql_server c ON c.id = a.id_mysql_server
@@ -611,6 +642,15 @@ ORDER BY a.id DESC";
             header("location: ".LINK."archives/index");
         }
 
+
+        $sql = "SELECT * FROM archive_load WHERE id=".$id_archive_load;
+        $res = $db->sql_query($sql);
+
+                while ($arr = $db->sql_fetch_array($res)) {
+            $data['archive_load'] = $arr;
+        }
+
+
         $sql = "SELECT * FROM archive_load a
             INNER JOIN archive_load_detail b ON a.id = b.id_archive_load
             INNER JOIN archive c ON c.id = b.id_archive
@@ -674,15 +714,29 @@ ORDER BY a.id DESC";
 
             $sql = "SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
 
-            $cmd = $php." ".GLIAL_INDEX." Archives load ".$id_archive_load." >> ".TMP."/archive_".$id_cleaner_main."_".$database.".sql & echo $!";
 
-            Debug::debug($cmd);
+            if (IS_CLI) {
 
-            $pid = shell_exec($cmd);
+                $this->load(array($id_archive_load));
 
+                $pid = getmypid();
+            } else {
 
+                $cmd = $php." ".GLIAL_INDEX." Archives load ".$id_archive_load." >> ".TMP."archive_".$id_cleaner_main."_".$database.".sql & echo $!";
+
+                Debug::debug($cmd);
+
+                $pid = shell_exec($cmd);
+            }
+
+            $db = $this->di['db']->sql(DB_DEFAULT);
+            $archive_load                        = array();
             $archive_load['archive_load']['pid'] = (int) $pid;
             $archive_load['archive_load']['id']  = $id_archive_load;
+
+
+            Debug::debug($archive_load);
+
             $db->sql_save($archive_load);
 
 

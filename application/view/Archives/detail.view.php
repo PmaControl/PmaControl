@@ -41,17 +41,23 @@ echo '</div>';
             <th><?= __("Date end") ?></th>
             <th><?= __("Total time") ?></th>
             <th><?= __("Status") ?></th>
-        </tr>
+        </tr
+
+   
 
         <tr>
             <td>
                 <div class="progress">
-                    <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;">
-                        60%
+                    <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: <?= $data['archive_load']['progression'] ?>%;">
+                        <?= $data['archive_load']['progression'] ?>%
                     </div>
                 </div>
             </td>
-            <td><?= __("Status") ?></td>
+            <td><?= $data['archive_load']['date_start'] ?></td>
+            <td><?= $data['archive_load']['date_end'] ?></td>
+            <td><?= $data['archive_load']['duration'] ?> <?= __('seconds') ?></td>
+            <td><?= colorLevel($data['archive_load']['status']) ?></td>
+            
         </tr>
     </table>
 </div>
@@ -119,6 +125,7 @@ echo '</div>';
     {
         $color = ($level === "DEBUG" || $level === "NOTICE") ? "PRIMARY" : $level;
         $color = ($level === "ERROR") ? "danger" : $level;
+        $color = ($level === "COMPLETED") ? "success" : $level;
 
         return '<big><span class="label label-'.strtolower($color).'">'.$level.'</span></big>';
     }
