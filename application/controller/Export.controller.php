@@ -199,19 +199,11 @@ $("#export_all-all2").click(function(){
 
         }
 
-
             $json = Chiffrement::decrypt($crypted, $password);
 
-            
             Debug::debug($json, "json");
 
-
-
-
             $data = $this->import(array($json));
-
-
-
 
               if (!empty($data['mysql']['updated'])) {
               $msg = implode(", ", $data['mysql']['updated']);
@@ -267,7 +259,7 @@ $("#export_all-all2").click(function(){
         $json = $param[0];
 
 
-        debug(json_decode($json,JSON_PRETTY_PRINT));
+        //debug(json_decode($json,JSON_PRETTY_PRINT));
 
         $data = Json::isJson($json);
 
@@ -279,8 +271,6 @@ $("#export_all-all2").click(function(){
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
-
-
 
                         Mysql::addMysqlServer($server);
                         break;

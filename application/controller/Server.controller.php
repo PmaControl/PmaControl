@@ -183,11 +183,12 @@ class Server extends Controller
             new Clipboard(".copy-button");
         })();');
 
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class` FROM mysql_server a
+        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`
+            FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
+                 ORDER by a.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
 
         $res = $db->sql_query($sql);
 

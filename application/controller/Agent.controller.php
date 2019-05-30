@@ -659,17 +659,12 @@ class Agent extends Controller
 
         Debug::parseDebug($param);
 
-        $id_daemon = $param[0];
+        $queue = intval($param[0]);
 
+        Debug::debug($queue, "Numéro de la queue");
 
-        $sql = "SELECT * FROM daemon_main WHERE queue_key != 0 and id = ".$id_daemon;
-        $res = $db->sql_query($sql);
-
-
-        Debug::sql($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $queue = msg_get_queue($ob->queue_key);
+       
+            $queue = msg_get_queue($queue);
 
             $last_value = 0;
 
@@ -699,7 +694,7 @@ class Agent extends Controller
 
                 usleep(50);
             }
-        }
+        
     }
 }
 /*

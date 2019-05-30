@@ -12,7 +12,7 @@ use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Chiffrement;
-use App\Library\Zmsg;
+use App\Library\Mysql;
 use \Glial\Cli\Color;
 
 //require ROOT."/application/library/Filter.php";
@@ -22,6 +22,8 @@ use \Glial\Cli\Color;
 
 class Aspirateur extends Controller
 {
+    const QUEUE = 21671;
+
     use \App\Library\Filter;
     var $shared        = array();
     var $log_file      = TMP."log/daemon.log";
@@ -376,6 +378,15 @@ class Aspirateur extends Controller
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
 
+        if ($var['variables']['log_bin'] === "ON") {
+            $data['binlog'] = $this->BinaryLog($mysql_tested);
+        }
+
+        Debug::debug("apres la récupération de la liste des binlogs");
+
+
+
+
 //Debug::debug($data['slave']);
 
         Debug::checkPoint('apres query');
@@ -471,7 +482,7 @@ class Aspirateur extends Controller
 
 
         Debug::debugShowTime();
-                
+
         ini_set("display_errors", $display_error);
     }
 
@@ -910,14 +921,12 @@ class Aspirateur extends Controller
         return $stats;
     }
 
-
     /**
      * @example : ./glial aspirateur addToQueue 11 --debug
      *
      * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
      * 
      */
-
     public function addToQueue($param)
     {
 
@@ -951,9 +960,8 @@ class Aspirateur extends Controller
         }
 
 
-        Debug::debug($queue_key, "QUEUE");
 
-        define('QUEUE', 21671);
+
 
 //add message to queue
         $queue    = msg_get_queue($queue_key);
@@ -961,10 +969,15 @@ class Aspirateur extends Controller
 
         // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
         if ($msg_qnum != 0) {
+
+            Debug::debug('On attends de vider la file d\'attente');
+
             for ($i = 0; $i < $maxExecutionTime; $i++) {
                 $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
                 if ($msg_qnum == 0) {
                     break;
+                } else {
+                    Debug::debug($msg_qnum, "Nombre de message en attente");
                 }
                 sleep(1);
             }
@@ -1069,6 +1082,9 @@ class Aspirateur extends Controller
 
 
 
+        Debug::debug($server_list, "Liste des serveurs monitoré");
+
+
 
         //to prevent any trouble with fork
         //$this->debugShowQueries();
@@ -1087,10 +1103,14 @@ class Aspirateur extends Controller
 
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
+
+                Debug::debug($server, "Ajout dans la file d'attente");
                 //echo "added to queue  \n";
                 // you can use the msg_stat_queue() function to see queue status
                 //print_r(msg_stat_queue($queue));
             } else {
+
+
                 echo "could not add message to queue \n";
             }
         }
@@ -1103,10 +1123,6 @@ class Aspirateur extends Controller
     {
 
 
-
-        define('QUEUE', 21671);
-
-
         $pid = getmypid();
 
         //get mypid
@@ -1114,14 +1130,23 @@ class Aspirateur extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_close();
+        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $queue = msg_get_queue(QUEUE);
+        $sql = "SELECT * FROM daemon_main WHERE id=11;";
+
+        $res = $db->sql_query($sql);
+        while ($ob  = $db->sql_fetch_object($res)) {
+            $queue_key = intval($ob->queue_key);
+        }
+
+        $db->sql_close();
+
+
+        $queue = msg_get_queue($queue_key);
 
         $msg_type     = NULL;
         $msg          = NULL;
         $max_msg_size = 512;
-
-
 
         $data        = array();
         $data['pid'] = $pid;
@@ -1135,11 +1160,9 @@ class Aspirateur extends Controller
             $data['id']        = $id_mysql_server;
             $data['microtime'] = microtime(true);
 
-
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
 
             $double_buffer = TMP."lock/worker/".$pid.".pid";
-
 
             $fp = fopen($lock_file, "w+");
             fwrite($fp, json_encode($data));
@@ -1151,7 +1174,7 @@ class Aspirateur extends Controller
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
 
-
+            //do your business logic here and process this message!
 
             $this->tryMysqlConnection(array($msg->name, $msg->id));
 
@@ -1167,12 +1190,6 @@ class Aspirateur extends Controller
                 unlink($lock_file);
             }
 
-
-
-
-
-            //$this->shared['worker']->mysql_server->{"$msg->id"} = NULL;
-            //do your business logic here and process this message!
             //finally, reset our msg vars for when we loop and run again
             $msg_type = NULL;
             $msg      = NULL;
@@ -1413,6 +1430,59 @@ class Aspirateur extends Controller
         if (!shmop_delete($shm_id)) {
             echo "Impossible d'effacer le segment de mémoire";
         }
+    }
+
+    private function BinaryLog($mysql_tested)
+    {
+
+        //$grants = $this->getGrants();
+
+        if ($mysql_tested->testAccess()) {
+
+            $sql = "SHOW BINARY LOGS;";
+            if ($res = $mysql_tested->sql_query($sql)) {
+
+                if ($mysql_tested->sql_num_rows($res) > 0) {
+
+                    $files = array();
+                    $sizes = array();
+
+                    while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_NUM)) {
+
+
+                        $files[] = $arr[0];
+                        $sizes[] = $arr[1];
+                    }
+
+                    $data['file_first'] = $files[0];
+                    $data['file_last']  = end($files);
+                    $data['files']      = json_encode($files);
+                    $data['sizes']      = json_encode($sizes);
+                    $data['total_size'] = array_sum($sizes);
+                    $data['nb_files']   = count($files);
+
+                    return $data;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function testBinaryLog($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $remote = Mysql::getDbLink($db, $id_mysql_server);
+
+        $db_remote = $this->di['db']->sql($remote);
+
+        $ret = $this->BinaryLog($db_remote);
+
+        Debug::debug($ret, "Resultat");
     }
 }
 /*
