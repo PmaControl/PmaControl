@@ -162,7 +162,7 @@ class CheckConfig extends Controller
 
 
 
-        $sql = "select group_concat(b.name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
+        $sql = "select group_concat(b.display_name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
             from link__architecture__mysql_server a
             INNER JOIN mysql_server b ON a.id_mysql_server= b.id
             group by id_architecture having count(1) > 1;";

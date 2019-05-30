@@ -28,7 +28,10 @@ class Color
          */
 
         $hex = self::setFontColor($type);
-        return self::getFontColor($hex);
+
+
+        return $hex;
+        //return self::getFontColor($hex);
 
         //return $hex['background'];
     }
