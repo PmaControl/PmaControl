@@ -330,15 +330,19 @@ td.pma-grey {background:#e2e2e2 !important; color:#000; border:#fff 1px solid !i
 
 
 
-tr.pma-default td{background:#ffffff; color:#000}
-tr.pma-primary td{background:#337ab7; color:#fff}
-tr.pma-success td{background:#449d44; color:#fff}
-tr.pma-info td{background:#5bc0de; color:#fff}
-tr.pma-warning td{background:#f0ad4e; color:#fff}
-tr.pma-danger td{background:#c9302c; color:#fff}
+tr.pma-default td{background:#ffffff !important; color:#000}
+tr.pma-primary td{background:#337ab7 !important; color:#fff}
+tr.pma-success td{background:#449d44 !important; color:#fff}
+tr.pma-info td{background:#5bc0de !important; color:#fff}
+tr.pma-warning td{background:#f0ad4e !important; color:#fff}
+tr.pma-danger td{background:#c9302c !important; color:#fff}
 
 
-tr.pma-grey td{background:#bebebe; color:#000}
+tr.pma-grey td{background:#bebebe !important; color:#000}
+
+
+tr.pma-success td a{ color:#eee; text-decoration: underline;}
+tr.pma-success td .text-muted{ color:#ddd;}
 
 
 .tooltip-inner{text-align: left;}

@@ -618,7 +618,7 @@ database=".$server['database']."";
             $this->cadre("create organization");
 
             do {
-                $rl            = new Hoa\Console\Readline\Readline();
+                $rl           = new Hoa\Console\Readline\Readline();
                 $organization = $rl->readLine('Your Organization : ');
             } while (strlen($organization) < 3);
 
@@ -880,13 +880,16 @@ if (! defined('WWW_ROOT'))
         //echo "UPDATE site.config.php";
         shell_exec("cp -a config_sample/site.config.php configuration/site.config.php");
 
-
         $php = explode(" ", shell_exec("whereis php"))[1];
         $cmd = $php." ".GLIAL_INDEX." administration all";
+
         shell_exec($cmd);
 
+        $filename = TMP."acl/acl.ser";
 
-        shell_exec("rm tmp/acl/acl.ser");
+        if (file_exists($filename)) {
+            unlink($filename);
+        }
 
         //load DB and compare => upgrade
     }

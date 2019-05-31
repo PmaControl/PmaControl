@@ -20,7 +20,7 @@ class Control extends Controller
     var $field_value           = array("int" => "bigint(20) unsigned NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
     var $primary_key           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)"
         , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
-    //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
+//var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     var $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
@@ -43,13 +43,10 @@ class Control extends Controller
 
 
 
-        // connect to ssh to sql server
-        //$ssh->
-        // or local
+// connect to ssh to sql server
+//$ssh->
+// or local
         $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
-
-
-
 
         $percent = substr($size, 0, -1);
 
@@ -152,6 +149,8 @@ class Control extends Controller
 
         foreach ($combi as $table) {
             $sql = "ALTER TABLE `".$table."` DROP PARTITION `p".$partition_number."`;";
+            Debug::sql($sql);
+
             $db->sql_query($sql);
 
             $this->logger->info($sql);
@@ -168,7 +167,7 @@ class Control extends Controller
         $db    = $this->di['db']->sql(DB_DEFAULT);
         $combi = $this->makeCombinaison();
 
-        $sql = "SELECT DISTINCT `PARTITION_NAME` FROM information_schema.partitions 
+        $sql = "SELECT DISTINCT `PARTITION_NAME` FROM information_schema.partitions
             where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
         $res = $db->sql_query($sql);
 
@@ -199,7 +198,7 @@ class Control extends Controller
         return $partition;
     }
 
-    // each hour ?
+// each hour ?
     /*
      * check space and delete old partition
      * and create new parttion
@@ -211,26 +210,41 @@ class Control extends Controller
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
 
-        //we drop oldest parttion if free space is low
+//we drop oldest parttion if free space is low
         if ($this->checkSize() > $this->percent_max_disk_used) {
             Debug::debug($partitions['min'], "Drop Partition");
 
+
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
-                //delete server_*
+//delete server_*
                 System::deleteFiles("server");
 
-                //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
                 Sleep(5);
 
                 $this->dropPartition(array($partitions['min']));
             }
         }
 
+
+
+        Debug::debug(count($partitions['other']), "nombre de partitions");
+
+        //On drop les partitions supérieur a 14 jours
+        if (count($partitions['other']) > 14) {
+            System::deleteFiles("server");
+
+//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+            Sleep(5);
+
+            $this->dropPartition(array($partitions['min']));
+        }
+
         $part = $this->getDates();
 
         Debug::debug($part);
 
-        // check partition of today and tomorow and create it if it's not exist
+// check partition of today and tomorow and create it if it's not exist
         foreach ($part as $date) {
             $partition_to_check = $this->getToDays(array($date));
 
@@ -244,9 +258,10 @@ class Control extends Controller
         $this->updateLinkVariableServeur();
 
 
+        $this->refreshVariable(array());
 
 
-        //Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+//Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function dropTsTable($param = array())
@@ -354,7 +369,7 @@ PARTITION BY RANGE (to_days(`date`))
 
         $cmd = $php." ".GLIAL_INDEX." Daemon stopAll";
         Debug::debug($cmd);
-        //shell_exec($cmd);
+//shell_exec($cmd);
 
 
 
@@ -364,13 +379,15 @@ PARTITION BY RANGE (to_days(`date`))
         Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
 
 
-        //drop lock sur
+//drop lock sur
         $this->dropLock();
 
 
-        $cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        Debug::debug($cmd);
-        //shell_exec($cmd);
+
+
+//$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
+//Debug::debug($cmd);
+//shell_exec($cmd);
 
         sleep(1);
         $this->dropLock();
@@ -430,13 +447,13 @@ PARTITION BY RANGE (to_days(`date`))
         $id_mysql_server = $param[0];
 
 
-        Debug::debug($id_mysql_server, "id_mysql_server");
+        //Debug::debug($id_mysql_server, "id_mysql_server");
 
 
         $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =".$id_mysql_server;
 
 
-        //Debug::sql($sql);
+//Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -459,7 +476,7 @@ PARTITION BY RANGE (to_days(`date`))
             ";
 
 
-        //Debug::sql($sql);
+//Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -468,9 +485,9 @@ PARTITION BY RANGE (to_days(`date`))
             $link2[] = $ob->id_ts_variable;
         }
 
-        //$resultat = array_intersect($link1, $link2);
-        //Debug::debug($link1, "link1");
-        //Debug::debug($link2, "link2");
+//$resultat = array_intersect($link1, $link2);
+//Debug::debug($link1, "link1");
+//Debug::debug($link2, "link2");
 
 
         $to_delete = array_diff($link1, $link2);
@@ -478,8 +495,8 @@ PARTITION BY RANGE (to_days(`date`))
 
 
 
-        //Debug::debug($to_delete, "to delete");
-        //Debug::debug($to_create, "to create");
+//Debug::debug($to_delete, "to delete");
+//Debug::debug($to_create, "to create");
 
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)
@@ -504,8 +521,8 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function dropLock()
     {
-        // drop variables
-        $files_to_drop = array(TMP."lock/variable/*.md5", TMP."lock/worker/*.pid");
+// drop variables
+        $files_to_drop = array(TMP."lock/variable/*.md5", TMP."lock/worker/*.pid", TMP."tmp_file/*");
 
 
         foreach ($files_to_drop as $file_to_drop) {
@@ -513,5 +530,100 @@ PARTITION BY RANGE (to_days(`date`))
                 unlink($filename);
             }
         }
+    }
+    /*
+     * Rafraichie les variables qui ont été dropé avec la partition
+     *
+     *
+     */
+
+    public function refreshVariable($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "WITH `z` as (select `id` from `ts_variable` where `name` = 'version')
+SELECT `a`.`id_mysql_server`, a.date, a.date_p4 FROM `ts_max_date` `a`
+INNER JOIN `ts_file` `b` ON `a`.`id_ts_file` = `b`.`id`
+LEFT JOIN `ts_value_general_text` c ON c.date = a.date_p4 AND a.id_mysql_server = c.id_mysql_server AND c.id_ts_variable = (SELECT id from z)
+WHERE b.file_name = 'variable' and  c.id is null;";
+
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $file = TMP."lock/variable/".$ob->id_mysql_server.".md5";
+
+
+            if (file_exists($file)) {
+                unlink($file);
+                Debug::debug("Drop du fichier de variable pour le serveur : ".$ob->id_mysql_server);
+            }
+        }
+    }
+
+    public function purgefrm($param)
+    {
+
+
+
+        Debug::parseDebug($param);
+
+        shell_exec("apt purge mariadb-plugin-rocksdb");
+
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SHOW GLOBAL VARIABLES LIKE 'datadir'";
+
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res)) {
+            $datadir = $arr[1];
+        }
+
+
+        $sql = "SELECT `database` FROM mysql_server where name ='".DB_DEFAULT."';";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $database = $ob->database;
+        }
+
+        $combi = $this->makeCombinaison();
+
+        foreach ($combi as $table) {
+
+            $file = $datadir.$database."/".$table.".frm";
+
+            if (file_exists($file)) {
+                $cmd = "rm ".$file;
+
+                Debug::debug($cmd);
+
+
+                shell_exec($cmd);
+            }
+        }
+
+
+        $file = $datadir.'#rocksdb';
+        
+
+        if (is_dir($file)) {
+            $cmd = "rm -rvf ".$file;
+
+            Debug::debug($cmd);
+            shell_exec($cmd);
+        }
+
+
+        $cmd2 = "apt install mariadb-plugin-rocksdb";
+        Debug::debug($cmd2);
+        shell_exec($cmd2);
     }
 }

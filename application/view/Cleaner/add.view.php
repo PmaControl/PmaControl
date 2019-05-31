@@ -105,19 +105,38 @@ use Glial\Html\Form\Form;
             <ul>
                 <li><?= __("If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted") ?></li>
                 <li><?= __("If there is no storage area, please add one there :") ?> <a href="<?= LINK ?>StorageArea/index/add"><?= __("Add a storage area") ?></a></li>
-
             </ul>
 
         </div>
 
         <div class="row">
 
-            <div class="col-md-4"><?= __("Storage Area") ?></div>
-            <div class="col-md-4">
+            <div class="col-md-6"><?= __("Storage Area") ?>
                 <?= Form::select("cleaner_main", "id_backup_storage_area", $data['backup_storage_area'], "", array("class" => "form-control")) ?>
 
+
             </div>
-            <div class="col-md-4"></div>
+            <div class="col-md-6">
+                <?= __('Crypted files') ?>
+                <div class="checkbox checbox-switch switch-success" style="margin: 0">
+                    <label>
+
+
+                        <?php
+                        if (!empty($_GET['cleaner_main']['is_crypted'])) {
+                            $checked = array("checked" => "checked");
+                        } else {
+                            $checked = array();
+                        }
+
+                        $computed = array_merge(array("class" => "form-control", "type" => "checkbox", "title" => "Archive crypted"), $checked);
+                        echo Form::input("cleaner_main", "is_crypted", $computed);
+                        ?>
+                        <span></span>
+                    </label>
+<?= __("If selelected the archives files will be crypted on storage area") ?>
+                </div>
+            </div>
         </div>   
 
     </div> 

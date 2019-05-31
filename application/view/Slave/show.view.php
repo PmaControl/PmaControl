@@ -148,8 +148,14 @@ if (empty($data['replication_name'])) {
         echo '<tr>';
         echo '<td>'.$i.'</td>';
 
+        //issues 33
+        //$line = each($part2);
+        $line = array();
+        foreach ($part2 as $k => $v) {
+            $line['key'] = $k;
+            $line['value'] = $v;
+        }
 
-        $line = each($part2);
         echo '<td><b>'.$key.'</b></td>';
         echo '<td>'.$value.'</td>';
         echo '<td><b>'.$line['key'].'</b></td>';

@@ -12,13 +12,12 @@ class Server extends Controller
 {
 
     use \App\Library\Filter;
-
-
     var $clip = 0;
+
 //dba_source
     public function hardware()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db           = $this->di['db']->sql(DB_DEFAULT);
         $this->title  = __("Hardware");
         $this->ariane = " > ".$this->title;
 
@@ -40,6 +39,7 @@ class Server extends Controller
 
     public function before($param)
     {
+
     }
 
     public function listing($param)
@@ -177,17 +177,18 @@ class Server extends Controller
         //$this->title  = __("Dashboard");
         $this->ariane = " > ".$this->title;
 
-        $this->di['js']->addJavascript(array('clipboard.min.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
             new Clipboard(".copy-button");
         })();');
 
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class` FROM mysql_server a
+        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`
+            FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
+                 ORDER by a.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '3,7,4,2,6,1,8');";
 
         $res = $db->sql_query($sql);
 
@@ -201,7 +202,7 @@ class Server extends Controller
 //debug($servers);
 
         Extraction::setDb($db);
-        $data['extra'] = Extraction::display(array("Version", "Hostname", "server::ping"));
+        $data['extra'] = Extraction::display(array("version", "hostname", "server::ping", "general_log"));
 
 
 
@@ -326,8 +327,8 @@ class Server extends Controller
 
     public function memory()
     {
-        $this->title       = __("Memory");
-        $this->ariane      = " > ".__("Tools Box")." > ".$this->title;
+        $this->title  = __("Memory");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -765,10 +766,6 @@ var myChart = new Chart(ctx, {
             .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
 
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-        }
-
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
@@ -869,12 +866,11 @@ var myChart = new Chart(ctx, {
         /**
          * @todo Add a new version code_javascript  => Once
          */
-
         /*
-        $this->di['js']->code_javascript('(function() {
-            new Clipboard(".copy-button");
-        })();');
-        */
+          $this->di['js']->code_javascript('(function() {
+          new Clipboard(".copy-button");
+          })();');
+         */
 
 
 
@@ -1020,6 +1016,8 @@ var myChart = new Chart(ctx, {
 
     public function remove($param)
     {
+
+        Debug::parseDebug($param);
         $this->view = false;
 
         $id_server = $param[0];
@@ -1027,14 +1025,64 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
-        $db->sql_query($sql);
+
+        // pour eviter d'effacer la base de PmaControl !!!
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
+        $res = $db->sql_query($sql);
+        Debug::sql($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->name != DB_DEFAULT) {
+                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+                $db->sql_query($sql);
+                Debug::sql($sql);
+            }
+        }
 
         header("location: ".LINK.__CLASS__."/settings/");
     }
 
     public function acknowledgedBy($param)
     {
+        
+    }
 
+    public function toggleGeneralLog($param)
+    {
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $general_log     = $param[1];
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
+        Debug::sql($sql);
+
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $name = $ob->name;
+        }
+
+        $remote = $this->di['db']->sql($name);
+
+        if ($general_log === "true") {
+
+            $sql2 = "SET GLOBAL `general_log`=ON;";
+        } else {
+            $sql2 = "SET GLOBAL `general_log`=OFF;";
+        }
+        Debug::sql($sql2);
+
+        $remote->sql_query($sql2);
+
+        $data['return'] ='ok';
+
+
+        echo json_encode($data);
     }
 }

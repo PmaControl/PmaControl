@@ -289,7 +289,7 @@ class StorageArea extends Controller {
         $sql = "DELETE FROM  backup_storage_area WHERE id ='" . $id_backup_storage_area . "'";
 
         $db->sql_query($sql);
-        header("location: " . LINK . "StorageArea/");
+        header("location: " . LINK . "StorageArea/index");
     }
 
     public function menu($param) {

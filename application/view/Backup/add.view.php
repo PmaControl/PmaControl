@@ -136,7 +136,7 @@ use Glial\Html\Form\Form;
                 </div>
             </div>
 
-
+            <br /><br />
             Documentation there : https://en.wikipedia.org/wiki/Cron
         </div>
     </div>

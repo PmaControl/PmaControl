@@ -39,7 +39,4 @@ class Architecture extends Controller {
         
         $this->set('data', $data);
     }
-
-
-
 }

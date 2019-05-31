@@ -11,6 +11,8 @@ use Glial\Html\Form\Form;
                     <h3 class="panel-title"><?= __('Export configuration') ?></h3>
                 </div>
                 <div class="well">
+
+                    <!--
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -70,7 +72,7 @@ use Glial\Html\Form\Form;
                         </div>
                     </div>
 
-
+                    -->
                     <div class="row">
                         <div class="col-md-6">Password
                             <?=
