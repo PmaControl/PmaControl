@@ -4,7 +4,8 @@
         <th><?= __('Name') ?> </th>
         <th><?= __('Environment') ?> </th>
         <th><?= __('Server') ?> </th>
-        <th><?= __('IP') ?> </th>
+        //<th><?= __('IP') ?> </th>
+        <th><?= __('Database') ?> </th>
         <th><?= __('Main table') ?> </th>
         <th><?= __('Tools') ?> </th>
         <th><?= __('Status') ?> </th>
@@ -15,12 +16,13 @@
     foreach ($data['cleaner_main'] as $cleaner) {
         
         //$hightlight = ($cleaner['id_cleaner_main'] === $data['id_cleaner']) ? "highlight_row" : "";
-        echo '<tr class="cleaner_main" data-id="' . $cleaner['id_cleaner_main'] . '" data-href="' . LINK . 'Cleaner/index/' . $cleaner['id_cleaner_main'] . '">';
+        echo '<tr class="cleaner_main" data-id="' . $cleaner['id_cleaner_main'] . '" data-href="' . LINK . 'cleaner/index/' . $cleaner['id_cleaner_main'] . '">';
         echo '<td>' . $cleaner['id_cleaner_main'] . '</td>';
         echo '<td>' . $cleaner['name_cleaner'] . '</td>';
         echo '<td><big><span class="label label-'.$cleaner['class'].'">'. $cleaner['env'].'</span></big></td>';
-        echo '<td>' . str_replace("_", "-", $cleaner['mysql_server_name']) . '</td>';
-        echo '<td>' . $cleaner['ip'] . '</td>';
+        echo '<td>' . $cleaner['display_name'] . '</td>';
+        //echo '<td>' . $cleaner['ip'] . '</td>';
+        echo '<td>' . $cleaner['db'] . '</td>';
         echo '<td>' . $cleaner['main_table'] . '</td>';
         echo '<td>';
 
@@ -67,5 +69,5 @@
 
 </table>
 
-<a href='<?= LINK ?>Cleaner/add/' id="add" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a cleaner</a>
+<a href='<?= LINK ?>cleaner/add/' id="add" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a cleaner</a>
 

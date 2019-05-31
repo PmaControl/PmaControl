@@ -165,12 +165,12 @@ class Aspirator extends Controller
 
 
             /*
-            Debug::debug($server_list);
+              Debug::debug($server_list);
 
-            foreach ($server_list as $server) {
-                Debug::debug($this->shared[$server['name']], $server['name']);
-                
-            }*/
+              foreach ($server_list as $server) {
+              Debug::debug($this->shared[$server['name']], $server['name']);
+
+              } */
 
 
             $time = microtime(true) - $date_start;
@@ -282,17 +282,17 @@ class Aspirator extends Controller
         //$this->allocate_shared_storage();
 
 
-        
+
         $lock_file = TMP."lock/".$name_server.".txt";
 
         $fp = fopen($lock_file, "w");
-          if (!is_writable($lock_file)) {
-          throw new \Exception("PMACTRL-068 lock file : " . $lock_file . " is not writable !", 80);
-          } 
-          // a deporter ??
+        if (!is_writable($lock_file)) {
+            throw new \Exception("PMACTRL-068 lock file : ".$lock_file." is not writable !", 80);
+        }
+        // a deporter ??
 
 
-        
+
         if (!flock($fp, LOCK_EX | LOCK_NB)) {
             Debug::debug("Un processus est déjà en cours");
             fwrite(STDERR, 'Un processus est déjà en cours');
@@ -301,7 +301,7 @@ class Aspirator extends Controller
             ftruncate($fp, 0);
             fwrite($fp, getmypid());
         }
-        
+
 
 
         Debug::checkPoint('avant query');
@@ -399,7 +399,7 @@ class Aspirator extends Controller
 
 
 
-        
+
         $lock_file = TMP."lock/".$name_server.".txt";
 
 
@@ -436,8 +436,6 @@ class Aspirator extends Controller
 
         fclose($fp);
         //unlink($lock_file);
-
-
         //$this->showQueries();
         $mysql_tested->sql_close();
 
@@ -864,9 +862,8 @@ class Aspirator extends Controller
 
         return $stats;
     }
+
 }
-
-
 /*
  *
  *

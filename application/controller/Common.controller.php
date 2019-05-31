@@ -7,6 +7,9 @@ use \Glial\Sgbd\Sgbd;
 use \Glial\Net\Ssh;
 use \Glial\Security\Crypt\Crypt;
 
+use \App\Library\Debug;
+
+
 class Common extends Controller
 {
 
@@ -270,6 +273,8 @@ class Common extends Controller
     public function getSelectServerAvailable($param = array())
     {
 
+
+
         if (!empty($param[0])) {
             $data['table'] = $param[0];
         } else {
@@ -308,10 +313,14 @@ class Common extends Controller
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT case error WHEN a.error='' THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip , b.letter, b.class, b.libelle, a.is_available
+        $sql = "SELECT case error WHEN nullif(a.`error`,'') THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip , b.letter, b.class, b.libelle, a.is_available
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
             WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
+
+        //debug($sql);
+
+
 
         $res = $db->sql_query($sql);
 

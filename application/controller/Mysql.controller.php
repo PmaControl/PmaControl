@@ -169,7 +169,7 @@ class Mysql extends Controller
 
     public function user($params)
     {
-        $this->view        = false;
+        $this->view = false;
 
         $users          = array();
         $user_to_update = array();
@@ -1288,14 +1288,15 @@ class Mysql extends Controller
 
     public function after($param)
     {
+
     }
 
     public function generate_config()
     {
-        $db                = $this->di['db']->sql(DB_DEFAULT);
-        $this->db_default  = $db;
-        $this->title       = __("Configurator");
-        $this->ariane      = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
+        $db               = $this->di['db']->sql(DB_DEFAULT);
+        $this->db_default = $db;
+        $this->title      = __("Configurator");
+        $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
     }
 
     public function add($param)
@@ -1326,8 +1327,8 @@ class Mysql extends Controller
                 if ($ret !== true) {
 
 
-                    debug($_POST);
-                    debug($ret);
+                    //debug($_POST);
+                    //debug($ret);
 
                     $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
                     $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
@@ -1348,7 +1349,7 @@ class Mysql extends Controller
                         array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
                 $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
-                $table['mysql_server']['passwd']              = Mysql2::crypt($table['mysql_server']['password']);
+                $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = "1";
@@ -1555,5 +1556,38 @@ class Mysql extends Controller
 
 
         print_r($parsed);
+    }
+
+    public function getAlias($db)
+    {
+
+        $default = $this->di['db']->sql(DB_DEFAULT);
+
+        $slaves = $db->isSlave();
+
+        foreach ($slaves as $slave) {
+
+
+            if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {
+
+
+                $list_ip_destinations = trim(shell_exec("getent hosts ".$slave['Master_Host']." | awk '{print $1}'"));
+
+                $ips = explode("\n", $list_ip_destinations);
+
+                foreach ($ips as $ip_destination) {
+
+
+                    if (!filter_var($ip_destination, FILTER_VALIDATE_IP)) {
+
+                        $data['alias_dns']['dns']         = $slave['Master_Host'];
+                        $data['alias_dns']['port']        = $slave['Master_Port'];
+                        $data['alias_dns']['destination'] = $ip_destination;
+
+                        $default->sql_save($data);
+                    }
+                }
+            }
+        }
     }
 }

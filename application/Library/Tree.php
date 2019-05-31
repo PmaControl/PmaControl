@@ -58,6 +58,8 @@ class Tree
             WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}.$this->extraWhere();
 
         $this->db->sql_query($sql4);
+
+        $this->removeaclfile();
     }
 
     private function extraWhere()
@@ -112,13 +114,16 @@ class Tree
         }
 
         $id_menu = $this->db->sql_save($menu);
-
+        
+        $this->removeaclfile();
 
         if (!$id_menu) {
             debug($this->db->sql_error());
             debug($menu);
             exit;
         }
+
+        return $id_menu;
     }
 
     public function up($id) // remonte d'un cran un item dans le menu sans effet dans l'arbre recursif
@@ -251,6 +256,13 @@ class Tree
             $this->db->sql_query("COMMIT;");
         } catch (Exception $ex) {
             $this->db->sql_query("ROLLBACK;");
+        }
+    }
+
+    public function removeaclfile()
+    {
+        if (file_exists($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser")) {
+            unlink($_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser");
         }
     }
 
