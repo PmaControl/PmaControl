@@ -10,7 +10,7 @@ namespace App\Library;
 trait Filter
 {
 
-    static private function getFilter($id_mysql_server = array())
+    static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
 
         $where = "";
@@ -31,15 +31,15 @@ trait Filter
         }
 
         if (!empty($environment)) {
-            $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
+            $where .= " AND `".$alias."`.id_environment IN (".implode(',', json_decode($environment, true)).")";
         }
         if (!empty($client)) {
-            $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
+            $where .= " AND `".$alias."`.id_client IN (".implode(',', json_decode($client, true)).")";
         }
 
         if (! empty($id_mysql_server))
         {
-            $where .= " AND a.id IN (".implode(',', $id_mysql_server).") ";
+            $where .= " AND `".$alias."`.id IN (".implode(',', $id_mysql_server).") ";
         }
 
         return $where;

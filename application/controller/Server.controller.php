@@ -44,8 +44,6 @@ class Server extends Controller
 
     public function listing($param)
     {
-
-
         // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 

@@ -29,7 +29,10 @@ echo '</tr>';
 foreach ($data['storage'] as $storage) {
     echo '<tr>';
     echo '<td>'.$storage['id_backup_storage_area'].'</td>';
-    echo '<td>'.$storage['name'].'</td>';
+    ?>
+    <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
+    <?php
+
     echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
     echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
     echo '<td>'.$storage['path'].'</td>';
