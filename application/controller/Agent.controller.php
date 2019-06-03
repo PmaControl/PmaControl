@@ -112,14 +112,14 @@ class Agent extends Controller
 
             $cmd = $php." ".GLIAL_INDEX." Agent launch ".$id_daemon." ".$debug." >> ".$this->log_file." & echo $!";
             Debug::debug($cmd);
-            $pid = shell_exec($cmd);
+            $pid = trim(shell_exec($cmd));
 
             $this->logger->info("CMD : ".$cmd);
 
 
             $this->logger->info(Color::getColoredString('Started daemon with pid : '.$pid, "grey", "green"));
 
-            $sql   = "UPDATE daemon_main SET pid ='".$pid."' WHERE id = '".$id_daemon."'";
+            $sql   = "UPDATE daemon_main SET pid ='".$pid."' WHERE id = ".$id_daemon.";";
             $db->sql_query($sql);
             $msg   = I18n::getTranslation(__("The daemon (id=".$id_daemon.") successfully started with")." pid : ".$pid);
             $title = I18n::getTranslation(__("Success"));
