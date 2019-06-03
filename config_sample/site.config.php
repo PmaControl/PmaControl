@@ -28,5 +28,5 @@ if (!defined('SITE_VERSION')) {
 }
 
 if (!defined('SITE_LAST_UPDATE')) {
-    define("SITE_LAST_UPDATE", "2019-05-31");
+    define("SITE_LAST_UPDATE", "2019-06-03");
 }
