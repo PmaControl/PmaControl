@@ -335,7 +335,6 @@ class Aspirateur extends Controller
         }
 
 
-
         Debug::debug("on est la !!!!!!!!");
 
         $data['server']['ping'] = microtime(true) - $time_start;
@@ -1231,7 +1230,7 @@ class Aspirateur extends Controller
 
 
                     $file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
-                    debug($file, "FILE");
+                    Debug::debug($file, "FILE");
 
                     $this->addWorker(array($ob2->id, $id_daemon_main));
                 }
