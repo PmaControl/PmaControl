@@ -63,9 +63,13 @@ foreach ($data['storage'] as $storage) {
         echo '</td>';
         
     }
-    echo '<td>'
-    . '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>'
-            ."&nbsp;&nbsp;&nbsp;"
+    echo '<td>';
+
+    /*
+     * TODO : finish edit
+     */
+    //echo '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>';
+      echo      "&nbsp;&nbsp;&nbsp;"
     . '<a href="'.LINK.'StorageArea/delete/'.$storage['id_backup_storage_area'].'" class="btn btn-danger delete-line"><span class="glyphicon glyphicon-trash" style="font-size:12px"></span> '.__("Delete").'</a>'
             . ''
             . '</td>';
