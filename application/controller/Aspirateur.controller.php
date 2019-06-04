@@ -1483,6 +1483,13 @@ class Aspirateur extends Controller
 
         Debug::debug($ret, "Resultat");
     }
+
+
+    public function getArbitrator()
+    {
+        // cat error.log | grep -oE 'tcp://[0-9]+.[0-9]+.[0-9]+.[0-9]+:4567' | sort -d | uniq -c | grep -v '0.0.0.0'
+        // et retirer les IP presente dans la table alias et la table mysql_server
+    }
 }
 /*
  *
