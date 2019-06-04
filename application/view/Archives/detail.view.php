@@ -16,6 +16,9 @@ function display_status($val)
     $status['STARTED']              = "info";
     $status['COMPLETED_WITH_ERROR'] = "primary";
     $status['FILE_NOT_FOUND']       = "danger";
+    $status['CMP_MD5_REMOTE']       = "danger";
+    $status['ERROR_MYSQL']          = "danger";
+    $status['CMP_MD5_COMPRESSED']   = "danger";
 
     if (!empty($status[$val])) {
         return $status[$val];
@@ -43,7 +46,7 @@ echo '</div>';
             <th><?= __("Status") ?></th>
         </tr
 
-   
+
 
         <tr>
             <td>
@@ -56,8 +59,12 @@ echo '</div>';
             <td><?= $data['archive_load']['date_start'] ?></td>
             <td><?= $data['archive_load']['date_end'] ?></td>
             <td><?= $data['archive_load']['duration'] ?> <?= __('seconds') ?></td>
-            <td><?= colorLevel($data['archive_load']['status']) ?></td>
-            
+
+            <?php
+            ?>
+
+            <td><span class="label label-<?= display_status($data['archive_load']['status']) ?>"><?= $data['archive_load']['status'] ?></span></td>
+
         </tr>
     </table>
 </div>
@@ -68,45 +75,53 @@ echo '</div>';
 
         <h3 class="panel-title"><?= __('Statistics by table') ?></h3>
     </div>
-    <?php
-    echo '<table class="table table-condensed table-bordered table-striped">';
+<?php
+echo '<table class="table table-condensed table-bordered table-striped">';
 
 
+echo '<tr>';
+echo '<th>'.__("Top").'</th>';
+echo '<th>'.__("ID").'</th>';
+echo '<th>'.__("Date start").'</th>';
+echo '<th>'.__("Date end").'</th>';
+echo '<th>'.__("File").'</th>';
+echo '<th>'.__("Time scp").'</th>';
+echo '<th>'.__("Time decrypt").'</th>';
+echo '<th>'.__("Time uncompress").'</th>';
+echo '<th>'.__("Time load").'</th>';
+echo '<th>'.__("Status").'</th>';
+echo '<th>'.__("Error message").'</th>';
+echo '</tr>';
+
+
+$i = 0;
+foreach ($data['details'] as $detail) {
+
+    $i++;
     echo '<tr>';
-    echo '<th>'.__("Top").'</th>';
-    echo '<th>'.__("ID").'</th>';
-    echo '<th>'.__("Date start").'</th>';
-    echo '<th>'.__("Date end").'</th>';
-    echo '<th>'.__("File").'</th>';
-    echo '<th>'.__("Time scp").'</th>';
-    echo '<th>'.__("Time decrypt").'</th>';
-    echo '<th>'.__("Time uncompress").'</th>';
-    echo '<th>'.__("Time load").'</th>';
-    echo '<th>'.__("Status").'</th>';
-    echo '<th>'.__("Error message").'</th>';
-    echo '</tr>';
+    echo '<td>'.$i.'</td>';
+    echo '<td>'.$detail['id'].'</td>';
+    echo '<td>'.$detail['date_start'].'</td>';
+    echo '<td>'.$detail['date_end'].'</td>';
+    echo '<td>'.$detail['pathfile'].'</td>';
+    echo '<td>'.$detail['time_to_transfert'].'</td>';
+    echo '<td>'.$detail['time_to_decrypt'].'</td>';
+    echo '<td>'.$detail['time_to_uncompress'].'</td>';
+    echo '<td>'.$detail['time_to_mysql'].'</td>';
 
+    $spin = '';
 
-    $i = 0;
-    foreach ($data['details'] as $detail) {
-
-        $i++;
-        echo '<tr>';
-        echo '<td>'.$i.'</td>';
-        echo '<td>'.$detail['id'].'</td>';
-        echo '<td>'.$detail['date_start'].'</td>';
-        echo '<td>'.$detail['date_end'].'</td>';
-        echo '<td>'.$detail['pathfile'].'</td>';
-        echo '<td>'.$detail['time_to_transfert'].'</td>';
-        echo '<td>'.$detail['time_to_decrypt'].'</td>';
-        echo '<td>'.$detail['time_to_uncompress'].'</td>';
-        echo '<td>'.$detail['time_to_mysql'].'</td>';
-
-        echo '<td><span class="label label-'.display_status($detail['status']).'">'.$detail['status'].'</span></td>';
-        echo '<td>'.$detail['error_msg'].'</td>';
-        echo '</tr>';
+    if ($detail['status'] === "RUNNING") {
+        $spin = '<i class="fa fa-spinner fa-pulse fa-fw"></i> ';
     }
-    ?>
+
+
+
+    echo '<td><span class="label label-'.display_status($detail['status']).'">'.$spin.$detail['status'].'</span></td>';
+    echo '<td>'.$detail['error_msg'].'</td>';
+    echo '</tr>';
+}
+?>
 
 </table>
 </div>
@@ -119,55 +134,53 @@ echo '</div>';
         <h3 class="panel-title"><?= __('Logs') ?></h3>
     </div>
 
-    <?php
+<?php
 
-    function colorLevel($level)
-    {
-        $color = ($level === "DEBUG" || $level === "NOTICE") ? "PRIMARY" : $level;
-        $color = ($level === "ERROR") ? "danger" : $level;
-        $color = ($level === "COMPLETED") ? "success" : $level;
+function colorLevel($level)
+{
+    $color = ($level === "DEBUG" || $level === "NOTICE") ? "PRIMARY" : $level;
+    $color = ($level === "ERROR") ? "danger" : $level;
+    $color = ($level === "COMPLETED") ? "success" : $level;
 
-        return '<big><span class="label label-'.strtolower($color).'">'.$level.'</span></big>';
-    }
+    return '<big><span class="label label-'.strtolower($color).'">'.$level.'</span></big>';
+}
+echo '<table class="table table-condensed table-bordered table-striped">';
+
+echo '<tr>';
+echo '<th>'.'#'.'</th>';
+echo '<th>'.'Pid'.'</th>';
+echo '<th>'.__('Date').'</th>';
 
 
-    echo '<table class="table table-condensed table-bordered table-striped">';
+echo '<th>'.__('Level').'</th>';
 
+echo '<th>'.__('Type').'</th>';
+echo '<th>'.__('Message').'</th>';
+echo '</tr>';
+
+
+$i = 0;
+foreach ($data['logs'] as $log) {
+    $i++;
     echo '<tr>';
-    echo '<th>'.'#'.'</th>';
-    echo '<th>'.'Pid'.'</th>';
-    echo '<th>'.__('Date').'</th>';
+    echo '<td>'.$i.'</td>';
+    echo '<td style="background:rgb('.$log['background'][0].', '.$log['background'][1].', '.$log['background'][2].',0.7);'
+    .'border-bottom:rgb('.$log['background'][0].', '.$log['background'][1].', '.$log['background'][2].',0.5) 1px solid; ">'.$log['pid'].'</td>';
+    echo '<td>'.$log['date'].'</td>';
+
+    echo '<td>'.colorLevel($log['level']).'</td>';
+    echo '<td>'.$log['type'].'</td>';
 
 
-    echo '<th>'.__('Level').'</th>';
 
-    echo '<th>'.__('Type').'</th>';
-    echo '<th>'.__('Message').'</th>';
+    echo '<td>';
+    echo $log['msg'];
+
+    echo '</td>';
     echo '</tr>';
-
-
-    $i = 0;
-    foreach ($data['logs'] as $log) {
-        $i++;
-        echo '<tr>';
-        echo '<td>'.$i.'</td>';
-        echo '<td style="background:rgb('.$log['background'][0].', '.$log['background'][1].', '.$log['background'][2].',0.7);'
-        .'border-bottom:rgb('.$log['background'][0].', '.$log['background'][1].', '.$log['background'][2].',0.5) 1px solid; ">'.$log['pid'].'</td>';
-        echo '<td>'.$log['date'].'</td>';
-
-        echo '<td>'.colorLevel($log['level']).'</td>';
-        echo '<td>'.$log['type'].'</td>';
-
-
-
-        echo '<td>';
-        echo $log['msg'];
-
-        echo '</td>';
-        echo '</tr>';
-    }
-    echo '</table>';
-    ?>
+}
+echo '</table>';
+?>
 
 
 </div>
