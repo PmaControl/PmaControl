@@ -104,7 +104,7 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',5838,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',5788,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',5802,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',5814,64,'log/daemon_11.log',20,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',5826,64,'log/daemon_12.log',10,10,2,'Aspirateur','checkAllWorker','',0,0,0);
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',0,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',12897,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',12909,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',12921,64,'log/daemon_11.log',20,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',12933,64,'log/daemon_12.log',10,10,2,'Aspirateur','checkAllWorker','',0,0,0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1869,6 +1869,66 @@ CREATE TABLE `objet` (
   `ip` char(15) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `plugin_file`
+--
+
+DROP TABLE IF EXISTS `plugin_file`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `plugin_file` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_plugin_main` int(11) NOT NULL,
+  `file` varchar(255) NOT NULL,
+  `md5` varchar(32) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_plugin_main` (`id_plugin_main`),
+  CONSTRAINT `plugin_file_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `plugin_main`
+--
+
+DROP TABLE IF EXISTS `plugin_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `plugin_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(32) NOT NULL,
+  `description` text NOT NULL,
+  `auteur` varchar(100) NOT NULL,
+  `image` varchar(255) NOT NULL COMMENT 'le lien de l''image',
+  `fichier` varchar(255) NOT NULL,
+  `date_installation` datetime NOT NULL,
+  `md5_zip` varchar(32) NOT NULL,
+  `version` char(10) NOT NULL,
+  `est_actif` int(11) NOT NULL DEFAULT 0,
+  `type_licence` varchar(50) NOT NULL,
+  `numero_licence` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`,`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `plugin_menu`
+--
+
+DROP TABLE IF EXISTS `plugin_menu`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `plugin_menu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_plugin_main` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_plugin_main` (`id_plugin_main`),
+  CONSTRAINT `plugin_menu_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
