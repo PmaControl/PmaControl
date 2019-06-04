@@ -10,15 +10,21 @@ use \App\Library\Debug;
 use App\Library\Extraction;
 use App\Library\Mysql;
 use Glial\Security\Crypt\Crypt;
+use App\Library\Display;
 
 class Binlog extends Controller
 {
+
+    use \App\Library\Filter;
+
+    
     CONST DELAIS_DE_RETENTION = 172800; //48 heures en secondes
     CONST DIRECTORY_BACKUP    = '/data/backup/binlog';
 
     public function index()
     {
 
+        Display::setDb($this->di['db']->sql(DB_DEFAULT));
 
         $data = array();
         $this->set('data', $data);
@@ -228,8 +234,8 @@ class Binlog extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
 
             $bin_backup[$ob->logfile_name] = $ob->logfile_size;
-            $last_file = $ob->logfile_name;
-            $last_id   = $ob->id;
+            $last_file                     = $ob->logfile_name;
+            $last_id                       = $ob->id;
         }
 
 
@@ -434,7 +440,8 @@ class Binlog extends Controller
             FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
-            LEFT JOIN binlog_max d on a.id = d.id_mysql_server";
+            LEFT JOIN binlog_max d on a.id = d.id_mysql_server
+            WHERE 1 ".self::getFilter();
 
 
         $res = $db->sql_query($sql);

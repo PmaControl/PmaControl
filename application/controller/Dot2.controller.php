@@ -42,7 +42,6 @@ class Dot2 extends Controller
       14 rows in set (0.001 sec)
 
      */
-
     var $maping_master           = array();
     var $master_slave            = array();
     var $galera_cluster          = array();
@@ -106,7 +105,7 @@ class Dot2 extends Controller
         $this->master_slave = $tmp_group;
 
 
-        Debug::debug($this->slaves, "MASTER / SLAVE");
+        //Debug::debug($this->slaves, "MASTER / SLAVE");
 
         return $this->master_slave;
     }
@@ -117,13 +116,21 @@ class Dot2 extends Controller
             if (!empty($server['wsrep_on']) && $server['wsrep_on'] === "ON") {
                 //debug($server);
                 //$server['wsrep_incoming_addresses']
-                $tab      = explode(",", $server['wsrep_incoming_addresses']);
+                $nodes    = explode(",", $server['wsrep_incoming_addresses']);
                 $to_match = $server['ip'].":".$server['port'];
 
 
-                // the goal is to remove proxy
-                if (in_array($to_match, $tab)) {
-                    $this->galera_cluster[$server['wsrep_cluster_name']][$server['id_mysql_server']] = $server;
+                // the goal is to remove proxy (HaProxy, ProxySQL same server from and other port)
+                if (in_array($to_match, $nodes)) {
+
+
+                    //génération d'un identifiant unique (pour la détection des Split brain)
+                    sort($nodes, SORT_REGULAR);
+                    $cluster_id = md5(implode(",", $nodes)).":".$server['wsrep_cluster_name'];
+
+
+                    //$server['wsrep_cluster_name']
+                    $this->galera_cluster[$cluster_id][$server['id_mysql_server']] = $server;
                 }
             }
         }
@@ -346,12 +353,13 @@ class Dot2 extends Controller
 
 //label=\"Step 2\";
         $graph = "digraph PmaControl {";
-        $graph .= "rankdir=LR; splines=line;";
-        $graph .= " graph [fontname = \"helvetica\"];
+        $graph .= "rankdir=LR; splines=line;"; //ortho  =>  Try using xlabels
+        $graph .= " graph [fontname = \"helvetica\" ];
  node [fontname = \"helvetica\"];
  edge [fontname = \"helvetica\"];
  node [shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false];\n";
 
+        // nodesep=0
 
 
 
@@ -608,8 +616,8 @@ class Dot2 extends Controller
     {
         $file_id = uniqid();
 
-        $tmp_in  = TMP."tmp".$file_id.".dot";
-        $tmp_out = TMP."tmp".$file_id.".svg";
+        $tmp_in  = "/tmp/dot_".$file_id.".dot";
+        $tmp_out = "/tmp/svg_".$file_id.".svg";
 
         file_put_contents($tmp_in, $dot);
 
@@ -716,6 +724,7 @@ class Dot2 extends Controller
 
         $lines   = array();
         $lines[] = "IP : n/a:".$server['port'];
+        $lines[] = "Date : ".$server['date'];
 
         foreach ($lines as $line) {
             $node .= $this->nodeLine($line);
@@ -952,7 +961,7 @@ class Dot2 extends Controller
 
             $this->joiner = array();
 
-            Debug::debug($this->galera_cluster, "GALERA TO CHECK");
+            //Debug::debug($this->galera_cluster, "GALERA TO CHECK");
 
 
 
@@ -1010,28 +1019,15 @@ class Dot2 extends Controller
         $cluster_check = array();
 
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
-
             foreach ($segments as $segment => $nodes) {
-
                 foreach ($nodes as $node) {
-
-
-
                     $cluster_check[$cluster_name][$node] = $this->servers[$node]['is_available'];
                 }
             }
         }
 
 
-
-
-
-
-
-
-
-
-
+//        Debug::debug($this->graph_galera_cluster, "GaleraCluster");
 
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
 
@@ -1052,7 +1048,6 @@ class Dot2 extends Controller
 
             if ($count_by_type['1'] === $nb_node) {
                 $galera_style = $this->galera['GALERA_AVAILABLE'];
-
             } else {
                 $galera_style = $this->galera['GALERA_DEGRADED'];
             }
@@ -1074,21 +1069,25 @@ class Dot2 extends Controller
             }
 
 
+            $cluster_name_display = explode(":", $cluster_name)[1];
 
 
             $cluster = "";
-            $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name).' {'."\n";
+            $cluster .= 'subgraph cluster_'.str_replace(array('-', ':'), '', $cluster_name).' {'."\n";
             $cluster .= 'rankdir="TB";';
 
 
             //style='.$galera_style['style'].';
             $cluster .= 'style=solid;penwidth=2; color="'.$galera_style['color'].'";'."\n";
-            $cluster .= 'label = " Galera : '.$cluster_name.'";';
+
+
+         
+            $cluster .= 'label = "'.$cluster_name_display.'";';
 
             //Debug::debug($nodes_ordered, "nodes_ordered");
             //$cluster .= implode(" -> ", $all_segment)."[color=grey arrowhead=none];\n"; // [constraint=false]
 
-            $first_from_segment = array();
+            //$first_from_segment = array();
 
 
 
@@ -1097,10 +1096,11 @@ class Dot2 extends Controller
                 $nodes_ordered = $this->orderyBy($nodes, 'hostname');
 
 
+                Debug::debug($nodes_ordered, "Node ordered");
 
-                $first_from_segment[$segment] = end($nodes_ordered);
+                //$first_from_segment[$segment] = end($nodes_ordered);
 
-                $cluster .= 'subgraph cluster_'.str_replace('-', '', $cluster_name)."_".$segment." {\n";
+                $cluster .= 'subgraph cluster_'.str_replace(array('-', ':'), '', $cluster_name)."_".$segment." {\n";
                 $cluster .= 'label = "Segment : '.$segment.'";'."\n";
                 $cluster .= 'rankdir="LR";';
                 $cluster .= 'rank="same"; penwidth=2;';
@@ -1112,14 +1112,23 @@ class Dot2 extends Controller
 
 
                     //$cluster .= "{".implode(";", $nodes_ordered)."; } ;\n";
-                    $cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n";
+
+
+                    
+                    $cluster .= "rank = same;";
+                    foreach($nodes_ordered as $node)
+                    {
+                        $cluster .= $node.";\n";
+                    }/**/
+
+                    //$cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n"; //[style=invis]
                 } else {
                     $cluster .= end($nodes).";\n"; // [constraint=false]
                 }/**/
 
                 foreach ($nodes as $id_mysql_server) {
 
-                     $cluster .= $id_mysql_server.";\n";
+                    $cluster .= $id_mysql_server.";\n";
                 }
 
 
@@ -1129,17 +1138,22 @@ class Dot2 extends Controller
             $cluster .= ' }'."\n";
 
 
+            
             if (in_array($id_mysql_server, $group)) {
 
 
-
-                if (count($first_from_segment) > 1) { // evite que la fleche entre segement si un seul segment
-                    //$cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
+                /* pour ranger les segments horizontalement au lieu de verticalement
+                if (count($first_from_segment) > 1) { // evite que la fleche entre segment si un seul segment
+                    $cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
                     //Debug::debug($this->servers);
                 }
+                 /*** */
+                 
 
                 $galera .= $cluster;
 
+
+                //debug only
                 if (in_array(7, $group)) {
 
                     //$galera .= "27 -> 97 [style=invis];\n";
@@ -1150,6 +1164,7 @@ class Dot2 extends Controller
                     Debug::debug($cluster, "GOOG");
                 }
             }
+           
         }
 
 
@@ -1210,11 +1225,12 @@ class Dot2 extends Controller
      * shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false
      */
 
-    private function createArbitrator()
+    private function createArbitrator($group)
     {
         $id_arbitrator = $this->getNewId();
 
 
+        Debug::debug($group, "GROUP");
 
         //debug($this->servers[$id_arbitrator-1]);
 
@@ -1223,6 +1239,7 @@ class Dot2 extends Controller
         $this->servers[$id_arbitrator]["is_available"]           = 1;
         $this->servers[$id_arbitrator]["ip"]                     = "n/a";
         $this->servers[$id_arbitrator]["port"]                   = "4567";
+        $this->servers[$id_arbitrator]["date"]                   = date('Y-m-d H:i:s');
 
         $this->graph_arbitrator[] = $id_arbitrator;
 
@@ -1276,6 +1293,12 @@ class Dot2 extends Controller
             Debug::debug($row);
         }
     }
+
+    /*
+     *
+     * fait en sorte que si un MASTER // MASTER  est détecté celui-ci est automatiquement mis au même rang
+     *
+     */
 
     public function generateRankForMM($group)
     {
@@ -1421,7 +1444,7 @@ class Dot2 extends Controller
             }
         }
 
-        krsort($to_order, SORT_REGULAR);
+        krsort($to_order);
 
 
         return $to_order;

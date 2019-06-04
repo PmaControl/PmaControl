@@ -54,7 +54,7 @@ use App\Library\Format;
         echo '<td>'.$server['id_mysql_server'].'</td>';
 
         echo '<td>'.$server['organization'].'</td>';
-        echo '<td>'.Display::server($server);
+        echo '<td>'.Display::srv($server['id_mysql_server']);
 
 
         //automatic purge
