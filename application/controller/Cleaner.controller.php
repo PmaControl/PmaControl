@@ -19,6 +19,7 @@ use \Glial\Sgbd\Sql\Mysql\Compare;
 use \App\Library\Ariane;
 use \Glial\Synapse\Basic;
 use \App\Library\Debug;
+use \App\Library\Display;
 
 // Installation des gestionnaires de signaux
 declare(ticks = 1);
@@ -27,6 +28,7 @@ class Cleaner extends Controller
 {
 
     use \App\Library\Scp;
+    use \App\Library\Filter;
     var $id_cleaner  = 0;
 //status to check
     private $com_status = array();
@@ -314,12 +316,16 @@ var myChart = new Chart(ctx, {
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
+        Display::setDb($db);
+
+
         /** new cleaner with UI * */
         $sql = "SELECT *,a.id as id_cleaner_main,
             b.name as mysql_server_name,c.`libelle` as env, c.`class`, a.libelle as name_cleaner, a.database as db
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-        INNER JOIN environment c ON b.id_environment = c.id;";
+        INNER JOIN environment c ON b.id_environment = c.id
+        WHERE 1=1 ".self::getFilter(array(), "b").";";
 
         $data['cleaner_main'] = $db->sql_fetch_yield($sql);
         $sql                  = "SELECT DISTINCT `name` FROM pmacli_drain_process;";

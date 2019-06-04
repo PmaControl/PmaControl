@@ -8,6 +8,7 @@ use \Glial\Cli\Crontab;
 use \App\Library\Debug;
 use App\Library\Mysql;
 
+
 class Backup extends Controller
 {
     const BACKUP_DIR = "/data/backup";
@@ -34,7 +35,7 @@ class Backup extends Controller
 
     /*
      *
-     *  mysql -h 10.243.4.44 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
+     *  mysql -h 127.0.0.1 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
      *
      */
 
@@ -399,7 +400,6 @@ class Backup extends Controller
      * DEPRECATED
      */
 
-
     function getDatabaseByServer($param)
     {
 
@@ -423,10 +423,7 @@ class Backup extends Controller
 
         $this->set("data", $data);
     }
-
-
-
-        /*
+    /*
      *
      *
      * DEPRECATED
@@ -451,7 +448,7 @@ class Backup extends Controller
 
 
 
-        /*
+    /*
      *
      *
      * DEPRECATED
@@ -1796,7 +1793,7 @@ $(function () {
             $total = filesize($table_data);
             echo $table_data." : ".$this->human_filesize($total, 2)."\n";
 
-            $avancement = 0;
+            $avancement  = 0;
             $percent_mem = 0;
 
             $handle = fopen($table_data, "r");
@@ -1825,7 +1822,7 @@ $(function () {
 
 
                         if ($percent > $percent_mem) {
-                            
+
                             echo round($percent, 2)."%\t";
                             $percent_mem = $percent;
                         }
@@ -1918,6 +1915,27 @@ $(function () {
             fclose($handle);
             echo "done.";
         }
+    }
+
+    public function warningTest($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $this->layout_name = false;
+        $this->view        = false;
+
+        $sql = "CREATE TABLE IF NOT EXISTS `test_warning`(`a` varchar(10));";
+        $db->sql_query($sql);
+        Debug::sql($sql);
+
+
+        $sql = "INSERT INTO `test_warning` SET `a`='FGHFTHGftgbnhxfthTFHFTRH';";
+        $db->sql_query($sql);
+        Debug::sql($sql);
+        
     }
 }
 /*

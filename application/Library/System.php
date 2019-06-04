@@ -35,8 +35,6 @@ class System
 
         $pid = intval($pid);
 
-
-
         $res = shell_exec("ps -p $pid | tail -n +2");
         if (!empty($res)) {
             //process with a pid = $pid is running
@@ -48,7 +46,7 @@ class System
 
             //test si un process à été récupérer par autre chose que php
             if (substr($cmd, 0, 3) === "php") {
-                echo $cmd;
+                //echo $cmd;
                 return true;
             } else {
                 return false;

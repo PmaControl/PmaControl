@@ -191,7 +191,7 @@ var myChart = new Chart(ctx, {
         if (IS_CLI) {
 
 
-            $time_begin        = microtime(true);
+            $time_begin = microtime(true);
 
             $id_archive_load = (int) $param[0];
             $this->view      = false;
@@ -221,6 +221,9 @@ var myChart = new Chart(ctx, {
 
 
             Debug::debug($sql);
+
+
+            $main_error = false;
 
             while ($ob2 = $db->sql_fetch_object($res)) {
 
@@ -310,7 +313,7 @@ var myChart = new Chart(ctx, {
                 $save['archive_load_detail']['id']              = $archive['id_archive_load_detail'];
                 $save['archive_load_detail']['id_archive']      = $archive['id'];
                 $save['archive_load_detail']['id_archive_load'] = $id_archive_load;
-                $save['archive_load_detail']['status']          = "STARTED";
+                $save['archive_load_detail']['status']          = "RUNNING";
                 $save['archive_load_detail']['date_start']      = date('Y-m-d H:i:s');
                 $db->sql_save($save);
 
@@ -321,8 +324,11 @@ var myChart = new Chart(ctx, {
 
                 $remote = $this->getFile($archive['id_backup_storage_area'], $archive['pathfile'], $file);
 
-                $save['archive_load_detail']['time_to_transfert '] = $remote['execution_time'];
-                $save['archive_load_detail']['size_remote ']       = $remote['size'] ?? 0;
+
+                Debug::debug($remote, "Info remote file");
+
+                $save['archive_load_detail']['time_to_transfert'] = $remote['execution_time'];
+                $save['archive_load_detail']['size_remote']       = $remote['size'] ?? 0;
                 $save['archive_load_detail']['md5']                = $remote['md5'] ?? "";
 
                 Debug::debug($remote);
@@ -330,13 +336,17 @@ var myChart = new Chart(ctx, {
                 if (!file_exists($file)) {
 
 
-                    $msg = "SCP : The remote file is not found (".$file.")";
+                    $main_error = true;
+                    $msg        = "SCP : The remote file is not found (".$file.")";
 
                     $save['archive_load_detail']['error_msg'] = $msg;
                     $save['archive_load_detail']['status']    = "FILE_NOT_FOUND";
                     $save['archive_load_detail']['date_end']  = date('Y-m-d H:i:s');
+                    $save['archive_load_detail']['duration']         = round(microtime(true) - $time_begin, 0);
+
                     $db->sql_save($save);
 
+                    Debug::error($msg);
 
                     $this->log("error", "FILE NOT FOUND", $msg);
                     continue;
@@ -350,16 +360,25 @@ var myChart = new Chart(ctx, {
 
                 if ($archive['md5_remote'] !== md5_file($file)) {
 
-
-                    $msg = "The remote file is corrupted the md5 don't correspond (".$archive['md5_remote']." != ".md5_file($file).")";
+                    $main_error = true;
+                    $msg        = "The remote file is corrupted the md5 don't correspond (".$archive['md5_remote']." != ".md5_file($file).")";
                     $this->log("error", "CMP_MD5_REMOTE", $msg);
 
                     Debug::error($msg);
 
+                    $save                                     = array();
+                    $save['archive_load_detail']['id']        = $archive['id_archive_load_detail'];
+                    $save['archive_load_detail']['error_msg'] = $msg;
+                    $save['archive_load_detail']['status']    = "CMP_MD5_REMOTE";
+                    $save['archive_load_detail']['date_end']         = date('Y-m-d H:i:s');
+                    $save['archive_load_detail']['duration']         = round(microtime(true) - $time_begin, 0);
+                    $db->sql_save($save);
+
+
+
+
                     continue;
-                }
-                else
-                {
+                } else {
                     Debug::success("The file has been fully download and have the same md5");
                 }
 
@@ -369,10 +388,19 @@ var myChart = new Chart(ctx, {
 
                 if ($archive['md5_compressed'] !== $stats['uncompressed']['md5']) {
 
-
-                    $msg = "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")";
+                    $main_error = true;
+                    $msg        = "The decrypted and uncompressed file is corrupted the md5 don't correspond (".$archive['md5_compressed']." != ".$stats['uncompressed']['md5'].")";
 
                     Debug::error($msg);
+
+
+                    $save                                     = array();
+                    $save['archive_load_detail']['id']        = $archive['id_archive_load_detail'];
+                    $save['archive_load_detail']['error_msg'] = $msg;
+                    $save['archive_load_detail']['status']    = "CMP_MD5_COMPRESSED";
+                    $save['archive_load_detail']['date_end']         = date('Y-m-d H:i:s');
+                    $save['archive_load_detail']['duration']         = round(microtime(true) - $time_begin, 0);
+                    $db->sql_save($save);
 
                     $this->log("error", "MD5_FILE", $msg);
                     continue;
@@ -398,7 +426,10 @@ var myChart = new Chart(ctx, {
                 //to prevent old stuff we archived, like enum with empty choice or duble choice
                 shell_exec("sed -i '1iSET sql_mode=\"ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\";' ".$stats['file_path']);
 
-                $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database;
+
+                $log_mysql = "/tmp/".uniqid();
+
+                $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database." 2> ".$log_mysql;
 
                 Debug::debug($cmd);
                 $cmd = str_replace("{password}", $conf['password'], $cmd);
@@ -410,12 +441,40 @@ var myChart = new Chart(ctx, {
 
                 if ($exit !== 0) {
 
-                    $status = "SUCCESSFULL";
-                    $this->log("error", "MYSQL", " Error to load the file '".$stats['file_path']."' with mysql");
-                } else {
-                    $status = "ERROR";
-                    $this->log("info", "MYSQL", "We loaded this file '".$stats['file_path']."' to mysql");
+                    $main_error = true;
 
+                    $sql_error = "";
+                    $sql_error = file_get_contents($log_mysql);
+
+                    $msg = "We could'nt load this file '".$stats['file_path']."' to mysql [".$sql_error."]";
+
+                    unlink($log_mysql);
+
+                    $this->log("info", "MYSQL", $msg);
+
+                    Debug::error($msg);
+
+                    $save                                     = array();
+                    $save['archive_load_detail']['id']        = $archive['id_archive_load_detail'];
+                    $save['archive_load_detail']['error_msg'] = $msg;
+                    $save['archive_load_detail']['status']    = "ERROR_MYSQL";
+                    $save['archive_load_detail']['date_end']         = date('Y-m-d H:i:s');
+                    $save['archive_load_detail']['duration']         = round(microtime(true) - $time_begin, 0);
+                    $db->sql_save($save);
+                } else {
+
+                    $msg = " MySQL file : '".$stats['file_path']."' completed with success on mysql";
+                    $this->log("error", "MYSQL", $msg);
+
+                    $save                                  = array();
+                    $save['archive_load_detail']['id']     = $archive['id_archive_load_detail'];
+                    $save['archive_load_detail']['status'] = "COMPLETED";
+                    $save['archive_load_detail']['date_end']      = date('Y-m-d H:i:s');
+                    $save['archive_load_detail']['duration']      = round(microtime(true) - $time_begin, 0);
+                    $db->sql_save($save);
+
+
+                    Debug::success($msg);
 
                     $size += $archive['size_sql'];
                 }
@@ -424,8 +483,6 @@ var myChart = new Chart(ctx, {
 
 
                 $percent = floor($size / $total_size * 100);
-
-
 
 
 
@@ -438,34 +495,43 @@ var myChart = new Chart(ctx, {
                 $res6 = $db->sql_query($sql6);
 
 
-                $error_msg;
-                while ($ob6 = $db->sql_fetch_object($res6)) {
-                    $error_msg = $ob6->error_msg;
+                $error_msg = '';
+                while ($ob6       = $db->sql_fetch_object($res6)) {
+
+                    if (!empty($ob6->error_msg)) {
+                        $error_msg = $ob6->error_msg;
+                    }
                 }
 
-                if (empty($error_msg)) {
-                    $status = "COMPLETED";
-                } else {
-                    $status = "ERROR";
-                }
 
-                $save =array();
 
-                
-                $save['archive_load']['id']   = $id_archive_load;
-                $save['archive_load']['status']   = $status;
-                $save['archive_load']['date_end'] = date('Y-m-d H:i:s');
-                $save['archive_load']['duration'] = round(microtime(true) - $time_begin, 0);
-                $db->sql_save($save);
+
 
 
                 Debug::checkPoint("traitement : ".$stats['file_path']);
             }
 
-            $msg = "The load of archive is completed";
 
+
+            $msg = "The load of archive is completed";
             Debug::success($msg);
             $this->log("info", "COMPLETED", $msg);
+
+
+            if ($main_error === true) {
+                $main_status = "ERROR";
+            } else {
+                $main_status = "COMPLETED";
+            }
+
+
+
+            $save                             = array();
+            $save['archive_load']['id']       = $id_archive_load;
+            $save['archive_load']['status']   = $main_status;
+            $save['archive_load']['date_end'] = date('Y-m-d H:i:s');
+            $save['archive_load']['duration'] = round(microtime(true) - $time_begin, 0);
+            $db->sql_save($save);
         }
     }
 
@@ -502,6 +568,8 @@ ORDER BY a.id DESC";
         while ($ob              = $db->sql_fetch_object($res)) {
             $data['history'][] = $ob;
         }
+
+        App\Library\Display::setDb($db);
 
         $this->set('data', $data);
     }
@@ -646,7 +714,7 @@ ORDER BY a.id DESC";
         $sql = "SELECT * FROM archive_load WHERE id=".$id_archive_load;
         $res = $db->sql_query($sql);
 
-                while ($arr = $db->sql_fetch_array($res)) {
+        while ($arr = $db->sql_fetch_array($res)) {
             $data['archive_load'] = $arr;
         }
 
@@ -729,7 +797,7 @@ ORDER BY a.id DESC";
                 $pid = shell_exec($cmd);
             }
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db                                  = $this->di['db']->sql(DB_DEFAULT);
             $archive_load                        = array();
             $archive_load['archive_load']['pid'] = (int) $pid;
             $archive_load['archive_load']['id']  = $id_archive_load;
