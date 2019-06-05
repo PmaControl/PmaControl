@@ -11,10 +11,7 @@ use \Glial\Date\Date;
 use App\Library\Extraction;
 use \App\Library\Debug;
 
-
 // Joining: receiving State Transfer   => IST change color
-
-
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
@@ -340,10 +337,10 @@ class Dot2 extends Controller
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::wsrep_desync",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
-                "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
+                "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
                 "status::wsrep_cluster_size"));
 
-        //debug($temp);
+        //Debug::debug($temp);
 
         foreach ($temp as $id_mysql_server => $servers) {
 
@@ -356,6 +353,8 @@ class Dot2 extends Controller
                 $this->servers[$id_mysql_server] = $server;
             }
         }
+
+        return $this->servers;
     }
 
     public function generateGroup($groups)
@@ -484,8 +483,10 @@ class Dot2 extends Controller
 //debug($this->servers);
 
 
-        foreach ($this->servers as $id_mysql_server => $servers) {
-//$server = $servers[''];
+        foreach ($this->servers as $id_mysql_server => $server) {
+
+
+            //Debug::debug($server, "server");
 //$this->graph_node[$id_mysql_server] = $server;
 
             if ($this->servers[$id_mysql_server]['is_available'] === "1") {
@@ -495,6 +496,19 @@ class Dot2 extends Controller
             } else if ($this->servers[$id_mysql_server]['is_available'] === "-1") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_BUSY'];
             }
+
+            //Joining: receiving State Transfer
+            if (!empty($server['wsrep_local_state']) && $server['wsrep_local_state'] === "1") {
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_IST'];
+            }
+
+            //MANUAL DESYNC
+            if (!empty($server['wsrep_desync']) && $server['wsrep_desync'] === "ON") {
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_MANUAL_DESYNC'];
+            }
+
+
+
         }
 
 //        Debug::debug($this->graph_node, "GENERATE NODE");
@@ -622,7 +636,7 @@ class Dot2 extends Controller
     public function run($param)
     {
         Debug::parseDebug($param);
-        Debug::debugQueriesOff();
+        //Debug::debugQueriesOff();
 
         $this->view = false;
 
@@ -830,12 +844,9 @@ class Dot2 extends Controller
          */
 
 
-        if ($id_mysql_server == "66") {
-            Debug::debug($this->graph_node[$id_mysql_server]['color'], "COLOR NODE");
-        }
 
-        $node .= "node [color = \"".$this->graph_node[$id_mysql_server]['color']."\"];\n";
-        $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
+        $node .= 'node [color = "'.$this->graph_node[$id_mysql_server]['color'].'" style="'.$this->graph_node[$id_mysql_server]['style'].'"];'."\n";
+        $node .= '  '.$id_mysql_server.' [penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
 
 
         //debug($server);
@@ -1048,7 +1059,6 @@ class Dot2 extends Controller
 
                     Debug::debug($this->joiner);
                 }
-
 
                 /*
                   if (!empty($member['wsrep_desync']) && $member['wsrep_desync'] === "ON")
@@ -1373,6 +1383,8 @@ class Dot2 extends Controller
                 } else {
                     $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR_DESYNCED']['color'];
                 }
+
+
 
                 $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_JOINER']['color'];
 
