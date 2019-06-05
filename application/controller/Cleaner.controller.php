@@ -916,7 +916,7 @@ var myChart = new Chart(ctx, {
             $log_file = TMP."log/cleaner_".$ob->id.".log";
 
             $cmd = $php." ".GLIAL_INDEX." Cleaner launch ".$id_cleaner." >> ".$log_file." & echo $!";
-            $pid = shell_exec($cmd);
+            $pid = intval(trim(shell_exec($cmd)));
 
 
             if (IS_CLI) {
