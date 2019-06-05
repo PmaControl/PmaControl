@@ -11,6 +11,10 @@ use \Glial\Date\Date;
 use App\Library\Extraction;
 use \App\Library\Debug;
 
+
+// Joining: receiving State Transfer   => IST change color
+
+
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
@@ -20,27 +24,40 @@ class Dot2 extends Controller
     use \App\Library\Filter;
     /**
      *
-     * select * from architecture_legend;
-      +----+---------------------------+------------------+------------+--------+-------+-------------+
-      | id | const                     | name             | color      | style  | order | type        |
-      +----+---------------------------+------------------+------------+--------+-------+-------------+
-      |  1 | REPLICATION_OK            | Healty           | #008000    | filled |     1 | REPLICATION |
-      |  2 | REPLICATION_IST           | Galera IST       | turquoise4 | filled |    20 | REPLICATION |
-      |  3 | REPLICATION_SST           | Galera SST       | #e3ea12    | dashed |    12 | REPLICATION |
-      |  4 | REPLICATION_STOPPED       | Stopped          | #0000FF    | filled |     3 | REPLICATION |
-      |  5 | REPLICATION_ERROR_SQL     | Error SQL        | #FF0000    | filled |     3 | REPLICATION |
-      |  7 | REPLICATION_DELAY         | Delay            | #FFA500    | filled |     2 | REPLICATION |
-      |  8 | REPLICATION_NA            | Not allowed      | grey       | filled |     8 | REPLICATION |
-      |  9 | REPLICATION_CONNECTING    | Connecting       | peachpuff3 | filled |     9 | REPLICATION |
-      | 10 | REPLICATION_ERROR_IO      | Error IO         | #FF0000    | dashed |     3 | REPLICATION |
-      | 11 | REPLICATION_ERROR_CONNECT | Error connecting | #FF0000    | dotted |     3 | REPLICATION |
-      | 12 | REPLICATION_BUG           | Bug              | black      | filled |    21 | REPLICATION |
-      | 13 | NODE_OK                   | Healty           | #008000    | filled |     1 | NODE        |
-      | 14 | NODE_KO                   | Out of order     | #FF0000    | filled |     2 | NODE        |
-      | 15 | NODE_BUSY                 | Going down       | #FFA500    | filled |     3 | NODE        |
-      +----+---------------------------+------------------+------------+--------+-------+-------------+
-      14 rows in set (0.001 sec)
-
+      MariaDB [pmacontrol]> select * from architecture_legend;
+      +----+---------------------------+---------------------------+------------+---------+-------+-------------+-----------+
+      | id | const                     | name                      | color      | style   | order | type        | condition |
+      +----+---------------------------+---------------------------+------------+---------+-------+-------------+-----------+
+      |  1 | REPLICATION_OK            | Healty                    | #008000    | filled  |     1 | REPLICATION |           |
+      |  2 | REPLICATION_IST           | Galera IST                | turquoise4 | filled  |    20 | REPLICATION |           |
+      |  3 | REPLICATION_SST           | Galera SST                | #e3ea12    | dashed  |    12 | REPLICATION |           |
+      |  4 | REPLICATION_STOPPED       | Stopped                   | #0000FF    | filled  |     3 | REPLICATION |           |
+      |  5 | REPLICATION_ERROR_SQL     | Error SQL                 | #FF0000    | filled  |     3 | REPLICATION |           |
+      |  7 | REPLICATION_DELAY         | Delay                     | #FFA500    | filled  |     2 | REPLICATION |           |
+      | 10 | REPLICATION_ERROR_IO      | Error IO                  | #FF0000    | dashed  |     3 | REPLICATION |           |
+      | 11 | REPLICATION_ERROR_CONNECT | Error connecting          | #696969    | dashed  |     3 | REPLICATION |           |
+      | 13 | NODE_OK                   | Healty                    | #008000    | filled  |     1 | NODE        |           |
+      | 14 | NODE_ERROR                | Out of order              | #FF0000    | filled  |     2 | NODE        |           |
+      | 15 | NODE_BUSY                 | Going down                | #FFA500    | filled  |     3 | NODE        |           |
+      | 16 | NODE_NOT_PRIMARY          | Node probably desynced    | Orange     | filled  |    10 | NODE        |           |
+      | 17 | NODE_DONOR                | donnor                    | #00FF00    | filled  |    11 | NODE        |           |
+      | 18 | NODE_DONOR_DESYNCED       | Node donor desynced       | #e3ea12    | filled  |    11 | NODE        |           |
+      | 19 | NODE_MANUAL_DESYNC        | node desync manually      | #0000ff    | filled  |    12 | NODE        |           |
+      | 20 | NODE_JOINER               | node joining cluster      | #000000    | dashed  |    15 | NODE        |           |
+      | 21 | GALERA_AVAILABLE          | galera all ok             | #008000    | filled  |     1 | GALERA      |           |
+      | 22 | GALERA_DEGRADED           |                           | #e3ea12    | filled  |     2 | GALERA      |           |
+      | 23 | GALERA_WARNING            | N*2  node should be N*2+1 | orange     | filled  |     3 | GALERA      |           |
+      | 24 | GALERA_CRITICAL           | only 2 node               | #FF0000    | filled  |     4 | GALERA      |           |
+      | 25 | GALERA_EMERGENCY          | only one node in galera   | #FF0000    | dashed  |     5 | GALERA      |           |
+      | 26 | GALERA_OUTOFORDER         | galera HS                 | #000000    | filled  |     6 | GALERA      |           |
+      | 27 | REPLICATION_BLACKOUT      | Out of order              | #000000    | filled  |    15 | REPLICATION |           |
+      | 28 | SEGMENT_OK                | segment ok                | #008000    | dashed  |     1 | SEGMENT     |           |
+      | 29 | SEGMENT_KO                | segment out of order      | #FF0000    | dashed  |     2 | SEGMENT     |           |
+      | 32 | SEGMENT_PARTIAL           | un neud est hs            | #FFA500    | dashed  |     3 | SEGMENT     |           |
+      | 33 | NODE_INITIALIZED          | Node initialized          | #7FFF00    | fillled |    16 | NODE        |           |
+      | 34 | NODE_WAITING              | Waiting for SST           | #00008B    | dashed  |    17 | NODE        |           |
+      +----+---------------------------+---------------------------+------------+---------+-------+-------------+-----------+
+      28 rows in set (0.000 sec)
      */
     var $maping_master           = array();
     var $master_slave            = array();
@@ -61,10 +78,12 @@ class Dot2 extends Controller
     var $galera_border           = array();
     //used for legend from architecture_legend
 
-    var $edge    = array();
-    var $node    = array();
-    var $galera  = array();
-    var $segment = array();
+    var $edge               = array();
+    var $node               = array();
+    var $galera             = array();
+    var $segment            = array();
+    // contain the list of cluster empty (made with offline node to get back full list of node from original cluster
+    var $cluster_black_list = array();
 
     public function getMasterSlave($param)
     {
@@ -136,7 +155,60 @@ class Dot2 extends Controller
         }
 
 
-        //debug($this->maping_master);
+        //cLuster to remove at end
+        //remove node offline alone (to not create an other cluster with node offline)
+        //and move the node offline to good cluster
+
+
+        $nodes_to_move = array();
+
+        foreach ($this->galera_cluster as $cluster_name => $all_nodes) {
+
+            if (count($all_nodes) === 1) {
+
+                $node = array_pop($all_nodes);
+
+
+                if ($node['is_available'] === "0") {
+                    Debug::debug($cluster_name, "TO_REMOVE");
+                    Debug::debug($node, "NODE OFFLINE ALONE");
+
+
+                    Debug::debug($node['wsrep_incoming_addresses']);
+
+                    $nodes_to_move[] = $node;
+
+                    $this->cluster_black_list[] = $cluster_name;
+                }
+            }
+        }
+
+        foreach ($nodes_to_move as $node_to_move) {
+            $to_move_in = $this->extractIncomming($node_to_move['wsrep_incoming_addresses'], $this->maping_master, array($node_to_move['id_mysql_server']));
+            foreach ($to_move_in as $id_mysql_server) {
+                if ($id_mysql_server === "Arbitre") {
+                    continue;
+                }
+
+                foreach ($this->galera_cluster as $cluster_name => $all_nodes) {
+                    $node = array_pop($all_nodes);
+
+                    if ($node['id_mysql_server'] === $id_mysql_server) {
+                        $this->galera_cluster[$cluster_name][] = $node_to_move;
+
+                        Debug::debug("Node : ".$node_to_move['id_mysql_server']." moved in Galera Cluster : ".$cluster_name);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        foreach ($this->cluster_black_list as $cluster_name) {
+            unset($this->galera_cluster[$cluster_name]);
+        }
+
+        //debug($this->galera_cluster, "GALERA");
 
         $group_galera = array();
 
@@ -151,8 +223,6 @@ class Dot2 extends Controller
                     // to get offline node
                     $incomming[] = $server['wsrep_incoming_addresses'];
 
-
-
                     $tab      = explode(",", $server['wsrep_incoming_addresses']);
                     $to_match = $server['ip'].":".$server['port'];
                     // the goal is to remove proxy
@@ -162,6 +232,9 @@ class Dot2 extends Controller
                 }
 
                 $nodes = $this->getAllMemberFromGalera($incomming, $galera_nodes, $group);
+
+
+                Debug::debug($nodes, "ALL MEMBERS");
 
                 if (count($nodes['all_nodes']) > 0) {
                     $group_galera[$group] = $nodes['all_nodes'];
@@ -178,7 +251,7 @@ class Dot2 extends Controller
             }
 
 
-            Debug::debug($group_galera);
+//            Debug::debug($group_galera);
         }
 
 
@@ -189,10 +262,7 @@ class Dot2 extends Controller
     private function getAllMemberFromGalera($incomming, $galera_nodes, $group)
     {
         //need dertect split brain !!
-        Debug::debug($incomming);
-
-
-
+//        Debug::debug($incomming, "INCOMING");
 
 
         $all_node = array();
@@ -205,7 +275,7 @@ class Dot2 extends Controller
 
         $nodes = array_unique($all_node);
 
-        Debug::debug($nodes);
+        Debug::debug($nodes, "NODES");
 
 
         $arbitres = array();
@@ -251,6 +321,8 @@ class Dot2 extends Controller
             $this->servers[$ar['id']]                       = $ar;
         }
 
+        //Debug::debug($this->servers, 'gg');
+
         return $this->maping_master;
     }
 
@@ -266,9 +338,10 @@ class Dot2 extends Controller
 
 
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone",
-                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method", "variables::wsrep_desync",
-                "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses", "status::wsrep_cluster_size"));
+                "variables::system_time_zone", "variables::wsrep_desync",
+                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
+                "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
+                "status::wsrep_cluster_size"));
 
         //debug($temp);
 
@@ -300,7 +373,7 @@ class Dot2 extends Controller
         $result['groups']  = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
 
-//Debug::debug($result);
+        //Debug::debug($result);
         $this->groups = $result;
 
         return $this->groups;
@@ -715,7 +788,6 @@ class Dot2 extends Controller
     {
         $server = $this->servers[$id_mysql_server];
 
-
         $node = "";
         $node .= "node [color = \"".$this->node['NODE_OK']['color']."\"];\n";
         $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
@@ -920,7 +992,7 @@ class Dot2 extends Controller
                         $val['arrow'] = 'double';
                     }
 
-                    Debug::debug($val['arrow'], 'ARROW');
+                    //Debug::debug($val['arrow'], 'ARROW');
 
                     if ($val['arrow'] == "double") {
                         $val['color'] = $val['color'].":white:".$val['color'];
@@ -956,6 +1028,7 @@ class Dot2 extends Controller
 
         //debug($this->graph_node);
         //Debug::debug($this->galera_cluster, "galera_cluster");
+//        Debug::debug($this->galera_cluster);
 
         foreach ($this->galera_cluster as $cluster_name => $members) {
 
@@ -975,6 +1048,20 @@ class Dot2 extends Controller
 
                     Debug::debug($this->joiner);
                 }
+
+
+                /*
+                  if (!empty($member['wsrep_desync']) && $member['wsrep_desync'] === "ON")
+                  {
+                  Debug::debug($member, "DESYNC");
+                  $this->graph_node[$id_mysql_server]['color'] = $this->node['$id_mysql_server']['color'];
+                  } */
+
+
+
+
+
+
                 //Debug::debug($this->graph_edge);
                 // if donor
                 // $this->graph_node[$id_mysql_server]['color']
@@ -1031,6 +1118,12 @@ class Dot2 extends Controller
 
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
 
+
+            if (in_array($cluster_name, $this->cluster_black_list)) {
+                continue;
+            }
+
+
             ksort($segments);
 
 
@@ -1081,12 +1174,11 @@ class Dot2 extends Controller
             $cluster .= 'style=solid;penwidth=2; color="'.$galera_style['color'].'";'."\n";
 
 
-         
+
             $cluster .= 'label = "'.$cluster_name_display.'";';
 
             //Debug::debug($nodes_ordered, "nodes_ordered");
             //$cluster .= implode(" -> ", $all_segment)."[color=grey arrowhead=none];\n"; // [constraint=false]
-
             //$first_from_segment = array();
 
 
@@ -1096,8 +1188,7 @@ class Dot2 extends Controller
                 $nodes_ordered = $this->orderyBy($nodes, 'hostname');
 
 
-                Debug::debug($nodes_ordered, "Node ordered");
-
+                //Debug::debug($nodes_ordered, "Node ordered");
                 //$first_from_segment[$segment] = end($nodes_ordered);
 
                 $cluster .= 'subgraph cluster_'.str_replace(array('-', ':'), '', $cluster_name)."_".$segment." {\n";
@@ -1114,10 +1205,9 @@ class Dot2 extends Controller
                     //$cluster .= "{".implode(";", $nodes_ordered)."; } ;\n";
 
 
-                    
+
                     $cluster .= "rank = same;";
-                    foreach($nodes_ordered as $node)
-                    {
+                    foreach ($nodes_ordered as $node) {
                         $cluster .= $node.";\n";
                     }/**/
 
@@ -1138,17 +1228,17 @@ class Dot2 extends Controller
             $cluster .= ' }'."\n";
 
 
-            
+
             if (in_array($id_mysql_server, $group)) {
 
 
                 /* pour ranger les segments horizontalement au lieu de verticalement
-                if (count($first_from_segment) > 1) { // evite que la fleche entre segment si un seul segment
-                    $cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
-                    //Debug::debug($this->servers);
-                }
-                 /*** */
-                 
+                  if (count($first_from_segment) > 1) { // evite que la fleche entre segment si un seul segment
+                  $cluster .= implode(" -> ", $first_from_segment)." [color=blue arrowhead=none style=invis];\n"; // [constraint=false]
+                  //Debug::debug($this->servers);
+                  }
+                  /*** */
+
 
                 $galera .= $cluster;
 
@@ -1164,7 +1254,6 @@ class Dot2 extends Controller
                     Debug::debug($cluster, "GOOG");
                 }
             }
-           
         }
 
 
@@ -1278,6 +1367,7 @@ class Dot2 extends Controller
                 $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = $this->arrow['REPLICATION_SST']['color'];
                 $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['label'] = "SST";
 
+
                 if ($data['wsrep_sst_method'] === "xtrabackup-v2" || $data['wsrep_sst_method'] === "mariabackup") {
                     $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR']['color'];
                 } else {
@@ -1293,7 +1383,6 @@ class Dot2 extends Controller
             Debug::debug($row);
         }
     }
-
     /*
      *
      * fait en sorte que si un MASTER // MASTER  est détecté celui-ci est automatiquement mis au même rang
@@ -1480,5 +1569,41 @@ class Dot2 extends Controller
                     break;
             }
         }
+    }
+    /*
+     * $incomming value from wsrep_incoming_addresses
+     * $reference contain an array of all ip:port => $id_mysql_server that we know
+     * $exclude array of all id_mysql_server we want to exclude
+     */
+
+    public function extractIncomming($incomming, $reference, $exclude = array())
+    {
+        $servers = explode(",", $incomming);
+
+        $nodes = array();
+
+        foreach ($servers as $server) {
+
+            if (empty($server)) {
+                $nodes[] = "Arbitre";
+                continue;
+            }
+
+
+            if (!empty($this->maping_master[$server])) {
+                $id_mysql_server = $this->maping_master[$server];
+
+                if (!in_array($id_mysql_server, $exclude)) {
+                    $nodes[] = $id_mysql_server;
+                }
+            } else {
+                trigger_error("Node unknow : ".$server, E_USER_WARNING);
+            }
+        }
+
+
+        sort($nodes);
+
+        return $nodes;
     }
 }

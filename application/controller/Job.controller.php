@@ -3,6 +3,7 @@
 use \Glial\Synapse\Controller;
 use App\Library\Mydumper;
 use App\Library\System;
+use App\Library\Debug;
 
 class Job extends Controller
 {
