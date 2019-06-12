@@ -42,6 +42,9 @@ class Server extends Controller
 
     }
 
+
+    /*
+
     public function listing($param)
     {
         // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
@@ -101,7 +104,6 @@ class Server extends Controller
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
 
-        /*         * ***** */
 
         $data['menu_select']['main']['name']  = __('Servers');
         $data['menu_select']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
@@ -167,6 +169,8 @@ class Server extends Controller
 
         $this->set('data', $data);
     }
+     /*
+     */
 
     public function main()
     {

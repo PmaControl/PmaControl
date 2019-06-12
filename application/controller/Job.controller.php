@@ -23,9 +23,9 @@ class Job extends Controller
                 $gg['job']['status']   = "INTERRUPTED";
                 $gg['job']['date_end'] = date("Y-m-d H:i:s");
 
-                $res = $db->sql_save($gg);
+                $res2 = $db->sql_save($gg);
 
-                if ($res) {
+                if ($res2) {
                     $ob['status']   = $gg['job']['status'];
                     $ob['date_end'] = $gg['job']['date_end'];
                 }
@@ -56,7 +56,7 @@ class Job extends Controller
             } else {
                 $status = "ERROR";
             }
-            
+
             $upt['job']['id']       = $ob->id;
             $upt['job']['status']   = $status;
             $upt['job']['date_end'] = date('Y-m-d H:i:s');

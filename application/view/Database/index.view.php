@@ -5,6 +5,9 @@
  * and open the template in the editor.
  */
 
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
 
 \Glial\Synapse\FactoryController::addNode("Database", "create", array());
 \Glial\Synapse\FactoryController::addNode("Database", "rename", array());

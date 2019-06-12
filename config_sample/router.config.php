@@ -3,7 +3,7 @@
 
 if (! defined('ROUTE_DEFAULT'))
 {
-    define('ROUTE_DEFAULT', "server/listing");
+    define('ROUTE_DEFAULT', "server/main");
 }
 
 

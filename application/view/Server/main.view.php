@@ -4,60 +4,61 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use \Glial\Synapse\FactoryController;
 use \Glial\Security\Crypt\Crypt;
 use Glial\Html\Form\Form;
-
-
 use App\Library\Format;
 
 /*
-function formatVersion($version)
-{
-    if (strpos($version, "-")) {
-        $number = explode("-", $version)[0];
-        $fork   = explode("-", $version)[1];
-    } else {
-        $number = $version;
-    }
+  function formatVersion($version)
+  {
+  if (strpos($version, "-")) {
+  $number = explode("-", $version)[0];
+  $fork   = explode("-", $version)[1];
+  } else {
+  $number = $version;
+  }
 
-    switch (strtolower($fork)) {
-        case 'mariadb':
-            $name = '<span class="geek">&#xF130;</span> MariaDB';
-            break;
+  switch (strtolower($fork)) {
+  case 'mariadb':
+  $name = '<span class="geek">&#xF130;</span> MariaDB';
+  break;
 
-        case 'percona':
-            $name = 'percona';
-            break;
+  case 'percona':
+  $name = 'percona';
+  break;
 
-        default:
-            $name = '<span class="geek">&#xF137;</span> MySQL';
-    }
+  default:
+  $name = '<span class="geek">&#xF137;</span> MySQL';
+  }
 
-    return $name." ".$number;
-}
+  return $name." ".$number;
+  }
 
-function format_ping($microtime, $precision = 2)
-{
-    $units = array('ms', 's');
+  function format_ping($microtime, $precision = 2)
+  {
+  $units = array('ms', 's');
 
-    $microtime = $microtime * 1000;
+  $microtime = $microtime * 1000;
 
-    if ($microtime > 1000) {
-        $microtime = $microtime / 1000;
-        $pow       = 1;
-    } else {
-        $pow = 0;
-    }
-
-
-    // Uncomment one of the following alternatives
-    // $bytes /= pow(1024, $pow);
-    // $bytes /= (1 << (10 * $pow));
+  if ($microtime > 1000) {
+  $microtime = $microtime / 1000;
+  $pow       = 1;
+  } else {
+  $pow = 0;
+  }
 
 
-    return round($microtime, $precision).' '.$units[$pow];
-}
+  // Uncomment one of the following alternatives
+  // $bytes /= pow(1024, $pow);
+  // $bytes /= (1 << (10 * $pow));
 
-*/
 
+  return round($microtime, $precision).' '.$units[$pow];
+  }
+
+ */
+
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
 
 
 $converter = new AnsiToHtmlConverter();
@@ -124,7 +125,7 @@ if (!empty($data['servers'])) {
         $i++;
 
         $style = "";
-        
+
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
@@ -236,13 +237,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-                        echo Form::input("check", "all", $computed);
-                        ?>
+            echo Form::input("check", "all", $computed);
+            ?>
                         <span></span>
                     </label>
                 </div>

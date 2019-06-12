@@ -11,6 +11,13 @@ function format($bytes, $decimals = 2)
     $factor = floor((strlen($bytes) - 1) / 3);
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
 }
+
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
+
+
 echo '<table class="table table-condensed table-bordered table-striped">';
 
 echo '<tr>';
