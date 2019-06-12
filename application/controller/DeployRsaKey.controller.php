@@ -25,7 +25,7 @@ class DeployRsaKey extends Controller
     public function index()
     {
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
 
 
         $this->di['js']->code_javascript('

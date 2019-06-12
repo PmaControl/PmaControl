@@ -10,6 +10,8 @@ use Glial\Html\Form\Form;
 <div class="well">
 
     <?php
+    \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+    echo '<br >';
     //print_r($_GET);
     //echo $data['sql'];
 
@@ -19,7 +21,7 @@ use Glial\Html\Form\Form;
     echo __("Server : ");
     echo ' ';
 
-    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id",array("data-width"=>"auto")));
+    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "auto")));
 
     //echo Form::select("mysql_server", "id", $data['servers'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
     echo ' ';
@@ -34,7 +36,7 @@ use Glial\Html\Form\Form;
     echo Form::select("ts_variable", "derivate", $data['derivate'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
 
 
-    echo ' <button type="submit" class="btn btn-primary">' . __("Filter") . '</button>';
+    echo ' <button type="submit" class="btn btn-primary">'.__("Filter").'</button>';
 
     echo '</div>';
     echo '</form>';
@@ -50,7 +52,7 @@ use Glial\Html\Form\Form;
 <?php
 if (!empty($data['fields_required'])) {
 
-    echo '<div class="well" style="border-left-color: #' . 'b85c5c' . ';   border-left-width: 10px;"><p><b>' . 'Error' . '</b></p>';
+    echo '<div class="well" style="border-left-color: #'.'b85c5c'.';   border-left-width: 10px;"><p><b>'.'Error'.'</b></p>';
     echo 'Please request all fields !';
     echo '</div>';
 

@@ -5,18 +5,15 @@
  * and open the template in the editor.
  */
 
-
 use \App\Library\Debug;
 use App\Library\Chiffrement;
-
 use App\Library\Mysql;
+use App\Library\System;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
-
 use \Glial\Synapse\Controller;
-
 
 class Database extends Controller
 {
@@ -41,7 +38,10 @@ class Database extends Controller
 
 
 
-                $sql = "SELECT * FROM mysql_server WHERE id in(".implode(",", $_POST['database']['id_mysql_server']).");";
+                $sql = "SELECT a.*,b.key FROM mysql_server a
+                    INNER JOIN environment b ON a.`id_environment` = b.id
+
+                 WHERE a.id in(".implode(",", $_POST['database']['id_mysql_server']).");";
                 $res = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res)) {
@@ -54,11 +54,14 @@ class Database extends Controller
 
                         if (!empty($database)) {
 
+
+
                             $sql = "CREATE DATABASE `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                             $db_remote->sql_query($sql);
 
-                            $sql = "set sql_log_bin =0;";
-                            $db_remote->sql_query($sql);
+
+                            //$sql = "set sql_log_bin =0;";
+                            //$db_remote->sql_query($sql);
 
                             if (empty($_POST['database']['id_mysql_privilege'])) {
                                 $droits = "SELECT, INSERT, UPDATE, DELETE";
@@ -87,7 +90,7 @@ class Database extends Controller
                             $sql = "GRANT ".$droits." ON ".$database.".* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
                             $db_remote->sql_query($sql);
 
-                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." login : ".$user." / password : ".$password;
+                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password;
                         }
                     }
                 }
@@ -133,7 +136,7 @@ class Database extends Controller
     public function refresh($param)
     {
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
         Debug::parseDebug($param);
 
 
@@ -153,7 +156,7 @@ class Database extends Controller
 
                     $id_mysql_server__source      = $_POST['database']['id_mysql_server__from'];
                     $id_mysql_server__destination = $_POST['database']['id_mysql_server__target'];
-                    $databases                    = $_POST['database']['list'];
+                    $databases                    = implode(',', $_POST['database']['list']);
                     $path                         = $_POST['database']['path'];
 
 
@@ -163,60 +166,13 @@ class Database extends Controller
                     }
 
 
-                    $php = explode(" ", shell_exec("whereis php"))[1];
-
-                    $uuid = Uuid::uuid4()->toString();
-                    $log  = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
-
-                    $callback = $php." ".GLIAL_INDEX." job callback ".$uuid."\n";
-                    $cmd      = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__destination." '".implode(",", $databases)."' '".$path."' >> ".$log."\n";
-
-                    $cmd_file = TMP.$uuid.".sh";
-
-                    file_put_contents($cmd_file, "#!/bin/sh\n".$cmd.$callback);
-
-
-                    shell_exec("chmod +x ".$cmd_file);
-
-                    debug(file_get_contents($cmd_file));
-
-                    //su - www-data -s /bin/bas
-
-                    $batch = "bash ".$cmd_file." & echo $!";
-
-
-                    // nohup command &>/dev/null &
-
-                    Debug::debug($batch);
-
-
-                    //$pid = 54274823;
-                    $pid = shell_exec($batch);
-
-
-                    $db = $this->di['db']->sql(DB_DEFAULT);
-
-                    $job                      = array();
-                    $job['job']['uuid']       = $uuid;
-                    $job['job']['class']      = __CLASS__;
-                    $job['job']['method']     = __FUNCTION__;
-                    $job['job']['param']      = json_encode($_POST);
-                    $job['job']['date_start'] = date("Y-m-d H:i:s");
-                    $job['job']['pid']        = $pid;
-                    $job['job']['log']        = $log;
-                    $job['job']['status']     = "RUNNING";
-
-
-                    Debug::debug($job);
-
-                    $db->sql_save($job);
-
+                    $this->addRefresh(array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path));
 
                     //header("location: ".LINK."job/index");
                 }
             }
         }
-        
+
 
         $data['listdb1'] = array();
         $this->set('data', $data);
@@ -238,7 +194,7 @@ class Database extends Controller
         $path                    = $param[3];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
-        
+
 
         $directory = $path."/".uniqid();
 
@@ -260,12 +216,10 @@ class Database extends Controller
 
 
         //Mysql::set_db($db);
-
         //$ob = Mysql::getServerInfo($id_mysql_server__source);
-
         //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
         //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
-        
+
 
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
@@ -297,7 +251,7 @@ class Database extends Controller
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
-        while ($ar = $db->sql_fetch_object($res)) {
+        while ($ar  = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
 
@@ -305,7 +259,7 @@ class Database extends Controller
 
         if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
-            $to_dump = "";
+            $to_dump  = "";
 
             if ($database != "ALL") {
                 $to_dump = " -B '".$database."' ";
@@ -462,8 +416,6 @@ class Database extends Controller
 
                     $triggers[$ob6['Trigger']] = str_replace('@'.$OLD_DB.'.', '@'.$NEW_DB.'.', $ob21['SQL Original Statement']).";";
                 }
-
-
 
                 $sql8 = "DROP TRIGGER `".$ob6['Trigger']."`;";
                 Debug::debug($sql8);
@@ -793,5 +745,76 @@ END;";
         $data = array_merge($revoke, $grants);
 
         return $data;
+    }
+
+    public function addRefresh($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server__source = $param[0];
+        $id_mysql_server__target = $param[1];
+        $databases               = explode(",", $param[2]);
+        $path                    = $param[3];
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+
+        $uuid = Uuid::uuid4()->toString();
+        $log  = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
+
+        $callback = $php." ".GLIAL_INDEX." job callback ".$uuid." --debug 2>&1 >> ".$log."\n";
+        $cmd      = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '".implode(",", $databases)."' '".$path."' --debug 2>&1 >> ".$log."\n";
+        $cmd_file = TMP.'trash/refresh-'.$uuid.".sh";
+
+        file_put_contents($cmd_file, "#!/bin/bash\n".$cmd.$callback);
+
+        shell_exec("chmod +x ".$cmd_file);
+
+        Debug::debug(file_get_contents($cmd_file), "Script");
+
+        //su - www-data -s /bin/bas
+        $batch = "/bin/bash ".$cmd_file." 2>&1 & echo $!";
+
+
+        //$batch = "nohup ".$cmd_file." &>/dev/null & echo $!";
+        // nohup command &>/dev/null &
+        Debug::debug($batch);
+
+        //$pid = 54274823;
+        $pid = trim(shell_exec($batch));
+
+        Debug::debug($pid, "PID");
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $job                      = array();
+        $job['job']['uuid']       = $uuid;
+        $job['job']['class']      = __CLASS__;
+        $job['job']['method']     = __FUNCTION__;
+        $job['job']['param']      = json_encode($param);
+        $job['job']['date_start'] = date("Y-m-d H:i:s");
+        $job['job']['pid']        = $pid;
+        $job['job']['log']        = $log;
+        $job['job']['status']     = "RUNNING";
+
+        Debug::debug($job, "JOB");
+
+        $res = $db->sql_save($job);
+
+        if (!$res) {
+
+        }
+
+        //unlink($cmd_file);
+
+        if (!System::isRunningPid($pid)) {
+            Debug::debug($pid, "The refresh failed");
+
+
+            if (file_exists($log)) {
+                Debug::debug(file_get_contents($log), "Debug");
+            }
+        } else {
+            Debug::debug($pid, "process started !");
+        }
     }
 }
