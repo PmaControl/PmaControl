@@ -56,15 +56,23 @@ class Database extends Controller
 
 
 
-                            $sql = "CREATE DATABASE `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+                            $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                             $db_remote->sql_query($sql);
 
 
                             //$sql = "set sql_log_bin =0;";
                             //$db_remote->sql_query($sql);
 
+
+
+
                             if (empty($_POST['database']['id_mysql_privilege'])) {
-                                $droits = "SELECT, INSERT, UPDATE, DELETE";
+
+                                if (in_array($ob->key, array("prod", "preprod"))) {
+                                    $droits = "SELECT, INSERT, UPDATE, DELETE";
+                                } else {
+                                    $droits = "ALL";
+                                }
                             } else {
                                 $droits = implode(', ', $_POST['database']['id_mysql_privilege']);
                             }
@@ -90,7 +98,7 @@ class Database extends Controller
                             $sql = "GRANT ".$droits." ON ".$database.".* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
                             $db_remote->sql_query($sql);
 
-                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password;
+                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password." Database : ".$database;
                         }
                     }
                 }
@@ -168,7 +176,7 @@ class Database extends Controller
 
                     $this->addRefresh(array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path));
 
-                    //header("location: ".LINK."job/index");
+                    header("location: ".LINK."job/index");
                 }
             }
         }
