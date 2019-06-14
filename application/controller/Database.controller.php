@@ -12,7 +12,7 @@ use App\Library\System;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
+
 use \Glial\Synapse\Controller;
 
 class Database extends Controller

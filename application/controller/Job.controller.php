@@ -11,7 +11,7 @@ class Job extends Controller
     public function index()
     {
         $db  = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * from `job`;";
+        $sql = "SELECT * from `job` ORDER BY date_start DESC;";
         $res = $db->sql_query($sql);
 
         $data['jobs'] = array();
@@ -63,5 +63,42 @@ class Job extends Controller
 
             $db->sql_save($upt);
         }
+    }
+
+    public function add($param)
+    {
+
+        Debug::parseDebug($param);
+        
+        $uuid = $param[0];
+        $parametre = $param[1];
+        $pid = $param[2];
+        $pid = $param[3];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $called_from = debug_backtrace();
+
+        $job                      = array();
+        $job['job']['class']      = $called_from[1]['class'];
+        $job['job']['method']     = $called_from[1]['function'];
+        $job['job']['param']      = json_encode($param);
+        $job['job']['date_start'] = date("Y-m-d H:i:s");
+        $job['job']['pid']        = $pid;
+        $job['job']['log']        = $log;
+        $job['job']['status']     = "RUNNING";
+
+
+/***/
+  //      Debug::debug($job);
+
+        //$db->save($job);
+    }
+
+
+    public function gg($param)
+    {
+      
+        $this->add($param);
     }
 }

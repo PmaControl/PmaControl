@@ -7,7 +7,8 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Crontab;
 use \App\Library\Debug;
 use App\Library\Mysql;
-
+use App\Library\System;
+use Ramsey\Uuid\Uuid;
 
 class Backup extends Controller
 {
@@ -32,7 +33,7 @@ class Backup extends Controller
 //droit minima pour backup : GRANT SELECT, RELOAD, LOCK TABLES, EXECUTE, REPLICATION CLIENT, SHOW VIEW, EVENT, TRIGGER
 //ON *.* TO 'backup'@'%' IDENTIFIED BY PASSWORD '*';
 
-    
+
     /*
      * mount -t nfs -o $mount_options $nfs_source $mount_point"
      *  mysql -h 127.0.0.1 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
@@ -1935,7 +1936,90 @@ $(function () {
         $sql = "INSERT INTO `test_warning` SET `a`='FGHFTHGftgbnhxfthTFHFTRH';";
         $db->sql_query($sql);
         Debug::sql($sql);
-        
+    }
+
+    public function launchBackup($param)
+    {
+        $id_backup_main = $param[0];
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $this->layout_name = false;
+        $this->view        = false;
+
+        $sql = "SELECT * FROM backup_main a
+            INNER JOIN mysql_server b ON a.id_mysql_server = b.id
+            LEFT JOIN link__mysql_server__ssh_key c ON c.id_mysql_server = b.id
+            INNER JOIN ssh_key d ON d.id = c.id_ssh_key
+            WHERE a.id = ".$id_backup_main." LIMIT 1;";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $ret = $this->checkConfig($arr);
+
+            if ($ret === true) {
+
+                $pid = $this->runBackup($param);
+                
+                if (!System::isRunningPid($pid)) {
+                    Debug::debug($pid, "The refresh failed");
+                } else {
+                    Debug::debug($pid, "process started !");
+                }
+            }
+        }
+    }
+
+    public function checkConfig($param)
+    {
+        Debug::parseDebug($param);
+
+
+        // check everything without make the backup
+        //test command (mydumper, mysqldump, xtrabackup and version)
+        //test ssh access
+        //test mysql server
+
+        return true;
+    }
+
+    public function runBackup($param)
+    {
+
+        $id_backup_main = $param[0];
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+
+        $uuid = Uuid::uuid4()->toString();
+
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." 2>&1 & echo $!";
+        $pid = trim(shell_exec($cmd));
+
+        Debug::debug($pid, "PID");
+
+
+        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid), Glial\Synapse\FactoryController::RESULT);
+
+        if (!System::isRunningPid($pid)) {
+            Debug::debug($pid, "The refresh failed");
+        } else {
+            Debug::debug($pid, "process started !");
+        }
+
+        shell_exec("sleep 20");
+    }
+
+    public function doBackup($param)
+    {
+        Debug::parseDebug($param);
     }
 }
 /*
