@@ -76,10 +76,6 @@ class Ssh extends Controller
         $filename = $param[0] ?? "";
 
 
-
-
-
-
         if (!IS_CLI) {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 //traitement du UI en post

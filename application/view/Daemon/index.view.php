@@ -16,6 +16,7 @@ echo '<th>'.__('Date').'</th>';
 //echo '<th>'.__("Each").'</th>';
 echo '<th>'.__("Thread concurrency").'</th>';
 echo '<th>'.__("Maximum Delay").'</th>';
+echo '<th>'.__("Refresh time").'</th>';
 echo '<th>'.__("Queue number").'</th>';
 echo '<th>'.__("Queue msg").'</th>';
 echo '<th>'.__("Path").'</th>';
@@ -35,6 +36,7 @@ foreach ($data['daemon'] as $daemon) {
   //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
     echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
+    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
     echo '<td>'.$daemon['queue_number'].'</td>';
     echo '<td>'.$daemon['nb_msg'].'</td>';
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';

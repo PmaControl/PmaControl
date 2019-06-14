@@ -8,6 +8,12 @@
 use \Glial\Html\Form\Form;
 use App\Library\Display;
 
+
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
+
 if (empty($data['storage_area'])) {
 
     echo "Before to schedule a backup, you must add an array of stockage : ";
