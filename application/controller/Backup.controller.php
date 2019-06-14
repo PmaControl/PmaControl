@@ -32,9 +32,9 @@ class Backup extends Controller
 //droit minima pour backup : GRANT SELECT, RELOAD, LOCK TABLES, EXECUTE, REPLICATION CLIENT, SHOW VIEW, EVENT, TRIGGER
 //ON *.* TO 'backup'@'%' IDENTIFIED BY PASSWORD '*';
 
-
+    
     /*
-     *
+     * mount -t nfs -o $mount_options $nfs_source $mount_point"
      *  mysql -h 127.0.0.1 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
      *
      */
