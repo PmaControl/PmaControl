@@ -15,7 +15,7 @@ class About extends Controller
             .$name;
 
 
-        $data['graphviz'] = shell_exec("dot -V 2>&1");
+        $data['graphviz'] = shell_exec("dot -V 2>&1");   //bin oui le numéro de version s'affiche dans le flux d'errreur !
         $data['php']      = phpversion();
         $data['mysql']    = shell_exec("mysql --version");
         $data['kernel']   = shell_exec("uname -a");
