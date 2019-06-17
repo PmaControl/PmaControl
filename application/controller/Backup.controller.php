@@ -2008,7 +2008,7 @@ $(function () {
         $log = TMP."log/backup-".uniqid().'.log';
         $log_error = TMP."log/backup-".uniqid().'.log';
 
-        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$debug." > ".$log." 2> ".$log_error." & echo $!";
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$uuid." ".$debug." > ".$log." 2> ".$log_error." & echo $!";
         //$cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." & echo $!";
 
 
@@ -2017,39 +2017,32 @@ $(function () {
         $pid = trim(shell_exec($cmd));
 
 
-
         Debug::debug($pid, "PID");
 
 
         
-
-
-        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
-
+        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
 
 
 
 
-        if (!System::isRunningPid($pid)) {
-            Debug::debug($pid, "The refresh failed");
-        } else {
-            Debug::debug($pid, "process started !");
-        }
+        return $pid;
     }
 
     public function doBackup($param)
     {
+
+        $id_backup_main = $param[0];
+        $uuid = $param[1];
+
+
+
         Debug::parseDebug($param);
-
-
-        $gg = shell_exec("dot -V 2>&1");
-
-        Debug::debug($gg,'dot version');
-
         Debug::debug($param,'param');
-
         sleep(10);
 
+        \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
+        
 
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
     }

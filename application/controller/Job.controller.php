@@ -4,6 +4,7 @@ use \Glial\Synapse\Controller;
 use App\Library\Mydumper;
 use App\Library\System;
 use App\Library\Debug;
+use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 
 class Job extends Controller
 {
@@ -13,6 +14,11 @@ class Job extends Controller
         $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * from `job` ORDER BY date_start DESC;";
         $res = $db->sql_query($sql);
+
+
+
+        $converter = new AnsiToHtmlConverter();
+
 
         $data['jobs'] = array();
         while ($ob           = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -31,8 +37,32 @@ class Job extends Controller
                 }
             }
 
-            $ob['log_msg']  = Mydumper::ParseLog($ob['log']);
-            $data['jobs'][] = $ob;
+
+
+
+
+            if (file_exists($ob['log'])) {
+                $log = file_get_contents($ob['log']);
+            } else {
+                $log = "";
+            }
+            $log           = Mydumper::ParseLog($converter->convert($log));
+            $ob['log_msg'] = $log;
+
+
+
+
+
+            if (file_exists($ob['error'])) {
+                $error = file_get_contents($ob['error']);
+            } else {
+                $error = "";
+            }
+            $error           = Mydumper::ParseLog($converter->convert($error));
+            $ob['error_msg'] = $error;
+
+
+            $data['jobs'][]  = $ob;
         }
 
         $this->set('data', $data);
@@ -49,7 +79,7 @@ class Job extends Controller
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $log = file_get_contents($ob->log);
+            $log = file_get_contents($ob->error);
 
             if (empty($log)) {
                 $status = "SUCCESS";
@@ -69,36 +99,39 @@ class Job extends Controller
     {
 
         Debug::parseDebug($param);
-        
-        $uuid = $param[0];
+
+        $uuid      = $param[0];
         $parametre = $param[1];
-        $pid = $param[2];
-        $log = $param[3];
+        $pid       = $param[2];
+        $log       = $param[3];
+        $log_error = $param[4];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $called_from = debug_backtrace();
 
         $job                      = array();
-        $job['job']['class']      = $called_from[1]['class'];
-        $job['job']['method']     = $called_from[1]['function'];
+        $job['job']['uuid']       = $uuid;
+        $job['job']['class']      = $called_from[3]['class'];
+        $job['job']['method']     = $called_from[3]['function'];
         $job['job']['param']      = json_encode($parametre);
         $job['job']['date_start'] = date("Y-m-d H:i:s");
         $job['job']['pid']        = $pid;
         $job['job']['log']        = $log;
+        $job['job']['error']      = $log_error;
         $job['job']['status']     = "RUNNING";
 
 
-/***/
-  //      Debug::debug($job);
 
-        //$db->save($job);
+        /*         * */
+        Debug::debug($job);
+
+        $db->sql_save($job);
     }
-
 
     public function gg($param)
     {
-      
+
         $this->add($param);
     }
 }

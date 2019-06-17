@@ -1,6 +1,8 @@
 <?php
 
-use Glial\Html\Form\Form;
+//use Glial\Html\Form\Form;
+
+use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 
 function getBadge($status)
 {
@@ -51,7 +53,8 @@ function getBadge($status)
             <th><?= __('date end') ?></th>
             <th><?= __('pid') ?></th>
             <th><?= __('status') ?></th>
-            <th><?= __('log') ?></th>            
+            <th><?= __('log') ?></th>
+            <th><?= __('error') ?></th>
         </tr>
 
         <?php
@@ -69,7 +72,19 @@ function getBadge($status)
                 <td><?= $job['date_end'] ?></td>
                 <td><?= $job['pid'] ?></td>
                 <td><big><span class="label label-<?= getBadge($job['status']) ?>"><?= $job['status'] ?></span></big></td>
-                <td><?= $job['log_msg'] ?></td>
+
+
+            <td><?php
+                if (!empty($job['log_msg'])) {
+                    echo '<pre id="data_log" style="background-color: black; overflow: auto; max-height:400px; max-width:500px; padding: 5px; font-family: monospace;">'.$job['log_msg'].'</pre>';
+                }
+                ?></td>
+            <td><?php
+                if (!empty($job['error_msg'])) {
+                    echo '<pre id="data_log" style="background-color: black; overflow: auto; max-height:400px; max-width:500px; padding: 5px; font-family: monospace;">'.$job['error_msg'].'</pre>';
+                }
+                ?></td>
+
             </tr>
 
             <?php

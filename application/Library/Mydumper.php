@@ -20,14 +20,13 @@ class Mydumper
      *
      *
      */
-    public function parseLog($file_log)
+    public function parseLog($log)
     {
-        $log = "";
 
-        if (file_exists($file_log)) {
-            $log = file_get_contents($file_log);
-            $log = str_replace(array("\n\n", "\n"), array("\n", "<br>"), trim($log));
-        }
+
+        $log = str_replace(array("\n\n", "\n"), array("\n", "<br>"), trim($log));
+        //
+
 
         //preg_match_all('/\*\*\s\(mydumper\:[0-9]+\)\: ([A-Z]+)\s/', $input_line, $output_array);
 
@@ -41,12 +40,8 @@ class Mydumper
         return $log2;
     }
 
-
-
     function getLevel($file_log)
     {
         preg_match_all('/\*\*\s\(mydumper\:[0-9]+\)\: ([A-Z]+)\s/', $input_line, $output_array);
-
-        
     }
 }
