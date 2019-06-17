@@ -168,7 +168,6 @@ class Backup extends Controller
                         $res2 = $dblink->sql_query($sql);
 
                         while ($tab = $dblink->sql_fetch_array($res2, MYSQLI_NUM)) {
-
                             fwrite($handle, $tab[0].";\n");
                         }
                     }
@@ -1966,7 +1965,7 @@ $(function () {
             if ($ret === true) {
 
                 $pid = $this->runBackup($param);
-                
+
                 if (!System::isRunningPid($pid)) {
                     Debug::debug($pid, "The refresh failed");
                 } else {
@@ -2000,26 +1999,59 @@ $(function () {
 
         $uuid = Uuid::uuid4()->toString();
 
-        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." 2>&1 & echo $!";
+
+        $debug = "";
+        if (Debug::$debug === true) {
+            $debug = "--debug";
+        }
+
+        $log = TMP."log/backup-".uniqid().'.log';
+        $log_error = TMP."log/backup-".uniqid().'.log';
+
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$debug." > ".$log." 2> ".$log_error." & echo $!";
+        //$cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." & echo $!";
+
+
+
+        Debug::debug($cmd);
         $pid = trim(shell_exec($cmd));
+
+
 
         Debug::debug($pid, "PID");
 
 
-        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid), Glial\Synapse\FactoryController::RESULT);
+        
+
+
+        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
+
+
+
+
 
         if (!System::isRunningPid($pid)) {
             Debug::debug($pid, "The refresh failed");
         } else {
             Debug::debug($pid, "process started !");
         }
-
-        shell_exec("sleep 20");
     }
 
     public function doBackup($param)
     {
         Debug::parseDebug($param);
+
+
+        $gg = shell_exec("dot -V 2>&1");
+
+        Debug::debug($gg,'dot version');
+
+        Debug::debug($param,'param');
+
+        sleep(10);
+
+
+        //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
     }
 }
 /*

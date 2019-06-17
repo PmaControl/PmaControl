@@ -73,7 +73,7 @@ class Job extends Controller
         $uuid = $param[0];
         $parametre = $param[1];
         $pid = $param[2];
-        $pid = $param[3];
+        $log = $param[3];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -82,7 +82,7 @@ class Job extends Controller
         $job                      = array();
         $job['job']['class']      = $called_from[1]['class'];
         $job['job']['method']     = $called_from[1]['function'];
-        $job['job']['param']      = json_encode($param);
+        $job['job']['param']      = json_encode($parametre);
         $job['job']['date_start'] = date("Y-m-d H:i:s");
         $job['job']['pid']        = $pid;
         $job['job']['log']        = $log;
