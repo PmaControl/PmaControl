@@ -71,7 +71,24 @@ function getBadge($status)
                 <td><?= $job['date_start'] ?></td>
                 <td><?= $job['date_end'] ?></td>
                 <td><?= $job['pid'] ?></td>
-                <td><big><span class="label label-<?= getBadge($job['status']) ?>"><?= $job['status'] ?></span></big></td>
+                <td><big><span class="label label-<?= getBadge($job['status']) ?>"><?= $job['status'] ?></span></big>
+
+                <?php
+
+                if ($job['status'] !== "RUNNING")
+                {
+                    echo '<br />';
+                    echo '<br />';
+
+                    echo __("options : ")."<br />";
+                    echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-primary btn-xs"><i class="fa fa-refresh fa-spin"></i> '.__('Restart').'</a><br/>';
+                    echo '<a href="'.LINK.'job/restart/'.$job['id'].'/--debug" type="button" style="margin-top:4px;" class="btn btn-warning btn-xs"><i class="fa fa-cog fa-spin"></i> '.__('Debug').'</a><br/>';
+                    //echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-danger btn-xs">'.__('Kill').'</a>';
+                }
+
+                ?>
+
+                </td>
 
 
             <td><?php

@@ -649,7 +649,6 @@ class Backup extends Controller
                 Crontab::insert($ob->minute, $ob->hour, $ob->day_of_month, $ob->month, $ob->day_of_week, $ob->command, $ob->comment, $ob->id_crontab);
             }
 
-
             $backup_database                             = [];
             $backup_database['backup_main']['id']        = $id;
             $backup_database['backup_main']['is_active'] = $is_active;
@@ -1396,10 +1395,21 @@ $(function () {
 
 
 
+
                 if (!$id_backup_database = $db->sql_save($backup_database)) {
                     debug($backup_database);
                     debug($db->sql_error());
                     throw new Exception("PMACTRL-053 : impossible to shedule this backup");
+                } else {
+
+                    $php = explode(" ", shell_exec("whereis php"))[1];
+                    $cmd = $php." ".GLIAL_INDEX." crontab monitor backup launchBackup ".$id_backup_database;
+
+
+                    $backup_database['backup_main']['id']      = $id_backup_database;
+                    $backup_database['backup_main']['command'] = $cmd;
+
+                    $db->sql_save($backup_database);
                 }
 
 
@@ -1407,8 +1417,6 @@ $(function () {
 
 
 
-
-                $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
 
                 Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
                     "Backup database with PmaControl", $id_crontab);
@@ -1991,6 +1999,9 @@ $(function () {
     public function runBackup($param)
     {
 
+        Debug::parseDebug($param);
+
+
         $id_backup_main = $param[0];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -2005,8 +2016,8 @@ $(function () {
             $debug = "--debug";
         }
 
-        $log = TMP."log/backup-".uniqid().'.log';
-        $log_error = TMP."log/backup-".uniqid().'.log';
+        $log       = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.log';
+        $log_error = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.log';
 
         $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$uuid." ".$debug." > ".$log." 2> ".$log_error." & echo $!";
         //$cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." & echo $!";
@@ -2020,7 +2031,7 @@ $(function () {
         Debug::debug($pid, "PID");
 
 
-        
+
         \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
 
 
@@ -2033,16 +2044,20 @@ $(function () {
     {
 
         $id_backup_main = $param[0];
-        $uuid = $param[1];
-
-
+        $uuid           = $param[1];
 
         Debug::parseDebug($param);
-        Debug::debug($param,'param');
+        Debug::debug($param, 'param');
+
+
+        
+
+
+
         sleep(10);
 
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
-        
+
 
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
     }

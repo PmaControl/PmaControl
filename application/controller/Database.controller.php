@@ -12,7 +12,6 @@ use App\Library\System;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
-
 use \Glial\Synapse\Controller;
 
 class Database extends Controller
@@ -168,13 +167,15 @@ class Database extends Controller
                     $path                         = $_POST['database']['path'];
 
 
+
                     $debug = "";
                     if (Debug::$debug === true) {
                         $debug = "--debug";
                     }
 
 
-                    $this->addRefresh(array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path));
+                    $elems = array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path, $debug);
+                    $this->addRefresh($elems);
 
                     header("location: ".LINK."job/index");
                 }
@@ -200,6 +201,7 @@ class Database extends Controller
         $id_mysql_server__target = $param[1];
         $databases               = explode(",", $param[2]);
         $path                    = $param[3];
+        $uuid                    = $param[4];
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -228,12 +230,9 @@ class Database extends Controller
         //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
         //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
 
-
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
-
-
-
+        \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
 
 
         shell_exec("rm -rvf ".$directory);
@@ -764,53 +763,32 @@ END;";
         $databases               = explode(",", $param[2]);
         $path                    = $param[3];
 
-        $php = explode(" ", shell_exec("whereis php"))[1];
+
 
         $uuid = Uuid::uuid4()->toString();
-        $log  = $this->log_file.strtolower(__CLASS__)."-".__FUNCTION__."-".uniqid().".log";
 
-        $callback = $php." ".GLIAL_INDEX." job callback ".$uuid." --debug 2>&1 >> ".$log."\n";
-        $cmd      = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '".implode(",", $databases)."' '".$path."' --debug 2>&1 >> ".$log."\n";
-        $cmd_file = TMP.'trash/refresh-'.$uuid.".sh";
-
-        file_put_contents($cmd_file, "#!/bin/bash\n".$cmd.$callback);
-
-        shell_exec("chmod +x ".$cmd_file);
-
-        Debug::debug(file_get_contents($cmd_file), "Script");
-
-        //su - www-data -s /bin/bas
-        $batch = "/bin/bash ".$cmd_file." 2>&1 & echo $!";
+        $log       = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.log';
+        $log_error = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.error.log';
 
 
-        //$batch = "nohup ".$cmd_file." &>/dev/null & echo $!";
-        // nohup command &>/dev/null &
-        Debug::debug($batch);
+        $php = explode(" ", shell_exec("whereis php"))[1];
 
-        //$pid = 54274823;
-        $pid = trim(shell_exec($batch));
+
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '"
+            .implode(",", $databases)."' '".$path."' ".$uuid." --debug > ".$log." 2> ".$log_error." & echo $!";
+
+        Debug::debug($cmd);
+
+
+        $pid = trim(shell_exec($cmd));
 
         Debug::debug($pid, "PID");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $job                      = array();
-        $job['job']['uuid']       = $uuid;
-        $job['job']['class']      = __CLASS__;
-        $job['job']['method']     = __FUNCTION__;
-        $job['job']['param']      = json_encode($param);
-        $job['job']['date_start'] = date("Y-m-d H:i:s");
-        $job['job']['pid']        = $pid;
-        $job['job']['log']        = $log;
-        $job['job']['status']     = "RUNNING";
 
-        Debug::debug($job, "JOB");
+        \Glial\Synapse\FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
+        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
 
-        $res = $db->sql_save($job);
-
-        if (!$res) {
-
-        }
 
         //unlink($cmd_file);
 
