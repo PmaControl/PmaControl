@@ -62,7 +62,7 @@ class Job extends Controller
             $ob['error_msg'] = $error;
 
 
-            $data['jobs'][]  = $ob;
+            $data['jobs'][] = $ob;
         }
 
         $this->set('data', $data);
@@ -70,6 +70,10 @@ class Job extends Controller
 
     public function callback($param)
     {
+
+        usleep(1000);
+//au cas ou le script est ultra rapide et le callback vient avant la création de la ligne
+
         Debug::parseDebug($param);
         $uuid = $param[0];
         $db   = $this->di['db']->sql(DB_DEFAULT);
@@ -98,7 +102,7 @@ class Job extends Controller
     public function add($param)
     {
 
-        Debug::parseDebug($param);
+        Debug::parseDebug($param, "param Add Job");
 
         $uuid      = $param[0];
         $parametre = $param[1];
@@ -106,7 +110,7 @@ class Job extends Controller
         $log       = $param[3];
         $log_error = $param[4];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+
 
         $called_from = debug_backtrace();
 
@@ -122,10 +126,9 @@ class Job extends Controller
         $job['job']['status']     = "RUNNING";
 
 
-
-        /*         * */
         Debug::debug($job);
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
         $db->sql_save($job);
     }
 
@@ -133,5 +136,53 @@ class Job extends Controller
     {
 
         $this->add($param);
+    }
+
+    public function restart($param)
+    {
+
+        $this->view = false;
+
+
+        $id_job = $param[0];
+
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM job WHERE id=".$id_job;
+        $res = $db->sql_query($sql);
+
+        $debug = "";
+        if (Debug::$debug === true) {
+            $debug = "--debug";
+        }
+
+
+        if (!empty($param[1]) && $param[1] === "--debug") {
+            $debug = "--debug";
+        }
+
+
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            if (System::isRunningPid($ob->pid) !== true) {
+
+
+                $php = explode(" ", shell_exec("whereis php"))[1];
+
+                $cmd = $php." ".GLIAL_INDEX." ".$ob->class." ".$ob->method." ".implode(" ", json_decode($ob->param, true))."  ".$debug."";
+                Debug::debug($cmd);
+
+                $pid = trim(shell_exec($cmd));
+
+
+                Debug::debug($pid, "PID");
+            }
+        }
+
+        header("location: ".LINK.__CLASS__.'/index');
     }
 }
