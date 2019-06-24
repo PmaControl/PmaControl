@@ -36,7 +36,7 @@ class Backup extends Controller
 
     /*
      * mount -t nfs -o $mount_options $nfs_source $mount_point"
-     *  mysql -h 127.0.0.1 -u dba -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h 10.243.4.44 -u dba -p mall > views.sql
+     *  mysql -h 127.0.0.1 -u user -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h dgfjhdg -u user -p db > views.sql
      *
      */
 
@@ -1465,204 +1465,67 @@ $(function () {
         
     }
 
-    function mydumper($backup)
+    function mydumper($backup, $temp_dir, $uuid)
     {
-//$this->backup_dir = $this->backup_dir;
-
 
         Debug::debug($backup);
 
 
-        $db_to_backup = $this->di['db']->sql($backup['id_connection']);
+        $db_to_backup = $this->di['db']->sql($backup->name_connection);
+        //Debug::debug($db_to_backup);
+        //$server_config = $db_to_backup->getParams();
+        //Debug::debug($server_config);
 
 
 
+        if ($backup->databases === "ALL") {
 
-        $server_config = $db_to_backup->getParams();
-
-
-        debug($backup['id_connection']);
-        debug($server_config);
+            $sql  = "SHOW DATABASES;";
+            $res2 = $db_to_backup->sql_query($sql);
 
 
+            $dbs = array();
+            while ($arr = $db_to_backup->sql_fetch_array($res2, MYSQLI_NUM)) {
 
-        $userpassword = " -h ".$server_config['hostname']." -P ".$backup['port']." -u ".$server_config['user']." -p ".$server_config['password'];
-
-
-        /*
-          if ($slave) {
-
-          $stop_slave = "STOP SLAVE;"; //because option --dump-slave restart replication after made the dump
-          if ($db_to_backup->isMultiMaster()) {
-          $stop_slave = "STOP ALL SLAVES;";
-          }
-          $cmd = "mysql ".$userpassword." -e '".$stop_slave.";'";
-          $this->cmd($cmd);
-
-
-          debug($slave);
-
-
-          $slave = $MS->isSlave();
-
-          $this->slave_data = json_encode($slave);
-          }
-
-          if ($master) {
-
-          debug($master);
-
-          $this->master_data = json_encode($master);
-          }
-          //$backup['path']
-         */
-
-        $directory = $id_backup_main."_".date("Y-m-d_His");
-        $this->checkDirectory($this->backup_dir);
-
-        $extra = " ";
-
-
-
-
-        $this->di['db']->sql(DB_DEFAULT)->sql_close();
-
-//$this->di['db']->sql(DB_DEFAULT);
-//echo $mysql_dump . "\n";
-
-        Crypt::$key         = CRYPT_KEY;
-        $mysql_ssh_login    = Crypt::decrypt($backup['mysql_ssh_login']);
-        $mysql_ssh_password = Crypt::decrypt($backup['mysql_ssh_password']);
-
-        $nas_ssh_login    = Crypt::decrypt($backup['nas_ssh_login']);
-        $nas_ssh_password = Crypt::decrypt($backup['nas_ssh_password']);
-
-        $pmauser   = 'pmacontrol';
-        $pmapasswd = Crypt::decrypt(PMACONTROL_PASSWD);
-
-
-        echo "{$backup['ip']}, 22, $pmauser, $pmapasswd);\n";
-
-        $ccc = new Ssh($backup['ip'], 22, $pmauser, $pmapasswd);
-        $ccc->connect();
-
-        $pwd = $ccc->exec('pwd');
-
-        debug($pwd);
-
-        $screen = $ccc->whereis("screen");
-//$screen = "/usr/bin/screen";
-
-        $mysqldump = $ccc->whereis("mysqldump");
-
-        $cmd       = $mysqldump.$userpassword.$dumpoptions.$extra." ".$backup['db_name']." > ".$this->backup_dir."/".$file_name;
-        $id_backup = $backup['id_backup_database'];
-
-
-        echo "MYSQL_DUMP CMD : ".$cmd."\n";
-
-        $ccc->exec("echo \"#!/bin/sh\n$cmd\" > ".$this->backup_dir."/mysqldump.$id_backup.sh");
-
-        $ccc->exec("echo \"#!/bin/sh\n$screen -S backup_database_$id_backup -d -m ".$this->backup_dir."/mysqldump.$id_backup.sh\n"
-            ."$screen -list | grep backup_database_$id_backup | head -n1 | cut -f1 -d'.' | sed 's/\s//g' > ".$this->backup_dir."/pid.$id_backup.pid\n"
-            ."\" > ".$this->backup_dir."/backup.$id_backup.sh");
-
-        $ccc->exec("chmod +x ".$this->backup_dir."/mysqldump.".$backup['id_backup_database'].".sh");
-        $ccc->exec("chmod +x ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
-        $exec = $ccc->exec("sh ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
-
-
-        $pid = trim($ccc->exec("cat ".$this->backup_dir."/pid.".$backup['id_backup_database'].".pid"));
-
-
-        $waiting = ['/', '-', '\\', '|'];
-        $i       = 0;
-
-
-        echo "backup in progress ... ";
-        do {
-            $i++;
-
-            $mod = $i % 4;
-            echo " ".$waiting[$mod];
-            echo "\033[2D";
-            sleep(1);
-
-            $nb_thread = $ccc->exec("ps -p $pid | grep $pid | wc -l");
-
-            switch (trim($nb_thread)) {
-                case "1":
-                    $continue = true;
-                    break;
-                case "0":
-                    $continue = false;
-                    break;
-
-                default:
-
-
-                    throw new Exception("PMACTRL-085 : more than one thread ($nb_thread) have to audit code !");
-                    break;
+                $dbs[] = $arr[0];
             }
-        } while ($continue);
 
-
-
-        if (!strpos("dump-slave", $extra) && $slave) {
-            $start_slave = "START SLAVE;"; //because option --dump-slave restart replication after made the dump
-            if ($db_to_backup->isMultiMaster()) {
-                $start_slave = "START ALL SLAVES;";
-            }
-            $cmd = "mysql ".$userpassword." -e '".$start_slave.";'";
-            $this->cmd($cmd);
+            $backup->databases = implode(',', $dbs);
         }
 
+        $databases = explode(',', $backup->databases);
+
+        $logs = $this->getLogFile($uuid);
 
 
+        Debug::debug($logs);
 
-        $this->time_backup_end = microtime(true);
-        $full_path             = $this->backup_dir."/".$file_name;
-        $file_gz               = $this->backup_dir."/".$file_name.".gz";
+        foreach ($databases as $database) {
 
-//get md5 of file
-        $this->md5_file  = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
-//get size of file
-        $this->size_file = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
+            if (empty($database)) {
+                continue;
+            }
 
-        $cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
-
-        $ret = $ccc->exec($cmd);
-
-//get md5 of file
-        $this->md5_gz = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
+            if (in_array($database, array('mysql', 'sys', 'performance_schema', 'information_schema')))
 
 
-        $this->size_gz = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
+            Debug::debug($database, "DATABASE");
 
-        $this->time_gzip = microtime(true);
+            $res = $db_to_backup->sql_query("SHOW DATABASES LIKE '".$database."';");
 
-//remove old backup
+            if ($db_to_backup->sql_num_rows($res) === 1) {
 
 
-        $grep  = $ccc->whereis("grep");
-        $ls    = $ccc->whereis("ls");
-        $sed   = $ccc->whereis("sed");
-        $xargs = $ccc->whereis("xargs");
-        $rm    = $ccc->whereis("rm");
+                $cmd = "mydumper -h ".$backup->ip." -u ".$backup->login." -p ".Crypt::decrypt($backup->passwd, CRYPT_KEY)
+                    ." -P ".$backup->port." -B ".$database." -G -E -R -o ".$temp_dir."/".$database." >> ".$logs['log']." 2>> ".$logs['error']." ";
 
-        $cmd = 'cd '.$this->backup_dir.' && '.$ls.' -t | '.$grep.' \'__'.$backup['db_name'].'.sql\' | '.$sed.' -e \'1,2d\' | '.$xargs.' -d \'\n\' '.$rm.''."\n";
-        $ret = $ccc->exec($cmd);
+                Debug::debug($cmd);
 
-        $ret = $ccc->exec("ls ".$file_gz." | wc -l");
-
-        if (trim($ret) === "1") {
-            return $file_gz;
+                shell_exec($cmd);
+            } else {
+                Debug::debug($db_to_backup->sql_num_rows($res));
+            }
         }
-
-        throw new \Exception("PMACTRL-052 : file not found '".$file_gz."'");
-        echo "\n";
-
-        return false;
     }
 
     public function myloader($param)
@@ -2019,7 +1882,7 @@ $(function () {
         $log       = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.log';
         $log_error = TMP."log/".__CLASS__."-".__FUNCTION__."-".uniqid().'.log';
 
-        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$uuid." ".$debug." > ".$log." 2> ".$log_error." & echo $!";
+        $cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." ".$uuid." ".$debug." >> ".$log." 2>> ".$log_error." & echo $!";
         //$cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." & echo $!";
 
 
@@ -2050,16 +1913,61 @@ $(function () {
         Debug::debug($param, 'param');
 
 
-        
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT *, b.name as name_connection, a.database as `databases` FROM backup_main a
+            INNER JOIN mysql_server b ON a.id_mysql_server = b.id
+            INNER JOIN backup_type e ON e.id = a.id_backup_type
+            LEFT JOIN link__mysql_server__ssh_key c ON c.id_mysql_server = b.id
+            INNER JOIN ssh_key d ON d.id = c.id_ssh_key
+            WHERE a.id = ".$id_backup_main." LIMIT 1;";
+
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
 
 
 
-        sleep(10);
+        $temp_dir = TMP_BACKUP.'/bak-'.uniqid();
+
+
+        mkdir($temp_dir);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+
+            switch ($ob->libelle) {
+
+                case 'mydumper':
+
+                    $this->mydumper($ob, $temp_dir, $uuid);
+
+                    break;
+            }
+        }
+
+
+
+        usleep(1000);
 
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
 
 
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
+    }
+
+    public function getLogFile($uuid)
+    {
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT `log`,`error` FROM `job` where `uuid` = '".$uuid."'";
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            return array("log" => $ob->log, "error" => $ob->error);
+        }
     }
 }
 /*
