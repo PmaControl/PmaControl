@@ -1507,6 +1507,9 @@ $(function () {
             }
 
             if (in_array($database, array('mysql', 'sys', 'performance_schema', 'information_schema')))
+            {
+                continue;
+            }
 
 
             Debug::debug($database, "DATABASE");
