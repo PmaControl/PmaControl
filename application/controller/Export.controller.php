@@ -8,7 +8,6 @@
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Chiffrement;
-
 use Glial\Security\Crypt\Crypt;
 use App\Library\Mysql;
 
@@ -132,7 +131,7 @@ $("#export_all-all2").click(function(){
             Debug::debug($json, "JSON");
 
 
-            $crypted   = Chiffrement::encrypt($json, $_POST['export']['password']);
+            $crypted = Chiffrement::encrypt($json, $_POST['export']['password']);
 
 
             //$file_name = $_POST['export']['name_file'];
@@ -195,20 +194,18 @@ $("#export_all-all2").click(function(){
             $json    = Chiffrement::decrypt($crypted, $password);
             Debug::debug($json, "json");
             $data    = $this->import(array($json));
-
-
         }
 
-            $json = Chiffrement::decrypt($crypted, $password);
+        $json = Chiffrement::decrypt($crypted, $password);
 
-            Debug::debug($json, "json");
+        Debug::debug($json, "json");
 
-            $data = $this->import(array($json));
+        $data = $this->import(array($json));
 
-              if (!empty($data['mysql']['updated'])) {
-              $msg = implode(", ", $data['mysql']['updated']);
-              set_flash("success", __('Server updated'), $msg);
-              }
+        if (!empty($data['mysql']['updated'])) {
+            $msg = implode(", ", $data['mysql']['updated']);
+            set_flash("success", __('Server updated'), $msg);
+        }
 
 
         if (!IS_CLI) {
@@ -246,7 +243,7 @@ $("#export_all-all2").click(function(){
 
 
         Crypt::$key = CRYPT_KEY;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = $this->di['db']->sql(DB_DEFAULT);
         //$db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -264,7 +261,7 @@ $("#export_all-all2").click(function(){
         $data = Json::isJson($json);
 
 
-        
+
 
 
         foreach ($data as $server_type => $servers) {
@@ -357,8 +354,7 @@ $("#export_all-all2").click(function(){
                 Debug::debug($sql_good);
 
                 $res10 = $db->sql_query($sql_good);
-
-                $cpt = $db->sql_num_rows($res10);
+                $cpt   = $db->sql_num_rows($res10);
 
                 if ($cpt !== 0) {
                     continue;
@@ -367,19 +363,21 @@ $("#export_all-all2").click(function(){
 
 
             if ($data['mysql_server']['name'] !== "pmacontrol") {
-                $res = $db->sql_save($data);
+                $id_mysql_server = $db->sql_save($data);
             }
 
 
-            if (!$res) {
+            if (!$id_mysql_server) {
                 debug($data);
                 debug($db->sql_error());
+            } else {
+                Mysql::addMaxDate($db, $id_mysql_server);
             }
-
-            $this->generateMySQLConfig();
-
-            Mysql::onAddMysqlServer($db);
         }
+
+        //$this->generateMySQLConfig();
+        //Mysql::onAddMysqlServer($db);
+        Mysql::generateMySQLConfig($db);
     }
 
     public function generateMySQLConfig($param = '')
