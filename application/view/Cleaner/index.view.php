@@ -25,7 +25,7 @@ foreach ($data['cleaner_main'] as $cleaner) {
     echo '<tr class="cleaner_main" data-id="'.$cleaner['id_cleaner_main'].'" data-href="'.LINK.'cleaner/index/'.$cleaner['id_cleaner_main'].'">';
     echo '<td>'.$cleaner['id_cleaner_main'].'</td>';
     echo '<td>'.$cleaner['name_cleaner'].'</td>';
-    echo '<td>'.Display::srv($cleaner['id']).'</td>';
+    echo '<td>'.Display::srv($cleaner['id_mysql_server']).'</td>';
     //echo '<td>' . $cleaner['ip'] . '</td>';
     echo '<td>'.$cleaner['db'].'</td>';
     echo '<td>'.$cleaner['main_table'].'</td>';
