@@ -106,14 +106,31 @@ class Mysql
         }
     }
 
-    static public function addMaxDate($db)
+    static public function addMaxDate($db, $id_mysql_server = '')
     {
         $sql1 = "select * from ts_file;";
         $res1 = $db->sql_query($sql1);
 
         while ($ob1 = $db->sql_fetch_object($res1)) {
+
+
+            //a optimiser !!
+            //$sql = "SELECT count(1) from `ts_max_date` WHERE id"
+
+
+
+
             $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server;";
+                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server";
+
+
+
+            if (!empty($id_mysql_server)) {
+                $sql5 .= " WHERE id=".$id_mysql_server."";
+            }
+
+            $sql5 .= ";";
+
             $db->sql_query($sql5);
         }
     }
