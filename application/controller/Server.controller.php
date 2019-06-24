@@ -407,10 +407,13 @@ class Server extends Controller
                 $id_mysql_server = $ob->id;
 
                 header('location: '.LINK.__CLASS__
-                    .'/'.__METHOD__.'/mysql_server:id:'.$id_mysql_server
+                    .'/'.__FUNCTION__.'/mysql_server:id:'.$id_mysql_server
                     .'/ts_variable:name:'.$_POST['ts_variable']['name']
                     .'/ts_variable:date:'.$_POST['ts_variable']['date']
                     .'/ts_variable:derivate:'.$_POST['ts_variable']['derivate']);
+                /***/
+
+                exit;
             }
         } else {
 
