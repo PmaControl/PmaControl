@@ -780,7 +780,7 @@ class Aspirateur extends Controller
                     case "9": $codename = "Stretch";
                         break;
                 }
-
+                
                 $os = trim("Debian GNU/Linux ".$version." (".$codename.")");
             }
         }
