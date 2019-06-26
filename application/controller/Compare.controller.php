@@ -11,6 +11,9 @@ use \Glial\Sgbd\Sql\Mysql\Parser;
 use \Glial\Sgbd\Sql\Mysql\Comment;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 
+
+//&lrarr;
+
 class Compare extends Controller
 {
 
