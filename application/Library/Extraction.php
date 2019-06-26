@@ -125,6 +125,9 @@ class Extraction
         }
 
 
+         //echo \SqlFormatter::format($sql3)."\n";
+        
+
         if ($graph === true) {
 
             $sql3 = "WITH t as ($sql3)

@@ -8,10 +8,13 @@ use \Glial\Cli\Crontab;
 use \App\Library\Debug;
 use App\Library\Mysql;
 use App\Library\System;
+use App\Library\Extraction;
 use Ramsey\Uuid\Uuid;
 
 class Backup extends Controller
 {
+
+    use App\Library\Scp;
     const BACKUP_DIR = "/data/backup";
 
     var $backup_dir = self::BACKUP_DIR;
@@ -1471,6 +1474,8 @@ $(function () {
         Debug::debug($backup);
 
 
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
         $db_to_backup = $this->di['db']->sql($backup->name_connection);
         //Debug::debug($db_to_backup);
         //$server_config = $db_to_backup->getParams();
@@ -1478,18 +1483,19 @@ $(function () {
 
 
 
+
+        $sql  = "SHOW DATABASES;";
+        $res2 = $db_to_backup->sql_query($sql);
+
+        $dbs = array();
+        while ($arr = $db_to_backup->sql_fetch_array($res2, MYSQLI_NUM)) {
+            $dbs[] = $arr[0];
+        }
+
+        Debug::debug($dbs, "list backup Database");
+
+
         if ($backup->databases === "ALL") {
-
-            $sql  = "SHOW DATABASES;";
-            $res2 = $db_to_backup->sql_query($sql);
-
-
-            $dbs = array();
-            while ($arr = $db_to_backup->sql_fetch_array($res2, MYSQLI_NUM)) {
-
-                $dbs[] = $arr[0];
-            }
-
             $backup->databases = implode(',', $dbs);
         }
 
@@ -1500,23 +1506,23 @@ $(function () {
 
         Debug::debug($logs);
 
+
+        $db_to_backup->sql_close();
+        $db->sql_close();
+
         foreach ($databases as $database) {
 
             if (empty($database)) {
                 continue;
             }
 
-            if (in_array($database, array('mysql', 'sys', 'performance_schema', 'information_schema')))
-            {
+            if (in_array($database, array('mysql', 'sys', 'performance_schema', 'information_schema'))) {
                 continue;
             }
 
 
-            Debug::debug($database, "DATABASE");
-
-            $res = $db_to_backup->sql_query("SHOW DATABASES LIKE '".$database."';");
-
-            if ($db_to_backup->sql_num_rows($res) === 1) {
+            // to prevent to backup unknow database
+            if (in_array($database, $dbs)) {
 
 
                 $cmd = "mydumper -h ".$backup->ip." -u ".$backup->login." -p ".Crypt::decrypt($backup->passwd, CRYPT_KEY)
@@ -1526,9 +1532,54 @@ $(function () {
 
                 shell_exec($cmd);
             } else {
-                Debug::debug($db_to_backup->sql_num_rows($res));
+                Debug::debug($database, "UNKNOW DB");
             }
         }
+
+
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        Extraction::setDb($db);
+        $hostname = trim(Extraction::display(array("hostname"), array($backup->id_mysql_server))[$backup->id_mysql_server]['']['hostname']);
+
+
+
+        //nice zip
+        //$cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
+
+        $file_gz = $hostname.'__'.date('Y-m-d_H-i-s').".tar.gz";
+
+        $cmd = "cd ".TMP_BACKUP." && nice tar -cvzf ".$file_gz." -C ".$temp_dir." .";
+
+        Debug::debug($cmd, "CMD");
+
+        shell_exec($cmd);
+
+
+        Debug::debug("Fin de la compression");
+
+
+        return array("gzip" => $file_gz, "directory" => $temp_dir, "hostname" => $hostname);
+    }
+
+    public function testHost($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        Extraction::setDb($db);
+        $ret = Extraction::display(array("hostname"), array(11))[11]['']['hostname'];
+
+
+
+
+
+        Debug:debug($ret);
     }
 
     public function myloader($param)
@@ -1602,6 +1653,8 @@ $(function () {
 
             echo $db_bame." - ".$table_name."\n";
 
+
+            //$sql = "DROP TABLE `".$db_bame."`.`".$table_name."`;";
 
 
             $db_remote->sql_close($db_bame);
@@ -1938,21 +1991,27 @@ $(function () {
         mkdir($temp_dir);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
-
             switch ($ob->libelle) {
-
                 case 'mydumper':
-
-                    $this->mydumper($ob, $temp_dir, $uuid);
-
+                    $export = $this->mydumper($ob, $temp_dir, $uuid);
                     break;
             }
+
+            Debug::debug('send file', $export['gzip']);
+
+
+            $src =  TMP_BACKUP."/".$export['gzip'];
+            $dst = "backup/".$export['hostname']."/".$export['gzip'];
+
+
+            Debug::debug($src, "Source file");
+            Debug::debug($dst, "Destination file");
+
+            $this->sendFile($ob->id_backup_storage_area, $src, $dst);
+
+            Debug::debug('end SCP');
         }
 
-
-
-        usleep(1000);
 
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
 
