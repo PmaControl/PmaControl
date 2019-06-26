@@ -1,8 +1,8 @@
--- MariaDB dump 10.17  Distrib 10.4.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.6-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.4.5-MariaDB-1:10.4.5+maria~bionic-log
+-- Server version	10.4.6-MariaDB-1:10.4.6+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -104,7 +104,7 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',3130,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,4,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',3137,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,20,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',3149,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',3161,64,'log/daemon_11.log',5,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',3174,64,'log/daemon_12.log',10,10,2,'Aspirateur','checkAllWorker','',0,0,0);
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,0),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,0),(5,'Generate architecture graph','2016-11-08 00:00:00',8184,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,0),(6,'aspirateur mysql','2017-11-23 18:15:54',0,64,'log/daemon_6.log',10,1,20,'Aspirateur','testAllMysql','',0,0,21671),(7,'integrate mysql','2017-12-05 12:27:30',8193,64,'log/daemon_7.log',1,1,1,'integrate','evaluate','answer',0,0,0),(8,'integrate ssh','2017-12-05 12:27:30',0,64,'log/daemon_8.log',300,1,1,'integrate','evaluate','hardware,ssh_stats',0,0,0),(9,'aspirateur ssh','2017-11-23 18:15:54',0,64,'log/daemon_9.log',20,1,3,'Aspirateur','testAllssh','',0,0,0),(10,'integrate variable','2018-10-01 00:00:00',8202,64,'log/daemon_10.log',1,1,1,'integrate','evaluate','variable',0,0,0),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',8215,64,'log/daemon_11.log',20,10,2,'Aspirateur','addToQueue','',0,21671,21671),(12,'check all queue','2018-11-27 18:15:54',8231,64,'log/daemon_12.log',10,1,2,'Aspirateur','checkAllWorker','',0,0,0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -571,11 +571,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.17  Distrib 10.4.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.6-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.4.5-MariaDB-1:10.4.5+maria~bionic-log
+-- Server version	10.4.6-MariaDB-1:10.4.6+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -727,17 +727,14 @@ CREATE TABLE `backup_database` (
   `id_mysql_server` int(11) NOT NULL,
   `database_name` int(11) NOT NULL,
   `id_backup_type` int(11) NOT NULL,
-  `id_crontab` int(11) NOT NULL,
   `is_active` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_mysql_database` (`database_name`),
   KEY `id_backup_type` (`id_backup_type`),
-  KEY `id_crontab` (`id_crontab`),
   KEY `id_backup_main` (`id_backup_main`),
   CONSTRAINT `backup_database_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `backup_database_ibfk_4` FOREIGN KEY (`id_backup_type`) REFERENCES `backup_type` (`id`),
-  CONSTRAINT `backup_database_ibfk_5` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `backup_database_ibfk_6` FOREIGN KEY (`id_backup_main`) REFERENCES `backup_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -792,6 +789,7 @@ CREATE TABLE `backup_main` (
   `database` text NOT NULL COMMENT 'if = 0 we backup all, else database coma separated',
   `date_inserted` datetime NOT NULL,
   `is_active` int(11) NOT NULL,
+  `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `id_backup_storage_area` (`id_backup_storage_area`),
   KEY `id_backup_type` (`id_backup_type`),
@@ -1106,6 +1104,7 @@ CREATE TABLE `crontab` (
   `day_of_week` char(10) NOT NULL,
   `command` text NOT NULL,
   `comment` text NOT NULL,
+  `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1372,6 +1371,7 @@ CREATE TABLE `job` (
   `date_end` datetime DEFAULT NULL,
   `pid` int(11) NOT NULL,
   `log` varchar(255) NOT NULL,
+  `error` varchar(255) NOT NULL,
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
