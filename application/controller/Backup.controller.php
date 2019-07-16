@@ -47,7 +47,7 @@ class Backup extends Controller
     function before($param)
     {
         if (!IS_CLI) {
-
+            
         }
     }
 
@@ -68,7 +68,7 @@ class Backup extends Controller
             passthru("mkdir -p ".$dir, $exit);
             if ($exit !== 0) {
                 throw new \Exception(
-                "GLI-017 : Impossible to create the directory : ".$dir, $exit);
+                    "GLI-017 : Impossible to create the directory : ".$dir, $exit);
             }
         }
 
@@ -1649,42 +1649,18 @@ $(function () {
             $elem2 = explode(".", $tmp);
 
             $table_name = $elem2[1];
-            $db_bame    = $elem2[0];
+            $db_name    = $elem2[0];
 
-            echo $db_bame." - ".$table_name."\n";
-
+            echo $db_name." - ".$table_name."\n";
 
             //$sql = "DROP TABLE `".$db_bame."`.`".$table_name."`;";
 
-
-            $db_remote->sql_close($db_bame);
-            $db_remote = $this->di['db']->sql($remote);
-
-            $db_remote->sql_select_db($db_bame);
-
-
-            $sql = '/*!40101 SET NAMES binary*/';
-            $db_remote->sql_query($sql);
-            Debug::sql($sql);
-
-            $sql = '/*!40014 SET FOREIGN_KEY_CHECKS=0*/';
-            $db_remote->sql_query($sql);
-            Debug::sql($sql);
-
-
-
-            //if mariaDB have to let binlog for MySQL
-            $sql = 'SET sql_log_bin=0';
-            $db_remote->sql_query($sql);
-            Debug::sql($sql);
-
+            $db_remote = $this->discReco($db_remote,$remote, $db_name );
             $sql = file_get_contents($table_link);
-
-
             $queries = SqlFormatter::splitQuery($sql);
 
-
             foreach ($queries as $query) {
+
 
                 $db_remote->sql_query($query);
                 Debug::sql($query);
@@ -1735,6 +1711,8 @@ $(function () {
                         Debug::sql(substr(str_replace("\n", "", $query), 0, 80));
                         //echo $query.'GG';
 
+
+
                         $db_remote->sql_query($query);
 
 
@@ -1752,6 +1730,8 @@ $(function () {
 
                             echo round($percent, 2)."%\t";
                             $percent_mem = $percent;
+
+                            $db_remote = $this->discReco($db_remote,$remote, $db_name );
                         }
                     }
                 }
@@ -1776,6 +1756,33 @@ $(function () {
           $db_remote->sql_query($sql);
           Debug::sql($sql);
          */
+    }
+
+    function discReco($db_link, $link, $db)
+    {
+
+
+        $db_link->sql_close($db);
+        $db_link = $this->di['db']->sql($remote);
+
+        $db_link->sql_select_db($db);
+
+
+        $sql = '/*!40101 SET NAMES binary*/';
+        $db_link->sql_query($sql);
+        Debug::sql($sql);
+
+        $sql = '/*!40014 SET FOREIGN_KEY_CHECKS=0*/';
+        $db_link->sql_query($sql);
+        Debug::sql($sql);
+
+        //if mariaDB have to let binlog for MySQL
+        $sql = 'SET sql_log_bin=0';
+        $db_link->sql_query($sql);
+        Debug::sql($sql);
+
+
+        return $db_link;
     }
 
     function human_filesize($bytes, $decimals = 2)
@@ -1862,6 +1869,11 @@ $(function () {
         $sql = "INSERT INTO `test_warning` SET `a`='FGHFTHGftgbnhxfthTFHFTRH';";
         $db->sql_query($sql);
         Debug::sql($sql);
+
+
+        $sql = "DROP TABLE IF NOT EXISTS `test_warning`;";
+        $db->sql_query($sql);
+        Debug::sql($sql);
     }
 
     public function launchBackup($param)
@@ -1900,6 +1912,10 @@ $(function () {
                 }
             }
         }
+
+
+
+        //todo if no SSH KEY available found
     }
 
     public function checkConfig($param)
@@ -2000,12 +2016,13 @@ $(function () {
             Debug::debug('send file', $export['gzip']);
 
 
-            $src =  TMP_BACKUP."/".$export['gzip'];
+            $src = TMP_BACKUP."/".$export['gzip'];
             $dst = "backup/".$export['hostname']."/".$export['gzip'];
 
 
             Debug::debug($src, "Source file");
             Debug::debug($dst, "Destination file");
+
 
             $this->sendFile($ob->id_backup_storage_area, $src, $dst);
 

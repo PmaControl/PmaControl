@@ -344,6 +344,9 @@ class Ssh extends Controller
 
         $keys = $this->getSshKeys($id_ssh_key);
 
+
+        Debug::debug($keys, "SSH KEYS");
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -352,7 +355,7 @@ class Ssh extends Controller
 FROM mysql_server a
 INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
 WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
-SELECT b.* FROM mysql_server b, ssh_key c
+SELECT b.id FROM mysql_server b, ssh_key c
 WHERE c.id in (".$id_ssh_key.")
 AND b.id NOT IN (select id from z)
 AND b.is_available = 1;";
@@ -390,18 +393,25 @@ AND b.is_available = 1;";
 
         $php = explode(" ", shell_exec("whereis php"))[1];
 
-        for ($id_worker = 1; $id_worker < self::NB_WORKER; $id_worker++) {
 
-            $cmd = $php." ".GLIAL_INDEX." Ssh workerAssociate >> ".TMP."log/".__FUNCTION__."_".$id_worker.".log 2>&1 & echo $!";
-            Debug::debug($cmd);
-
-            $pids[] = shell_exec($cmd);
+        if (Debug::$debug === true) {
+            $debug = "--debug ";
+        } else {
+            $debug = '';
         }
 
-        Debug::debug("Démarage des ".$id_worker." workers terminé");
-        /* */
 
 
+        for ($id_worker = 1; $id_worker <= self::NB_WORKER; $id_worker++) {
+
+            $cmd = $php." ".GLIAL_INDEX." Ssh workerAssociate ".$debug.">> ".TMP."log/".__FUNCTION__."_".$id_worker.".log 2>&1 & echo $!";
+            Debug::debug($cmd);
+
+            $pids[] = trim(shell_exec($cmd));
+        }
+
+        Debug::debug("Démarage des ".self::NB_WORKER." workers terminé");
+        Debug::debug($pids, "PIDS");
         $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
 
 
@@ -411,30 +421,31 @@ AND b.is_available = 1;";
         $i  = 0;
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
-
-            foreach ($keys as $key) {
-                $i++;
-
-                // Create dummy message object
-                $object         = new stdclass;
-                $object->server = $ob;
-                $object->key    = $key;
+            Debug::debug($ob, "ARRAY");
 
 
 
+            //foreach ($keys as $key) {
+            $i++;
+
+            // Create dummy message object
+            $object         = new stdclass;
+            $object->server = $ob['id'];
+            $object->key    = $id_ssh_key;
 
 
+            Debug::debug($object, "MSG");
 
-                //try to add message to queue
-                if (msg_send($queue, 1, $object)) {
-                    Debug::debug("Added to queue - msg n°".$i);
-                    // you can use the msg_stat_queue() function to see queue status
-                    //print_r(msg_stat_queue($queue));
-                } else {
+            //try to add message to queue
+            if (msg_send($queue, 1, $object)) {
+                Debug::debug("Added to queue - msg n°".$i);
+                // you can use the msg_stat_queue() function to see queue status
+                //print_r(msg_stat_queue($queue));
+            } else {
 
-                    Debug::debug("[ERROR] Could not add message to queue !");
-                }
+                Debug::debug("[ERROR] Could not add message to queue !");
             }
+            //}
         }
 
 
@@ -444,11 +455,12 @@ AND b.is_available = 1;";
             $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
 
 
+            sleep(2); // la queue est vide mais il faut prendre le temps de traité les msg
             Debug::debug("Nombre de msg en attente : ".$msg_qnum);
             if ($msg_qnum == 0) {
                 break;
             }
-            sleep(1);
+            
         } while (true);
 
 // kill des workers !
@@ -490,9 +502,39 @@ AND b.is_available = 1;";
         return $key;
     }
 
-    private function tryAssociate($server, $key)
+    public function tryAssociate($param)
     {
+
+        Debug::parseDebug($param);
+
+
+        $id_mysql_server = $param[0];
+        $id_ssh_key      = $param[1];
+
+        Debug::debug($id_mysql_server, "SERVER");
+        Debug::debug($id_ssh_key, "KEY");
+
+
+
+       
         $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_mysql_server.";";
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $server = $arr;
+        }
+
+        $sql2 = "SELECT * FROM ssh_key WHERE id=".$id_ssh_key.";";
+        Debug::sql($sql2);
+        $res2 = $db->sql_query($sql2);
+        while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $key = $arr2;
+        }
+        
 
         $ssh = new SSH2($server['ip']);
         $rsa = new RSA();
@@ -520,7 +562,10 @@ AND b.is_available = 1;";
         $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
 
         $this->logger->info($ret);
-//Debug::debug($ret);
+        Debug::debug($ret);
+
+
+
 
 
         if ($login_successfull === true) {
@@ -535,6 +580,8 @@ AND b.is_available = 1;";
 
 
             $db->sql_save($data);
+        } else {
+            Debug::debug($server['ip'], "Login Failed");
         }
     }
 
@@ -641,8 +688,11 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
       Please ensure to follow a good programming style and close/free all your message queues before your script exits to avoid those warning messages.
      */
 
-    public function workerAssociate()
+    public function workerAssociate($param)
     {
+
+        Debug::parseDebug($param);
+
         $pid = getmypid();
 
         $queue = msg_get_queue(self::KEY_WORKER_ASSOCIATE);
@@ -656,7 +706,19 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
             $data = json_decode(json_encode($msg), true);
-            $this->tryAssociate($data['server'], $data['key']);
+
+            //$server = json_encode($data['server']);
+            //$key    = json_encode($data['key']);
+            //Debug::debug($server, "server");
+            Debug::debug($data, "data");
+
+
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            $this->tryAssociate(array($data['server'], $data['key']));
+            
+            $db->sql_close();
+
         }
     }
 
