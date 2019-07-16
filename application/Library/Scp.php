@@ -74,6 +74,7 @@ trait Scp {
             Debug::debug($dst_dir, "mkdir -p");
 
 
+            $db->sql_close();
             $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
             $data['execution_time'] = round(microtime(true) - $start, 0);
 
