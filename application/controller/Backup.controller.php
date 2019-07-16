@@ -1758,7 +1758,7 @@ $(function () {
          */
     }
 
-    function discReco($db_link, $link, $db)
+    function discReco($db_link, $remote, $db)
     {
 
 
