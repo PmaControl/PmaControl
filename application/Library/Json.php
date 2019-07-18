@@ -5,6 +5,9 @@
  * and open the template in the editor.
  */
 
+
+namespace App\Library;
+
 class Json
 {
 
@@ -16,7 +19,7 @@ class Json
 
         $json = file_get_contents($configFile);
 
-        return self::is_json($json);
+        return self::isJson($json);
     }
 
 

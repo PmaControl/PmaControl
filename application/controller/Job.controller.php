@@ -128,8 +128,11 @@ class Job extends Controller
 
         Debug::debug($job);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $db->sql_save($job);
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $id_job = $db->sql_save($job);
+
+
+        return $id_job;
     }
 
     public function gg($param)

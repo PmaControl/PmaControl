@@ -18,18 +18,14 @@ class Debug
 
     static function parseDebug(& $param)
     {
-
-
         if (!empty($param)) {
-
-
             if (is_array($param)) {
                 foreach ($param as $key => $elem) {
                     if ($elem == "--debug") {
                         self::$debug = true;
                         self::checkPoint("Start debug");
                         //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
-
+                        
                         unset($param[$key]);
                     }
                 }
@@ -44,14 +40,11 @@ class Debug
 
     static public function debugShowQueries($di_link)
     {
-
         if (self::$debug) {
 
             $thread_sgbd = $di_link->getConnected();
 
             self::debug($thread_sgbd);
-
-
 
             foreach ($thread_sgbd as $name_db) {
 
