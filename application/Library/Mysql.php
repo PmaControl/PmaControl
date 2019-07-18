@@ -204,7 +204,7 @@ class Mysql
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
-        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], array($data['fqdn'],$data['login'], $data['password'], $data['port']));
+        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], array($data['fqdn'], $data['login'], $data['password'], $data['port']));
         $server['mysql_server']['ip']                  = $ip;
         $server['mysql_server']['hostname']            = $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
@@ -307,36 +307,25 @@ class Mysql
         $db = self::get_db();
 
         $sql = "
-SET autocommit = 0;
 IF (SELECT 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
 BEGIN
     SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
 END;
 ELSE
 BEGIN
-    INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
-    
+    INSERT INTO `".$table_name."` (`".$field."`".$list_key.") VALUES('".$db->sql_real_escape_string($value)."'".$list_val.");
     SELECT LAST_INSERT_ID() AS id;
 END;
-END IF;
+END IF;";
 
-SET autocommit = 1;";
-
-        
         Debug::sql($sql);
 
         if ($db->sql_multi_query($sql)) {
-
             $i = 1;
-
-
-
 
             do {
                 $res = $db->sql_store_result();
-
-                Debug::debug($res);
-
+                //Debug::debug($res);
 
                 if ($res) {
                     while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -345,27 +334,26 @@ SET autocommit = 1;";
                         Debug::debug($row);
 
                         if (!empty($row['id'])) {
-                            
+
                             $id_return = $row['id'];
                         }
                     }
                     $db->sql_free_result($res);
                 } else {
 
-                    Debug::debug($db->sql_error());
+                    if (!empty($db->sql_error())) {
+                        Debug::debug($db->sql_error());
+                    }
                 }
 
-
-
-
-                Debug::debug($db->sql_more_results());
+                //Debug::debug($db->sql_more_results());
                 if ($db->sql_more_results()) {
                     printf("-----------------\n");
                 }
             } while ($db->sql_more_results() && $db->sql_next_result());
 
 
-           
+
             if ($error = $db->sql_error()) {
                 echo "Syntax Error: \n $error";  // display array pointer key:value
             }
@@ -373,7 +361,6 @@ SET autocommit = 1;";
 
             Debug::debug($id_return, "ID de retour de la table : ".$table_name." !");
             return $id_return;
-
         }
 
 
@@ -434,9 +421,7 @@ SET autocommit = 1;";
                 }
 
                 $db->close();
-            }
-            else
-            {
+            } else {
                 Debug::error($data, "Impossible to connect to");
                 return false;
             }
