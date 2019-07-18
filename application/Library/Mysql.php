@@ -315,12 +315,14 @@ END;
 ELSE
 BEGIN
     INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
+    
     SELECT LAST_INSERT_ID() AS id;
 END;
 END IF;
+
 SET autocommit = 1;";
 
-        echo "\n\n\n\n\n\n";
+        
         Debug::sql($sql);
 
         if ($db->sql_multi_query($sql)) {
@@ -343,7 +345,8 @@ SET autocommit = 1;";
                         Debug::debug($row);
 
                         if (!empty($row['id'])) {
-                            return $row['id'];
+                            
+                            $id_return = $row['id'];
                         }
                     }
                     $db->sql_free_result($res);
@@ -360,60 +363,17 @@ SET autocommit = 1;";
                     printf("-----------------\n");
                 }
             } while ($db->sql_more_results() && $db->sql_next_result());
-            /*             * ** */
 
 
-            /*
-              do {
-              //echo "<br><br>", key($queries), ": ", current($queries);  // display key:value @ pointer
-
-              if ($result = mysqli_store_result($mysqli)) {   // if a result set
-              while ($rows = mysqli_fetch_assoc($result)) {
-              echo "<br>Col = {$rows["Col"]}";
-              }
-              mysqli_free_result($result);
-              }
-              echo "<br>Rows = ", mysqli_affected_rows($mysqli); // acts like num_rows on SELECTs
-              } while (next($queries) && mysqli_more_results($mysqli) && mysqli_next_result($mysqli));
-              /* */
-
-
-
+           
             if ($error = $db->sql_error()) {
                 echo "Syntax Error: \n $error";  // display array pointer key:value
             }
 
 
-            /*
-              do {
+            Debug::debug($id_return, "ID de retour de la table : ".$table_name." !");
+            return $id_return;
 
-
-              if ($i > 1) {
-              $db->sql_next_result();
-              }
-
-              if ($res = $db->sql_store_result()) {
-              while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-
-
-              debug($row);
-              if (!empty($row['id'])) {
-              return $row['id'];
-              }
-              }
-              }
-              if ($db->sql_more_results()) {
-              printf("-----------------\n");
-              }
-
-
-
-
-              $i++;
-              } while ($db->sql_more_results());
-             *
-             *
-             */
         }
 
 
@@ -431,7 +391,7 @@ SET autocommit = 1;";
         if (!empty(self::$db)) {
             return self::$db;
         } else {
-            throw new Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
+            throw new \Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
         }
     }
 

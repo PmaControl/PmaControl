@@ -11,6 +11,8 @@ use \App\Library\Debug;
 use App\Library\Mysql;
 use App\Library\Json;
 
+
+
 class Webservice extends Controller
 {
     var $return = array();
@@ -29,12 +31,15 @@ class Webservice extends Controller
             echo '{"error": "Vous n\'êtes pas autorisé à acceder à la ressource requise"}'."\n";
             exit;
         }
-        
+
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+
+        Debug::debug($id_user_main, "Authorized Access");
+
 
         if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {
 
-            if ($id_user_main !== false) {
+            if ($id_user_main === true) {
 
                 if (!empty(end($_FILES)['tmp_name'])) {
 
@@ -83,18 +88,30 @@ class Webservice extends Controller
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM webservice_user WHERE user = '".$db->sql_real_escape_string($user)."'";
+        $sql = "SELECT * FROM webservice_user WHERE user = '".$db->sql_real_escape_string($user)."' AND is_enabled=1";
+        Debug::sql($sql);
+
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            if ($this->unCrypt($ob->password) != $password) {
-                return false;
+
+            Debug::debug($ob, "value");
+
+            $pw_from_db = Crypt::decrypt($ob->password, CRYPT_KEY);
+
+
+            Debug::debug($pw_from_db, "remote");
+            Debug::debug($password, "database");
+
+
+            if ($pw_from_db === $password) {
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     private function parseServer($filename)
@@ -171,10 +188,11 @@ class Webservice extends Controller
     }
     /*     * ************************ */
 
-    
-
     public function addAccount($param)
     {
+
+        Debug::parseDebug($param);
+
         $filename = $param[0] ?? "";
 
         if (!empty($filename) && file_exists($filename)) {
@@ -185,6 +203,9 @@ class Webservice extends Controller
         if (!empty($config['webservice'])) {
 
             $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+            
 
             foreach ($config['webservice'] as $user) {
 
@@ -200,9 +221,15 @@ class Webservice extends Controller
                     }
                 }
 
-                $id_client = $this->getId($user['organization'], "client", "libelle");
+                Mysql::set_db($db);
+                $id_client = Mysql::getId($user['organization'], "client", "libelle");
 
-                $sql = "SELECT * FROM `webservice_user` WHERE `user` = '".$user['user']."' AND `host` = '".$user['host']."'";
+
+
+
+                $sql = "SELECT * FROM `webservice_user` WHERE `user` = '".$user['user']."' AND `host` = '".$user['host']."';";
+                Debug::sql($sql);
+
                 $res = $db->sql_query($sql);
 
                 $data = array();
@@ -212,9 +239,12 @@ class Webservice extends Controller
                 }
 
                 $data['webservice_user']['user']      = $user['user'];
-                $data['webservice_user']['password']  = $this->crypt($user['password']);
+                $data['webservice_user']['password']  = Crypt::encrypt($user['password'], CRYPT_KEY);
                 $data['webservice_user']['host']      = $user['host'];
                 $data['webservice_user']['id_client'] = $id_client;
+
+
+                Debug::debug($data, "Data to inset or refresh");
 
                 $res = $db->sql_save($data);
 
@@ -232,5 +262,17 @@ class Webservice extends Controller
     {
 
         //ecran pour gérer les webservice // password
+    }
+
+    private function parseConfig($configFile)
+    {
+        //debug($configFile);
+
+        $config = json_decode(file_get_contents($configFile), true);
+        //$config = Yaml::parse(file_get_contents($configFile));
+        //$config = yaml_parse_file($configFile);
+        //debug($config);
+
+        return $config;
     }
 }
