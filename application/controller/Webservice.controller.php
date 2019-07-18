@@ -39,6 +39,9 @@ class Webservice extends Controller
                 if (!empty(end($_FILES)['tmp_name'])) {
 
                     $this->return['authenticate'] = "ok";
+
+                    Debug::debug(end($_FILES)['tmp_name']);
+
                     $this->parseServer(end($_FILES)['tmp_name']);
 
                     //$this->pushFile(trim(file_get_contents()));
@@ -101,6 +104,8 @@ class Webservice extends Controller
         $data = Json::getDataFromFile($filename);
 
 
+        Debug::debug($data, "data");
+
         $db = $this->di['db']->sql(DB_DEFAULT);
         Mysql::set_db($db);
 
@@ -109,6 +114,10 @@ class Webservice extends Controller
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
+
+                        Debug::debug($server, "SERVER");
+
+
                         Mysql::addMysqlServer($server);
                         break;
                 }

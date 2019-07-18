@@ -68,7 +68,7 @@ class Backup extends Controller
             passthru("mkdir -p ".$dir, $exit);
             if ($exit !== 0) {
                 throw new \Exception(
-                    "GLI-017 : Impossible to create the directory : ".$dir, $exit);
+                "GLI-017 : Impossible to create the directory : ".$dir, $exit);
             }
         }
 
@@ -1655,9 +1655,9 @@ $(function () {
 
             //$sql = "DROP TABLE `".$db_bame."`.`".$table_name."`;";
 
-            $db_remote = $this->discReco($db_remote,$remote, $db_name );
-            $sql = file_get_contents($table_link);
-            $queries = SqlFormatter::splitQuery($sql);
+            $db_remote = $this->discReco($db_remote, $remote, $db_name);
+            $sql       = file_get_contents($table_link);
+            $queries   = SqlFormatter::splitQuery($sql);
 
             foreach ($queries as $query) {
 
@@ -1731,7 +1731,7 @@ $(function () {
                             echo round($percent, 2)."%\t";
                             $percent_mem = $percent;
 
-                            $db_remote = $this->discReco($db_remote,$remote, $db_name );
+                            $db_remote = $this->discReco($db_remote, $remote, $db_name);
                         }
                     }
                 }
@@ -1981,11 +1981,41 @@ $(function () {
         $id_backup_main = $param[0];
         $uuid           = $param[1];
 
+
+
         Debug::parseDebug($param);
         Debug::debug($param, 'param');
 
 
         $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql3 = "SELECT id FROM job WHERE uuid='".$uuid."'";
+        Debug::sql($sql3);
+        $res3 = $db->sql_query($sql3);
+        while ($ob3  = $db->sql_fetch_object($res3)) {
+            $id_job = $ob3->id;
+        }
+
+
+        $sql2 = "SELECT * FROM `backup_main` where `id` = ".$id_backup_main.";";
+        Debug::sql($sql2);
+
+        $res2 = $db->sql_query($sql2);
+
+        while ($ob2 = $db->sql_fetch_object($res2)) {
+
+            $sql2 = "INSERT INTO backup_dump SET id_backup_main= ".$id_backup_main." ,"
+                ."id_mysql_server = ".$ob2->id_mysql_server.","
+                ." id_job='".$id_job."', "
+                ."date_start='".date("Y-m-d H:i:s")."';";
+            Debug::sql($sql2);
+
+            $id_backup_dump = $db->sql_query($sql2);
+        }
+
+
+        /*         * ************************************ */
+
 
         $sql = "SELECT *, b.name as name_connection, a.database as `databases` FROM backup_main a
             INNER JOIN mysql_server b ON a.id_mysql_server = b.id
@@ -2030,7 +2060,23 @@ $(function () {
         }
 
 
+
+        $db->sql_close();
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $backup_dump                            = array();
+        $backup_dump['backup_dump']['id']       = $id_backup_dump;
+        $backup_dump['backup_dump']['date_end'] = date("Y-m-d H:i:s");
+        $tmp = $db->sql_save($backup_dump);
+
+
+        Debug::debug($tmp, '$db->sql_save($backup_dump);');
+
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
+
+
+
+
 
 
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);

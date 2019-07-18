@@ -200,10 +200,11 @@ class Mysql
 
 
 
+
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
-        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], $data);
+        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], array($data['fqdn'],$data['login'], $data['password'], $data['port']));
         $server['mysql_server']['ip']                  = $ip;
         $server['mysql_server']['hostname']            = $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
@@ -223,7 +224,7 @@ class Mysql
             }
         }
 
-        //Debug::debug($server, "new MySQL");
+        Debug::debug($server, "new MySQL");
 
 
         if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
@@ -458,7 +459,7 @@ SET autocommit = 1;";
 
         if (empty($name) || $name == "@hostname") {
 
-            debug($data);
+            Debug::debug($data);
 
             $db = mysqli_init();
             if (!$db) {
@@ -473,6 +474,11 @@ SET autocommit = 1;";
                 }
 
                 $db->close();
+            }
+            else
+            {
+                Debug::error($data, "Impossible to connect to");
+                return false;
             }
         } else {
             $hostname = $name;
