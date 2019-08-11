@@ -11,6 +11,12 @@ use \Glial\Date\Date;
 use App\Library\Extraction;
 use \App\Library\Debug;
 
+// ""	&#9635;   ▣
+// "□"	&#9633;	&#x25A1;
+// ""	&#9679;  ●
+//"○"	&#9675;
+//"◇"	&#9671;	&#x25C7;
+//"◈"	&#9672;	&#x25C8;
 // Joining: receiving State Transfer   => IST change color
 //add virtual_ip
 // ha proxy
@@ -81,6 +87,7 @@ class Dot2 extends Controller
     var $segment            = array();
     // contain the list of cluster empty (made with offline node to get back full list of node from original cluster
     var $cluster_black_list = array();
+    var $server_backup      = array();
 
     public function getMasterSlave($param)
     {
@@ -506,9 +513,6 @@ class Dot2 extends Controller
             if (!empty($server['wsrep_desync']) && $server['wsrep_desync'] === "ON") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_MANUAL_DESYNC'];
             }
-
-
-
         }
 
 //        Debug::debug($this->graph_node, "GENERATE NODE");
@@ -682,6 +686,9 @@ class Dot2 extends Controller
         $this->getColor();
 
 
+
+
+
         $this->generateAllGraph();
         Debug::checkPoint("generateAllGraph");
     }
@@ -780,9 +787,15 @@ class Dot2 extends Controller
         return $line;
     }
 
-    private function nodeHead($display_name)
+    private function nodeHead($display_name, $id_mysql_server)
     {
-        $line = '<tr><td bgcolor="black" color="white" align="center"><font color="white">'.$display_name.'</font></td></tr>';
+
+        $backup = '&#x25A1;';
+        if (in_array($id_mysql_server, $this->getServerBackuped($id_mysql_server))) {
+            $backup = '&#9635;';
+        }
+
+        $line = '<tr><td bgcolor="black" color="white" align="center"><font color="white">'.$display_name.' '.$backup.'</font></td></tr>';
         return $line;
     }
 
@@ -805,7 +818,7 @@ class Dot2 extends Controller
         $node = "";
         $node .= "node [color = \"".$this->node['NODE_OK']['color']."\"];\n";
         $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
-        $node .= $this->nodeHead("Arbitrator");
+        $node .= $this->nodeHead("Arbitrator", $id_mysql_server);
 
 
         $lines   = array();
@@ -851,7 +864,7 @@ class Dot2 extends Controller
 
         //debug($server);
 
-        $node .= $this->nodeHead($server['hostname']);
+        $node .= $this->nodeHead($server['hostname'], $id_mysql_server);
 
         $lines[] = "IP : ".$server['ip'].":".$server['port'];
         $lines[] = "Date : ".$server['date'];
@@ -1617,5 +1630,40 @@ class Dot2 extends Controller
         sort($nodes);
 
         return $nodes;
+    }
+
+    public function getServerBackuped($id_mysql_server)
+    {
+
+
+        if (!empty($this->server_backup) && count($this->server_backup) != 0) {
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            $sql = "SELECT id_mysql_server FROM backup_main where is_active=1";
+            $res = $db->sql_query($sql);
+
+
+            $backup = array();
+            while ($ob     = $db->sql_fetch_object($res)) {
+                $backup[] = $ob->id_mysql_server;
+            }
+
+
+            $sql = "SELECT id_mysql_server from mysql_server a
+            INNER JOIN link__mysql_server__tag b ON a.id = b.id_mysql_server
+            INNER JOIN tag c ON c.id = b.id_tag
+            WHERE c.name='backup'";
+
+
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $backup[] = $ob->id_mysql_server;
+            }
+
+            $uniq = array_unique($backup);
+        }
+
+        return $this->server_backup;
     }
 }

@@ -12,7 +12,7 @@ class Job extends Controller
     public function index()
     {
         $db  = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "SELECT * from `job` ORDER BY date_start DESC;";
+        $sql = "SELECT * from `job` ORDER BY date_start DESC LIMIT 20;";
         $res = $db->sql_query($sql);
 
 
@@ -128,8 +128,11 @@ class Job extends Controller
 
         Debug::debug($job);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $db->sql_save($job);
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $id_job = $db->sql_save($job);
+
+
+        return $id_job;
     }
 
     public function gg($param)
