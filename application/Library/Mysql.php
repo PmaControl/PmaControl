@@ -200,10 +200,11 @@ class Mysql
 
 
 
+
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
-        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], $data);
+        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], array($data['fqdn'], $data['login'], $data['password'], $data['port']));
         $server['mysql_server']['ip']                  = $ip;
         $server['mysql_server']['hostname']            = $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
@@ -223,7 +224,7 @@ class Mysql
             }
         }
 
-        //Debug::debug($server, "new MySQL");
+        Debug::debug($server, "new MySQL");
 
 
         if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
@@ -306,34 +307,25 @@ class Mysql
         $db = self::get_db();
 
         $sql = "
-SET autocommit = 0;
 IF (SELECT 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
 BEGIN
     SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
 END;
 ELSE
 BEGIN
-    INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
+    INSERT INTO `".$table_name."` (`".$field."`".$list_key.") VALUES('".$db->sql_real_escape_string($value)."'".$list_val.");
     SELECT LAST_INSERT_ID() AS id;
 END;
-END IF;
-SET autocommit = 1;";
+END IF;";
 
-        echo "\n\n\n\n\n\n";
         Debug::sql($sql);
 
         if ($db->sql_multi_query($sql)) {
-
             $i = 1;
-
-
-
 
             do {
                 $res = $db->sql_store_result();
-
-                Debug::debug($res);
-
+                //Debug::debug($res);
 
                 if ($res) {
                     while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -342,39 +334,23 @@ SET autocommit = 1;";
                         Debug::debug($row);
 
                         if (!empty($row['id'])) {
-                            return $row['id'];
+
+                            $id_return = $row['id'];
                         }
                     }
                     $db->sql_free_result($res);
                 } else {
 
-                    Debug::debug($db->sql_error());
+                    if (!empty($db->sql_error())) {
+                        Debug::debug($db->sql_error());
+                    }
                 }
 
-
-
-
-                Debug::debug($db->sql_more_results());
+                //Debug::debug($db->sql_more_results());
                 if ($db->sql_more_results()) {
                     printf("-----------------\n");
                 }
             } while ($db->sql_more_results() && $db->sql_next_result());
-            /*             * ** */
-
-
-            /*
-              do {
-              //echo "<br><br>", key($queries), ": ", current($queries);  // display key:value @ pointer
-
-              if ($result = mysqli_store_result($mysqli)) {   // if a result set
-              while ($rows = mysqli_fetch_assoc($result)) {
-              echo "<br>Col = {$rows["Col"]}";
-              }
-              mysqli_free_result($result);
-              }
-              echo "<br>Rows = ", mysqli_affected_rows($mysqli); // acts like num_rows on SELECTs
-              } while (next($queries) && mysqli_more_results($mysqli) && mysqli_next_result($mysqli));
-              /* */
 
 
 
@@ -383,36 +359,8 @@ SET autocommit = 1;";
             }
 
 
-            /*
-              do {
-
-
-              if ($i > 1) {
-              $db->sql_next_result();
-              }
-
-              if ($res = $db->sql_store_result()) {
-              while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-
-
-              debug($row);
-              if (!empty($row['id'])) {
-              return $row['id'];
-              }
-              }
-              }
-              if ($db->sql_more_results()) {
-              printf("-----------------\n");
-              }
-
-
-
-
-              $i++;
-              } while ($db->sql_more_results());
-             *
-             *
-             */
+            Debug::debug($id_return, "ID de retour de la table : ".$table_name." !");
+            return $id_return;
         }
 
 
@@ -430,7 +378,7 @@ SET autocommit = 1;";
         if (!empty(self::$db)) {
             return self::$db;
         } else {
-            throw new Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
+            throw new \Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
         }
     }
 
@@ -458,7 +406,7 @@ SET autocommit = 1;";
 
         if (empty($name) || $name == "@hostname") {
 
-            debug($data);
+            Debug::debug($data);
 
             $db = mysqli_init();
             if (!$db) {
@@ -473,6 +421,9 @@ SET autocommit = 1;";
                 }
 
                 $db->close();
+            } else {
+                Debug::error($data, "Impossible to connect to");
+                return false;
             }
         } else {
             $hostname = $name;

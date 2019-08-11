@@ -10,10 +10,10 @@ echo '<div class="well">';
 echo '</div>';
 
 
-//\Glial\Synapse\FactoryController::addNode("Binlog", "view", array());
+\Glial\Synapse\FactoryController::addNode("Binlog", "view", array());
 
 
-//\Glial\Synapse\FactoryController::addNode("Binlog", "max", array());
+\Glial\Synapse\FactoryController::addNode("Binlog", "max", array());
 
 
 //\Glial\Synapse\FactoryController::addNode("Binlog", "search", array());

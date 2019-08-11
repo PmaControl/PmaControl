@@ -20,7 +20,7 @@ class Mydumper
      *
      *
      */
-    public function parseLog($log)
+    static public function parseLog($log)
     {
 
 
@@ -33,14 +33,14 @@ class Mydumper
         return self::colorStatus($log);
     }
 
-    function colorStatus($log)
+    static function colorStatus($log)
     {
         $log1 = str_replace("CRITICAL", '<big><span class="label label-danger">CRITICAL</span></big>', $log);
         $log2 = str_replace("WARNING", '<big><span class="label label-warning">WARNING</span></big>', $log1);
         return $log2;
     }
 
-    function getLevel($file_log)
+    static function getLevel($file_log)
     {
         preg_match_all('/\*\*\s\(mydumper\:[0-9]+\)\: ([A-Z]+)\s/', $input_line, $output_array);
     }

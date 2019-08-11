@@ -100,9 +100,6 @@ function log_exception($e, $StringError = null)
                   $pile .= " <b>Classe</b> ".$value["class"]."\r\n";
                   } */
 
-
-
-
                 $compteur = 0;
                 if (isset($value["args"])) {
                     foreach ($value["args"] as $key2 => $value2) {
@@ -134,11 +131,8 @@ function log_exception($e, $StringError = null)
                         $pile .= "\r\n";
                     }
                 }
-                
             }
-            
         }
-
 
         ini_set('log_errors_max_len', 0);
 

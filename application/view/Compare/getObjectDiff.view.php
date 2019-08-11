@@ -90,12 +90,20 @@ if (count($data['resultat'][$_GET['menu']]) != 0) {
         foreach ($data['resultat'][$_GET['menu']] as $tablename => $table) {
             if (count($table['script']) != 0) {
                 $queries = implode('', $table['script']);
-                $queries = str_replace(";",";\n", $queries);
+                $queries = str_replace(";", ";\n", $queries);
                 echo $queries."\n";
             }
         }
 
-
+/*
+        foreach ($data['resultat'][$_GET['menu']] as $tablename => $table) {
+            if (count($table['script']) != 0) {
+                $queries = implode('', $table['script']);
+                $queries = str_replace(";", ";\n", $queries);
+                echo $queries."\n";
+            }
+        }
+/***/
         echo '</textarea>';
 
 
