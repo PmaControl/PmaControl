@@ -8,7 +8,6 @@ class About extends Controller
     public function index()
     {
 
-
         $name         = __("About");
         $this->title  = '<i class="fa fa-info-circle" style="font-size:32px"></i> '.$name;
         $this->ariane = '> <i class="fa fa-question" style="font-size:16px" aria-hidden="true"></i> Help > <i class="fa fa-info-circle" style="font-size:16px"></i> '
