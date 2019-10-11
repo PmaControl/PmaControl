@@ -823,6 +823,9 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+
+    
+
     public function mpd($param)
     {
         $default = $this->di['db']->sql(DB_DEFAULT);
@@ -830,7 +833,15 @@ class Mysql extends Controller
         $this->title  = __("The Physical Schemata Panel");
         $this->ariane = " > ".__("MySQL")." > ".$this->title;
 
-        $db = $this->di['db']->sql(str_replace('-', '_', $param[0]));
+
+        $sql = "SELECT name FROM mysql_server WHERE id=".intval($param[0]);
+        $res = $default->sql_query($sql);
+
+        while ($ob = $default->sql_fetch_object($res)) {
+            $name_connect = $ob->name;
+        }
+
+        $db = $this->di['db']->sql($name_connect);
         if (!empty($param[2])) {
             $this->table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
         }

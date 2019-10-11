@@ -729,7 +729,7 @@ var myChart = new Chart(ctx, {
     public function daemon($param)
     {
 
-        $id_cleaner = $param[0];
+        //$id_cleaner = $param[0];
         $command    = $param[1];
 
 
