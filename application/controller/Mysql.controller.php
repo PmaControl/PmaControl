@@ -844,6 +844,9 @@ class Mysql extends Controller
         $db = $this->di['db']->sql($name_connect);
         if (!empty($param[2])) {
             $this->table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
+
+            Debug::debug($this->table_to_purge);
+
         }
 
         $file_name    = TMP.$param[0]."_".$param[1].".svg";
@@ -856,11 +859,14 @@ class Mysql extends Controller
         $file = $path_parts['filename'];
 
         $sql    = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
+
+        //$sql  .= " AND TABLE_NAME in('commande_services','AnnulationCommandeAcces','CrRaccordement','cr','ot','otacces','equipement','batiment','emplacement_cassette','port_pto','route_optique','service_passif','site','local','adresse','escalier','cassette','etage','ont','port_ethernet','service','port')";
+
         $tables = $db->sql_fetch_yield($sql);
 
         if ($fp = fopen($path.'/'.$file.'.dot', "w")) {
 
-            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho;  ".PHP_EOL);
+            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho  ".PHP_EOL); //splines=ortho;
 //fwrite($fp, "\t size=\"10,1000\";");
 
             fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);

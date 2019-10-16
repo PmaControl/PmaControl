@@ -22,7 +22,7 @@ use \App\Library\Debug;
 use \App\Library\Display;
 
 // Installation des gestionnaires de signaux
-declare(ticks = 1);
+declare(ticks=1);
 
 class Cleaner extends Controller
 {
@@ -58,14 +58,13 @@ class Cleaner extends Controller
     private $sql_hex_for_binary    = false;
     private $fk_circulaire         = array();
     var $logger;
-    private $cache_pk              = array();
-    private $cache_fk              = array();
     private $cache_table           = array();
-    private $cache_alter           = array();
     private $primary_key           = array();
     private $com_to_check          = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
     private $id_mysql_server       = 0;
     private $limit                 = 1000;
+    private $table_filter          = array();
+    private $children              = array();
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
@@ -88,7 +87,6 @@ class Cleaner extends Controller
         $id_cleaner = $this->get_id_cleaner($param);
 
         if (Basic::from(__FILE__)) {
-
             return $this->title;
         }
 
@@ -295,7 +293,7 @@ var myChart = new Chart(ctx, {
         $table->addHeader(array("Parameter", "Value"));
         $table->addLine(array("SERVER_TO_PURGE", $ob->link_to_purge));
         $table->addLine(array("DATABASE_TO_PURGE", $ob->schema_to_purge));
-        $table->addLine(array("TABLES_TO_SET_FIRST", implode(",", $ob->table_to_purge)));
+        //$table->addLine(array("TABLES_TO_SET_FIRST", implode(",", $ob->table_to_purge)));
         $table->addLine(array("INIT_DATA_WITH", $ob->main_table));
         $table->addLine(array("QUERY", $ob->query));
         $table->addLine(array("WAIT_TIME", $ob->wait_time_in_sec));
@@ -730,7 +728,7 @@ var myChart = new Chart(ctx, {
     {
 
         //$id_cleaner = $param[0];
-        $command    = $param[1];
+        $command = $param[1];
 
 
         switch ($command) {
@@ -1069,11 +1067,19 @@ var myChart = new Chart(ctx, {
 
     public function getTableImpacted($param)
     {
+        Debug::parseDebug($param);
+
+
+        Debug::debug($param);
+
+
+
+
         $id_cleaner = $param[0];
         $this->view = false; // required cannot be call directly from navigator
         $default    = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT *, b.name as nameserver,a.id as id_cleaner_main
+        $sql = "SELECT *, b.name as nameserver,a.id as id_cleaner_main, a.database as db
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
                 WHERE a.id = '".$id_cleaner."'";
@@ -1083,7 +1089,7 @@ var myChart = new Chart(ctx, {
         while ($ob = $default->sql_fetch_object($res)) {
             $this->id_cleaner      = $id_cleaner;
             $this->link_to_purge   = $ob->nameserver;
-            $this->schema_to_purge = $ob->database;
+            $this->schema_to_purge = $ob->db;
             $this->schema_delete   = $ob->cleaner_db;
             $this->prefix          = $ob->prefix;
             $this->debug           = false;
@@ -1486,8 +1492,10 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-        $list_tables     = $this->getOrderBy();
-        $tables_impacted = $this->getAffectedTables();
+
+        $this->
+            $list_tables = $this->getOrderBy();
+        $tables_impacted                 = $this->getAffectedTables();
 
         foreach ($list_tables as $sub_array) {
 
@@ -1592,6 +1600,10 @@ var myChart = new Chart(ctx, {
                         // archivation en fichier plat
                         if ($have_data) {
                             $sql = rtrim($sql, ",").";";
+
+                            //Debug::$debug = true;
+                            debug($sql);
+
                             $db->sql_query($sql);
 
                             $this->setAffectedRows($table_name);
@@ -1630,7 +1642,7 @@ var myChart = new Chart(ctx, {
         return $this->table_in_error;
     }
 
-    private function getForeignKeys()
+    private function getRealForeignKeys()
     {
 //get list of FK and put in array
         $db = $this->di['db']->sql($this->link_to_purge);
@@ -1642,9 +1654,12 @@ var myChart = new Chart(ctx, {
             ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
 
+
         if (!empty($this->prefix)) {
             $sql .= "AND TABLE_NAME not like '".$this->prefix."%';";
         }
+
+        Debug::sql($sql);
 
         $res           = $db->sql_query($sql);
         $order_to_feed = array();
@@ -1653,7 +1668,7 @@ var myChart = new Chart(ctx, {
             $order_to_feed[$ob->REFERENCED_TABLE_NAME][] = $ob->TABLE_NAME;
         }
 
-        Debug::debug($order_to_feed, "REAL FOREIGN KEY");
+        //Debug::debug($order_to_feed, "REAL FOREIGN KEY");
 
 
         return $order_to_feed;
@@ -1682,6 +1697,7 @@ var myChart = new Chart(ctx, {
             $fk[$line['constraint_schema']][$line['constraint_table']][$line['constraint_column']] = $line['referenced_schema']."-".$line['referenced_table']."-".$line['referenced_column'];
         }
 
+
         if (count($fk) != 0) {
             $this->foreign_keys = $fk;
         }
@@ -1709,32 +1725,42 @@ var myChart = new Chart(ctx, {
      *
      */
 
-    private function getOrderBy($order = 'ASC')
+    private function getOrderBy($foreign_keys, $order = 'ASC')
     {
 
         $this->setCacheFile();
 
+
+
         if (!file_exists($this->path_to_orderby_tmp)) {
 
-            $virtual_fk = $this->getVirtualForeignKeys();
-            $real_fk    = $this->getForeignKeys();
+            $tmp = $foreign_keys;
 
-            $fks = array_merge_recursive($real_fk, $virtual_fk);
-            $tmp = $fks;
-
+            //On retire les FKs en double
             foreach ($tmp as $key => $tab) {
-                $fks[$key] = array_unique($fks[$key]);
+                $foreign_keys[$key] = array_unique($foreign_keys[$key]);
             }
-            Debug::debug("On retire les FKs en double");
 
 
             //remove all tables with no father from $this->main_table
             $fks = $this->removeTableNotImpacted($fks);
 
+
+            Debug::debug($fks);
+
             $level   = array();
             $level[] = $this->table_to_purge;
 
+            $all_childs = $this->addChild($fks, $this->main_table, array($this->main_table));
+
+
+            Debug::debug($all_childs);
+
+            $fks = $this->filterFkWithChildren($all_childs, $fks);
+
+
             $array = $fks;
+
 
             // test des tables qui boucle sur elle même
             $tmp2 = $array;
@@ -1750,12 +1776,12 @@ var myChart = new Chart(ctx, {
                 }
             }
 
-//debug($array);
+            //debug($array);
 
             $i    = 0;
             while ($last = count($array) != 0) {
 
-//echo "level " . $i . PHP_EOL;
+                //echo "level " . $i . PHP_EOL;
                 $temp = $array;
 
                 foreach ($temp as $father_name => $tab_father) {
@@ -1765,9 +1791,9 @@ var myChart = new Chart(ctx, {
                             if (empty($level[$i]) || !in_array($table_child, $level[$i])) {
                                 $level[$i][] = $table_child;
                             }
-//debug($level);
+                            //debug($level);
                             unset($array[$father_name][$key_child]);
-//debug($array);
+                            //debug($array);
                         }
                     }
                 }
@@ -1784,34 +1810,48 @@ var myChart = new Chart(ctx, {
                     }
                 }
 
-
                 if ($last == count($array)) {
                     $cas_found = false;
 
-//cas de deux chemins differents pour arriver à la même table enfant
+                    //cas de deux chemins differents pour arriver à la même table enfant
                     $temp = $array;
                     foreach ($temp as $key1 => $tab2) {
                         foreach ($tab2 as $key2 => $val) {
-
-
                             foreach ($level as $tab3) {
-
                                 if (in_array($val, $tab3)) {
-
-
                                     unset($array[$key1][$key2]);
                                     $cas_found = true;
                                 }
                             }
+
+                            //debug($val);
                         }
                     }
 
                     if (!$cas_found) {
                         echo "\n";
 
+                        debug($temp);
                         debug($tab2);
                         debug($level);
                         debug($array);
+
+
+                        $tables = array();
+                        foreach ($array as $key => $tab) {
+                            $tables[] = $key;
+
+                            foreach ($tab as $elem) {
+                                $tables[] = $elem;
+                            }
+                        }
+
+                        $tables = array_unique($tables);
+
+                        echo implode("','", $tables);
+
+
+                        //Debug::debug($this->fk_circulaire);
                         throw new \Exception("PMACTRL-333 Circular definition (table <-> table)");
                     }
                 }
@@ -1938,7 +1978,7 @@ var myChart = new Chart(ctx, {
             foreach ($fks as $table => $data) {
 
 
-//we want keep main table
+                //we want keep main table
                 if (trim($table) == $this->main_table) {
                     continue;
                 }
@@ -2167,7 +2207,10 @@ var myChart = new Chart(ctx, {
 
     private function getImpactedTable()
     {
-        $list = $this->getOrderby();
+        $list = $this->getOrderBy();
+
+        Debug::debug($list);
+
 
         $tables = array();
         foreach ($list as $elem) {
@@ -2641,7 +2684,7 @@ var myChart = new Chart(ctx, {
 
         $file_to_cmp = '';
         if (file_exists($file)) {
-            $file_to_cmp = file_get_contents();
+            $file_to_cmp = file_get_contents($file);
         }
 
         $updater = new Compare;
@@ -2999,6 +3042,10 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
     public function impacted($param)
     {
+
+
+        Debug::parseDebug($param);
+
         $data['id_cleaner'] = $this->get_id_cleaner($param);
 
         $this->title = '<i class="fa fa-table" aria-hidden="true"></i> '.__('Tables impacted');
@@ -3009,7 +3056,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT *,a.database,a.id as id_cleaner_main,
+        $sql = "SELECT *,a.database,a.id as id_cleaner_main,b.id as id_mysql_server,
             b.name as mysql_server_name
         FROM cleaner_main a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
@@ -3019,7 +3066,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         while ($ob = $db->sql_fetch_object($res)) {
             $data['database']    = $ob->database;
-            $data['server_name'] = $ob->mysql_server_name;
+            $data['server_name'] = $ob->id_mysql_server;
         }
 
         $this->set('data', $data);
@@ -3028,5 +3075,104 @@ objDiv.scrollTop = objDiv.scrollHeight;
     private function setCacheFile()
     {
         $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".ser";
+    }
+
+    public function addChild($fks, $ref_table, $childs = array())
+    {
+
+
+        $this->table_filter[] = $ref_table;
+
+        //Debug::debug($fks);
+        Debug::debug($ref_table, '<b style="color:#0000ff">REF TABLE</b>');
+        Debug::debug($childs, "CHILDREN");
+
+        if (!empty($fks[$ref_table])) {
+
+            Debug::debug($fks[$ref_table], 'table parent');
+
+            $parents = $fks[$ref_table];
+
+            foreach ($parents as $parent) {
+
+                if (!in_array($parent, $this->table_filter)) {   //pour eviter les boucle infinie !
+                    $childs = $this->addChild($fks, $parent, $childs);
+                }
+            }
+
+            return $childs;
+        } else {
+
+            $childs[] = $ref_table;
+            return $childs;
+        }
+    }
+
+    public function filterFkWithChildren($children, $foreign_keys)
+    {
+
+        Debug::debug($children);
+
+        foreach ($foreign_keys as $parent => $childs) {
+            if (!in_array($parent, $children)) {
+                unset($foreign_keys[$parent]);
+
+                Debug::debug($parent, "delete");
+            }
+        }
+
+        Debug::debug($foreign_keys, "sdghqwsdgf");
+
+        return $foreign_keys;
+    }
+
+    public function getForeignKeys()
+    {
+
+
+
+
+        $virtual_fk = $this->getVirtualForeignKeys();
+        $real_fk    = $this->getRealForeignKeys();
+
+
+        $fks = array_merge_recursive($real_fk, $virtual_fk);
+
+
+        return $fks;
+    }
+
+    public function generateMock($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+        
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "SELECT name FROM mysql_server WHERE id=".$id_mysql_server;
+        $res = $db->sql_query($sql);
+        while ($ob  = $db->sql_fetch_object($res)) {
+            $remote_link = $this->di['db']->sql($ob->name);
+
+            $sql = "SELECT `REFERENCED_TABLE_NAME` as `refrenceTable`,`TABLE_NAME` as `tableName` FROM `information_schema`.`KEY_COLUMN_USAGE` "
+                ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
+                ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+                ."AND `REFERENCED_TABLE_NAME` IS NOT NULL;";
+
+            Debug::sql($sql);
+
+            $res           = $db->sql_query($sql);
+            $order_to_feed = array();
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $order_to_feed[$ob->refrenceTable][] = $ob->tableName;
+            }
+
+
+            echo json_encode($order_to_feed);
+        }
     }
 }
