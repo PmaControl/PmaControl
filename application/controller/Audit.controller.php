@@ -2,12 +2,15 @@
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \App\Library\Post;
+use App\Library\Extraction;
+use App\Library\Transfer;
 
 class Audit extends Controller
 {
 
-    var $log_files = array("/data/www/rt.log");
-
+    use App\Library\Filter;
+    var $log_files = array("/data/www/pmacontrol/data/general.log");
     var $granted   = array();
     var $denied    = array();
 
@@ -29,21 +32,14 @@ class Audit extends Controller
                     //preg_match(' /(\S+)@(\S+) as anonymous on\s?(\S+)?/', $buffer, $output_array);
                     //preg_match_all('/(\S+)@(\S+) as anonymous on\s?(\S+)?/', $input_line, $output_array);
                     //preg_match('/(\S+)@(\S+) as anonymous on\s?(\S+)/', $buffer, $output_array);
-
-
-
                     //Debug::debug($output_array);
 
-
                     preg_match('/(\S+)@(\S+) (as anonymous\s)?on (\S+)/', $buffer, $output_array3);
-
-
-
 
                     if (!empty($output_array3[0])) {
                         //Debug::debug($output_array3);
                     }
-                    
+
 
                     if (count($output_array) > 0) {
 
@@ -102,5 +98,73 @@ class Audit extends Controller
         $tab2 = array_keys($this->denied, "denied");
 
         Debug::debug($tab2, "denied");
+    }
+
+    public function general_log($param)
+    {
+        Debug::parseDebug($param);
+
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+            Debug::debug($_POST);
+
+            if (!empty($_POST['general_log']['activate'])) {
+                $get = Post::getToPost();
+
+
+                $url = LINK.__CLASS__."/".__FUNCTION__."/".$get;
+
+                Debug::debug($url);
+
+                header('location: '.$url);
+            }
+        }
+
+        if (!empty($_GET['mysql_server']['id'])) {
+
+            $db = $this->di['db']->sql(DB_DEFAULT);
+
+            Extraction::setDb($db);
+            $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
+
+            Debug::debug($data['logs']);
+        }
+    }
+
+    public function scp($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $_GET['mysql_server']['id'] = 104;
+
+        Debug::debug($param);
+
+
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        Extraction::setDb($db);
+
+        $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
+
+        Debug::debug($data['logs']);
+
+
+        $general_log_file = $data['logs'][$_GET['mysql_server']['id']]['']['general_log_file'];
+        $datadir          = $data['logs'][$_GET['mysql_server']['id']]['']['datadir'];
+
+
+        Debug::debug($general_log_file, "general_log_file");
+
+
+        $dst = ROOT."/data/general.log";
+        Debug::debug($dst, "dst");
+
+        Transfer::setDb($db);
+        $info = Transfer::getFileFromMysql($_GET['mysql_server']['id'], $general_log_file,$dst);
+
+        Debug::debug($info);
+
+        
     }
 }

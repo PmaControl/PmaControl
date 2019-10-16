@@ -11,8 +11,6 @@ use \App\Library\Debug;
 use App\Library\Mysql;
 use App\Library\Json;
 
-
-
 class Webservice extends Controller
 {
     var $return = array();
@@ -205,7 +203,7 @@ class Webservice extends Controller
             $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-            
+
 
             foreach ($config['webservice'] as $user) {
 
@@ -260,7 +258,6 @@ class Webservice extends Controller
 
     public function index()
     {
-
         //ecran pour gérer les webservice // password
     }
 
@@ -274,5 +271,10 @@ class Webservice extends Controller
         //debug($config);
 
         return $config;
+    }
+
+    public function decrypt($param)
+    {
+        echo Crypt::decrypt($param[0], CRYPT_KEY);
     }
 }
