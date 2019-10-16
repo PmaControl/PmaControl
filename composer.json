@@ -17,7 +17,7 @@
         "ext-mbstring": "*",
         "ext-dom": "*",
         "glial/glial": "4.2.*",
-        "phpunit/phpunit": "3.7.*",
+        "phpunit/phpunit": "7.*",
         "sensiolabs/ansi-to-html": "1.1.1",
         "alfallouji/php_multithread": "0.1.4",
         "hoa/console": "~3.0",
@@ -39,6 +39,8 @@
         "post-update-cmd": [
           "php ./glial install updateVersion"
         ]
+    },
+    "require-dev": {
+        "atoum/atoum": "^3.3"
     }
-
 }
