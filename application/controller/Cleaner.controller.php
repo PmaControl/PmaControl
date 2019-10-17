@@ -92,7 +92,6 @@ class Cleaner extends Controller
 
         $data['id_cleaner'] = $id_cleaner;
 
-
         //https://github.com/chartjs/chartjs-plugin-zoom
 
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
@@ -1493,9 +1492,8 @@ var myChart = new Chart(ctx, {
         $db->sql_select_db($this->schema_to_purge);
 
 
-        $this->
-            $list_tables = $this->getOrderBy();
-        $tables_impacted                 = $this->getAffectedTables();
+        $this->list_tables = $this->getOrderBy($this->getForeignKeys());
+        $tables_impacted   = $this->getAffectedTables();
 
         foreach ($list_tables as $sub_array) {
 
@@ -1516,7 +1514,7 @@ var myChart = new Chart(ctx, {
 
                 $fk_circular = array();
 
-//get virtual FK and merge to real FK
+//get virtual FK and merge to real FK  TODO a déporté dans getVirtualForeignKey
                 if (!empty($this->foreign_keys[$this->schema_to_purge][$table_name])) {
                     foreach ($this->foreign_keys[$this->schema_to_purge][$table_name] as $constraint_column => $line) {
                         $tab = explode("-", $line);
@@ -1903,7 +1901,7 @@ var myChart = new Chart(ctx, {
     {
         $db          = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
-        $list_tables = $this->getOrderBy("DESC");
+        $list_tables = $this->getOrderBy($this->getForeignKeys(), "DESC");
 
         foreach ($list_tables as $levels) {
             foreach ($levels as $table) {
@@ -1959,7 +1957,7 @@ var myChart = new Chart(ctx, {
     private function getAffectedTables()
     {
         if (count($this->table_impacted) === 0) {
-            $list_tables = $this->getOrderBy();
+            $list_tables = $this->getOrderBy($this->getForeignKeys());
 
             foreach ($list_tables as $tables) {
                 $this->table_impacted = array_merge($this->table_impacted, $tables);
@@ -2207,7 +2205,7 @@ var myChart = new Chart(ctx, {
 
     private function getImpactedTable()
     {
-        $list = $this->getOrderBy();
+        $list = $this->getOrderBy($this->getForeignKeys());
 
         Debug::debug($list);
 
@@ -2343,8 +2341,17 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-        $sql = "SET @@skip_replication = ON;";
-        $db->sql_query($sql);
+        $version  = $db->getVersion();
+        $provider = $db->getServerType();
+        Debug::debug($version);
+
+        if (version_compare($version, '5.5.21') >= 0 && $provider === "MariaDB") {
+            $sql = "SET @@skip_replication = ON;";
+            $db->sql_query($sql);
+            Debug::sql($sql);
+        } else {
+            Debug::debug(Color::getColoredString("SET @@skip_replication = ON; in not spupported ! be carrfull if you want an history server as Slave !", "yellow"));
+        }
 
         $sql = "CREATE DATABASE IF NOT EXISTS `".$this->schema_delete."`;";
         $db->sql_query($sql);
@@ -2432,7 +2439,7 @@ var myChart = new Chart(ctx, {
             }
 
             $data        = "";
-            $list_tables = $this->getOrderBy();
+            $list_tables = $this->getOrderBy($this->getForeignKeys());
 
             foreach ($list_tables as $sub_array) {
 
@@ -3149,7 +3156,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT name FROM mysql_server WHERE id=".$id_mysql_server;

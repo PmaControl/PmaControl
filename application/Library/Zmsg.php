@@ -6,6 +6,8 @@
     https://github.com/booksbyus/zguide/blob/master/examples/PHP/zmsg.php
 */
 
+namespace App\Library;
+
 class Zmsg
 {
     /**

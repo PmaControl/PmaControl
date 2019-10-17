@@ -53,7 +53,8 @@ class Ariane
         if ($method != 'error_web::error404')
         {
             if ($count == 0) {
-                set_flash("error", "Error 501", "Menu error : No menu entry for ".$method.". ");
+                //TODO add to log
+                //set_flash("error", "Error 501", "Menu error : No menu entry for ".$method.". ");
             } else {
                 $ariane[$count - 1] = $ariane2[$count - 1];
             }

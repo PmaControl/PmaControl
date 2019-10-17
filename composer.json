@@ -41,6 +41,7 @@
         ]
     },
     "require-dev": {
-        "atoum/atoum": "^3.3"
+        "atoum/atoum": "^3.3",
+        "phpstan/phpstan": "^0.11.16"
     }
 }
