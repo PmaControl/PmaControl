@@ -823,9 +823,6 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
-
-    
-
     public function mpd($param)
     {
         $default = $this->di['db']->sql(DB_DEFAULT);
@@ -846,7 +843,6 @@ class Mysql extends Controller
             $this->table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
 
             Debug::debug($this->table_to_purge);
-
         }
 
         $file_name    = TMP.$param[0]."_".$param[1].".svg";
@@ -858,9 +854,18 @@ class Mysql extends Controller
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-        $sql    = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
 
-        //$sql  .= " AND TABLE_NAME in('commande_services','AnnulationCommandeAcces','CrRaccordement','cr','ot','otacces','equipement','batiment','emplacement_cassette','port_pto','route_optique','service_passif','site','local','adresse','escalier','cassette','etage','ont','port_ethernet','service','port')";
+
+        $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
+            'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
+
+
+        //$filter = array();
+
+
+        $sql .= " AND TABLE_NAME in('commande_services','flux_commande_acces','service','histo_etape_commande_service','reseau','dsp','operateur','adresse','local',"
+            ."'batiment','equipement','site','crmad_services','local','adresse','etape_commande_service','cr','crmes')";
 
         $tables = $db->sql_fetch_yield($sql);
 
@@ -908,11 +913,33 @@ class Mysql extends Controller
             $ob  = $db->sql_fetch_object($res);
 
             if ($ob->cpt === "1") {
+
+
+                $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
+                    ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+                    ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+                    ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
+
+
+                /*
                 $sql        = "SELECT * FROM information_schema.`REFERENTIAL_CONSTRAINTS`
                 WHERE CONSTRAINT_SCHEMA ='".$param[1]."' AND UNIQUE_CONSTRAINT_SCHEMA ='".$param[1]."'";
+                 * 
+                 */
                 $contraints = $db->sql_fetch_yield($sql);
 
                 foreach ($contraints as $contraint) {
+
+
+                    
+                    if (!in_array($contraint['REFERENCED_TABLE_NAME'], $filter)) {
+                        continue;
+                    }
+
+                    if (!in_array($contraint['TABLE_NAME'], $filter)) {
+                        continue;
+                    }
+
 
                     if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge)) {
                         $color = "#337ab7";
@@ -921,7 +948,10 @@ class Mysql extends Controller
                     }
 
                     fwrite($fp,
-                        "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME'].'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" label =""  edgetarget="" edgeURL=""];'.PHP_EOL);
+                        "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME']
+                        .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" 
+                        label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME']
+                        .'"  edgetarget="" edgeURL=""];'.PHP_EOL);
                 }
             } else {
                 $data['NO_FK'] = 1;
@@ -1305,7 +1335,7 @@ class Mysql extends Controller
 
     public function after($param)
     {
-
+        
     }
 
     public function generate_config()

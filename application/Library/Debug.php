@@ -7,6 +7,7 @@
 
 namespace App\Library;
 
+use \Glial\Cli\Color;
 use \Glial\Cli\Table;
 
 class Debug
@@ -25,7 +26,7 @@ class Debug
                         self::$debug = true;
                         self::checkPoint("Start debug");
                         //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
-                        
+
                         unset($param[$key]);
                     }
                 }
@@ -165,7 +166,7 @@ class Debug
 
 
                 if (IS_CLI) {
-                    
+
                     print_r($string);
                 } else {
                     echo $var."<br>";
@@ -194,6 +195,7 @@ class Debug
             if (!empty($var)) {
 
 
+
                 if (IS_CLI) {
                     echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
                 } else {
@@ -201,8 +203,13 @@ class Debug
                 }
             }
 
+            $sql = \SqlFormatter::highlight($sql);
 
-            echo \SqlFormatter::highlight($sql);
+            if (mb_strlen($sql) > 10000) {
+                $suspention = Color::getColoredString("[...]", "grey", "blue");
+                $sql = mb_substr($sql, 0, 5000)."\n".$suspention."\n".mb_substr($sql, -5000);
+                echo $sql;
+            }
             //echo trim($string)."\n";
         }
     }

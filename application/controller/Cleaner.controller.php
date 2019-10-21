@@ -6,6 +6,9 @@
  * le temps de load peut être optimisé
  */
 
+// Installation des gestionnaires de signaux
+declare(ticks=1);
+
 use Glial\Synapse\Controller;
 use Glial\Synapse\FactoryController;
 use Glial\Cli\Table;
@@ -21,9 +24,6 @@ use \Glial\Synapse\Basic;
 use \App\Library\Debug;
 use \App\Library\Display;
 
-// Installation des gestionnaires de signaux
-declare(ticks=1);
-
 class Cleaner extends Controller
 {
 
@@ -32,7 +32,6 @@ class Cleaner extends Controller
     var $id_cleaner  = 0;
 //status to check
     private $com_status = array();
-    private $connection = array();
 
     const FIELD_LOOP = "pmactrol_purge_loop";
 
@@ -65,18 +64,11 @@ class Cleaner extends Controller
     private $limit                 = 1000;
     private $table_filter          = array();
     private $children              = array();
+    private $wait_time             = 1;
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
 
-    private function anonymous()
-    {
-        $fct = function() {
-            $default = $this->di['db']->sql(DB_DEFAULT);
-
-            $id_pmacli_drain_process = $this->id_pmacli_drain_process;
-        };
-    }
 
     public function statistics($param)
     {
@@ -143,8 +135,7 @@ class Cleaner extends Controller
             }
 
             $data[$ob->table][$ob->date_start] = "{ x: new Date('".$ob->date_start."'), y: ".$ob->row."}";
-
-            $date = $ob->date_start;
+            $date                              = $ob->date_start;
         }
 
         $datajs = "";
@@ -166,7 +157,6 @@ class Cleaner extends Controller
     pointBorderWidth: 2,
     pointRadius :3,
     lineTension:0,
-    
     ';
 
                 if ($i != 0) {
@@ -295,7 +285,7 @@ var myChart = new Chart(ctx, {
         //$table->addLine(array("TABLES_TO_SET_FIRST", implode(",", $ob->table_to_purge)));
         $table->addLine(array("INIT_DATA_WITH", $ob->main_table));
         $table->addLine(array("QUERY", $ob->query));
-        $table->addLine(array("WAIT_TIME", $ob->wait_time_in_sec));
+        $table->addLine(array("wait_time", $ob->wait_time_in_sec));
 
         echo $table->display();
     }
@@ -551,20 +541,18 @@ var myChart = new Chart(ctx, {
         $this->set("data", $data);
         return $data;
     }
+    /*
+     * 
+     * deprecated !!
+     */
 
     function getTableByDatabase($param)
     {
         $database = $param[0];
 
-
-
-
-
         if (FactoryController::getRootNode()[1] === __FUNCTION__) {
             $this->layout_name = false;
         }
-
-
 
 
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -612,10 +600,10 @@ var myChart = new Chart(ctx, {
         $sql = "show index from `".$_GET['schema']."`.`".$param[0]."`";
 //$sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '".$database."' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
 
-        $res = $db_clean->sql_query($sql);
+        $res2 = $db_clean->sql_query($sql);
 
         $data['column'] = [];
-        while ($ob             = $db->sql_fetch_object($res)) {
+        while ($ob             = $db->sql_fetch_object($res2)) {
             $tmp            = [];
             $tmp['id']      = $ob->Column_name;
             $tmp['libelle'] = $ob->Column_name;
@@ -723,30 +711,6 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function daemon($param)
-    {
-
-        //$id_cleaner = $param[0];
-        $command = $param[1];
-
-
-        switch ($command) {
-            case 'stop':
-
-                break;
-
-            case 'start':
-
-                break;
-
-            case 'restart':
-
-                break;
-
-            default:
-        }
-    }
-
     public function launch($param)
     {
         Debug::parseDebug($param);
@@ -785,7 +749,7 @@ var myChart = new Chart(ctx, {
             $this->backup_dir             = DATA."cleaner/".$this->id_cleaner;
             $this->init_where             = $ob->query;
             $this->libelle                = $ob->libelle;
-            $this->WAIT_TIME              = $ob->wait_time_in_sec;
+            $this->wait_time              = $ob->wait_time_in_sec;
             $this->id_mysql_server        = $ob->id_mysql_server;
         }
 
@@ -832,8 +796,8 @@ var myChart = new Chart(ctx, {
             $res = $default->sql_save($data);
 
             if (!$res) {
-                debug($default->sql_error());
-                debug($data);
+                Debug::debug($default->sql_error());
+                Debug::debug($data);
 
                 throw new \Exception("PMACTRL-002 : Impossible to insert stat for cleaner (ID : ".$id_cleaner.")");
             } else {
@@ -852,8 +816,8 @@ var myChart = new Chart(ctx, {
                         $res = $default->sql_save($data);
 
                         if (!$res) {
-                            debug($default->sql_error());
-                            debug($data);
+                            Debug::debug($default->sql_error());
+                            Debug::debug($data);
 
                             throw new \Exception("PMACTRL-003 : Impossible to insert an item for cleaner (ID : ".$id_cleaner.")");
                         }
@@ -876,7 +840,7 @@ var myChart = new Chart(ctx, {
 
             Debug::debugPurge();
 
-            sleep($this->WAIT_TIME);
+            sleep($this->wait_time);
             usleep(700);
         } // end while
     }
@@ -1091,7 +1055,6 @@ var myChart = new Chart(ctx, {
             $this->schema_to_purge = $ob->db;
             $this->schema_delete   = $ob->cleaner_db;
             $this->prefix          = $ob->prefix;
-            $this->debug           = false;
             $this->main_table      = $ob->main_table;
         }
 
@@ -1278,7 +1241,7 @@ var myChart = new Chart(ctx, {
             case SIGUSR1:
 
                 $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR1][pid:'.getmypid().'] DEBUG : ON');
-                $this->debug = true;
+                Debug::$debug = true;
                 Debug::debug("DEBUG : [ON] OFF");
                 break;
 
@@ -1286,7 +1249,7 @@ var myChart = new Chart(ctx, {
 
                 //toggle active // desactive le mode debug
                 $this->logger->debug('[id:'.$this->id_cleaner.'][SIGUSR2][pid:'.getmypid().'] DEBUG : OFF');
-                $this->debug = false;
+                Debug::$debug = false;
                 Debug::debug("DEBUG : ON [OFF]");
                 break;
 
@@ -1323,40 +1286,6 @@ var myChart = new Chart(ctx, {
 
         return $id_cleaner;
     }
-
-    private function get_infos(array $variables)
-    {
-
-        if (empty($this->id_cleaner)) {
-            throw new \Exception("PMACTRL-257 : id_cleaner is required", 80);
-        }
-
-
-        if (!empty($this->connection[$this->id_cleaner])) {
-
-            $sql = "SELECT a.cleaner_db, a.prefix, b.name as nameserver,a.id as id_cleaner_main
-            FROM cleaner_main a
-                INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-                WHERE a.id = '".$this->id_cleaner."'";
-
-            $res = $db->sql_query($sql);
-
-            while ($ob = $db->sql_fetch_object($res)) {
-                
-            }
-        }
-
-        $ret = '';
-        foreach ($variables as $var) {
-            if (!empty($this->connection[$this->id_cleaner][$var])) {
-                $ret[$var] = $this->connection[$this->id_cleaner][$var];
-            } else {
-                throw new \Exception("PMACTRL-258 : this field '".$var."' is unknow", 80);
-            }
-        }
-
-        return $ret;
-    }
     /*     * *********************************** */
     /*     * *********************************** */
     /*     * *********************************** */
@@ -1375,8 +1304,9 @@ var myChart = new Chart(ctx, {
 
 // to not affect history server, read : https://mariadb.com/kb/en/mariadb/documentation/replication/standard-replication/selectively-skipping-replication-of-binlog-events/
         // only if MariaDB (need try purge on MySQL)
-        $sql = "SET @@skip_replication = ON;";
-        $db->sql_query($sql);
+
+
+        $this->skipReplication($db);
 
         $this->rows_to_delete = array();
 
@@ -1492,16 +1422,24 @@ var myChart = new Chart(ctx, {
         $db->sql_select_db($this->schema_to_purge);
 
 
-        $this->list_tables = $this->getOrderBy($this->getForeignKeys());
-        $tables_impacted   = $this->getAffectedTables();
+        $list_tables = $this->getOrderBy($this->getForeignKeys());
+
+        Debug::debug($list_tables);
+
+        $tables_impacted = $this->getAffectedTables();
 
         foreach ($list_tables as $sub_array) {
 
             foreach ($sub_array as $table_name) {
 
+
+                // pourquoi j'ai ecris ça ?
                 if ($table_name === $this->main_table) {
                     continue;
                 }
+
+
+                //get virtual FK and merge to real FK  TODO a déporté dans getVirtualForeignKey
 
                 $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
                     ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
@@ -1578,38 +1516,61 @@ var myChart = new Chart(ctx, {
                         }
 
 
+                        Debug::sql($sql);
+
                         $data = $db->sql_fetch_yield($sql);
 
                         $have_data = false;
                         $sql       = "INSERT IGNORE INTO `".$this->schema_delete."`.`".$this->prefix.$table_name."` (".$primary_keys."".$circular_field.") VALUES ";
 
                         $count = 0;
+
+
+                        $values_sql = array();
+
+
+                        $value_sql = $sql;
                         foreach ($data as $line) {
 
                             $have_data = true;
-                            $sql       .= "('".implode("','", $line)."'".$circular_data."),";
+                            $value_sql .= "('".implode("','", $line)."'".$circular_data."),";
                             $count++;
+
+                            if ($count % 50000 === 0) {
+                                $values_sql[] = rtrim($value_sql, ",").";";
+                                $value_sql    = $sql;
+                            }
                         }
+                        $values_sql[] = rtrim($value_sql, ",").";";
+
+
 
                         if ($circular) {
                             Debug::debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
                         }
 
                         // archivation en fichier plat
+                        
+                        /*
                         if ($have_data) {
                             $sql = rtrim($sql, ",").";";
 
-                            //Debug::$debug = true;
-                            debug($sql);
 
-                            $db->sql_query($sql);
+                            //insertion dans la table de purge
+                            foreach ($values_sql as $sql) {
+                                
+                                Debug::sql($sql);
+                                $db->sql_query($sql);
+                                $this->setAffectedRows($table_name);
+                                
+                                $this->query = array();
+                            }
 
-                            $this->setAffectedRows($table_name);
 
                             //export to file
                             $this->exportToFile($table_name);
                             // fin export
-                        }
+                        }*/
 
                         $loop++;
                     } while ($circular && $count !== 0);
@@ -1618,6 +1579,9 @@ var myChart = new Chart(ctx, {
         }
 
         Debug::checkPoint("Feed delete tables from FKs");
+
+
+        exit;
     }
 
     public function createAllTemporaryTable()
@@ -1741,23 +1705,24 @@ var myChart = new Chart(ctx, {
 
 
             //remove all tables with no father from $this->main_table
-            $fks = $this->removeTableNotImpacted($fks);
+
+            $foreign_keys = $this->removeTableNotImpacted($foreign_keys);
 
 
-            Debug::debug($fks);
+            //Debug::debug($fks);
 
             $level   = array();
             $level[] = $this->table_to_purge;
 
-            $all_childs = $this->addChild($fks, $this->main_table, array($this->main_table));
+            $all_childs = $this->addChild($foreign_keys, $this->main_table, array($this->main_table));
 
 
             Debug::debug($all_childs);
 
-            $fks = $this->filterFkWithChildren($all_childs, $fks);
+            $foreign_keys = $this->filterFkWithChildren($all_childs, $foreign_keys);
 
 
-            $array = $fks;
+            $array = $foreign_keys;
 
 
             // test des tables qui boucle sur elle même
@@ -1829,10 +1794,10 @@ var myChart = new Chart(ctx, {
                     if (!$cas_found) {
                         echo "\n";
 
-                        debug($temp);
-                        debug($tab2);
-                        debug($level);
-                        debug($array);
+                        Debug::debug($temp);
+                        Debug::debug($tab2);
+                        Debug::debug($level);
+                        Debug::debug($array);
 
 
                         $tables = array();
@@ -2050,6 +2015,8 @@ var myChart = new Chart(ctx, {
 
                 $fields_list = implode(",", $fields);
 
+                
+                //TODO : generer par batch de 50 000
                 $query = "INSERT IGNORE INTO ".$table." (".$fields_list.") VALUES ".$this->get_rows($res).";\n";
 
                 $this->testDirectory($this->backup_dir);
@@ -2303,8 +2270,8 @@ var myChart = new Chart(ctx, {
                 $err = $default->sql_save($archive);
 
                 if (!$err) {
-                    debug($archive);
-                    debug($default->sql_error());
+                    Debug::debug($archive);
+                    Debug::debug($default->sql_error());
 
                     exit;
                 }
@@ -2341,17 +2308,8 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-        $version  = $db->getVersion();
-        $provider = $db->getServerType();
-        Debug::debug($version);
 
-        if (version_compare($version, '5.5.21') >= 0 && $provider === "MariaDB") {
-            $sql = "SET @@skip_replication = ON;";
-            $db->sql_query($sql);
-            Debug::sql($sql);
-        } else {
-            Debug::debug(Color::getColoredString("SET @@skip_replication = ON; in not spupported ! be carrfull if you want an history server as Slave !", "yellow"));
-        }
+        $this->skipReplication($db);
 
         $sql = "CREATE DATABASE IF NOT EXISTS `".$this->schema_delete."`;";
         $db->sql_query($sql);
@@ -3164,7 +3122,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         while ($ob  = $db->sql_fetch_object($res)) {
             $remote_link = $this->di['db']->sql($ob->name);
 
-            $sql = "SELECT `REFERENCED_TABLE_NAME` as `refrenceTable`,`TABLE_NAME` as `tableName` FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            $sql = "SELECT `REFERENCED_TABLE_NAME` as `refrence_table`,`TABLE_NAME` as `table_name` FROM `information_schema`.`KEY_COLUMN_USAGE` "
                 ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
                 ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
                 ."AND `REFERENCED_TABLE_NAME` IS NOT NULL;";
@@ -3175,11 +3133,28 @@ objDiv.scrollTop = objDiv.scrollHeight;
             $order_to_feed = array();
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $order_to_feed[$ob->refrenceTable][] = $ob->tableName;
+                $order_to_feed[$ob->refrence_table][] = $ob->table_name;
             }
 
 
             echo json_encode($order_to_feed);
+        }
+    }
+
+    public function skipReplication($db)
+    {
+
+
+        if ($db->checkVersion(array("MariaDB" => "5.5.21"))) {
+
+            $sql = "SET @@skip_replication = ON;";
+            $db->sql_query($sql);
+            Debug::sql($sql);
+
+            return true;
+        } else {
+            Debug::debug(Color::getColoredString("SET @@skip_replication = ON; in not spupported ! be carrfull if you want an history server as Slave !", "yellow"));
+            return false;
         }
     }
 }
