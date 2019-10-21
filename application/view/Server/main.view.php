@@ -129,29 +129,38 @@ if (!empty($data['servers'])) {
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
         if (empty($server['is_available']) && $server['is_monitored'] === "1") {
-            $style = 'background-color:#F2DEDE; color:#000';
+           $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
         }
 
         // cas des warning
         if ($server['is_available'] == -1 && $server['is_monitored'] === "1") {
-            $style = 'background-color:#FCF8E3; color:#000000';
+
+            $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
+            //$style = 'gg';
         }
 
         // acknoledge
         if ($server['is_acknowledged'] !== "0") {
-            $style = 'background-color:#DFF0D8; color:#999999';
+            $style = 'background-color:rgb(92, 184, 92, 0.7); color:#666666';
         }
 
         // serveur non monitoré
         if (empty($server['is_monitored'])) {
-            $style = 'background-color:#D9EDF7; color:#999';
+            $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
         }
 
+
+
+
+        $alternate = 'alternate';
+
         if (!empty($style)) {
+            $alternate = '';
+
             $style .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
         }
 
-        echo '<tr>';
+        echo '<tr class="'.$alternate.'">';
         echo '<td style="'.$style.'">'.$i.'</td>';
         echo '<td style="'.$style.'">'.$server['id'].'</td>';
         echo '<td style="'.$style.'">';
@@ -237,13 +246,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-            <?php
-            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+                        <?php
+                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-            echo Form::input("check", "all", $computed);
-            ?>
+                        echo Form::input("check", "all", $computed);
+                        ?>
                         <span></span>
                     </label>
                 </div>
