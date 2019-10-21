@@ -13,10 +13,17 @@ font-size: 13px;
 #glial-title > h2 {margin:0; padding:0;}
 
 
-table.table tr:nth-child(even)  td{
- background-color: #eee;
+table.table tr  td{
+  background-color: #fff; 
   border: 1px solid #fff !important;
 }
+
+
+table.table tr.alternate:nth-child(even)  td{
+  background-color: #eee; 
+  border: 1px solid #fff !important;
+}
+
 
 
 

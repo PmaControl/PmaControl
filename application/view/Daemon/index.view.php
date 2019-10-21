@@ -27,7 +27,7 @@ echo '</tr>';
 
 foreach ($data['daemon'] as $daemon) {
 
-    echo '<tr>';
+    echo '<tr class="alternate">';
 
     echo '<td>'.$daemon['name'].'</td>';
     echo '<td>'.$daemon['pid'].'</td>';
