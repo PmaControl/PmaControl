@@ -751,6 +751,7 @@ var myChart = new Chart(ctx, {
             $this->libelle                = $ob->libelle;
             $this->wait_time              = $ob->wait_time_in_sec;
             $this->id_mysql_server        = $ob->id_mysql_server;
+            $this->limit                  = $ob->limit;
         }
 
         $i = 1;
@@ -1318,8 +1319,14 @@ var myChart = new Chart(ctx, {
         $primary_key2 = "`".implode('`, `', $pri)."`";
 
         $sql = "SELECT ".$primary_key." FROM `".$this->main_table."` a ".$this->init_where." LIMIT ".$this->limit.";"; // LOCK IN SHARE MODE
-        $res = $db->sql_query($sql);
 
+
+        Debug::debug($sql);
+        Debug::sql($sql);
+        //SELECT a.`id` FROM `historique_ipe` a WHERE `dateTraitement` <= DATE_ADD(now(), INTERVAL - 6 MONTH) LIMIT 1;  ne marche pas avec sqlformat ?
+
+
+        $res = $db->sql_query($sql);
 
 
         $have_data = false;
@@ -1335,6 +1342,8 @@ var myChart = new Chart(ctx, {
 
         if ($have_data) {
             $sql = rtrim($sql, ",");
+
+            Debug::debug($sql);
             $db->sql_query($sql);
             $this->setAffectedRows($this->main_table);
 
@@ -1428,6 +1437,9 @@ var myChart = new Chart(ctx, {
 
         $tables_impacted = $this->getAffectedTables();
 
+
+        Debug::debug($tables_impacted, '$tables_impacted');
+
         foreach ($list_tables as $sub_array) {
 
             foreach ($sub_array as $table_name) {
@@ -1445,6 +1457,9 @@ var myChart = new Chart(ctx, {
                     ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
                     ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
                     ."AND `TABLE_NAME` ='".$table_name."';";
+
+                Debug::debug($sql);
+
 
                 $res = $db->sql_query($sql);
                 $fks = $db->sql_to_array($res);
@@ -1479,12 +1494,17 @@ var myChart = new Chart(ctx, {
 
                 $fks = array_merge($fks, $fk_circular);
 
+
+
+
                 foreach ($fks as $fk) {
 
 //don't take in consideration the table not impacted by cleaner
-                    if (!in_array($fk['REFERENCED_TABLE_NAME'], $tables_impacted)) {
-                        continue;
-                    }
+
+                    /*
+                      if (!in_array($fk['REFERENCED_TABLE_NAME'], $tables_impacted)) {
+                      continue;
+                      } */
 
                     $pri          = $this->getPrimaryKey($table_name, $this->schema_to_purge);
                     $primary_key  = "a.`".implode('`,a.`', $pri)."`";
@@ -1502,7 +1522,9 @@ var myChart = new Chart(ctx, {
                     do {
 
                         $sql = "SELECT ".$primary_key." FROM `".$this->schema_to_purge."`.`".$table_name."` a
-                    INNER JOIN `".$this->schema_delete."`.`".$this->prefix.$fk['REFERENCED_TABLE_NAME']."` b ON b.`".$fk['REFERENCED_COLUMN_NAME']."` = a.`".$fk['COLUMN_NAME']."`";
+                        INNER JOIN `".$this->schema_delete."`.`".$this->prefix.$fk['REFERENCED_TABLE_NAME']."` b ON b.`".$fk['REFERENCED_COLUMN_NAME']."` = a.`".$fk['COLUMN_NAME']."`";
+
+
 
                         if ($circular) {
                             $sql .= " WHERE b.`".self::FIELD_LOOP."` = ".($loop - 1).";";
@@ -1526,7 +1548,7 @@ var myChart = new Chart(ctx, {
                         $count = 0;
 
 
-                        $values_sql = array();
+                        $step_sql = "";
 
 
                         $value_sql = $sql;
@@ -1536,52 +1558,56 @@ var myChart = new Chart(ctx, {
                             $value_sql .= "('".implode("','", $line)."'".$circular_data."),";
                             $count++;
 
-                            if ($count % 50000 === 0) {
-                                $values_sql[] = rtrim($value_sql, ",").";";
-                                $value_sql    = $sql;
+                            if ($count % 10000 === 0) {
+
+                                $step_sql = rtrim($value_sql, ",").";";
+
+                                Debug::sql($step_sql);
+
+                                $db->sql_query($step_sql);
+                                $this->setAffectedRows($table_name);
+
+                                Debug::debug($count, "Nombre de lignes");
+
+
+                                $value_sql = $sql;
                             }
                         }
-                        $values_sql[] = rtrim($value_sql, ",").";";
-
 
 
                         if ($circular) {
                             Debug::debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
                         }
 
-                        // archivation en fichier plat
-                        
-                        /*
-                        if ($have_data) {
-                            $sql = rtrim($sql, ",").";";
 
+
+
+                        if ($have_data) {
+                            $step_sql = rtrim($value_sql, ",").";";
 
                             //insertion dans la table de purge
-                            foreach ($values_sql as $sql) {
-                                
-                                Debug::sql($sql);
-                                $db->sql_query($sql);
-                                $this->setAffectedRows($table_name);
-                                
-                                $this->query = array();
-                            }
 
+                            Debug::sql($step_sql);
+                            $db->sql_query($step_sql);
+                            $this->setAffectedRows($table_name);
+                            Debug::debug($count, "Nombre de lignes");
 
-                            //export to file
-                            $this->exportToFile($table_name);
-                            // fin export
-                        }*/
+                            $this->query = array();
+                        }
 
                         $loop++;
                     } while ($circular && $count !== 0);
+
+
+                    // archivation en fichier plat
+                    //export to file
+                    //$this->exportToFile($table_name);
+                    // fin export
                 }
             }
         }
 
         Debug::checkPoint("Feed delete tables from FKs");
-
-
-        exit;
     }
 
     public function createAllTemporaryTable()
@@ -1882,18 +1908,25 @@ var myChart = new Chart(ctx, {
 
                 $field = implode(" ", $join);
 
-                $sql = "DELETE a FROM ".$table." a
-                  INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";";
 
-                $db->sql_query($sql);
+                //do {
+                    $sql = "DELETE a FROM ".$table." a
+                  INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";"; // LIMIT 50000
+
+                    Debug::sql($sql);
+                    $db->sql_query($sql);
 
 
-                if (end($db->query)['rows'] == "-1") {
+                    $affected_rows = end($db->query)['rows'];
+
+                    if ($affected_rows == "-1") {
 
 
-                    $this->logger->error('[id:'.$this->id_cleaner.'][FOREIGN KEY][pid:'.getmypid().'] have to update lib of cleaner or order of table set in param'.$sql);
-                    throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
-                }
+                        $this->logger->error('[id:'.$this->id_cleaner.'][FOREIGN KEY][pid:'.getmypid().'] have to update lib of cleaner or order of table set in param'.$sql);
+                        throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
+                    }
+                //} while ($affected_rows > 0);
+
 
                 $sql = "TRUNCATE TABLE `".$this->schema_delete."`.`".$this->prefix.$table."`;";
                 $db->sql_query($sql);
@@ -2015,7 +2048,7 @@ var myChart = new Chart(ctx, {
 
                 $fields_list = implode(",", $fields);
 
-                
+
                 //TODO : generer par batch de 50 000
                 $query = "INSERT IGNORE INTO ".$table." (".$fields_list.") VALUES ".$this->get_rows($res).";\n";
 
@@ -2174,7 +2207,7 @@ var myChart = new Chart(ctx, {
     {
         $list = $this->getOrderBy($this->getForeignKeys());
 
-        Debug::debug($list);
+        //Debug::debug($list);
 
 
         $tables = array();
@@ -2689,6 +2722,7 @@ var myChart = new Chart(ctx, {
             $_GET['cleaner_main']['limit']                  = $ob->limit;
             $_GET['cleaner_main']['is_crypted']             = $ob->is_crypted;
 
+
             $_GET['id_mysql_server'] = $ob->id_mysql_server;
 
             $data = $this->getDatabaseByServer(array($ob->id_mysql_server));
@@ -2716,6 +2750,9 @@ var myChart = new Chart(ctx, {
     public function view($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
+
+
+
 
         $this->title = '<span class="glyphicon glyphicon-eye-open"></span> '.__('View');
 
@@ -2766,6 +2803,7 @@ var myChart = new Chart(ctx, {
         $db2 = $this->di['db']->sql($this->link_to_purge);
 
 
+        $db_origin = $db->db;
         $db2->sql_select_db($data['database']);
 
         $sql2 = "explain ".$sql;
@@ -2805,9 +2843,11 @@ var myChart = new Chart(ctx, {
         }
         $data['id_cleaner'] = $id_cleaner;
 
-        $data['estimation'] = floor($data['nb_line_to_purge'] / 1000) * (5 + $data['wait_time_in_sec']);
+        $data['estimation'] = floor($data['nb_line_to_purge'] / $data['limit']) * (5 + $data['wait_time_in_sec']);
 
 
+        // in case cleaner on Pmacontrol to switch back to DB of PmaControl
+        $db->sql_select_db($db_origin);
         $this->set('data', $data);
     }
 
@@ -3086,7 +3126,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
             }
         }
 
-        Debug::debug($foreign_keys, "sdghqwsdgf");
 
         return $foreign_keys;
     }
@@ -3147,9 +3186,10 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         if ($db->checkVersion(array("MariaDB" => "5.5.21"))) {
 
-            $sql = "SET @@skip_replication = ON;";
+            $sql = 'SET @@skip_replication = ON;';
+            Debug::debug(Color::getColoredString($sql, "yellow"));
+
             $db->sql_query($sql);
-            Debug::sql($sql);
 
             return true;
         } else {
