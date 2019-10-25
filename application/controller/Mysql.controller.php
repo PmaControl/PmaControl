@@ -856,17 +856,17 @@ class Mysql extends Controller
 
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
 
-
+/*
         $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
             'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
-
+/**/
 
         //$filter = array();
 
-
+/*
         $sql .= " AND TABLE_NAME in('commande_services','flux_commande_acces','service','histo_etape_commande_service','reseau','dsp','operateur','adresse','local',"
             ."'batiment','equipement','site','crmad_services','local','adresse','etape_commande_service','cr','crmes')";
-
+*/
         $tables = $db->sql_fetch_yield($sql);
 
         if ($fp = fopen($path.'/'.$file.'.dot', "w")) {
@@ -931,7 +931,7 @@ class Mysql extends Controller
                 foreach ($contraints as $contraint) {
 
 
-                    
+                    /*
                     if (!in_array($contraint['REFERENCED_TABLE_NAME'], $filter)) {
                         continue;
                     }
@@ -939,7 +939,7 @@ class Mysql extends Controller
                     if (!in_array($contraint['TABLE_NAME'], $filter)) {
                         continue;
                     }
-
+                    */
 
                     if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge)) {
                         $color = "#337ab7";

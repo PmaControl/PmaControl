@@ -1113,7 +1113,7 @@ var myChart = new Chart(ctx, {
     private function getFileinfo($filename)
     {
         $data['size'] = filesize($filename);
-        $data['md5']  = md5_file($filename);
+        $data['md5']  = md5_file($filename); //Warning: md5_file(/data/www/pmacontrol/data/cleaner/1/2019-10-24_log.sql): failed to open stream: Permission denied in /data/www/pmacontrol/application/controller/Cleaner.controller.php on line 1116
 
         return $data;
     }
@@ -1601,7 +1601,9 @@ var myChart = new Chart(ctx, {
 
                     // archivation en fichier plat
                     //export to file
-                    //$this->exportToFile($table_name);
+                    if ($have_data) {
+                        $this->exportToFile($table_name);
+                    }
                     // fin export
                 }
             }
@@ -1910,21 +1912,21 @@ var myChart = new Chart(ctx, {
 
 
                 //do {
-                    $sql = "DELETE a FROM ".$table." a
+                $sql = "DELETE a FROM ".$table." a
                   INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join).";"; // LIMIT 50000
 
-                    Debug::sql($sql);
-                    $db->sql_query($sql);
+                Debug::sql($sql);
+                $db->sql_query($sql);
 
 
-                    $affected_rows = end($db->query)['rows'];
+                $affected_rows = end($db->query)['rows'];
 
-                    if ($affected_rows == "-1") {
+                if ($affected_rows == "-1") {
 
 
-                        $this->logger->error('[id:'.$this->id_cleaner.'][FOREIGN KEY][pid:'.getmypid().'] have to update lib of cleaner or order of table set in param'.$sql);
-                        throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
-                    }
+                    $this->logger->error('[id:'.$this->id_cleaner.'][FOREIGN KEY][pid:'.getmypid().'] have to update lib of cleaner or order of table set in param'.$sql);
+                    throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
+                }
                 //} while ($affected_rows > 0);
 
 
