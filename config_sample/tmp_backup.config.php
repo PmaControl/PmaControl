@@ -1,6 +1,6 @@
 <?php
 
-if (!defined('TEMP_BACKUP')) {
+if (!defined('TMP_BACKUP')) {
     define("TMP_BACKUP", '/data/backup');
 }
 
