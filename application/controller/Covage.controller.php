@@ -2,6 +2,7 @@
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use App\Library\Mysql;
 
 class Covage extends Controller
 {
@@ -58,13 +59,12 @@ class Covage extends Controller
     var $base_de_travail = 'reprise';
 
     /*
-    var $tables          = array('commande_services', 'otelligibilite', 'histo_etape_commande_service',
-        'ArCommandeAcces', 'CrCommandeAcces', 'CmdStoc', 'CrStoc', 'NotifRaccoKo',
-        'CrmadAcces', 'crmes', 'CrAnnulationCommandeAcces', 'AnnulationCommandeAcces',
-        'service_passif', 'NotifEcrasement', 'NotifReprovisionning', 'flux_commande_acces');
-*/
-    
-    var $tables          = array( 'CrStoc');
+      var $tables          = array('commande_services', 'otelligibilite', 'histo_etape_commande_service',
+      'ArCommandeAcces', 'CrCommandeAcces', 'CmdStoc', 'CrStoc', 'NotifRaccoKo',
+      'CrmadAcces', 'crmes', 'CrAnnulationCommandeAcces', 'AnnulationCommandeAcces',
+      'service_passif', 'NotifEcrasement', 'NotifReprovisionning', 'flux_commande_acces');
+     */
+    var $tables = array('CrStoc');
     //  NotifReprovisionning  flux_commande_acces
 
     var $primary_key = array('');
@@ -82,13 +82,13 @@ class Covage extends Controller
             }
         }
     }
-
-    public function before($param): void
-    {
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $db->sql_query("CREATE DATABASE IF NOT EXISTS `".$this->base_de_travail."`;");
-        $db->sql_select_db($this->base_de_travail);
-    }
+    /*
+      public function before($param): void
+      {
+      $db = $this->di['db']->sql(DB_DEFAULT);
+      $db->sql_query("CREATE DATABASE IF NOT EXISTS `".$this->base_de_travail."`;");
+      $db->sql_select_db($this->base_de_travail);
+      } */
 
     public function getEnvs()
     {
@@ -220,18 +220,18 @@ class Covage extends Controller
             $sql = 'Create table `'.$table.'` LIKE '.$table.'_'.$this->destination.';';
             $db->sql_query($sql);
 
-            
+
             $pk          = $this->getPrimaryKey($this->base_de_travail, $table.'_'.$this->destination);
             $primary_key = $pk[0];
 
             $all_fields = $this->getFields($this->base_de_travail, $table.'_'.$this->source);
 
-            $fields = "a.`".implode('`, a.`', $all_fields)."`";
+            $fields  = "a.`".implode('`, a.`', $all_fields)."`";
             $libelle = implode(',', $all_fields);
 
             $sql = "INSERT INTO ".$table." (".$libelle.")
                 SELECT ".$fields." "
-                . "FROM `".$table.'_'.$this->source.'` a '
+                ."FROM `".$table.'_'.$this->source.'` a '
                 .'LEFT JOIN `'.$table.'_'.$this->destination.'` b ON a.`'.$primary_key.'` = b.`'.$primary_key.'` '
                 .'WHERE b.`'.$primary_key.'` IS NULL';
 
@@ -243,8 +243,6 @@ class Covage extends Controller
 
     public function getFields($database, $table)
     {
-        Debug::parseDebug($param);
-
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT COLUMN_NAME as colonne
@@ -261,5 +259,91 @@ class Covage extends Controller
         }
 
         return $fields;
+    }
+
+    public function createTableSpider($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $backend  = $param[0];
+        $database = $param[1];
+        $table    = $param[2];
+
+
+        Debug::parseDebug($param);
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = 'create table `'.$database.'`.`'.$table.'` engine=spider '
+            .'comment=\'wrapper "mysql", srv "'.$backend.'", table "'.$table.'"\';';
+
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    }
+
+    public function createDbLink($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        $backend              = $param[0];
+        $id_mysql_destination = $param[1];
+        $database_destination = $param[2];
+
+        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $name       = Mysql::getDbLink($db, $id_mysql_destination);
+        $remote_dst = $this->di['db']->sql($name);
+
+
+
+        Debug::debug($param);
+
+
+        $host = $this->getInfoFromBackend($backend, $id_mysql_destination);
+
+        Debug::debug($host);
+
+        $sql = "select * from mysql_server where ip='".$host['Host']."' and port='".$host['Port']."'";
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $remote_src = $this->di['db']->sql($ob->name);
+
+            $remote_src->sql_select_db($host['Db']);
+            $tables = $remote_src->getListTable()['table'];
+
+
+            Debug::debug($tables);
+
+            foreach ($tables as $table) {
+                $this->createTableSpider(array($backend, $database_destination, $table));
+                sleep(1);
+            }
+        }
+    }
+
+    public function getInfoFromBackend($backend, $id_mysql_server)
+    {
+
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $name   = Mysql::getDbLink($db, $id_mysql_server);
+        $remote = $this->di['db']->sql($name);
+
+        $sql = "select * from mysql.servers where Server_name='".$backend."';";
+        Debug::debug($sql);
+        
+        
+        $res = $remote->sql_query($sql);
+
+        while ($arr = $remote->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            return $arr;
+        }
+        
+        
+        throw new \Exception("PMACTRL-581 : Impossible to find this backend : '".$backend."'");
     }
 }
