@@ -9,10 +9,26 @@ use App\Library\Debug;
 class Tree extends Controller
 {
 
-    public function index()
+    public function index($param)
     {
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+
+
+        if (empty($param[0])) {
+            $param[0] = 1;
+        }
+
+
+        $data['id_menu'] = $param[0];
+
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            if (!empty($_POST['menu']['id'])) {
+                header('location: '.LINK.__CLASS__.'/'.__FUNCTION__.'/'.$_POST['menu']['id']);
+            }
+        }
 
         /*
           $this->di['js']->code_javascript('$(function () {  $(\'[data-toggle="popover"]\').popover({trigger:"hover"}) });');
@@ -47,7 +63,7 @@ class Tree extends Controller
         }
 
 
-        $data['id_menu'] = 1;
+        //$data['id_menu'] = 1;
 
         $sql2 = "SELECT * FROM menu WHERE group_id=".$data['id_menu']." ORDER BY bg ASC";
         $res2 = $db->sql_query($sql2);
@@ -108,7 +124,7 @@ class Tree extends Controller
 
         $tree->up($id);
 
-        $this->debugShowQueries();
+        Debug::debugShowQueries($db); // <= ici
 
         header("location: ".LINK."tree/index/".$id_menu);
     }

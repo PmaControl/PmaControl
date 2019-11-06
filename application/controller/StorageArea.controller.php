@@ -12,12 +12,17 @@ use phpseclib\Net\SFTP;
 use \App\Library\Debug;
 use \App\Library\Post;
 
-class StorageArea extends Controller {
+class StorageArea extends Controller
+{
 
-    public function index($param) {
-        $this->title = __("Storage area");
-        $this->ariane = " > " . __("Backup") . " > " . $this->title;
+    public function index($param)
+    {
+
         $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'StorageArea/index.js'));
+
 
         if (empty($param[0])) {
             $data['menu'] = "listStorage";
@@ -34,7 +39,8 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
-    public function add($param) {
+    public function add($param)
+    {
 
 //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
@@ -59,13 +65,13 @@ class StorageArea extends Controller {
 
             $db = $this->di['db']->sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id =" . $storage_area['backup_storage_area']['id_ssh_key'] . "";
+            $sql = "SELECT * FROM ssh_key WHERE id =".$storage_area['backup_storage_area']['id_ssh_key']."";
 
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
                 $ssh_private_key = App\Library\Chiffrement::decrypt($ob->private_key);
-                $ssh_user = $ob->user;
+                $ssh_user        = $ob->user;
             }
 
             // clef ssh ou password ?
@@ -83,11 +89,11 @@ class StorageArea extends Controller {
                 $elems = Post::getToPost();
 
                 $title = I18n::getTranslation(__("Failed to connect on ssh/scp"));
-                $msg = I18n::getTranslation(__("Please check your hostname and you credentials !"));
+                $msg   = I18n::getTranslation(__("Please check your hostname and you credentials !"));
 
                 set_flash("error", $title, $msg);
 
-                header("location: " . LINK . "storageArea/add/" . $elems);
+                header("location: ".LINK."storageArea/add/".$elems);
                 exit;
             }
 
@@ -96,37 +102,37 @@ class StorageArea extends Controller {
             if (!$id_storage_area) {
 
 
-                $error = $db->sql_error();
+                $error             = $db->sql_error();
                 $_SESSION['ERROR'] = $error;
 
                 $title = I18n::getTranslation(__("Fail to add this storage area"));
-                $msg = I18n::getTranslation(__("One or more problem came when you try to add this storage, please verify your informations"));
+                $msg   = I18n::getTranslation(__("One or more problem came when you try to add this storage, please verify your informations"));
 
                 set_flash("error", $title, $msg);
 
                 $elems = Post::getToPost();
 
-                header("location: " . LINK . "storageArea/add/" . $elems);
+                header("location: ".LINK."storageArea/add/".$elems);
                 exit;
             } else {
 
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                $cmd = $php . " " . GLIAL_INDEX . " StorageArea getStorageSpace " . $id_storage_area . "";
+                $cmd = $php." ".GLIAL_INDEX." StorageArea getStorageSpace ".$id_storage_area."";
                 shell_exec($cmd);
 
                 $title = I18n::getTranslation(__("Successfull"));
-                $msg = I18n::getTranslation(__("You storage area has been successfull added !"));
+                $msg   = I18n::getTranslation(__("You storage area has been successfull added !"));
 
                 set_flash("success", $title, $msg);
-                header("location: " . LINK . "storageArea/listStorage");
+                header("location: ".LINK."storageArea/listStorage");
                 exit;
             }
         }
 
 
         $this->di['js']->addJavascript(array("jquery.browser.min.js", "jquery.autocomplete.min.js"));
-        $this->di['js']->code_javascript('$("#backup_storage_area-id_geolocalisation_city-auto").autocomplete("' . LINK . 'user/city/none>none", {
+        $this->di['js']->code_javascript('$("#backup_storage_area-id_geolocalisation_city-auto").autocomplete("'.LINK.'user/city/none>none", {
 		extraParams: {
 			country: function() {return $("#backup_storage_area-id_geolocalisation_country").val();}
 		},
@@ -148,8 +154,8 @@ class StorageArea extends Controller {
 
 		');
 
-        $sql = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
-        $res = $db->sql_query($sql);
+        $sql                             = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
+        $res                             = $db->sql_query($sql);
         $data['geolocalisation_country'] = $db->sql_to_array($res);
 
 
@@ -159,10 +165,10 @@ class StorageArea extends Controller {
 
 
         $data['ssh_key'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = array();
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->name . " (" . $ob->type . ":" . $ob->bit . " bit) " . $ob->fingerprint;
+        while ($ob              = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->name." (".$ob->type.":".$ob->bit." bit) ".$ob->fingerprint;
 
             $data['ssh_key'][] = $tmp;
         }
@@ -173,7 +179,8 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
-    public function listStorage() {
+    public function listStorage()
+    {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         $sql = "SELECT *,c.libelle as city, a.libelle as name,a.id as id_backup_storage_area
@@ -196,12 +203,13 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
-    public function getStorageSpace($param) {
+    public function getStorageSpace($param)
+    {
 
         Debug::parseDebug($param);
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -209,7 +217,7 @@ class StorageArea extends Controller {
             INNER JOIN `ssh_key` b ON a.`id_ssh_key` = b.id ";
 
         if (!empty($param[0])) {
-            $sql .= " WHERE a.`id` = " . intval($param[0]) . "";
+            $sql .= " WHERE a.`id` = ".intval($param[0])."";
         }
         $sql .= ";";
 
@@ -219,7 +227,7 @@ class StorageArea extends Controller {
 
         foreach ($storages as $storage) {
 
-            $login = $storage['user'];
+            $login   = $storage['user'];
             $key_ssh = App\Library\Chiffrement::decrypt($storage['private_key']);
 
             $rsa = new RSA();
@@ -247,28 +255,28 @@ class StorageArea extends Controller {
                  * awk '{print $2 \" \" $3 \" \" $4 \" \" $5}' => split result by space
                  */
 
-                $cmd = 'cd ' . $storage['path'] . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
+                $cmd       = 'cd '.$storage['path'].' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
                 $resultats = $ssh->exec($cmd);
                 $resultats = preg_replace('`([ ]{2,})`', ' ', $resultats);
-                $results = explode(' ', trim($resultats));
+                $results   = explode(' ', trim($resultats));
 
 
-                $cmd2 = "cd " . $storage['path'] . " && du -s . | awk '{print $1}'";
+                $cmd2           = "cd ".$storage['path']." && du -s . | awk '{print $1}'";
                 $used_by_backup = $ssh->exec($cmd2);
 
-                $data = [];
+                $data                                                   = [];
                 $data['backup_storage_space']['id_backup_storage_area'] = $storage['id'];
-                $data['backup_storage_space']['date'] = date('Y-m-d H:i:s');
-                $data['backup_storage_space']['size'] = $results['1'];
-                $data['backup_storage_space']['used'] = $results['2'];
-                $data['backup_storage_space']['available'] = $results['3'];
-                $data['backup_storage_space']['percent'] = substr(trim($results['4']), 0, -1);
-                $data['backup_storage_space']['backup'] = trim($used_by_backup);
+                $data['backup_storage_space']['date']                   = date('Y-m-d H:i:s');
+                $data['backup_storage_space']['size']                   = $results['1'];
+                $data['backup_storage_space']['used']                   = $results['2'];
+                $data['backup_storage_space']['available']              = $results['3'];
+                $data['backup_storage_space']['percent']                = substr(trim($results['4']), 0, -1);
+                $data['backup_storage_space']['backup']                 = trim($used_by_backup);
 
                 if (!$db->sql_save($data)) {
 
 
-                    debug($cmd . "\n");
+                    debug($cmd."\n");
                     debug($resultats);
                     debug($results);
                     debug($data);
@@ -283,18 +291,20 @@ class StorageArea extends Controller {
         return true;
     }
 
-    public function delete($param) {
+    public function delete($param)
+    {
         $id_backup_storage_area = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql = "DELETE FROM  backup_storage_area WHERE id ='" . $id_backup_storage_area . "'";
+        $db                     = $this->di['db']->sql(DB_DEFAULT);
+        $sql                    = "DELETE FROM  backup_storage_area WHERE id ='".$id_backup_storage_area."'";
 
         $db->sql_query($sql);
-        header("location: " . LINK . "StorageArea/");
+        header("location: ".LINK."StorageArea/index");
     }
 
-    public function menu($param) {
+    public function menu($param)
+    {
 
-        
+
 
         if (empty($param[0])) {
             $data['menu'] = "listStorage";
@@ -308,4 +318,21 @@ class StorageArea extends Controller {
         $this->set("data", $data);
     }
 
+    public function update($param)
+    {
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+
+        $sql = "UPDATE menu SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            header("HTTP/1.0 503 Internal Server Error");
+        }
+    }
 }

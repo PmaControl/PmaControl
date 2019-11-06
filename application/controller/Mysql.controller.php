@@ -169,9 +169,7 @@ class Mysql extends Controller
 
     public function user($params)
     {
-
-        $this->view        = false;
-        $this->layout_name = false;
+        $this->view = false;
 
         $users          = array();
         $user_to_update = array();
@@ -832,9 +830,19 @@ class Mysql extends Controller
         $this->title  = __("The Physical Schemata Panel");
         $this->ariane = " > ".__("MySQL")." > ".$this->title;
 
-        $db = $this->di['db']->sql(str_replace('-', '_', $param[0]));
+
+        $sql = "SELECT name FROM mysql_server WHERE id=".intval($param[0]);
+        $res = $default->sql_query($sql);
+
+        while ($ob = $default->sql_fetch_object($res)) {
+            $name_connect = $ob->name;
+        }
+
+        $db = $this->di['db']->sql($name_connect);
         if (!empty($param[2])) {
             $this->table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
+
+            Debug::debug($this->table_to_purge);
         }
 
         $file_name    = TMP.$param[0]."_".$param[1].".svg";
@@ -846,12 +854,24 @@ class Mysql extends Controller
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-        $sql    = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
+
+/*
+        $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
+            'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
+/**/
+
+        //$filter = array();
+
+/*
+        $sql .= " AND TABLE_NAME in('commande_services','flux_commande_acces','service','histo_etape_commande_service','reseau','dsp','operateur','adresse','local',"
+            ."'batiment','equipement','site','crmad_services','local','adresse','etape_commande_service','cr','crmes')";
+*/
         $tables = $db->sql_fetch_yield($sql);
 
         if ($fp = fopen($path.'/'.$file.'.dot', "w")) {
 
-            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho;  ".PHP_EOL);
+            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho  ".PHP_EOL); //splines=ortho;
 //fwrite($fp, "\t size=\"10,1000\";");
 
             fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);
@@ -875,6 +895,7 @@ class Mysql extends Controller
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
 
+                /*
                 $sql = "SELECT * FROM information_schema.`COLUMNS`
                     WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION";
 
@@ -883,6 +904,8 @@ class Mysql extends Controller
                 foreach ($columns as $column) {
                     fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td></tr>'.PHP_EOL);
                 }
+                 * 
+                 */
 
                 fwrite($fp, '</table>> ];'.PHP_EOL);
             }
@@ -893,11 +916,33 @@ class Mysql extends Controller
             $ob  = $db->sql_fetch_object($res);
 
             if ($ob->cpt === "1") {
+
+
+                $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
+                    ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+                    ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+                    ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
+
+
+                /*
                 $sql        = "SELECT * FROM information_schema.`REFERENTIAL_CONSTRAINTS`
                 WHERE CONSTRAINT_SCHEMA ='".$param[1]."' AND UNIQUE_CONSTRAINT_SCHEMA ='".$param[1]."'";
+                 * 
+                 */
                 $contraints = $db->sql_fetch_yield($sql);
 
                 foreach ($contraints as $contraint) {
+
+
+                    /*
+                    if (!in_array($contraint['REFERENCED_TABLE_NAME'], $filter)) {
+                        continue;
+                    }
+
+                    if (!in_array($contraint['TABLE_NAME'], $filter)) {
+                        continue;
+                    }
+                    */
 
                     if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge)) {
                         $color = "#337ab7";
@@ -906,7 +951,11 @@ class Mysql extends Controller
                     }
 
                     fwrite($fp,
-                        "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME'].'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" label =""  edgetarget="" edgeURL=""];'.PHP_EOL);
+                        "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME']
+                        .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" 
+                          edgetarget="" edgeURL=""];'.PHP_EOL);
+                    
+                    // label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME'].'"
                 }
             } else {
                 $data['NO_FK'] = 1;
@@ -1290,20 +1339,15 @@ class Mysql extends Controller
 
     public function after($param)
     {
-        if (!IS_CLI) {
-            $this->layout_name = 'pmacontrol';
-//$this->di['js']->addJavascript(array("https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"));
-        }
+        
     }
 
     public function generate_config()
     {
-
-        $this->layout_name = 'pmacontrol';
-        $db                = $this->di['db']->sql(DB_DEFAULT);
-        $this->db_default  = $db;
-        $this->title       = __("Configurator");
-        $this->ariane      = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
+        $db               = $this->di['db']->sql(DB_DEFAULT);
+        $this->db_default = $db;
+        $this->title      = __("Configurator");
+        $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
     }
 
     public function add($param)
@@ -1334,8 +1378,8 @@ class Mysql extends Controller
                 if ($ret !== true) {
 
 
-                    debug($_POST);
-                    debug($ret);
+                    //debug($_POST);
+                    //debug($ret);
 
                     $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
                     $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
@@ -1350,14 +1394,13 @@ class Mysql extends Controller
 
                 $table['mysql_server'] = $_POST['mysql_server'];
 
-                $table['mysql_server']['port']                = $data['port'] ?? 3306;
+                $table['mysql_server']['port']                = $_POST['mysql_server']['port'] ?? 3306;
                 $table['mysql_server']['ip']                  = $table['mysql_server']['ip'];
                 $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
                         array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
-                $table['mysql_server']['hostname']            = Mysql2::getHostname("@hostname",
-                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
-                $table['mysql_server']['passwd']              = Mysql2::crypt($table['mysql_server']['password']);
+                $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
+                $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = "1";
@@ -1564,5 +1607,38 @@ class Mysql extends Controller
 
 
         print_r($parsed);
+    }
+
+    public function getAlias($db)
+    {
+
+        $default = $this->di['db']->sql(DB_DEFAULT);
+
+        $slaves = $db->isSlave();
+
+        foreach ($slaves as $slave) {
+
+
+            if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {
+
+
+                $list_ip_destinations = trim(shell_exec("getent hosts ".$slave['Master_Host']." | awk '{print $1}'"));
+
+                $ips = explode("\n", $list_ip_destinations);
+
+                foreach ($ips as $ip_destination) {
+
+
+                    if (!filter_var($ip_destination, FILTER_VALIDATE_IP)) {
+
+                        $data['alias_dns']['dns']         = $slave['Master_Host'];
+                        $data['alias_dns']['port']        = $slave['Master_Port'];
+                        $data['alias_dns']['destination'] = $ip_destination;
+
+                        $default->sql_save($data);
+                    }
+                }
+            }
+        }
     }
 }

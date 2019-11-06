@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Index
  *
@@ -19,6 +18,17 @@
  * @since         Gliale(tm) v 0.1
  * @license       MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
+
+
+//to know if we are in cli
+define('IS_CLI', PHP_SAPI === 'cli');
+
+
+if (!IS_CLI) {
+    //include ("exception.php");
+    $ScreenError = 1;
+}
+
 try {
 
     /*
@@ -33,8 +43,8 @@ try {
 
     define("TIME_START", microtime(true));
 
-//to know if we are in cli
-    define('IS_CLI', PHP_SAPI === 'cli');
+
+    
 
 //Use the DS to separate the directories in other defines
     define('DS', DIRECTORY_SEPARATOR);
@@ -50,8 +60,8 @@ try {
             define('ROOT', dirname(dirname(dirname(htmlspecialchars($_SERVER["SCRIPT_FILENAME"], ENT_QUOTES, "utf-8")))));
             define('APP_DIR', dirname(dirname(htmlspecialchars($_SERVER["SCRIPT_FILENAME"], ENT_QUOTES, "utf-8"))));
         } else {
-            define('ROOT', dirname(dirname(dirname($_SERVER["PWD"] . DS . $_SERVER["SCRIPT_FILENAME"]))));
-            define('APP_DIR', dirname(dirname($_SERVER["PWD"] . DS . $_SERVER["SCRIPT_FILENAME"])));
+            define('ROOT', dirname(dirname(dirname($_SERVER["PWD"].DS.$_SERVER["SCRIPT_FILENAME"]))));
+            define('APP_DIR', dirname(dirname($_SERVER["PWD"].DS.$_SERVER["SCRIPT_FILENAME"])));
         }
     } else {
         define('ROOT', dirname(dirname(dirname(htmlspecialchars($_SERVER["SCRIPT_FILENAME"], ENT_QUOTES, "utf-8")))));
@@ -59,34 +69,33 @@ try {
     }
 
 //temp directory
-    define("TMP", ROOT . DS . "tmp" . DS);
-    define("DATA", ROOT . DS . "data" . DS);
+    define("TMP", ROOT.DS."tmp".DS);
+    define("DATA", ROOT.DS."data".DS);
 
 //The actual directory name for the "config".
-    define('CONFIG', ROOT . DS . "configuration" . DS);
+    define('CONFIG', ROOT.DS."configuration".DS);
 
 //The actual directory name for the extern "library".
-    define('LIBRARY', ROOT . DS . "library" . DS);
+    define('LIBRARY', ROOT.DS."library".DS);
 
 //The absolute path to the "glial" directory.
-    define('CORE_PATH', ROOT . DS);
-    define('LIB', CORE_PATH . "lib" . DS);
+    define('CORE_PATH', ROOT.DS);
+    define('LIB', CORE_PATH."lib".DS);
 
 //The absolute path to the webroot directory.
-    define('WEBROOT_DIR', basename(dirname(__FILE__)) . DS);
+    define('WEBROOT_DIR', basename(dirname(__FILE__)).DS);
 
 
-if (! IS_CLI)
-{
-    require(CONFIG . "webroot.config.php");
-    define('IMG', WWW_ROOT . "image" . DS);
-    define('CSS', WWW_ROOT . "css" . DS);
-    define('FILE', WWW_ROOT . "file" . DS);
-    define('VIDEO', WWW_ROOT . "video" . DS);
-    define('JS', WWW_ROOT . "js" . DS);
-}   
-    
-    
+    if (!IS_CLI) {
+        require(CONFIG."webroot.config.php");
+        define('IMG', WWW_ROOT."image".DS);
+        define('CSS', WWW_ROOT."css".DS);
+        define('FILE', WWW_ROOT."file".DS);
+        define('VIDEO', WWW_ROOT."video".DS);
+        define('JS', WWW_ROOT."js".DS);
+    }
+
+
     define('GLIAL_INDEX', __FILE__);
 
 
@@ -95,14 +104,15 @@ if (! IS_CLI)
         //case where navigator ask favicon.ico even if it's not set in your html
         exit;
     } else {
-        if (!include(ROOT . DS . "vendor/glial/glial/Glial/Bootstrap.php")) {
-            trigger_error("Gliale core could not be found. Check the value of CORE_PATH in application/webroot/index.php.  It should point to the directory containing your " . DS . "glial core directory and your " . DS . "vendors root directory.", E_USER_ERROR);
+        if (!include(ROOT.DS."vendor/glial/glial/Glial/Bootstrap.php")) {
+            trigger_error("Gliale core could not be found. Check the value of CORE_PATH in application/webroot/index.php.  It should point to the directory containing your ".DS."glial core directory and your ".DS."vendors root directory.",
+                E_USER_ERROR);
         }
     }
 } catch (Exception $e) {
 
 
-    echo "[" . date("Y-m-d H:i:s") . "][ERROR] " . $e->getMessage(), "\n";
+    echo "[".date("Y-m-d H:i:s")."][ERROR] ".$e->getMessage(), "\n";
 
     $error_code = $e->getCode();
     if ($error_code >= 80) {
@@ -122,7 +132,7 @@ if (! IS_CLI)
     } elseif ($error_code >= 10) {
         $log->debug($e->getMessage());
     } else {
-        $log->log(1,$e->getMessage());
+        $log->log(1, $e->getMessage());
     }
 
 
@@ -136,7 +146,7 @@ if (! IS_CLI)
     }
     if (isset($error_code)) {
 
-	    echo "CODE ERROR : ".$e->getCode()."\n";
+        echo "CODE ERROR : ".$e->getCode()."\n";
 
         exit(1);
     }

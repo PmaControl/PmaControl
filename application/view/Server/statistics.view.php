@@ -6,6 +6,11 @@ function secondsToTime($seconds) {
     return $dtF->diff($dtT)->format('%a days, %h hours, %i minutes and %s seconds');
 }
 
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
+
 echo '<table class="table table-bordered table-striped" id="table">';
 
 

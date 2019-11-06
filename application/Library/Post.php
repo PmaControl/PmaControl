@@ -5,8 +5,8 @@ namespace App\Library;
 class Post
 {
 
-    static public function getToPost(
-)    {
+    static public function getToPost($filter= array())
+    {
         $ret = [];
 
         //debug($_POST);
@@ -15,11 +15,10 @@ class Post
             foreach ($elems as $key => $val) {
 
                 if (is_array($val)) {
-                    $val = "[".implode(",",$val)."]";
+                    $val = "[".implode(",", $val)."]";
                 }
 
-
-                $ret[] = $main.":".$key.":".(str_replace("/","[DS]", $val));
+                $ret[] = $main.":".$key.":".(str_replace("/", "[DS]", $val));
             }
         }
 

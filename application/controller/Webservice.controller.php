@@ -9,15 +9,16 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
 use App\Library\Mysql;
+use App\Library\Json;
 
 class Webservice extends Controller
 {
+    var $return = array();
 
     public function pushServer($param)
     {
         $this->view        = false;
         $this->layout_name = false;
-
 
         Debug::parseDebug($param);
 
@@ -31,42 +32,53 @@ class Webservice extends Controller
 
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        Debug::debug($id_user_main, "Authorized Access");
 
-            if ($id_user_main !== false) {
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {
+
+            if ($id_user_main === true) {
 
                 if (!empty(end($_FILES)['tmp_name'])) {
 
+                    $this->return['authenticate'] = "ok";
+
+                    Debug::debug(end($_FILES)['tmp_name']);
+
                     $this->parseServer(end($_FILES)['tmp_name']);
 
-
                     //$this->pushFile(trim(file_get_contents()));
-
-                    echo '{"authenticate": "ok"}'."\n";
                 } else {
-                    echo '{"authenticate": "ok","json":"not loaded"}'."\n";
+
+                    $this->return['authenticate'] = "ok";
+                    $this->return['error'][]      = "Impossible to load json";
                 }
             } else {
-                echo '{"authenticate": "ko"}'."\n";
+                $this->return['authenticate'] = "ko";
+                $this->return['error'][]      = "Unauthorized access";
+
                 //echo "KO\n";
             }
 
+            $db = $this->di['db']->sql(DB_DEFAULT);
             Mysql::onAddMysqlServer($db);
+
             $this->saveHistory($id_user_main);
+        } else {
+
+            $this->return['error'][] = "This request method is not allowed : ".$_SERVER['REQUEST_METHOD'];
         }
-        
-        
+
+        echo json_encode($this->return, JSON_PRETTY_PRINT)."\n";
 
         //echo "\n";
     }
 
     public function importFile($param)
     {
-
         Debug::parseDebug($param);
 
         $filename = $param[0] ?? "";
-
         $this->parseServer($filename);
     }
 
@@ -74,43 +86,60 @@ class Webservice extends Controller
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM webservice_user WHERE user = '".$db->sql_real_escape_string($user)."'";
+        $sql = "SELECT * FROM webservice_user WHERE user = '".$db->sql_real_escape_string($user)."' AND is_enabled=1";
+        Debug::sql($sql);
+
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            if ($this->unCrypt($ob->password) != $password) {
-                return false;
+
+            Debug::debug($ob, "value");
+
+            $pw_from_db = Crypt::decrypt($ob->password, CRYPT_KEY);
+
+
+            Debug::debug($pw_from_db, "remote");
+            Debug::debug($password, "database");
+
+
+            if ($pw_from_db === $password) {
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     private function parseServer($filename)
     {
 
 
-        $data = $this->parseConfig($filename);
+        $data = Json::getDataFromFile($filename);
 
+
+        Debug::debug($data, "data");
+
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        Mysql::set_db($db);
 
 
         foreach ($data as $server_type => $servers) {
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
-                        $this->addMysqlServer($server);
-                        break;
-                    case 'haproxy':
-                        $this->addHaproxyServer($server);
+
+                        Debug::debug($server, "SERVER");
+
+
+                        Mysql::addMysqlServer($server);
                         break;
                 }
             }
         }
 
-
-        Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+        Mysql::generateMySQLConfig($db);
 
         return true;
     }
@@ -127,210 +156,6 @@ class Webservice extends Controller
         echo json_encode(json_decode($json));
 
         //$this->parseServer($json);
-    }
-
-    private function addMysqlServer($data)
-    {
-        //Debug::debug($data);
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-
-        $server                              = array();
-        $server['mysql_server']['id_client'] = $this->getId($data['organization'] ?? "none", "client", "libelle");
-
-
-
-        $server['mysql_server']['id_environment']      = $this->getId($data['environment'], "environment", "key",
-            array("libelle" => ucfirst($data['environment']), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
-        $server['mysql_server']['name']                = str_replace(array('-', '.'), "_", $data['fqdn']);
-        $server['mysql_server']['display_name']        = $this->getHostname($data['display_name'], $data);
-        $server['mysql_server']['ip']                  = $this->getIp($data['fqdn']);
-        $server['mysql_server']['hostname']            = $data['fqdn'];
-        $server['mysql_server']['login']               = $data['login'];
-        $server['mysql_server']['passwd']              = $this->crypt($data['password']);
-        $server['mysql_server']['database']            = $data['database'] ?? "mysql";
-        $server['mysql_server']['is_password_crypted'] = "1";
-        $server['mysql_server']['port']                = $data['port'] ?? 3306;
-
-
-        $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-
-            if (!empty($ob->id)) {
-                $server['mysql_server']['id'] = $ob->id;
-            }
-        }
-
-        Debug::debug($server, "new MySQL");
-
-        $ret = $db->sql_save($server);
-
-        if ($ret) {
-
-            if (empty($server['mysql_server']['id'])) {
-                echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - INSERTED"}';
-            } else {
-                echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "OK - UPDATED"}';
-            }
-
-
-
-            Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-        } else {
-            echo '{"'.$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].'": "KO"}';
-        }
-        
-        
-        
-
-
-
-        return $server;
-    }
-
-    private function addHaproxyServer()
-    {
-        
-    }
-
-    private function addMaxscaleServer()
-    {
-        
-    }
-
-    private function addProxysqlServer()
-    {
-        
-    }
-    /*
-     * to export in Glial::MySQL ?
-     * 
-     */
-
-    private function getId($value, $table_name, $field, $list = array())
-    {
-
-        $list_key = '';
-        $list_val = '';
-
-
-        if (count($list) > 0) {
-            $keys   = array_keys($list);
-            $values = array_values($list);
-
-            $list_key = ",`".implode('`,`', $keys)."`";
-            $list_val = ",'".implode("','", $values)."'";
-        }
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
-        $sql = "IF (SELECT 1 = 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
-BEGIN
-    SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
-END;
-ELSE
-BEGIN
-    INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");
-    SELECT LAST_INSERT_ID() AS id;
-END;
-END IF;";
-
-        Debug::debug(SqlFormatter::highlight($sql), "SQL");
-
-
-        if ($db->sql_multi_query($sql)) {
-
-
-            $i = 1;
-            do {
-
-                if ($i != 1) {
-                    $db->sql_next_result();
-                }
-                $i++;
-
-
-                /* Stockage du premier jeu de résultats */
-                $result = $db->sql_use_result();
-                if ($result) {
-
-                    while ($row = $db->sql_fetch_array($result, MYSQLI_ASSOC)) {
-
-                        if (!empty($row['id'])) {
-                            $id = $row['id'];
-                        }
-                    }
-                }
-            } while ($db->sql_more_results());
-        }
-
-        return $id;
-
-
-        //debug($row['id']);
-        //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
-    }
-
-    function testa()
-    {
-        $id = $this->getId("dgwdfg", "client", "libelle");
-        debug($id);
-    }
-
-    private function getHostname($name, $data)
-    {
-
-
-        if (Debug::$debug) {
-            return $name;
-        }
-
-
-
-        if ($name == "@hostname") {
-
-
-            $db = new mysqli($data['fqdn'], $data['login'], $data['password'], "mysql", $data['port']);
-
-            if ($db) {
-                $res = $db->query('SELECT @@hostname as hostname;');
-
-                while ($ob = $res->fetch_object()) {
-                    $hostname = $ob->hostname;
-                }
-
-                $db->close();
-            }
-        } else {
-            $hostname = $name;
-        }
-
-        return $hostname;
-    }
-
-    private function getIp($hostname)
-    {
-        $ip = shell_exec("dig +short ".$hostname);
-
-        return trim($ip);
-    }
-
-    private function crypt($password)
-    {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::encrypt($password);
-
-        return $passwd;
-    }
-
-    private function unCrypt($password_crypted)
-    {
-        Crypt::$key = CRYPT_KEY;
-        $passwd     = Crypt::decrypt($password_crypted);
-
-        return $passwd;
     }
 
     private function saveHistory($id_user_main)
@@ -361,47 +186,11 @@ END IF;";
     }
     /*     * ************************ */
 
-    public function parseConfig($configFile)
-    {
-
-        if (empty($configFile) || !file_exists($configFile)) {
-            throw new \Exception('PMACTRL-255 : The file '.$configFile.' doesn\'t exit !');
-        }
-
-        $file   = file_get_contents($configFile);
-        $config = json_decode($file, true);
-
-
-        switch (json_last_error()) {
-            case JSON_ERROR_NONE:
-                return $config;
-                break;
-            case JSON_ERROR_DEPTH:
-                $error = 'Maximum stack depth exceeded';
-                break;
-            case JSON_ERROR_STATE_MISMATCH:
-                $error = 'Underflow or the modes mismatch';
-                break;
-            case JSON_ERROR_CTRL_CHAR:
-                $error = 'Unexpected control character found';
-                break;
-            case JSON_ERROR_SYNTAX:
-                $error = 'Syntax error, malformed JSON';
-                break;
-            case JSON_ERROR_UTF8:
-                $error = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-                break;
-            default:
-                $error = 'Unknown error';
-                break;
-        }
-
-
-        throw new \Exception("PMACTRL-254 : JSON : ".$error, 80);
-    }
-
     public function addAccount($param)
     {
+
+        Debug::parseDebug($param);
+
         $filename = $param[0] ?? "";
 
         if (!empty($filename) && file_exists($filename)) {
@@ -412,6 +201,9 @@ END IF;";
         if (!empty($config['webservice'])) {
 
             $db = $this->di['db']->sql(DB_DEFAULT);
+
+
+
 
             foreach ($config['webservice'] as $user) {
 
@@ -427,9 +219,15 @@ END IF;";
                     }
                 }
 
-                $id_client = $this->getId($user['organization'], "client", "libelle");
+                Mysql::set_db($db);
+                $id_client = Mysql::getId($user['organization'], "client", "libelle");
 
-                $sql = "SELECT * FROM `webservice_user` WHERE `user` = '".$user['user']."' AND `host` = '".$user['host']."'";
+
+
+
+                $sql = "SELECT * FROM `webservice_user` WHERE `user` = '".$user['user']."' AND `host` = '".$user['host']."';";
+                Debug::sql($sql);
+
                 $res = $db->sql_query($sql);
 
                 $data = array();
@@ -439,9 +237,12 @@ END IF;";
                 }
 
                 $data['webservice_user']['user']      = $user['user'];
-                $data['webservice_user']['password']  = $this->crypt($user['password']);
+                $data['webservice_user']['password']  = Crypt::encrypt($user['password'], CRYPT_KEY);
                 $data['webservice_user']['host']      = $user['host'];
                 $data['webservice_user']['id_client'] = $id_client;
+
+
+                Debug::debug($data, "Data to inset or refresh");
 
                 $res = $db->sql_save($data);
 
@@ -453,5 +254,27 @@ END IF;";
         } else {
             //show that we don't sert webservice
         }
+    }
+
+    public function index()
+    {
+        //ecran pour gérer les webservice // password
+    }
+
+    private function parseConfig($configFile)
+    {
+        //debug($configFile);
+
+        $config = json_decode(file_get_contents($configFile), true);
+        //$config = Yaml::parse(file_get_contents($configFile));
+        //$config = yaml_parse_file($configFile);
+        //debug($config);
+
+        return $config;
+    }
+
+    public function decrypt($param)
+    {
+        echo Crypt::decrypt($param[0], CRYPT_KEY);
     }
 }

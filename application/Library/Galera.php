@@ -214,6 +214,4 @@ trait Galera {
 
         return $id;
     }
-
-
 }

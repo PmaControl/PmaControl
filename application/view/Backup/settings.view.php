@@ -6,8 +6,13 @@
  */
 
 use \Glial\Html\Form\Form;
-
 use App\Library\Display;
+
+
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
 
 if (empty($data['storage_area'])) {
 
@@ -51,7 +56,15 @@ if (empty($data['storage_area'])) {
         echo '<tr class="edit">';
         echo '<td>'.$i.'</td>';
         echo '<td>'.Display::server($backup_list).'</td>';
-        echo '<td>'.$backup_list['database'].'</td>';
+        echo '<td>';
+
+        if (empty($backup_list['database'])) {
+            echo "<i>ALL DATABASES</i>";
+        } else {
+            echo $backup_list['database'];
+        }
+
+        echo '</td>';
         echo '<td>'.$backup_list['bakcup_server'].'</td>';
         //echo '<td>' . 0 . '</td>';
         //echo '<td>'.$backup_list['nas'].'</td>';

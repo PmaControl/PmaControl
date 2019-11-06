@@ -4,7 +4,6 @@ use Glial\Synapse\Singleton;
 use Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 
-include(CONFIG."translation.config.php");
 
 class Translation extends Controller
 {

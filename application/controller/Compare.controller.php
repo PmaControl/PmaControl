@@ -11,6 +11,9 @@ use \Glial\Sgbd\Sql\Mysql\Parser;
 use \Glial\Sgbd\Sql\Mysql\Comment;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 
+
+//&lrarr;
+
 class Compare extends Controller
 {
 
@@ -30,10 +33,7 @@ class Compare extends Controller
         /*
          * SHOW TABLES
          * SHOW COLUMNS FROM table_name
-         *
          */
-
-        $this->layout_name = 'pmacontrol';
         $db                = $this->di['db']->sql(DB_DEFAULT);
         $this->db_default  = $db;
         $this->title       = __("Compare");
