@@ -12,6 +12,7 @@ use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
 use App\Library\Chiffrement;
+use App\Library\Debug;
 
 trait Scp {
 
@@ -66,8 +67,14 @@ trait Scp {
             $dst_dir = pathinfo($dst)['dirname'];
 
 
+            Debug::debug(pathinfo($dst), "Path_info");
+
             $ssh->exec("mkdir -p " . $dst_dir);
 
+            Debug::debug($dst_dir, "mkdir -p");
+
+
+            $db->sql_close();
             $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
             $data['execution_time'] = round(microtime(true) - $start, 0);
 
@@ -80,8 +87,12 @@ trait Scp {
             $data['pathfile'] = $dst;
 
 
+            Debug::debug($data, "data");
 
             $files = $sftp->rawlist($dst_dir);
+
+
+            Debug::debug($files, "files");
 
             foreach ($files as $file) {
                 if ($file['filename'] === $file_name) {
@@ -102,7 +113,7 @@ trait Scp {
             WHERE a.id = " . $id_backup_storage_area;
         $res = $db->sql_query($sql);
 
-        Crypt::$key = CRYPT_KEY;
+        
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -115,7 +126,7 @@ trait Scp {
 
             
             if (!empty($ob->private_key)) {
-                $pv_key = Chiffrement::decrypt($ob->private_key);
+                $pv_key = Chiffrement::decrypt($ob->private_key, CRYPT_KEY);
             }
 
             $sftp = new SFTP($ob->ip);
@@ -151,5 +162,8 @@ trait Scp {
             return $data;
         } //end while
     }
+
+
+
 
 }

@@ -11,11 +11,12 @@ echo '<tr>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>'.'PID'.'</th>';
 echo '<th>'.__('Date').'</th>';
-echo '<th>'.__('By').'</th>';
 
-echo '<th>'.__("Each").'</th>';
+//echo '<th>'.__('By').'</th>';
+//echo '<th>'.__("Each").'</th>';
 echo '<th>'.__("Thread concurrency").'</th>';
 echo '<th>'.__("Maximum Delay").'</th>';
+echo '<th>'.__("Refresh time").'</th>';
 echo '<th>'.__("Queue number").'</th>';
 echo '<th>'.__("Queue msg").'</th>';
 echo '<th>'.__("Path").'</th>';
@@ -26,15 +27,16 @@ echo '</tr>';
 
 foreach ($data['daemon'] as $daemon) {
 
-    echo '<tr>';
+    echo '<tr class="alternate">';
 
     echo '<td>'.$daemon['name'].'</td>';
     echo '<td>'.$daemon['pid'].'</td>';
     echo '<td>'.$daemon['date'].'</td>';
-    echo '<td>'.'Aurélien LEQUOY'.'</td>';
-    echo '<td>'.'Aurélien LEQUOY'.'</td>';
-    echo '<td>'.$daemon['thread_concurency'].'</td>';
+  //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
+  //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
+    echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
+    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
     echo '<td>'.$daemon['queue_number'].'</td>';
     echo '<td>'.$daemon['nb_msg'].'</td>';
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
@@ -72,4 +74,10 @@ echo '</table>';
 echo ' <div class="btn-group" role="group" aria-label="Default button group">';
 echo '&nbsp;<a href="'.LINK.'Daemon/stopAll/" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
 echo '<a href="'.LINK.'Daemon/startAll" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
+
+
+
 echo '</div>';
+echo '<a href="'.LINK.'Daemon/refresh" type="button" title="Use this if there are troubles after crash of server, can take several seconds" class="btn btn-warning" style="font-size:12px"> <span class="glyphicon glyphicon-refresh" aria-hidden="true" style="font-size:12px"></span> Refresh all</a>';
+
+

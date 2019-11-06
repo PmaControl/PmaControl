@@ -33,13 +33,12 @@ class Architecture extends Controller {
             INNER JOIN architecture c ON c.id = b.id_architecture
             WHERE 1 GROUP BY c.id
          */
+
+        
         
         $data['graphs'] = $db->sql_fetch_yield($sql);
         
         
         $this->set('data', $data);
     }
-
-
-
 }

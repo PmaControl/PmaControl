@@ -11,11 +11,12 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
-class Install extends Controller {
-
+class Install extends Controller
+{
     var $link; /* link mysql server */
 
-    public function out($msg, $type) {
+    public function out($msg, $type)
+    {
         switch ($type) {
             case 'OK':
             case 'true':
@@ -29,7 +30,7 @@ class Install extends Controller {
                 break;
         }
 
-        $ret = $msg . str_repeat(".", 73 - strlen(Color::strip($msg))) . " [ " . $status . " ]" . PHP_EOL;
+        $ret = $msg.str_repeat(".", 73 - strlen(Color::strip($msg)))." [ ".$status." ]".PHP_EOL;
 
         /*
           if (!empty($err)) {
@@ -40,25 +41,27 @@ class Install extends Controller {
         return $ret;
     }
 
-    public function onError() {
+    public function onError()
+    {
 
-        echo PHP_EOL . "To understand what happen : " . Color::getColoredString("glial/tmp/log/error_php.log", "cyan") . PHP_EOL;
-        echo "To resume the setup : " . Color::getColoredString("php composer.phar update", "cyan") . PHP_EOL;
+        echo PHP_EOL."To understand what happen : ".Color::getColoredString("glial/tmp/log/error_php.log", "cyan").PHP_EOL;
+        echo "To resume the setup : ".Color::getColoredString("php composer.phar update", "cyan").PHP_EOL;
         exit(10);
     }
 
-    public function cmd($cmd, $msg) {
+    public function cmd($cmd, $msg)
+    {
         $code_retour = 0;
 
         ob_start();
         passthru($cmd, $code_retour);
 
         if ($code_retour !== 0) {
-            $fine = 'KO';
+            $fine   = 'KO';
             ob_end_flush();
             $return = false;
         } else {
-            $fine = 'OK';
+            $fine   = 'OK';
             ob_end_clean();
             $return = true;
         }
@@ -68,17 +71,20 @@ class Install extends Controller {
         return $return;
     }
 
-    function displayResult($msg, $fine) {
-        echo $this->out(Color::getColoredString("[" . date("Y-m-d H:i:s") . "] ", "purple") . $msg, $fine);
+    function displayResult($msg, $fine)
+    {
+        echo $this->out(Color::getColoredString("[".date("Y-m-d H:i:s")."] ", "purple").$msg, $fine);
     }
 
-    public function anonymous($function, $msg) {
+    public function anonymous($function, $msg)
+    {
         list($fine, $message) = $function($msg);
 
         echo $this->out($message, $fine);
     }
 
-    public function index($param = array()) {
+    public function index($param = array())
+    {
         $this->view = false;
 
         //$title = Hoa\Console\Window::getTitle();
@@ -86,7 +92,7 @@ class Install extends Controller {
 
         echo "\n";
         echo SITE_LOGO;
-        echo Color::getColoredString(SITE_NAME, "green") . " version " . Color::getColoredString(SITE_VERSION, "yellow") . " (" . SITE_LAST_UPDATE . ")\n";
+        echo Color::getColoredString(SITE_NAME, "green")." version ".Color::getColoredString(SITE_VERSION, "yellow")." (".SITE_LAST_UPDATE.")\n";
         echo "Powered by Glial (https://github.com/Glial/Glial)\n";
 
 
@@ -113,14 +119,14 @@ class Install extends Controller {
         $config->load(CONFIG);
 
 
-        $db = $config->get("db");
+        $db  = $config->get("db");
         $_DB = new Sgbd($db);
 
 
         $log = new Logger('Glial');
 
 
-        $file_log = TMP . 'log/glial.log';
+        $file_log = TMP.'log/glial.log';
 
         $handler = new StreamHandler($file_log, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
@@ -136,25 +142,27 @@ class Install extends Controller {
 
         $this->cmd("echo 1", "Testing system & configuration");
 
-        echo Color::getColoredString("\n" . SITE_NAME . " " . SITE_VERSION . " has been successfully installed !\n", "green");
+        echo Color::getColoredString("\n".SITE_NAME." ".SITE_VERSION." has been successfully installed !\n", "green");
         //Hoa\Console\Window::setTitle($title);
     }
 
-    private function prompt($test) {
+    private function prompt($test)
+    {
         echo $test;
         $handle = fopen("php://stdin", "r");
-        $line = fgets($handle);
+        $line   = fgets($handle);
         return $line;
     }
 
-    private function testMysqlServer() {
+    private function testMysqlServer()
+    {
 
         $good = false;
         do {
             echo "Name of connection into configuration/db.config.ini.php : [pmacontrol]\n";
 
             $hostname = trim($this->prompt('Hostname/IP of MySQL [default : 127.0.0.1] : '));
-            $port = trim($this->prompt('Port of MySQL        [default : 3306]      : '));
+            $port     = trim($this->prompt('Port of MySQL        [default : 3306]      : '));
 
             if (empty($port)) {
                 $port = 3306;
@@ -167,15 +175,15 @@ class Install extends Controller {
             $ret = $this->testIpPort($hostname, $port);
 
             if ($ret === true) {
-                $this->cmd("echo 1", "MySQL server : " . $hostname . ":" . $port . " available");
+                $this->cmd("echo 1", "MySQL server : ".$hostname.":".$port." available");
                 $good = true;
             } else {
-                echo Color::getColoredString($ret['errstr'] . " (" . $ret['errno'] . ")", "grey", "red") . "\n";
-                echo "MySQL server : " . $hostname . ":" . $port . " -> " . Color::getColoredString("KO", "grey", "red") . "\n";
-                echo str_repeat("-", 80) . "\n";
+                echo Color::getColoredString($ret['errstr']." (".$ret['errno'].")", "grey", "red")."\n";
+                echo "MySQL server : ".$hostname.":".$port." -> ".Color::getColoredString("KO", "grey", "red")."\n";
+                echo str_repeat("-", 80)."\n";
             }
 
-            $this->cmd("echo 1", "MySQL server : " . $hostname . ":" . $port . " available");
+            $this->cmd("echo 1", "MySQL server : ".$hostname.":".$port." available");
         } while ($good === false);
 
 
@@ -184,12 +192,12 @@ class Install extends Controller {
         $good = false;
 
         do {
-            echo "MySQL account on (" . $hostname . ":" . $port . ")\n";
+            echo "MySQL account on (".$hostname.":".$port.")\n";
 
-            $rl = new Hoa\Console\Readline\Readline ();
+            $rl   = new Hoa\Console\Readline\Readline ();
             $user = $rl->readLine('User     [default : root]    : ');
 
-            $rl = new Hoa\Console\Readline\Password();
+            $rl       = new Hoa\Console\Readline\Password();
             $password = $rl->readLine('Password [default : (empty)] : ');
 
             if (empty($user)) {
@@ -202,8 +210,8 @@ class Install extends Controller {
                 $this->cmd("echo 1", "Login/password for MySQL's server");
                 $good = true;
             } else {
-                echo Color::getColoredString($ret, "grey", "red") . "\n";
-                echo str_repeat("-", 80) . "\n";
+                echo Color::getColoredString($ret, "grey", "red")."\n";
+                echo str_repeat("-", 80)."\n";
             }
 
             sleep(1);
@@ -240,10 +248,10 @@ class Install extends Controller {
         wrong_db:
         $good = false;
         do {
-            echo "Name of database who will be used by PmaConrol\n";
+            echo "Name of database who will be used by PmaControl\n";
 
 
-            $rl = new Hoa\Console\Readline\Readline ();
+            $rl       = new Hoa\Console\Readline\Readline ();
             $database = $rl->readLine('Database     [default : pmacontrol]    : ');
 
             if (empty($database)) {
@@ -257,8 +265,8 @@ class Install extends Controller {
                 $good = true;
                 $this->cmd("echo 1", "Database's name");
             } else {
-                echo Color::getColoredString($ret, "grey", "red") . "\n";
-                echo str_repeat("-", 80) . "\n";
+                echo Color::getColoredString($ret, "grey", "red")."\n";
+                echo str_repeat("-", 80)."\n";
             }
         } while ($good === false);
 
@@ -270,11 +278,11 @@ class Install extends Controller {
         if ($ret === true) {
 
 
-            $this->cmd("echo 1", 'The database "' . mysqli_real_escape_string($this->link, $database) . '" has been created');
+            $this->cmd("echo 1", 'The database "'.mysqli_real_escape_string($this->link, $database).'" has been created');
         } else {
-            echo Color::getColoredString($ret, "black", "red") . "\n";
+            echo Color::getColoredString($ret, "black", "red")."\n";
             goto wrong_db;
-            echo str_repeat("-", 80) . "\n";
+            echo str_repeat("-", 80)."\n";
         }
 
 
@@ -286,31 +294,33 @@ class Install extends Controller {
 
 
         $mysql['hostname'] = $hostname;
-        $mysql['port'] = $port;
-        $mysql['user'] = $user;
+        $mysql['port']     = $port;
+        $mysql['user']     = $user;
         $mysql['password'] = $passwd;
         $mysql['database'] = $database;
         return $mysql;
     }
 
-    private function cadre($text, $elem = '#') {
-        echo str_repeat($elem, 80) . "\n";
-        echo $elem . str_repeat(' ', ceil((80 - strlen($text) - 2) / 2)) . $text . str_repeat(' ', floor((80 - strlen($text) - 2) / 2)) . $elem . "\n";
-        echo str_repeat($elem, 80) . "\n";
+    private function cadre($text, $elem = '#')
+    {
+        echo str_repeat($elem, 80)."\n";
+        echo $elem.str_repeat(' ', ceil((80 - strlen($text) - 2) / 2)).$text.str_repeat(' ', floor((80 - strlen($text) - 2) / 2)).$elem."\n";
+        echo str_repeat($elem, 80)."\n";
     }
 
-    private function importData($server) {
+    private function importData($server)
+    {
         //$path = ROOT."/sql/*.sql";
-        $path = ROOT . "/sql/full/pmacontrol.sql";
+        $path = ROOT."/sql/full/pmacontrol.sql";
 
 
-        Crypt::$key = CRYPT_KEY;
+        Crypt::$key         = CRYPT_KEY;
         $server['password'] = Crypt::decrypt($server['password']);
 
         foreach (glob($path) as $filename) {
             //echo "$filename size ".filesize($filename)."\n";
-            $cmd = "mysql -h " . $server["hostname"] . " -u " . $server['user'] . " -P " . $server['port'] . " -p'" . $server['password'] . "' " . $server['database'] . " < " . $filename . "";
-            $ret = $this->cmd($cmd, "Loading " . pathinfo($filename)['basename']);
+            $cmd = "mysql -h ".$server["hostname"]." -u ".$server['user']." -P ".$server['port']." -p'".$server['password']."' ".$server['database']." < ".$filename."";
+            $ret = $this->cmd($cmd, "Loading ".pathinfo($filename)['basename']);
 
             if ($ret === false) {
                 exit(1);
@@ -318,7 +328,8 @@ class Install extends Controller {
         }
     }
 
-    private function updateConfig($server) {
+    private function updateConfig($server)
+    {
         //update DB config
 
         $config = "
@@ -331,26 +342,28 @@ class Install extends Controller {
 
 [pmacontrol]
 driver=mysql
-hostname=" . $server["hostname"] . "
-user=" . $server['user'] . "
-password='" . $server['password'] . "'
+hostname=".$server["hostname"]."
+user=".$server['user']."
+password='".$server['password']."'
 crypted='1'
-database=" . $server['database'] . "";
+database=".$server['database']."";
 
-        $fp = fopen(CONFIG . "/db.config.ini.php", 'w');
+        $fp = fopen(CONFIG."/db.config.ini.php", 'w');
         fwrite($fp, $config);
         fclose($fp);
 
         $this->cmd("echo 1", "Generate config file for DB");
     }
 
-    private function updateCache() {
+    private function updateCache()
+    {
         $this->cmd("php glial administration admin_index_unique", "Generating DDL cash for index");
         $this->cmd("php glial administration admin_table", "Generating DDL cash for databases");
         $this->cmd("php glial administration generate_model", "Making model with reverse engineering of databases");
     }
 
-    public function createAdmin($param = array()) {
+    public function createAdmin($param = array())
+    {
         $this->view = false;
 
         /*
@@ -370,16 +383,16 @@ database=" . $server['database'] . "";
         if (!empty($filename) && file_exists($filename)) {
 
             $config = $this->parseConfig($filename);
-            $admin = $config['user']['Super administrator'][0];
+            $admin  = $config['user']['Super administrator'][0];
 
-            $email = $admin['email'];
-            $login = $admin['login'];
-            $pwd = $admin['password'];
+            $email     = $admin['email'];
+            $login     = $admin['login'];
+            $pwd       = $admin['password'];
             $firstname = $admin['firstname'];
-            $lastname = $admin['lastname'];
+            $lastname  = $admin['lastname'];
 
 
-            $sql = "select id from geolocalisation_country where libelle = '" . $db->sql_real_escape_string($admin['country']) . "'";
+            $sql = "select id from geolocalisation_country where libelle = '".$db->sql_real_escape_string($admin['country'])."'";
             $res = $db->sql_query($sql);
 
 
@@ -389,7 +402,7 @@ database=" . $server['database'] . "";
             }
 
 
-            $sql = "SELECT id FROM geolocalisation_city where libelle = '" . $db->sql_real_escape_string($admin['city']) . "' AND id_geolocalisation_country=" . $id_country . " ORDER BY libelle";
+            $sql = "SELECT id FROM geolocalisation_city where libelle = '".$db->sql_real_escape_string($admin['city'])."' AND id_geolocalisation_country=".$id_country." ORDER BY libelle";
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
@@ -403,7 +416,7 @@ database=" . $server['database'] . "";
 
             $email_is_valid = false;
             do {
-                $rl = new Hoa\Console\Readline\Readline ();
+                $rl    = new Hoa\Console\Readline\Readline ();
                 $email = $rl->readLine('Your email : ');
 
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -441,25 +454,25 @@ database=" . $server['database'] . "";
 
             //country
             $sql = "SELECT libelle FROM geolocalisation_country where libelle != '' ORDER BY libelle";
-            $DB = $this->di['db']->sql(DB_DEFAULT);
+            $DB  = $this->di['db']->sql(DB_DEFAULT);
 
-            $res = $db->sql_query($sql);
+            $res     = $db->sql_query($sql);
             $country = [];
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob      = $db->sql_fetch_object($res)) {
                 $country[] = $ob->libelle;
             }
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
+                $rl       = new Hoa\Console\Readline\Readline();
                 $rl->setAutocompleter(new Hoa\Console\Readline\Autocompleter\Word($country));
                 $country2 = $rl->readLine('Your country [First letter in upper case, then tab for help] : ');
 
-                $sql = "select id from geolocalisation_country where libelle = '" . $db->sql_real_escape_string($country2) . "'";
+                $sql = "select id from geolocalisation_country where libelle = '".$db->sql_real_escape_string($country2)."'";
                 $res = $db->sql_query($sql);
 
 
                 if ($db->sql_num_rows($res) == 1) {
-                    $ob = $db->sql_fetch_object($res);
+                    $ob         = $db->sql_fetch_object($res);
                     $id_country = $ob->id;
                     $this->displayResult("Country found in database !", "OK");
                 } else {
@@ -469,25 +482,25 @@ database=" . $server['database'] . "";
 
 
             //city
-            $sql = "SELECT libelle FROM geolocalisation_city where id_geolocalisation_country = '" . $id_country . "' ORDER BY libelle";
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $sql = "SELECT libelle FROM geolocalisation_city where id_geolocalisation_country = '".$id_country."' ORDER BY libelle";
+            $db  = $this->di['db']->sql(DB_DEFAULT);
 
-            $res = $db->sql_query($sql);
+            $res  = $db->sql_query($sql);
             $city = [];
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob   = $db->sql_fetch_object($res)) {
                 $city[] = $ob->libelle;
             }
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
+                $rl    = new Hoa\Console\Readline\Readline();
                 $rl->setAutocompleter(new Hoa\Console\Readline\Autocompleter\Word($city));
                 $city2 = $rl->readLine('Your city [First letter in upper case, then tab for help] : ');
 
-                $sql = "select id from geolocalisation_city where libelle = '" . $db->sql_real_escape_string($city2) . "'";
+                $sql = "select id from geolocalisation_city where libelle = '".$db->sql_real_escape_string($city2)."'";
                 $res = $db->sql_query($sql);
 
                 if ($db->sql_num_rows($res) == 1) {
-                    $ob = $db->sql_fetch_object($res);
+                    $ob      = $db->sql_fetch_object($res);
                     $id_city = $ob->id;
                     $this->displayResult("City found in database !", "OK");
                 } else {
@@ -503,7 +516,7 @@ database=" . $server['database'] . "";
 
             $good = false;
             do {
-                $pwd = $rl->readLine('Password : ');
+                $pwd  = $rl->readLine('Password : ');
                 $pwd2 = $rl->readLine('Password (repeat) : ');
 
                 if (!empty($pwd) && $pwd === $pwd2) {
@@ -525,14 +538,14 @@ database=" . $server['database'] . "";
 
 
         $data['user_main']['is_valid'] = 1;
-        $data['user_main']['email'] = $email;
+        $data['user_main']['email']    = $email;
 
 
         if (empty($login)) {
             $login = $email;
         }
 
-        $data['user_main']['login'] = $login;
+        $data['user_main']['login']    = $login;
         $data['user_main']['password'] = \Glial\Auth\Auth::hashPassword($login, $pwd);
 
         //to set uppercase to composed name like 'Jean-Louis'
@@ -541,16 +554,16 @@ database=" . $server['database'] . "";
 
         $data['user_main']['firstname'] = str_replace(" - ", "-", $firstname);
 
-        $data['user_main']['name'] = mb_convert_case($lastname, MB_CASE_UPPER, "UTF-8");
-        $data['user_main']['ip'] = $ip;
-        $data['user_main']['date_created'] = date('Y-m-d H:i:s');
-        $data['user_main']['id_group'] = 4; // 4 = super admin
+        $data['user_main']['name']                       = mb_convert_case($lastname, MB_CASE_UPPER, "UTF-8");
+        $data['user_main']['ip']                         = $ip;
+        $data['user_main']['date_created']               = date('Y-m-d H:i:s');
+        $data['user_main']['id_group']                   = 4; // 4 = super admin
         $data['user_main']['id_geolocalisation_country'] = $id_country;
-        $data['user_main']['id_geolocalisation_city'] = $id_city;
-        $data['user_main']['id_client'] = 1;
-        $data['user_main']['date_last_login'] = date('Y-m-d H:i:s');
-        $data['user_main']['date_last_connected'] = date('Y-m-d H:i:s');
-        $data['user_main']['key_auth'] = '';
+        $data['user_main']['id_geolocalisation_city']    = $id_city;
+        $data['user_main']['id_client']                  = 1;
+        $data['user_main']['date_last_login']            = date('Y-m-d H:i:s');
+        $data['user_main']['date_last_connected']        = date('Y-m-d H:i:s');
+        $data['user_main']['key_auth']                   = '';
 
 
 
@@ -581,45 +594,46 @@ database=" . $server['database'] . "";
                 continue;
             }
 
-            echo "You can connect to the application on this url : " . Color::getColoredString("http://" . $ip . WWW_ROOT, "yellow") . "\n";
+            echo "You can connect to the application on this url : ".Color::getColoredString("http://".$ip.WWW_ROOT, "yellow")."\n";
         }
 
 
-        echo "You can connect to the application on this url : " . Color::getColoredString("http://" . gethostname() . WWW_ROOT, "yellow") . "\n";
+        echo "You can connect to the application on this url : ".Color::getColoredString("http://".gethostname().WWW_ROOT, "yellow")."\n";
     }
 
-    public function createOrganisation($param) {
+    public function createOrganisation($param)
+    {
 
         $filename = $param[0] ?? "";
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = $this->di['db']->sql(DB_DEFAULT);
 
         if (!empty($filename) && file_exists($filename)) {
-
             $config = $this->parseConfig($filename);
-            $orgas = $config['organization'];
+            $orgas  = $config['organization'];
         } else {
 
-            createOragnisation:
-            $this->cadre("create oraganisation");
+            createOrganization:
+            $this->cadre("create organization");
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
-                $oraganisation = $rl->readLine('Your Oraganization : ');
-            } while (strlen($oraganisation) < 3);
+                $rl           = new Hoa\Console\Readline\Readline();
+                $organization = $rl->readLine('Your Organization : ');
+            } while (strlen($organization) < 3);
 
-            $orgas = array($oraganisation);
+            $orgas = array($organization);
         }
 
 
         foreach ($orgas as $oraga) {
-            $sql = "INSERT INTO client (`libelle`,`date`) VALUES ('" . $oraga . "', '" . date('Y-m-d H:i:s') . "')";
+            $sql = "INSERT INTO client (`libelle`,`date`) VALUES ('".$oraga."', '".date('Y-m-d H:i:s')."')";
             $db->sql_query($sql);
         }
     }
 
-    private function rand_char($length) {
+    private function rand_char($length)
+    {
         $random = '';
         for ($i = 0; $i < $length; $i++) {
             $random .= chr(mt_rand(33, 126));
@@ -627,7 +641,8 @@ database=" . $server['database'] . "";
         return $random;
     }
 
-    private function generate_key() {
+    private function generate_key()
+    {
 
         $key = str_replace("'", "", $this->rand_char(256));
 
@@ -636,12 +651,12 @@ database=" . $server['database'] . "";
 
 if (! defined('CRYPT_KEY'))
 {
-    define('CRYPT_KEY', '" . $key . "');
+    define('CRYPT_KEY', '".$key."');
 }
 ";
 
         $path = "configuration/crypt.config.php";
-        $msg = "Generate key for encryption";
+        $msg  = "Generate key for encryption";
 
         if (!file_exists($path)) {
             file_put_contents($path, $data);
@@ -652,13 +667,15 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
-    public function installLanguage($db) {
+    public function installLanguage($db)
+    {
 
         \Glial\I18n\I18n::injectDb($db);
         \Glial\I18n\I18n::install();
     }
 
-    private function parseConfig($configFile) {
+    private function parseConfig($configFile)
+    {
         //debug($configFile);
 
         $config = json_decode(file_get_contents($configFile), true);
@@ -669,12 +686,13 @@ if (! defined('CRYPT_KEY'))
         return $config;
     }
 
-    private function testIpPort($hostname, $port) {
+    private function testIpPort($hostname, $port)
+    {
 
         $fp = @fsockopen($hostname, $port, $errno, $errstr, 30);
         if (!$fp) {
 
-            $ret['errno'] = $errno;
+            $ret['errno']  = $errno;
             $ret['errstr'] = $errstr;
 
             return $ret;
@@ -685,18 +703,20 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
-    private function testMySQL($hostname, $port, $user, $password) {
+    private function testMySQL($hostname, $port, $user, $password)
+    {
 
-        $this->link = mysqli_connect($hostname . ":" . $port, $user, trim($password));
+        $this->link = mysqli_connect($hostname.":".$port, $user, trim($password));
 
         if ($this->link) {
             return true;
         } else {
-            return 'Connect Error (' . mysqli_connect_errno() . ') ' . mysqli_connect_error();
+            return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
     }
 
-    private function testVectorDB() {
+    private function testVectorDB()
+    {
         if (empty($this->link)) {
             //throw new \Exception("MySQL link not defined");
         }
@@ -710,7 +730,7 @@ if (! defined('CRYPT_KEY'))
         while ($ob = mysqli_fetch_object($res)) {
 
             if ($ob->cpt < "1") {
-                echo Color::getColoredString('Engine "TokuDB" is not installed yet', "grey", "red") . "\n";
+                echo Color::getColoredString('Engine "TokuDB" is not installed yet', "grey", "red")."\n";
 
 
                 echo "To install TokuDB :\n";
@@ -720,7 +740,7 @@ if (! defined('CRYPT_KEY'))
                 echo "\t- Restart MySQL server\n";
 
 
-                echo Color::getColoredString('Engine "ROCKSDB" is not installed yet', "grey", "red") . "\n";
+                echo Color::getColoredString('Engine "ROCKSDB" is not installed yet', "grey", "red")."\n";
                 echo "To install ROCKSDB :\n";
                 echo "\t- mariadb-plugin-rocksdb\n";
 
@@ -729,7 +749,8 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
-    private function testSpider() {
+    private function testSpider()
+    {
         $sql = "select count(1) as cpt from information_schema.engines where engine = 'SPIDER' and (SUPPORT = 'YES' OR SUPPORT = 'DEFAULT');";
 
         $res = mysqli_query($this->link, $sql);
@@ -737,7 +758,7 @@ if (! defined('CRYPT_KEY'))
         while ($ob = mysqli_fetch_object($res)) {
 
             if ($ob->cpt !== "1") {
-                echo Color::getColoredString('Engine "SPIDER" is not installed yet', "grey", "red") . "\n";
+                echo Color::getColoredString('Engine "SPIDER" is not installed yet', "grey", "red")."\n";
 
                 echo "To install Spider, run the install_spider.sql script, located in the share directory, for example, from the command line:\n\n";
                 echo "\tmysql -uroot -p < /usr/share/mysql/install_spider.sql\n";
@@ -750,8 +771,9 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
-    private function testDatabase($database) {
-        $sql = "SELECT count(1) as cpt FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" . mysqli_real_escape_string($this->link, $database) . "'";
+    private function testDatabase($database)
+    {
+        $sql    = "SELECT count(1) as cpt FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '".mysqli_real_escape_string($this->link, $database)."'";
         $result = mysqli_query($this->link, $sql);
 
         $ob = mysqli_fetch_object($result);
@@ -766,30 +788,32 @@ if (! defined('CRYPT_KEY'))
         exit;
     }
 
-    private function createDatabase($database) {
+    private function createDatabase($database)
+    {
 
-        $sql = "CREATE DATABASE " . mysqli_real_escape_string($this->link, $database) . "";
+        $sql = "CREATE DATABASE ".mysqli_real_escape_string($this->link, $database)."";
         $res = mysqli_query($this->link, $sql);
 
 
         if ($res) {
             return true;
         } else {
-            return 'The database "' . mysqli_real_escape_string($this->link, $database) . '" couldn\'t be created';
+            return 'The database "'.mysqli_real_escape_string($this->link, $database).'" couldn\'t be created';
         }
     }
 
-    private function configMySQL($config) {
+    private function configMySQL($config)
+    {
 
         $error = array();
 
         $ret = $this->testIpPort($config['mysql']['ip'], $config['mysql']['port']);
 
         if ($ret !== true) {
-            throw new \Exception($ret['errstr'] . " (" . $ret['errno'] . ")");
+            throw new \Exception($ret['errstr']." (".$ret['errno'].")");
             exit(1);
         }
-        $this->cmd("echo 1", "MySQL server : " . $config['mysql']['ip'] . ":" . $config['mysql']['port'] . " available");
+        $this->cmd("echo 1", "MySQL server : ".$config['mysql']['ip'].":".$config['mysql']['port']." available");
 
         $this->testMySQL($config['mysql']['ip'], $config['mysql']['port'], $config['mysql']['user'], $config['mysql']['password']);
         if ($ret !== true) {
@@ -824,7 +848,8 @@ if (! defined('CRYPT_KEY'))
         return $config['mysql'];
     }
 
-    public function webroot($param) {
+    public function webroot($param)
+    {
         $filename = $param[0] ?? "";
 
         if (!empty($filename) && file_exists($filename)) {
@@ -844,27 +869,38 @@ if (! defined('CRYPT_KEY'))
 
 if (! defined('WWW_ROOT'))
 {
-    define('WWW_ROOT', \"" . $config['webroot'] . "\");
+    define('WWW_ROOT', \"".$config['webroot']."\");
 }";
             file_put_contents("configuration/webroot.config.php", $webroot);
         }
     }
 
-    public function updateVersion() {
+    public function updateVersion()
+    {
         //echo "UPDATE site.config.php";
         shell_exec("cp -a config_sample/site.config.php configuration/site.config.php");
 
-
         $php = explode(" ", shell_exec("whereis php"))[1];
-        $cmd = $php . " " . GLIAL_INDEX . " administration all";
+        $cmd = $php." ".GLIAL_INDEX." administration all";
+
         shell_exec($cmd);
 
-        
-        shell_exec("rm tmp/acl/acl.ser");
+        $filename = TMP."acl/acl.ser";
+
+        if (file_exists($filename)) {
+            unlink($filename);
+        }
 
         //load DB and compare => upgrade
     }
 
-}
+    public function update($param)
+    {
 
+
+
+        shell_exec("cd ".ROOT." && chown www-data. -R tmp/");
+        shell_exec("cd ".ROOT." && chown www-data. -R configuration/");
+    }
+}
 //https://www.programmez.com/actualites/yak-pro-php-obfuscator-cachez-ce-code-que-je-ne-saurais-voir-23454

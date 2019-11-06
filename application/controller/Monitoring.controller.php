@@ -62,9 +62,6 @@ class Monitoring extends Controller
         $this->title  = __("Query Analyzer");
         $this->ariane = " > ".__("Monitoring")." > ".$this->title;
 
-        $this->layout_name = 'pmacontrol';
-
-
         if (empty($param[0])) {
 
             $default = $this->di['db']->sql(DB_DEFAULT);

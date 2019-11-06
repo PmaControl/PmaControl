@@ -12,14 +12,12 @@ class Server extends Controller
 {
 
     use \App\Library\Filter;
+    var $clip = 0;
 
 //dba_source
     public function hardware()
     {
-
-
-        $db = $this->di['db']->sql(DB_DEFAULT);
-
+        $db           = $this->di['db']->sql(DB_DEFAULT);
         $this->title  = __("Hardware");
         $this->ariane = " > ".$this->title;
 
@@ -41,13 +39,14 @@ class Server extends Controller
 
     public function before($param)
     {
-        $this->layout_name = 'pmacontrol';
+
     }
+
+
+    /*
 
     public function listing($param)
     {
-        
-
         // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
@@ -104,10 +103,9 @@ class Server extends Controller
         $data['menu']['cache']['name']  = __('Cache');
         $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
         $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
-        
-            /*             * ***** */
 
-            $data['menu_select']['main']['name']  = __('Servers');
+
+        $data['menu_select']['main']['name']  = __('Servers');
         $data['menu_select']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
         $data['menu_select']['main']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/main';
 
@@ -171,57 +169,28 @@ class Server extends Controller
 
         $this->set('data', $data);
     }
+     /*
+     */
 
     public function main()
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $this->title  = __("Dashboard");
+        //$this->title  = __("Dashboard");
         $this->ariane = " > ".$this->title;
 
-        $this->di['js']->addJavascript(array('clipboard.min.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
 
-        $this->di['js']->code_javascript('
-        $("#check-all").click(function(){
-    $("input:checkbox").not(this).prop("checked", this.checked);
-});
+        $this->di['js']->code_javascript('(function() {
+            new Clipboard(".copy-button");
+        })();');
 
-
-(function(){
-  new Clipboard(".copy-button");
-})();
-
-');
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-
-            if (!empty($_POST['is_monitored'])) {
-
-//start transaction !
-                $sql = "UPDATE mysql_server a SET is_monitored='0' WHERE 1 ".$this->getFilter();
-
-                $db->sql_query($sql);
-
-                if (!empty($_POST['monitored'])) {
-                    foreach ($_POST['monitored'] as $key => $val) {
-//ugly to optimize but no time now
-                        if ($val == "on") {
-                            $sql = "UPDATE mysql_server a SET is_monitored='1' WHERE id='".$key."' ".$this->getFilter();
-                            $db->sql_query($sql);
-                        }
-                    }
-                }
-            }
-
-//header
-        }
-
-
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class` FROM mysql_server a
+        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`
+            FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by d.`libelle`;";
+                 ORDER by a.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
 
         $res = $db->sql_query($sql);
 
@@ -235,7 +204,7 @@ class Server extends Controller
 //debug($servers);
 
         Extraction::setDb($db);
-        $data['extra'] = Extraction::display(array("Version", "Hostname", "server::ping"));
+        $data['extra'] = Extraction::display(array("version", "hostname", "server::ping", "general_log"));
 
 
 
@@ -360,9 +329,8 @@ class Server extends Controller
 
     public function memory()
     {
-        $this->layout_name = 'pmacontrol';
-        $this->title       = __("Memory");
-        $this->ariane      = " > ".__("Tools Box")." > ".$this->title;
+        $this->title  = __("Memory");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -382,8 +350,6 @@ class Server extends Controller
 
     public function index()
     {
-        $this->layout_name = 'pmacontrol';
-
         $this->title  = __("Index usage");
         $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
@@ -396,6 +362,8 @@ class Server extends Controller
 
 
         Extraction::setDb($db);
+
+
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
                 "status::handler_read_next", "status::handler_read_key", "status::handler_read_prev"));
 
@@ -430,16 +398,22 @@ class Server extends Controller
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            debug($_POST);
+
             $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
             $res = $db->sql_query($sql);
             while ($ob  = $db->sql_fetch_object($res)) {
                 $id_mysql_server = $ob->id;
 
                 header('location: '.LINK.__CLASS__
-                    .'/listing/id/mysql_server:id:'.$id_mysql_server
+                    .'/'.__FUNCTION__.'/mysql_server:id:'.$id_mysql_server
                     .'/ts_variable:name:'.$_POST['ts_variable']['name']
                     .'/ts_variable:date:'.$_POST['ts_variable']['date']
                     .'/ts_variable:derivate:'.$_POST['ts_variable']['derivate']);
+                /***/
+
+                exit;
             }
         } else {
 
@@ -455,7 +429,7 @@ class Server extends Controller
             }
 
 
-// get server available
+// get variable available
             $sql            = "SELECT name FROM ts_variable WHERE `from` in('status','slave','server') order by name ASC";
             $res            = $db->sql_query($sql);
             $data['status'] = array();
@@ -599,7 +573,7 @@ var myChart = new Chart(ctx, {
         bezierCurve: false,
         title: {
             display: true,
-            text: "Nombre de select par secondes ",
+            text: " ",
             position: "top",
             padding: "0"
         },
@@ -723,44 +697,6 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-//DEPRECATED
-    /*
-      private function getFilter()
-      {
-
-      trigger_error("Use trait use \App\Library\Filter::getFilter();", E_USER_DEPRECATED);
-      $where = "";
-
-
-      if (!empty($_GET['environment']['libelle'])) {
-      $environment = $_GET['environment']['libelle'];
-      }
-      if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-      $environment                    = $_SESSION['environment']['libelle'];
-      $_GET['environment']['libelle'] = $environment;
-      }
-
-      if (!empty($_SESSION['client']['libelle'])) {
-      $client = $_SESSION['client']['libelle'];
-      }
-      if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-      $client                    = $_GET['client']['libelle'];
-      $_GET['client']['libelle'] = $client;
-      }
-
-
-      if (!empty($environment)) {
-      $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
-      }
-
-      if (!empty($client)) {
-      $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
-      }
-
-
-      return $where;
-      } */
-
     public function settings()
     {
 
@@ -834,10 +770,6 @@ var myChart = new Chart(ctx, {
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
             .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
 
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-        }
 
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
@@ -932,6 +864,23 @@ var myChart = new Chart(ctx, {
 
     public function passwd($param)
     {
+
+        $this->di['js']->addJavascript(array('clipboard.min.js'));
+
+
+        /**
+         * @todo Add a new version code_javascript  => Once
+         */
+        /*
+          $this->di['js']->code_javascript('(function() {
+          new Clipboard(".copy-button");
+          })();');
+         */
+
+
+
+
+
         Crypt::$key       = CRYPT_KEY;
         $data['password'] = Crypt::decrypt($param[0]);
 
@@ -999,6 +948,12 @@ var myChart = new Chart(ctx, {
     {
         $id_server = $param[0];
 
+        if (empty($id_server)) {
+            throw new \Exception("PMACTRL-748 : Impossible to get id_server, wrong URL ?");
+        }
+
+
+
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -1013,7 +968,7 @@ var myChart = new Chart(ctx, {
                 if ($ret) {
 
                     Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
-                    Mysql::generateMySQLConfig($this->di['db']->sql(DB_DEFAULT));
+
 
                     set_flash("success", "Success", "Password updated !");
 
@@ -1026,6 +981,25 @@ var myChart = new Chart(ctx, {
                 }
             }
         }
+
+        $sql = "SELECT * FROM mysql_server WHERE id =".$id_server;
+
+        $res = $db->sql_query($sql);
+
+        $data['server'] = array();
+        while ($ob             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['server'] = $ob;
+        }
+
+
+        $this->set('data', $data);
+    }
+
+    public function upd()
+    {
+
+
+        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
     }
 
     public function acknowledge($param)
@@ -1047,6 +1021,8 @@ var myChart = new Chart(ctx, {
 
     public function remove($param)
     {
+
+        Debug::parseDebug($param);
         $this->view = false;
 
         $id_server = $param[0];
@@ -1054,14 +1030,64 @@ var myChart = new Chart(ctx, {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
-        $db->sql_query($sql);
+
+        // pour eviter d'effacer la base de PmaControl !!!
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
+        $res = $db->sql_query($sql);
+        Debug::sql($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->name != DB_DEFAULT) {
+                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+                $db->sql_query($sql);
+                Debug::sql($sql);
+            }
+        }
 
         header("location: ".LINK.__CLASS__."/settings/");
     }
 
     public function acknowledgedBy($param)
     {
+        
+    }
 
+    public function toggleGeneralLog($param)
+    {
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $general_log     = $param[1];
+
+        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
+        Debug::sql($sql);
+
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $name = $ob->name;
+        }
+
+        $remote = $this->di['db']->sql($name);
+
+        if ($general_log === "true") {
+
+            $sql2 = "SET GLOBAL `general_log`=ON;";
+        } else {
+            $sql2 = "SET GLOBAL `general_log`=OFF;";
+        }
+        Debug::sql($sql2);
+
+        $remote->sql_query($sql2);
+
+        $data['return'] ='ok';
+
+
+        echo json_encode($data);
     }
 }

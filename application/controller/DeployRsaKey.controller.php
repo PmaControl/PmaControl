@@ -11,20 +11,49 @@ use phpseclib\Net\SFTP;
 use \Glial\Synapse\Controller;
 use App\Library\Post;
 use Glial\I18n\I18n;
-
 use \App\Library\Debug;
-
+use \App\Library\Ssh;
+use App\Library\Chiffrement;
 
 class DeployRsaKey extends Controller
 {
+    const KEY_WORKER_DEPLOY = 148759;
+    const KEY_PUBLIC        = "public_key";
+    const KEY_PRIVATE       = "private_key";
+    const NB_WORKER         = 10;
 
     public function index()
     {
 
+        //Debug::$debug = true;
+
+
         $this->di['js']->code_javascript('
-        $("#check-all").click(function(){
+$("#check-all").click(function(){
     $("input:checkbox").not(this).prop("checked", this.checked);
-});');
+});
+
+/* c est dégeu mais FF ne supporte pas l autocomplète */
+
+$("#mysql_server-login_ssh").val("");
+$("#mysql_server-password_ssh").val("");
+
+
+/* pour griser les ligne ou on a deja deployer la clef */
+
+$("#ssh_key-id").change(function() {
+
+    id_ssh_key = $(this).val();
+    $rows = $(".row-server");
+    $rows.removeClass("pma-success");
+    $rows.find("input:checkbox").removeAttr("disabled");
+
+    $rows.filter(".key-"+id_ssh_key).each(function(i) {
+        $(this).addClass("pma-success");
+        $(this).find("input:checkbox").attr("disabled", true);
+    });
+});
+');
 
 
         $this->title  = '<i style="font-size: 32px" class="fa fa-key" aria-hidden="true"></i> '."Deploy key RSA";
@@ -37,14 +66,69 @@ class DeployRsaKey extends Controller
 
             if (!empty($_POST['settings'])) {
 
-                debug($_POST);
+                Debug::debug($_POST, "POST");
+
+                $error_form = false;
+
+
+
+                $private = '';
+
+                if (!empty($_POST['mysql_server']['login_ssh'])) {
+
+                    $login = $_POST['mysql_server']['login_ssh'];
+
+                    if (!empty($_POST['mysql_server']['password_ssh'])) {
+                        $private = $login."@".$_POST['mysql_server']['password_ssh'];
+                    }
+                    if (!empty($_POST['mysql_server']['key_ssh'])) {
+                        $private = $login."@".$_POST['mysql_server']['key_ssh'];
+                    }
+                }
+
+                if (!empty($_POST['ssh_key_pv']['id'])) {
+                    $private = $_POST['ssh_key_pv']['id'];
+                }
+
+                if (!empty($_POST['ssh_key']['id'])) {
+                    $public = $_POST['ssh_key']['id'];
+                }
+
+                if (empty($public)) {
+                    //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('The public key has not been selected.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
+                }
+
+                if (empty($private)) {
+                    //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('The credentials to connect in SSH has not been provided.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
+                }
 
                 $list_id = [];
-                foreach ($_POST['id'] as $key => $value) {
+                foreach ($_POST['link__mysql_server__ssh_key'] as $key => $value) {
 
-                    if (!empty($_POST['mysql_server'][$key]["is_monitored"]) && $_POST['mysql_server'][$key]["is_monitored"] === "on") {
-                        $list_id[] = $value;
+                    if (!empty($value["deploy"])) {
+                        $list_id[] = $value['id_mysql_server'];
                     }
+                }
+
+                if (count($list_id) === 0) {
+                    //error
+                    $error_form = true;
+                    $msg        = I18n::getTranslation(__('A server must be selected at least.'));
+                    $title      = I18n::getTranslation(__('Warning'));
+                    set_flash("caution", $title, $msg);
+                }
+
+                if ($error_form === true) {
+                    header("location: ".LINK."DeployRsaKey/index/");
+                    exit;
                 }
 
                 $ids = implode(",", $list_id);
@@ -52,124 +136,94 @@ class DeployRsaKey extends Controller
                 $sql = "SELECT * FROM mysql_server WHERE id IN (".$ids.");";
                 $res = $db->sql_query($sql);
 
-
-                print_r($sql);
-
-                if (empty($_POST['generate']['key_ssh'])) {
-                    $path_puplic_key = "/tmp/".uniqid();
-
-                    file_put_contents($path_puplic_key, $_POST['to_deploy']['key_ssh']);
-                }
-
-
-                // check public key
-                $cmd = "ssh-keygen -l -f ".$path_puplic_key." 2>&1";
-                debug($cmd);
-
-
-                $result = shell_exec($cmd);
-                $pos    = strpos($result, "public key file");
-
-
-                debug($result);
-
-
-                if ($pos === false) {
-                    
-                } else {
-
-                    //error msg
-
-
-                    echo "ERROR";
-
-                    $msg   = I18n::getTranslation(__("The public key seem to be not valid : '".$result."'"));
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
-
-                    unlink($path_puplic_key);
-                    //header('location: '.LINK.__CLASS__.'/'.__FUNCTION__.'/'.Post::getToPost());
-                    exit;
-                }
-
-                $path_private_key = $_POST['mysql_server']['key_ssh'];
-                
-
-
-
-                shell_exec("mkdir ".DATA."keys/");
+                $retour_ok = array();
+                $retour_ko = array();
 
                 while ($ob = $db->sql_fetch_object($res)) {
 
+                    $this->deploy(array($ob->ip, $public, $private));
 
-// to rewrite
-                    /*
-                    if (!empty($_POST['generate']['key_ssh'])) {
-                        $path_private_key = DATA."keys/".$ob->ip.'.key';
-                        $path_puplic_key  = $path_private_key.'.pub';
+                    if ($this->testConnection($ob->ip, $public) === true) {
+                        Debug::debug($_POST['mysql_server']['login_ssh']."@".$ob->ip." : ".'CONNECTION OK !');
+                        //Debug::debug($path_private_key);
 
-                        $checks = [$path_private_key, $path_puplic_key];
-                        foreach ($checks as $file) {
-                            if (file_exists($file)) {
-                                $ret = shell_exec("rm -f ".$file);
-                            }
+
+
+                        $tmp                                                   = array();
+                        $tmp['link__mysql_server__ssh_key']['id_mysql_server'] = $ob->id;
+                        $tmp['link__mysql_server__ssh_key']['id_ssh_key']      = $public;
+                        $tmp['link__mysql_server__ssh_key']['added_on']        = date("Y-m-d H:i:s");
+                        $tmp['link__mysql_server__ssh_key']['active']          = 1;
+
+                        $gg = $db->sql_save($tmp);
+
+                        if ($gg) {
+                            $retour_ok[] = $ob->display_name;
+                        } else {
+                            $retour_ko[] = $ob->display_name;
                         }
-
-                        $cmd = 'ssh-keygen -t rsa -N "" -b 4096 -C "PmaControl@esysteme.com" -f '.$path_private_key;
-                        $ret = shell_exec($cmd);
-                    }
-                    */
-
-
-                    $this->deploy($ob->ip, $_POST['mysql_server']['login_ssh'], $_POST['mysql_server']['password_ssh'], $path_puplic_key, $_POST['mysql_server']['key_ssh']);
-
-                    if ($this->testConnection($ob->ip, "root", $path_private_key) === true) {
-
-
-                        /*
-                          $table                                     = [];
-                          $table['mysql_server']['id']               = $ob->id;
-                          $table['mysql_server']['ssh_login']        = $_POST['mysql_server']['login_ssh'];
-                          $table['mysql_server']['ssh_password']     = $_POST['mysql_server']['password_ssh'];
-                          $table['mysql_server']['key_private_path'] = $path_private_key;
-                          $table['mysql_server']['key_private_user'] = "root";
-
-                          $ret = $db->sql_save($table);
-
-                          if (!$ret) {
-                          debug($table);
-                          debug($ret->sql_error());
-                          } */
+                    } else {
+                        $retour_ko[] = $ob->display_name;
                     }
                 }
 
+                if (!empty($retour_ok)) {
+                    $msg   = I18n::getTranslation(implode(',', $retour_ok));
+                    $title = I18n::getTranslation(__("The public key has been added on these servers :"));
+                    set_flash("success", $title, $msg);
+                }
+
+                if (!empty($retour_ko)) {
+                    $msg   = I18n::getTranslation(implode(',', $retour_ko));
+                    $title = I18n::getTranslation(__("The public key cannot been added to these servers :"));
+                    set_flash("error", $title, $msg);
+                }
+
+
+
 //debug($list_id);
-//header("location: ".LINK."DeployRsaKey/index/");
+                header("location: ".LINK."DeployRsaKey/index/");
                 exit;
             }
         }
 
-        $this->title  = '<i class="fa fa-key" aria-hidden="true"></i> '.__("Deploy RSA key");
+        $this->title     = '<i class="fa fa-key" aria-hidden="true"></i> '.__("Deploy RSA key");
         /* $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
-            .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
-            */
-        $sql             = "SELECT *, b.libelle as organization FROM mysql_server a
+          .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
+         */
+        $sql             = "
+            WITH z as (SELECT id_mysql_server, group_concat(id_ssh_key) as id_ssh_key,max(active) as active, count(1) from link__mysql_server__ssh_key
+            GROUP BY id_mysql_server)
+            SELECT a.*, z.id_ssh_key,z.active, b.libelle as organization,c.*, a.id as id_mysql_server
+            FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
-            WHERE 1=1 ".$this->getFilter()." ORDER by name";
+            LEFT JOIN z ON a.id = z.id_mysql_server
+            WHERE 1=1 ".$this->getFilter()."";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
 
-        $sql = "SELECT * FROM ssh_key where type='rsa'";
+        /*
+          $sql = "SELECT `id_mysql_server`,count(1) as cpt, group_concat(active) as active
+          FROM `link__mysql_server__ssh_key` GROUP BY `id_mysql_server` order by active ASC;";
+          $res = $db->sql_query($sql);
+
+          while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+          $data['mysql_server_ssh'][$ob['id_mysql_server']] = $ob;
+          } */
+
+
+        $sql = "SELECT * FROM ssh_key";
         $res = $db->sql_query($sql);
 
-        while($ob = $db->sql_fetch_object($res))
-        {
-            $tmp = array();
-            $tmp['id'] = $ob->id;
+        while ($ob = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->name;
 
-            $tmp['extra'] = array("data-content" => "<span title='".$ob->type."' class='label label-default'>".strtoupper($ob->type)." ".$ob->bit."</span> [".$ob->name."] <small class='text-muted'>".implode('-', str_split($ob->fingerprint, 4))."</small>");
+            $tmp['extra'] = array("data-content" => "<span title='".$ob->type."' class='label label-default'>".strtoupper($ob->type)." ".$ob->bit."</span> [".$ob->name."] <small class='text-muted'>".implode('-',
+                    str_split($ob->fingerprint, 4))."</small>");
 
             $data['key_ssh'][] = $tmp;
         }
@@ -179,6 +233,12 @@ class DeployRsaKey extends Controller
     }
 
 //to mutualize
+    /**
+     *
+     * @deprecated
+     * @todelete
+     *
+     */
     private function getFilter()
     {
 
@@ -213,124 +273,35 @@ class DeployRsaKey extends Controller
 
         return $where;
     }
+    /*
+     * 
+     *
+     *
+     *
+     */
 
-    private function deploy($ip, $login, $password, $path_public_key, $pv_key)
-    {
-        echo "$ip, $login, $password<br />";
-
-
-        if (!empty($pv_key)) {
-            $key = new RSA();
-            $key->loadKey($pv_key);
-
-
-            $password = $key;
-        }
-
-//deploy public key by SCP
-        $sftp = new SFTP($ip);
-
-
-        if (!$sftp->login($login, $password)) {
-            echo 'SCP Login Failed';
-            return false;
-        } else {
-            debug("SCP OK ! ");
-        }
-
-        $data      = file_get_contents($path_public_key);
-        $file_name = pathinfo($path_public_key)['basename'];
-        $sftp->put($file_name, $data);
-
-        $files = $sftp->rawlist();
-
-
-
-        $found = false;
-        foreach ($files as $file) {
-            if ($file['filename'] === $file_name) {
-
-
-                debug($file['filename']);
-                debug("found KEY SSH");
-                $found = true;
-                break;
-            }
-        }
-
-        if ($found === false) {
-            return false;
-        }
-
-
-
-//connect with user and then with sudo su - and move key to root
-        $ssh2 = new SSH2($ip);
-
-
-        if (!$ssh2->login($login, $password)) {
-
-            debug('FAILED !!!!!!!!');
-        }
-
-
-        if ($login === "root") {
-            $cmd = "mkdir -p /root/.ssh && cat /".$login."/".$file_name." >> /root/.ssh/authorized_keys\n";
-
-            debug($cmd);
-            $res = $ssh2->exec($cmd);
-
-            debug($res);
-        } else {
-
-            $ssh2->setTimeout(1);
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-
-            $ssh2->write("sudo su -\n");
-            $ssh2->setTimeout(1);
-
-            $ssh2->write($password."\n");
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-
-            $ssh2->write("whoami\n");
-            $ssh2->write("mkdir -p /root/.ssh && cat /home/".$login."/".$file_name." >> /root/.ssh/authorized_keys\n");
-
-            $output = $ssh2->read('/.*@.*[$|#]/');
-            debug($output);
-        }
-
-        if ($login === "root") {
-            $cmd = "rm /root/".$file_name;
-        } else {
-            $cmd = "rm /home/".$login."/".$file_name."";
-        }
-        $output = $ssh2->exec($cmd);
-        debug($output);
-
-        return true;
-    }
-
-    private function testConnection($ip, $login, $path_private_key)
+    private function testConnection($ip, $path_private_key)
     {
         $ssh2 = new SSH2($ip);
         $rsa  = new RSA();
 
 
-        if (file_exists($path_private_key)) {
+        Debug::debug($path_private_key);
 
-            $privatekey = file_get_contents($path_private_key);
+        $priv_key = $this->parseUserKey($path_private_key, self::KEY_PRIVATE);
+
+
+        Debug::debug($priv_key);
+
+        if ($priv_key !== false) {
+
+            if ($rsa->loadKey($priv_key['key']) === false) {
+
+                if (!$ssh2->login($priv_key['user'], $rsa)) {
+                    return false;
+                }
+            }
         } else {
-            $privatekey = $path_private_key;
-        }
-
-
-        if ($rsa->loadKey($privatekey) === false) {
-            return false;
-        }
-
-        if (!$ssh2->login($login, $rsa)) {
             return false;
         }
 
@@ -343,13 +314,356 @@ class DeployRsaKey extends Controller
 //a coder
     }
 
-
     public function testkey($param)
     {
 
         Debug::parseDebug($param);
         $gg = App\Library\Ssh::isValid("/root/.ssh/id_rsa.pub", "[RETURN]");
+    }
+    /*
+     *
+     * This function will get one combinaison and test it !
+     * The goal is to associate one Key SSH with all Server
+     *
+     * 
+     */
 
-        
+    public function workerDeploy()
+    {
+        $pid = getmypid();
+
+        $queue = msg_get_queue(self::KEY_WORKER_DEPLOY);
+
+        $msg_type     = NULL;
+        $msg          = NULL;
+        $max_msg_size = 20480;
+
+        $data        = array();
+        $data['pid'] = $pid;
+
+        while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
+            $data = json_decode(json_encode($msg), true);
+
+            $this->deploy2($data['server'], $data['key']);
+        }
+    }
+
+    /**
+     * $this->deploy($ob->ip, $_POST['mysql_server']['login_ssh'], $_POST['mysql_server']['password_ssh'],
+      $path_puplic_key, $_POST['mysql_server']['key_ssh']);
+     *
+     *
+     * (PmaControl 1.3.8)<br/>
+     * Deploy a key public key on remote server SSH
+     * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
+     * @from cli or graphical
+     * @param string server, under form ip:port or id_mysql_server or id_mysql_server:port, with id_mysql_server from mysql_server, if not requested the port will 22
+     * @param string secret, login@key / login@password / id_ssh_key can be private key / file where to find private key, id_ssh_key in PmaControl or password used to connect remotely in SSH
+     * @param string public, login@public key, can be public key / file where to find public key to deploy, id_ssh_key in PmaControl / or id from table key_ssh to remote server
+     * @return boolean true or error msg, if called directly write error msg with error return else nothing
+
+     * @description create a new MVC and display the output in standard flux
+     * @access public
+     *
+     * @examples :
+     * - ./glial DeployRsaKey deploy 10.10.10.1:22 root@password 'pmacontrol@ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNMSqI5qyTcoRXZ8LbVhx+uUTtau2rm2VxjKBbgAQu2Ozh2EByFoev+q8j1QaefKvWWFTGBjt8EKL8K5MxhjQgQ= PmaControl'
+     * - ./glial DeployRsaKey deploy 10.10.10.1:22 root@password 'pmacontrol@/path/to/pub/key.pub'
+     * - ./glial DeployRsaKey deploy 5 root@/path/to/private/key 5
+     * - ./glial DeployRsaKey deploy 127.0.0.1:22 root@/root/id_rsa root@/root/id_rsa.pub
+     */
+    public function deploy($param)
+    {
+
+        Debug::parseDebug($param);
+
+
+        Debug::debug($param);
+
+
+        $server  = $param[0];
+        $private = $param[1];
+        $public  = $param[2];
+
+        //# Get Parameters
+        // port SSH par défaut
+
+        $port     = 22;
+        $elems    = explode(":", $server);
+        $nb_elems = count($elems);
+
+        if ($nb_elems === 2) {
+            $port = intval($elems[1]);
+        }
+
+        if (ctype_digit(strval($elems[0]))) {
+            $db  = $this->di['db']->sql(DB_DEFAULT);
+            $sql = "SELECT `ip`, `ssh_port` FROM `mysql_server` where `id`=".intval($elems[0]);
+            Debug::sql($sql);
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $ip = $ob->ip;
+                if ($nb_elems === 1) {
+                    $port = $ob->ssh_port;
+                }
+            }
+        } else {
+            $ip = $elems[0];
+        }
+
+
+
+        $pubkey = $this->parseUserKey($private, self::KEY_PUBLIC);
+        $prikey = $this->parseUserKey($public, self::KEY_PRIVATE);
+
+
+
+        if (!empty($pubkey['id_ssh_key']) && !empty($prikey['id_ssh_key']) && $prikey['id_ssh_key'] == $pubkey['id_ssh_key']) {
+            return "You cannot push the same public / private key";
+        }
+
+
+        //$ip, $port = 22, $user, $password
+        if (Ssh::connect($ip, $port, $prikey['user'], $prikey['key']) !== false) {
+            Debug::debug($prikey['user']."@".$ip.":".$port." - SSH successfull !");
+        } else {
+            Debug::debug($prikey['user']."@".$ip.":".$port." - SSH failed ! ");
+            return $prikey['user']."@".$ip.":".$port." - SSH failed ! ";
+        }
+
+
+        $tmp_file          = uniqid();
+        $file_name_pub_key = "/tmp/".$tmp_file;
+        file_put_contents($file_name_pub_key, $pubkey['key']."\n");
+
+        if ($pubkey['user'] === "root") {
+            $dest_path = '/root/'.$tmp_file;
+        } else {
+            $dest_path = '/home/'.$pubkey['user'].'/'.$tmp_file;
+        }
+
+
+
+        Debug::debug(shell_exec("cat ".$file_name_pub_key));
+
+        Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path);
+
+        Debug::debug(Ssh::$ssh->exec("cat ".$dest_path));
+
+
+        if ($prikey['user'] === "root") {
+
+            $cmd = "mkdir -p /root/.ssh && cat ".$dest_path." >> /root/.ssh/authorized_keys\n";
+
+            Debug::debug($prikey['user']."@".$ip."> ".$cmd, "CMD");
+            $res = Ssh::$ssh->exec($cmd, "return");
+
+            Debug::debug($res);
+        } else {
+
+
+            // @todo  this time need to test
+            Ssh::$ssh->setTimeout(1);
+            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
+            Debug::debug($output);
+
+            Ssh::$ssh->write("sudo su -\n");
+            Ssh::$ssh->setTimeout(1);
+
+            Ssh::$ssh->write($password."\n");
+            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
+            Debug::debug($output);
+
+            Ssh::$ssh->write("whoami\n");
+            Ssh::$ssh->write("mkdir -p /root/.ssh && cat /home/".$pubkey['user']."/".$tmp_file." >> /root/.ssh/authorized_keys\n");
+
+            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
+            Debug::debug($output);
+        }
+
+
+        if (substr($file_name_pub_key, 0, 4) === "/tmp/") {
+            unlink($file_name_pub_key);
+        }
+
+        return true;
+    }
+
+    /**
+     *
+     * (PmaControl 1.3.9)<br/>
+     * Deploy a key public key on remote server SSH
+     * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
+     * @from cli 
+     * @param string as formated as user@key
+     * key can be id_shh_key (from PmaControl)
+     * key can be directly an ssh key (private or public)
+     * key can be path to a ssh key (private or public)
+     * key can be password (in case self::KEY_PRIVATE), sudo will be try if not root
+     * @param const self::KEY_PUBLIC or self::KEY_PRIVATE (to know if was are looking for private_key / or public_key
+     * @return boolean true or error msg, if called directly write error msg with error return else nothing
+     */
+    public function parseUserKey($elem, $type_key = self::KEY_PUBLIC)
+    {
+
+        if (!in_array($type_key, array(self::KEY_PUBLIC, self::KEY_PRIVATE))) {
+            throw new \Exception("PMACTRL-871 : This type of key : '".$type_key."' is not supported");
+        }
+
+        $data = array();
+
+        $elems = explode("@", $elem);
+        if (count($elems) === 2) {
+            $login = $elems[0];
+            $key   = $elems[1];
+        } else {
+
+            $login = "root";
+            $key   = end($elems);
+        }
+
+        if (is_numeric($key)) {
+
+            $db  = $this->di['db']->sql(DB_DEFAULT);
+            $sql = "SELECT * FROM `ssh_key` WHERE `id` = ".$key;
+            Debug::sql($sql);
+
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $key = Chiffrement::decrypt($ob->{$type_key});
+
+                $data['id_ssh_key'] = $ob->id;
+            }
+        } elseif (file_exists($key)) {
+
+            Debug::debug($key, "file exist");
+
+            $key = file_get_contents($key);
+        }
+
+        $ret = Ssh::isValid($key);
+        if ($ret === false && $type_key == self::KEY_PUBLIC) {
+
+            Debug::debug($ret, "ERROR !!!!!!!!!!!");
+
+
+            if (self::KEY_PUBLIC === $type_key) {
+                return __("This public key is not valid");
+            } else {
+
+                $data['warning'] = __("This private key is not valid, considering password");
+                $data['password'] = $key;
+            }
+        } else {
+            $data['info'] = $ret;
+        }
+
+        $data['type'] = $type_key;
+
+        $data['key']  = $key;
+        $data['user'] = $login;
+
+        Debug::debug($data);
+
+        return $data;
+    }
+
+    public function testParseUserKey()
+    {
+        Debug::$debug = true;
+
+        $ret = $this->parseUserKey(2, self::KEY_PUBLIC);
+
+        Debug::debug($ret);
+    }
+
+    public function queue($param)
+    {
+
+        // system de queue
+        // démarage des worker
+        $pids = array();
+
+        if (msg_queue_exists(self::KEY_WORKER_DEPLOY)) {
+
+
+            $queue = msg_get_queue(self::KEY_WORKER_DEPLOY);
+            msg_remove_queue($queue);
+        }
+
+//ajout de tout les messages a traiter :
+        $queue = msg_get_queue(self::KEY_WORKER_DEPLOY);
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+
+        for ($id_worker = 1; $id_worker < self::NB_WORKER; $id_worker++) {
+
+            $cmd = $php." ".GLIAL_INDEX." Ssh workerDeploy >> ".TMP."log/".__CLASS__."-".__FUNCTION__."-".$id_worker.".log 2>&1 & echo $!";
+            Debug::debug($cmd);
+
+            $pids[] = shell_exec($cmd);
+        }
+
+        Debug::debug("Démarage des ".$id_worker." workers terminé");
+        /* */
+
+
+        $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+
+
+        Debug::debug($msg_qnum, "msg dans la liste d'attente : ".$msg_qnum);
+
+
+        $i  = 0;
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+
+            foreach ($keys as $key) {
+                $i++;
+
+                // Create dummy message object
+                $object         = new stdclass;
+                $object->server = $ob;
+                $object->key    = $key;
+
+
+
+                //try to add message to queue
+                if (msg_send($queue, 1, $object)) {
+                    Debug::debug("Added to queue - msg n°".$i);
+                    // you can use the msg_stat_queue() function to see queue status
+                    //print_r(msg_stat_queue($queue));
+                } else {
+
+                    Debug::debug("[ERROR] Could not add message to queue !");
+                }
+            }
+        }
+
+
+// attend la fin des worker
+// on attend d'avoir vider la file d'attente
+        do {
+            $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+
+
+            Debug::debug("Nombre de msg en attente : ".$msg_qnum);
+            if ($msg_qnum == 0) {
+                break;
+            }
+            sleep(1);
+        } while (true);
+
+// kill des workers !
+        foreach ($pids as $pid) {
+
+            $cmd = "kill ".$pid;
+            shell_exec($cmd);
+        }
+
+        if (!IS_CLI) {
+            header("location: ".LINK.__CLASS__."/index");
+        }
     }
 }

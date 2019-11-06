@@ -1,8 +1,6 @@
 <?php
 
 use \Glial\Synapse\Controller;
-use \Glial\Security\Crypt\Crypt;
-use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 
@@ -162,7 +160,7 @@ class CheckConfig extends Controller
 
 
 
-        $sql = "select group_concat(b.name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
+        $sql = "select group_concat(b.display_name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
             from link__architecture__mysql_server a
             INNER JOIN mysql_server b ON a.id_mysql_server= b.id
             group by id_architecture having count(1) > 1;";
@@ -258,8 +256,8 @@ class CheckConfig extends Controller
         }
         return $difference;
     }
-
-    public function liste_combinaison($list)
+/*
+    private function liste_combinaison($list)
     {
         $count = count($list);
 
@@ -268,7 +266,7 @@ class CheckConfig extends Controller
         foreach ($list as $elem) {
 
         }
-    }
+    }*/
     /*
      * add doc
      * permet de testé 2 à 2 toutes les possibilitées
