@@ -895,6 +895,7 @@ class Mysql extends Controller
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
 
+                /*
                 $sql = "SELECT * FROM information_schema.`COLUMNS`
                     WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION";
 
@@ -903,6 +904,8 @@ class Mysql extends Controller
                 foreach ($columns as $column) {
                     fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td></tr>'.PHP_EOL);
                 }
+                 * 
+                 */
 
                 fwrite($fp, '</table>> ];'.PHP_EOL);
             }
@@ -950,8 +953,9 @@ class Mysql extends Controller
                     fwrite($fp,
                         "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME']
                         .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" 
-                        label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME']
-                        .'"  edgetarget="" edgeURL=""];'.PHP_EOL);
+                          edgetarget="" edgeURL=""];'.PHP_EOL);
+                    
+                    // label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME'].'"
                 }
             } else {
                 $data['NO_FK'] = 1;
