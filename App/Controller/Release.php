@@ -1,5 +1,8 @@
 <?php
 
+namespace App\Controller;
+
+
 use \Glial\Synapse\Controller;
 
 class Release extends Controller {

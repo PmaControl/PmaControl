@@ -8,7 +8,7 @@ use \Glial\I18n\I18n;
 
 class Mysqlsys extends Controller {
 
-    use App\Library\Filter;
+    use \App\Library\Filter;
 
     public function index() {
 

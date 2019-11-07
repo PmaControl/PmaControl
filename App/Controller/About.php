@@ -1,9 +1,8 @@
 <?php
 
-use \Glial\Synapse\Controller;
-
 namespace App\Controller;
 
+use \Glial\Synapse\Controller;
 
 class About extends Controller
 {

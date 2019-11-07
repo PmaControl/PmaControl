@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controller;
+
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Mysql;
@@ -335,15 +337,15 @@ class Covage extends Controller
 
         $sql = "select * from mysql.servers where Server_name='".$backend."';";
         Debug::debug($sql);
-        
-        
+
+
         $res = $remote->sql_query($sql);
 
         while ($arr = $remote->sql_fetch_array($res, MYSQLI_ASSOC)) {
             return $arr;
         }
-        
-        
+
+
         throw new \Exception("PMACTRL-581 : Impossible to find this backend : '".$backend."'");
     }
 }

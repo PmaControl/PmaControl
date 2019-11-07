@@ -18,9 +18,9 @@ use App\Library\System;
 class Archives extends Controller {
 
     // a sortir d'ici
-    use App\Library\Filter;
-    use App\Library\Scp;
-    use App\Library\File;
+    use \App\Library\Filter;
+    use \App\Library\Scp;
+    use \App\Library\File;
 
     var $id_user_main = 0;
     var $id_archive_load = 0;
