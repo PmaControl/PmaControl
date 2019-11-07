@@ -10,7 +10,7 @@ use App\Library\Transfer;
 
 class Audit extends Controller {
 
-    use App\Library\Filter;
+    use \App\Library\Filter;
 
     var $log_files = array("/data/www/pmacontrol/data/general.log");
     var $granted = array();

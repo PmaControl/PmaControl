@@ -1,4 +1,4 @@
-namespace App\Controller;<?php
+<?php
 /*
  * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK
  *
@@ -6,19 +6,23 @@ namespace App\Controller;<?php
  * le temps de load peut être optimisé
  */
 
+namespace App\Controller;
+
 use Glial\Synapse\Controller;
 use App\Library\Debug;
 
-class Enum extends Controller {
+class Enum extends Controller
+{
 
-    public function index($param) {
+    public function index($param)
+    {
         Debug::parseDebug($param);
 
         $db = $this->di['db']->sql("hb01_maria_cart01"); //prod
         //$db = $this->di['db']->sql("preprod_maria_cart01_preprod_rdc");
         $db->sql_select_db("cart");
 
-        $tables = array();
+        $tables                           = array();
         $tables['cart']['cart_status'][1] = "new";
         $tables['cart']['cart_status'][2] = "payment_processing";
         $tables['cart']['cart_status'][3] = "processed";
@@ -37,7 +41,7 @@ class Enum extends Controller {
         foreach ($tables as $table => $fields) {
             foreach ($fields as $field => $rows) {
                 foreach ($rows as $id => $libelle) {
-                    $sql = "UPDATE `" . $table . "` SET `" . $field . "_id`=" . $id . " WHERE `" . $field . "`='" . $libelle . "' AND `" . $field . "_id` IS NULL LIMIT 1000;";
+                    $sql = "UPDATE `".$table."` SET `".$field."_id`=".$id." WHERE `".$field."`='".$libelle."' AND `".$field."_id` IS NULL LIMIT 1000;";
                     Debug::sql($sql);
                     do {
                         $db->sql_query($sql);
@@ -49,5 +53,4 @@ class Enum extends Controller {
             }
         }
     }
-
 }

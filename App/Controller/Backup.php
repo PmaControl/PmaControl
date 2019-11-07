@@ -15,7 +15,7 @@ use Ramsey\Uuid\Uuid;
 
 class Backup extends Controller {
 
-    use App\Library\Scp;
+    use \App\Library\Scp;
 
     const BACKUP_DIR = "/data/backup";
 

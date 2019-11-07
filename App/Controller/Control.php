@@ -400,7 +400,7 @@ PARTITION BY RANGE (to_days(`date`))
     private function getDates() {
         $today = date("Y-m-d");
 
-        $date = new DateTime($today);
+        $date = new \DateTime($today);
         $date->modify('+1 day');
         $part[] = $date->format('Y-m-d');
         $date->modify('+1 day');

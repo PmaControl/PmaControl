@@ -1,7 +1,9 @@
 <?php
 
+namespace App\Controller;
+
 use \Glial\Synapse\Controller;
-use App\Library\Extraction;
+use \App\Library\Extraction;
 
 class Gagman extends Controller {
 
