@@ -67,4 +67,18 @@ class Util
 
         return $server;
     }
+    
+    
+    /*
+     * 
+     * Retourne le nom de la classe sans l'espace de nom
+     * 
+     */
+    
+    
+    static public function getController($class)
+    {
+        $elems = explode('\\', $class);
+        return end($elems);
+    }
 }

@@ -177,14 +177,24 @@ class Mysql
     {
         Debug::debug($data);
 
-        $db = self::$db;
-
+        $db     = self::$db;
         //debug($data);
-
         $server = array();
 
+        if (empty($data['fqdn'])) {
+            $data['fqdn'] = $data['ip'];
+        }
 
-        $ip   = System::getIp($data['fqdn']);
+        $ip = System::getIp($data['fqdn']);
+
+
+        if (empty($data['password'])) {
+            $data['password'] = $data['passwd'];
+        }
+
+
+
+
         $port = $data['port'] ?? 3306;
 
 
@@ -197,8 +207,6 @@ class Mysql
         }
 
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
-
-
 
 
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
@@ -235,18 +243,11 @@ class Mysql
             return false;
         }
 
-
-
-
         $id_mysql_server = $db->sql_save($server);
-
         if ($id_mysql_server) {
-
             if (empty($server['mysql_server']['id'])) {
-
                 self::$return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
             } else {
-
                 self::$return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
 
 
@@ -255,6 +256,9 @@ class Mysql
                     Debug::debug($data['tag'], "Tags");
 
                     Tag::set_db(self::$db);
+                    
+                    
+                    
                     Tag::insertTag($id_mysql_server, $data['tag']);
                 }
             }
@@ -461,7 +465,7 @@ END IF;";
         $sql = "SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';";
         $res = $db->sql_query($sql);
 
-        Debug::sql($sql);
+        Debug::debug($sql);
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             if (!empty($arr['id'])) {

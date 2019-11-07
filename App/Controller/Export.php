@@ -10,9 +10,10 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
-use App\Library\Chiffrement;
-use Glial\Security\Crypt\Crypt;
-use App\Library\Mysql;
+use \App\Library\Chiffrement;
+use \Glial\Security\Crypt\Crypt;
+use \App\Library\Mysql;
+use \App\Library\Json;
 
 class Export extends Controller {
 
@@ -150,7 +151,9 @@ $("#export_all-all2").click(function(){
         $this->view = false;
 
         Debug::parseDebug($param);
-
+        //Debug::$debug = true;
+        
+        
         $data = array();
         $error = false;
 
@@ -193,6 +196,9 @@ $("#export_all-all2").click(function(){
             $json = Chiffrement::decrypt($crypted, $password);
             Debug::debug($json, "json");
             $data = $this->import(array($json));
+            
+            Debug::debug($data);
+            
         }
 
         $json = Chiffrement::decrypt($crypted, $password);
@@ -272,23 +278,6 @@ $("#export_all-all2").click(function(){
                 }
             }
         }
-
-
-        /*
-          $data['arr']     = json_decode($json[0], true);
-          $data['options'] = $this->getExportOption();
-
-          //Debug::debug($data);
-          //$this->addMysql($data);
-
-
-          if (IS_CLI == true) {
-          echo $rep;
-          }
-
-          return json_decode($rep, true);
-
-          /** */
     }
 
     private function addMysql($arr) {

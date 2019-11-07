@@ -17,20 +17,20 @@ class Tag
 
     static $db;
 
-    static public function insertTag($id_mysql_server, $tags)
+    static public function insertTag($id_mysql_server, $all_tags)
     {
 
         //Debug::debug($tags);
 
-        if (empty($tags)) {
+        if (empty($all_tags)) {
             return true;
         }
 
-        //$tags = explode(',', $all_tags);
+        $tags = explode(',', $all_tags);
 
         foreach ($tags as $tag) {
 
-            $id_tag = Mysql::selectOrInsert($tag, "tag", "name", array("background" => "#".Color::setBackgroundColor($tag), "color" => "#".Color::setFontColor($tag)));
+            $id_tag = Mysql::selectOrInsert($tag, "tag", "name", array("background" => "#".Color::setBackgroundColor($tag), "color" => "#FFFFFF"));
 
             //Debug::debug($id_tag,"TAG");
 
