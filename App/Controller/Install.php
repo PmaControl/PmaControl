@@ -186,10 +186,10 @@ class Install extends Controller {
         do {
             echo "MySQL account on (" . $hostname . ":" . $port . ")\n";
 
-            $rl = new Hoa\Console\Readline\Readline ();
+            $rl = new \Hoa\Console\Readline\Readline ();
             $user = $rl->readLine('User     [default : root]    : ');
 
-            $rl = new Hoa\Console\Readline\Password();
+            $rl = new \Hoa\Console\Readline\Password();
             $password = $rl->readLine('Password [default : (empty)] : ');
 
             if (empty($user)) {
@@ -243,7 +243,7 @@ class Install extends Controller {
             echo "Name of database who will be used by PmaControl\n";
 
 
-            $rl = new Hoa\Console\Readline\Readline ();
+            $rl = new \Hoa\Console\Readline\Readline ();
             $database = $rl->readLine('Database     [default : pmacontrol]    : ');
 
             if (empty($database)) {
@@ -403,7 +403,7 @@ database=" . $server['database'] . "";
 
             $email_is_valid = false;
             do {
-                $rl = new Hoa\Console\Readline\Readline ();
+                $rl = new \Hoa\Console\Readline\Readline ();
                 $email = $rl->readLine('Your email : ');
 
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -450,8 +450,8 @@ database=" . $server['database'] . "";
             }
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
-                $rl->setAutocompleter(new Hoa\Console\Readline\Autocompleter\Word($country));
+                $rl = new \Hoa\Console\Readline\Readline();
+                $rl->setAutocompleter(new \Hoa\Console\Readline\Autocompleter\Word($country));
                 $country2 = $rl->readLine('Your country [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_country where libelle = '" . $db->sql_real_escape_string($country2) . "'";
@@ -479,8 +479,8 @@ database=" . $server['database'] . "";
             }
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
-                $rl->setAutocompleter(new Hoa\Console\Readline\Autocompleter\Word($city));
+                $rl = new \Hoa\Console\Readline\Readline();
+                $rl->setAutocompleter(new \Hoa\Console\Readline\Autocompleter\Word($city));
                 $city2 = $rl->readLine('Your city [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_city where libelle = '" . $db->sql_real_escape_string($city2) . "'";
@@ -499,7 +499,7 @@ database=" . $server['database'] . "";
 
 
             //password
-            $rl = new Hoa\Console\Readline\Password();
+            $rl = new \Hoa\Console\Readline\Password();
 
             $good = false;
             do {
@@ -604,7 +604,7 @@ database=" . $server['database'] . "";
             $this->cadre("create organization");
 
             do {
-                $rl = new Hoa\Console\Readline\Readline();
+                $rl = new \Hoa\Console\Readline\Readline();
                 $organization = $rl->readLine('Your Organization : ');
             } while (strlen($organization) < 3);
 
