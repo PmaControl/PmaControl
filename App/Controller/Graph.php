@@ -22,7 +22,7 @@ class Graph extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
                 $id_mysql_server = $ob->id;
 
-                /* header('location: '.LINK.__CLASS__
+                /* header('location: '.LINK.$this->getClass()
                   .'/index/mysql_server:id:'.$id_mysql_server
                   .'/status_value_int:date:'.$_POST['status_value_int']['date']);
                  */

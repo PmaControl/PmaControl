@@ -48,7 +48,7 @@ class History extends Controller {
                 if (!empty($_POST['id_history_etat'])) {
                     foreach ($_POST['id_history_etat'] as $key => $value) {
                         history::revert_history(substr($key, 3));
-                        header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/id_user_main:" . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'] . "/page:" . $data['page']);
+                        header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/id_user_main:" . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'] . "/page:" . $data['page']);
                         exit;
                     }
                 }
@@ -61,7 +61,7 @@ class History extends Controller {
                     (empty($_POST['history_main']['id_user_main'])) ? $data['id_user_main'] = -1 : $data['id_user_main'] = $_POST['history_main']['id_user_main'];
                     (empty($_POST['history_main']['id_history_action'])) ? $data['id_history_action'] = -1 : $data['id_history_action'] = $_POST['history_main']['id_history_action'];
 
-                    header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/id_user_main:" . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'] . "/page:" . $data['page']);
+                    header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/id_user_main:" . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'] . "/page:" . $data['page']);
                     exit;
                 }
             }
@@ -91,7 +91,7 @@ class History extends Controller {
                 include_once(LIB . "pagination.lib.php");
 
 //url, curent page, nb item max , nombre de lignes, nombres de pages
-                $pagination = new pagination(LINK . __CLASS__ . '/' . __FUNCTION__ . '/id_user_main:' . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'], $data['page'], $data['count'][0]['cpt'], HISTORY_ELEM_PER_PAGE, HISTORY_NB_PAGE_TO_DISPLAY_MAX);
+                $pagination = new pagination(LINK .$this->getClass(). '/' . __FUNCTION__ . '/id_user_main:' . $data['id_user_main'] . '/id_history_action:' . $data['id_history_action'], $data['page'], $data['count'][0]['cpt'], HISTORY_ELEM_PER_PAGE, HISTORY_NB_PAGE_TO_DISPLAY_MAX);
 
                 $tab = $pagination->get_sql_limit();
                 $pagination->set_alignment("left");

@@ -24,7 +24,7 @@ class Format extends Controller {
             $md5 = md5($_POST['sql']);
             $_SESSION[$md5] = $_POST['sql'];
 
-            header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/" . $md5);
+            header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $md5);
         }
 
         if (!empty($param[0])) {

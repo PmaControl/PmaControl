@@ -373,24 +373,24 @@ Threads fairness:
 
         $data['menu']['bench']['name'] = __('Make a new benchmark');
         $data['menu']['bench']['icone'] = '<i class="fa fa-clock-o" aria-hidden="true"></i>';
-        $data['menu']['bench']['path'] = LINK . __CLASS__ . '/' . __FUNCTION__ . '/bench';
+        $data['menu']['bench']['path'] = LINK .$this->getClass(). '/' . __FUNCTION__ . '/bench';
 
         $data['menu']['current']['name'] = __('Currents') . $badge;
         $data['menu']['current']['icone'] = '<i class="fa fa-refresh fa-spin" aria-hidden="true"></i>';
-        $data['menu']['current']['path'] = LINK . __CLASS__ . '/' . __FUNCTION__ . '/current';
+        $data['menu']['current']['path'] = LINK .$this->getClass(). '/' . __FUNCTION__ . '/current';
 
         $data['menu']['config']['name'] = __('Configuration');
         $data['menu']['config']['icone'] = '<i class="fa fa-wrench" aria-hidden="true"></i>';
-        $data['menu']['config']['path'] = LINK . __CLASS__ . '/' . __FUNCTION__ . '/config';
+        $data['menu']['config']['path'] = LINK .$this->getClass(). '/' . __FUNCTION__ . '/config';
 
         $data['menu']['graph']['name'] = __('Graphs');
         $data['menu']['graph']['icone'] = '<i class="fa fa-area-chart" aria-hidden="true"></i>';
-        $data['menu']['graph']['path'] = LINK . __CLASS__ . '/' . __FUNCTION__ . '/graph';
+        $data['menu']['graph']['path'] = LINK .$this->getClass(). '/' . __FUNCTION__ . '/graph';
 
 
         if (!empty($param[0])) {
             if (in_array($param[0], array('bench', 'current', 'config', 'graph'))) {
-                $_GET['path'] = LINK . __CLASS__ . '/' . __FUNCTION__ . '/' . $param[0];
+                $_GET['path'] = LINK .$this->getClass(). '/' . __FUNCTION__ . '/' . $param[0];
             }
         }
 
@@ -695,7 +695,7 @@ Threads fairness:
                     set_flash("error", "Server", "Please select the server(s) you want to bench");
 
 
-                    header("location: " . LINK . __CLASS__ . "/index/" . __FUNCTION__);
+                    header("location: " . LINK .$this->getClass(). "/index/" . __FUNCTION__);
                 }
             }
         }

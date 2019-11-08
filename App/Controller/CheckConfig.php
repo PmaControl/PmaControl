@@ -24,12 +24,12 @@ class CheckConfig extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['id'])) {
 
-                header('location: ' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']);
+                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']);
             }
 
             if (!empty($_POST['mysql_server']['id'])) {
 
-                header('location: ' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/mysql_server:id:' . implode(',', $_POST['mysql_server']['id']));
+                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_server:id:' . implode(',', $_POST['mysql_server']['id']));
             }
         } else {
 

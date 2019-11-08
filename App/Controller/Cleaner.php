@@ -2864,7 +2864,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         foreach ($menu as $elem) {
 
             $data['menu'][$elem]['title'] = $this->$elem($param);
-            $data['menu'][$elem]['url'] = LINK . __CLASS__ . "/" . $elem . "/" . $id_cleaner;
+            $data['menu'][$elem]['url'] = LINK .$this->getClass(). "/" . $elem . "/" . $id_cleaner;
         }
 
 

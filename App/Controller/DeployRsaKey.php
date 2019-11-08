@@ -593,7 +593,7 @@ $("#ssh_key-id").change(function() {
 
         for ($id_worker = 1; $id_worker < self::NB_WORKER; $id_worker++) {
 
-            $cmd = $php . " " . GLIAL_INDEX . " Ssh workerDeploy >> " . TMP . "log/" . __CLASS__ . "-" . __FUNCTION__ . "-" . $id_worker . ".log 2>&1 & echo $!";
+            $cmd = $php . " " . GLIAL_INDEX . " Ssh workerDeploy >> " . TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . $id_worker . ".log 2>&1 & echo $!";
             Debug::debug($cmd);
 
             $pids[] = shell_exec($cmd);
@@ -657,7 +657,7 @@ $("#ssh_key-id").change(function() {
         }
 
         if (!IS_CLI) {
-            header("location: " . LINK . __CLASS__ . "/index");
+            header("location: " . LINK .$this->getClass(). "/index");
         }
     }
 

@@ -24,7 +24,7 @@ class CheckDataOnCluster extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['database']) && !empty($_POST['sql'])) {
 
-                header('location: ' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']
+                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']
                         . '/mysql_cluster:database:' . $_POST['mysql_cluster']['database'] . '/sql:' . urlencode($_POST['sql']));
             }
         } else {

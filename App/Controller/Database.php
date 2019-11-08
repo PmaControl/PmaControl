@@ -371,7 +371,7 @@ class Database extends Controller {
 
                 $nb_renamed = $this->move(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name'], $_POST['rename']['adjust_privileges']));
 
-                header('location: ' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/renamed:tables:' . $nb_renamed);
+                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/renamed:tables:' . $nb_renamed);
             }
         }
     }
@@ -760,14 +760,14 @@ END;";
 
         $uuid = Uuid::uuid4()->toString();
 
-        $log = TMP . "log/" . __CLASS__ . "-" . __FUNCTION__ . "-" . uniqid() . '.log';
-        $log_error = TMP . "log/" . __CLASS__ . "-" . __FUNCTION__ . "-" . uniqid() . '.error.log';
+        $log = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
+        $log_error = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.error.log';
 
 
         $php = explode(" ", shell_exec("whereis php"))[1];
 
 
-        $cmd = $php . " " . GLIAL_INDEX . " " . __CLASS__ . " databaseRefresh " . $id_mysql_server__source . " " . $id_mysql_server__target . " '"
+        $cmd = $php . " " . GLIAL_INDEX . " " .$this->getClass(). " databaseRefresh " . $id_mysql_server__source . " " . $id_mysql_server__target . " '"
                 . implode(",", $databases) . "' '" . $path . "' " . $uuid . " --debug > " . $log . " 2> " . $log_error . " & echo $!";
 
         Debug::debug($cmd);

@@ -112,7 +112,7 @@ class Audit extends Controller {
                 $get = Post::getToPost();
 
 
-                $url = LINK . __CLASS__ . "/" . __FUNCTION__ . "/" . $get;
+                $url = LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $get;
 
                 Debug::debug($url);
 

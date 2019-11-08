@@ -1918,11 +1918,11 @@ $(function () {
             $debug = "--debug";
         }
 
-        $log = TMP . "log/" . __CLASS__ . "-" . __FUNCTION__ . "-" . uniqid() . '.log';
-        $log_error = TMP . "log/" . __CLASS__ . "-" . __FUNCTION__ . "-" . uniqid() . '.log';
+        $log = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
+        $log_error = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
 
-        $cmd = $php . " " . GLIAL_INDEX . " " . __CLASS__ . " doBackup " . $id_backup_main . " " . $uuid . " " . $debug . " >> " . $log . " 2>> " . $log_error . " & echo $!";
-        //$cmd = $php." ".GLIAL_INDEX." ".__CLASS__." doBackup ".$id_backup_main." & echo $!";
+        $cmd = $php . " " . GLIAL_INDEX . " " .$this->getClass(). " doBackup " . $id_backup_main . " " . $uuid . " " . $debug . " >> " . $log . " 2>> " . $log_error . " & echo $!";
+        //$cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." doBackup ".$id_backup_main." & echo $!";
 
 
 

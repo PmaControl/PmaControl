@@ -67,7 +67,7 @@ class Binlog extends Controller {
                 $db->sql_query($sql);
 
 
-                header('location: ' . LINK . __CLASS__ . '/index');
+                header('location: ' . LINK .$this->getClass(). '/index');
             }
         }
     }
