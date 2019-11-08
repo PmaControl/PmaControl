@@ -277,7 +277,7 @@ class Load2 extends Controller {
         }
 
         if ($code_retour !== 0) {
-            throw new Exception('the following command failed : "' . $cmd . '"');
+            throw new \Exception('the following command failed : "' . $cmd . '"');
         } else {
             return true;
         }

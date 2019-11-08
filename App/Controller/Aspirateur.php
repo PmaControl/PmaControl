@@ -124,7 +124,7 @@ class Aspirateur extends Controller {
 
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             sleep(1);
-//throw new Exception("List of server to test is empty", 20);
+//throw new \Exception("List of server to test is empty", 20);
         }
 
 
@@ -139,7 +139,7 @@ class Aspirateur extends Controller {
             $child_processes[$pid] = 1;
 
             if ($pid == -1) {
-                throw new Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
+                throw new \Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
             } else if ($pid) {
 
 
@@ -561,7 +561,7 @@ class Aspirateur extends Controller {
         if (empty($server_list)) {
             sleep(10);
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
-//throw new Exception("List of server to test is empty", 20);
+//throw new \Exception("List of server to test is empty", 20);
         }
 
 
@@ -581,7 +581,7 @@ class Aspirateur extends Controller {
             $child_processes[$pid] = 1;
 
             if ($pid == -1) {
-                throw new Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
+                throw new \Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
             } else if ($pid) {
 
 
@@ -1072,12 +1072,13 @@ class Aspirateur extends Controller {
 
 
 
-        Debug::debug($server_list, "Liste des serveurs monitoré");
+        //Debug::debug($server_list, "Liste des serveurs monitoré");
 
 
 
         //to prevent any trouble with fork
         //$this->debugShowQueries();
+        
         $db->sql_close();
 
         // filename: add_to_queue.php
@@ -1087,7 +1088,7 @@ class Aspirateur extends Controller {
         foreach ($server_list as $server) {
 
             // Create dummy message object
-            $object = new stdclass;
+            $object = new \stdclass;
             $object->name = $server['name'];
             $object->id = $server['id'];
 
@@ -1396,7 +1397,7 @@ class Aspirateur extends Controller {
 
         if ($shm_bytes_written != strlen($string)) {
 
-            throw new Exception("GLI");
+            throw new \Exception("GLI");
             echo "Impossible d'écrire toutes les données en mémoire\n";
         }
 

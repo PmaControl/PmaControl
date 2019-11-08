@@ -114,7 +114,7 @@ class Exctractor extends Controller {
         if (empty($server_list)) {
             sleep(10);
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
-            //throw new Exception("List of server to test is empty", 20);
+            //throw new \Exception("List of server to test is empty", 20);
         }
 
 
@@ -135,7 +135,7 @@ class Exctractor extends Controller {
             $child_processes[$pid] = 1;
 
             if ($pid == -1) {
-                throw new Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
+                throw new \Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
             } else if ($pid) {
 
 

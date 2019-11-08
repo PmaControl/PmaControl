@@ -280,7 +280,7 @@ class Backup extends Controller {
           if (!$id_crontab) {
           debug($crontab);
           debug($db->sql_error());
-          throw new Exception("PMACTRL-052 : impossible to save crontab");
+          throw new \Exception("PMACTRL-052 : impossible to save crontab");
           }
 
           $backup_database                                  = [];
@@ -291,7 +291,7 @@ class Backup extends Controller {
           if (!$id_backup_database = $db->sql_save($backup_database)) {
           debug($backup_database);
           debug($db->sql_error());
-          throw new Exception("PMACTRL-053 : impossible to shedule this backup");
+          throw new \Exception("PMACTRL-053 : impossible to shedule this backup");
           }
 
           $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
@@ -306,7 +306,7 @@ class Backup extends Controller {
           if (!$db->sql_save($crontab)) {
           debug($crontab);
           debug($db->sql_error());
-          throw new Exception("PMACTRL-054 : impossible to set command into crontab");
+          throw new \Exception("PMACTRL-054 : impossible to set command into crontab");
           }
 
 
@@ -652,7 +652,7 @@ class Backup extends Controller {
 
                 debug($backup_database);
 
-                throw new Exception('PMACTRL-025 : impossible to update is_active');
+                throw new \Exception('PMACTRL-025 : impossible to update is_active');
             }
             header('location: ' . LINK . 'backup/settings');
         }
@@ -660,7 +660,7 @@ class Backup extends Controller {
 
         debug($sql);
 
-        throw new Exception('PMACTRL-026 : impossible to find line in backup_main');
+        throw new \Exception('PMACTRL-026 : impossible to find line in backup_main');
     }
 
     function mysqldump($backup) {
@@ -804,7 +804,7 @@ class Backup extends Controller {
                 default:
 
 
-                    throw new Exception("PMACTRL-085 : more than one thread ($nb_thread) have to audit code !");
+                    throw new \Exception("PMACTRL-085 : more than one thread ($nb_thread) have to audit code !");
                     break;
             }
         } while ($continue);
@@ -1352,7 +1352,7 @@ $(function () {
                 if (!$id_crontab) {
                     debug($crontab);
                     debug($db->sql_error());
-                    throw new Exception("PMACTRL-052 : impossible to save crontab");
+                    throw new \Exception("PMACTRL-052 : impossible to save crontab");
                 }
 
 
@@ -1380,7 +1380,7 @@ $(function () {
                 if (!$id_backup_database = $db->sql_save($backup_database)) {
                     debug($backup_database);
                     debug($db->sql_error());
-                    throw new Exception("PMACTRL-053 : impossible to shedule this backup");
+                    throw new \Exception("PMACTRL-053 : impossible to shedule this backup");
                 } else {
 
                     $php = explode(" ", shell_exec("whereis php"))[1];
@@ -1577,7 +1577,7 @@ $(function () {
         $db_remote = $this->di['db']->sql($remote);
 
         if (!is_dir($directory_backup)) {
-            throw new Exception('PMACTRL-914 : This directory is not valid');
+            throw new \Exception('PMACTRL-914 : This directory is not valid');
         }
 //SET FOREIGN_KEY_CHECKS=0;
 
