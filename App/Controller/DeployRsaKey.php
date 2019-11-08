@@ -217,6 +217,7 @@ $("#ssh_key-id").change(function() {
         $sql = "SELECT * FROM ssh_key";
         $res = $db->sql_query($sql);
 
+        $data['key_ssh'] = array();
         while ($ob = $db->sql_fetch_object($res)) {
             $tmp = array();
             $tmp['id'] = $ob->id;
