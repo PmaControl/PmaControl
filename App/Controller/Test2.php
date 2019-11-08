@@ -86,7 +86,7 @@ class Test2 extends Controller {
         $color = ['blue', 'red', 'green'];
 
         if (!in_array($data['color'], $color)) {
-            throw new Exception("PMACLI-085 Impossible to get the color !");
+            throw new \Exception("PMACLI-085 Impossible to get the color !");
         }
         fwrite($fp, "\t node [color=" . $data['color'] . "];" . PHP_EOL);
         fwrite($fp, '  "' . $data['id_mysql_server'] . '" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td bgcolor="black" color="white" align="center" href="' . LINK . 'monitoring/query/' . str_replace('_', '-', $data['hostname']) . '/' . '"><font color="white">' . str_replace('_', '-', $data['hostname']) . '</font></td></tr><tr><td bgcolor="grey" align="left">' . $data['ip'] . ':' . $data['port'] . '</td></tr>');

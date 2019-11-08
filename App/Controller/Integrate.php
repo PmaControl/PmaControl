@@ -326,7 +326,7 @@ class Integrate extends Controller {
 
             //case of negative int (not allowed)
             if ($value < 0) {
-                throw new Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
+                throw new \Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
             }
         }
 
@@ -484,7 +484,7 @@ class Integrate extends Controller {
 
 
         if (empty($this->files[$memory_file])) {
-            throw new Exception('PMACTRL-098 : Impossible to find this file name : "' . $memory_file . '"');
+            throw new \Exception('PMACTRL-098 : Impossible to find this file name : "' . $memory_file . '"');
         }
         $id_file_name = $this->files[$memory_file];
 

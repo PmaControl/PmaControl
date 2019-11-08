@@ -11,6 +11,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
+use \App\Library\Debug;
+
 
 class CompareConfig extends Controller {
 
@@ -23,10 +25,10 @@ class CompareConfig extends Controller {
     var $db_default;
     var $object = array("TABLE", "VIEW", "TRIGGER", "FUNCTION", "PROCEDURE", "EVENT");
 
-    function index($params) {
+    function index($param) {
 
 
-
+        Debug::parseDebug($param);
         /*
          * SHOW TABLES
          * SHOW COLUMNS FROM table_name
@@ -270,7 +272,7 @@ class CompareConfig extends Controller {
 
 
         if (!is_array($queries)) {
-            throw new Exception("PMACTRL-652 : first parameter should be an array !");
+            throw new \Exception("PMACTRL-652 : first parameter should be an array !");
         }
 
         $query = implode(";", $queries);

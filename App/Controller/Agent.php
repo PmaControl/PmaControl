@@ -206,7 +206,7 @@ class Agent extends Controller {
             $db->sql_query($sql);
 
             $this->logger->info(Color::getColoredString('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid, "grey", "red"));
-            //throw new Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
+            //throw new \Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
         }
 
 

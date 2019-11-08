@@ -271,7 +271,7 @@ class Compare extends Controller {
 
 
         if (!is_array($queries)) {
-            throw new Exception("PMACTRL-652 : first parameter should be an array !");
+            throw new \Exception("PMACTRL-652 : first parameter should be an array !");
         }
 
         $query = implode(";", $queries);

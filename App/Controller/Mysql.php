@@ -430,7 +430,7 @@ class Mysql extends Controller {
 
         foreach ($users as $user) {
             if (!preg_match("/[\w]+/", $user)) {
-                throw new Exception("GLI-013 : User '" . $user . "' invalid");
+                throw new \Exception("GLI-013 : User '" . $user . "' invalid");
             }
         }
 
@@ -469,7 +469,7 @@ class Mysql extends Controller {
 
         foreach ($users as $user) {
             if (!preg_match("/[\w]+/", $user)) {
-                throw new Exception("GLI-013 : User '" . $user . "' invalid");
+                throw new \Exception("GLI-013 : User '" . $user . "' invalid");
             }
         }
 
@@ -1269,7 +1269,7 @@ class Mysql extends Controller {
         passthru($cmd, $code_retour);
 
         if ($code_retour !== 0) {
-            throw new Exception('the following command failed : "' . $cmd . '"');
+            throw new \Exception('the following command failed : "' . $cmd . '"');
         } else {
             return true;
         }

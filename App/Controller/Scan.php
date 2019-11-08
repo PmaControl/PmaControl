@@ -344,7 +344,7 @@ class Scan extends Controller {
             $child_processes[$pid] = 1;
 
             if ($pid == -1) {
-                throw new Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
+                throw new \Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
             } else if ($pid) {
 
                 if (count($child_processes) > $maxThreads) {
@@ -449,7 +449,7 @@ class Scan extends Controller {
             $child_processes[$pid] = 1;
 
             if ($pid == -1) {
-                throw new Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
+                throw new \Exception('PMACTRL-057 : Couldn\'t fork thread !', 80);
             } else if ($pid) {
 
                 if (count($child_processes) > $maxThreads) {
