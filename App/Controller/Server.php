@@ -65,89 +65,89 @@ class Server extends Controller {
       $data['menu']['main']['name']  = __('Servers');
       $data['menu']['main']['icone'] = '<i class="fa fa-server" aria-hidden="true" style="font-size:14px"></i>';
       //$data['menu']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
-      $data['menu']['main']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/main';
+      $data['menu']['main']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/main';
 
       $data['menu']['hardware']['name']  = __('Hardware');
       $data['menu']['hardware']['icone'] = '<span class="glyphicon glyphicon-hdd" style="font-size:12px"></span>';
-      $data['menu']['hardware']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/hardware';
+      $data['menu']['hardware']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/hardware';
 
       $data['menu']['database']['name']  = __('Databases');
       $data['menu']['database']['icone'] = '<i class="fa fa-database fa-lg" style="font-size:14px"></i>';
-      $data['menu']['database']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/database';
+      $data['menu']['database']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/database';
 
       $data['menu']['statistics']['name']  = __('Statistics');
       $data['menu']['statistics']['icone'] = '<span class="glyphicon glyphicon-signal" style="font-size:12px"></span>';
-      $data['menu']['statistics']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/statistics';
+      $data['menu']['statistics']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/statistics';
 
       $data['menu']['memory']['name']  = __('Memory');
       $data['menu']['memory']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
-      $data['menu']['memory']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/memory';
+      $data['menu']['memory']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/memory';
 
       $data['menu']['index']['name']  = __('Index');
       $data['menu']['index']['icone'] = '<span class="glyphicon glyphicon-th-list" style="font-size:12px"></span>';
-      $data['menu']['index']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/index';
+      $data['menu']['index']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/index';
 
       $data['menu']['system']['name']  = __('System');
       $data['menu']['system']['icone'] = '<span class="glyphicon glyphicon-cog" style="font-size:12px"></span>';
-      $data['menu']['system']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/system';
+      $data['menu']['system']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/system';
 
       $data['menu']['logs']['name']  = __('Logs');
       $data['menu']['logs']['icone'] = '<span class="glyphicon glyphicon-list-alt" style="font-size:12px"></span>';
-      $data['menu']['logs']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/index';
+      $data['menu']['logs']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/index';
 
       $data['menu']['id']['name']  = __('Graphs');
       $data['menu']['id']['icone'] = '<i class="fa fa-line-chart" aria-hidden="true"></i>';
-      $data['menu']['id']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/id';
+      $data['menu']['id']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/id';
 
       $data['menu']['cache']['name']  = __('Cache');
       $data['menu']['cache']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
-      $data['menu']['cache']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/cache';
+      $data['menu']['cache']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/cache';
 
 
       $data['menu_select']['main']['name']  = __('Servers');
       $data['menu_select']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
-      $data['menu_select']['main']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/main';
+      $data['menu_select']['main']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/main';
 
       $data['menu_select']['hardware']['name']  = __('Hardware');
       $data['menu_select']['hardware']['icone'] = '<span class="glyphicon glyphicon-hdd" style="font-size:12px"></span>';
-      $data['menu_select']['hardware']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/hardware';
+      $data['menu_select']['hardware']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/hardware';
 
 
       $data['menu_select']['database']['name']  = __('Databases');
       $data['menu_select']['database']['icone'] = '<i class="fa fa-database fa-lg" style="font-size:14px"></i>';
-      $data['menu_select']['database']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/database';
+      $data['menu_select']['database']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/database';
 
       $data['menu_select']['statistics']['name']  = __('Statistics');
       $data['menu_select']['statistics']['icone'] = '<span class="glyphicon glyphicon-signal" style="font-size:12px"></span>';
-      $data['menu_select']['statistics']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/statistics';
+      $data['menu_select']['statistics']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/statistics';
 
       $data['menu_select']['memory']['name']  = __('Memory');
       $data['menu_select']['memory']['icone'] = '<span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span>';
-      $data['menu_select']['memory']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/memory';
+      $data['menu_select']['memory']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/memory';
 
       $data['menu_select']['index']['name']  = __('Index');
       $data['menu_select']['index']['icone'] = '<span class="glyphicon glyphicon-th-list" style="font-size:12px"></span>';
-      $data['menu_select']['index']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/index';
+      $data['menu_select']['index']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/index';
 
 
       $data['menu_select']['system']['name']  = __('System');
       $data['menu_select']['system']['icone'] = '<span class="glyphicon glyphicon-cog" style="font-size:12px"></span>';
-      $data['menu_select']['system']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/system';
+      $data['menu_select']['system']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/system';
 
       $data['menu_select']['logs']['name']  = __('Logs');
       $data['menu_select']['logs']['icone'] = '<span class="glyphicon glyphicon-list-alt" style="font-size:12px"></span>';
-      $data['menu_select']['logs']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/index';
+      $data['menu_select']['logs']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/index';
 
 
       $data['menu_select']['id']['name']  = __('Server');
       $data['menu_select']['id']['icone'] = '<span class="glyphicon glyphicon-list-alt" style="font-size:12px"></span>';
-      $data['menu_select']['id']['path']  = LINK.__CLASS__.'/'.__FUNCTION__.'/id';
+      $data['menu_select']['id']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/id';
 
 
 
       if (!empty($param[0])) {
       if (in_array($param[0], array("main", "database", "statistics", "logs", "memory", "index", "hardware", "system", "id", "cache"))) {
-      $_GET['path'] = LINK.__CLASS__.'/'.__FUNCTION__.'/'.$param[0];
+      $_GET['path'] = LINK.$this->getClass().'/'.__FUNCTION__.'/'.$param[0];
       }
       }
 
@@ -398,7 +398,7 @@ class Server extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
                 $id_mysql_server = $ob->id;
 
-                header('location: ' . LINK . __CLASS__
+                header('location: ' . LINK . $this->getClass()
                         . '/' . __FUNCTION__ . '/mysql_server:id:' . $id_mysql_server
                         . '/ts_variable:name:' . $_POST['ts_variable']['name']
                         . '/ts_variable:date:' . $_POST['ts_variable']['date']
@@ -959,11 +959,11 @@ var myChart = new Chart(ctx, {
                     set_flash("success", "Success", "Password updated !");
 
 
-                    header("location: " . LINK . __CLASS__ . '/settings');
+                    header("location: " . LINK .$this->getClass(). '/settings');
                 } else {
                     set_flash("error", "Error", "Password not updated !");
 
-                    header("location: " . LINK . __CLASS__ . '/' . __FUNCTION__ . '/' . $id_server);
+                    header("location: " . LINK .$this->getClass(). '/' . __FUNCTION__ . '/' . $id_server);
                 }
             }
         }
@@ -1000,7 +1000,7 @@ var myChart = new Chart(ctx, {
         debug($sql);
         $db->sql_query($sql);
 
-        header("location: " . LINK . __CLASS__ . "/main/");
+        header("location: " . LINK .$this->getClass(). "/main/");
     }
 
     public function remove($param) {
@@ -1028,7 +1028,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        header("location: " . LINK . __CLASS__ . "/settings/");
+        header("location: " . LINK .$this->getClass(). "/settings/");
     }
 
     public function acknowledgedBy($param) {

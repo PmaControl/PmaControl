@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -15,15 +14,16 @@ use \Glial\Security\Crypt\Crypt;
 use \App\Library\Mysql;
 use \App\Library\Json;
 
-class Export extends Controller {
-
+class Export extends Controller
+{
     var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country", "history_etat", "ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
         "home_box", "backup_type", "export_option");
-    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
+    var $exlude_table    = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
-    function generateDump($param) {
+    function generateDump($param)
+    {
         Debug::parseDebug($param);
         $this->view = false;
 
@@ -31,7 +31,7 @@ class Export extends Controller {
 
         $tables = $db->getListTable()['table'];
 
-        $table_with_data = array();
+        $table_with_data    = array();
         $table_without_data = array();
 
         foreach ($tables as $key => $table) {
@@ -65,29 +65,30 @@ class Export extends Controller {
         }
 
 // a remplacer par une implementation full PHP
-        $cmd = "mysqldump --skip-dump-date -h " . $connect['hostname']
-                . " -u " . $connect['user']
-                . " -P " . $connect['port']
-                . " -p'" . Chiffrement::decrypt($connect['password'])
-                . "' " . $connect['database'] . " " . implode(" ", $table_with_data) . " | sed 's/ AUTO_INCREMENT=[0-9]*\b//' > " . ROOT . "/sql/full/pmacontrol.sql 2>&1";
+        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
+            ." -u ".$connect['user']
+            ." -P ".$connect['port']
+            ." -p'".Chiffrement::decrypt($connect['password'])
+            ."' ".$connect['database']." ".implode(" ", $table_with_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' > ".ROOT."/sql/full/pmacontrol.sql 2>&1";
 
 
         shell_exec($cmd);
 
-        $cmd = "mysqldump --skip-dump-date -h " . $connect['hostname']
-                . " -u " . $connect['user']
-                . " -P " . $connect['port']
-                . " -d "
-                . " -p'" . Chiffrement::decrypt($connect['password'])
-                . "' " . $connect['database'] . " " . implode(" ", $table_without_data) . " | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> " . ROOT . "/sql/full/pmacontrol.sql 2>&1";
+        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
+            ." -u ".$connect['user']
+            ." -P ".$connect['port']
+            ." -d "
+            ." -p'".Chiffrement::decrypt($connect['password'])
+            ."' ".$connect['database']." ".implode(" ", $table_without_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> ".ROOT."/sql/full/pmacontrol.sql 2>&1";
 
 
         shell_exec($cmd);
     }
 
-    function index() {
+    function index()
+    {
 
-        $this->title = '<span class="glyphicon glyphicon-import"></span> ' . __("Import / Export");
+        $this->title = '<span class="glyphicon glyphicon-import"></span> '.__("Import / Export");
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -107,14 +108,15 @@ $("#export_all-all2").click(function(){
         $res = $db->sql_query($sql);
 
         $data['options'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['options'][] = $arr;
         }
 
         $this->set('data', $data);
     }
 
-    public function export_conf() {
+    public function export_conf()
+    {
 
         $this->view = false;
 
@@ -136,30 +138,31 @@ $("#export_all-all2").click(function(){
 
 
             //$file_name = $_POST['export']['name_file'];
-            $file_name = "export_" . date('Y-m-d') . ".pmactrl";
+            $file_name = "export_".date('Y-m-d').".pmactrl";
 
             file_put_contents("/tmp/export", $crypted);
 
-            header("Content-Disposition: attachment; filename=\"" . $file_name . "\"");
-            header("Content-Length: " . filesize("/tmp/export"));
+            header("Content-Disposition: attachment; filename=\"".$file_name."\"");
+            header("Content-Length: ".filesize("/tmp/export"));
             header("Content-Type: application/octet-stream;");
             readfile("/tmp/export");
         }
     }
 
-    public function import_conf($param) {
+    public function import_conf($param)
+    {
         $this->view = false;
 
         Debug::parseDebug($param);
         //Debug::$debug = true;
-        
-        
-        $data = array();
+
+
+        $data  = array();
         $error = false;
 
         if (IS_CLI) {
 
-            $file = $param[0];
+            $file     = $param[0];
             $password = $param[1];
 
             Debug::debug($file, "file");
@@ -168,7 +171,7 @@ $("#export_all-all2").click(function(){
             if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
                 if (!empty($_FILES['export']['tmp_name']['file'])) {
-                    $file = $_FILES['export']['tmp_name']['file'];
+                    $file     = $_FILES['export']['tmp_name']['file'];
                     $password = $_POST['export']['password'];
                 }
 
@@ -183,7 +186,7 @@ $("#export_all-all2").click(function(){
                 }
 
                 if ($error == true) {
-                    header("location: " . LINK . strtolower(__CLASS__) . "/index");
+                    header("location: ".LINK.$this->getClass()."/index");
                     exit;
                 }
             }
@@ -193,12 +196,11 @@ $("#export_all-all2").click(function(){
         if (!empty($file) && !empty($password)) {
 
             $crypted = file_get_contents($file);
-            $json = Chiffrement::decrypt($crypted, $password);
+            $json    = Chiffrement::decrypt($crypted, $password);
             Debug::debug($json, "json");
-            $data = $this->import(array($json));
-            
+            $data    = $this->import(array($json));
+
             Debug::debug($data);
-            
         }
 
         $json = Chiffrement::decrypt($crypted, $password);
@@ -226,11 +228,11 @@ $("#export_all-all2").click(function(){
             }
 
             if (!empty($data['error'])) {
-                $msg = "<ul><li>" . implode("</li><li> ", $data['error']) . "</li></ul>";
+                $msg = "<ul><li>".implode("</li><li> ", $data['error'])."</li></ul>";
                 set_flash("error", __('Error'), $msg);
             }
 
-            header("location: " . LINK . strtolower(__CLASS__) . "/index");
+            header("location: ".LINK.$this->getClass()."/index");
             exit;
         }
 
@@ -239,7 +241,8 @@ $("#export_all-all2").click(function(){
         $this->set('data', $data);
     }
 
-    public function import($param) {
+    public function import($param)
+    {
         //$param[] = "--debug";
 //        debug($param);
 
@@ -247,7 +250,7 @@ $("#export_all-all2").click(function(){
 
 
         Crypt::$key = CRYPT_KEY;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = $this->di['db']->sql(DB_DEFAULT);
         //$db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -280,7 +283,8 @@ $("#export_all-all2").click(function(){
         }
     }
 
-    private function addMysql($arr) {
+    private function addMysql($arr)
+    {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -297,9 +301,9 @@ $("#export_all-all2").click(function(){
             $mysql['error'] = '';
 
 
-            $data = array();
-            $data['mysql_server'] = $mysql;
-            $data['mysql_server']['id_client'] = 1;
+            $data                                   = array();
+            $data['mysql_server']                   = $mysql;
+            $data['mysql_server']['id_client']      = 1;
             $data['mysql_server']['id_environment'] = 1;
 
             $data['mysql_server']['is_password_crypted'] = 1;
@@ -326,21 +330,21 @@ $("#export_all-all2").click(function(){
 
                 $sql = array();
                 foreach ($keys as $key) {
-                    $sql[] = " `" . $key . "` = '" . $data['mysql_server'][$key] . "' ";
+                    $sql[] = " `".$key."` = '".$data['mysql_server'][$key]."' ";
                 }
 
-                $sql2[] = "SELECT * FROM `mysql_server` WHERE " . implode(" AND ", $sql);
+                $sql2[] = "SELECT * FROM `mysql_server` WHERE ".implode(" AND ", $sql);
             }
 
 
             if (!empty($sql2)) {
-                $sql_good = '( ' . implode(") UNION (", $sql2) . ' )';
+                $sql_good = '( '.implode(") UNION (", $sql2).' )';
 
 
                 Debug::debug($sql_good);
 
                 $res10 = $db->sql_query($sql_good);
-                $cpt = $db->sql_num_rows($res10);
+                $cpt   = $db->sql_num_rows($res10);
 
                 if ($cpt !== 0) {
                     continue;
@@ -366,7 +370,8 @@ $("#export_all-all2").click(function(){
         Mysql::generateMySQLConfig($db);
     }
 
-    public function generateMySQLConfig($param = '') {
+    public function generateMySQLConfig($param = '')
+    {
         $this->view = false;
 
         Debug::parseDebug($param);
@@ -385,38 +390,40 @@ $("#export_all-all2").click(function(){
 ';
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $string = "[" . $ob->name . "]\n";
+            $string = "[".$ob->name."]\n";
             $string .= "driver=mysql\n";
-            $string .= "hostname=" . $ob->ip . "\n";
-            $string .= "port=" . $ob->port . "\n";
-            $string .= "user=" . $ob->login . "\n";
-            $string .= "password=" . $ob->passwd . "\n";
+            $string .= "hostname=".$ob->ip."\n";
+            $string .= "port=".$ob->port."\n";
+            $string .= "user=".$ob->login."\n";
+            $string .= "password=".$ob->passwd."\n";
             $string .= "crypted=1\n";
-            $string .= "database=" . $ob->database . "\n";
+            $string .= "database=".$ob->database."\n";
 
-            $config .= $string . "\n\n";
+            $config .= $string."\n\n";
 
 //Debug::debug($string);
         }
 
-        file_put_contents(ROOT . "/configuration/db.config.ini.php", $config);
+        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
 
-    public function test_import($param) {
+    public function test_import($param)
+    {
         $file = $param[0];
         $json = file_get_contents($file);
         $this->import($json);
     }
 
-    private function _export($options = array()) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $sql1 = "SELECT * FROM `export_option` where active ='1'";
-        $res1 = $db->sql_query($sql1);
+    private function _export($options = array())
+    {
+        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $sql1   = "SELECT * FROM `export_option` where active ='1'";
+        $res1   = $db->sql_query($sql1);
         $backup = array();
 
         while ($ob = $db->sql_fetch_object($res1, MYSQLI_ASSOC)) {
 
-            $tables = explode(",", trim($ob->table_name));
+            $tables  = explode(",", trim($ob->table_name));
             $crypted = explode(",", $ob->crypted_fields);
             $splited = explode(",", $ob->splited_fields);
 
@@ -438,7 +445,7 @@ $("#export_all-all2").click(function(){
 
                         $sql2 = str_replace('{$DB_DEFAULT}', DB_DEFAULT, $ob->sql);
                     } else {
-                        $sql2 = "SELECT * FROM `" . $table . "`";
+                        $sql2 = "SELECT * FROM `".$table."`";
                     }
 
 
@@ -482,7 +489,7 @@ $("#export_all-all2").click(function(){
                 Debug::debug($ob->config_file, "config file");
 //Debug::debug($tables);
 
-                $config = file_get_contents(CONFIG . $ob->config_file);
+                $config = file_get_contents(CONFIG.$ob->config_file);
                 preg_match_all("/define\(\"(\w+)\"\s*,\s*\"(.*)\"/", $config, $output_array);
 
                 foreach ($output_array[1] as $key => $val) {
@@ -498,7 +505,8 @@ $("#export_all-all2").click(function(){
         return $backup;
     }
 
-    public function test_export($param) {
+    public function test_export($param)
+    {
 
         Debug::parseDebug($param);
 
@@ -507,16 +515,17 @@ $("#export_all-all2").click(function(){
         debug(json_encode($backup));
     }
 
-    public function getExportOption() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+    public function getExportOption()
+    {
+        $db  = $this->di['db']->sql(DB_DEFAULT);
         $sql = "SELECT * FROM export_option";
 
         $res = $db->sql_query($sql);
 
         $export_option = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr           = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
-            $arr['table_name'] = explode(",", trim($arr['table_name']));
+            $arr['table_name']     = explode(",", trim($arr['table_name']));
             $arr['crypted_fields'] = explode(",", trim($arr['crypted_fields']));
 
             if (empty($arr['table_name'][0])) {
@@ -540,23 +549,25 @@ $("#export_all-all2").click(function(){
         return $export_option;
     }
 
-    private function getUniqueKey($table_name) {
+    private function getUniqueKey($table_name)
+    {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
-        $sql = "select group_concat(COLUMN_NAME) as colonne from information_schema.KEY_COLUMN_USAGE where TABLE_schema = 'pmacontrol' and table_name ='" . $table_name . "' and POSITION_IN_UNIQUE_CONSTRAINT is null and CONSTRAINT_NAME != 'PRIMARY' group by CONSTRAINT_NAME;";
+        $sql = "select group_concat(COLUMN_NAME) as colonne from information_schema.KEY_COLUMN_USAGE where TABLE_schema = 'pmacontrol' and table_name ='".$table_name."' and POSITION_IN_UNIQUE_CONSTRAINT is null and CONSTRAINT_NAME != 'PRIMARY' group by CONSTRAINT_NAME;";
 
         $res = $db->sql_query($sql);
 
         $unique = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $unique[] = $arr['colonne'];
         }
 
         return $unique;
     }
 
-    public function encrypt() {
+    public function encrypt()
+    {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -565,12 +576,13 @@ $("#export_all-all2").click(function(){
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $sql = "UPDATE mysql_server SET passwd = '" . Chiffrement::encrypt($ob->passwd) . "' WHERE id=" . $ob->id;
+            $sql = "UPDATE mysql_server SET passwd = '".Chiffrement::encrypt($ob->passwd)."' WHERE id=".$ob->id;
             $db->sql_query($sql);
         }
     }
 
-    public function option() {
+    public function option()
+    {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -590,10 +602,11 @@ $("#export_all-all2").click(function(){
 //a mettre dans une librairy
 
 
-    public function test_dechiffrement() {
+    public function test_dechiffrement()
+    {
         if (IS_CLI) {
 
-            $file = $param[0];
+            $file     = $param[0];
             $password = $param[1];
 
             Debug::debug($file, "file");
@@ -602,7 +615,7 @@ $("#export_all-all2").click(function(){
             if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
                 if (!empty($_FILES['export']['tmp_name']['file'])) {
-                    $file = $_FILES['export']['tmp_name']['file'];
+                    $file     = $_FILES['export']['tmp_name']['file'];
                     $password = $_POST['export']['password'];
                 }
 
@@ -619,7 +632,7 @@ $("#export_all-all2").click(function(){
                 }
 
                 if ($error == true) {
-                    header("location: " . LINK . strtolower(__CLASS__) . "/" . __FUNCTION__);
+                    header("location: ".LINK.$this->getClass()."/".__FUNCTION__);
                     exit;
                 }
             }
@@ -628,20 +641,20 @@ $("#export_all-all2").click(function(){
         $data = array();
 
         if (!empty($file) && !empty($password)) {
-            $crypted = file_get_contents($file);
+            $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
 
 
 
             if ($this->is_gzipped($compressed) === true) {
 
-                $json = gzuncompress($compressed);
+                $json         = gzuncompress($compressed);
                 $data['json'] = $json;
             } else {
 
 
                 set_flash("error", __('Error'), __("The password is not good"));
-                header("location: " . LINK . strtolower(__CLASS__) . "/" . __FUNCTION__);
+                header("location: ".LINK.$this->getClass()."/".__FUNCTION__);
                 exit;
             }
             //false
@@ -650,9 +663,10 @@ $("#export_all-all2").click(function(){
         $this->set('data', $data);
     }
 
-    function is_gzipped($in) {
+    function is_gzipped($in)
+    {
 
-        if (mb_strpos($in, "\x1f" . "\x8b" . "\x08") === 0) {
+        if (mb_strpos($in, "\x1f"."\x8b"."\x08") === 0) {
             return true;
         } else if (@gzuncompress($in) !== false) {
             return true;
@@ -662,9 +676,7 @@ $("#export_all-all2").click(function(){
             return false;
         }
     }
-
 }
-
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);
   echo $uncompressed; */

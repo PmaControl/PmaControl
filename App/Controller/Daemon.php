@@ -16,8 +16,6 @@ class Daemon extends Controller
 {
     var $daemon = array(7, 10, 11, 12, 5);
 
-
-
     public function index()
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -88,7 +86,7 @@ class Daemon extends Controller
 
         if (!IS_CLI) {
             set_flash("success", $title, $msg);
-            header("location: ".LINK.\App\Library\Util::getController(__CLASS__)."/index");
+            header("location: ".LINK.$this->getClass()."/index");
             exit;
         }
     }
@@ -128,7 +126,7 @@ class Daemon extends Controller
         }
 
         $php = explode(" ", shell_exec("whereis php"))[1];
-        $cmd = $php." ".GLIAL_INDEX." ".\App\Library\Util::getController(__CLASS__)." stopAll".$debug;
+        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." stopAll".$debug;
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
@@ -138,7 +136,7 @@ class Daemon extends Controller
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
-        $cmd = $php." ".GLIAL_INDEX." ".\App\Library\Util::getController(__CLASS__)." startAll".$debug;
+        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." startAll".$debug;
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
@@ -151,7 +149,7 @@ class Daemon extends Controller
 
 
             set_flash("success", $title, $msg);
-            header("location: ".LINK.\App\Library\Util::getController(__CLASS__)."/index");
+            header("location: ".LINK.$this->getClass()."/index");
             exit;
         }
     }

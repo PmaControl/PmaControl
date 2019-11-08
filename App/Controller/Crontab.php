@@ -51,7 +51,7 @@ class Crontab extends Controller {
                     $param = implode("/", $ret);
 
 
-                    header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/" . $param);
+                    header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $param);
 
                     die();
                 }

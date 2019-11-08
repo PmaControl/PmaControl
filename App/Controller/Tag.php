@@ -66,7 +66,7 @@ class Tag extends Controller {
                 }
 
 
-                header('location: ' . LINK . __CLASS__ . '/' . $method . '/' . Post::getToPost());
+                header('location: ' . LINK .$this->getClass(). '/' . $method . '/' . Post::getToPost());
             }
         }
 

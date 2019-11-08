@@ -48,7 +48,7 @@ class Log extends Controller {
                 $_POST['ts_variable']['id'] = "[" . implode(",", $_POST['ts_variable']['id']) . "]";
             }
 
-            header("location: " . LINK . __CLASS__ . "/" . __FUNCTION__ . "/" . Post::getToPost());
+            header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . Post::getToPost());
         }
 
         $data['log'] = array();

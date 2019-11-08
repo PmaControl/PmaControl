@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
+use App\Library\Util;
 
 class Mysqlsys extends Controller {
 
@@ -30,7 +31,7 @@ class Mysqlsys extends Controller {
 
                 while ($ob = $db->sql_fetch_object($res)) {
                     $id_mysql_server = $ob->id;
-                    $url = LINK . strtolower(__CLASS__) . '/index/mysql_server:id:' . $id_mysql_server;
+                    $url = LINK . strtolower($this->getClass()) . '/index/mysql_server:id:' . $id_mysql_server;
                     header('location: ' . $url);
                 }
             }

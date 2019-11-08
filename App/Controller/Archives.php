@@ -13,7 +13,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
-use App\Library\System;
+use \App\Library\System;
 
 class Archives extends Controller {
 
@@ -568,7 +568,7 @@ ORDER BY a.id DESC";
             $data['history'][] = $ob;
         }
 
-        App\Library\Display::setDb($db);
+        \App\Library\Display::setDb($db);
 
         $this->set('data', $data);
     }
@@ -611,15 +611,15 @@ ORDER BY a.id DESC";
         $data['menu']['index']['name'] = __('Total archives by cleaner');
         $data['menu']['index']['icone'] = '<i class="fa fa-file-archive-o" aria-hidden="true"></i>';
         //$data['menu']['main']['icone'] = '<span class="glyphicon glyphicon-th-large" style="font-size:12px"></span>';
-        $data['menu']['index']['path'] = LINK . __CLASS__ . '/index';
+        $data['menu']['index']['path'] = LINK .$this->getClass(). '/index';
 
         $data['menu']['history']['name'] = __('Restoration history');
         $data['menu']['history']['icone'] = '<i class="fa fa-history" aria-hidden="true"></i>';
-        $data['menu']['history']['path'] = LINK . __CLASS__ . '/history';
+        $data['menu']['history']['path'] = LINK .$this->getClass(). '/history';
 
         $data['menu']['detail']['name'] = __('Restoration detail');
         $data['menu']['detail']['icone'] = '<i class="fa fa-tasks" aria-hidden="true"></i>';
-        $data['menu']['detail']['path'] = LINK . __CLASS__ . '/detail/' . $id_archive_load;
+        $data['menu']['detail']['path'] = LINK .$this->getClass(). '/detail/' . $id_archive_load;
 
 
         $this->set('data', $data);

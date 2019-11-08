@@ -325,7 +325,7 @@ class Ssh extends Controller {
             $db->sql_query($sql);
         }
 
-        header("location: " . LINK . __CLASS__ . "/index");
+        header("location: " . LINK .$this->getClass(). "/index");
     }
 
     public function associate($param) {
@@ -467,7 +467,7 @@ AND b.is_available = 1;";
 
 
         if (!IS_CLI) {
-            header("location: " . LINK . __CLASS__ . "/index");
+            header("location: " . LINK .$this->getClass(). "/index");
         }
     }
 

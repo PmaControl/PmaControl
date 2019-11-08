@@ -144,12 +144,12 @@ class Translation extends Controller {
 	});
 
 	$("#none-id_from").change(function() {
-		  document.location="' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:"+$(this).val()+"/to:' . $data['to'] . ' "
+		  document.location="' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:"+$(this).val()+"/to:' . $data['to'] . ' "
 		  // display based on the value
 	});
 
 	$("#none-id_to").change(function() {
-		  document.location="' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:"+$(this).val()
+		  document.location="' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:"+$(this).val()
 		  // display based on the value
 	});
 
@@ -201,7 +201,7 @@ class Translation extends Controller {
                 include_once(LIB . "pagination.lib.php");
 
                 //url, curent page, nb item max , nombre de lignes, nombres de pages
-                $pagination = new pagination(LINK . __CLASS__ . '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:' . $data['to'],
+                $pagination = new pagination(LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:' . $data['to'],
                         $data['page'], $data['count'][0]['cpt'], TRANSLATION_ELEM_PER_PAGE, TRANSLATION_NB_PAGE_TO_DISPLAY_MAX);
 
                 $tab = $pagination->get_sql_limit();
@@ -248,7 +248,7 @@ class Translation extends Controller {
             set_flash("success", $title, $msg);
         }
 
-        header("location: " . LINK . __CLASS__ . "/admin_translation/");
+        header("location: " . LINK .$this->getClass(). "/admin_translation/");
         exit;
     }
 
@@ -282,7 +282,7 @@ class Translation extends Controller {
 
         set_flash("success", $title, $msg);
 
-        header("location: " . LINK . __CLASS__ . "/admin_translation/");
+        header("location: " . LINK .$this->getClass(). "/admin_translation/");
         exit;
     }
 

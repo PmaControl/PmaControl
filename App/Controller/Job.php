@@ -182,7 +182,7 @@ class Job extends Controller {
             }
         }
 
-        header("location: " . LINK . __CLASS__ . '/index');
+        header("location: " . LINK .$this->getClass(). '/index');
     }
 
 }

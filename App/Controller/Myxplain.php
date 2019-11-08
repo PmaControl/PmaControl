@@ -5,15 +5,15 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use Glial\Cli\Table;
 
-class Myxplain extends Controller {
-
-    var $id = '<p>This is <b>the query identifier</b>, this column <B>shows the number of SELECTs</B> (This is not the identifier of a join)</p>
+class Myxplain extends Controller
+{
+    var $id            = '<p>This is <b>the query identifier</b>, this column <B>shows the number of SELECTs</B> (This is not the identifier of a join)</p>
 	<p>Therefore, in the case of a simple SELECT query, this identifier will always be equal to 1 for each row of the EXPLAIN output</p>
-	<p>Other values are possible when using <a href="' . LINK . __CLASS__ . '/index/id/18">subqueries</a>, '
-            . '<a href="' . LINK . __CLASS__ . '/index/id/16">derived tables</a> or <a href="' . LINK . __CLASS__ . '/index/id/18">UNION</a></p>
+	<p>Other values are possible when using <a href="'.LINK.'Myxplain/index/id/18">subqueries</a>, '
+        .'<a href="'.LINK.'Myxplain/index/id/16">derived tables</a> or <a href="'.LINK.'Myxplain/index/id/18">UNION</a></p>
 	<p>NULL value will be displayed for the results of an UNION of two (or more) SELECTs of the EXPLAIN output</p>
 	<p>In our example, the column <i>table</i> looks like that : &lt;union1,2&gt;, where 1 and 2 are the two SELECT of the EXPLAIN plan</p>';
-    var $select_type = "This column indicates if you run a simple or a complex query
+    var $select_type   = "This column indicates if you run a simple or a complex query
 
 This is an informative column related to the id column
 
@@ -34,7 +34,7 @@ For complex queries, the main SELECT will always labeled PRIMARY and the other s
 Note that converting subqueries or derived tables to JOINs is better for performance
 
 Subqueries runs as part of explain execution, pay attention to this if you love your tranquility";
-    var $table = "This column simply displays the name of the table (or its alias) being accessed for the specified row
+    var $table         = "This column simply displays the name of the table (or its alias) being accessed for the specified row
 
 For complex queries, the output of this column can be <unionM,N> or <derivedN>
 
@@ -44,7 +44,7 @@ This column is also useful to see what was the optimizer choices about the join 
 
 NULL value is also possible in the case of an impossible query or for queries with no table
 ";
-    var $type = "The join type shows how data is accessed
+    var $type          = "The join type shows how data is accessed
 
 This is an important information about the query optimization, it must be as good as possible
 
@@ -84,7 +84,7 @@ If this is not the case, the trouble begins... hey, it's your job!
 If NULL value is displayed, it is possible that an index is missing (or it means that you are looking to an UNION or a DERIVED TABLE row)
 
 Remember to take a look at the where clause of the query to understand the optimizer choice";
-    var $key = "This is the key that the optimizer decided to use to access to the data and minimize the query cost
+    var $key           = "This is the key that the optimizer decided to use to access to the data and minimize the query cost
 
 This is one of the most important column related to the query optimization
 
@@ -97,7 +97,7 @@ But the most important is to have an index name in this column
 Use the show index command to show the indexes declared for the tables listed in the explain plan
 
 It's possible to force the optimizer to use or ignore an index with hints";
-    var $key_len = "This is the length of the index that the optimizer decided to use
+    var $key_len       = "This is the length of the index that the optimizer decided to use
 
 This information allows you to know how many parts of a multiple-part index are used
 
@@ -112,12 +112,12 @@ In this second example, the two parts of the primary key are used, you can read 
 These 8 bytes corresponds to the sum of the size of an integer type and the size of a timestamp type (4 bytes + 4 bytes)
 
 Note that if the column is nullable, the key length is incremented by 1. UTF8 character set can also affect this size";
-    var $ref = "Which columns or constants were compared with index in the key column
+    var $ref           = "Which columns or constants were compared with index in the key column
 
 This column allows you to see what is compared
 
 In this example, the id values of the table t3 are compared with the values of the idx1 index";
-    var $row = "This is the estimated amount of rows that the optimizer have to examine to retrieve the result of the query
+    var $row           = "This is the estimated amount of rows that the optimizer have to examine to retrieve the result of the query
 
 This is not the number of rows of the result set
 
@@ -134,7 +134,7 @@ If this difference is significant, it's time to analyze your where clause dude
 type and key columns may help to diagnose a potential problem
 
 Note that run an analyze table command before the explain command may help the optimizer to estimate a more accurate number of rows";
-    var $filtered = "This column is specific with EXPLAIN EXTENDED command
+    var $filtered      = "This column is specific with EXPLAIN EXTENDED command
 
 It corresponds to an estimated percentage of rows filtered by the table condition
 
@@ -143,7 +143,7 @@ In other words, it is the number of rows which will be joined with previous tabl
 These information may be a very valuable addition to EXPLAIN for performance troubleshooting
 
 See documentation for more details about special markers that can appear in EXTENDED output";
-    var $extra = "The Extra column provides additinal informations about how MySQL resolves the query
+    var $extra         = "The Extra column provides additinal informations about how MySQL resolves the query
 
 It can be a concatenation of multiple informations
 
@@ -161,14 +161,15 @@ The most common values for this colomn are the following :
 
 See documentation for more details about other possible values";
 
-    public function index($param) {
+    public function index($param)
+    {
         $colonne = $param[0] ?? "id";
-        $query = $param[1] ?? 1;
+        $query   = $param[1] ?? 1;
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
-        $sql1 = "SELECT * FROM myxplain WHERE id = " . $query;
+        $sql1 = "SELECT * FROM myxplain WHERE id = ".$query;
 
 
         $res1 = $db->sql_query($sql1);
@@ -204,8 +205,8 @@ See documentation for more details about other possible values";
 
 
         foreach ($keys as $key) {
-            $search = '/(\s|\|)(' . $key . ')(\s|\|)/';
-            $lines[1] = preg_replace($search, '$1<a href="' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/$2">$2</a>$3', $lines[1]);
+            $search   = '/(\s|\|)('.$key.')(\s|\|)/';
+            $lines[1] = preg_replace($search, '$1<a href="'.LINK.$this->getClass().'/'.__FUNCTION__.'/$2">$2</a>$3', $lines[1]);
         }
 
 
@@ -220,7 +221,8 @@ See documentation for more details about other possible values";
         $this->set('data', $data);
     }
 
-    public function import() {
+    public function import()
+    {
         $db = $this->di['db']->sql(DB_DEFAULT);
 
 
@@ -228,9 +230,7 @@ See documentation for more details about other possible values";
 
 
             $json = file_get_contents($filename);
-
-            $tab = json_decode($json, true);
-
+            $tab  = json_decode($json, true);
             $data = $tab['mysqlcommand'];
 
             debug($data);
@@ -240,15 +240,14 @@ See documentation for more details about other possible values";
 
             $sql = "INSERT INTO myxplain (`name`,`command`,`explain`,`duration`,`date`)
                 VALUES (
-                '" . $file['filename'] . "',
-                '" . $data['command'] . "',
-                '" . json_encode($data['results']) . "',
-                '" . $data['duration'] . "',
-                '" . date('Y-m-d H:i:s') . "' )";
+                '".$file['filename']."',
+                '".$data['command']."',
+                '".json_encode($data['results'])."',
+                '".$data['duration']."',
+                '".date('Y-m-d H:i:s')."' )";
 
 
             $db->sql_query($sql);
         }
     }
-
 }

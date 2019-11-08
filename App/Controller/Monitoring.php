@@ -268,7 +268,7 @@ class Monitoring extends Controller {
                     $_GET['page'] = 1;
                 }
 
-                $pagination = new Pagination(LINK . __CLASS__ . '/' . __FUNCTION__ . '/' . $param[0]
+                $pagination = new Pagination(LINK .$this->getClass(). '/' . __FUNCTION__ . '/' . $param[0]
                         . "/database:id:" . $_GET['database']['id']
                         . "/field:id:" . $_GET['field']['id']
                         . "/database:filter:" . $_GET['database']['filter'] . "/orderby:id:" . $_GET['orderby']['id']

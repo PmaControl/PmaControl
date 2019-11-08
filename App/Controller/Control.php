@@ -74,7 +74,7 @@ class Control extends Controller {
     }
 
     public function before($param = "") {
-        $logger = new Logger(__CLASS__);
+        $logger = new Logger($this->getClass());
         $file_log = LOG_FILE;
         $handler = new StreamHandler($file_log, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));

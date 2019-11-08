@@ -1,5 +1,4 @@
 <?php
-
 /*
  * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK
  */
@@ -10,13 +9,15 @@ use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
 
-class Slave extends Controller {
+class Slave extends Controller
+{
 
     use \App\Library\Filter;
 
-    public function index() {
+    public function index()
+    {
 
-        $this->title = '<i class="fa fa-sitemap"></i> ' . __("Master / Slave");
+        $this->title = '<i class="fa fa-sitemap"></i> '.__("Master / Slave");
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -29,8 +30,8 @@ class Slave extends Controller {
 
         Extraction::setDb($db);
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
-                    "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                    "slave::last_sql_error", "slave::last_sql_errno"));
+                "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
+                "slave::last_sql_error", "slave::last_sql_errno"));
 
 
 
@@ -52,16 +53,16 @@ class Slave extends Controller {
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE 1 " . self::getFilter() . "
+                 WHERE 1 ".self::getFilter()."
                  ORDER by `name`;";
 
         $res = $db->sql_query($sql);
 
 
         $data['server'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['server']['master'][$arr['ip'] . ':' . $arr['port']] = $arr;
-            $data['server']['master'][$arr['id']] = $arr;
+        while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['server']['master'][$arr['ip'].':'.$arr['port']] = $arr;
+            $data['server']['master'][$arr['id']]                  = $arr;
 
 
             $data['server']['slave'][$arr['id']] = $arr;
@@ -83,7 +84,8 @@ class Slave extends Controller {
         $this->set('data', $data);
     }
 
-    private function generateGraph($slaves) {
+    private function generateGraph($slaves)
+    {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
         foreach ($slaves as $slave) {
@@ -92,16 +94,16 @@ class Slave extends Controller {
 
 Chart.defaults.global.legend.display = false;
 
-var ctx = document.getElementById("myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . '").getContext("2d");
+var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'").getContext("2d");
 
-var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' = new Chart(ctx, {
+var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new Chart(ctx, {
     type: "line",
     data: {
         labels: [],
         datasets: [{
             fill: true,
             fillColor : "rgba(255,255, 0, 1)",
-            data: [' . $slave['graph'] . '],
+            data: ['.$slave['graph'].'],
                 borderColor: "rgba(0,0, 0, 1)",
                 borderWidth: 2,
              pointRadius :0,
@@ -167,21 +169,22 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         }
     }
 
-    public function show($param) {
+    public function show($param)
+    {
 
-        $this->title = '<i class="fa fa-sitemap"></i> ' . __("Slave status");
+        $this->title = '<i class="fa fa-sitemap"></i> '.__("Slave status");
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         //debug($db);
 
-        $id_mysql_server = $param[0];
+        $id_mysql_server  = $param[0];
         $replication_name = $param[1];
 
-        $data['id_mysql_server'] = $id_mysql_server;
+        $data['id_mysql_server']  = $id_mysql_server;
         $data['replication_name'] = $replication_name;
 
-        $sql = "SELECT * from mysql_server where id = " . $id_mysql_server . ";";
+        $sql = "SELECT * from mysql_server where id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -224,14 +227,14 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         Extraction::setOption('groupbyday', true);
 
 
-        $date = date('Y-m-d H:i:s');
+        $date        = date('Y-m-d H:i:s');
         $date_format = 'Y-m-d';
 
         $array_date = date_parse_from_format($date_format, $date);
 
         $more_days = -7;
         $next_date = date(
-                $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
+            $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
 
 
@@ -250,12 +253,12 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         //change master
         $sql = "SELECT a.id_mysql_server FROM link__architecture__mysql_server a
           INNER JOIN link__architecture__mysql_server b ON a.id_architecture = b.id_architecture
-          WHERE b.id_mysql_server=" . $id_mysql_server . " and a.id_mysql_server != " . $id_mysql_server . ";";
+          WHERE b.id_mysql_server=".$id_mysql_server." and a.id_mysql_server != ".$id_mysql_server.";";
 
         $res = $db->sql_query($sql);
 
         $data['mysql_server_specify'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ob                           = $db->sql_fetch_object($res)) {
             $data['mysql_server_specify'][] = $ob->id_mysql_server;
         }
 
@@ -264,7 +267,7 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         // find master
         $_GET['mysql_server']['id'] = Mysql::getMaster($db, $id_mysql_server, $replication_name);
 
-        $data['id_slave'] = array($id_mysql_server);
+        $data['id_slave']              = array($id_mysql_server);
         $_GET['mysql_slave']['server'] = $id_mysql_server;
 
 
@@ -273,12 +276,12 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         //rebuild db
         $db_master = $this->di['db']->sql(Mysql::getDbLink($db, $_GET['mysql_server']['id']));
 
-        $sql = "show databases;";
+        $sql  = "show databases;";
         $res7 = $db_master->sql_query($sql);
 
         $data['db_on_master'] = array();
-        $i = 0;
-        while ($ob7 = $db->sql_fetch_object($res7)) {
+        $i                    = 0;
+        while ($ob7                  = $db->sql_fetch_object($res7)) {
             if (in_array($ob7->Database, array('information_schema', 'performance_schema', 'mysql', 'sys'))) {
                 continue;
             }
@@ -297,40 +300,39 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         // https://mariadb.com/kb/en/library/gtid/
 
 
-        $data['class'] = __CLASS__;
+        $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
 
 
         $this->set('data', $data);
     }
 
-    public function box() {
+    public function box()
+    {
 
         $db = $this->di['db']->sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
-                    "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
-                    "slave::last_sql_error", "slave::last_sql_errno"));
+                "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
+                "slave::last_sql_error", "slave::last_sql_errno"));
 
 
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE 1 " . self::getFilter() . "
+                 WHERE 1 ".self::getFilter()."
                  ORDER by `name`;";
 
 
         $res = $db->sql_query($sql);
 
         $data['server'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['server']['master'][$arr['ip'] . ':' . $arr['port']] = $arr;
-            $data['server']['master'][$arr['id']] = $arr;
-
-
-            $data['server']['slave'][$arr['id']] = $arr;
+        while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['server']['master'][$arr['ip'].':'.$arr['port']] = $arr;
+            $data['server']['master'][$arr['id']]                  = $arr;
+            $data['server']['slave'][$arr['id']]                   = $arr;
         }
 
 
@@ -348,30 +350,30 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
                     $export = array();
 
 
-                    if (empty($data['server']['master'][$slave['master_host'] . ':' . $slave['master_port']])) {
-                        $data['server']['master'][$slave['master_host'] . ':' . $slave['master_port']]['display_name'] = "Unknow " . $slave['master_host'] . ':' . $slave['master_port'];
+                    if (empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
+                        $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['display_name'] = "Unknow ".$slave['master_host'].':'.$slave['master_port'];
 
                         if ($slave['slave_io_running'] === 'Yes') {
-                            $data['server']['master'][$slave['master_host'] . ':' . $slave['master_port']]['is_available'] = "1";
+                            $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['is_available'] = "1";
                         } else {
-                            $data['server']['master'][$slave['master_host'] . ':' . $slave['master_port']]['is_available'] = "0";
+                            $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['is_available'] = "0";
                         }
                     }
 
 
-                    $export['master'] = $data['server']['master'][$slave['master_host'] . ':' . $slave['master_port']];
-                    $export['slave'] = $data['server']['slave'][$id_mysql_server];
-                    $export['connect'] = $connect_name;
-                    $export['seconds'] = $slave['seconds_behind_master'];
+                    $export['master']            = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']];
+                    $export['slave']             = $data['server']['slave'][$id_mysql_server];
+                    $export['connect']           = $connect_name;
+                    $export['seconds']           = $slave['seconds_behind_master'];
                     $export['slave_sql_running'] = $slave['slave_sql_running'];
-                    $export['slave_io_running'] = $slave['slave_io_running'];
+                    $export['slave_io_running']  = $slave['slave_io_running'];
 
                     $export['slave_sql_error'] = $slave['last_sql_error'];
-                    $export['slave_io_error'] = $slave['last_io_error'];
+                    $export['slave_io_error']  = $slave['last_io_error'];
 
 
                     $export['slave_sql_errno'] = $slave['last_sql_errno'];
-                    $export['slave_io_errno'] = $slave['last_io_errno'];
+                    $export['slave_io_errno']  = $slave['last_io_errno'];
 
                     $data['box'][] = $export;
                 }
@@ -383,7 +385,8 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         //debug($data['box']);
     }
 
-    private function generateGraphSlave($slaves) {
+    private function generateGraphSlave($slaves)
+    {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
         foreach ($slaves as $slave) {
@@ -392,15 +395,15 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
 
 Chart.defaults.global.legend.display = false;
 
-var ctx = document.getElementById("myChart' . $slave['id_mysql_server'] . crc32($slave['day']) . '").getContext("2d");
+var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'").getContext("2d");
 
-var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' = new Chart(ctx, {
+var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new Chart(ctx, {
 
     type: "line",
     data: {
         datasets: [{
-            label: "' . __('Second behind master') . '",
-            data: [' . $slave['graph'] . '],
+            label: "'.__('Second behind master').'",
+            data: ['.$slave['graph'].'],
                 borderWidth: 1,
              pointRadius :1,
              lineTension: 0
@@ -412,7 +415,7 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         bezierCurve: false,
         title: {
             display: true,
-            text: "Replication : ' . $slave['day'] . '",
+            text: "Replication : '.$slave['day'].'",
             position: "top",
             padding: "0"
         },
@@ -429,8 +432,8 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
                 distribution: "linear",
                 time: {
 
-                    min: new Date("' . $slave['day'] . ' 00:00:00"),
-                    max: new Date("' . $slave['day'] . ' 23:59:59"),
+                    min: new Date("'.$slave['day'].' 00:00:00"),
+                    max: new Date("'.$slave['day'].' 23:59:59"),
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
           minute: "HH:mm"
@@ -460,12 +463,12 @@ var myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']) . ' 
         }
     }
 
-    public function startSlave($param) {
+    public function startSlave($param)
+    {
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             $db = Mysql::getDbLink();
         }
     }
-
 }

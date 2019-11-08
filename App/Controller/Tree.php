@@ -26,7 +26,7 @@ class Tree extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             if (!empty($_POST['menu']['id'])) {
-                header('location: ' . LINK . __CLASS__ . '/' . __FUNCTION__ . '/' . $_POST['menu']['id']);
+                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/' . $_POST['menu']['id']);
             }
         }
 
