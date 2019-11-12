@@ -1562,7 +1562,7 @@ var myChart = new Chart(ctx, {
 
                                 $step_sql = rtrim($value_sql, ",").";";
 
-                                Debug::sql($step_sql);
+                                //Debug::sql($step_sql);
 
                                 $db->sql_query($step_sql);
                                 $this->setAffectedRows($table_name);
@@ -1579,15 +1579,12 @@ var myChart = new Chart(ctx, {
                             Debug::debug(Color::getColoredString("COUNT(1) = ".$count." - LOOP = ".$loop, "yellow"));
                         }
 
-
-
-
                         if ($have_data) {
                             $step_sql = rtrim($value_sql, ",").";";
 
                             //insertion dans la table de purge
 
-                            Debug::sql($step_sql);
+                            //Debug::sql($step_sql);
                             $db->sql_query($step_sql);
                             $this->setAffectedRows($table_name);
                             Debug::debug($count, "Nombre de lignes");
