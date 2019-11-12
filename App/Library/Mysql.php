@@ -1,4 +1,5 @@
 <?php
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -12,19 +13,18 @@ use App\Library\System;
 use App\Library\Tag;
 use \Glial\Security\Crypt\Crypt;
 
-class Mysql
-{
+class Mysql {
+
     static $db;
     static $return;
 
-    static function exportAllUser($db_link)
-    {
+    static function exportAllUser($db_link) {
         $sql1 = "select user, host from mysql.user;";
         $res1 = $db_link->sql_query($sql1);
 
         $users = array();
-        while ($ob1   = $db_link->sql_fetch_object($res1)) {
-            $sql2 = "SHOW GRANTS FOR '".$ob1->user."'@'".$ob1->host."'";
+        while ($ob1 = $db_link->sql_fetch_object($res1)) {
+            $sql2 = "SHOW GRANTS FOR '" . $ob1->user . "'@'" . $ob1->host . "'";
             $res2 = $db_link->sql_query($sql2);
 
             while ($ob2 = $db_link->sql_fetch_array($res2, MYSQLI_NUM)) {
@@ -36,14 +36,13 @@ class Mysql
         return $users;
     }
 
-    static function exportUserByUser($db_link)
-    {
+    static function exportUserByUser($db_link) {
         $sql1 = "select user, host from mysql.user;";
         $res1 = $db_link->sql_query($sql1);
 
         $users = array();
-        while ($ob1   = $db_link->sql_fetch_object($res1)) {
-            $sql2 = "SHOW GRANTS FOR '".$ob1->user."'@'".$ob1->host."'";
+        while ($ob1 = $db_link->sql_fetch_object($res1)) {
+            $sql2 = "SHOW GRANTS FOR '" . $ob1->user . "'@'" . $ob1->host . "'";
             $res2 = $db_link->sql_query($sql2);
 
             while ($ob2 = $db_link->sql_fetch_array($res2, MYSQLI_NUM)) {
@@ -55,8 +54,7 @@ class Mysql
         return $users;
     }
 
-    static public function onAddMysqlServer($db)
-    {
+    static public function onAddMysqlServer($db) {
 
         self::addMaxDate($db);
         self::generateMySQLConfig($db);
@@ -65,8 +63,7 @@ class Mysql
 //startAll daemon
     }
 
-    static public function generateMySQLConfig($db)
-    {
+    static public function generateMySQLConfig($db) {
 
         $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
         $res = $db->sql_query($sql);
@@ -82,16 +79,16 @@ class Mysql
         $delta = $config;
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $string = "[".$ob->name."]\n";
+            $string = "[" . $ob->name . "]\n";
             $string .= "driver=mysql\n";
-            $string .= "hostname=".$ob->ip."\n";
-            $string .= "port=".$ob->port."\n";
-            $string .= "user=".$ob->login."\n";
-            $string .= "password=".$ob->passwd."\n";
+            $string .= "hostname=" . $ob->ip . "\n";
+            $string .= "port=" . $ob->port . "\n";
+            $string .= "user=" . $ob->login . "\n";
+            $string .= "password=" . $ob->passwd . "\n";
             $string .= "crypted=1\n";
-            $string .= "database=".$ob->database."\n";
+            $string .= "database=" . $ob->database . "\n";
 
-            $config .= $string."\n\n";
+            $config .= $string . "\n\n";
 
 //Debug::debug($string);
         }
@@ -99,15 +96,14 @@ class Mysql
 
         if ($config != $delta) {
 
-            file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+            file_put_contents(ROOT . "/configuration/db.config.ini.php", $config);
         } else {
             echo 'VGCFGXDNGFX';
             exit;
         }
     }
 
-    static public function addMaxDate($db, $id_mysql_server = '')
-    {
+    static public function addMaxDate($db, $id_mysql_server = '') {
         $sql1 = "select * from ts_file;";
         $res1 = $db->sql_query($sql1);
 
@@ -121,12 +117,12 @@ class Mysql
 
 
             $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server";
+                    . "SELECT 7,id, now(), now(),now(),now(),now(), " . $ob1->id . " from mysql_server";
 
 
 
             if (!empty($id_mysql_server)) {
-                $sql5 .= " WHERE id=".$id_mysql_server."";
+                $sql5 .= " WHERE id=" . $id_mysql_server . "";
             }
 
             $sql5 .= ";";
@@ -135,8 +131,7 @@ class Mysql
         }
     }
 
-    static public function getMaster($db, $id_mysql_server, $connection_name = '')
-    {
+    static public function getMaster($db, $id_mysql_server, $connection_name = '') {
 
         Extraction::setDb($db);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
@@ -146,7 +141,7 @@ class Mysql
         foreach ($masters as $master) {
 
 //a mapper aussi avec les ip virtuel (version enterprise)
-            $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
+            $sql = "SELECT id FROM mysql_server where ip='" . $master[$connection_name]['master_host'] . "' AND port='" . $master[$connection_name]['master_port'] . "' LIMIT 1;";
 
             $res = $db->sql_query($sql);
 
@@ -160,10 +155,9 @@ class Mysql
         return 0;
     }
 
-    static public function getDbLink($dblink, $id_mysql_server)
-    {
+    static public function getDbLink($dblink, $id_mysql_server) {
 
-        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
+        $sql = "SELECT name from mysql_server where id=" . $id_mysql_server . ";";
         $res = $dblink->sql_query($sql);
 
         while ($ob = $dblink->sql_fetch_object($res)) {
@@ -173,11 +167,10 @@ class Mysql
         return $name;
     }
 
-    static function addMysqlServer($data)
-    {
+    static function addMysqlServer($data) {
         Debug::debug($data);
 
-        $db     = self::$db;
+        $db = self::$db;
         //debug($data);
         $server = array();
 
@@ -198,7 +191,7 @@ class Mysql
         $port = $data['port'] ?? 3306;
 
 
-        $sql = "SELECT id from mysql_server where ip='".$ip."' and port =".$port;
+        $sql = "SELECT id from mysql_server where ip='" . $ip . "' and port =" . $port;
 
         $res = $db->sql_query($sql);
 
@@ -209,29 +202,32 @@ class Mysql
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
 
-        $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
-                array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
-        $server['mysql_server']['name']                = "server_".uniqid();
-        $server['mysql_server']['display_name']        = self::getHostname($data['display_name'], array($data['fqdn'], $data['login'], $data['password'], $data['port']));
-        $server['mysql_server']['ip']                  = $ip;
-        $server['mysql_server']['hostname']            = $data['fqdn'];
-        $server['mysql_server']['login']               = $data['login'];
-        $server['mysql_server']['passwd']              = Crypt::encrypt($data['password'], CRYPT_KEY);
-        $server['mysql_server']['database']            = $data['database'] ?? "mysql";
+        $server['mysql_server']['id_environment'] = self::selectOrInsert($data['environment'], "environment", "libelle",
+                        array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
+        $server['mysql_server']['name'] = "server_" . uniqid();
+        $server['mysql_server']['display_name'] = self::getHostname($data['display_name'], array($data['fqdn'], $data['login'], $data['password'], $data['port']));
+        $server['mysql_server']['ip'] = $ip;
+        $server['mysql_server']['hostname'] = $data['fqdn'];
+        $server['mysql_server']['login'] = $data['login'];
+        $server['mysql_server']['passwd'] = Crypt::encrypt($data['password'], CRYPT_KEY);
+        $server['mysql_server']['database'] = $data['database'] ?? "mysql";
         $server['mysql_server']['is_password_crypted'] = "1";
-        $server['mysql_server']['port']                = $port;
-        
-        
-        $server['mysql_server']['is_monitored'] = $data['database'] ?? 1;
+        $server['mysql_server']['port'] = $port;
+
+
+        $server['mysql_server']['is_monitored'] = $data['is_monitored'] ?? "1";
         $server['mysql_server']['is_acknowledged'] = $data['is_acknowledged'] ?? 0;
         $server['mysql_server']['ssh_port'] = $data['ssh_port'] ?? 22;
         $server['mysql_server']['ssh_login'] = $data['ssh_login'] ?? "root";
         $server['mysql_server']['is_proxy'] = $data['is_proxy'] ?? 0;
         $server['mysql_server']['ssh_available'] = 0;
-        
 
-        $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
+
+        $sql = "SELECT id FROM `mysql_server` WHERE `ip`='" . $server['mysql_server']['ip'] . "' AND `port` = '" . $server['mysql_server']['port'] . "'";
         $res = $db->sql_query($sql);
+
+
+
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -246,7 +242,7 @@ class Mysql
         if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
 
 
-            self::$return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
+            self::$return['mysql']['caution'] = "Impossible to overright the server of PmaControl (" . $server['mysql_server']['ip'] . ":" . $server['mysql_server']['port'] . ")";
 
             return false;
         }
@@ -254,9 +250,9 @@ class Mysql
         $id_mysql_server = $db->sql_save($server);
         if ($id_mysql_server) {
             if (empty($server['mysql_server']['id'])) {
-                self::$return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+                self::$return['mysql']['inserted'][] = $server['mysql_server']['display_name'] . " (" . $server['mysql_server']['hostname'] . ':' . $server['mysql_server']['port'] . ")";
             } else {
-                self::$return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+                self::$return['mysql']['updated'][] = $server['mysql_server']['display_name'] . " (" . $server['mysql_server']['hostname'] . ':' . $server['mysql_server']['port'] . ")";
 
 
                 if (!empty($data['tag'])) {
@@ -264,9 +260,9 @@ class Mysql
                     Debug::debug($data['tag'], "Tags");
 
                     Tag::set_db(self::$db);
-                    
-                    
-                    
+
+
+
                     Tag::insertTag($id_mysql_server, $data['tag']);
                 }
             }
@@ -274,28 +270,35 @@ class Mysql
             Mysql::onAddMysqlServer($db);
         } else {
 
+
+
+
             unset($server['mysql_server']['passwd']);
 
-            self::$return['mysql']['failed'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : "
-                .json_encode(array($db->sql_error(), $server));
+            $msg = $server['mysql_server']['display_name'] . " (" . $server['mysql_server']['hostname'] . ':' . $server['mysql_server']['port'] . ") : "
+                    . json_encode(array($db->sql_error(), $server));
+
+
+            Debug::debug($msg, "FAIL INSERT");
+
+            self::$return['mysql']['failed'][] = $msg;
         }
 
 
         return $server;
     }
 
-    static public function set_db($db)
-    {
+    static public function set_db($db) {
 
         self::$db = $db;
     }
+
     /*
      * to export in Glial::MySQL ?
      *
      */
 
-    static function getId($value, $table_name, $field, $list = array())
-    {
+    static function getId($value, $table_name, $field, $list = array()) {
 
         $list_key = '';
         $list_val = '';
@@ -307,25 +310,25 @@ class Mysql
 
 
             if (in_array($field, $keys)) {
-                throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "'.$field.'"');
+                throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "' . $field . '"');
             }
 
 
             $values = array_values($list);
 
-            $list_key = ",`".implode('`,`', $keys)."`";
-            $list_val = ",'".implode("','", $values)."'";
+            $list_key = ",`" . implode('`,`', $keys) . "`";
+            $list_val = ",'" . implode("','", $values) . "'";
         }
         $db = self::get_db();
 
         $sql = "
-IF (SELECT 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
+IF (SELECT 1 FROM `" . $table_name . "` WHERE `" . $field . "`='" . $db->sql_real_escape_string($value) . "') THEN
 BEGIN
-    SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';
+    SELECT `id` FROM `" . $table_name . "` WHERE `" . $field . "`='" . $db->sql_real_escape_string($value) . "';
 END;
 ELSE
 BEGIN
-    INSERT INTO `".$table_name."` (`".$field."`".$list_key.") VALUES('".$db->sql_real_escape_string($value)."'".$list_val.");
+    INSERT INTO `" . $table_name . "` (`" . $field . "`" . $list_key . ") VALUES('" . $db->sql_real_escape_string($value) . "'" . $list_val . ");
     SELECT LAST_INSERT_ID() AS id;
 END;
 END IF;";
@@ -371,12 +374,12 @@ END IF;";
             }
 
 
-            Debug::debug($id_return, "ID de retour de la table : ".$table_name." !");
+            Debug::debug($id_return, "ID de retour de la table : " . $table_name . " !");
             return $id_return;
         }
 
 
-        throw new \Exception('PMACTRL-071 : no id returned (problem INSERT/UPDATE) [table: '.$table_name.', field: '.$field.']');
+        throw new \Exception('PMACTRL-071 : no id returned (problem INSERT/UPDATE) [table: ' . $table_name . ', field: ' . $field . ']');
 
 
 
@@ -385,8 +388,7 @@ END IF;";
 //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
     }
 
-    public static function get_db()
-    {
+    public static function get_db() {
         if (!empty(self::$db)) {
             return self::$db;
         } else {
@@ -394,13 +396,12 @@ END IF;";
         }
     }
 
-    static public function isPmaControl($ip, $port)
-    {
+    static public function isPmaControl($ip, $port) {
 
         $db = self::get_db();
 
 
-        $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
+        $sql = "SELECT * FROM mysql_server where name='" . DB_DEFAULT . "'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -413,8 +414,7 @@ END IF;";
         return false;
     }
 
-    static function getHostname($name, $data)
-    {
+    static function getHostname($name, $data) {
 
         if (empty($name) || $name == "@hostname") {
 
@@ -443,6 +443,7 @@ END IF;";
 
         return $hostname;
     }
+
     /*
      *
      *
@@ -451,8 +452,7 @@ END IF;";
      * return id on select or inserted row
      */
 
-    static function selectOrInsert($value, $table_name, $field, $list = array())
-    {
+    static function selectOrInsert($value, $table_name, $field, $list = array()) {
         $list_key = '';
         $list_val = '';
 
@@ -460,17 +460,17 @@ END IF;";
             $keys = array_keys($list);
 
             if (in_array($field, $keys)) {
-                throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "'.$field.'"');
+                throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "' . $field . '"');
             }
 
             $values = array_values($list);
 
-            $list_key = ",`".implode('`,`', $keys)."`";
-            $list_val = ",'".implode("','", $values)."'";
+            $list_key = ",`" . implode('`,`', $keys) . "`";
+            $list_val = ",'" . implode("','", $values) . "'";
         }
         $db = self::get_db();
 
-        $sql = "SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';";
+        $sql = "SELECT `id` FROM `" . $table_name . "` WHERE `" . $field . "`='" . $db->sql_real_escape_string($value) . "';";
         $res = $db->sql_query($sql);
 
         Debug::debug($sql);
@@ -481,14 +481,14 @@ END IF;";
             }
         }
 
-        $sql2 = "INSERT INTO `".$table_name."` (`".$field."` ".$list_key.") VALUES('".$db->sql_real_escape_string($value)."' ".$list_val.");";
+        $sql2 = "INSERT INTO `" . $table_name . "` (`" . $field . "` " . $list_key . ") VALUES('" . $db->sql_real_escape_string($value) . "' " . $list_val . ");";
 
         Debug::sql($sql2);
 
 
         $res = $db->sql_query($sql2);
         if (!$res) {
-            throw new \Exception("PMACTRL-518 : ".$db->sql_error());
+            throw new \Exception("PMACTRL-518 : " . $db->sql_error());
         }
 
         $id = $db->sql_insert_id();
@@ -496,17 +496,16 @@ END IF;";
         Debug::debug($id, "id");
 
         if (empty($id)) {
-            throw new \Exception('PMACTRL-519 : empty id after insert !  [table: '.$table_name.', field: '.$field.']');
+            throw new \Exception('PMACTRL-519 : empty id after insert !  [table: ' . $table_name . ', field: ' . $field . ']');
         }
 
         return $id;
     }
 
-    static public function getServerInfo($id_mysql_server)
-    {
+    static public function getServerInfo($id_mysql_server) {
         $db = self::get_db();
 
-        $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
+        $sql = "SELECT * FROM mysql_server WHERE id = " . $id_mysql_server . ";";
         $res = $db->sql_query($sql);
 
         while ($ar = $db->sql_fetch_object($res)) {
@@ -517,4 +516,5 @@ END IF;";
 
         return $ob;
     }
+
 }
