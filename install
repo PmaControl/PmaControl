@@ -186,45 +186,45 @@ fi
 
 if [ -f "$CONFIG_FILE" ]; then
 
-	php application/webroot/index.php install webroot $CONFIG_FILE
+	php App/Webroot/index.php install webroot $CONFIG_FILE
 	if [ $? != 0 ]; then
 	    exit 1
 	fi
 
-	php application/webroot/index.php install index $CONFIG_FILE
+	php App/Webroot/index.php install index $CONFIG_FILE
 	if [ $? != 0 ]; then
 	    exit 2
 	fi
 
 
-	php application/webroot/index.php install createOrganisation $CONFIG_FILE
+	php App/Webroot/index.php install createOrganisation $CONFIG_FILE
 	if [ $? != 0 ]; then
 	    exit 3
 	fi
 
-	php application/webroot/index.php install createAdmin $CONFIG_FILE
+	php App/Webroot/index.php install createAdmin $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 4
 	fi
 
-	php application/webroot/index.php ldap updateFromInstall $CONFIG_FILE
+	php App/Webroot/index.php ldap updateFromInstall $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 5
 	fi
 
-	php application/webroot/index.php webservice addAccount $CONFIG_FILE
+	php App/Webroot/index.php webservice addAccount $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 6
 	fi
 
 
-	php application/webroot/index.php ssh add $CONFIG_FILE
+	php App/Webroot/index.php ssh add $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 7
 	fi
 
 
-	php application/webroot/index.php ssh associate $CONFIG_FILE
+	php App/Webroot/index.php ssh associate $CONFIG_FILE
 	if [ $? != 0 ]; then
 	   exit 7
 	fi
@@ -233,43 +233,43 @@ if [ -f "$CONFIG_FILE" ]; then
 
 
 else
-	php application/webroot/index.php install index
+	php App/Webroot/index.php install index
 	if [ $? != 0 ]; then
 	    exit 1
 	fi
 
-	php application/webroot/index.php install createOrganisation
+	php App/Webroot/index.php install createOrganisation
 	if [ $? != 0 ]; then
 	    exit 2
 	fi
 
-	php application/webroot/index.php install createAdmin
+	php App/Webroot/index.php install createAdmin
 	if [ $? != 0 ]; then
 	   exit 3
 	fi
 
 fi
 
-php application/webroot/index.php control createTsTable
+php App/Webroot/index.php control createTsTable
 
 if [ $? != 0 ]; then
     exit 8
 fi
 
-php application/webroot/index.php agent updateServerList
+php App/Webroot/index.php agent updateServerList
 
 if [ $? != 0 ]; then
     exit 4
 fi
 
-php application/webroot/index.php administration generate_model
+php App/Webroot/index.php administration generate_model
 
 if [ $? != 0 ]; then
     exit 5
 fi
 
 
-php application/webroot/index.php administration admin_table
+php App/Webroot/index.php administration admin_table
 
 if [ $? != 0 ]; then
     exit 6
