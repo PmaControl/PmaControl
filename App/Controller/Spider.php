@@ -67,7 +67,7 @@ class Spider extends Controller {
         }
 
         $data['spider_activated'] = 0;
-
+        
         if ($cpt === "1") {
             $data['spider_activated'] = 1;
         }
@@ -140,6 +140,10 @@ class Spider extends Controller {
         $database_source = $param[1];
         $id_mysql_destination = $param[2];
         $database_destination = $param[3];
+        
+        
+        
+        
     }
 
 }
