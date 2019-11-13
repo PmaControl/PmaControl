@@ -105,7 +105,7 @@ try {
         exit;
     } else {
         if (!include(ROOT.DS."vendor/glial/glial/Glial/Bootstrap.php")) {
-            trigger_error("Gliale core could not be found. Check the value of CORE_PATH in App/webroot/index.php.  It should point to the directory containing your ".DS."glial core directory and your ".DS."vendors root directory.",
+            trigger_error("Gliale core could not be found. Check the value of CORE_PATH in App/Webroot/index.php.  It should point to the directory containing your ".DS."glial core directory and your ".DS."vendors root directory.",
                 E_USER_ERROR);
         }
     }

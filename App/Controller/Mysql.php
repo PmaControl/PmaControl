@@ -321,7 +321,7 @@ class Mysql extends Controller {
 
         echo "\n";
 
-        foreach ($this->db as $key => $db) {
+        foreach ($this->di['db'] as $key => $db) {
 
             echo $key . " ";
 
@@ -616,7 +616,8 @@ class Mysql extends Controller {
 
                 $ip[$slave][0] = $i;
 
-                if ($cpt = count($masters[$master]) == 1) {
+                $cpt = count($masters[$master]);
+                if ($cpt == 1) {
                     $ip[$slave][1] = Color::getColoredString("ÃƒÂ¢Ã¢â‚¬ï¿½Ã¢â‚¬ï¿½ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ", $color) . $ip[$slave][1];
                 } else {
                     $ip[$slave][1] = Color::getColoredString("ÃƒÂ¢Ã¢â‚¬ï¿½Ã…â€œÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ", $color) . $ip[$slave][1];
