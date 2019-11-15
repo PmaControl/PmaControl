@@ -152,7 +152,7 @@ class Database extends Controller {
        function(){
 	$("#database-list").selectpicker("refresh");
     });
-});drupal
+});
 ');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -202,7 +202,7 @@ class Database extends Controller {
         $path = $param[3];
         $uuid = $param[4];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+
 
 
         $directory = $path . "/" . uniqid();
@@ -371,7 +371,7 @@ class Database extends Controller {
 
                 $nb_renamed = $this->move(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name'], $_POST['rename']['adjust_privileges']));
 
-                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/renamed:tables:' . $nb_renamed);
+                header('location: ' . LINK . $this->getClass() . '/' . __FUNCTION__ . '/renamed:tables:' . $nb_renamed);
             }
         }
     }
@@ -760,14 +760,14 @@ END;";
 
         $uuid = Uuid::uuid4()->toString();
 
-        $log = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
-        $log_error = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.error.log';
+        $log = TMP . "log/" . $this->getClass() . "-" . __FUNCTION__ . "-" . uniqid() . '.log';
+        $log_error = TMP . "log/" . $this->getClass() . "-" . __FUNCTION__ . "-" . uniqid() . '.error.log';
 
 
         $php = explode(" ", shell_exec("whereis php"))[1];
 
 
-        $cmd = $php . " " . GLIAL_INDEX . " " .$this->getClass(). " databaseRefresh " . $id_mysql_server__source . " " . $id_mysql_server__target . " '"
+        $cmd = $php . " " . GLIAL_INDEX . " " . $this->getClass() . " databaseRefresh " . $id_mysql_server__source . " " . $id_mysql_server__target . " '"
                 . implode(",", $databases) . "' '" . $path . "' " . $uuid . " --debug > " . $log . " 2> " . $log_error . " & echo $!";
 
         Debug::debug($cmd);
@@ -795,6 +795,59 @@ END;";
         } else {
             Debug::debug($pid, "process started !");
         }
+    }
+
+    public function analyze($param) {
+
+
+        $this->di['js']->code_javascript('$("#analyze-id_mysql_server").change(function () {
+    data = $(this).val();
+    $("#analyze-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+       function(){
+	$("#analyze-database").selectpicker("refresh");
+    });
+});');
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            if (!empty($_POST['database'][__FUNCTION__])) {
+                
+                
+                
+                $this->updateStats($param);
+            }
+        }
+    }
+
+    public function updateStats($param) {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $all_dbs = $param[1];
+        $db = $this->di['db']->sql(DB_DEFAULT);
+        $remote = $this->di['db']->sql(Mysql::getDbLink($db, $id_mysql_server));
+
+        //au cas ou une connexion est deja ouverte avec un autre database (pour prevenir un probleme de conflit avec pmacontrol)
+        $res = $remote->sql_query("select database() as db");
+        while ($ob = $remote->sql_fetch_object($res)) {
+            $init_db = $ob->db;
+        }
+        $databases = explode(',', $all_dbs);
+
+        foreach ($databases as $database) {
+            $remote->sql_select_db($database);
+            $tables = $remote->getListTable()['table'];
+
+            foreach ($tables as $table) {
+                
+                $sql = "ANALYZE TABLE `".$database."`.`".$table."`;";
+                Debug::debug($sql);
+                $remote->sql_query($sql);
+            }
+
+        }
+
+        $remote->sql_select_db($init_db);
     }
 
 }
