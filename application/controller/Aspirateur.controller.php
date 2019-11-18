@@ -1081,12 +1081,14 @@ class Aspirateur extends Controller
 
 
 
-        Debug::debug($server_list, "Liste des serveurs monitoré");
+        //Debug::debug($server_list, "Liste des serveurs monitoré");
 
 
 
         //to prevent any trouble with fork
-        //$this->debugShowQueries();
+        $this->debugShowQueries();
+        
+        
         $db->sql_close();
 
         // filename: add_to_queue.php
