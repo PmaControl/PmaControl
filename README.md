@@ -51,7 +51,7 @@ plugin-load=ha_rocksdb
 
 ### Deploy this project
 
-* `git clone https://github.com/PmaControl/PmaControl.git pmacontrol`
+* `git clone git@github.com:PmaControl/PmaControl.git pmacontrol`
 
 
 ### Install dependencies
