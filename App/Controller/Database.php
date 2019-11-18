@@ -846,7 +846,6 @@ END;";
             }
 
         }
-
         $remote->sql_select_db($init_db);
     }
 

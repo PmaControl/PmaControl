@@ -2746,7 +2746,7 @@ var myChart = new Chart(ctx, {
         $primary_key = "a.`" . implode('`,a.`', $pri) . "`";
 
         $sql = "SELECT " . $primary_key . " FROM `" . $data['database'] . "`.`" . $data['main_table'] . "` a " . $data['query'] . " LIMIT " . $data['limit'] . ";";
-        $data['sql'] = SqlFormatter::format($sql);
+        $data['sql'] = \SqlFormatter::format($sql);
 
         $db2 = $this->di['db']->sql($this->link_to_purge);
 
@@ -3024,8 +3024,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->table_filter[] = $ref_table;
 
         //Debug::debug($fks);
-        Debug::debug($ref_table, '<b style="color:#0000ff">REF TABLE</b>');
-        Debug::debug($childs, "CHILDREN");
+//        Debug::debug($ref_table, '<b style="color:#0000ff">REF TABLE</b>');
+//        Debug::debug($childs, "CHILDREN");
 
         if (!empty($fks[$ref_table])) {
 

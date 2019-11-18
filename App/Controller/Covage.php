@@ -69,9 +69,15 @@ class Covage extends Controller
     var $tables = array('CrStoc');
     //  NotifReprovisionning  flux_commande_acces
 
-    var $primary_key = array('');
-    var $diff        = array('');
+    var $primary_key  = array('');
+    var $diff         = array('');
+    var $table_rename = array('action','cassette','cassette_modele','cassette_modele_equipement_modele','champs','commande_acces','constructeur','corbeille','couleur',
+        'couleur_table_couleur','droit','emplacement_cassette','enregistrement','etape','extraction','fibre','HistoriqueOntEligibilite','ipe','lien_optique','lien_route_optique',
+        'objet','OntEligibilite','otelligibiliteservice','parametres','planning','port','port_pto','reporting','reporting_data','reseau_users',
+        'service_corbeille','table_couleur','task','type_cable','type_erreur','type_lien_optique','valeur');
 
+    var $table_rollback = array('port_pto', 'statutportpto', 'tube', 'type_planning');
+    
     public function creationTableSpider()
     {
         $db = $this->di['db']->sql(DB_DEFAULT);
@@ -347,5 +353,46 @@ class Covage extends Controller
 
 
         throw new \Exception("PMACTRL-581 : Impossible to find this backend : '".$backend."'");
+    }
+
+    public function toRename($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+
+        $name = Mysql::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
+        $db   = $this->di['db']->sql($name);
+
+
+
+        foreach ($this->table_rename as $table) {
+
+            $sql = "RENAME TABLE `".$database."`.`".$table."` TO `".$database."`.`zzz_".$table."`;";
+            Debug::sql($sql);
+
+            $db->sql_query($sql);
+        }
+    }
+
+    public function toRenameRollback($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+        $name = Mysql::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
+        $db   = $this->di['db']->sql($name);
+
+        foreach ($this->table_rollback as $table) {
+
+            $sql = "RENAME TABLE `".$database."`.`zzz_".$table."` TO `".$database."`.`".$table."`;";
+            Debug::sql($sql);
+
+            $db->sql_query($sql);
+        }
     }
 }
