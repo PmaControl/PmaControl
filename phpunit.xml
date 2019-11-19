@@ -3,8 +3,7 @@
 <phpunit bootstrap="vendor/autoload.php" colors="true">
     <testsuites>
 	    <testsuite name="PHPUnit-Tdd test suite">
-            <directory>./application</directory>
-            <directory>./vendor/glial/glial/Glial</directory>
+            <directory>./App</directory>
 	    </testsuite>
     </testsuites>
 </phpunit>
