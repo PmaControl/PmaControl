@@ -10,6 +10,7 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 use \App\Library\Debug;
+use \App\Library\Graphviz;
 use \App\Library\Mysql as Mysql2;
 
 class Mysql extends Controller
@@ -846,11 +847,12 @@ class Mysql extends Controller
             $name_connect = $ob->name;
         }
 
+        $table_to_purge = array();
         $db = $this->di['db']->sql($name_connect);
         if (!empty($param[2])) {
-            $this->table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
+            $table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
 
-            Debug::debug($this->table_to_purge);
+            Debug::debug($table_to_purge);
         }
 
         $file_name    = TMP.$id_mysql_server."_".$database.".svg";
@@ -887,28 +889,44 @@ class Mysql extends Controller
             fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho  ".PHP_EOL); //splines=ortho;
 //fwrite($fp, "\t size=\"10,1000\";");
 
-            fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);
-            fwrite($fp, "\t node [color=\"#5cb85c\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
 
+            /*
+              fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);
+              fwrite($fp, "\t node [color=\"#5cb85c\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+              /*** */
 
             foreach ($tables as $table) {
                 if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
                     continue;
                 }
 
-                if (in_array($table['TABLE_NAME'], $this->table_to_purge)) {
-                    fwrite($fp, "\t node [color=\"#337ab7\"];".PHP_EOL);
+
+
+                if (count($table_to_purge) > 0) {
+                    if (in_array($table['TABLE_NAME'], $table_to_purge)) {
+                        $color = '#337ab7';
+                    } else {
+                        $color = '#5cb85c';
+                    }
                 } else {
-                    fwrite($fp, "\t node [color=\"#5cb85c\"];".PHP_EOL);
+                    $color = $this->getColor($table['TABLE_NAME']);
                 }
+
+
+
+                fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
+                fwrite($fp, "\t node [color=\"".$color."\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+
+
+
 // shape=Mrecord
                 fwrite($fp,
                     '  "'.$table['TABLE_NAME'].'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
-
                 /*
+
                   $sql = "SELECT * FROM information_schema.`COLUMNS`
                   WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION";
 
@@ -917,8 +935,8 @@ class Mysql extends Controller
                   foreach ($columns as $column) {
                   fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td></tr>'.PHP_EOL);
                   }
-                 * 
                  */
+
 
                 fwrite($fp, '</table>> ];'.PHP_EOL);
             }
@@ -945,7 +963,7 @@ class Mysql extends Controller
                 $contraints = $db->sql_fetch_yield($sql);
 
 
-                $columns = $this->getColumns(array($id_mysql_server, $database));
+                //$columns = $this->getColumns(array($id_mysql_server, $database));
 
                 foreach ($contraints as $contraint) {
 
@@ -967,35 +985,37 @@ class Mysql extends Controller
                       }
                      */
 
-                    if (in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge)) {
-                        $color = "#337ab7";
+                    if (count($table_to_purge) > 0) {
+                        if (in_array($contraint['REFERENCED_TABLE_NAME'], $table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $table_to_purge)) {
+                            $color = "#337ab7";
+                        } else {
+                            $color = "#5cb85c";
+                        }
                     } else {
-                        $color = "#5cb85c";
+
+                        $color = $this->getColor($contraint['TABLE_NAME']);
                     }
 
-                    
-                    
-/*
-                    if ($columns[$contraint['TABLE_NAME']][$contraint['COLUMN_NAME']]['IS_NULLABLE'] === "YES" $contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge))) {
-                        $color = "#0000ff";
-                    }*/
-/*
+                    /*
+                      if ($columns[$contraint['TABLE_NAME']][$contraint['COLUMN_NAME']]['IS_NULLABLE'] === "YES" $contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge) && in_array($contraint['REFERENCED_TABLE_NAME'], $this->table_to_purge))) {
+                      $color = "#0000ff";
+                      } */
+                    /*
 
-                    if ($columns[$contraint['REFERENCED_TABLE_NAME']][$contraint['REFERENCED_COLUMN_NAME']]['IS_NULLABLE'] === "YES") {
-                        $color = "#000000";
-                    }
+                      if ($columns[$contraint['REFERENCED_TABLE_NAME']][$contraint['REFERENCED_COLUMN_NAME']]['IS_NULLABLE'] === "YES") {
+                      $color = "#000000";
+                      }
 
-
-                    if ($columns[$contraint['REFERENCED_TABLE_NAME']][$contraint['REFERENCED_COLUMN_NAME']]['IS_NULLABLE'] === "YES" && $columns[$contraint['TABLE_NAME']][$contraint['COLUMN_NAME']]['IS_NULLABLE']
-                        === "YES") {
-                        $color = "#FF0000";
-                    }
-*/
+                      if ($columns[$contraint['REFERENCED_TABLE_NAME']][$contraint['REFERENCED_COLUMN_NAME']]['IS_NULLABLE'] === "YES" && $columns[$contraint['TABLE_NAME']][$contraint['COLUMN_NAME']]['IS_NULLABLE']
+                      === "YES") {
+                      $color = "#FF0000";
+                      }
+                     */
 
                     fwrite($fp,
                         "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME']
                         .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" 
-                          edgetarget="" edgeURL=""];'.PHP_EOL);
+                          tooltip="'.$contraint['TABLE_NAME'].'.'.$contraint['COLUMN_NAME'].' => '.$contraint['REFERENCED_TABLE_NAME'].'.'.$contraint['REFERENCED_COLUMN_NAME'].'" edgeURL=""];'.PHP_EOL);
 
                     // label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME'].'"
                 }
@@ -1733,8 +1753,25 @@ class Mysql extends Controller
 
         return $this->columns[$id_mysql_server][$database];
     }
-    
-    
-    
-    
+
+    public function getColor($string)
+    {
+
+
+
+        $color = Graphviz::$color[hexdec(substr(md5($string), 0, 2))];
+
+        //echo $color ."\n";
+
+
+
+        $h1 = substr(md5($string), 5, 2);
+        $h2 = substr(md5($string), 10, 2);
+        $h3 = substr(md5($string), 0, 2);
+
+
+        $color = $h1.$h2.$h3;
+
+        return "#".$color;
+    }
 }
