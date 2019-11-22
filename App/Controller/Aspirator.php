@@ -418,6 +418,8 @@ class Aspirator extends Controller {
         //push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
+        
+        $variables = array();
         if ($export_variables) {
 
 
