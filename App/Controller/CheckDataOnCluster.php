@@ -24,7 +24,7 @@ class CheckDataOnCluster extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['database']) && !empty($_POST['sql'])) {
 
-                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']
+                header('location: ' . LINK . $this->getClass() . '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']
                         . '/mysql_cluster:database:' . $_POST['mysql_cluster']['database'] . '/sql:' . urlencode($_POST['sql']));
             }
         } else {
@@ -235,8 +235,9 @@ class CheckDataOnCluster extends Controller {
                     $difference[$key] = $value;
                 } else {
                     $new_diff = $this->array_diff_assoc_recursive($value, $array2[$key]);
-                    if (!empty($new_diff))
+                    if (!empty($new_diff)) {
                         $difference[$key] = $new_diff;
+                    }
                 }
             } else if (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
                 $difference[$key] = $value;

@@ -56,7 +56,7 @@ class StorageArea extends Controller {
 
 
 
-            debug($storage_area);
+            //debug($storage_area);
 
             $db = $this->di['db']->sql(DB_DEFAULT);
 
@@ -65,7 +65,7 @@ class StorageArea extends Controller {
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $ssh_private_key = App\Library\Chiffrement::decrypt($ob->private_key);
+                $ssh_private_key = Crypt::decrypt($ob->private_key, CRYPT_KEY);
                 $ssh_user = $ob->user;
             }
 
@@ -221,7 +221,7 @@ class StorageArea extends Controller {
         foreach ($storages as $storage) {
 
             $login = $storage['user'];
-            $key_ssh = App\Library\Chiffrement::decrypt($storage['private_key']);
+            $key_ssh = Crypt::decrypt($storage['private_key'], CRYPT_KEY);
 
             $rsa = new RSA();
 
@@ -285,12 +285,16 @@ class StorageArea extends Controller {
     }
 
     public function delete($param) {
+        
+        $this->view = false;
+        
         $id_backup_storage_area = $param[0];
         $db = $this->di['db']->sql(DB_DEFAULT);
         $sql = "DELETE FROM  backup_storage_area WHERE id ='" . $id_backup_storage_area . "'";
 
         $db->sql_query($sql);
         header("location: " . LINK . "StorageArea/index");
+        exit;
     }
 
     public function menu($param) {
