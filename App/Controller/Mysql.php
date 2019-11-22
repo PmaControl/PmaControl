@@ -874,10 +874,9 @@ class Mysql extends Controller
 
         //$filter = array();
 
-        /*
-          $sql .= " AND TABLE_NAME in('commande_services','flux_commande_acces','service','histo_etape_commande_service','reseau','dsp','operateur','adresse','local',"
-          ."'batiment','equipement','site','crmad_services','local','adresse','etape_commande_service','cr','crmes')";
-         */
+        
+         // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
+         
 
 
 
@@ -952,7 +951,9 @@ class Mysql extends Controller
                 $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
                     ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
                     ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
-                    ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
+                    ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
+                    //. "AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site')"
+                    //. " AND `REFERENCED_TABLE_NAME` in('batiment', 'equipement','escalier', 'etage', 'local', 'site')";
 
 
                 /*
