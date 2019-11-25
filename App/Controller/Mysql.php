@@ -848,7 +848,9 @@ class Mysql extends Controller
         }
 
         $table_to_purge = array();
-        $db = $this->di['db']->sql($name_connect);
+        $db             = $this->di['db']->sql($name_connect);
+
+
         if (!empty($param[2])) {
             $table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
 
@@ -867,38 +869,62 @@ class Mysql extends Controller
 
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
 
+
+
+        $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
+                          UNION  
+                          SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
+
+
+        $res2 = $db->sql_query($sql2);
+
+
+        $liste_table_connected = array();
+        while ($ob2    = $db->sql_fetch_object($res2)) {
+            $liste_table_connected[] = $ob2->table_name;
+        }
+
         /*
           $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
           'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
           /* */
 
         //$filter = array();
-
-        
-         // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
-         
-
-
+        // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
 
 
         $tables = $db->sql_fetch_yield($sql);
 
-        if ($fp = fopen($path.'/'.$file.'.dot', "w")) {
+        $fp = fopen($path.'/'.$file.'.dot', "w");
+
+
+        if ($fp) {
 
             fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho  ".PHP_EOL); //splines=ortho;
-//fwrite($fp, "\t size=\"10,1000\";");
 
-
-            /*
-              fwrite($fp, "\t edge [color=\"#5cb85c\"];".PHP_EOL);
-              fwrite($fp, "\t node [color=\"#5cb85c\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
-              /*** */
 
             foreach ($tables as $table) {
+
+
+                //pour retirer les tables en attente d'être éffacer
+                
+               
                 if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
                     continue;
                 }
 
+                // si c'est pas dans la liste des tables qui sont connecté on ne l'affiche pas
+                // On affiche pas les tables qui ne sont pas lié à une autre (on retire les tables singleton)
+                
+                if (!in_array($table['TABLE_NAME'], $liste_table_connected)) {
+                    continue;
+                }
 
 
                 if (count($table_to_purge) > 0) {
@@ -911,12 +937,8 @@ class Mysql extends Controller
                     $color = $this->getColor($table['TABLE_NAME']);
                 }
 
-
-
-                fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
+                //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
                 fwrite($fp, "\t node [color=\"".$color."\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
-
-
 
 // shape=Mrecord
                 fwrite($fp,
@@ -952,8 +974,8 @@ class Mysql extends Controller
                     ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
                     ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
                     ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
-                    //. "AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site')"
-                    //. " AND `REFERENCED_TABLE_NAME` in('batiment', 'equipement','escalier', 'etage', 'local', 'site')";
+                //. "AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site')"
+                //. " AND `REFERENCED_TABLE_NAME` in('batiment', 'equipement','escalier', 'etage', 'local', 'site')";
 
 
                 /*
@@ -1017,8 +1039,6 @@ class Mysql extends Controller
                         "".$contraint['TABLE_NAME']." -> ".$contraint['REFERENCED_TABLE_NAME']
                         .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'" 
                           tooltip="'.$contraint['TABLE_NAME'].'.'.$contraint['COLUMN_NAME'].' => '.$contraint['REFERENCED_TABLE_NAME'].'.'.$contraint['REFERENCED_COLUMN_NAME'].'" edgeURL=""];'.PHP_EOL);
-
-                    // label ="'.$contraint['COLUMN_NAME']." => ".$contraint['REFERENCED_COLUMN_NAME'].'"
                 }
             } else {
                 $data['NO_FK'] = 1;
