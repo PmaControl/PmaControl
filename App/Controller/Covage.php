@@ -73,8 +73,8 @@ class Covage extends Controller
     var $diff         = array('');
     var $table_rename = array('action','cassette','cassette_modele','cassette_modele_equipement_modele','champs','commande_acces','constructeur','corbeille','couleur',
         'couleur_table_couleur','droit','emplacement_cassette','enregistrement','etape','extraction','fibre','HistoriqueOntEligibilite','ipe','lien_optique','lien_route_optique',
-        'objet','OntEligibilite','otelligibiliteservice','parametres','planning','port','port_pto','reporting','reporting_data','reseau_users',
-        'service_corbeille','table_couleur','type_cable','type_erreur','type_lien_optique','valeur');
+        'objet','OntEligibilite','otelligibiliteservice','parametres','planning','port','reporting','reporting_data','reseau_users',
+        'service_corbeille','table_couleur','type_cable','type_erreur','type_lien_optique','valeur', 'type_planning');
 
     var $table_rollback = array('task');
     
