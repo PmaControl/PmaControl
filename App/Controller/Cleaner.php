@@ -68,6 +68,8 @@ class Cleaner extends Controller
     private $table_filter          = array();
     private $children              = array();
     private $wait_time             = 1;
+    public $db;
+    public $testfk                 = array();
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
@@ -168,7 +170,6 @@ class Cleaner extends Controller
                 $datajs .= '
 },';
             }
-
             $i++;
         }
 
@@ -1456,12 +1457,16 @@ var myChart = new Chart(ctx, {
 
                 //get virtual FK and merge to real FK  TODO a déporté dans getVirtualForeignKey
 
+
+                Debug::debug($this->table_to_purge);
+                //exit;
                 $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
                     ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
-                    ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
+                    ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."'
+                     AND REFERENCED_TABLE_NAME IN ('".implode("','", $tables_impacted)."') "
                     ."AND `TABLE_NAME` ='".$table_name."';";
 
-                Debug::debug($sql);
+                Debug::sql($sql);
 
 
                 $res = $db->sql_query($sql);
@@ -1914,6 +1919,9 @@ var myChart = new Chart(ctx, {
 
     private function delete_rows()
     {
+
+        exit;
+
         $db          = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table, "DESC"));
@@ -1942,6 +1950,9 @@ var myChart = new Chart(ctx, {
 
 
                 $affected_rows = end($db->query)['rows'];
+
+
+                Debug::debug($affected_rows, $table);
 
                 if ($affected_rows == "-1") {
 
@@ -2231,7 +2242,7 @@ var myChart = new Chart(ctx, {
     {
         $list = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table));
 
-        Debug::debug($list);
+        //Debug::debug($list);
 
 
         $tables = array();
@@ -2252,6 +2263,19 @@ var myChart = new Chart(ctx, {
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
+
+
+        Debug::parseDebug($param);
+
+
+        $id_mysql_server = 104;
+
+
+        $dblink   = $this->di['db']->sql(DB_DEFAULT);
+        $name     = Mysql::getDbLink($dblink, $id_mysql_server);
+        $this->db = $this->di['db']->sql($name);
+
+        $this->schema_to_purge = 'mydb';
     }
 
 // move to archive controller ? avec toute les fonctions qui sont appeller dedant
@@ -2454,7 +2478,7 @@ var myChart = new Chart(ctx, {
             }
 
             $data        = "";
-            $list_tables = $this->getOrderBy2($this->getForeignKeys());
+            $list_tables = $this->getOrderBy2($this->getForeignKeys(), $this->main_table);
 
             foreach ($list_tables as $sub_array) {
 
@@ -3167,7 +3191,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $to_drop = $this->detectCircularDefinition(array());
 
 
-        Debug::debug($fks);
+        //Debug::debug($fks);
         Debug::debug($to_drop);
 
 
@@ -3449,7 +3473,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
             $this->orderby = $level;
 
             Debug::debug($level, "LEVEL");
-            exit;
+            //exit;
 
             file_put_contents($this->path_to_orderby_tmp, serialize($this));
 
@@ -3585,6 +3609,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         Debug::debug($to_drop);
 
+        $to_drop['equipement']   = array();
+        $to_drop['equipement'][] = "local";
+
 
         return $to_drop;
     }
@@ -3607,17 +3634,13 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $tables = array('batiment', 'equipement', 'escalier', 'etage', 'local', 'site');
 
-        $tables2 = $tables;
-
-
+        $tables2  = $tables;
         $doublons = array();
 
-        
+
         $k = 0;
         foreach ($tables as $table) {
             foreach ($tables2 as $table2) {
-
-                
                 if ($table === $table2) {
                     continue;
                 }
@@ -3636,10 +3659,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
                     $dtable = new Table(2);
 
                     echo "#".$k." Boucle circulaire detecter ( ".$table." <=> ".$table2.")\n";
-                    
+
                     $dtable->addHeader(array("#", "DEPART", "ARRIVEE", "CHEMIN"));
-
-
 
                     $i = 1;
                     foreach ($way1 as $path) {
@@ -3648,25 +3669,36 @@ objDiv.scrollTop = objDiv.scrollHeight;
                     }
 
                     $dtable->addHr();
-
                     $i = 1;
 
                     foreach ($way2 as $path) {
-
                         $dtable->addLine(array($i, $path['cur_from'], $path['cur_dest'], $path['cur_path']));
                         //Debug::debug($path);
-                        
                         $i++;
                     }
-                    
+
                     echo $dtable->display();
 
                     echo ' '."\n";
-                    
+
+
+                    $this->testOneToOne($way1);
+                    $this->testOneToOne($way2);
                 }
 
-                $doublons[$table][$table2] = 1;
+                if (strcasecmp($table, $table2) == 0) {
+                    $doublons[$table][$table2] = 1;
+                } else {
+                    $doublons[$table2][$table] = 1;
+                }
             }
+        }
+
+
+        $i = 1;
+        foreach ($this->testfk as $fk) {
+            echo "#".$i." ".$fk;
+            $i++;
         }
     }
     /*
@@ -3687,6 +3719,7 @@ UNION
 ) 
 SELECT * FROM paths where cur_dest = '".$table2."';";
 
+        //Debug::sql($sql);
         $res = $db->sql_query($sql);
 
 
@@ -3700,5 +3733,115 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         //debug($rows);
 
         return $rows;
+    }
+
+    public function testOneToOne($way, $order = 'ASC')
+    {
+        if (count($way) > 0) {
+
+            foreach ($way as $path) {
+                $tables = explode(",", $path['cur_path']);
+
+                if (count($tables) === 2) {
+                    $this->testFk($tables[0], $tables[1]);
+                }
+            }
+        }
+    }
+
+    public function testFk($table_a, $table_b)
+    {
+
+        $sql = "SELECT table_name, column_name, referenced_table_name, referenced_column_name  FROM `information_schema`.`KEY_COLUMN_USAGE` 
+            WHERE TABLE_NAME ='".$table_a."'
+            AND REFERENCED_TABLE_NAME = '".$table_b."' AND TABLE_SCHEMA='".$this->schema_to_purge."' AND REFERENCED_TABLE_SCHEMA='".$this->schema_to_purge."' ";
+
+        $db = $this->db;
+
+        $res = $db->sql_query($sql);
+
+        $i = 0;
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $i++;
+
+
+            $sql2 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NULL";
+            $sql3 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NOT NULL";
+
+
+            $res2 = $db->sql_query($sql2);
+            $res3 = $db->sql_query($sql3);
+
+            while ($ob2 = $db->sql_fetch_object($res2)) {
+
+                $ob3 = $db->sql_fetch_object($res3);
+
+                $is_null     = $ob2->cpt;
+                $is_not_null = $ob3->cpt;
+
+
+                $this->testfk[] = $ob->table_name.".".$ob->column_name."\t=>\t".$ob->referenced_table_name.".".$ob->referenced_column_name."\t(".$is_not_null."\t/\t".($is_null + $is_not_null).") ".round($is_not_null
+                        / ($is_null + $is_not_null) * 100, 2)."%\t(orphans ".($is_null).")\n";
+
+
+
+                /*
+                  $fks['TABLE_NAME']             = $ob->table_name;
+                  $fks['column_name']            = $ob->column_name;
+                  $fks['REFERENCED_TABLE_NAME']  = $ob->referenced_table_name;
+                  $fks['REFERENCED_COLUMN_NAME'] = $ob->referenced_column_name;
+                  $fks['is_null']                = $is_null;
+                  $fks['is_not_null']            = $is_not_null;
+                  $fks['total']                  = $is_null + $is_not_null;
+
+                  $percent        = round($is_not_null / ($is_null + $is_not_null) * 100, 2);
+                  $fks['percent'] = $percent;
+
+
+                  $all[$fks['TABLE_NAME']][$fks['REFERENCED_TABLE_NAME']] = $fks;
+                 * 
+                 */
+            }
+        }
+    }
+
+    public function comptage($param)
+    {
+        Debug::parseDebug($param);
+
+        $table = new Table(2);
+
+
+        $database = 'clean8';
+
+        $table->addHeader(array('Table', 'Count'));
+
+        $db = $this->db;
+
+        $sql = "select table_name, table_rows from information_schema.tables where table_schema ='".$database."'  order by table_name;";
+
+        $res = $db->sql_query($sql);
+
+
+
+        $tables = array();
+        while ($ob     = $db->sql_fetch_object($res)) {
+
+            $sql2 = "SELECT count(1) as cpt FROM `".$database."`.`".$ob->table_name."`";
+            $res2 = $db->sql_query($sql2);
+
+            while ($ob2 = $db->sql_fetch_object($res2)) {
+                if ($ob2->cpt !== "0") {
+                    $table->addLine(array($ob->table_name, $ob2->cpt));
+                }
+            }
+            
+            $tables[] = $ob->table_name;
+        }
+
+        echo $table->display();
+        
+        echo implode("','", $tables);
     }
 }
