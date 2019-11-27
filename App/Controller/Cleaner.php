@@ -1978,10 +1978,13 @@ var myChart = new Chart(ctx, {
                     while ($ob = $db->sql_fetch_object($res)) {
                         $max = $ob->max;
                     }
+                    
+                    $loop = $max;
+                    
                 }
 
 
-                $loop = $max;
+                
 
 
                 $affected_rows = 0;
@@ -2218,6 +2221,10 @@ var myChart = new Chart(ctx, {
 
         while ($row = $db->sql_fetch_array($result, MYSQLI_NUM)) {
             $values = array();
+            
+            
+            $insert_elem = array();
+            
             for ($j = 0; $j < $fields_cnt; $j++) {
 // NULL
                 if (!isset($row[$j]) || is_null($row[$j])) {
