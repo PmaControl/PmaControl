@@ -164,7 +164,7 @@ class Mysql {
             return $ob->name;
         }
 
-        throw \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
+        throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
         
     }
 
