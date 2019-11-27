@@ -61,16 +61,16 @@ class Cleaner extends Controller {
     private $sql_hex_for_binary = false;
     private $fk_circulaire = array();
     var $logger;
-    private $cache_table           = array();
-    private $primary_key           = array();
-    private $com_to_check          = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
-    private $id_mysql_server       = 0;
-    private $limit                 = 1000;
-    private $table_filter          = array();
-    private $children              = array();
-    private $wait_time             = 1;
+    private $cache_table = array();
+    private $primary_key = array();
+    private $com_to_check = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
+    private $id_mysql_server = 0;
+    private $limit = 1000;
+    private $table_filter = array();
+    private $children = array();
+    private $wait_time = 1;
     public $db;
-    public $testfk                 = array();
+    public $testfk = array();
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
@@ -321,41 +321,10 @@ var myChart = new Chart(ctx, {
         $data['id_cleaner'] = empty($param[0]) ? 0 : $param[0];
         $data['menu'] = empty($param[1]) ? "log" : $param[1];
 
-
-
         $this->title = '<i class="glyphicon glyphicon-erase"></i> ' . __("Cleaner");
-
-
-
-        //$this->ariane .= $this->title;
-
         $this->di['js']->addJavascript(array('jquery-latest.min.js',
             'cleaner/index.cleaner.js'
         ));
-
-        /*
-          $sql = "SELECT `table`, avg(row) as avg FROM `pmacli_drain_item` GROUP BY `table` ORDER by `table`;";
-
-          $sql = "SELECT `item_deleted`, time as avg, `date_end` as date_end
-          FROM `pmacli_drain_process`
-          WHERE name='" . $param[0] . "'
-          GROUP BY
-          ;";
-
-          $sql = "SELECT max(date_end) as date_end,
-          HOUR(date_end) as hour,
-          avg(time) as avg,
-          max(time) as max,
-          min(time) as min,
-          "
-          . " sum(item_deleted) as item_deleted "
-          . "FROM `pmacli_drain_process` "
-          . "where name='" . $param[0] . "' and date_end >= ADDDATE(now(), INTERVAL -1 DAY) GROUP BY HOUR(date_end) order by max(date_end)";
-
-          //echo $sql;
-
-          $hour = $db->sql_fetch_yield($sql);
-         */
 
 
         $this->set('data', $data);
@@ -452,6 +421,7 @@ var myChart = new Chart(ctx, {
                 set_flash("success", $title, $msg);
 
                 header('location: ' . LINK . "cleaner/index");
+                exit;
                 //$this->exit();
             } else {
 
@@ -462,6 +432,7 @@ var myChart = new Chart(ctx, {
                 $elems = explode('/', $_GET['glial_path']);
                 unset($elems[0]);
                 header('location: ' . LINK . implode('/', $elems));
+                exit;
             }
         }
 
@@ -1294,18 +1265,20 @@ var myChart = new Chart(ctx, {
 
 //feed id with main table
 
+
+        Debug::debug($this->fk_circulaire);
+
+
+
         $pri = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
         $primary_key = "a.`" . implode('`, a.`', $pri) . "`";
         $primary_key2 = "`" . implode('`, `', $pri) . "`";
 
-        $sql = "SELECT " . $primary_key . " FROM `" . $this->main_table . "` a " . $this->init_where . " LIMIT " . $this->limit . ";"; // LOCK IN SHARE MODE
+        $sql3 = "SELECT " . $primary_key . " FROM `" . $this->main_table . "` a " . $this->init_where . " LIMIT " . $this->limit . ";"; // LOCK IN SHARE MODE
 
 
-        Debug::debug($sql);
-        Debug::sql($sql);
-        //SELECT a.`id` FROM `historique_ipe` a WHERE `dateTraitement` <= DATE_ADD(now(), INTERVAL - 6 MONTH) LIMIT 1;  ne marche pas avec sqlformat ?
 
-
+        Debug::sql($sql3);
 
         $sql2 = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
                 . "WHERE `CONSTRAINT_SCHEMA` ='" . $this->schema_to_purge . "' "
@@ -1313,77 +1286,106 @@ var myChart = new Chart(ctx, {
                 . "AND `TABLE_NAME` ='" . $this->main_table . "' "
                 . "AND REFERENCED_TABLE_NAME = '" . $this->main_table . "';";
 
+        Debug::sql($sql2);
 
         $res2 = $db->sql_query($sql2);
-        
-        
+
+
         $nbline = $db->sql_num_rows($res2);
-        
-        if ($nbline == 1)
-        {
+
+        if ($nbline == 1) {
             $recursive = true;
-            
-            while($ob2 = $db->sql_fetch_object($res2) )
-            {
+
+            while ($ob2 = $db->sql_fetch_object($res2)) {
                 $field_to = $ob2->REFERENCED_COLUMN_NAME;
                 $field_from = $ob2->COLUMN_NAME;
-
             }
-        }
-        else if ($nbline > 1)
-        {
+        } else if ($nbline > 1) {
             throw new \Exception("PMACTRL-334 : more than one key on circular definition");
         }
-        
-        
-        
 
 
         $have_data = false;
 
+        if ($recursive) {
 
+            $circular_field = ",`" . self::FIELD_LOOP . "`";
+        } else {
+            $circular_field = "";
+        }
+
+
+        $loop = 1;
+
+
+
+        $nb_loop = 1;
         do {
+
+            if ($recursive === true) {
+                $circular_data = "," . ($nb_loop);
+            } else {
+                $circular_data = "";
+            }
+
+
+
+            if ($nb_loop > 1 && $recursive === true) {
+
+                // si la table principale a une pk sur 2 champs ca va peter :( a corriger
+                $sql3 = "SELECT " . $primary_key . " FROM `" . $this->main_table . "` a 
+                inner join      `" . $this->main_table . "` c ON c.`" . $field_to . "` = a.`" . $field_from . "`
+                INNER JOIN  `" . $this->schema_delete . "`.`" . $this->prefix . $this->main_table . "` b ON c.$primary_key2 = b.$primary_key2
+                and b.`" . self::FIELD_LOOP . "` = " . ($nb_loop - 1) . "";
+            }
+
             $loop = false;
 
+            Debug::sql($sql3);
+            $res3 = $db->sql_query($sql3);
 
-            if ($loop === true && $recursive === true) {
-                
-                $sql = "SELECT " . $primary_key . " FROM `" . $this->main_table . "` a 
-                        INNER JOIN  `" . $this->schema_delete . "`.`" . $this->prefix . $this->main_table . "` b ON a.`".$field_to."` = b.`".$field_from."`;";
-                
-                
-                
-            }
-
-            $res = $db->sql_query($sql);
+            $have_data = false;
 
 
-            $sql = "REPLACE INTO `" . $this->schema_delete . "`.`" . $this->prefix . $this->main_table . "` (" . $primary_key2 . ") VALUES ";
-
-            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $sql = "REPLACE INTO `" . $this->schema_delete . "`.`" . $this->prefix . $this->main_table . "` (" . $primary_key2 . "" . $circular_field . ") VALUES ";
+            while ($arr = $db->sql_fetch_array($res3, MYSQLI_ASSOC)) {
                 $have_data = true;
                 $loop = true;
-                $sql .= "('" . implode("','", $arr) . "'),";
+                $sql .= "('" . implode("','", $arr) . "'" . $circular_data . "),";
             }
+
+
+
+
+
+            if ($have_data) {
+
+                $sql = rtrim($sql, ",");
+
+                Debug::debug($sql);
+                $db->sql_query($sql);
+                $this->setAffectedRows($this->main_table);
+                //$this->exportToFile($this->main_table);
+                //
+            } else {
+                if ($nb_loop === 1) {
+                    $this->rows_to_delete[$this->main_table] = 0;
+                    $this->end_loop();
+                    sleep(1);
+
+                    return $this->rows_to_delete;
+                }
+            }
+
+            $nb_loop++;
         } while ($have_data === true);
 
 
 
 
-        if ($have_data) {
-            $sql = rtrim($sql, ",");
 
-            Debug::debug($sql);
-            $db->sql_query($sql);
-            $this->setAffectedRows($this->main_table);
-            $this->exportToFile($this->main_table);
-        } else {
-            $this->rows_to_delete[$this->main_table] = 0;
-            $this->end_loop();
-            sleep(1);
+        $this->exportToFile($this->main_table);
 
-            return $this->rows_to_delete;
-        }
 
 //feed table in the right order to delete later
 
@@ -1399,6 +1401,10 @@ var myChart = new Chart(ctx, {
                 unset($this->rows_to_delete[$key]);
             }
         }
+
+
+        Debug::debug($this->rows_to_delete);
+
 
         if (!empty($this->rows_to_delete[$this->main_table])) {
             $this->delete_rows();
@@ -1473,15 +1479,13 @@ var myChart = new Chart(ctx, {
 
 
                 //get virtual FK and merge to real FK  TODO a déporté dans getVirtualForeignKey
-
-
                 Debug::debug($this->table_to_purge);
                 //exit;
                 $sql = "SELECT * FROM `information_schema`.`KEY_COLUMN_USAGE` "
-                    ."WHERE `CONSTRAINT_SCHEMA` ='".$this->schema_to_purge."' "
-                    ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."'
-                     AND REFERENCED_TABLE_NAME IN ('".implode("','", $tables_impacted)."') "
-                    ."AND `TABLE_NAME` ='".$table_name."';";
+                        . "WHERE `CONSTRAINT_SCHEMA` ='" . $this->schema_to_purge . "' "
+                        . "AND `REFERENCED_TABLE_SCHEMA`='" . $this->schema_to_purge . "'
+                     AND REFERENCED_TABLE_NAME IN ('" . implode("','", $tables_impacted) . "') "
+                        . "AND `TABLE_NAME` ='" . $table_name . "';";
 
                 Debug::sql($sql);
 
@@ -1549,8 +1553,6 @@ var myChart = new Chart(ctx, {
                         $sql = "SELECT " . $primary_key . " FROM `" . $this->schema_to_purge . "`.`" . $table_name . "` a
                         INNER JOIN `" . $this->schema_delete . "`.`" . $this->prefix . $fk['REFERENCED_TABLE_NAME'] . "` b ON b.`" . $fk['REFERENCED_COLUMN_NAME'] . "` = a.`" . $fk['COLUMN_NAME'] . "`";
 
-
-
                         if ($circular) {
                             $sql .= " WHERE b.`" . self::FIELD_LOOP . "` = " . ($loop - 1) . ";";
 
@@ -1561,7 +1563,6 @@ var myChart = new Chart(ctx, {
                             $circular_data = "";
                             $sql .= ";";
                         }
-
 
                         Debug::sql($sql);
 
@@ -1930,12 +1931,11 @@ var myChart = new Chart(ctx, {
         return $this->orderby;
     }
 
-    private function delete_rows()
-    {
+    private function delete_rows() {
 
-        exit;
 
-        $db          = $this->di['db']->sql($this->link_to_purge);
+
+        $db = $this->di['db']->sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table, "DESC"));
 
@@ -1954,15 +1954,66 @@ var myChart = new Chart(ctx, {
                 $field = implode(" ", $join);
 
 
-                //do {
-                $sql = "DELETE a FROM " . $table . " a
-                  INNER JOIN `" . $this->schema_delete . "`." . $this->prefix . $table . " as b ON  " . implode(" AND ", $join) . ";"; // LIMIT 50000
-
-                Debug::sql($sql);
-                $db->sql_query($sql);
 
 
-                $affected_rows = end($db->query)['rows'];
+
+
+                if ($table === "local") {
+                    $db->sql_query("SET FOREIGN_KEY_CHECKS=0;");
+                    Debug::debug("SET FOREIGN_KEY_CHECKS=0;");
+                }
+
+
+
+                $circular = false;
+
+                if (in_array($table, $this->fk_circulaire)) {
+                    $circular = true;
+                    $loop = 0;
+
+                    // moyen d'enregistrer le nombre en cash au lieu de refaire une requette
+                    $sql = "SELECT MAX(`" . self::FIELD_LOOP . "`) as max FROM `" . $this->schema_delete . "`." . $this->prefix . $table . "";
+                    $res = $db->sql_query($sql);
+
+                    while ($ob = $db->sql_fetch_object($res)) {
+                        $max = $ob->max;
+                    }
+                }
+
+
+                $loop = $max;
+
+
+                $affected_rows = 0;
+                do {
+                    //seulement si il y a des lignes pour gagner du temps
+                    $sql = "DELETE a FROM " . $table . " a
+                  INNER JOIN `" . $this->schema_delete . "`." . $this->prefix . $table . " as b ON  " . implode(" AND ", $join); // LIMIT 50000
+
+                    if ($circular) {
+                        $sql .= " WHERE `" . self::FIELD_LOOP . "`=" . $loop . ";";
+                    }
+                    $sql .= ";";
+
+
+                    Debug::sql($sql);
+                    $db->sql_query($sql);
+
+                    $affected_rows += end($db->query)['rows'];
+
+                    $loop--;
+                } while ($circular && $loop >= 0);
+
+                if ($table === "local") {
+                    $db->sql_query("SET FOREIGN_KEY_CHECKS=1;");
+                    Debug::debug("SET FOREIGN_KEY_CHECKS=1;");
+                }
+
+
+
+
+
+
 
 
                 Debug::debug($affected_rows, $table);
@@ -2276,15 +2327,17 @@ var myChart = new Chart(ctx, {
 
         Debug::parseDebug($param);
 
+        /*
+          $id_mysql_server = 104;
 
-        $id_mysql_server = 104;
 
+          $dblink   = $this->di['db']->sql(DB_DEFAULT);
+          $name     = Mysql::getDbLink($dblink, $id_mysql_server);
+          $this->db = $this->di['db']->sql($name);
 
-        $dblink   = $this->di['db']->sql(DB_DEFAULT);
-        $name     = Mysql::getDbLink($dblink, $id_mysql_server);
-        $this->db = $this->di['db']->sql($name);
-
-        $this->schema_to_purge = 'mydb';
+          $this->schema_to_purge = 'mydb';
+         * 
+         */
     }
 
 // move to archive controller ? avec toute les fonctions qui sont appeller dedant
@@ -2482,7 +2535,7 @@ var myChart = new Chart(ctx, {
                 exit;
             }
 
-            $data        = "";
+            $data = "";
             $list_tables = $this->getOrderBy2($this->getForeignKeys(), $this->main_table);
 
             foreach ($list_tables as $sub_array) {
@@ -3579,11 +3632,18 @@ objDiv.scrollTop = objDiv.scrollHeight;
             echo $table->display();
         }
 
-
         Debug::debug($to_drop);
 
-        $to_drop['equipement']   = array();
+        $to_drop['equipement'] = array();
         $to_drop['equipement'][] = "local";
+//
+//
+//        $to_drop['batiment'] = array();
+//        $to_drop['site'] = array();
+//        $to_drop['batiment'][] = "equipement";
+//        $to_drop['site'][] = "equipement";
+
+
 
 
         return $to_drop;
@@ -3606,7 +3666,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $tables = array('batiment', 'equipement', 'escalier', 'etage', 'local', 'site');
 
-        $tables2  = $tables;
+        $tables2 = $tables;
         $doublons = array();
 
 
@@ -3630,7 +3690,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                     $dtable = new Table(2);
 
-                    echo "#".$k." Boucle circulaire detecter ( ".$table." <=> ".$table2.")\n";
+                    echo "#" . $k . " Boucle circulaire detecter ( " . $table . " <=> " . $table2 . ")\n";
 
                     $dtable->addHeader(array("#", "DEPART", "ARRIVEE", "CHEMIN"));
 
@@ -3651,7 +3711,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                     echo $dtable->display();
 
-                    echo ' '."\n";
+                    echo ' ' . "\n";
 
 
                     $this->testOneToOne($way1);
@@ -3669,7 +3729,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $i = 1;
         foreach ($this->testfk as $fk) {
-            echo "#".$i." ".$fk;
+            echo "#" . $i . " " . $fk;
             $i++;
         }
     }
@@ -3707,8 +3767,7 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
         return $rows;
     }
 
-    public function testOneToOne($way, $order = 'ASC')
-    {
+    public function testOneToOne($way, $order = 'ASC') {
         if (count($way) > 0) {
 
             foreach ($way as $path) {
@@ -3721,12 +3780,11 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
         }
     }
 
-    public function testFk($table_a, $table_b)
-    {
+    public function testFk($table_a, $table_b) {
 
         $sql = "SELECT table_name, column_name, referenced_table_name, referenced_column_name  FROM `information_schema`.`KEY_COLUMN_USAGE` 
-            WHERE TABLE_NAME ='".$table_a."'
-            AND REFERENCED_TABLE_NAME = '".$table_b."' AND TABLE_SCHEMA='".$this->schema_to_purge."' AND REFERENCED_TABLE_SCHEMA='".$this->schema_to_purge."' ";
+            WHERE TABLE_NAME ='" . $table_a . "'
+            AND REFERENCED_TABLE_NAME = '" . $table_b . "' AND TABLE_SCHEMA='" . $this->schema_to_purge . "' AND REFERENCED_TABLE_SCHEMA='" . $this->schema_to_purge . "' ";
 
         $db = $this->db;
 
@@ -3738,8 +3796,8 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
             $i++;
 
 
-            $sql2 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NULL";
-            $sql3 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NOT NULL";
+            $sql2 = "SELECT count(1) as cpt FROM `" . $this->schema_to_purge . "`.`" . $ob->table_name . "` WHERE  `" . $ob->column_name . "` IS NULL";
+            $sql3 = "SELECT count(1) as cpt FROM `" . $this->schema_to_purge . "`.`" . $ob->table_name . "` WHERE  `" . $ob->column_name . "` IS NOT NULL";
 
 
             $res2 = $db->sql_query($sql2);
@@ -3749,12 +3807,11 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
 
                 $ob3 = $db->sql_fetch_object($res3);
 
-                $is_null     = $ob2->cpt;
+                $is_null = $ob2->cpt;
                 $is_not_null = $ob3->cpt;
 
 
-                $this->testfk[] = $ob->table_name.".".$ob->column_name."\t=>\t".$ob->referenced_table_name.".".$ob->referenced_column_name."\t(".$is_not_null."\t/\t".($is_null + $is_not_null).") ".round($is_not_null
-                        / ($is_null + $is_not_null) * 100, 2)."%\t(orphans ".($is_null).")\n";
+                $this->testfk[] = $ob->table_name . "." . $ob->column_name . "\t=>\t" . $ob->referenced_table_name . "." . $ob->referenced_column_name . "\t(" . $is_not_null . "\t/\t" . ($is_null + $is_not_null) . ") " . round($is_not_null / ($is_null + $is_not_null) * 100, 2) . "%\t(orphans " . ($is_null) . ")\n";
 
 
 
@@ -3778,29 +3835,27 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
         }
     }
 
-    public function comptage($param)
-    {
+    public function comptage($param) {
         Debug::parseDebug($param);
 
         $table = new Table(2);
 
 
-        $database = 'clean8';
 
         $table->addHeader(array('Table', 'Count'));
 
-        $db = $this->db;
+        $db = $this->di['db']->sql($this->link_to_purge);
 
-        $sql = "select table_name, table_rows from information_schema.tables where table_schema ='".$database."'  order by table_name;";
+        $sql = "select table_name, table_rows from information_schema.tables where table_schema ='" . $this->schema_delete . "'  order by table_name;";
 
         $res = $db->sql_query($sql);
 
 
 
         $tables = array();
-        while ($ob     = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
 
-            $sql2 = "SELECT count(1) as cpt FROM `".$database."`.`".$ob->table_name."`";
+            $sql2 = "SELECT count(1) as cpt FROM `" . $this->schema_delete . "`.`" . $ob->table_name . "`";
             $res2 = $db->sql_query($sql2);
 
             while ($ob2 = $db->sql_fetch_object($res2)) {
@@ -3808,12 +3863,17 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
                     $table->addLine(array($ob->table_name, $ob2->cpt));
                 }
             }
-            
+
             $tables[] = $ob->table_name;
         }
 
         echo $table->display();
-        
+
         echo implode("','", $tables);
     }
+
+    public function feedCircularFk($table) {
+        
+    }
+
 }
