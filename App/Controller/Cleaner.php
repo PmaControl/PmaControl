@@ -2536,7 +2536,7 @@ var myChart = new Chart(ctx, {
             }
 
             $data = "";
-            $list_tables = $this->getOrderBy2($this->getForeignKeys(), $this->main_table);
+            $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table));
 
             foreach ($list_tables as $sub_array) {
 
