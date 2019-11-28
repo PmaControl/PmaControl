@@ -1967,9 +1967,11 @@ var myChart = new Chart(ctx, {
 
                 $circular = false;
 
+                
+                $loop = 0;
                 if (in_array($table, $this->fk_circulaire)) {
                     $circular = true;
-                    $loop = 0;
+                    
 
                     // moyen d'enregistrer le nombre en cash au lieu de refaire une requette
                     $sql = "SELECT MAX(`" . self::FIELD_LOOP . "`) as max FROM `" . $this->schema_delete . "`." . $this->prefix . $table . "";
