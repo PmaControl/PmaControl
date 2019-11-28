@@ -12,7 +12,7 @@ var $schema = "CREATE TABLE `mysql_status` (
   UNIQUE KEY `libelle` (`libelle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","color","libelle");
+var $field = array("color","id","libelle");
 
 var $validate = array(
 	'color' => array(

@@ -29,9 +29,18 @@ var $schema = "CREATE TABLE `backup_dump` (
   CONSTRAINT `backup_dump_ibfk_1` FOREIGN KEY (`id_backup_database`) REFERENCES `backup_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-var $field = array("time","size_file","id","time_gz","size_gz","id_backup_database","is_completed","time_transfered","size_transfered","date_start","date_end","database","md5_gz","md5_transfered","md5","file_name","master_data","slave_data");
+var $field = array("size_transfered","date_start","date_end","time","size_file","id","time_gz","size_gz","id_backup_database","is_completed","time_transfered","database","md5","md5_gz","md5_transfered","file_name","master_data","slave_data");
 
 var $validate = array(
+	'size_transfered' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'date_start' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'date_end' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
 	'time' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -52,15 +61,6 @@ var $validate = array(
 	),
 	'time_transfered' => array(
 		'numeric' => array('This must be an int.')
-	),
-	'size_transfered' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date_start' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'date_end' => array(
-		'dateTime' => array('This must be a datetime.')
 	),
 );
 

@@ -161,10 +161,11 @@ class Mysql {
         $res = $dblink->sql_query($sql);
 
         while ($ob = $dblink->sql_fetch_object($res)) {
-            $name = $ob->name;
+            return $ob->name;
         }
 
-        return $name;
+        throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
+        
     }
 
     static function addMysqlServer($data) {

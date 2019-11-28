@@ -20,9 +20,18 @@ var $schema = "CREATE TABLE `pmacli_drain_process` (
   CONSTRAINT `pmacli_drain_process_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("date_start","id","date_end","id_cleaner_main","time","id_mysql_server","item_deleted","time_by_item","name");
+var $field = array("id_mysql_server","item_deleted","time_by_item","date_start","id","date_end","id_cleaner_main","time","name");
 
 var $validate = array(
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
+	),
+	'item_deleted' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'time_by_item' => array(
+		'decimal' => array('This must be a float.')
+	),
 	'date_start' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
@@ -33,15 +42,6 @@ var $validate = array(
 		'reference_to' => array('The constraint to cleaner_main.id isn\'t respected.','cleaner_main', 'id')
 	),
 	'time' => array(
-		'decimal' => array('This must be a float.')
-	),
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
-	'item_deleted' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'time_by_item' => array(
 		'decimal' => array('This must be a float.')
 	),
 );

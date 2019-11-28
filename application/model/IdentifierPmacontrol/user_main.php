@@ -33,9 +33,15 @@ var $schema = "CREATE TABLE `user_main` (
   CONSTRAINT `user_main_ibfk_3` FOREIGN KEY (`id_geolocalisation_city`) REFERENCES `geolocalisation_city` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id_geolocalisation_country","id","id_geolocalisation_city","is_valid","id_group","date_last_login","is_ldap","date_last_connected","date_created","ip","key_auth","name","firstname","login","email","avatar","password");
+var $field = array("date_last_connected","date_created","id_geolocalisation_country","id","id_geolocalisation_city","is_valid","id_group","date_last_login","is_ldap","ip","firstname","key_auth","name","login","email","avatar","password");
 
 var $validate = array(
+	'date_last_connected' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'date_created' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
 	'id_geolocalisation_country' => array(
 		'reference_to' => array('The constraint to geolocalisation_country.id isn\'t respected.','geolocalisation_country', 'id')
 	),
@@ -53,12 +59,6 @@ var $validate = array(
 	),
 	'is_ldap' => array(
 		'numeric' => array('This must be an int.')
-	),
-	'date_last_connected' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'date_created' => array(
-		'dateTime' => array('This must be a datetime.')
 	),
 	'ip' => array(
 		'ip' => array('your IP is not valid')

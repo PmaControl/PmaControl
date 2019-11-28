@@ -4,6 +4,10 @@ use \Glial\Html\Form\Form;
 
 if (!empty($data['ajax']) && $data['ajax']) {
     Form::setAjax(true);
+    
+    $data['table'] = "";
+    $data['field'] = "";
+    
 }
 
 $options = array_merge(array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"), $data['options']);

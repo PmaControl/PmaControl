@@ -23,9 +23,15 @@ var $schema = "CREATE TABLE `mysql_database` (
   CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("data_length","binlog_do_db","id_mysql_server","data_free","binlog_ignore_db","index_length","tables","rows","id","character_set_name","name","collation_name");
+var $field = array("tables","rows","id","data_length","binlog_do_db","id_mysql_server","data_free","binlog_ignore_db","index_length","character_set_name","collation_name","name");
 
 var $validate = array(
+	'tables' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'rows' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'data_length' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -42,12 +48,6 @@ var $validate = array(
 		'numeric' => array('This must be an int.')
 	),
 	'index_length' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'tables' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'rows' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

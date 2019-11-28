@@ -15,9 +15,9 @@ var $schema = "CREATE TABLE `export_option` (
   `splited_fields` varchar(255) NOT NULL,
   `sql` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=latin1";
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1";
 
-var $field = array("id","active","key","table_name","config_file","libelle","crypted_fields","splited_fields","sql");
+var $field = array("active","id","key","table_name","config_file","libelle","crypted_fields","splited_fields","sql");
 
 var $validate = array(
 	'active' => array(

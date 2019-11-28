@@ -31,9 +31,18 @@ var $schema = "CREATE TABLE `archive_load_detail` (
   CONSTRAINT `archive_load_detail_ibfk_2` FOREIGN KEY (`id_archive_load`) REFERENCES `archive_load` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("time_to_decrypt","size_compressed","id","time_to_transfert","size_remote","id_archive","time_to_mysql","size_crypted","id_archive_load","date_start","time_to_uncompress","date_end","size_sql","status","md5_sql","md5_compressed","md5_crypted","md5_remote","error_msg");
+var $field = array("time_to_uncompress","date_end","size_sql","time_to_decrypt","size_compressed","id","time_to_transfert","size_remote","id_archive","time_to_mysql","size_crypted","id_archive_load","date_start","status","md5_sql","md5_compressed","md5_crypted","md5_remote","error_msg");
 
 var $validate = array(
+	'time_to_uncompress' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'date_end' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'size_sql' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'time_to_decrypt' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -60,15 +69,6 @@ var $validate = array(
 	),
 	'date_start' => array(
 		'dateTime' => array('This must be a datetime.')
-	),
-	'time_to_uncompress' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date_end' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'size_sql' => array(
-		'numeric' => array('This must be an int.')
 	),
 );
 

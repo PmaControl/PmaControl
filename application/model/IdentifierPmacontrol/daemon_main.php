@@ -24,21 +24,9 @@ var $schema = "CREATE TABLE `daemon_main` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1";
 
-var $field = array("queue_number","id_user_main","id","queue_key","refresh_time","date","thread_concurency","debug","pid","max_delay","class","method","name","log_file","params");
+var $field = array("date","thread_concurency","debug","pid","max_delay","queue_number","id_user_main","id","queue_key","refresh_time","class","method","name","params","log_file");
 
 var $validate = array(
-	'queue_number' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'id_user_main' => array(
-		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
-	),
-	'queue_key' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'refresh_time' => array(
-		'numeric' => array('This must be an int.')
-	),
 	'date' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
@@ -52,6 +40,18 @@ var $validate = array(
 		'numeric' => array('This must be an int.')
 	),
 	'max_delay' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'queue_number' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'id_user_main' => array(
+		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
+	),
+	'queue_key' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'refresh_time' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

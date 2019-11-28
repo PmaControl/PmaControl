@@ -25,9 +25,18 @@ var $schema = "CREATE TABLE `mysql_replication_stats` (
   CONSTRAINT `mysql_replication_stats_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='1.9.6'";
 
-var $field = array("ssh_ok","is_master","id_mysql_server","is_slave","uptime","ping","date","is_available","position","id","version","binlog_format","time_zone","databases","file");
+var $field = array("date","is_available","position","id","ssh_ok","is_master","id_mysql_server","is_slave","uptime","ping","binlog_format","version","time_zone","file","databases");
 
 var $validate = array(
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'is_available' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'position' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'ssh_ok' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -44,15 +53,6 @@ var $validate = array(
 		'numeric' => array('This must be an int.')
 	),
 	'ping' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'is_available' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'position' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

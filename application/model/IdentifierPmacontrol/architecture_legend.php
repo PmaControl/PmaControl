@@ -12,10 +12,11 @@ var $schema = "CREATE TABLE `architecture_legend` (
   `style` varchar(20) NOT NULL,
   `order` int(11) NOT NULL,
   `type` varchar(20) NOT NULL,
+  `condition` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=latin1";
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=latin1";
 
-var $field = array("id","order","style","type","color","const","name");
+var $field = array("id","order","color","style","type","const","name","condition");
 
 var $validate = array(
 	'order' => array(

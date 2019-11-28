@@ -14,7 +14,7 @@ var $schema = "CREATE TABLE `sharding` (
   UNIQUE KEY `prefix` (`prefix`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8";
 
-var $field = array("id","date","prefix","table_link","name");
+var $field = array("date","id","prefix","table_link","name");
 
 var $validate = array(
 	'date' => array(

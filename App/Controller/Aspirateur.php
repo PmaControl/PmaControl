@@ -377,7 +377,7 @@ class Aspirateur extends Controller {
         Debug::debug("apres slave");
 
         if ($var['variables']['log_bin'] === "ON") {
-            $data['binlog'] = $this->BinaryLog($mysql_tested);
+            $data['binlog'] = $this->binaryLog($mysql_tested);
         }
 
         Debug::debug("apres la récupération de la liste des binlogs");
@@ -1416,7 +1416,7 @@ class Aspirateur extends Controller {
         }
     }
 
-    private function BinaryLog($mysql_tested) {
+    private function binaryLog($mysql_tested) {
 
         //$grants = $this->getGrants();
 
@@ -1462,7 +1462,7 @@ class Aspirateur extends Controller {
 
         $db_remote = $this->di['db']->sql($remote);
 
-        $ret = $this->BinaryLog($db_remote);
+        $ret = $this->binaryLog($db_remote);
 
         Debug::debug($ret, "Resultat");
     }

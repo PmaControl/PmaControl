@@ -12,14 +12,14 @@ var $schema = "CREATE TABLE `link__ts_variable__mysql_server` (
   UNIQUE KEY `idx_gg` (`id_mysql_server`,`id_ts_variable`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_mysql_server","id_ts_variable");
+var $field = array("id_ts_variable","id","id_mysql_server");
 
 var $validate = array(
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
 	'id_ts_variable' => array(
 		'reference_to' => array('The constraint to ts_variable.id isn\'t respected.','ts_variable', 'id')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 );
 

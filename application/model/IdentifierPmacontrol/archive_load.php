@@ -19,9 +19,18 @@ var $schema = "CREATE TABLE `archive_load` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("date_start","id","date_end","id_user_main","id_cleaner_main","progression","id_mysql_server","duration","pid","status","database");
+var $field = array("id_mysql_server","duration","pid","date_start","id","date_end","id_user_main","id_cleaner_main","progression","status","database");
 
 var $validate = array(
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
+	),
+	'duration' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'pid' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'date_start' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
@@ -35,15 +44,6 @@ var $validate = array(
 		'reference_to' => array('The constraint to cleaner_main.id isn\'t respected.','cleaner_main', 'id')
 	),
 	'progression' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
-	'duration' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'pid' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

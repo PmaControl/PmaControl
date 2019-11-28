@@ -15,14 +15,14 @@ var $schema = "CREATE TABLE `link__mysql_server__tag` (
   CONSTRAINT `link__mysql_server__tag_ibfk_2` FOREIGN KEY (`id_tag`) REFERENCES `tag` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_mysql_server","id_tag");
+var $field = array("id_tag","id","id_mysql_server");
 
 var $validate = array(
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
 	'id_tag' => array(
 		'reference_to' => array('The constraint to tag.id isn\'t respected.','tag', 'id')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 );
 

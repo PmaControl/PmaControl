@@ -13,20 +13,20 @@ var $schema = "CREATE TABLE `ts_date_by_server` (
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT
  PARTITION BY RANGE (to_days(`date`))
-(PARTITION `p737518` VALUES LESS THAN (737518) ENGINE = ROCKSDB,
- PARTITION `p737519` VALUES LESS THAN (737519) ENGINE = ROCKSDB)";
+(PARTITION `p737600` VALUES LESS THAN (737600) ENGINE = ROCKSDB,
+ PARTITION `p737601` VALUES LESS THAN (737601) ENGINE = ROCKSDB)";
 
-var $field = array("date","id","id_mysql_server","id_ts_file");
+var $field = array("id_mysql_server","id_ts_file","date","id");
 
 var $validate = array(
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
 	'id_mysql_server' => array(
 		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 	'id_ts_file' => array(
 		'reference_to' => array('The constraint to ts_file.id isn\'t respected.','ts_file', 'id')
+	),
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
 	),
 );
 

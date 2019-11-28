@@ -20,7 +20,7 @@ var $schema = "CREATE TABLE `haproxy_main` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","date_refresh","ip","vip","user_private_key","stats_login","stats_password","hostname","path_conf","csv","private_key","config");
+var $field = array("id","date_refresh","vip","ip","user_private_key","stats_login","stats_password","hostname","path_conf","csv","private_key","config");
 
 var $validate = array(
 	'date_refresh' => array(

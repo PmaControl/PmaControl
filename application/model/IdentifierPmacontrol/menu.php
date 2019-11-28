@@ -20,17 +20,11 @@ var $schema = "CREATE TABLE `menu` (
   `level` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `class` (`class`,`method`,`bg`,`bd`)
-) ENGINE=InnoDB AUTO_INCREMENT=162 DEFAULT CHARSET=latin1";
+) ENGINE=InnoDB AUTO_INCREMENT=183 DEFAULT CHARSET=latin1";
 
-var $field = array("position","parent_id","group_id","bg","bd","active","id","title","url","level","class","method","icon");
+var $field = array("group_id","bg","bd","active","id","position","parent_id","title","url","level","class","method","icon");
 
 var $validate = array(
-	'position' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'parent_id' => array(
-		'numeric' => array('This must be an int.')
-	),
 	'group_id' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -41,6 +35,12 @@ var $validate = array(
 		'numeric' => array('This must be an int.')
 	),
 	'active' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'position' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'parent_id' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

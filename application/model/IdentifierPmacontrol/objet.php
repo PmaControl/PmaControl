@@ -12,7 +12,7 @@ var $schema = "CREATE TABLE `objet` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","reference_id","ip","table_name");
+var $field = array("reference_id","id","ip","table_name");
 
 var $validate = array(
 	'reference_id' => array(

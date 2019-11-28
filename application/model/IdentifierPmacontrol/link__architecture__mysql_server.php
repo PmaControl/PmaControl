@@ -15,14 +15,14 @@ var $schema = "CREATE TABLE `link__architecture__mysql_server` (
   CONSTRAINT `link__architecture__mysql_server_ibfk_2` FOREIGN KEY (`id_architecture`) REFERENCES `architecture` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_mysql_server","id_architecture");
+var $field = array("id_architecture","id","id_mysql_server");
 
 var $validate = array(
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
 	'id_architecture' => array(
 		'reference_to' => array('The constraint to architecture.id isn\'t respected.','architecture', 'id')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 );
 

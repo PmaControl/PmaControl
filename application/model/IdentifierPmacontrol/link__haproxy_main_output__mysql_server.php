@@ -15,14 +15,14 @@ var $schema = "CREATE TABLE `link__haproxy_main_output__mysql_server` (
   CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_haproxy_output","id_mysql_server");
+var $field = array("id_mysql_server","id","id_haproxy_output");
 
 var $validate = array(
-	'id_haproxy_output' => array(
-		'reference_to' => array('The constraint to haproxy_output.id isn\'t respected.','haproxy_output', 'id')
-	),
 	'id_mysql_server' => array(
 		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
+	),
+	'id_haproxy_output' => array(
+		'reference_to' => array('The constraint to haproxy_output.id isn\'t respected.','haproxy_output', 'id')
 	),
 );
 

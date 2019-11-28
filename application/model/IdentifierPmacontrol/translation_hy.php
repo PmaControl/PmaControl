@@ -21,9 +21,12 @@ var $schema = "CREATE TABLE `translation_hy` (
   KEY `id_history_etat` (`id_history_etat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("line_found","id_history_etat","date_inserted","date_updated","translate_auto","id","source","destination","key","file_found","text");
+var $field = array("translate_auto","id","line_found","id_history_etat","date_inserted","date_updated","source","destination","key","file_found","text");
 
 var $validate = array(
+	'translate_auto' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'line_found' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -35,9 +38,6 @@ var $validate = array(
 	),
 	'date_updated' => array(
 		'dateTime' => array('This must be a datetime.')
-	),
-	'translate_auto' => array(
-		'numeric' => array('This must be an int.')
 	),
 );
 

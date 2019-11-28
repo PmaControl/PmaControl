@@ -14,14 +14,14 @@ var $schema = "CREATE TABLE `binlog_history` (
   CONSTRAINT `binlog_history_ibfk_1` FOREIGN KEY (`id_binlog_max`) REFERENCES `binlog_max` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","id_binlog_max","date","file");
+var $field = array("date","id","id_binlog_max","file");
 
 var $validate = array(
-	'id_binlog_max' => array(
-		'reference_to' => array('The constraint to binlog_max.id isn\'t respected.','binlog_max', 'id')
-	),
 	'date' => array(
 		'dateTime' => array('This must be a datetime.')
+	),
+	'id_binlog_max' => array(
+		'reference_to' => array('The constraint to binlog_max.id isn\'t respected.','binlog_max', 'id')
 	),
 );
 

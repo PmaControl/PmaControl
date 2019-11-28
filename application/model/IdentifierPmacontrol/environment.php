@@ -12,7 +12,7 @@ var $schema = "CREATE TABLE `environment` (
   `letter` char(1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1";
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1";
 
 var $field = array("id","letter","key","libelle","class");
 

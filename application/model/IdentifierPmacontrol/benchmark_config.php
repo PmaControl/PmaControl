@@ -17,19 +17,19 @@ var $schema = "CREATE TABLE `benchmark_config` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("table_size","id","max_time","tables_count","pid","read_only","mode","lua_script","threads");
+var $field = array("tables_count","pid","table_size","id","max_time","read_only","mode","lua_script","threads");
 
 var $validate = array(
-	'table_size' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'max_time' => array(
-		'numeric' => array('This must be an int.')
-	),
 	'tables_count' => array(
 		'numeric' => array('This must be an int.')
 	),
 	'pid' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'table_size' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'max_time' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

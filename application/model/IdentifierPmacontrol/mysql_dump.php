@@ -27,9 +27,21 @@ var $schema = "CREATE TABLE `mysql_dump` (
   CONSTRAINT `mysql_dump_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-var $field = array("time","is_gziped","id_mysql_server","is_available","id_backup_database","is_completed","date_start","size","date_end","id","database","md5","file_name","slave_data","master_data");
+var $field = array("is_completed","date_start","size","date_end","id","time","is_gziped","id_mysql_server","is_available","id_backup_database","database","md5","file_name","master_data","slave_data");
 
 var $validate = array(
+	'is_completed' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'date_start' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'size' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'date_end' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
 	'time' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -44,18 +56,6 @@ var $validate = array(
 	),
 	'id_backup_database' => array(
 		'reference_to' => array('The constraint to backup_database.id isn\'t respected.','backup_database', 'id')
-	),
-	'is_completed' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date_start' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'size' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date_end' => array(
-		'dateTime' => array('This must be a datetime.')
 	),
 );
 

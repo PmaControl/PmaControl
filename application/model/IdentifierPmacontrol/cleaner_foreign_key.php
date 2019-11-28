@@ -18,7 +18,7 @@ var $schema = "CREATE TABLE `cleaner_foreign_key` (
   CONSTRAINT `cleaner_foreign_key_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","id_cleaner_main","constraint_column","referenced_schema","referenced_table","constraint_schema","referenced_column","constraint_table");
+var $field = array("id","id_cleaner_main","constraint_schema","referenced_column","constraint_table","constraint_column","referenced_schema","referenced_table");
 
 var $validate = array(
 	'id_cleaner_main' => array(

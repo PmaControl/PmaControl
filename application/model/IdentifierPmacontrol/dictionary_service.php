@@ -12,14 +12,14 @@ var $schema = "CREATE TABLE `dictionary_service` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-var $field = array("id","id_dictionary_serveur","port_default","name");
+var $field = array("port_default","id","id_dictionary_serveur","name");
 
 var $validate = array(
-	'id_dictionary_serveur' => array(
-		'reference_to' => array('The constraint to dictionary_serveur.id isn\'t respected.','dictionary_serveur', 'id')
-	),
 	'port_default' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'id_dictionary_serveur' => array(
+		'reference_to' => array('The constraint to dictionary_serveur.id isn\'t respected.','dictionary_serveur', 'id')
 	),
 );
 

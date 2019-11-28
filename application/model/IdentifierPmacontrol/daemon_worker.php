@@ -13,14 +13,14 @@ var $schema = "CREATE TABLE `daemon_worker` (
   CONSTRAINT `daemon_worker_ibfk_1` FOREIGN KEY (`id_daemon_main`) REFERENCES `daemon_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_daemon_main","pid");
+var $field = array("pid","id","id_daemon_main");
 
 var $validate = array(
-	'id_daemon_main' => array(
-		'reference_to' => array('The constraint to daemon_main.id isn\'t respected.','daemon_main', 'id')
-	),
 	'pid' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'id_daemon_main' => array(
+		'reference_to' => array('The constraint to daemon_main.id isn\'t respected.','daemon_main', 'id')
 	),
 );
 

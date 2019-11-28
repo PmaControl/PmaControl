@@ -17,8 +17,8 @@ var $schema = "CREATE TABLE `mysql_server` (
   `database` varchar(64) NOT NULL,
   `is_password_crypted` int(11) NOT NULL,
   `port` int(11) NOT NULL,
-  `ssh_login` text NOT NULL DEFAULT '',
-  `ssh_password` text NOT NULL DEFAULT '',
+  `ssh_port` int(11) NOT NULL DEFAULT 22,
+  `ssh_login` text CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '\'\'',
   `is_sudo` int(11) NOT NULL DEFAULT 0,
   `is_root` int(11) NOT NULL DEFAULT 1,
   `is_monitored` int(11) NOT NULL DEFAULT 1,
@@ -27,8 +27,6 @@ var $schema = "CREATE TABLE `mysql_server` (
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
   `error` text NOT NULL DEFAULT '',
   `date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
-  `key_private_path` varchar(250) NOT NULL DEFAULT '',
-  `key_private_user` varchar(100) NOT NULL DEFAULT '',
   `ssh_available` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
@@ -39,13 +37,31 @@ var $schema = "CREATE TABLE `mysql_server` (
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-var $field = array("date_refresh","is_proxy","is_available","id","is_sudo","is_acknowledged","is_password_crypted","id_client","ssh_available","is_root","port","id_environment","is_monitored","ip","login","database","name","display_name","key_private_user","hostname","key_private_path","passwd","ssh_login","ssh_password","error");
+var $field = array("is_root","port","id_environment","is_monitored","date_refresh","ssh_port","is_proxy","ssh_available","is_available","id","is_sudo","is_acknowledged","is_password_crypted","id_client","ip","login","database","name","display_name","hostname","passwd","error","ssh_login");
 
 var $validate = array(
+	'is_root' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'port' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'id_environment' => array(
+		'reference_to' => array('The constraint to environment.id isn\'t respected.','environment', 'id')
+	),
+	'is_monitored' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'date_refresh' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
+	'ssh_port' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'is_proxy' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'ssh_available' => array(
 		'numeric' => array('This must be an int.')
 	),
 	'is_available' => array(
@@ -62,21 +78,6 @@ var $validate = array(
 	),
 	'id_client' => array(
 		'reference_to' => array('The constraint to client.id isn\'t respected.','client', 'id')
-	),
-	'ssh_available' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'is_root' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'port' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'id_environment' => array(
-		'reference_to' => array('The constraint to environment.id isn\'t respected.','environment', 'id')
-	),
-	'is_monitored' => array(
-		'numeric' => array('This must be an int.')
 	),
 	'ip' => array(
 		'ip' => array('your IP is not valid')

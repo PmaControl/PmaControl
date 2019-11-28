@@ -15,7 +15,7 @@ var $schema = "CREATE TABLE `webservice_user` (
   UNIQUE KEY `user` (`user`,`host`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","is_enabled","id_client","user","password","host");
+var $field = array("id","is_enabled","id_client","user","host","password");
 
 var $validate = array(
 	'is_enabled' => array(

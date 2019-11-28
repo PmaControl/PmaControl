@@ -11,7 +11,7 @@ var $schema = "CREATE TABLE `mysql_privilege` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","type","privilege");
+var $field = array("id","privilege","type");
 
 var $validate = array(
 );

@@ -13,7 +13,7 @@ var $schema = "CREATE TABLE `client` (
   UNIQUE KEY `libelle` (`libelle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","date","libelle","logo");
+var $field = array("date","id","libelle","logo");
 
 var $validate = array(
 	'date' => array(
