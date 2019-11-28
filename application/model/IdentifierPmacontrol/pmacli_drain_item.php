@@ -14,14 +14,14 @@ var $schema = "CREATE TABLE `pmacli_drain_item` (
   CONSTRAINT `pmacli_drain_item_ibfk_1` FOREIGN KEY (`id_pmacli_drain_process`) REFERENCES `pmacli_drain_process` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","id_pmacli_drain_process","row","table");
+var $field = array("row","id","id_pmacli_drain_process","table");
 
 var $validate = array(
-	'id_pmacli_drain_process' => array(
-		'reference_to' => array('The constraint to pmacli_drain_process.id isn\'t respected.','pmacli_drain_process', 'id')
-	),
 	'row' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'id_pmacli_drain_process' => array(
+		'reference_to' => array('The constraint to pmacli_drain_process.id isn\'t respected.','pmacli_drain_process', 'id')
 	),
 );
 

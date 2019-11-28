@@ -15,15 +15,12 @@ var $schema = "CREATE TABLE `ts_value_slave_int` (
   KEY `id_mysql_server` (`id_mysql_server`,`id_ts_variable`,`date`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1
  PARTITION BY RANGE (to_days(`date`))
-(PARTITION `p737518` VALUES LESS THAN (737518) ENGINE = ROCKSDB,
- PARTITION `p737519` VALUES LESS THAN (737519) ENGINE = ROCKSDB)";
+(PARTITION `p737600` VALUES LESS THAN (737600) ENGINE = ROCKSDB,
+ PARTITION `p737601` VALUES LESS THAN (737601) ENGINE = ROCKSDB)";
 
-var $field = array("date","id","value","id_mysql_server","id_ts_variable","connection_name");
+var $field = array("value","id_mysql_server","id_ts_variable","date","id","connection_name");
 
 var $validate = array(
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
 	'value' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -32,6 +29,9 @@ var $validate = array(
 	),
 	'id_ts_variable' => array(
 		'reference_to' => array('The constraint to ts_variable.id isn\'t respected.','ts_variable', 'id')
+	),
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
 	),
 );
 

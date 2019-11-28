@@ -30,9 +30,21 @@ var $schema = "CREATE TABLE `ha_proxy_stats` (
   CONSTRAINT `ha_proxy_stats_ibfk_2` FOREIGN KEY (`id_haprox_input`) REFERENCES `haproxy_main_input` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("session_max","session_rate_cur","id","session_limit","server_role","session_rate_max","id_haproxy_main","bytes_in","queue_cur","session_rate_limit","id_haprox_input","bytes_out","queue_max","session_cur","date","enabled","queue_limit","server_status");
+var $field = array("session_cur","date","enabled","queue_limit","session_max","session_rate_cur","id","session_limit","server_role","session_rate_max","id_haproxy_main","bytes_in","queue_cur","session_rate_limit","id_haprox_input","bytes_out","queue_max","server_status");
 
 var $validate = array(
+	'session_cur' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'enabled' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'queue_limit' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'session_max' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -67,18 +79,6 @@ var $validate = array(
 		'numeric' => array('This must be an int.')
 	),
 	'queue_max' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'session_cur' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'enabled' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'queue_limit' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

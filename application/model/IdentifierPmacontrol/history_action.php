@@ -12,7 +12,7 @@ var $schema = "CREATE TABLE `history_action` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","point","title","action");
+var $field = array("point","id","title","action");
 
 var $validate = array(
 	'point' => array(

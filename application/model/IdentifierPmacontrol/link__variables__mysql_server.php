@@ -12,17 +12,17 @@ var $schema = "CREATE TABLE `link__variables__mysql_server` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","id_variables_name","id_mysql_server","type");
+var $field = array("id_mysql_server","type","id","id_variables_name");
 
 var $validate = array(
-	'id_variables_name' => array(
-		'reference_to' => array('The constraint to variables_name.id isn\'t respected.','variables_name', 'id')
-	),
 	'id_mysql_server' => array(
 		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 	'type' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'id_variables_name' => array(
+		'reference_to' => array('The constraint to variables_name.id isn\'t respected.','variables_name', 'id')
 	),
 );
 

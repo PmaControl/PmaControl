@@ -11,11 +11,13 @@ var $schema = "CREATE TABLE `home_box` (
   `class` varchar(50) NOT NULL,
   `method` varchar(50) NOT NULL,
   `order` int(11) NOT NULL,
+  `button_msg` varchar(255) NOT NULL,
+  `button_url` varchar(250) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `class` (`class`,`method`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1";
 
-var $field = array("id","order","method","title","class","icon");
+var $field = array("id","order","class","method","title","icon","button_url","button_msg");
 
 var $validate = array(
 	'order' => array(

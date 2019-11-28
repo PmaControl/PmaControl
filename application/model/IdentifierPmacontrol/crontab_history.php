@@ -15,20 +15,20 @@ var $schema = "CREATE TABLE `crontab_history` (
   CONSTRAINT `crontab_history_ibfk_1` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("code_retour","id","id_crontab","date_started","date_end");
+var $field = array("date_started","date_end","code_retour","id","id_crontab");
 
 var $validate = array(
-	'code_retour' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'id_crontab' => array(
-		'reference_to' => array('The constraint to crontab.id isn\'t respected.','crontab', 'id')
-	),
 	'date_started' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
 	'date_end' => array(
 		'dateTime' => array('This must be a datetime.')
+	),
+	'code_retour' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'id_crontab' => array(
+		'reference_to' => array('The constraint to crontab.id isn\'t respected.','crontab', 'id')
 	),
 );
 

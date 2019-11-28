@@ -24,12 +24,9 @@ var $schema = "CREATE TABLE `mysql_replication_thread` (
   CONSTRAINT `mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_replication_stats`) REFERENCES `mysql_replication_stats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-var $field = array("id_mysql_replication_stats","last_sql_errno","exec_master_log_pos","last_io_errno","master_port","id","time_behind","master_host","thread_sql","thread_io","thread_name","relay_master_log_file","last_io_error","last_sql_error");
+var $field = array("last_sql_errno","exec_master_log_pos","last_io_errno","master_port","id","id_mysql_replication_stats","time_behind","master_host","thread_io","thread_sql","thread_name","relay_master_log_file","last_sql_error","last_io_error");
 
 var $validate = array(
-	'id_mysql_replication_stats' => array(
-		'reference_to' => array('The constraint to mysql_replication_stats.id isn\'t respected.','mysql_replication_stats', 'id')
-	),
 	'last_sql_errno' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -41,6 +38,9 @@ var $validate = array(
 	),
 	'master_port' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'id_mysql_replication_stats' => array(
+		'reference_to' => array('The constraint to mysql_replication_stats.id isn\'t respected.','mysql_replication_stats', 'id')
 	),
 );
 

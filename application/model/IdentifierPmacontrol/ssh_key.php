@@ -19,7 +19,7 @@ var $schema = "CREATE TABLE `ssh_key` (
   UNIQUE KEY `fingerprint` (`fingerprint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("id","added_on","bit","type","user","name","fingerprint","comment","public_key","private_key");
+var $field = array("added_on","bit","id","type","user","name","fingerprint","comment","public_key","private_key");
 
 var $validate = array(
 	'added_on' => array(

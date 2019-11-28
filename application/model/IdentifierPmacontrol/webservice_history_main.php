@@ -17,17 +17,17 @@ var $schema = "CREATE TABLE `webservice_history_main` (
   CONSTRAINT `webservice_history_main_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("date","id","logon","id_user_main","password","user","message");
+var $field = array("logon","id_user_main","date","id","user","password","message");
 
 var $validate = array(
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
 	'logon' => array(
 		'numeric' => array('This must be an int.')
 	),
 	'id_user_main' => array(
 		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
+	),
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
 	),
 );
 

@@ -14,7 +14,7 @@ var $schema = "CREATE TABLE `scan` (
   UNIQUE KEY `ip` (`ip`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","ms","date","ip","data");
+var $field = array("ms","date","id","ip","data");
 
 var $validate = array(
 	'ms' => array(

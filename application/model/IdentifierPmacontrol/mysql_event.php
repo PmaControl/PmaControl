@@ -19,17 +19,17 @@ var $schema = "CREATE TABLE `mysql_event` (
   CONSTRAINT `mysql_event_ibfk_2` FOREIGN KEY (`id_mysql_status`) REFERENCES `mysql_status` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","id_mysql_server","id_mysql_status","date","message","serialized");
+var $field = array("id_mysql_status","date","id","id_mysql_server","message","serialized");
 
 var $validate = array(
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
 	'id_mysql_status' => array(
 		'reference_to' => array('The constraint to mysql_status.id isn\'t respected.','mysql_status', 'id')
 	),
 	'date' => array(
 		'dateTime' => array('This must be a datetime.')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 );
 

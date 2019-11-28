@@ -25,9 +25,18 @@ var $schema = "CREATE TABLE `benchmark_main` (
   CONSTRAINT `benchmark_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("date_start","table_size","id","progression","date_end","max_time","id_mysql_server","id_user_main","date","tables_count","read_only","mode","status","sysbench_version","threads");
+var $field = array("id_user_main","date","tables_count","date_start","table_size","id","progression","date_end","max_time","id_mysql_server","read_only","mode","status","sysbench_version","threads");
 
 var $validate = array(
+	'id_user_main' => array(
+		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
+	),
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'tables_count' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'date_start' => array(
 		'dateTime' => array('This must be a datetime.')
 	),
@@ -45,15 +54,6 @@ var $validate = array(
 	),
 	'id_mysql_server' => array(
 		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
-	'id_user_main' => array(
-		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
-	),
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'tables_count' => array(
-		'numeric' => array('This must be an int.')
 	),
 );
 

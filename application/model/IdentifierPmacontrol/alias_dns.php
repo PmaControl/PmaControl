@@ -10,10 +10,10 @@ var $schema = "CREATE TABLE `alias_dns` (
   `port` int(11) NOT NULL,
   `destination` varchar(15) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `dns` (`dns`)
+  UNIQUE KEY `dns` (`dns`,`port`,`destination`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT";
 
-var $field = array("id","port","destination","dns");
+var $field = array("port","id","destination","dns");
 
 var $validate = array(
 	'port' => array(

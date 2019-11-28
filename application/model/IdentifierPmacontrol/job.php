@@ -15,11 +15,10 @@ var $schema = "CREATE TABLE `job` (
   `pid` int(11) NOT NULL,
   `log` varchar(255) NOT NULL,
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
-  `error` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","date_start","date_end","pid","status","uuid","class","method","error","log","param");
+var $field = array("id","date_start","date_end","pid","status","uuid","class","method","log","param");
 
 var $validate = array(
 	'date_start' => array(

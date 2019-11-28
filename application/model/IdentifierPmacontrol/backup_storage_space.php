@@ -18,9 +18,18 @@ var $schema = "CREATE TABLE `backup_storage_space` (
   CONSTRAINT `backup_storage_space_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("used","id","available","id_backup_storage_area","percent","date","backup","size");
+var $field = array("date","backup","size","used","id","available","id_backup_storage_area","percent");
 
 var $validate = array(
+	'date' => array(
+		'dateTime' => array('This must be a datetime.')
+	),
+	'backup' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'size' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'used' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -31,15 +40,6 @@ var $validate = array(
 		'reference_to' => array('The constraint to backup_storage_area.id isn\'t respected.','backup_storage_area', 'id')
 	),
 	'percent' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date' => array(
-		'dateTime' => array('This must be a datetime.')
-	),
-	'backup' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'size' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

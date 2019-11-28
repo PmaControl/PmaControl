@@ -17,9 +17,15 @@ var $schema = "CREATE TABLE `mysql_node` (
   KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("ready","id","status","id_mysql_galera","id_mysql_server","size","nodes");
+var $field = array("id_mysql_server","size","ready","id","status","id_mysql_galera","nodes");
 
 var $validate = array(
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
+	),
+	'size' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'ready' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -28,12 +34,6 @@ var $validate = array(
 	),
 	'id_mysql_galera' => array(
 		'reference_to' => array('The constraint to mysql_galera.id isn\'t respected.','mysql_galera', 'id')
-	),
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
-	'size' => array(
-		'numeric' => array('This must be an int.')
 	),
 );
 

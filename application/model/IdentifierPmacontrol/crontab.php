@@ -16,7 +16,7 @@ var $schema = "CREATE TABLE `crontab` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","month","day_of_week","minute","hour","day_of_month","command","comment");
+var $field = array("id","hour","day_of_month","month","day_of_week","minute","comment","command");
 
 var $validate = array(
 );

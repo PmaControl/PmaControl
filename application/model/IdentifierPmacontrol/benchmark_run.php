@@ -25,9 +25,21 @@ var $schema = "CREATE TABLE `benchmark_run` (
   CONSTRAINT `benchmark_run_ibfk_1` FOREIGN KEY (`id_benchmark_main`) REFERENCES `benchmark_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("reponse_avg","read","error","id","reponse_percentile95","write","time","id_benchmark_main","other","reponse_min","date","total","reponse_max","threads","transaction");
+var $field = array("reponse_min","date","total","reponse_max","threads","transaction","reponse_avg","read","error","id","reponse_percentile95","write","time","id_benchmark_main","other");
 
 var $validate = array(
+	'date' => array(
+		'date' => array('This must be a date.')
+	),
+	'total' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'threads' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'transaction' => array(
+		'numeric' => array('This must be an int.')
+	),
 	'read' => array(
 		'numeric' => array('This must be an int.')
 	),
@@ -41,18 +53,6 @@ var $validate = array(
 		'reference_to' => array('The constraint to benchmark_main.id isn\'t respected.','benchmark_main', 'id')
 	),
 	'other' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'date' => array(
-		'date' => array('This must be a date.')
-	),
-	'total' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'threads' => array(
-		'numeric' => array('This must be an int.')
-	),
-	'transaction' => array(
 		'numeric' => array('This must be an int.')
 	),
 );

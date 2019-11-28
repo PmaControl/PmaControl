@@ -8,6 +8,7 @@ var $schema = "CREATE TABLE `cleaner_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
   `id_backup_storage_area` int(11) DEFAULT 0,
+  `is_crypted` int(11) NOT NULL,
   `id_user_main` int(11) NOT NULL,
   `database` varchar(64) NOT NULL,
   `libelle` varchar(50) NOT NULL,
@@ -26,17 +27,11 @@ var $schema = "CREATE TABLE `cleaner_main` (
   CONSTRAINT `cleaner_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("limit","id","id_mysql_server","id_backup_storage_area","pid","id_user_main","wait_time_in_sec","libelle","cleaner_db","prefix","database","main_table","log_file","query");
+var $field = array("is_crypted","pid","id_user_main","wait_time_in_sec","id","limit","id_mysql_server","id_backup_storage_area","prefix","libelle","cleaner_db","database","main_table","log_file","query");
 
 var $validate = array(
-	'limit' => array(
+	'is_crypted' => array(
 		'numeric' => array('This must be an int.')
-	),
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
-	'id_backup_storage_area' => array(
-		'reference_to' => array('The constraint to backup_storage_area.id isn\'t respected.','backup_storage_area', 'id')
 	),
 	'pid' => array(
 		'numeric' => array('This must be an int.')
@@ -46,6 +41,15 @@ var $validate = array(
 	),
 	'wait_time_in_sec' => array(
 		'numeric' => array('This must be an int.')
+	),
+	'limit' => array(
+		'numeric' => array('This must be an int.')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
+	),
+	'id_backup_storage_area' => array(
+		'reference_to' => array('The constraint to backup_storage_area.id isn\'t respected.','backup_storage_area', 'id')
 	),
 );
 

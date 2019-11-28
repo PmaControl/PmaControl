@@ -16,7 +16,7 @@ var $schema = "CREATE TABLE `user_main_login` (
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","is_logged","id_user_main","date","ip","user_agent");
+var $field = array("is_logged","id_user_main","date","id","ip","user_agent");
 
 var $validate = array(
 	'is_logged' => array(

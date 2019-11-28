@@ -26,9 +26,15 @@ var $schema = "CREATE TABLE `history_main` (
   CONSTRAINT `history_main_ibfk_5` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id_history_action","id","id_history_table","date","line","id_history_etat","id_user_main","type","param");
+var $field = array("id_history_etat","id_user_main","id_history_action","id","id_history_table","date","line","type","param");
 
 var $validate = array(
+	'id_history_etat' => array(
+		'reference_to' => array('The constraint to history_etat.id isn\'t respected.','history_etat', 'id')
+	),
+	'id_user_main' => array(
+		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
+	),
 	'id_history_action' => array(
 		'reference_to' => array('The constraint to history_action.id isn\'t respected.','history_action', 'id')
 	),
@@ -40,12 +46,6 @@ var $validate = array(
 	),
 	'line' => array(
 		'numeric' => array('This must be an int.')
-	),
-	'id_history_etat' => array(
-		'reference_to' => array('The constraint to history_etat.id isn\'t respected.','history_etat', 'id')
-	),
-	'id_user_main' => array(
-		'reference_to' => array('The constraint to user_main.id isn\'t respected.','user_main', 'id')
 	),
 );
 

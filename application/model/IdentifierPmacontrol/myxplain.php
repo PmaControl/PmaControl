@@ -15,7 +15,7 @@ var $schema = "CREATE TABLE `myxplain` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-var $field = array("duration","id","date","name","json","command","explain");
+var $field = array("duration","id","date","name","explain","json","command");
 
 var $validate = array(
 	'date' => array(

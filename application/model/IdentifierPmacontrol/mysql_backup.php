@@ -12,14 +12,14 @@ var $schema = "CREATE TABLE `mysql_backup` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-var $field = array("id","id_mysql_server","date","database");
+var $field = array("date","id","id_mysql_server","database");
 
 var $validate = array(
-	'id_mysql_server' => array(
-		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
-	),
 	'date' => array(
 		'dateTime' => array('This must be a datetime.')
+	),
+	'id_mysql_server' => array(
+		'reference_to' => array('The constraint to mysql_server.id isn\'t respected.','mysql_server', 'id')
 	),
 );
 

@@ -10,7 +10,7 @@ var $schema = "CREATE TABLE `version` (
   `version` varchar(20) NOT NULL,
   `comment` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8";
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8";
 
 var $field = array("id","date","version","comment");
 

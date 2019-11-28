@@ -12,7 +12,7 @@ var $schema = "CREATE TABLE `history_table` (
   UNIQUE KEY `Name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
 
-var $field = array("id","date_insterted","name");
+var $field = array("date_insterted","id","name");
 
 var $validate = array(
 	'date_insterted' => array(
