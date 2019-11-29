@@ -11,7 +11,6 @@ use App\Library\Extraction;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
-
 trait Galera {
 
     var $galera_cluster = array();
@@ -216,4 +215,5 @@ trait Galera {
 
         return $id;
     }
+
 }

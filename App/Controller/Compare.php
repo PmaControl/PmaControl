@@ -12,6 +12,7 @@ use \Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use App\Library\Diff;
+use \Glial\Sgbd\Sgbd;
 
 //&lrarr;
 

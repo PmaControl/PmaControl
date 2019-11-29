@@ -512,16 +512,14 @@ END IF;";
     }
 
     static public function execMulti($queries, $db_link) {
-        if (IS_CLI) {
-            $this->view = false;
-        }
 
 
         if (!is_array($queries)) {
             throw new \Exception("PMACTRL-652 : first parameter should be an array !");
         }
 
-        $query = implode(";", $queries);
+
+        $query = implode("", $queries);
         $ret = [];
         $i = 0;
 
@@ -546,13 +544,15 @@ END IF;";
         return $ret;
     }
 
-    static public function compareListObject($db_link1, $db1, $db_link2, $db2, $type_object) {
-        $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from information_schema.triggers where trigger_schema ='{DB}'";
+    static public function getListObject($db_link, $database, $type_object) {
+        $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from `information_schema`.`triggers` where trigger_schema ='{DB}';";
         $query['FUNCTION']['query'] = "show function status WHERE Db ='{DB}';";
-        $query['PROCEDURE']['query'] = "show procedure status WHERE Db ='{DB}'";
-        $query['TABLE']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
-        $query['VIEW']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
-        $query['EVENT']['query'] = "SHOW EVENTS FROM `{DB}`";
+        $query['PROCEDURE']['query'] = "show procedure status WHERE Db ='{DB}';";
+        $query['TABLE']['query'] = "select TABLE_NAME from `information_schema`.`tables` where `TABLE_SCHEMA` = '{DB}' AND `TABLE_TYPE`='BASE TABLE' order by TABLE_NAME;";
+        $query['VIEW']['query'] = "select TABLE_NAME from `information_schema`.`tables` where `TABLE_SCHEMA` = '{DB}' AND `TABLE_TYPE`='VIEW' order by TABLE_NAME;";
+        $query['EVENT']['query'] = "SHOW EVENTS FROM `{DB}`;";
+
+
 
         $query['TRIGGER']['field'] = "trigger_name";
         $query['FUNCTION']['field'] = "Name";
@@ -560,35 +560,95 @@ END IF;";
         $query['TABLE']['field'] = "TABLE_NAME";
         $query['VIEW']['field'] = "TABLE_NAME";
         $query['EVENT']['field'] = "Name";
-
+        /*
+         * //$query['ALL'] = true; => TO DO
+         */
 
         if (!in_array($type_object, array_keys($query))) {
             throw new \Exception("PMACTRL-095 : this type of object is not supported : '" . $type_object . "'", 80);
         }
 
-        // [] to prevent db with same name
-        $dbs[][$db1] = $db_link1;
-        $dbs[][$db2] = $db_link2;
-
-        $i = 0;
 
         //to prevent if a DB don't have a type of object
         $data = array();
 
+        $sql = str_replace('{DB}', $database, $query[$type_object]['query']);
+        $res = $db_link->sql_query($sql);
 
-        foreach ($dbs as $db_unique) {
-            foreach ($db_unique as $db_name => $db_link) {
-                $sql = str_replace('{DB}', $db_name, $query[$type_object]['query']);
-                $res = $db_link->sql_query($sql);
 
-                while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data[$row[$query[$type_object]['field']]][$i] = 1;
-                }
-                $i++;
-            }
+        while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data[] = $row[$query[$type_object]['field']];
         }
+
+
         ksort($data);
         return $data;
+    }
+
+    /*
+     * @author : Aurélien LEQUOY
+     * @desctiotion : return current database
+     * @version 1.0
+     * 
+     */
+
+    static public function getCurrentDb($db) {
+        $ob_a = $db->sql_fetch_object($db->sql_query("SELECT database() as db"));
+        return $ob_a->db;
+    }
+
+    static public function getStructure($db_link, $database, $data, $object) {
+        $query['TRIGGER']['query'] = "SHOW CREATE TRIGGER `{DB}`.`{OBJECT}`;";
+        $query['FUNCTION']['query'] = "SHOW CREATE FUNCTION `{DB}`.`{OBJECT}`;";
+        $query['PROCEDURE']['query'] = "SHOW CREATE PROCEDURE `{DB}`.`{OBJECT}`;";
+        $query['TABLE']['query'] = "SHOW CREATE TABLE `{DB}`.`{OBJECT}`;";
+        $query['VIEW']['query'] = "SHOW CREATE VIEW `{DB}`.`{OBJECT}`;";
+        $query['EVENT']['query'] = "SHOW CREATE EVENT `{DB}`.`{OBJECT}`;";
+
+        $query['TRIGGER']['field'] = "SQL Original Statement";
+        $query['FUNCTION']['field'] = "Create Function";
+        $query['PROCEDURE']['field'] = "Create Procedure";
+        $query['TABLE']['field'] = "Create Table";
+        $query['VIEW']['field'] = "Create View";
+        $query['EVENT']['field'] = "Create Event";
+
+        $query['TRIGGER']['drop'] = "DROP TRIGGER `{OBJECT}`";
+        $query['FUNCTION']['drop'] = "DROP FUNCTION `{OBJECT}`";
+        $query['PROCEDURE']['drop'] = "DROP PROCEDURE `{OBJECT}`";
+        $query['TABLE']['drop'] = "DROP TABLE `{OBJECT}`";
+        $query['VIEW']['drop'] = "DROP VIEW `{OBJECT}`";
+        $query['EVENT']['drop'] = "DROP EVENT `{OBJECT}`";
+
+        $query['TABLE']['name'] = "Table";
+
+        $queries = array();
+        foreach ($data as $elem) {
+
+            $tmp = str_replace(array('{DB}', '{OBJECT}'),
+                    array($database, $elem), $query[$object]['query']);
+            $queries[$elem] = $tmp;
+        }
+
+
+        $ret = self::execMulti($queries, $db_link);
+
+        $resultat = array();
+        foreach ($ret as $elem => $row) {
+            $arr = $row[0];
+
+            $struc = $arr[$query[$object]['field']];
+
+            if ($object === "TABLE") {
+                $struc = preg_replace('/(\sAUTO_INCREMENT=[0-9]+)/', '', $struc);
+            }
+            //$arr[$query[$object]['name']]
+            $resultat[$elem] = $struc;
+        }
+
+        //Debug::debug($ret);
+
+
+        return $resultat;
     }
 
 }

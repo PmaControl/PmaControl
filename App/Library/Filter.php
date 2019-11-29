@@ -7,6 +7,9 @@
 
 namespace App\Library;
 
+use \Glial\Sgbd\Sgbd;
+
+
 trait Filter
 {
 

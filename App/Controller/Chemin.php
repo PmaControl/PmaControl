@@ -6,10 +6,12 @@
  * le temps de load peut être optimisé
  */
 
-// Installation des gestionnaires de signaux
-declare(ticks=1);
 
-use Glial\Synapse\Controller;
+
+namespace App\Controller;
+
+
+use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
 class Chemin extends Controller
