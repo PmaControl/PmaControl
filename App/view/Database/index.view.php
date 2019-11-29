@@ -14,4 +14,6 @@ echo '</div>';
 \Glial\Synapse\FactoryController::addNode("Database", "refresh", array());
 
 
+\Glial\Synapse\FactoryController::addNode("Database", "compare", array());
 \Glial\Synapse\FactoryController::addNode("Database", "analyze", array());
+
