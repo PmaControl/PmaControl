@@ -15,6 +15,8 @@ use Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\Chiffrement;
+use \Glial\Sgbd\Sgbd;
+
 
 class DeployRsaKey extends Controller {
 
@@ -60,7 +62,7 @@ $("#ssh_key-id").change(function() {
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '
                 . '<i style="font-size: 16px" class="fa fa-key" aria-hidden="true"></i> ' . "Deploy key RSA";
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -394,7 +396,7 @@ $("#ssh_key-id").change(function() {
         }
 
         if (ctype_digit(strval($elems[0]))) {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT `ip`, `ssh_port` FROM `mysql_server` where `id`=" . intval($elems[0]);
             Debug::sql($sql);
             $res = $db->sql_query($sql);
@@ -521,7 +523,7 @@ $("#ssh_key-id").change(function() {
 
         if (is_numeric($key)) {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM `ssh_key` WHERE `id` = " . $key;
             Debug::sql($sql);
 

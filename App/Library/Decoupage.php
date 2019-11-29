@@ -48,7 +48,7 @@ trait Decoupage {
         Debug::parseDebug($param);
 
         $id_server = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->tryRocksDb();
 
@@ -74,7 +74,7 @@ trait Decoupage {
         $fields = array("int", "double", "text");
 
         $id_server = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tables = $db->getListTable('table');
 
@@ -102,7 +102,7 @@ trait Decoupage {
     }
 
     public function buildTableName($name_table) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "CREATE TABLE IF NOT EXISTS `" . $name_table . "_name` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -117,7 +117,7 @@ trait Decoupage {
     }
 
     public function buildTableLink($name_table, $table_link) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $link_to = explode('__', $table_link)[0];
         $sql = "CREATE TABLE IF NOT EXISTS `link__" . $name_table . "__" . $link_to . "` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -132,7 +132,7 @@ trait Decoupage {
     }
 
     public function buildTablePartition($name_table, $table_link, $id_server) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $link_to = explode('__', $table_link)[0];
 
@@ -162,7 +162,7 @@ trait Decoupage {
     }
 
     public function buildMainTable($prefix, $table_link, $id_servers) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $link_to = explode('__', $table_link)[0];
 
@@ -221,7 +221,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
     }
 
     public function buildTableHistory($prefix, $table_link, $id_servers) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $link_to = explode('__', $table_link)[0];
 
@@ -258,7 +258,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
     }
 
     function getIdservers() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server";
         $res = $db->sql_query($sql);
@@ -271,7 +271,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
     function tryRocksDb() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "select count(1) as cpt from information_schema.engines where engine in ('ROCKSDB') and (SUPPORT = 'YES' OR SUPPORT = 'DEFAULT');";
 
         $res = $db->sql_query($sql);
@@ -296,7 +296,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
 
         Debug::parseDebug($param);
         
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id_servers = $this->getIdservers();
 
         foreach ($id_servers as $id_server) {
@@ -319,7 +319,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         $this->view = false;
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_servers = $this->getIdservers();
 
@@ -362,7 +362,7 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
          */
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "TRUNCATE TABLE `variables_name`";
         

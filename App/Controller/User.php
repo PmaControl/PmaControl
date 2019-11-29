@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
+use \Glial\Sgbd\Sgbd;
+
 
 class User extends Controller {
 
@@ -28,7 +30,7 @@ class User extends Controller {
         $this->title = __("Members");
         $this->ariane = "> " . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id, a.firstname, a.name, b.id_country, a.email,b.libelle, a.id_group, COUNT( d.point ) AS points, date_last_connected
 			FROM user_main a
@@ -149,7 +151,7 @@ class User extends Controller {
         $this->layout_name = false;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT libelle, id FROM geolocalisation_city WHERE libelle LIKE '" . $db->sql_real_escape_string($_GET['q']) . "%'
@@ -209,7 +211,7 @@ class User extends Controller {
 		');
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
@@ -338,7 +340,7 @@ class User extends Controller {
     function lost_password() {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->title = __("Password forgotten ?");
@@ -411,7 +413,7 @@ class User extends Controller {
     }
 
     function password_recover($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->title = __("Recover your password");
@@ -518,7 +520,7 @@ class User extends Controller {
     }
 
     function confirmation($data) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM user_main WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
@@ -574,7 +576,7 @@ class User extends Controller {
 
     private function log($id_user, $success) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $data = array();
         $data['user_main_login']['id_user_main'] = $id_user;
@@ -593,7 +595,7 @@ class User extends Controller {
 
     public function profil($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->layout_name = "admin";
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -807,7 +809,7 @@ GROUP BY d.id";
     function updateGroup() {
 
         $roles = $this->di['acl']->getAlias();
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "DELETE FROM `group`";
         $db->sql_query($sql);
@@ -841,7 +843,7 @@ GROUP BY d.id";
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             foreach ($_POST['user_main'] as $id_user_main => $value) {
 

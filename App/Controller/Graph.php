@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 class Graph extends Controller {
 
@@ -14,7 +16,7 @@ class Graph extends Controller {
         $this->di['js']->addJavascript(array("Chart.min.js"));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST" && !empty($_POST['mysql_server']['id']) && !empty($_POST['status_value_int']['date'])) {
             $sql = "SELECT * FROM mysql_server where id='" . $_POST['mysql_server']['id'] . "'";

@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 class Haproxy extends Controller {
 
@@ -11,7 +13,7 @@ class Haproxy extends Controller {
         Debug::parseDebug($param);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
 

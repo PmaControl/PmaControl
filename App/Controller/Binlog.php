@@ -14,6 +14,8 @@ use App\Library\Extraction;
 use App\Library\Mysql;
 use Glial\Security\Crypt\Crypt;
 use App\Library\Display;
+use \Glial\Sgbd\Sgbd;
+
 
 class Binlog extends Controller {
 
@@ -24,7 +26,7 @@ class Binlog extends Controller {
 
     public function index() {
 
-        Display::setDb($this->di['db']->sql(DB_DEFAULT));
+        Display::setDb(Sgbd::sql(DB_DEFAULT));
 
         $data = array();
         $this->set('data', $data);
@@ -61,7 +63,7 @@ class Binlog extends Controller {
                 $max_file_to_keep = ceil($number / $_POST['variables']['file_binlog_size']);
 
 
-                $db = $this->di['db']->sql(DB_DEFAULT);
+                $db = Sgbd::sql(DB_DEFAULT);
                 $sql = "REPLACE INTO binlog_max (`id_mysql_server`, `size_max`, `number_file_max`) VALUES ('" . $_POST['mysql_server']['id'] . "', '" . $number . "', '" . $max_file_to_keep . "')";
 
                 $db->sql_query($sql);
@@ -74,7 +76,7 @@ class Binlog extends Controller {
 
     public function max() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM binlog_max a
@@ -95,7 +97,7 @@ class Binlog extends Controller {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
         $this->view = false;
@@ -122,7 +124,7 @@ class Binlog extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -148,7 +150,7 @@ class Binlog extends Controller {
 
 
             $remote = Mysql::getDbLink($db, $arr['id_mysql_server']);
-            $db_remote = $this->di['db']->sql($remote);
+            $db_remote = Sgbd::sql($remote);
 
 
             $res2 = $db_remote->sql_query("show binary logs;");
@@ -202,11 +204,11 @@ class Binlog extends Controller {
 
     public function backupServer($param) {
         Debug::parseDebug($param);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_mysql_server = intval($param[0]);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT d.*
             FROM mysql_server a
@@ -288,7 +290,7 @@ class Binlog extends Controller {
 
                     if (empty($gg)) {
 
-                        $db = $this->di['db']->sql(DB_DEFAULT);
+                        $db = Sgbd::sql(DB_DEFAULT);
                         $bck = array();
 
 
@@ -329,7 +331,7 @@ class Binlog extends Controller {
         Debug::parseDebug($param);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id as id_mysql_server
             FROM mysql_server a
@@ -350,7 +352,7 @@ class Binlog extends Controller {
 
         $id_mysql_server = intval($param[0]);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *
             FROM mysql_server a
@@ -400,7 +402,7 @@ class Binlog extends Controller {
 
                 if ($total_size > $ob->size_max) {
                     $name_link = Mysql::getDbLink($db, $id_mysql_server);
-                    $db_remote = $this->di['db']->sql($name_link);
+                    $db_remote = Sgbd::sql($name_link);
                     $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
                     Debug::sql($sql);
                     $db_remote->sql_query($sql);
@@ -416,7 +418,7 @@ class Binlog extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"));

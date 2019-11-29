@@ -27,6 +27,7 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\Display;
 use App\Controller\Test\CleanerTest;
+use \Glial\Sgbd\Sgbd;
 
 class Cleaner extends Controller {
 
@@ -92,7 +93,7 @@ class Cleaner extends Controller {
         //https://github.com/chartjs/chartjs-plugin-zoom
 
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         // si qqn a qq chose de mieux je suis preneur
@@ -262,7 +263,7 @@ var myChart = new Chart(ctx, {
 
     function getIdMysqlServer($name) {
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id FROM mysql_server WHERE name ='" . $name . "';";
         $res_id_mysql_server = $default->sql_query($sql);
@@ -293,7 +294,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function showDaemon() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `pmacli_drain_process` order by date_start DESC LIMIT 5000;";
         $data['clean'] = $db->sql_fetch_yield($sql);
 
@@ -301,7 +302,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function index($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Display::setDb($db);
 
@@ -332,7 +333,7 @@ var myChart = new Chart(ctx, {
 
     public function treatment($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `pmacli_drain_process` WHERE `id_cleaner_main`='" . $param[0] . "' ORDER BY date_start DESC LIMIT 100";
         $data['treatment'] = $db->sql_fetch_yield($sql);
@@ -341,7 +342,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function detail($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $tmp = explode('/', $_GET['url']);
         $var = end($tmp);
 
@@ -360,7 +361,7 @@ var myChart = new Chart(ctx, {
 
     public function add($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "cleaner/add.cleaner.js"));
 
@@ -482,7 +483,7 @@ var myChart = new Chart(ctx, {
             $this->layout_name = false;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($param[0]) . "';";
         $res = $db->sql_query($sql);
@@ -490,7 +491,7 @@ var myChart = new Chart(ctx, {
         while ($ob = $db->sql_fetch_object($res)) {
 
 
-            $db_to_get_db = $this->di['db']->sql($ob->name);
+            $db_to_get_db = Sgbd::sql($ob->name);
         }
 
         $sql = "SHOW DATABASES";
@@ -522,7 +523,7 @@ var myChart = new Chart(ctx, {
         }
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($_GET['id_mysql_server']) . "';";
         $res = $db->sql_query($sql);
@@ -530,7 +531,7 @@ var myChart = new Chart(ctx, {
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_server = $ob->id;
-            $db_clean = $this->di['db']->sql($ob->name);
+            $db_clean = Sgbd::sql($ob->name);
         }
 
         $sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '" . $database . "' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
@@ -553,14 +554,14 @@ var myChart = new Chart(ctx, {
     function getColumnByTable($param) {
 
         $this->layout_name = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($_GET['id_mysql_server']) . "';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_server = $ob->id;
-            $db_clean = $this->di['db']->sql($ob->name);
+            $db_clean = Sgbd::sql($ob->name);
         }
 
         $sql = "show index from `" . $_GET['schema'] . "`.`" . $param[0] . "`";
@@ -587,7 +588,7 @@ var myChart = new Chart(ctx, {
 
 
         $id_cleaner = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM cleaner_main WHERE id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
@@ -615,7 +616,7 @@ var myChart = new Chart(ctx, {
     public function settings($param) {
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "cleaner/add.cleaner.js"));
@@ -681,7 +682,7 @@ var myChart = new Chart(ctx, {
         $id_cleaner = $param[0];
         $this->id_cleaner = $id_cleaner;
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
         $this->schema_main = $default->getDb();
@@ -745,7 +746,7 @@ var myChart = new Chart(ctx, {
             $time_end = microtime(true);
             $date_end = date("Y-m-d H:i:s");
 
-            $default = $this->di['db']->sql(DB_DEFAULT);
+            $default = Sgbd::sql(DB_DEFAULT);
 
             $data = array();
             $data['pmacli_drain_process']['id_mysql_server'] = $this->id_mysql_server;
@@ -812,7 +813,7 @@ var myChart = new Chart(ctx, {
     function start($param) {
 
         $id_cleaner = $this->get_id_cleaner($param);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
@@ -871,7 +872,7 @@ var myChart = new Chart(ctx, {
     function stop($param) {
 
         $id_cleaner = $this->get_id_cleaner($param);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
@@ -916,7 +917,7 @@ var myChart = new Chart(ctx, {
 
 
         sleep(1);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($this->isRunning($ob->pid) === false) {
 
@@ -940,7 +941,7 @@ var myChart = new Chart(ctx, {
     public function restart($param) {
         $id_cleaner = $this->get_id_cleaner($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
         $res = $db->sql_query($sql);
 
@@ -999,7 +1000,7 @@ var myChart = new Chart(ctx, {
 
         $id_cleaner = $param[0];
         $this->view = false; // required cannot be call directly from navigator
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *, b.name as nameserver,a.id as id_cleaner_main, a.database as db
             FROM cleaner_main a
@@ -1124,7 +1125,7 @@ var myChart = new Chart(ctx, {
         Debug::parseDebug($param);
         $this->get_id_cleaner($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
@@ -1142,7 +1143,7 @@ var myChart = new Chart(ctx, {
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $db_to_clean = $this->di['db']->sql($ob->nameserver);
+            $db_to_clean = Sgbd::sql($ob->nameserver);
             $db_to_clean->sql_select_db($ob->cleaner_db);
             $tables = $db_to_clean->getListTable();
 
@@ -1247,7 +1248,7 @@ var myChart = new Chart(ctx, {
     /*     * *********************************** */
 
     public function purge() {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
 // to not affect history server, read : https://mariadb.com/kb/en/mariadb/documentation/replication/standard-replication/selectively-skipping-replication-of-binlog-events/
@@ -1416,7 +1417,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function createTemporaryTable($table) {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
         $fields = $db->getTypeOfPrimaryKey($table, $this->schema_to_purge);
@@ -1454,7 +1455,7 @@ var myChart = new Chart(ctx, {
     public function feedDeleteTableWithFk() {
         Debug::checkPoint("FEED FROM FK");
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
 
@@ -1636,7 +1637,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function createAllTemporaryTable() {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $tables = $this->getImpactedTable();
         $db->getTypeOfPrimaryKey($tables, $this->schema_to_purge);
 
@@ -1655,7 +1656,7 @@ var myChart = new Chart(ctx, {
 
     private function getRealForeignKeys() {
 //get list of FK and put in array
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
 //$db->sql_select_db($this->schema_to_purge);
 
@@ -1688,10 +1689,10 @@ var myChart = new Chart(ctx, {
 
         Debug::debug("get the virtual foreign keys");
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
 //get and set virtual Foreign keys.
-        $params = $this->di['db']->sql(DB_DEFAULT)->getParams();
+        $params = Sgbd::sql(DB_DEFAULT)->getParams();
         $sql = "SELECT * FROM `" . $params['database'] . "`.`cleaner_foreign_key` WHERE `id_cleaner_main` = " . $this->id_cleaner . ";";
 
         $foreign_keys = $default->sql_fetch_yield($sql);
@@ -1932,7 +1933,7 @@ var myChart = new Chart(ctx, {
 
 
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table, "DESC"));
 
@@ -2036,7 +2037,7 @@ var myChart = new Chart(ctx, {
     }
 
     private function setAffectedRows($table) {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
         if (empty($this->rows_to_delete[$table])) {
@@ -2096,7 +2097,7 @@ var myChart = new Chart(ctx, {
     private function exportToFile($table) {
         if (!empty($this->id_backup_storage_area)) {
 
-            $db = $this->di['db']->sql($this->link_to_purge);
+            $db = Sgbd::sql($this->link_to_purge);
 
 
 
@@ -2202,7 +2203,7 @@ var myChart = new Chart(ctx, {
 
     private function get_rows($result) {
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $current_row = 0;
 
         $fields_cnt = $db->sql_num_fields($result);
@@ -2335,9 +2336,9 @@ var myChart = new Chart(ctx, {
           $id_mysql_server = 104;
 
 
-          $dblink   = $this->di['db']->sql(DB_DEFAULT);
+          $dblink   = Sgbd::sql(DB_DEFAULT);
           $name     = Mysql::getDbLink($dblink, $id_mysql_server);
-          $this->db = $this->di['db']->sql($name);
+          $this->db = Sgbd::sql($name);
 
           $this->schema_to_purge = 'mydb';
          * 
@@ -2351,7 +2352,7 @@ var myChart = new Chart(ctx, {
 
         Debug::parseDebug($param);
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
         $storage_area = $this->getIdStorageArea($id_cleaner);
         $this->id_backup_storage_area = $storage_area->id;
 
@@ -2382,7 +2383,7 @@ var myChart = new Chart(ctx, {
 
                 // to prevent MySQL timeout ?
                 $default->sql_close();
-                $default = $this->di['db']->sql(DB_DEFAULT);
+                $default = Sgbd::sql(DB_DEFAULT);
 
                 $archive = array();
                 $archive['archive']['id_cleaner_main'] = (int) $id_cleaner;
@@ -2431,7 +2432,7 @@ var myChart = new Chart(ctx, {
     }
 
     private function getIdStorageArea($id_cleaner) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_select_db($this->schema_main);
 
         $sql = "SELECT b.*, a.is_crypted FROM cleaner_main a
@@ -2449,7 +2450,7 @@ var myChart = new Chart(ctx, {
         $this->logger->info('[id:' . $this->id_cleaner . '][INIT][pid:' . getmypid() . '] Init of cleaner');
         Debug::debug("REAL INIT !");
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
 
@@ -2483,7 +2484,7 @@ var myChart = new Chart(ctx, {
 
     private function generateCreateTable() {
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
         $tables = $this->getImpactedTable();
 
@@ -2609,7 +2610,7 @@ var myChart = new Chart(ctx, {
 
         Debug::debug("Refresh GLOBAL STATUS");
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
         $this->com_status['Com_create_table'] = $db->getStatus("Com_create_table", true);
         $this->com_status['Com_alter_table'] = $db->getStatus("Com_alter_table");
@@ -2622,7 +2623,7 @@ var myChart = new Chart(ctx, {
     }
 
     private function compareComStatus() {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
         $Coms = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
 
@@ -2678,7 +2679,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function getPrimaryKey($table, $database) {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
 
 
@@ -2704,7 +2705,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function end_loop() {
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
 
         //Debug::showQueries();
@@ -2803,7 +2804,7 @@ var myChart = new Chart(ctx, {
             return $this->title;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM cleaner_main WHERE id = " . $id_cleaner;
 
@@ -2860,7 +2861,7 @@ var myChart = new Chart(ctx, {
             return $this->title;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -2898,7 +2899,7 @@ var myChart = new Chart(ctx, {
         $sql = "SELECT " . $primary_key . " FROM `" . $data['database'] . "`.`" . $data['main_table'] . "` a " . $data['query'] . " LIMIT " . $data['limit'] . ";";
         $data['sql'] = \SqlFormatter::format($sql);
 
-        $db2 = $this->di['db']->sql($this->link_to_purge);
+        $db2 = Sgbd::sql($this->link_to_purge);
 
 
         $db_origin = $db->db;
@@ -2986,7 +2987,7 @@ var myChart = new Chart(ctx, {
 
         $data['id_cleaner'] = $id_cleaner;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM cleaner_main where id ='" . $id_cleaner . "'";
@@ -3102,7 +3103,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
     }
 
     private function getUser($id) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *,a.id as id_user FROM user_main a
             INNER JOIN geolocalisation_country b ON a.id_geolocalisation_country = b.id";
@@ -3145,7 +3146,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
             return $this->title;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *,a.database,a.id as id_cleaner_main,b.id as id_mysql_server,
             b.name as mysql_server_name
@@ -3263,12 +3264,12 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $database = $param[1];
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT name FROM mysql_server WHERE id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
         while ($ob = $db->sql_fetch_object($res)) {
-            $remote_link = $this->di['db']->sql($ob->name);
+            $remote_link = Sgbd::sql($ob->name);
 
             $sql = "SELECT `REFERENCED_TABLE_NAME` as `refrence_table`,`TABLE_NAME` as `table_name` FROM `information_schema`.`KEY_COLUMN_USAGE` "
                     . "WHERE `CONSTRAINT_SCHEMA` ='" . $database . "' "
@@ -3549,7 +3550,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
          */
 
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
 
         $sql = "SELECT a.table_name, a.referenced_table_name,a.column_name, a.referenced_column_name 
@@ -3661,10 +3662,10 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $database = 'test';
 
 
-        $dblink = $this->di['db']->sql(DB_DEFAULT);
+        $dblink = Sgbd::sql(DB_DEFAULT);
         $name = Mysql::getDbLink($dblink, $id_mysql_server);
 
-        $db = $this->di['db']->sql($name);
+        $db = Sgbd::sql($name);
         $db->sql_select_db('test');
 
 
@@ -3848,7 +3849,7 @@ SELECT * FROM paths where cur_dest = '" . $table2 . "';";
 
         $table->addHeader(array('Table', 'Count'));
 
-        $db = $this->di['db']->sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge);
 
         $sql = "select table_name, table_rows from information_schema.tables where table_schema ='" . $this->schema_delete . "'  order by table_name;";
 

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Date\Date;
+use \Glial\Sgbd\Sgbd;
 
 class Test2 extends Controller {
 

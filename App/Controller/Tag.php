@@ -5,6 +5,8 @@ namespace App\Controller;
 use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
 use App\Library\Post;
+use \Glial\Sgbd\Sgbd;
+
 
 class Tag extends Controller {
 
@@ -22,7 +24,7 @@ class Tag extends Controller {
 
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM tag order by name";
 
@@ -39,7 +41,7 @@ class Tag extends Controller {
     }
 
     public function add() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -80,7 +82,7 @@ class Tag extends Controller {
         $this->layout_name = false;
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "UPDATE tag SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
             $db->sql_query($sql);

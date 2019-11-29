@@ -11,6 +11,8 @@ namespace App\Controller;
 #b94a48
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
 
 class GraphicCharter extends Controller {
 

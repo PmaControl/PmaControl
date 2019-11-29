@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use \glial\synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
 
 class History extends Controller {
 

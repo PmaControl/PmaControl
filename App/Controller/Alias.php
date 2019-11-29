@@ -9,11 +9,12 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 
 class Alias extends Controller {
 
     public function index() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM alias_dns a
         ORDER BY dns";

@@ -13,6 +13,8 @@ use \App\Library\Debug;
 use \App\Library\Ssh as SshLib;
 use App\Library\Post;
 use \Glial\I18n\I18n;
+use \Glial\Sgbd\Sgbd;
+
 
 class Ssh extends Controller {
 
@@ -121,7 +123,7 @@ class Ssh extends Controller {
         if (!empty($keys)) {
             $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public_key'], 1);
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT id from ssh_key WHERE fingerprint='" . $fingerprint . "'";
             $res = $db->sql_query($sql);
@@ -281,7 +283,7 @@ class Ssh extends Controller {
 })();
 
 ');
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * from ssh_key";
@@ -317,7 +319,7 @@ class Ssh extends Controller {
         $this->view = false;
 
         if (!empty($param[0])) {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $id_clef = intval($param[0]);
 
             $sql = "DELETE FROM `ssh_key` WHERE `id`= " . $id_clef;
@@ -342,7 +344,7 @@ class Ssh extends Controller {
 
         Debug::debug($keys, "SSH KEYS");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -472,7 +474,7 @@ AND b.is_available = 1;";
     }
 
     private function getSshKeys($id_ssh_key = "") {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $where = "";
 
@@ -509,7 +511,7 @@ AND b.is_available = 1;";
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM mysql_server WHERE id=" . $id_mysql_server . ";";
@@ -583,7 +585,7 @@ AND b.is_available = 1;";
         $this->view = false;
         $this->layout_name = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "select public_key from ssh_key where id =" . $id_ssh_key;
 
         $res = $db->sql_query($sql);
@@ -701,7 +703,7 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
             Debug::debug($data, "data");
 
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $this->tryAssociate(array($data['server'], $data['key']));
 
@@ -727,7 +729,7 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
         if (!empty($id_ssh_key)) {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT * FROM ssh_key WHERE id = " . $id_ssh_key;
             $res = $db->sql_query($sql);

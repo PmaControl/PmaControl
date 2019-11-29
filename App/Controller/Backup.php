@@ -12,6 +12,7 @@ use App\Library\Mysql;
 use App\Library\System;
 use App\Library\Extraction;
 use Ramsey\Uuid\Uuid;
+use \Glial\Sgbd\Sgbd;
 
 class Backup extends Controller {
 
@@ -91,7 +92,7 @@ class Backup extends Controller {
 
         $sql = "SELECT file_name FROM mysql_dump where is_gziped=0";
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $res = $db->sql_query($sql);
 
@@ -120,7 +121,7 @@ class Backup extends Controller {
 
             try {
 
-                $dblink = $this->di['db']->sql($db);
+                $dblink = Sgbd::sql($db);
 
 
 
@@ -185,7 +186,7 @@ class Backup extends Controller {
         $this->ariane = " > " . __("Backup management") . " > " . $this->title;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *, a.id as id_dump FROM `mysql_dump` a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
@@ -200,7 +201,7 @@ class Backup extends Controller {
 
     public function getDump($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `mysql_dump` WHERE id=" . $db->sql_real_escape_string($param[0]) . "";
         $res = $db->sql_query($sql);
@@ -262,7 +263,7 @@ class Backup extends Controller {
     });
 });');
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         /*
           if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -400,7 +401,7 @@ class Backup extends Controller {
     function getDatabaseByServer($param) {
 
         $this->layout_name = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = '" . $db->sql_real_escape_string($param[0]) . "';";
 
@@ -430,7 +431,7 @@ class Backup extends Controller {
         $this->layout_name = false;
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `mysql_server` WHERE `name` LIKE '%" . $db->sql_real_escape_string($_GET['q']) . "%';";
 
@@ -455,7 +456,7 @@ class Backup extends Controller {
         $this->layout_name = false;
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `mysql_server` WHERE `ip` LIKE '%" . $db->sql_real_escape_string($_GET['q']) . "%';";
 
@@ -476,7 +477,7 @@ class Backup extends Controller {
 
         $id_backup_database = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT c.`name` as `server_name`, b.`libelle` as nas,
             e.`libelle` as backup_type,a.id as id_backup_database,
@@ -561,7 +562,7 @@ class Backup extends Controller {
         $this->time_transfert = microtime(true);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $data = [];
@@ -599,7 +600,7 @@ class Backup extends Controller {
     public function deleteShedule($param) {
         $this->layout_name = false;
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id = $param[0];
 
         $sql = "SELECT id_crontab FROM backup_main WHERE id ='" . $id . "'";
@@ -621,7 +622,7 @@ class Backup extends Controller {
         $this->layout_name = false;
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id = $param[0];
 
         $sql = "SELECT * FROM backup_main a
@@ -670,7 +671,7 @@ class Backup extends Controller {
 
         $dumpoptions = " --quick --add-drop-table --default-character-set=utf8 --extended-insert ";
 
-        $db_to_backup = $this->di['db']->sql($backup['id_connection']);
+        $db_to_backup = Sgbd::sql($backup['id_connection']);
         $MS->setInstance($db_to_backup);
 
         $server_config = $db_to_backup->getParams();
@@ -728,9 +729,9 @@ class Backup extends Controller {
             }
         }
 
-        $this->di['db']->sql(DB_DEFAULT)->sql_close();
+        Sgbd::sql(DB_DEFAULT)->sql_close();
 
-//$this->di['db']->sql(DB_DEFAULT);
+//Sgbd::sql(DB_DEFAULT);
 //echo $mysql_dump . "\n";
 
         Crypt::$key = CRYPT_KEY;
@@ -889,7 +890,7 @@ class Backup extends Controller {
         $this->ariane = " > " . __("Backup management") . " > " . $this->title;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *, a.id as id_dump, e.ip as ip_nas ,f.name as `database`, b.id as id_backup,d.name as server_name
             FROM `backup_dump` a
@@ -982,7 +983,7 @@ class Backup extends Controller {
 
         fwrite(STDOUT, str_repeat("-", 80) . "\n");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server";
         $servers = $db->sql_fetch_yield($sql);
 
@@ -1162,7 +1163,7 @@ if (! defined('PMACONTROL_PASSWD'))
 
 //echo $sql;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $res = $db->sql_query($sql);
@@ -1322,7 +1323,7 @@ $(function () {
     }
 
     public function gant() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.colorbox-min.js", "timetable-script.min.js"));
     }
@@ -1330,7 +1331,7 @@ $(function () {
     public function add() {
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             try {
@@ -1450,9 +1451,9 @@ $(function () {
         Debug::debug($backup);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-        $db_to_backup = $this->di['db']->sql($backup->name_connection);
+        $db_to_backup = Sgbd::sql($backup->name_connection);
         //Debug::debug($db_to_backup);
         //$server_config = $db_to_backup->getParams();
         //Debug::debug($server_config);
@@ -1515,7 +1516,7 @@ $(function () {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $hostname = trim(Extraction::display(array("hostname"), array($backup->id_mysql_server))[$backup->id_mysql_server]['']['hostname']);
@@ -1545,7 +1546,7 @@ $(function () {
         Debug::parseDebug($param);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $ret = Extraction::display(array("hostname"), array(11))[11]['']['hostname'];
@@ -1561,7 +1562,7 @@ $(function () {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
         $this->view = false;
@@ -1574,7 +1575,7 @@ $(function () {
 
 
         $remote = Mysql::getDbLink($db, $id_mysql_server);
-        $db_remote = $this->di['db']->sql($remote);
+        $db_remote = Sgbd::sql($remote);
 
         if (!is_dir($directory_backup)) {
             throw new \Exception('PMACTRL-914 : This directory is not valid');
@@ -1736,7 +1737,7 @@ $(function () {
 
 
         $db_link->sql_close($db);
-        $db_link = $this->di['db']->sql($remote);
+        $db_link = Sgbd::sql($remote);
 
         $db_link->sql_select_db($db);
 
@@ -1826,7 +1827,7 @@ $(function () {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
         $this->view = false;
@@ -1851,7 +1852,7 @@ $(function () {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
         $this->view = false;
@@ -1906,7 +1907,7 @@ $(function () {
 
         $id_backup_main = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $php = explode(" ", shell_exec("whereis php"))[1];
 
@@ -1953,7 +1954,7 @@ $(function () {
         Debug::debug($param, 'param');
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql3 = "SELECT id FROM job WHERE uuid='" . $uuid . "'";
         Debug::sql($sql3);
@@ -2028,7 +2029,7 @@ $(function () {
 
 
         $db->sql_close();
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $backup_dump = array();
         $backup_dump['backup_dump']['id'] = $id_backup_dump;
@@ -2049,7 +2050,7 @@ $(function () {
     }
 
     public function getLogFile($uuid) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT `log`,`error` FROM `job` where `uuid` = '" . $uuid . "'";
         $res = $db->sql_query($sql);

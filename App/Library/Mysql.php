@@ -164,8 +164,7 @@ class Mysql {
             return $ob->name;
         }
 
-        throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
-        
+        throw new \Exception("PMACTRL-854 : impossible to find the server with id '" . $id_mysql_server . "'");
     }
 
     static function addMysqlServer($data) {
@@ -186,11 +185,7 @@ class Mysql {
             $data['password'] = $data['passwd'];
         }
 
-
-
-
         $port = $data['port'] ?? 3306;
-
 
         $sql = "SELECT id from mysql_server where ip='" . $ip . "' and port =" . $port;
 
@@ -368,9 +363,9 @@ END IF;";
                 }
             } while ($db->sql_more_results() && $db->sql_next_result());
 
+            $error = $db->sql_error();
 
-
-            if ($error = $db->sql_error()) {
+            if ($error) {
                 echo "Syntax Error: \n $error";  // display array pointer key:value
             }
 
@@ -513,9 +508,87 @@ END IF;";
             $ob = $ar;
         }
 
-
-
         return $ob;
+    }
+
+    static public function execMulti($queries, $db_link) {
+        if (IS_CLI) {
+            $this->view = false;
+        }
+
+
+        if (!is_array($queries)) {
+            throw new \Exception("PMACTRL-652 : first parameter should be an array !");
+        }
+
+        $query = implode(";", $queries);
+        $ret = [];
+        $i = 0;
+
+        if ($db_link->sql_multi_query($query)) {
+            foreach ($queries as $table => $elem) {
+                $result = $db_link->sql_store_result();
+
+                if (!$result) {
+                    printf("Error: %s\n", mysqli_error($db_link->link));
+                    debug($query);
+                    exit();
+                }
+
+                while ($row = $db_link->sql_fetch_array($result, MYSQLI_ASSOC)) {
+                    $ret[$table][] = $row;
+                }
+                if ($db_link->sql_more_results()) {
+                    $db_link->sql_next_result();
+                }
+            }
+        }
+        return $ret;
+    }
+
+    static public function compareListObject($db_link1, $db1, $db_link2, $db2, $type_object) {
+        $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from information_schema.triggers where trigger_schema ='{DB}'";
+        $query['FUNCTION']['query'] = "show function status WHERE Db ='{DB}';";
+        $query['PROCEDURE']['query'] = "show procedure status WHERE Db ='{DB}'";
+        $query['TABLE']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
+        $query['VIEW']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
+        $query['EVENT']['query'] = "SHOW EVENTS FROM `{DB}`";
+
+        $query['TRIGGER']['field'] = "trigger_name";
+        $query['FUNCTION']['field'] = "Name";
+        $query['PROCEDURE']['field'] = "Name";
+        $query['TABLE']['field'] = "TABLE_NAME";
+        $query['VIEW']['field'] = "TABLE_NAME";
+        $query['EVENT']['field'] = "Name";
+
+
+        if (!in_array($type_object, array_keys($query))) {
+            throw new \Exception("PMACTRL-095 : this type of object is not supported : '" . $type_object . "'", 80);
+        }
+
+        // [] to prevent db with same name
+        $dbs[][$db1] = $db_link1;
+        $dbs[][$db2] = $db_link2;
+
+        $i = 0;
+
+        //to prevent if a DB don't have a type of object
+        $data = array();
+
+
+        foreach ($dbs as $db_unique) {
+            foreach ($db_unique as $db_name => $db_link) {
+                $sql = str_replace('{DB}', $db_name, $query[$type_object]['query']);
+                $res = $db_link->sql_query($sql);
+
+                while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $data[$row[$query[$type_object]['field']]][$i] = 1;
+                }
+                $i++;
+            }
+        }
+        ksort($data);
+        return $data;
     }
 
 }

@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 //add virtual_ip
 // ha proxy
@@ -74,7 +75,7 @@ class Dot extends Controller {
 
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $ret = $this->generateGroup($param);
 
         $graphs = [];
@@ -251,7 +252,7 @@ rankdir=LR;
 //$list_id = array_diff($list_id, $this->proxy);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id_mysql_servers = implode(',', $list_id);
 
         $sql = "SELECT *,b.id as id_db FROM mysql_server a
@@ -325,7 +326,7 @@ rankdir=LR;
     }
 
     public function generateEdge($list_id) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id_mysql_servers = implode(',', $list_id);
 
         $sql = "(SELECT a.*, b.*, c.*, d.id as id_master, a.id as id_slave FROM mysql_server a
@@ -471,7 +472,7 @@ rankdir=LR;
 
         Debug::parseDebug($param);
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tmp_group = [];
 
@@ -683,7 +684,7 @@ rankdir=LR;
 
     public function getServerStandAlone($grouped) {
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id from mysql_server a WHERE 1 " . $this->getFilter();
         $res = $db->sql_query($sql);
@@ -746,7 +747,7 @@ rankdir=LR;
             }
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->view = false;
         $graphs = $this->splitGraph($param);
@@ -812,7 +813,7 @@ rankdir=LR;
     }
 
     public function generateCluster($list_id) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $id_mysql_servers = implode(',', $list_id);
 
@@ -958,7 +959,7 @@ rankdir=LR;
     }
 
     private function generateMerge($list_id) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $id_mysql_servers = implode(',', $list_id);
@@ -1016,7 +1017,7 @@ rankdir=LR;
     public function getDestinationSst($ob) {
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $addrs = explode(",", $ob['incoming_addresses']);
 
@@ -1051,7 +1052,7 @@ rankdir=LR;
         $ret = '';
         $id_mysql_servers = implode(',', $list_id);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT a.name,a.segment as segment, a.id as id,group_concat(b.id_mysql_server) as id_mysql_server
             FROM `galera_cluster_main` a
             INNER JOIN galera_cluster_node b ON b.id_galera_cluster_main = a.id
@@ -1228,7 +1229,7 @@ rankdir=LR;
     }
 
     public function getGroupVip() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "(SELECT a.id_mysql_server as id1, c.id_mysql_server as id2 FROM `virtual_ip` a
             INNER JOIN mysql_replication_thread b ON a.ip = b.master_host
