@@ -5,6 +5,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Cli\Table;
 use \Glial\Security\Crypt\Crypt;
+use \Glial\Sgbd\Sgbd;
+
 
 class Load2 extends Controller {
 
@@ -100,7 +102,7 @@ class Load2 extends Controller {
     }
 
     public function waitPosition($db, $file, $position) {
-        $db = $this->di['db']->sql($this->sql_server);
+        $db = Sgbd::sql($this->sql_server);
 
 
         $i = 0;
@@ -161,7 +163,7 @@ class Load2 extends Controller {
 
     public function install($db_order) {
 
-        $db = $this->di['db']->sql($this->sql_server);
+        $db = Sgbd::sql($this->sql_server);
 
         $i = 0;
         foreach ($db_order as $timestamp => $arr) {
@@ -217,7 +219,7 @@ class Load2 extends Controller {
             $cmd = "pv " . $arr['dump'] . " | mysql -h " . $db->_param['hostname'] . " -u " . $db->_param['user'] . " -P " . $db->_param['port'] . " -p" . $passwd . " " . $arr['db'] . "";
             //echo $cmd."\n";
             $this->cmd($cmd);
-            $db = $this->di['db']->sql($this->sql_server);
+            $db = Sgbd::sql($this->sql_server);
             if ($i === 0) {
                 $sql = "CHANGE MASTER TO MASTER_LOG_FILE='" . $arr['file'] . "', MASTER_LOG_POS=" . $arr['position'] . ";";
                 if ($this->debug === false) {

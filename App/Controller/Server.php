@@ -9,6 +9,8 @@ use App\Library\Extraction;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\Chiffrement;
+use \Glial\Sgbd\Sgbd;
+
 
 class Server extends Controller {
 
@@ -18,7 +20,7 @@ class Server extends Controller {
 
 //dba_source
     public function hardware() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->title = __("Hardware");
         $this->ariane = " > " . $this->title;
 
@@ -49,7 +51,7 @@ class Server extends Controller {
       // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
       $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
-      $db = $this->di['db']->sql(DB_DEFAULT);
+      $db = Sgbd::sql(DB_DEFAULT);
 
       $sql = "SELECT * FROM daemon_main WHERE id=1";
       $res = $db->sql_query($sql);
@@ -172,7 +174,7 @@ class Server extends Controller {
      */
 
     public function main() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         //$this->title  = __("Dashboard");
         $this->ariane = " > " . $this->title;
@@ -233,7 +235,7 @@ class Server extends Controller {
 
     public function database() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
 			GROUP_CONCAT('',b.name) as dbs,
@@ -256,7 +258,7 @@ class Server extends Controller {
     }
 
     public function statistics() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -325,7 +327,7 @@ class Server extends Controller {
         $this->title = __("Memory");
         $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         Extraction::setDb($db);
@@ -345,7 +347,7 @@ class Server extends Controller {
         $this->title = __("Index usage");
         $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->code_javascript('
         $(function () {
@@ -387,7 +389,7 @@ class Server extends Controller {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
@@ -695,7 +697,7 @@ var myChart = new Chart(ctx, {
 
     public function settings() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -802,7 +804,7 @@ var myChart = new Chart(ctx, {
 
     public function getClients() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * from client order by libelle";
@@ -823,7 +825,7 @@ var myChart = new Chart(ctx, {
 
     public function getEnvironments() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * from environment order by libelle";
         $res = $db->sql_query($sql);
@@ -843,11 +845,11 @@ var myChart = new Chart(ctx, {
     }
 
     public function add() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
     }
 
     public function cache() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 // Qcache_hits / (Qcache_hits + Com_select )
@@ -880,11 +882,11 @@ var myChart = new Chart(ctx, {
     public function show($param) {
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
     }
 
     public function updateHostname() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $data['hostname'] = Extraction::display(array("variables::hostname"));
@@ -900,7 +902,7 @@ var myChart = new Chart(ctx, {
     }
 
     public function box() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * from mysql_server where is_available = 0;";
 
@@ -940,7 +942,7 @@ var myChart = new Chart(ctx, {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
@@ -953,7 +955,7 @@ var myChart = new Chart(ctx, {
 
                 if ($ret) {
 
-                    Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+                    Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
 
                     set_flash("success", "Success", "Password updated !");
@@ -984,7 +986,7 @@ var myChart = new Chart(ctx, {
     public function upd() {
 
 
-        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+        Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
     public function acknowledge($param) {
@@ -992,7 +994,7 @@ var myChart = new Chart(ctx, {
 
         $id_server = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "UPDATE mysql_server set is_acknowledged='" . ($this->di['auth']->getUser()->id) . "' WHERE id=" . $id_server . ";";
@@ -1010,7 +1012,7 @@ var myChart = new Chart(ctx, {
 
         $id_server = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -1043,7 +1045,7 @@ var myChart = new Chart(ctx, {
         $id_mysql_server = $param[0];
         $general_log = $param[1];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `mysql_server` WHERE `id`=" . $id_mysql_server . ";";
         Debug::sql($sql);
 
@@ -1054,7 +1056,7 @@ var myChart = new Chart(ctx, {
             $name = $ob->name;
         }
 
-        $remote = $this->di['db']->sql($name);
+        $remote = Sgbd::sql($name);
 
         if ($general_log === "true") {
 

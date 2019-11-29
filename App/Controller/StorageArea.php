@@ -9,12 +9,14 @@ use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use \App\Library\Debug;
 use \App\Library\Post;
+use \Glial\Sgbd\Sgbd;
+
 
 class StorageArea extends Controller {
 
     public function index($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'StorageArea/index.js'));
@@ -47,7 +49,7 @@ class StorageArea extends Controller {
         }
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
             Crypt::$key = CRYPT_KEY;
@@ -58,7 +60,7 @@ class StorageArea extends Controller {
 
             //debug($storage_area);
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT * FROM ssh_key WHERE id =" . $storage_area['backup_storage_area']['id_ssh_key'] . "";
 
@@ -175,7 +177,7 @@ class StorageArea extends Controller {
     }
 
     public function listStorage() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *,c.libelle as city, a.libelle as name,a.id as id_backup_storage_area
         FROM backup_storage_area a
@@ -204,7 +206,7 @@ class StorageArea extends Controller {
         $this->layout_name = false;
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.*, b.`user`, b.`private_key` FROM `backup_storage_area` a
             INNER JOIN `ssh_key` b ON a.`id_ssh_key` = b.id ";
@@ -289,7 +291,7 @@ class StorageArea extends Controller {
         $this->view = false;
         
         $id_backup_storage_area = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "DELETE FROM  backup_storage_area WHERE id ='" . $id_backup_storage_area . "'";
 
         $db->sql_query($sql);
@@ -318,7 +320,7 @@ class StorageArea extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "UPDATE menu SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
         $db->sql_query($sql);

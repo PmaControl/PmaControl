@@ -10,19 +10,7 @@
 declare(ticks=1);
 
 use Glial\Synapse\Controller;
-use Glial\Synapse\FactoryController;
-use Glial\Cli\Table;
-use \Glial\I18n\I18n;
-use \Glial\Cli\Color;
-use App\Library\Chiffrement;
-use \Monolog\Logger;
-use \Monolog\Formatter\LineFormatter;
-use \Monolog\Handler\StreamHandler;
-use \Glial\Sgbd\Sql\Mysql\Compare;
-use \App\Library\Ariane;
-use \Glial\Synapse\Basic;
-use \App\Library\Debug;
-use \App\Library\Display;
+use \Glial\Sgbd\Sgbd;
 
 class Chemin extends Controller
 {
@@ -33,7 +21,7 @@ class Chemin extends Controller
         $database        = $param[1];
 
         $name = $this->getNameMysqlServer($id_mysql_server);
-        $db   = $this->di['db']->sql($name);
+        $db   = Sgbd::sql($name);
 
         $db->sql_select_db($database);
 
@@ -81,7 +69,7 @@ SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN
     function getNameMysqlServer($id)
     {
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $sql                 = "SELECT `name` FROM mysql_server WHERE id ='".$id."';";
         $res_id_mysql_server = $default->sql_query($sql);

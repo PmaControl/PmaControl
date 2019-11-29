@@ -6,6 +6,8 @@ use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 //require ROOT."/application/library/Filter.php";
 // ./glial control rebuildAll --debug
@@ -41,7 +43,7 @@ class Integrate extends Controller {
         $id_ts_file = $this->getIdMemoryFile($memory_file);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $files = glob(TMP . "tmp_file/" . $memory_file . "_*");
@@ -277,7 +279,7 @@ class Integrate extends Controller {
 
     private function get_variable() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM `ts_variable`";
@@ -336,7 +338,7 @@ class Integrate extends Controller {
     private function insert_variable($variables_to_insert) {
         //Debug::debug($variables_to_insert, "dfgfgdg");
         //Debug::debug($variables_to_insert);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
         $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
@@ -350,7 +352,7 @@ class Integrate extends Controller {
             return 1;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::checkPoint("start save");
 
@@ -364,7 +366,7 @@ class Integrate extends Controller {
 
     public function reset() {
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach (array('int', 'double', 'text') as $type) {
             $db->sql_query("TRUNCATE TABLE `ts_value_general_" . strtolower($type) . "`;");
@@ -378,7 +380,7 @@ class Integrate extends Controller {
             return 1;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::checkPoint("start save");
 
@@ -402,7 +404,7 @@ class Integrate extends Controller {
     }
 
     private function putServerAvailable($id_servers) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $ids = implode(",", array_unique($id_servers));
@@ -415,7 +417,7 @@ class Integrate extends Controller {
     }
 
     private function linkServerVariable($history, $memory_file) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -465,7 +467,7 @@ class Integrate extends Controller {
 
     private function getIdMemoryFile($memory_file) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 

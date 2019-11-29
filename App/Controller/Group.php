@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Acl\Acl;
+use \Glial\Sgbd\Sgbd;
+
 
 class Group extends Controller {
 

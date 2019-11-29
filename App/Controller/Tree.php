@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 // https://codepen.io/gab/pen/Bxpwi
 
@@ -45,7 +46,7 @@ class Tree extends Controller {
          */
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "select * from menu_group";
@@ -80,7 +81,7 @@ class Tree extends Controller {
     }
 
     public function delete($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_menu = $param[0];
         $id = $param[1];
@@ -94,7 +95,7 @@ class Tree extends Controller {
     }
 
     public function add($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_menu = $param[0];
         $id_parent = $param[1];
@@ -112,7 +113,7 @@ class Tree extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_menu = $param[0];
         $id = $param[1];
@@ -130,7 +131,7 @@ class Tree extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "UPDATE menu SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
         $db->sql_query($sql);
@@ -148,7 +149,7 @@ class Tree extends Controller {
         $id_menu = $param[0];
         $id = $param[1];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 
@@ -162,7 +163,7 @@ class Tree extends Controller {
         $id_menu = $param[0];
         $id = $param[1];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 

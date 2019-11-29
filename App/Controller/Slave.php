@@ -8,6 +8,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
+use \Glial\Sgbd\Sgbd;
+
 
 class Slave extends Controller
 {
@@ -19,7 +21,7 @@ class Slave extends Controller
 
         $this->title = '<i class="fa fa-sitemap"></i> '.__("Master / Slave");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->di['js']->code_javascript('
@@ -174,7 +176,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $this->title = '<i class="fa fa-sitemap"></i> '.__("Slave status");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         //debug($db);
 
@@ -196,7 +198,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $data['slave'] = array();
 
         if ($server['is_available'] === "1") {
-            $link_slave = $this->di['db']->sql($server['name']);
+            $link_slave = Sgbd::sql($server['name']);
 
             $slaves = $link_slave->isSlave();
 
@@ -274,7 +276,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
         //rebuild db
-        $db_master = $this->di['db']->sql(Mysql::getDbLink($db, $_GET['mysql_server']['id']));
+        $db_master = Sgbd::sql(Mysql::getDbLink($db, $_GET['mysql_server']['id']));
 
         $sql  = "show databases;";
         $res7 = $db_master->sql_query($sql);
@@ -310,7 +312,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     public function box()
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",

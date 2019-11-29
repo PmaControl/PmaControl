@@ -9,6 +9,7 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 use \App\Library\System;
+use \Glial\Sgbd\Sgbd;
 
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
@@ -38,7 +39,7 @@ class Control extends Controller {
      */
 
     private function checkSize() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $datadir = $db->getVariables("datadir");
 
@@ -85,7 +86,7 @@ class Control extends Controller {
     }
 
     public function selectEngine() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select * from information_schema.ENGINES where SUPPORT = 'YES' and ENGINE in('" . implode("','", $this->engine_preference) . "');";
         $res = $db->sql_query($sql);
@@ -109,7 +110,7 @@ class Control extends Controller {
 
     public function addPartition($param) {
         $partition_number = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
@@ -139,7 +140,7 @@ class Control extends Controller {
 
     public function dropPartition($param) {
         $partition_number = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
@@ -160,7 +161,7 @@ class Control extends Controller {
      */
 
     public function getMinMaxPartition() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $combi = $this->makeCombinaison();
 
         $sql = "SELECT DISTINCT `PARTITION_NAME` FROM information_schema.partitions
@@ -181,7 +182,7 @@ class Control extends Controller {
 
     public function getToDays($param) {
         $date = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT TO_DAYS('" . $date . "') as number";
         $res = $db->sql_query($sql);
@@ -255,7 +256,7 @@ class Control extends Controller {
         $this->refreshVariable(array());
 
 
-//Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+//Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
     public function dropTsTable($param = array()) {
@@ -263,7 +264,7 @@ class Control extends Controller {
         Debug::parseDebug($param);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
@@ -279,7 +280,7 @@ class Control extends Controller {
     }
 
     public function createTsTable() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $dates = $this->getDates();
@@ -350,7 +351,7 @@ PARTITION BY RANGE (to_days(`date`))
 
     public function rebuildAll($param = "") {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         Debug::parseDebug($param);
@@ -367,7 +368,7 @@ PARTITION BY RANGE (to_days(`date`))
         $this->dropTsTable();
         $this->createTsTable();
 
-        Mysql::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+        Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
 
 //drop lock sur
@@ -387,7 +388,7 @@ PARTITION BY RANGE (to_days(`date`))
     public function statistique($param = "") {
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $combi = $this->makeCombinaison();
 
@@ -415,7 +416,7 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::debug("UPDATE link__ts_variable__mysql_server");
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server;";
         $res = $db->sql_query($sql);
@@ -429,7 +430,7 @@ PARTITION BY RANGE (to_days(`date`))
     }
 
     public function updateLinkServeur($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_mysql_server = $param[0];
 
@@ -501,7 +502,7 @@ PARTITION BY RANGE (to_days(`date`))
     }
 
     public function updateConfig() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         Mysql::generateMySQLConfig($db);
     }
 
@@ -527,7 +528,7 @@ PARTITION BY RANGE (to_days(`date`))
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "WITH `z` as (select `id` from `ts_variable` where `name` = 'version')
 SELECT `a`.`id_mysql_server`, a.date, a.date_p4 FROM `ts_max_date` `a`
@@ -561,7 +562,7 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         shell_exec("apt purge mariadb-plugin-rocksdb");
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SHOW GLOBAL VARIABLES LIKE 'datadir'";
 
         $res = $db->sql_query($sql);

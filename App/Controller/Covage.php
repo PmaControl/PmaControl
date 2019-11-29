@@ -5,6 +5,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Mysql;
+use \Glial\Sgbd\Sgbd;
+
 
 class Covage extends Controller
 {
@@ -80,7 +82,7 @@ class Covage extends Controller
     
     public function creationTableSpider()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($this->getEnvs() as $env) {
             foreach ($this->tables as $table) {
@@ -93,7 +95,7 @@ class Covage extends Controller
     /*
       public function before($param): void
       {
-      $db = $this->di['db']->sql(DB_DEFAULT);
+      $db = Sgbd::sql(DB_DEFAULT);
       $db->sql_query("CREATE DATABASE IF NOT EXISTS `".$this->base_de_travail."`;");
       $db->sql_select_db($this->base_de_travail);
       } */
@@ -113,13 +115,13 @@ class Covage extends Controller
 
         $this->saveRef(array());
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         Debug::debugShowQueries($db);
     }
 
     public function drop()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "DROP DATABASE IF EXISTS `".$this->base_de_travail."`;";
         $db->sql_query($sql);
@@ -131,7 +133,7 @@ class Covage extends Controller
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($this->tables as $table) {
 
@@ -165,7 +167,7 @@ class Covage extends Controller
 
     public function getPrimaryKey($database, $table)
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty($this->primary_key[$database][$table])) {
 
@@ -191,7 +193,7 @@ class Covage extends Controller
     {
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($this->tables as $table) {
 
@@ -216,7 +218,7 @@ class Covage extends Controller
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($this->tables as $table) {
 
@@ -251,7 +253,7 @@ class Covage extends Controller
 
     public function getFields($database, $table)
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT COLUMN_NAME as colonne
   FROM INFORMATION_SCHEMA.COLUMNS
@@ -281,7 +283,7 @@ class Covage extends Controller
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = 'create table `'.$database.'`.`'.$table.'` engine=spider '
             .'comment=\'wrapper "mysql", srv "'.$backend.'", table "'.$table.'"\';';
@@ -300,9 +302,9 @@ class Covage extends Controller
         $id_mysql_destination = $param[1];
         $database_destination = $param[2];
 
-        $db         = $this->di['db']->sql(DB_DEFAULT);
+        $db         = Sgbd::sql(DB_DEFAULT);
         $name       = Mysql::getDbLink($db, $id_mysql_destination);
-        $remote_dst = $this->di['db']->sql($name);
+        $remote_dst = Sgbd::sql($name);
 
 
 
@@ -319,7 +321,7 @@ class Covage extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $remote_src = $this->di['db']->sql($ob->name);
+            $remote_src = Sgbd::sql($ob->name);
 
             $remote_src->sql_select_db($host['Db']);
             $tables = $remote_src->getListTable()['table'];
@@ -337,9 +339,9 @@ class Covage extends Controller
     public function getInfoFromBackend($backend, $id_mysql_server)
     {
 
-        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $db     = Sgbd::sql(DB_DEFAULT);
         $name   = Mysql::getDbLink($db, $id_mysql_server);
-        $remote = $this->di['db']->sql($name);
+        $remote = Sgbd::sql($name);
 
         $sql = "select * from mysql.servers where Server_name='".$backend."';";
         Debug::debug($sql);
@@ -363,8 +365,8 @@ class Covage extends Controller
         $database        = $param[1];
 
 
-        $name = Mysql::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
-        $db   = $this->di['db']->sql($name);
+        $name = Mysql::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
+        $db   = Sgbd::sql($name);
 
 
 
@@ -384,8 +386,8 @@ class Covage extends Controller
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        $name = Mysql::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
-        $db   = $this->di['db']->sql($name);
+        $name = Mysql::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
+        $db   = Sgbd::sql($name);
 
         foreach ($this->table_rollback as $table) {
 

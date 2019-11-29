@@ -12,6 +12,7 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use App\Library\Mysql;
 use \App\Library\System;
+use \Glial\Sgbd\Sgbd;
 
 class Agent extends Controller {
 
@@ -61,7 +62,7 @@ class Agent extends Controller {
 
 
         $id_daemon = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
@@ -147,7 +148,7 @@ class Agent extends Controller {
         $id_daemon = $param[0];
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
@@ -251,7 +252,7 @@ class Agent extends Controller {
 
             $id_loop++;
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM daemon_main where id=" . $id;
             $res = $db->sql_query($sql);
 
@@ -274,7 +275,7 @@ class Agent extends Controller {
 
 
             // in case of mysql gone away, like this daemon restart when mysql is back
-            $this->di['db']->sql(DB_DEFAULT)->sql_close();
+            Sgbd::sql(DB_DEFAULT)->sql_close();
 
             if (empty($refresh_time)) {
                 $refresh_time = 60;
@@ -299,7 +300,7 @@ class Agent extends Controller {
 
     public function updateServerList() {
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `mysql_server`";
         $servers_mysql = $db->sql_fetch_yield($sql);
         $all_server = array();
@@ -374,11 +375,11 @@ class Agent extends Controller {
         }
 
 
-        Mysql::addMaxDate($this->di['db']->sql(DB_DEFAULT));
+        Mysql::addMaxDate(Sgbd::sql(DB_DEFAULT));
     }
 
     public function index() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `daemon_main` order by id";
         $res = $db->sql_query($sql);
 
@@ -390,7 +391,7 @@ class Agent extends Controller {
     }
 
     public function logs() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         // update param for the daemon
@@ -479,7 +480,7 @@ class Agent extends Controller {
       public function updateHaProxy()
       {
       $this->view = false;
-      $db         = $this->di['db']->sql(DB_DEFAULT);
+      $db         = Sgbd::sql(DB_DEFAULT);
 
       $haproxys = $this->di['config']->get('haproxy');
 
@@ -502,7 +503,7 @@ class Agent extends Controller {
         return true; // time to fix with mariadb 10.3.2
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select distinct a.engine from information_schema.tables a
                 LEFT JOIN information_schema.engines b ON a.engine = b.engine
@@ -577,7 +578,7 @@ class Agent extends Controller {
       private function addIpVirtuel($ssh, $id_mysql_server)
       {
 
-      $db = $this->di['db']->sql(DB_DEFAULT);
+      $db = Sgbd::sql(DB_DEFAULT);
       // bug il faudrait extraire les ip de la boucle local qui ne sont pas 127.0.0.1
       $cmd = "ifconfig | grep -Eo 'inet (a[d]{1,2}r:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'";
 
@@ -621,7 +622,7 @@ class Agent extends Controller {
     public function check_daemon() {
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id, name, pid, log_file FROM daemon_main WHERE pid != 0";
 
         $res = $db->sql_query($sql);
@@ -651,7 +652,7 @@ class Agent extends Controller {
 
     public function check_queue($param) {
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::parseDebug($param);
 

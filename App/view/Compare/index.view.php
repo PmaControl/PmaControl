@@ -94,7 +94,7 @@ $table2 = "CREATE TABLE IF NOT EXISTS `translation_zh-cn` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
 
-
+debug($data);
 
 $diff = Diff::compare($table1, $table2);
 

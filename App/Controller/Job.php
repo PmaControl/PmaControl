@@ -7,11 +7,13 @@ use App\Library\Mydumper;
 use App\Library\System;
 use App\Library\Debug;
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
+use \Glial\Sgbd\Sgbd;
+
 
 class Job extends Controller {
 
     public function index() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * from `job` ORDER BY date_start DESC LIMIT 20;";
         $res = $db->sql_query($sql);
 
@@ -75,7 +77,7 @@ class Job extends Controller {
 
         Debug::parseDebug($param);
         $uuid = $param[0];
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * from `job` where `uuid`='" . $uuid . "';";
         Debug::sql($sql);
@@ -126,7 +128,7 @@ class Job extends Controller {
 
         Debug::debug($job);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $id_job = $db->sql_save($job);
 
 
@@ -147,7 +149,7 @@ class Job extends Controller {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM job WHERE id=" . $id_job;
         $res = $db->sql_query($sql);

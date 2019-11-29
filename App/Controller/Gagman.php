@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Extraction;
+use \Glial\Sgbd\Sgbd;
+
 
 class Gagman extends Controller {
 
@@ -14,7 +16,7 @@ class Gagman extends Controller {
         $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 
 class Migration extends Controller {
 
@@ -17,7 +18,7 @@ class Migration extends Controller {
         "cache_update", "cache_variable", "cache_views", "cache_views_data");
 
     public function export() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'version2'";
@@ -31,7 +32,7 @@ class Migration extends Controller {
     public function importData() {
         $path = $this->path . "*.txt";
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $files = glob($path);
@@ -62,7 +63,7 @@ class Migration extends Controller {
 
     public function unHex() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $sql = 'SELECT a.TABLE_NAME,b.COLUMN_NAME,b.data_type,a.TABLE_ROWS
@@ -126,7 +127,7 @@ class Migration extends Controller {
     }
 
     public function crateDb() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "CREATE DATABASE `" . $this->database . "` CHARACTER SET UTF8;";
         $db->sql_query($sql);
     }
@@ -150,7 +151,7 @@ class Migration extends Controller {
     }
 
     public function checkHex() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $sql = 'SELECT a.TABLE_NAME,b.COLUMN_NAME,b.data_type,a.TABLE_ROWS
@@ -180,7 +181,7 @@ class Migration extends Controller {
 
     function patch() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
         $sqls = [];

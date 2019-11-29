@@ -7,6 +7,7 @@ use \App\Library\Debug;
 use \App\Library\Post;
 use App\Library\Extraction;
 use App\Library\Transfer;
+use \Glial\Sgbd\Sgbd;
 
 class Audit extends Controller {
 
@@ -122,7 +123,7 @@ class Audit extends Controller {
 
         if (!empty($_GET['mysql_server']['id'])) {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             Extraction::setDb($db);
             $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
@@ -141,7 +142,7 @@ class Audit extends Controller {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         Extraction::setDb($db);
 
         $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));

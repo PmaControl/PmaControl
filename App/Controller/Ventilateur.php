@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 //use App\Library\Zmsg;
 
 //require ROOT."/application/library/Filter.php";

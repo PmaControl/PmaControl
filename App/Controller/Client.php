@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use \Glial\I18n\I18n;
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 
 class Client extends Controller {
 
@@ -21,7 +22,7 @@ class Client extends Controller {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM client order by Libelle";
         $data['client'] = $db->sql_fetch_yield($sql);
 
@@ -40,7 +41,7 @@ class Client extends Controller {
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['client']['libelle'])) {
-                $db = $this->di['db']->sql(DB_DEFAULT);
+                $db = Sgbd::sql(DB_DEFAULT);
 
 
                 $client = [];

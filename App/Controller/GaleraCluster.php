@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 class GaleraCluster extends Controller {
 

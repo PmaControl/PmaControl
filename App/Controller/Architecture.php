@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-
+use \Glial\Sgbd\Sgbd;
 //require ROOT."/application/library/Filter.php";
 
 class Architecture extends Controller {
@@ -17,7 +17,7 @@ class Architecture extends Controller {
                 . __("Dashboard") . '</a> > <i class="fa fa-object-group" style="font-size:14px"></i> ' . __("Architecture");
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT c.id,c.display,c.height,c.`date`, b.id_architecture FROM mysql_server a
             INNER JOIN link__architecture__mysql_server b ON a.id = b.id_mysql_server
