@@ -7,8 +7,11 @@
 
 namespace App\Library;
 
+use \Glial\Sgbd\Sgbd;
+
 class Util
 {
+    static $server;
 
     static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
@@ -44,38 +47,46 @@ class Util
         return $where;
     }
 
-    public function getServer()
+    static public function getServer($id_mysql_server = 0)
     {
 
-        $db = Sgbd::sql(DB_DEFAULT);
+
+        if (empty(self::$server)) {
+            $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT a.*,d.libelle, d.class FROM mysql_server a
+            $sql = "SELECT a.*,d.libelle, d.class FROM mysql_server a
             INNER JOIN environment d on d.id = a.id_environment
             WHERE 1=1 ".self::getFilter();
 
-        $res = $db->sql_query($sql);
+            $res = $db->sql_query($sql);
 
-        $server = array();
-        while ($arr    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $server[$arr['id']] = $arr;
+            $server = array();
+            while ($arr    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $server[$arr['id']] = $arr;
 
-            $server[$arr['id']]['link'] = '<span class="label label-'.$arr['class'].'">'
-                .substr($arr['libelle'], 0, 1).'</span> '
-                .' <a href="">'.$arr['display_name'].'</a>';
+                $server[$arr['id']]['link'] = '<span class="label label-'.$arr['class'].'">'
+                    .substr($arr['libelle'], 0, 1).'</span> '
+                    .' <a href="gff">'.$arr['display_name'].'</a>';
+            }
+
+            self::$server = $server;
+        }
+
+        if (!empty($id_mysql_server)) {
+            if (!empty(self::$server[$id_mysql_server])) {
+                return self::$server[$id_mysql_server];
+            }
         }
 
         return $server;
     }
-    
-    
     /*
      * 
      * Retourne le nom de la classe sans l'espace de nom
      * 
      */
-    
-    
+
     static public function getController($class)
     {
         $elems = explode('\\', $class);

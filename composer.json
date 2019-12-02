@@ -27,7 +27,8 @@
         "geerlingguy/ping": "*",
 	"phpseclib/mcrypt_compat": "*",
 	"itsjavi/bootstrap-colorpicker": "3.*",
-	"ramsey/uuid":"3.*"
+	"ramsey/uuid":"3.*",
+        "jfcherng/php-diff": "^6.2"
     },
     "autoload": {
         "psr-4": {"App\\": "App/"}
