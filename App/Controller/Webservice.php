@@ -13,6 +13,7 @@ use \Glial\Security\Crypt\Crypt;
 use \App\Library\Debug;
 use App\Library\Mysql;
 use App\Library\Json;
+use \Glial\Sgbd\Sgbd;
 
 class Webservice extends Controller {
 
@@ -62,7 +63,7 @@ class Webservice extends Controller {
                 //echo "KO\n";
             }
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             Mysql::onAddMysqlServer($db);
 
             $this->saveHistory($id_user_main);
@@ -84,7 +85,7 @@ class Webservice extends Controller {
     }
 
     private function checkCredentials($user, $password) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM webservice_user WHERE user = '" . $db->sql_real_escape_string($user) . "' AND is_enabled=1";
         Debug::sql($sql);
@@ -120,7 +121,7 @@ class Webservice extends Controller {
 
         Debug::debug($data, "data");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         Mysql::set_db($db);
 
 
@@ -158,7 +159,7 @@ class Webservice extends Controller {
     }
 
     private function saveHistory($id_user_main) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $logon = 1;
         if ($id_user_main === false) {
@@ -198,7 +199,7 @@ class Webservice extends Controller {
 
         if (!empty($config['webservice'])) {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
 
 

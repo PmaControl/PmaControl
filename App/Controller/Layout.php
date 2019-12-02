@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Ariane;
+use \Glial\Sgbd\Sgbd;
+
 
 class Layout extends Controller {
 
@@ -42,7 +44,7 @@ class Layout extends Controller {
     }
 
     public function ariane($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $ariane = new Ariane($db);
         $body = $ariane->buildAriane($this->getMethod());
@@ -87,7 +89,7 @@ class Layout extends Controller {
 
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM menu where `class`='" . $controller . "' AND `method` = '" . $method . "' ORDER BY group_id ASC LIMIT 1";
 

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Glial\Synapse\Controller;
 use Glial\I18n\I18n;
+use \Glial\Sgbd\Sgbd;
 
 class Translation extends Controller {
 
@@ -55,7 +56,7 @@ class Translation extends Controller {
 
         $count = 0;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tables = $db->getListTable("table");
 

@@ -12,10 +12,16 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 use App\Library\System;
+use App\Library\Diff;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
+
+//TODO : metre un  sysème de tab pour éviter d'être perdu
+
 
 class Database extends Controller {
 
@@ -26,7 +32,7 @@ class Database extends Controller {
     }
 
     public function create() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -36,8 +42,6 @@ class Database extends Controller {
                 $compte = array();
                 $tmp_password = array();
 
-
-
                 $sql = "SELECT a.*,b.key FROM mysql_server a
                     INNER JOIN environment b ON a.`id_environment` = b.id
 
@@ -46,7 +50,7 @@ class Database extends Controller {
 
                 while ($ob = $db->sql_fetch_object($res)) {
 
-                    $db_remote = $this->di['db']->sql($ob->name);
+                    $db_remote = Sgbd::sql($ob->name);
                     $databases = explode(",", $_POST['database']['name']);
 
                     foreach ($databases as $database) {
@@ -253,7 +257,7 @@ class Database extends Controller {
         $database = $param[1];
         $path = $param[2];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = " . $id_mysql_server . ";";
         $res = $db->sql_query($sql);
@@ -296,7 +300,7 @@ class Database extends Controller {
         $databases = $param[1];
         $path = $param[2];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = " . $id_mysql_server . ";";
 
@@ -310,7 +314,7 @@ class Database extends Controller {
 
         if (!empty($ob)) {
 
-            $db_to_load = $this->di['db']->sql($ob->name);
+            $db_to_load = Sgbd::sql($ob->name);
 
             $password = Chiffrement::decrypt($ob->passwd);
 
@@ -385,14 +389,14 @@ class Database extends Controller {
         $AP = $param[3] ?? "";
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $db2 = $this->di['db']->sql($ob->name);
+            $db2 = Sgbd::sql($ob->name);
 
 
             $db2->sql_select_db($OLD_DB);
@@ -688,7 +692,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
     public function create_trigger() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_select_db("test");
 
         $sql = "CREATE DEFINER=`root`@`localhost` FUNCTION `version_patch`() RETURNS tinyint(3) unsigned
@@ -711,7 +715,7 @@ END;";
     public function testu($param) {
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql('hb01_mariaexport01');
+        $db = Sgbd::sql('hb01_mariaexport01');
 
         $users = Mysql::exportAllUser($db);
 
@@ -811,9 +815,9 @@ END;";
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             if (!empty($_POST['database'][__FUNCTION__])) {
-                
-                
-                
+
+
+
                 $this->updateStats($param);
             }
         }
@@ -824,8 +828,8 @@ END;";
 
         $id_mysql_server = $param[0];
         $all_dbs = $param[1];
-        $db = $this->di['db']->sql(DB_DEFAULT);
-        $remote = $this->di['db']->sql(Mysql::getDbLink($db, $id_mysql_server));
+        $db = Sgbd::sql(DB_DEFAULT);
+        $remote = Sgbd::sql(Mysql::getDbLink($db, $id_mysql_server));
 
         //au cas ou une connexion est deja ouverte avec un autre database (pour prevenir un probleme de conflit avec pmacontrol)
         $res = $remote->sql_query("select database() as db");
@@ -839,14 +843,163 @@ END;";
             $tables = $remote->getListTable()['table'];
 
             foreach ($tables as $table) {
-                
-                $sql = "ANALYZE TABLE `".$database."`.`".$table."`;";
+
+                $sql = "ANALYZE TABLE `" . $database . "`.`" . $table . "`;";
                 Debug::debug($sql);
                 $remote->sql_query($sql);
             }
-
         }
         $remote->sql_select_db($init_db);
+    }
+
+    public function compare($param) {
+        Debug::parseDebug($param);
+
+
+
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
+
+        $redirect = false;
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
+            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
+            $db1 = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
+            $db2 = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
+
+            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
+
+            if ($out !== true) {
+                $extra = "";
+
+                foreach ($out as $msg) {
+                    $extra .= "<br />" . __($msg);
+                }
+
+                $msg = I18n::getTranslation(__("Please correct your paramaters !") . $extra);
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+
+                $redirect = true;
+            }
+
+            header('location: ' . LINK . 'database/compare/compare_main:id_mysql_server__original:' . $id_server1
+                    . '/compare_main:' . 'id_mysql_server__compare:' . $id_server2
+                    . '/compare_main:' . 'database__original:' . $db1
+                    . '/compare_main:' . 'database__compare:' . $db2
+            );
+        }
+
+
+
+        $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
+            "jquery.autocomplete.min.js", "bootstrap-select.min.js", "compare/index.js"));
+
+        $sql = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
+        $servers = $db->sql_fetch_yield($sql);
+
+        $data['server'] = [];
+        foreach ($servers as $server) {
+            $tmp = [];
+            $tmp['id'] = $server['id'];
+            $tmp['libelle'] = str_replace('_', '-', $server['name']) . " (" . $server['ip'] . ")";
+            $data['server'][] = $tmp;
+        }
+
+        $data['listdb1'] = array();
+        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
+            $select1 = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+            $data['listdb1'] = $select1['databases'];
+        }
+
+        $data['listdb2'] = array();
+        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
+            $select1 = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+            $data['listdb2'] = $select1['databases'];
+        }
+
+
+        $data['display'] = false;
+
+        if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
+            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+
+
+                $data['resultat'] = $this->analyse($_GET['compare_main']['id_mysql_server__original'],
+                        $_GET['compare_main']['database__original'],
+                        $_GET['compare_main']['id_mysql_server__compare'],
+                        $_GET['compare_main']['database__compare']);
+
+                $data['display'] = true;
+
+                //log
+                $this->di['log']->warning('[Compare] ' . $_GET['compare_main']['id_mysql_server__original'] . ":" . $_GET['compare_main']['database__original'] . " vs " .
+                        $_GET['compare_main']['id_mysql_server__compare'] . ":" . $_GET['compare_main']['database__compare'] . "(" . $_SERVER["REMOTE_ADDR"] . ")");
+            }
+        }
+
+        $this->set('data', $data);
+    }
+
+    public function analyse($param) {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server_a = $param[0];
+        $database_a = $param[1];
+        $id_mysql_server_b = $param[2];
+        $database_b = $param[3];
+
+        $name_a = Mysql::getDbLink($db, $id_mysql_server_a);
+        $name_b = Mysql::getDbLink($db, $id_mysql_server_b);
+
+        $db_a = Sgbd::sql($name_a);
+        $db_b = Sgbd::sql($name_b);
+
+        $ob_a = $db_a->sql_fetch_object($db_a->sql_query("SELECT database() as db"));
+        $db_name_a_ori = $ob_a->db;
+
+        $ob_b = $db_b->sql_fetch_object($db_b->sql_query("SELECT database() as db"));
+        $db_name_b_ori = $ob_b->db;
+
+        $db_a->sql_select_db($database_a);
+        $db_b->sql_select_db($database_b);
+
+
+        $objects = array("TABLE", "VIEW", "TRIGGER", "FUNCTION", "PROCEDURE", "EVENT");
+
+        foreach($objects as $object)
+        {
+            $data_a[$object] = Mysql::getListObject($db_a, $database_a, $object);
+            $result_a[$object] = Mysql::getStructure($db_a, $database_a, $data_a[$object], $object);
+            
+            $data_b[$object] = Mysql::getListObject($db_b, $database_b, $object);
+            $result_b[$object] = Mysql::getStructure($db_b, $database_b, $data_b[$object], $object);
+            
+        }
+        
+        
+        $res = Diff::compare($data_a, $data_b);
+
+
+        Debug::debug($res);
+
+//
+//
+//        $diff = Diff::compare($table1, $table2);
+//        $diffTable = Diff::toSql($diff, $table1, $table2);
+//
+//
+//        $data = array();
+
+        $db_a->sql_select_db($db_name_a_ori);
+        $db_b->sql_select_db($db_name_b_ori);
+    }
+
+    public function before($param) {
+        Debug::parseDebug($param);
     }
 
 }

@@ -12,6 +12,7 @@ use \Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 
 class CompareConfig extends Controller {
@@ -34,7 +35,7 @@ class CompareConfig extends Controller {
          * SHOW COLUMNS FROM table_name
          *
          */
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->db_default = $db;
         $this->title = __("Compare");
         $this->ariane = "> " . '<a href="' . LINK . 'Plugins/index/">' . __('Plugins') . "</a> > " . $this->title;
@@ -125,7 +126,7 @@ class CompareConfig extends Controller {
     }
 
     private function checkConfig($id_server1, $db1, $id_server2, $db2) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $error = array();
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_server1) . "';";
@@ -155,7 +156,7 @@ class CompareConfig extends Controller {
             return $error;
         }
 
-        $db_ori = $this->di['db']->sql($db_name_ori);
+        $db_ori = Sgbd::sql($db_name_ori);
         $sql = "select count(1) as cpt from information_schema.SCHEMATA where SCHEMA_NAME = '" . $db_ori->sql_real_escape_string($db1) . "';";
         $res3 = $db_ori->sql_query($sql);
         $ob = $db_ori->sql_fetch_object($res3);
@@ -163,7 +164,7 @@ class CompareConfig extends Controller {
             $error[] = "The database '" . $db1 . "' original doesn't exist on server original : '" . $db_name_ori . "'";
         }
 
-        $db_cmp = $this->di['db']->sql($db_name_cmp);
+        $db_cmp = Sgbd::sql($db_name_cmp);
         $sql = "select count(1) as cpt from information_schema.SCHEMATA where SCHEMA_NAME = '" . $db_cmp->sql_real_escape_string($db2) . "';";
         $res4 = $db_cmp->sql_query($sql);
         $ob = $db_cmp->sql_fetch_object($res4);
@@ -185,7 +186,7 @@ class CompareConfig extends Controller {
     private function analyse($id_server1, $db1, $id_server2, $db2) {
         $db_original = $this->getDbLinkFromId($id_server1);
         $db_compare = $this->getDbLinkFromId($id_server2);
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->db_origin = $db_original;
         $this->db_target = $db_compare;
@@ -550,12 +551,12 @@ class CompareConfig extends Controller {
             $this->layout_name = false;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_db) . "';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = $this->di['db']->sql($ob->name);
+            $db_link = Sgbd::sql($ob->name);
         }
 
         return $db_link;

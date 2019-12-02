@@ -10,6 +10,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\FactoryController;
+use \Glial\Sgbd\Sgbd;
+
 
 class Menu extends Controller {
 
@@ -17,7 +19,7 @@ class Menu extends Controller {
         $id_menu = $params[0];
         //debug($id_menu);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT b.*, MAX(c.id) AS dropdown FROM `menu_group` a
 INNER JOIN `menu` b ON a.id = b.group_id
 LEFT JOIN `menu` c ON b.bg < c.bg AND b.bd > c.bd AND c.active = 1
@@ -47,7 +49,7 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
     public function getSelectedLevelOneMenu($id_menu) {
         $Array = FactoryController::getRootNode();
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "WITH a as (SELECT bg,bd, group_id FROM menu where `class`='" . $Array[0] . "' AND `method` = '" . $Array[1] . "' AND parent_id is not null LIMIT 1)
             SELECT * FROM menu b,a WHERE b.bg <= a.bg AND b.bd >= a.bg AND a.group_id = b.group_id AND parent_id is not null ORDER by b.bg";
 

@@ -6,6 +6,8 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 class Benchmark extends Controller {
 
@@ -42,7 +44,7 @@ class Benchmark extends Controller {
 
         Debug::debug("id_benchmark_main : $id_benchmark_main");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM benchmark_main a
             INNER JOIN mysql_server b ON a.id_mysql_server = b.id
@@ -59,7 +61,7 @@ class Benchmark extends Controller {
 
             $password = Crypt::decrypt($ob->passwd, CRYPT_KEY);
 
-            $server = $this->di['db']->sql($ob->name);
+            $server = Sgbd::sql($ob->name);
 
             $sql = "DROP DATABASE IF EXISTS sbtest;";
             $server->sql_query($sql);
@@ -356,7 +358,7 @@ Threads fairness:
         $this->title = '<i class="fa fa-tachometer"></i> ' . __("Benchmark");
         $this->ariane = '> <a href="' . LINK . 'plugins"><i class="fa fa-puzzle-piece"></i> ' . __("Plugins") . '</a> > ' . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT count(1) as cpt from benchmark_main where status != 'COMPLETED'";
         $res = $db->sql_query($sql);
@@ -419,9 +421,9 @@ Threads fairness:
         $name_server = $param[0];
         $id_server = $param[1];
 
-        $mysql_tested = $this->di['db']->sql($name_server);
+        $mysql_tested = Sgbd::sql($name_server);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $variables = $mysql_tested->getVariables();
     }
@@ -436,7 +438,7 @@ Threads fairness:
 
     public function graph() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array("Chart.min.js"));
 
         $data = array();
@@ -617,7 +619,7 @@ Threads fairness:
     }
 
     public function config() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
     }
 
     public function bench($param) {
@@ -625,7 +627,7 @@ Threads fairness:
         Debug::parseDebug($param);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -784,7 +786,7 @@ Threads fairness:
     }
 
     public function current() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT *,a.id as id_benchmark_main FROM benchmark_main a
              INNER JOIN mysql_server b on a.id_mysql_server = b.id
@@ -861,7 +863,7 @@ Threads fairness:
 
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::parseDebug($param);
 
@@ -902,7 +904,7 @@ Threads fairness:
                 Debug::debug("return : " . $err);
 
 
-                $db = $this->di['db']->sql(DB_DEFAULT);
+                $db = Sgbd::sql(DB_DEFAULT);
                 $res = $db->sql_query($sql);
                 while ($ob = $db->sql_fetch_object($res)) {
                     $id_benchmark_main = $ob->id;

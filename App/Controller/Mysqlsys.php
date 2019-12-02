@@ -6,6 +6,8 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use App\Library\Util;
+use \Glial\Sgbd\Sgbd;
+
 
 class Mysqlsys extends Controller {
 
@@ -16,7 +18,7 @@ class Mysqlsys extends Controller {
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
 //$this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '.$this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 //$this->di['js']->code_javascript('');
@@ -56,7 +58,7 @@ class Mysqlsys extends Controller {
 
             if (!empty($link_name)) {
 
-                $remote = $this->di['db']->sql($link_name);
+                $remote = Sgbd::sql($link_name);
                 $sql = "select table_name from information_schema.tables "
                         . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
                 $res = $remote->sql_query($sql);
@@ -140,7 +142,7 @@ class Mysqlsys extends Controller {
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title . ' > <i style="font-size: 16px" class="fa fa-upload"></i> Install';
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id='" . $_GET['mysql_server']['id'] . "'";
         $res = $db->sql_query($sql);
@@ -194,7 +196,7 @@ class Mysqlsys extends Controller {
 
         $id_mysql_server = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 // get server available
@@ -203,7 +205,7 @@ class Mysqlsys extends Controller {
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $remote = $this->di['db']->sql($ob->name);
+            $remote = Sgbd::sql($ob->name);
 
             $sql = "set sql_log_bin=0; call `sys`.ps_truncate_all_tables(false);";
             $remote->sql_multi_query($sql);
@@ -224,7 +226,7 @@ class Mysqlsys extends Controller {
 
         $id_mysql_server = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 // get server available
@@ -233,7 +235,7 @@ class Mysqlsys extends Controller {
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $remote = $this->di['db']->sql($ob->name);
+            $remote = Sgbd::sql($ob->name);
 
             $sql = "set sql_log_bin=0; DROP DATABASE IF EXISTS `sys`;";
             $remote->sql_multi_query($sql);

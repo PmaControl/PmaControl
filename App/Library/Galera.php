@@ -9,6 +9,7 @@ namespace App\Library;
 
 use App\Library\Extraction;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 trait Galera {
 
@@ -143,7 +144,7 @@ trait Galera {
      */
 
     public function getInfoServer($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
 
@@ -170,7 +171,7 @@ trait Galera {
 
     public function mappingMaster() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id,ip,port,is_available FROM mysql_server";
 
         $res = $db->sql_query($sql);
@@ -214,4 +215,5 @@ trait Galera {
 
         return $id;
     }
+
 }

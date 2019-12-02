@@ -13,6 +13,7 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\Chiffrement;
+use \Glial\Sgbd\Sgbd;
 
 //require ROOT."/application/library/Filter.php";
 
@@ -67,7 +68,7 @@ class Aspirator extends Controller {
         }
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "select id,name from mysql_server WHERE is_monitored =1;";
 
         Debug::debug($sql);
@@ -233,7 +234,7 @@ class Aspirator extends Controller {
              * wrong credentials
              * error in PHP script
              */
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             //in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
@@ -305,7 +306,7 @@ class Aspirator extends Controller {
         Debug::checkPoint('avant query');
 
         $time_start = microtime(true);
-        $mysql_tested = $this->di['db']->sql($name_server);
+        $mysql_tested = Sgbd::sql($name_server);
         $data['server']['ping'] = microtime(true) - $time_start;
 
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
@@ -476,7 +477,7 @@ class Aspirator extends Controller {
         $this->logger->info(str_repeat("#", 40));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT a.* FROM mysql_server a
@@ -586,7 +587,7 @@ class Aspirator extends Controller {
 
         Debug::debug($ret);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
@@ -631,7 +632,7 @@ class Aspirator extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` a
         INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server 

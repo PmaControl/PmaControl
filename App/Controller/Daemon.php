@@ -11,6 +11,8 @@ use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \Glial\I18n\I18n;
 use \App\Library\Util;
+use \Glial\Sgbd\Sgbd;
+
 
 class Daemon extends Controller
 {
@@ -18,7 +20,7 @@ class Daemon extends Controller
 
     public function index()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
         $sql = "SELECT * from daemon_main order by id";
@@ -98,7 +100,7 @@ class Daemon extends Controller
         $this->layout_name = false;
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "UPDATE daemon_main SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
             $db->sql_query($sql);

@@ -4,6 +4,8 @@ namespace App\Controller;
 
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
 
 class Release extends Controller {
     /*
@@ -54,7 +56,7 @@ class Release extends Controller {
 
             echo $gg;
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $database = "cmp_" . $version;
 
             $db->sql_query("DROP DATABASE IF EXISTS " . $database);

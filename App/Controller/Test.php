@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 class Test extends Controller {
 

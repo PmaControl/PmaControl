@@ -14,6 +14,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\System;
+use \Glial\Sgbd\Sgbd;
 
 class Archives extends Controller {
 
@@ -37,7 +38,7 @@ class Archives extends Controller {
         $this->ariane = ' > <a href⁼"">' . '<i class="fa fa-puzzle-piece"></i> '
                 . __("Plugins") . '</a> > ' . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id_cleaner_main, sum(a.size_sql) as size_sql, sum(a.size_remote) as size_remote, count(1) as cpt,
             c.display_name, b.libelle, b.database, b.main_table, c.id
@@ -158,7 +159,7 @@ var myChart = new Chart(ctx, {
 
         $id_cleaner = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select a.`id`,a.`md5_sql`,a.size_sql,a.`date`, b.`ip`, a.pathfile,
             a.size_remote , a. time_to_compress, a.time_to_crypt, a.time_to_transfert
@@ -199,7 +200,7 @@ var myChart = new Chart(ctx, {
             Debug::debug($id_archive_load, "archive_load");
 
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
 // to delete
             $db->sql_query("update archive_load set status='NOT_STARTED' WHERE id=" . $id_archive_load . ";");
@@ -437,7 +438,7 @@ var myChart = new Chart(ctx, {
 
                 $db->sql_close(); // to prevent lost of connextion for inactivity
                 passthru($cmd, $exit);
-                $db = $this->di['db']->sql(DB_DEFAULT);
+                $db = Sgbd::sql(DB_DEFAULT);
 
                 if ($exit !== 0) {
 
@@ -543,7 +544,7 @@ var myChart = new Chart(ctx, {
                 . __("Plugins") . '</a> > ' . $this->title;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->testPid(); // put in error all previous script started with no running pid anymore
@@ -577,7 +578,7 @@ ORDER BY a.id DESC";
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             foreach ($_POST['mysql_server'] as $arr) {
                 if (!empty($arr['database'])) {
@@ -597,7 +598,7 @@ ORDER BY a.id DESC";
         }
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT max(`id`) as `last` from `archive_load`;";
@@ -627,7 +628,7 @@ ORDER BY a.id DESC";
 
     public function testPid() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id, pid FROM `archive_load` WHERE status = 'STARTED'";
 
@@ -671,7 +672,7 @@ ORDER BY a.id DESC";
     private function getUser() {
         if (empty($this->user[$this->id_user_main])) {
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM user_main where id = " . $this->id_user_main;
             $res = $db->sql_query($sql);
 
@@ -689,7 +690,7 @@ ORDER BY a.id DESC";
     }
 
     public function detail($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -742,7 +743,7 @@ ORDER BY a.id DESC";
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         //$tb = explode("-", $arr['database']);
 
@@ -788,7 +789,7 @@ ORDER BY a.id DESC";
                 $pid = shell_exec($cmd);
             }
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $archive_load = array();
             $archive_load['archive_load']['pid'] = (int) $pid;
             $archive_load['archive_load']['id'] = $id_archive_load;

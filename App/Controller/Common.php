@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 //use \Glial\Cli\Color;
+
 
 class Common extends Controller {
 
@@ -15,7 +17,7 @@ class Common extends Controller {
     //dba_source
 
     public function index() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_database";
     }
 
@@ -28,7 +30,7 @@ class Common extends Controller {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -210,12 +212,12 @@ class Common extends Controller {
             $this->layout_name = false;
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_db) . "';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = $this->di['db']->sql($ob->name);
+            $db_link = Sgbd::sql($ob->name);
         }
 
         if (empty($db_link)) {
@@ -302,7 +304,7 @@ class Common extends Controller {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT case error WHEN nullif(a.`error`,'') THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip , b.letter, b.class, b.libelle, a.is_available
             FROM mysql_server a
@@ -364,7 +366,7 @@ class Common extends Controller {
         $data['options'] = $options;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM ts_variable order by `from`, `name`;";
 
@@ -392,7 +394,7 @@ class Common extends Controller {
 
     function getTagByServer($param) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
 
@@ -436,7 +438,7 @@ class Common extends Controller {
 
     static public function getTagArray($db) {
         if (empty(self::$tags)) {
-            //$db = $this->di['db']->sql(DB_DEFAULT);
+            //$db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT * FROM tag order by name";
 

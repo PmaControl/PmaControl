@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
 
 class Home extends Controller {
 
@@ -15,7 +17,7 @@ class Home extends Controller {
         $this->ariane = " > " . __("Welcome to PmaControl !");
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `home_box` ORDER BY `order`;";
 
         $res = $db->sql_query($sql);
@@ -31,7 +33,7 @@ class Home extends Controller {
     }
 
     function list_server($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
 
