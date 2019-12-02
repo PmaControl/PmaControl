@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use JJG\Ping;
+use \Glial\Sgbd\Sgbd;
 
 /*
  * this class is made to scan network and discover MySQL Server
@@ -134,7 +135,7 @@ class Scan extends Controller {
 
     public function index() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->title = '<span class="glyphicon glyphicon-search" aria-hidden="true"></span> ' . __("Scan network");
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title;
 
@@ -211,7 +212,7 @@ class Scan extends Controller {
     }
 
     public function getIpMonitored() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT `ip` from `mysql_server`";
         $res = $db->sql_query($sql);
         $data['ip'] = array();
@@ -308,7 +309,7 @@ class Scan extends Controller {
         }
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main where id=2";
         $res = $db->sql_query($sql);
@@ -421,7 +422,7 @@ class Scan extends Controller {
 
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main where id=3";
         $res = $db->sql_query($sql);
@@ -518,7 +519,7 @@ class Scan extends Controller {
     }
 
     public function save() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $list_file = glob($this->cache_file . "*.json");
         $port_open = glob($this->cache_file . "*.port");
 

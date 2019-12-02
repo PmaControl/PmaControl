@@ -8,6 +8,8 @@ use \Glial\I18n\I18n;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use \Glial\Sgbd\Sgbd;
+
 
 class Ldap extends Controller
 {
@@ -122,7 +124,7 @@ class Ldap extends Controller
             }
 
             if (!empty($_POST['ldap_group'])) {
-                $db = $this->di['db']->sql(DB_DEFAULT);
+                $db = Sgbd::sql(DB_DEFAULT);
 
 
                 foreach ($_POST['ldap_group'] as $ldap_group) {
@@ -195,7 +197,7 @@ class Ldap extends Controller
 
             //debug($this->di['auth']);
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
 
             $sql = "select a.id, a.name, b.cn from `group` a
@@ -309,7 +311,7 @@ class Ldap extends Controller
     {
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id_group, cn FROM `ldap_group`";
         $res = $db->sql_query($sql);
@@ -565,7 +567,7 @@ class Ldap extends Controller
 
             // update link with group
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
 
             //debug($config['ldap']);

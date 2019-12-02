@@ -10,6 +10,8 @@ namespace App\Controller;
 
 use Glial\Synapse\Controller;
 use App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 class Enum extends Controller
 {
@@ -18,8 +20,8 @@ class Enum extends Controller
     {
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql("hb01_maria_cart01"); //prod
-        //$db = $this->di['db']->sql("preprod_maria_cart01_preprod_rdc");
+        $db = Sgbd::sql("hb01_maria_cart01"); //prod
+        //$db = Sgbd::sql("preprod_maria_cart01_preprod_rdc");
         $db->sql_select_db("cart");
 
         $tables                           = array();

@@ -7,6 +7,9 @@
 
 namespace App\Library;
 
+use \Glial\Sgbd\Sgbd;
+
+
 trait Filter
 {
 
@@ -50,7 +53,7 @@ trait Filter
     public function getServer()
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT a.*,d.libelle, d.class FROM mysql_server a

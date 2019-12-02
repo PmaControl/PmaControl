@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Shell\Color;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 //use \App\Library\System;
 
@@ -39,7 +40,7 @@ class Exctractor extends Controller {
         Debug::parseDebug($param);
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `mysql_server` WHERE  ssh_available =1 AND is_monitored=1";
         $res = $db->sql_query($sql);
 
@@ -83,7 +84,7 @@ class Exctractor extends Controller {
         $this->logger->info(str_repeat("#", 40));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server WHERE is_monitored=1 AND key_private_path != '' and key_private_user != '';";
         Debug::debug(SqlFormatter::highlight($sql));
         $res = $db->sql_query($sql);
@@ -188,7 +189,7 @@ class Exctractor extends Controller {
 
         Debug::debug($ret);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
@@ -234,7 +235,7 @@ class Exctractor extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id=" . $id_server . ";";
 
@@ -287,7 +288,7 @@ class Exctractor extends Controller {
     }
 
     public function hardware($ssh, $id_mysql_server) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $memory = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
         $nb_cpu = $ssh->exec("cat /proc/cpuinfo | grep processor | wc -l");

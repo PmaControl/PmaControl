@@ -10,6 +10,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Post;
+use \Glial\Sgbd\Sgbd;
+
 
 class Environment extends Controller {
 
@@ -21,7 +23,7 @@ class Environment extends Controller {
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM environment order by `libelle`";
 
@@ -41,7 +43,7 @@ class Environment extends Controller {
         $this->layout_name = false;
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "UPDATE environment SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
             $db->sql_query($sql);
@@ -58,7 +60,7 @@ class Environment extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $id_menu = $param[0];
         $id = $param[1];
@@ -69,7 +71,7 @@ class Environment extends Controller {
 
     public function add($param) {
         $this->di['js']->addJavascript(array("bootstrap-select.min.js"));
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             $variable['environment'] = $_POST['environment'];

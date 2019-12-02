@@ -11,6 +11,8 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+
+
 class Install extends Controller {
 
     var $link; /* link mysql server */
@@ -322,7 +324,7 @@ class Install extends Controller {
         //update DB config
 
         $config = "
-;[name_of_connection] => will be acceded in framework with \$this->di['db']->sql('name_of_connection')->method()
+;[name_of_connection] => will be acceded in framework with \Sgbd::sql('name_of_connection')->method()
 ;driver => list of SGBD avaible {mysql, pgsql, sybase, oracle}
 ;hostname => server_name of ip of server SGBD (better to put localhost or real IP)
 ;user => user who will be used to connect to the SGBD
@@ -363,7 +365,7 @@ database=" . $server['database'] . "";
          * password repeat
          */
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $filename = $param[0] ?? "";
 
@@ -441,7 +443,7 @@ database=" . $server['database'] . "";
 
             //country
             $sql = "SELECT libelle FROM geolocalisation_country where libelle != '' ORDER BY libelle";
-            $DB = $this->di['db']->sql(DB_DEFAULT);
+            $DB = Sgbd::sql(DB_DEFAULT);
 
             $res = $db->sql_query($sql);
             $country = [];
@@ -470,7 +472,7 @@ database=" . $server['database'] . "";
 
             //city
             $sql = "SELECT libelle FROM geolocalisation_city where id_geolocalisation_country = '" . $id_country . "' ORDER BY libelle";
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $res = $db->sql_query($sql);
             $city = [];
@@ -593,7 +595,7 @@ database=" . $server['database'] . "";
         $filename = $param[0] ?? "";
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if (!empty($filename) && file_exists($filename)) {
             $config = $this->parseConfig($filename);

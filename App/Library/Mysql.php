@@ -164,8 +164,7 @@ class Mysql {
             return $ob->name;
         }
 
-        throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
-        
+        throw new \Exception("PMACTRL-854 : impossible to find the server with id '" . $id_mysql_server . "'");
     }
 
     static function addMysqlServer($data) {
@@ -186,11 +185,7 @@ class Mysql {
             $data['password'] = $data['passwd'];
         }
 
-
-
-
         $port = $data['port'] ?? 3306;
-
 
         $sql = "SELECT id from mysql_server where ip='" . $ip . "' and port =" . $port;
 
@@ -368,9 +363,9 @@ END IF;";
                 }
             } while ($db->sql_more_results() && $db->sql_next_result());
 
+            $error = $db->sql_error();
 
-
-            if ($error = $db->sql_error()) {
+            if ($error) {
                 echo "Syntax Error: \n $error";  // display array pointer key:value
             }
 
@@ -513,9 +508,147 @@ END IF;";
             $ob = $ar;
         }
 
-
-
         return $ob;
+    }
+
+    static public function execMulti($queries, $db_link) {
+
+
+        if (!is_array($queries)) {
+            throw new \Exception("PMACTRL-652 : first parameter should be an array !");
+        }
+
+
+        $query = implode("", $queries);
+        $ret = [];
+        $i = 0;
+
+        if ($db_link->sql_multi_query($query)) {
+            foreach ($queries as $table => $elem) {
+                $result = $db_link->sql_store_result();
+
+                if (!$result) {
+                    printf("Error: %s\n", mysqli_error($db_link->link));
+                    debug($query);
+                    exit();
+                }
+
+                while ($row = $db_link->sql_fetch_array($result, MYSQLI_ASSOC)) {
+                    $ret[$table][] = $row;
+                }
+                if ($db_link->sql_more_results()) {
+                    $db_link->sql_next_result();
+                }
+            }
+        }
+        return $ret;
+    }
+
+    static public function getListObject($db_link, $database, $type_object) {
+        $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from `information_schema`.`triggers` where trigger_schema ='{DB}';";
+        $query['FUNCTION']['query'] = "show function status WHERE Db ='{DB}';";
+        $query['PROCEDURE']['query'] = "show procedure status WHERE Db ='{DB}';";
+        $query['TABLE']['query'] = "select TABLE_NAME from `information_schema`.`tables` where `TABLE_SCHEMA` = '{DB}' AND `TABLE_TYPE`='BASE TABLE' order by TABLE_NAME;";
+        $query['VIEW']['query'] = "select TABLE_NAME from `information_schema`.`tables` where `TABLE_SCHEMA` = '{DB}' AND `TABLE_TYPE`='VIEW' order by TABLE_NAME;";
+        $query['EVENT']['query'] = "SHOW EVENTS FROM `{DB}`;";
+
+
+
+        $query['TRIGGER']['field'] = "trigger_name";
+        $query['FUNCTION']['field'] = "Name";
+        $query['PROCEDURE']['field'] = "Name";
+        $query['TABLE']['field'] = "TABLE_NAME";
+        $query['VIEW']['field'] = "TABLE_NAME";
+        $query['EVENT']['field'] = "Name";
+        /*
+         * //$query['ALL'] = true; => TO DO
+         */
+
+        if (!in_array($type_object, array_keys($query))) {
+            throw new \Exception("PMACTRL-095 : this type of object is not supported : '" . $type_object . "'", 80);
+        }
+
+
+        //to prevent if a DB don't have a type of object
+        $data = array();
+
+        $sql = str_replace('{DB}', $database, $query[$type_object]['query']);
+        $res = $db_link->sql_query($sql);
+
+
+        while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data[] = $row[$query[$type_object]['field']];
+        }
+
+
+        ksort($data);
+        return $data;
+    }
+
+    /*
+     * @author : Aurélien LEQUOY
+     * @desctiotion : return current database
+     * @version 1.0
+     * 
+     */
+
+    static public function getCurrentDb($db) {
+        $ob_a = $db->sql_fetch_object($db->sql_query("SELECT database() as db"));
+        return $ob_a->db;
+    }
+
+    static public function getStructure($db_link, $database, $data, $object) {
+        $query['TRIGGER']['query'] = "SHOW CREATE TRIGGER `{DB}`.`{OBJECT}`;";
+        $query['FUNCTION']['query'] = "SHOW CREATE FUNCTION `{DB}`.`{OBJECT}`;";
+        $query['PROCEDURE']['query'] = "SHOW CREATE PROCEDURE `{DB}`.`{OBJECT}`;";
+        $query['TABLE']['query'] = "SHOW CREATE TABLE `{DB}`.`{OBJECT}`;";
+        $query['VIEW']['query'] = "SHOW CREATE VIEW `{DB}`.`{OBJECT}`;";
+        $query['EVENT']['query'] = "SHOW CREATE EVENT `{DB}`.`{OBJECT}`;";
+
+        $query['TRIGGER']['field'] = "SQL Original Statement";
+        $query['FUNCTION']['field'] = "Create Function";
+        $query['PROCEDURE']['field'] = "Create Procedure";
+        $query['TABLE']['field'] = "Create Table";
+        $query['VIEW']['field'] = "Create View";
+        $query['EVENT']['field'] = "Create Event";
+
+        $query['TRIGGER']['drop'] = "DROP TRIGGER `{OBJECT}`";
+        $query['FUNCTION']['drop'] = "DROP FUNCTION `{OBJECT}`";
+        $query['PROCEDURE']['drop'] = "DROP PROCEDURE `{OBJECT}`";
+        $query['TABLE']['drop'] = "DROP TABLE `{OBJECT}`";
+        $query['VIEW']['drop'] = "DROP VIEW `{OBJECT}`";
+        $query['EVENT']['drop'] = "DROP EVENT `{OBJECT}`";
+
+        $query['TABLE']['name'] = "Table";
+
+        $queries = array();
+        foreach ($data as $elem) {
+
+            $tmp = str_replace(array('{DB}', '{OBJECT}'),
+                    array($database, $elem), $query[$object]['query']);
+            $queries[$elem] = $tmp;
+        }
+
+
+        $ret = self::execMulti($queries, $db_link);
+
+        $resultat = array();
+        foreach ($ret as $elem => $row) {
+            $arr = $row[0];
+
+            $struc = $arr[$query[$object]['field']];
+
+            if ($object === "TABLE") {
+                $struc = preg_replace('/(\sAUTO_INCREMENT=[0-9]+)/', '', $struc);
+            }
+            //$arr[$query[$object]['name']]
+            $resultat[$elem] = $struc;
+        }
+
+        //Debug::debug($ret);
+
+
+        return $resultat;
     }
 
 }

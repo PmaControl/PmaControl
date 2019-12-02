@@ -11,6 +11,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Post;
+use \Glial\Sgbd\Sgbd;
+
 
 class Log extends Controller {
 
@@ -31,7 +33,7 @@ class Log extends Controller {
 
         ");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $data = array();
 

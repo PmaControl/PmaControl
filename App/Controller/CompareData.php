@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use Glial\Cli\Table;
+use \Glial\Sgbd\Sgbd;
+
 
 //require ROOT."/application/library/Filter.php";
 
@@ -11,8 +13,8 @@ class CompareData extends Controller {
 
     public function index() {
 
-        $db1 = $this->di['db']->sql("hb03_middletac01_zm");
-        $db2 = $this->di['db']->sql("preprod_mariatac01");
+        $db1 = Sgbd::sql("hb03_middletac01_zm");
+        $db2 = Sgbd::sql("preprod_mariatac01");
 
         $db1->sql_select_db('BOUTIQUE');
         $db2->sql_select_db('BOUTIQUE');

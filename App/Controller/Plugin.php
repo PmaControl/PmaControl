@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
+use \Glial\Sgbd\Sgbd;
 
 class Plugin extends Controller {
 
@@ -29,7 +30,7 @@ class Plugin extends Controller {
             }
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif, maxversion
         FROM plugin_main ";
@@ -61,7 +62,7 @@ class Plugin extends Controller {
     public function jsontodatabase($jsonInText) {
         $Array = json_decode($jsonInText, true);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($Array as $key => $line):
 
@@ -94,7 +95,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $LOCALPLUGIN = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/";
         $LOCALAPPLICATION = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "App/";
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif
         FROM plugin_main WHERE id = " . $param[0];
@@ -251,7 +252,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
     }
 
     public function logpluginfile($handle, $pluginid, $source, $target) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if (is_dir($source . "/" . $handle)) {
             //Fonctionnement si répertoire
@@ -269,7 +270,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
     }
 
     private function sqlexecute($filename) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = file_get_contents($filename);
         $db->sql_query($sql);
@@ -280,7 +281,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             Throw new \Exception("No plugin Id provided");
         }
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $Query = "SELECT id, file FROM plugin_file WHERE id_plugin_main = " . $param[0];
 

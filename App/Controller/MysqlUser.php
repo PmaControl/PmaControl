@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Mysql;
+use \Glial\Sgbd\Sgbd;
+
 
 class MysqlUser extends Controller {
 
@@ -20,7 +22,7 @@ class MysqlUser extends Controller {
         //debug($_GET);
 
         if (!empty($_GET['mysql_server']['id'])) {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $ids = substr($_GET['mysql_server']['id'], 1, -1);
 
             $sql = "SELECT * FROM mysql_server where id in (" . $ids . ")";
@@ -28,7 +30,7 @@ class MysqlUser extends Controller {
             $res1 = $db->sql_query($sql);
 
             while ($ob1 = $db->sql_fetch_object($res1)) {
-                $db_link = $this->di['db']->sql($ob1->name);
+                $db_link = Sgbd::sql($ob1->name);
 
 
                 $users = Mysql::exportUserByUser($db_link);

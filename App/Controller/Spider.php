@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\Controller;
 //use \Glial\Cli\Color;
 
@@ -16,7 +17,7 @@ class Spider extends Controller {
         $this->title = '<img src="/pmacontrol/image/main/spider-icon32.png" height="16" width="16px">' . "Spider";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_database";
     }
 
@@ -67,7 +68,7 @@ class Spider extends Controller {
         }
 
         $data['spider_activated'] = 0;
-
+        
         if ($cpt === "1") {
             $data['spider_activated'] = 1;
         }
@@ -80,14 +81,14 @@ class Spider extends Controller {
      */
 
     private function getServerLink($id_mysql_server) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server where id = '" . $id_mysql_server . "'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $name_id = $ob->name;
         }
-        return $this->di['db']->sql($name_id);
+        return Sgbd::sql($name_id);
     }
 
     private function extractSpiderInfoFromCreateTable($createTable) {
@@ -110,7 +111,7 @@ class Spider extends Controller {
 
     public function create() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "bootstrap-select.min.js", "spider/create.js"));
@@ -140,6 +141,10 @@ class Spider extends Controller {
         $database_source = $param[1];
         $id_mysql_destination = $param[2];
         $database_destination = $param[3];
+        
+        
+        
+        
     }
 
 }

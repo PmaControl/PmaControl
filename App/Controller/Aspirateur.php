@@ -16,6 +16,7 @@ use App\Library\System;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 use \Glial\Cli\Color;
+use \Glial\Sgbd\Sgbd;
 
 //require ROOT."/application/library/Filter.php";
 //https://blog.programster.org/php-multithreading-pool-example
@@ -82,7 +83,7 @@ class Aspirateur extends Controller {
         }
 
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "select id,name from mysql_server WHERE is_monitored =1;";
 
         Debug::debug($sql);
@@ -257,7 +258,7 @@ class Aspirateur extends Controller {
              * wrong credentials
              * error in PHP script
              */
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
 //in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
@@ -302,13 +303,13 @@ class Aspirateur extends Controller {
         $name_server = $param[0];
         $id_server = $param[1];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_close();
 
         Debug::checkPoint('avant query');
 
         $time_start = microtime(true);
-        $mysql_tested = $this->di['db']->sql($name_server);
+        $mysql_tested = Sgbd::sql($name_server);
 
         $err = error_get_last();
         error_clear_last();
@@ -321,7 +322,7 @@ class Aspirateur extends Controller {
         if (!empty($error_msg)) {
             echo $name_server . " : " . $error_msg . "\n";
 
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
             $sql = "UPDATE `mysql_server` SET `error` ='" . $db->sql_real_escape_string($error_msg) . "', 
                 `date_refresh` = '" . date("Y-m-d H:i:s") . "',
                     `is_available` = 0 WHERE id =" . $id_server;
@@ -525,7 +526,7 @@ class Aspirateur extends Controller {
         $this->logger->info(str_repeat("#", 40));
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT a.* FROM mysql_server a
@@ -639,7 +640,7 @@ class Aspirateur extends Controller {
 
         Debug::debug($ret);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
@@ -688,7 +689,7 @@ class Aspirateur extends Controller {
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` a
         INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server 
@@ -938,7 +939,7 @@ class Aspirateur extends Controller {
         }
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main WHERE id=" . $id_daemon . ";";
 
@@ -998,7 +999,7 @@ class Aspirateur extends Controller {
         $list = array();
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($elems as $server) {
 
@@ -1118,9 +1119,9 @@ class Aspirateur extends Controller {
         //get mypid
         //start worker => pid / id_mysql_server
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_close();
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main WHERE id=11;";
 
@@ -1195,7 +1196,7 @@ class Aspirateur extends Controller {
         $id_daemon_main = $param[0];
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main WHERE id =" . $id_daemon_main;
         $res = $db->sql_query($sql);
@@ -1260,7 +1261,7 @@ class Aspirateur extends Controller {
         $id_daemon_main = $param[1];
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         if (empty($id_daemon_worker)) {
@@ -1288,7 +1289,7 @@ class Aspirateur extends Controller {
         Debug::parseDebug($param);
         $id_daemon_main = $param[0];
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_worker WHERE id_daemon_main=" . $id_daemon_main . " LIMIT 1";
         Debug::sql($sql);
@@ -1330,7 +1331,7 @@ class Aspirateur extends Controller {
 
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `daemon_worker` ";
 
         if ($id_daemon_main != 0) {
@@ -1355,7 +1356,7 @@ class Aspirateur extends Controller {
     public function checkAllWorker($param) {
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main where queue_number != 0";
 
@@ -1457,10 +1458,10 @@ class Aspirateur extends Controller {
         $id_mysql_server = $param[0];
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $remote = Mysql::getDbLink($db, $id_mysql_server);
 
-        $db_remote = $this->di['db']->sql($remote);
+        $db_remote = Sgbd::sql($remote);
 
         $ret = $this->binaryLog($db_remote);
 

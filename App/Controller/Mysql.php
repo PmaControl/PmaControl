@@ -12,6 +12,8 @@ use \Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Graphviz;
 use \App\Library\Mysql as Mysql2;
+use \Glial\Sgbd\Sgbd;
+
 
 class Mysql extends Controller
 {
@@ -147,7 +149,7 @@ class Mysql extends Controller
         $this->view = false;
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Crypt::$key = CRYPT_KEY;
 
@@ -198,7 +200,7 @@ class Mysql extends Controller
         $i        = 1;
         $password = array();
 
-        $def = $this->di['db']->sql(DB_DEFAULT);
+        $def = Sgbd::sql(DB_DEFAULT);
 
         $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
@@ -206,7 +208,7 @@ class Mysql extends Controller
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
 
-            $db = $this->di['db']->sql($ob2->name);
+            $db = Sgbd::sql($ob2->name);
 
             $server_config = $db->getParams();
 
@@ -266,7 +268,7 @@ class Mysql extends Controller
         $password = array();
         foreach ($this->di['db']->getAll() as $key => $db_name) {
 
-            $db = $this->di['db']->sql($db_name);
+            $db = Sgbd::sql($db_name);
 
             $server_config = $db->getParams();
 
@@ -335,7 +337,7 @@ class Mysql extends Controller
 
         echo "\n";
 
-        foreach ($this->db as $key => $db) {
+        foreach ($this->di['db'] as $key => $db) {
 
             echo $key." ";
 
@@ -449,13 +451,13 @@ class Mysql extends Controller
             }
         }
 
-        $def  = $this->di['db']->sql(DB_DEFAULT);
+        $def  = Sgbd::sql(DB_DEFAULT);
         $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
 
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
-            $db = $this->di['db']->sql($ob2->name);
+            $db = Sgbd::sql($ob2->name);
             foreach ($users as $user) {
 
                 $sql = "select * from mysql.user where user = '".$user."'";
@@ -489,14 +491,14 @@ class Mysql extends Controller
             }
         }
 
-        $def = $this->di['db']->sql(DB_DEFAULT);
+        $def = Sgbd::sql(DB_DEFAULT);
 
         $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
 
-            $db = $this->di['db']->sql($ob2->name);
+            $db = Sgbd::sql($ob2->name);
             foreach ($users as $user) {
 
                 $sql = "select * from mysql.user where user = '".$user."'";
@@ -553,10 +555,10 @@ class Mysql extends Controller
         $i       = 0;
         foreach ($this->di['db']->getAll() as $db) {
             $i++;
-            $server_config = $this->di['db']->sql($db)->getParams();
+            $server_config = Sgbd::sql($db)->getParams();
 
 
-            $MS->setInstance($this->di['db']->sql($db));
+            $MS->setInstance(Sgbd::sql($db));
             $master = $MS->isMaster();
             $slave  = $MS->isSlave();
 
@@ -564,8 +566,8 @@ class Mysql extends Controller
             $is_slave  = ($slave) ? "ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â " : "";
 
             $sql  = "SHOW GLOBAL VARIABLES LIKE 'version'";
-            $res  = $this->di['db']->sql($db)->sql_query($sql);
-            $data = $this->di['db']->sql($db)->sql_fetch_array($res, MYSQLI_ASSOC);
+            $res  = Sgbd::sql($db)->sql_query($sql);
+            $data = Sgbd::sql($db)->sql_fetch_array($res, MYSQLI_ASSOC);
 
             if (strpos($data['Value'], "-")) {
                 $version = strstr($data['Value'], '-', true);
@@ -678,7 +680,7 @@ class Mysql extends Controller
     {
         $this->view = false;
 
-        $db = $this->di['db']->sql("itprod-dbhistory-sa-01");
+        $db = Sgbd::sql("itprod-dbhistory-sa-01");
         /*
           $sql = "select * from PROD_TRACES order by date_passage DESC limit 1";
 
@@ -716,7 +718,7 @@ class Mysql extends Controller
 
 
         $sql = "SELECT * from mysql_server";
-        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
 
         $res = $db->sql_query($sql);
 
@@ -736,7 +738,7 @@ class Mysql extends Controller
 
     function event($param)
     {
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
 
         $where = "";
@@ -746,7 +748,7 @@ class Mysql extends Controller
 
 
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
         $sql     = "SELECT * FROM `mysql_event` a
            INNER JOIN mysql_server b ON a.id_mysql_server = b.id
            INNER JOIN mysql_status c ON c.id = a.id_mysql_status
@@ -777,7 +779,7 @@ class Mysql extends Controller
     {
 
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.name
             FROM mysql_server a
@@ -791,7 +793,7 @@ class Mysql extends Controller
         $data['servers'] = array();
 
         while ($ob = $default->sql_fetch_object($res)) {
-            $dblink = $this->di['db']->sql($ob->name);
+            $dblink = Sgbd::sql($ob->name);
 
             $sql = "(SELECT VARIABLE_NAME,VARIABLE_VALUE FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES order by VARIABLE_NAME) ";
             $sql .= " UNION (SELECT VARIABLE_NAME,VARIABLE_VALUE FROM INFORMATION_SCHEMA.GLOBAL_STATUS)  order by VARIABLE_NAME";
@@ -834,7 +836,7 @@ class Mysql extends Controller
         $database        = $param[1];
 
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $this->title  = __("The Physical Schemata Panel");
         $this->ariane = " > ".__("MySQL")." > ".$this->title;
@@ -848,7 +850,7 @@ class Mysql extends Controller
         }
 
         $table_to_purge = array();
-        $db             = $this->di['db']->sql($name_connect);
+        $db             = Sgbd::sql($name_connect);
 
 
         if (!empty($param[2])) {
@@ -1064,7 +1066,7 @@ class Mysql extends Controller
         $password = array();
         foreach ($this->di['db']->getAll() as $key => $db_name) {
 
-            $db = $this->di['db']->sql($db_name);
+            $db = Sgbd::sql($db_name);
 
             $sql = "GRANT SELECT, PROCESS, SUPER ON *.* TO 'nagios'@'127.0.0.1' IDENTIFIED BY PASSWORD '*D4E97961BFEE8EB3E2CA39A541946FB7A9208590';";
             $db->sql_query($sql);
@@ -1076,7 +1078,7 @@ class Mysql extends Controller
 
     public function thread($param)
     {
-        $db = $this->di['db']->sql(str_replace('-', '_', $param[0]));
+        $db = Sgbd::sql(str_replace('-', '_', $param[0]));
         $this->di['js']->addJavascript(array('jquery-latest.min.js', 'jQplot/jquery.jqplot.min.js',
             'jQplot/plugins/jqplot.dateAxisRenderer.min.js'));
 
@@ -1163,7 +1165,7 @@ class Mysql extends Controller
         $ip     = $param[0];
         $server = $param[1];
 
-        $db = $this->di['db']->sql(str_replace("-", "_", $server)); //generate alert if not exist
+        $db = Sgbd::sql(str_replace("-", "_", $server)); //generate alert if not exist
 
 
         $path = '/data/backup/'.$ip;
@@ -1314,7 +1316,7 @@ class Mysql extends Controller
 
             $this->cmd($cmd);
 
-            $db = $this->di['db']->sql(str_replace("-", "_", $server));
+            $db = Sgbd::sql(str_replace("-", "_", $server));
 
 
             if ($i === 0) {
@@ -1427,7 +1429,7 @@ class Mysql extends Controller
 
     public function generate_config()
     {
-        $db               = $this->di['db']->sql(DB_DEFAULT);
+        $db               = Sgbd::sql(DB_DEFAULT);
         $this->db_default = $db;
         $this->title      = __("Configurator");
         $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
@@ -1435,7 +1437,7 @@ class Mysql extends Controller
 
     public function add($param)
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -1508,7 +1510,7 @@ class Mysql extends Controller
                     exit;
                 } else {
 
-                    Mysql2::onAddMysqlServer($this->di['db']->sql(DB_DEFAULT));
+                    Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
 
                     $msg   = I18n::getTranslation(__("Your MySQL server was successfully added !"));
@@ -1611,7 +1613,7 @@ class Mysql extends Controller
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
         $res = $db->sql_query($sql);
@@ -1693,7 +1695,7 @@ class Mysql extends Controller
     public function getAlias($db)
     {
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
         $slaves = $db->isSlave();
 
@@ -1736,8 +1738,8 @@ class Mysql extends Controller
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        $name = Mysql2::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
-        $db   = $this->di['db']->sql($name);
+        $name = Mysql2::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
+        $db   = Sgbd::sql($name);
 
         $sql = "select TABLE_NAME as table_name,column_name, referenced_table_name, referenced_column_name
             from information_schema.KEY_COLUMN_USAGE 
@@ -1761,8 +1763,8 @@ class Mysql extends Controller
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        $name = Mysql2::getDbLink($this->di['db']->sql(DB_DEFAULT), $id_mysql_server);
-        $db   = $this->di['db']->sql($name);
+        $name = Mysql2::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
+        $db   = Sgbd::sql($name);
 
         $sql = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE , DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from information_schema.COLUMNS WHERE TABLE_SCHEMA='".$database."';";
 

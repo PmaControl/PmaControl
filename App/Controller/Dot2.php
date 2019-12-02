@@ -11,6 +11,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use \App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 // ""	&#9635;   ▣
 // "□"	&#9633;	&#x25A1;
@@ -94,7 +96,7 @@ class Dot2 extends Controller {
 
         Debug::parseDebug($param);
         $this->view = false;
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         Extraction::setDb($db);
@@ -312,7 +314,7 @@ class Dot2 extends Controller {
 
     public function mappingMaster() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id,ip,port,is_available FROM mysql_server";
 
         $res = $db->sql_query($sql);
@@ -328,7 +330,7 @@ class Dot2 extends Controller {
     }
 
     public function getInfoServer($param) {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         Extraction::setDb($db);
 
@@ -729,7 +731,7 @@ class Dot2 extends Controller {
 //Debug::debug($servers);
 
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "BEGIN";
         $db->sql_query($sql);
@@ -1409,7 +1411,7 @@ class Dot2 extends Controller {
 
         $sql = "SELECT * FROM `architecture_legend` WHERE `type`= 'REPLICATION' order by `order`;";
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $res = $db->sql_query($sql);
 
@@ -1538,7 +1540,7 @@ class Dot2 extends Controller {
 
     public function getColor() {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `architecture_legend` order by `order`;";
         $res = $db->sql_query($sql);
@@ -1607,7 +1609,7 @@ class Dot2 extends Controller {
 
 
         if (!empty($this->server_backup) && count($this->server_backup) != 0) {
-            $db = $this->di['db']->sql(DB_DEFAULT);
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT id_mysql_server FROM backup_main where is_active=1";
             $res = $db->sql_query($sql);

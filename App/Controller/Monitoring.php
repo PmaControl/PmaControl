@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Html\Pagination\Pagination;
+use \Glial\Sgbd\Sgbd;
+
 
 class Monitoring extends Controller {
 
@@ -63,7 +65,7 @@ class Monitoring extends Controller {
 
         if (empty($param[0])) {
 
-            $default = $this->di['db']->sql(DB_DEFAULT);
+            $default = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM mysql_server limit 1";
             $res = $default->sql_query($sql);
 
@@ -124,7 +126,7 @@ class Monitoring extends Controller {
         }
 
 
-        $default = $this->di['db']->sql(DB_DEFAULT);
+        $default = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM mysql_server order by name";
@@ -146,7 +148,7 @@ class Monitoring extends Controller {
             }
         }
 
-        $db = $this->di['db']->sql(str_replace('-', '_', $link));
+        $db = Sgbd::sql(str_replace('-', '_', $link));
 
 
         $sql = "SHOW DATABASES";
@@ -307,7 +309,7 @@ class Monitoring extends Controller {
     }
 
     public function search() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `mysql_server`";
         $res = $db->sql_query($sql);
@@ -330,11 +332,11 @@ class Monitoring extends Controller {
         // update setup_instruments SET ENABLED='YES', TIMED='YES';
         // UPDATE setup_consumers SET ENABLED = 'YES';
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server where id= " . $_GET['mysql_server']['id'] . "";
         $res = $db->sql_query($sql);
         while ($ob = $db->sql_fetch_object($res)) {
-            $remote = $this->di['db']->sql($ob->name);
+            $remote = Sgbd::sql($ob->name);
         }
 
         $sql = "select * from performance_schema.events_statements_history_long where DIGEST='" . $_GET['digest'] . "'";
@@ -349,14 +351,14 @@ class Monitoring extends Controller {
     }
 
     private function getServer() {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id= " . $_GET['mysql_server']['id'] . "";
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $remote = $this->di['db']->sql($ob->name);
+            $remote = Sgbd::sql($ob->name);
         }
 
         return $remote;

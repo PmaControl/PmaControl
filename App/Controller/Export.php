@@ -13,6 +13,8 @@ use \App\Library\Chiffrement;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Mysql;
 use \App\Library\Json;
+use \Glial\Sgbd\Sgbd;
+
 
 class Export extends Controller
 {
@@ -27,7 +29,7 @@ class Export extends Controller
         Debug::parseDebug($param);
         $this->view = false;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tables = $db->getListTable()['table'];
 
@@ -90,7 +92,7 @@ class Export extends Controller
 
         $this->title = '<span class="glyphicon glyphicon-import"></span> '.__("Import / Export");
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -250,8 +252,8 @@ $("#export_all-all2").click(function(){
 
 
         Crypt::$key = CRYPT_KEY;
-        $db         = $this->di['db']->sql(DB_DEFAULT);
-        //$db = $this->di['db']->sql(DB_DEFAULT);
+        $db         = Sgbd::sql(DB_DEFAULT);
+        //$db = Sgbd::sql(DB_DEFAULT);
 
 
         Mysql::set_db($db);
@@ -286,7 +288,7 @@ $("#export_all-all2").click(function(){
     private function addMysql($arr)
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
 
@@ -376,7 +378,7 @@ $("#export_all-all2").click(function(){
 
         Debug::parseDebug($param);
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
         $res = $db->sql_query($sql);
@@ -416,7 +418,7 @@ $("#export_all-all2").click(function(){
 
     private function _export($options = array())
     {
-        $db     = $this->di['db']->sql(DB_DEFAULT);
+        $db     = Sgbd::sql(DB_DEFAULT);
         $sql1   = "SELECT * FROM `export_option` where active ='1'";
         $res1   = $db->sql_query($sql1);
         $backup = array();
@@ -517,7 +519,7 @@ $("#export_all-all2").click(function(){
 
     public function getExportOption()
     {
-        $db  = $this->di['db']->sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM export_option";
 
         $res = $db->sql_query($sql);
@@ -552,7 +554,7 @@ $("#export_all-all2").click(function(){
     private function getUniqueKey($table_name)
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select group_concat(COLUMN_NAME) as colonne from information_schema.KEY_COLUMN_USAGE where TABLE_schema = 'pmacontrol' and table_name ='".$table_name."' and POSITION_IN_UNIQUE_CONSTRAINT is null and CONSTRAINT_NAME != 'PRIMARY' group by CONSTRAINT_NAME;";
 
@@ -569,7 +571,7 @@ $("#export_all-all2").click(function(){
     public function encrypt()
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,passwd from mysql_server where id !=1";
 
@@ -584,7 +586,7 @@ $("#export_all-all2").click(function(){
     public function option()
     {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `export_option` order by `active` desc;";
 

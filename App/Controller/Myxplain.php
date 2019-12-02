@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use Glial\Cli\Table;
+use \Glial\Sgbd\Sgbd;
+
 
 class Myxplain extends Controller
 {
@@ -166,7 +168,7 @@ See documentation for more details about other possible values";
         $colonne = $param[0] ?? "id";
         $query   = $param[1] ?? 1;
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql1 = "SELECT * FROM myxplain WHERE id = ".$query;
@@ -223,7 +225,7 @@ See documentation for more details about other possible values";
 
     public function import()
     {
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         foreach (glob("/data/www/MYXPLAIN/data/explain*.json") as $filename) {

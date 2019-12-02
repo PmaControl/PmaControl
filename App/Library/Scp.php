@@ -18,7 +18,7 @@ trait Scp {
 
     public function sendFile($id_backup_storage_area, $src, $dst) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT *, b.id FROM backup_storage_area a 
                 INNER JOIN ssh_key b ON a.id_ssh_key = b.id
                 WHERE a.id = " . $id_backup_storage_area;
@@ -107,7 +107,7 @@ trait Scp {
 
     private function getFile($id_backup_storage_area, $src, $dst) {
 
-        $db = $this->di['db']->sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT *, b.id FROM backup_storage_area a 
                 INNER JOIN ssh_key b ON a.id_ssh_key = b.id
             WHERE a.id = " . $id_backup_storage_area;
