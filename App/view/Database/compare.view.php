@@ -174,11 +174,3 @@ foreach ($data['resultat'] as $typeobject => $elems) {
     </div>
 
 </div>
-
-<?php ?>
-
-
-
-
-
-
