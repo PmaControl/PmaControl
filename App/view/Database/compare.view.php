@@ -61,11 +61,11 @@ $rendererOptions = [
             <div class="row">
                 <div class="col-md-4"><?= __("Server") ?></div>
                 <div class="col-md-4"><?php
-\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__original", array("data-width" => "100%")));
-?></div>
+                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__original", array("data-width" => "100%")));
+                    ?></div>
                 <div class="col-md-4"><?php
-\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__compare", array("data-width" => "100%")));
-?></div>
+                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("compare_main", "id_mysql_server__compare", array("data-width" => "100%")));
+                    ?></div>
             </div>
 
             <div class="row" style="height:5px">
@@ -73,9 +73,9 @@ $rendererOptions = [
             <div class="row">
                 <div class="col-md-4"><?= __("Database") ?></div>
                 <div class="col-md-4">
-<?php
-echo Form::select("compare_main", "database__original", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "100%"))
-?>
+                    <?php
+                    echo Form::select("compare_main", "database__original", $data['listdb1'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "100%"))
+                    ?>
                 </div>
                 <div class="col-md-4">
                     <?php
@@ -96,89 +96,82 @@ echo Form::select("compare_main", "database__original", $data['listdb1'], "", ar
 </form>
 
 
-
-
-
-<!-- Nav tabs -->
-<div class="panel with-nav-tabs panel-primary">
-    <div class="panel-heading">
-        <ul class="nav nav-tabs" role="tablist">
 <?php
-$i               = 0;
-foreach ($data['resultat'] as $typeobject => $elems) {
-    $i++;
-    $active = '';
-    if ($i === 1) {
-        $active = "active";
-    }
+if (!empty($data['resultat'])) {
+    ?>
 
-    echo '<li role="presentation" class="'.$active.'"><a href="#'.strtolower($typeobject).'" aria-controls="'.strtolower($typeobject).'" role="tab" data-toggle="tab">'.ucwords(strtolower($typeobject)).' ('.count($elems).')</a></li>'."\n";
-}
-?>
-        </ul>
-
-    </div>
+    <!-- Nav tabs -->
+    <div class="panel with-nav-tabs panel-primary">
+        <div class="panel-heading">
+            <ul class="nav nav-tabs" role="tablist">
+                <?php
+                $i = 0;
 
 
+                foreach ($data['resultat'] as $typeobject => $elems) {
+                    $i++;
+                    $active = '';
+                    if ($i === 1) {
+                        $active = "active";
+                    }
 
-    <!-- Tab panes -->
-    <div class="panel-body">
-        <div class="tab-content">
+                    echo '<li role="presentation" class="'.$active.'"><a href="#'.strtolower($typeobject).'" aria-controls="'.strtolower($typeobject).'" role="tab" data-toggle="tab">'.ucwords(strtolower($typeobject)).' ('.count($elems).')</a></li>'."\n";
+                }
+                ?>
+            </ul>
 
-<?php
-$active = "in active";
-
-foreach ($data['resultat'] as $typeobject => $elems) {
-    echo '<div role="tabpanel" class="tab-pane fade '.$active.'" id="'.strtolower($typeobject).'">';
-    foreach ($elems as $elem => $diffs) {
-
-        //$data[$type_object][$elem][1]
+        </div>
 
 
-       // echo '<div class="title">'.$elem.'</div>'."\n";
-        echo '<div class="panel panel-primary">
+
+        <!-- Tab panes -->
+        <div class="panel-body">
+            <div class="tab-content">
+
+                <?php
+                $active = "in active";
+
+                foreach ($data['resultat'] as $typeobject => $elems) {
+                    echo '<div role="tabpanel" class="tab-pane fade '.$active.'" id="'.strtolower($typeobject).'">';
+                    foreach ($elems as $elem => $diffs) {
+
+                        //$data[$type_object][$elem][1]
+                        // echo '<div class="title">'.$elem.'</div>'."\n";
+                        echo '<div class="panel panel-primary">
         <div class="panel-heading">
 
             <h3 class="panel-title">'.$elem.'</h3>
         </div>';
-        
-        
-        //pour prevenir des caractères windows
-        $diffs[0] = str_replace("\r\n", "\n", $diffs[0]);
-        $diffs[1] = str_replace("\r\n", "\n", $diffs[1]);
-        
-        $res = DiffHelper::calculate(utf8_encode($diffs[0]), utf8_encode($diffs[1]), 'SideBySide', $diffOptions, $rendererOptions);
 
-        $res = str_replace('class="th-top" colspan="2"', 'colspan="2"', $res);
-        
-        
-        $res = str_replace('colspan="2">Old<', 'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__original'])['link'].' ('.$_GET['compare_main']['database__original'].')<', $res);
-        $res = str_replace('colspan="2">New<', 'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__compare'])['link'].' ('.$_GET['compare_main']['database__compare'].')<', $res);
 
-        
-        
-        
-        echo $res;
-        
-        echo '</div>';
-        
-        
-    }
-    echo '</div>';
-    //break;
-    $active = '';
-}
-?>
+                        //pour prevenir des caractères windows
+                        $diffs[0] = str_replace("\r\n", "\n", $diffs[0]);
+                        $diffs[1] = str_replace("\r\n", "\n", $diffs[1]);
 
+                        $res = DiffHelper::calculate(utf8_encode($diffs[0]), utf8_encode($diffs[1]), 'SideBySide', $diffOptions, $rendererOptions);
+
+                        $res = str_replace('class="th-top" colspan="2"', 'colspan="2"', $res);
+
+
+                        $res = str_replace('colspan="2">Old<',
+                            'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__original'])['link'].' ('.$_GET['compare_main']['database__original'].')<', $res);
+                        $res = str_replace('colspan="2">New<',
+                            'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__compare'])['link'].' ('.$_GET['compare_main']['database__compare'].')<', $res);
+
+                        echo $res;
+
+                        echo '</div>';
+                    }
+                    echo '</div>';
+                    //break;
+                    $active = '';
+                }
+                ?>
+            </div>
         </div>
+
     </div>
 
-</div>
-
-<?php ?>
-
-
-
-
-
-
+    <?php
+}
+?>

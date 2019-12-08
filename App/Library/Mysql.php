@@ -165,9 +165,9 @@ class Mysql
     {
         /*
 
-        if (!is_int(($id_mysql_server))) {
-            throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
-        }*/
+          if (!is_int(($id_mysql_server))) {
+          throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
+          } */
 
         $dblink = Sgbd::sql($link);
 
