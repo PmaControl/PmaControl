@@ -3692,16 +3692,17 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $to_drop = array();
 
         foreach ($all as $table_name => $keys) {
-            foreach ($keys as $colomn => $val) {
+            foreach ($keys as $referenced_table => $val) {
                 $drop_fk = "";
+                $referenced_table = $referenced_table;
                 if ($val['percent'] < $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent']) {
                     $drop_fk = "DROP FK";
 
                     $to_drop[$table_name][] = $val['REFERENCED_TABLE_NAME'];
                 }
 
-                $table->addLine(array($table_name.'.'.$colomn.' => '.$val['REFERENCED_TABLE_NAME'].'.'.$val['TABLE_NAME'],
-                    $val['percent'].'%', "(".$val['is_not_null']."/".$val['total'].")", $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent']."%", $val['is_null'], $drop_fk));
+                $table->addLine(array($table_name . '.' . $val['column_name'] . ' => ' . $val['REFERENCED_TABLE_NAME'] . '.' . $val['REFERENCED_COLUMN_NAME'],
+                    $val['percent'] . '%', "(" . $val['is_not_null'] . "/" . $val['total'] . ")", $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent'] . "%", $val['is_null'], $drop_fk));
             }
         }
 

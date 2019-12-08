@@ -144,34 +144,4 @@ if (!empty($data['resultat'])) {
         </div>';
 
 
-                        //pour prevenir des caractères windows
-                        $diffs[0] = str_replace("\r\n", "\n", $diffs[0]);
-                        $diffs[1] = str_replace("\r\n", "\n", $diffs[1]);
-
-                        $res = DiffHelper::calculate(utf8_encode($diffs[0]), utf8_encode($diffs[1]), 'SideBySide', $diffOptions, $rendererOptions);
-
-                        $res = str_replace('class="th-top" colspan="2"', 'colspan="2"', $res);
-
-
-                        $res = str_replace('colspan="2">Old<',
-                            'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__original'])['link'].' ('.$_GET['compare_main']['database__original'].')<', $res);
-                        $res = str_replace('colspan="2">New<',
-                            'colspan="2">'.Util::getServer($_GET['compare_main']['id_mysql_server__compare'])['link'].' ('.$_GET['compare_main']['database__compare'].')<', $res);
-
-                        echo $res;
-
-                        echo '</div>';
-                    }
-                    echo '</div>';
-                    //break;
-                    $active = '';
-                }
-                ?>
-            </div>
-        </div>
-
-    </div>
-
-    <?php
-}
-?>
+</div>
