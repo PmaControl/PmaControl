@@ -1006,21 +1006,37 @@ END;";
         foreach ($all_objects as $type_object => $elems) {
             foreach ($elems as $elem => $order) {
 
-
                 //remplir à vide si jamais un élément s n'est pas définis d'un coté ou de l'autre
                 $result_a[$type_object][$elem] = $result_a[$type_object][$elem] ?? "";
                 $result_b[$type_object][$elem] = $result_b[$type_object][$elem] ?? "";
 
+                //on transforme les retour chariot windows en retour chariot linux
+                $res_a = str_replace("\r\n", "\n", $result_a[$type_object][$elem]);
+                $res_b = str_replace("\r\n", "\n", $result_b[$type_object][$elem]);
 
-                if ($result_b[$type_object][$elem] !== $result_a[$type_object][$elem]) {
-                    //$diff = Diff::compare($result_a[$type_object][$elem], $result_b[$type_object][$elem]);
+                //pour retirer les commentaires SQL dans les function et les procedure
+                if (in_array($type_object, array('FUNCTION', 'PROCEDURE'))) {
+                    $res_a = preg_replace('/(--[^\r\n]*)|(\#[^\r\n]*)|(\/\*[\w\W]*?(?=\*\/)\*\/)/ms', '', $res_a);
+                    $res_b = preg_replace('/(--[^\r\n]*)|(\#[^\r\n]*)|(\/\*[\w\W]*?(?=\*\/)\*\/)/ms', '', $res_b);
+                }
 
-                    $data[$type_object][$elem][0] = $result_a[$type_object][$elem];
-                    $data[$type_object][$elem][1] = $result_b[$type_object][$elem];
+                //et on convertit en utf8, car on peu avoir des caractère accentuer en latin1 qui vont faire crasher le diff
+                //$res_a = utf8_encode($res_a);
+                //$res_b = utf8_encode($res_b);
+                
+                
+                // On met en forme les vue pour faire apparaitre les differences (sur plusieurs lignes au lieu d'une seule)
+                if ($type_object === 'VIEW') {
+                    $res_a = \SqlFormatter::format($res_a, false);
+                    $res_b = \SqlFormatter::format($res_b, false);
+                }
+
+                if ($res_a !== $res_b) {
+                    $data[$type_object][$elem][0] = trim($res_a);
+                    $data[$type_object][$elem][1] = trim($res_b);
                 }
             }
         }
-
 
 
         $db_a->sql_select_db($db_name_a_ori);

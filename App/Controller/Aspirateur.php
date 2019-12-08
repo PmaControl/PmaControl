@@ -376,6 +376,8 @@ class Aspirateur extends Controller {
         Debug::debug("apres master");
         $data['slave'] = $mysql_tested->isSlave();
         Debug::debug("apres slave");
+        
+        $data['processlist'] = $mysql_tested->getProcesslist(1);
 
         if ($var['variables']['log_bin'] === "ON") {
             $data['binlog'] = $this->binaryLog($mysql_tested);
@@ -408,8 +410,6 @@ class Aspirateur extends Controller {
 
 
         if ($mysql_tested->is_connected === false) {
-
-
             echo "PAS BON DU TOUT ! ask creator of PmaControl";
             return false;
         }
@@ -517,7 +517,6 @@ class Aspirateur extends Controller {
      */
     public function testAllSsh($param) {
         $this->view = false;
-
 
         $this->loop = $param[0];
 
