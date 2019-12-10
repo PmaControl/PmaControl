@@ -538,7 +538,7 @@ class Aspirateur extends Controller
           LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
           WHERE `active` = 1";
 
-        Debug::debug(SqlFormatter::highlight($sql));
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $server_list = array();
@@ -546,14 +546,15 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-        $sql = "SELECT * FROM daemon_main where id=4;";
+        $sql = "SELECT * FROM daemon_main where id=9;";
         $res = $db->sql_query($sql);
 
-        Debug::debug(SqlFormatter::highlight($sql));
+        Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $maxThreads       = $ob->thread_concurency; // check MySQL server x by x
             $maxExecutionTime = $ob->max_delay;
+            $queue_number     = $ob->queue_number;
         }
 
 //to prevent any trouble with fork
@@ -599,11 +600,11 @@ class Aspirateur extends Controller
                 $father = true;
             } else {
 
-// one thread to test each MySQL server
-//$this->logger->info("Test SSH server (" . $server['id'].")");
-                $this->testSshServer($server['id'], $this->loop, $maxExecutionTime);
+                // one thread to test each SSH server
+                $this->logger->info("Test SSH server (".$server['id'].")");
+                $this->testSshServer(array($server['id'], $this->loop, $maxExecutionTime));
                 $father = false;
-//we want that child exit the foreach
+                //we want that child exit the foreach
                 break;
             }
             usleep(50);
@@ -628,10 +629,16 @@ class Aspirateur extends Controller
      *
      * @deprecated
      */
-    public function testSshServer($server_id, $id_loop, $max_execution_time = 20)
+    public function testSshServer($param)
     {
 //exeute a process with a timelimit (in case of SSH server don't answer and keep connection)
 //$max_execution_time = 20; // in seconds
+
+
+        $server_id          = $param[0];
+        $id_loop            = $param[1];
+        $max_execution_time = $param[2];
+
 
 
 
@@ -691,8 +698,8 @@ class Aspirateur extends Controller
      */
     public function trySshConnection($param)
     {
-        $this->view = false;
-        $id_server  = $param[0];
+        $this->view      = false;
+        $id_mysql_server = $param[0];
 
         Debug::parseDebug($param);
 
@@ -701,27 +708,33 @@ class Aspirateur extends Controller
         $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` a
         INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server 
         INNER JOIN `ssh_key` c on c.id = b.id_ssh_key
-        where a.id=".$id_server." AND b.`active` = 1 LIMIT 1;";
+        where a.id=".$id_mysql_server." AND b.`active` = 1 LIMIT 1;";
 
-        Debug::debug(SqlFormatter::highlight($sql));
+        Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $time_start             = microtime(true);
-            $ssh                    = Ssh::connect($ob->ip, 22, $ob->user, Chiffrement::decrypt($ob->private_key));
-            $data['server']['ping'] = microtime(true) - $time_start;
+            $ssh                    = Ssh::ssh($id_mysql_server);
+            $ping = microtime(true) - $time_start;
 
-            $stats    = $this->getStats($ssh, $data);
-            $hardware = $this->getHardware($ssh, $data);
+           
+            Debug::debug($data);
+
+
+            $stats    = $this->getStats($ssh);
+            $hardware = $this->getHardware($ssh);
 
             $id   = $ob->id;
             $date = array();
 
             $this->allocate_shared_storage('ssh_stats');
             $date[date('Y-m-d H:i:s')][$ob->id]['stats'] = $stats;
-            $this->shared->$id                           = $date;
+            $date[date('Y-m-d H:i:s')][$ob->id]['stats']['ping'] = $ping;
+            
+            //$this->shared->$id                           = $date;
 
             $this->allocate_shared_storage('hardware');
             $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
@@ -729,8 +742,7 @@ class Aspirateur extends Controller
             Debug::debug($date);
         }
 
-        Debug::debug(SqlFormatter::highlight($sql));
-        $db->sql_query($sql);
+
         $db->sql_close();
     }
 
@@ -751,8 +763,9 @@ class Aspirateur extends Controller
         $freq_brut                 = $ssh->exec("cat /proc/cpuinfo | grep 'cpu MHz'");
         preg_match("/[0-9]+\.[0-9]+/", $freq_brut, $freq);
         $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000))." GHz";
-        $hardware['os']            = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
+        $os                        = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
         $distributor               = trim($ssh->exec("lsb_release -si 2> /dev/null"));
+        $codename                  = trim($ssh->exec("lsb_release -cs 2> /dev/null"));
 
         if ($distributor === "RedHatEnterpriseServer") {
             $distributor = "RedHat";
@@ -781,11 +794,16 @@ class Aspirateur extends Controller
                         break;
                     case "9": $codename = "Stretch";
                         break;
+                    case "10": $codename = "Buster";
+                        break;
                 }
 
                 $os = trim("Debian GNU/Linux ".$version." (".$codename.")");
             }
         }
+
+
+
 
         $hardware['distributor']  = trim($distributor);
         $hardware['os']           = trim($os);
@@ -805,6 +823,9 @@ class Aspirateur extends Controller
 
         $uptime = $ssh->exec("uptime");
 
+        
+        
+        
         preg_match("/averages?:\s*([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)/", $uptime, $output_array);
 
         if (!empty($output_array[1])) {
@@ -812,6 +833,7 @@ class Aspirateur extends Controller
             $stats['load_average_5_min']  = $output_array[2];
             $stats['load_average_15_min'] = $output_array[3];
         }
+        
 
         preg_match("/([0-9]+)\s+user/", $uptime, $output_array);
         if (!empty($output_array[1])) {
@@ -823,6 +845,7 @@ class Aspirateur extends Controller
             $stats['uptime'] = $output_array[1];
         }
 
+        
         $membrut = trim($ssh->exec("free -b"));
         $lines   = explode("\n", $membrut);
 
@@ -847,8 +870,13 @@ class Aspirateur extends Controller
 
             $i++;
         }
+        
 
-        $dd    = trim($ssh->exec("df"));
+        //on exclu les montage nfs
+        $dd    = trim($ssh->exec("df -l"));
+        
+        
+        
         $lines = explode("\n", $dd);
         $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
         unset($lines[0]);
@@ -862,6 +890,8 @@ class Aspirateur extends Controller
 
         $stats['disks'] = json_encode($tmp);
 
+        
+        
         $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
 
         $stats['ips'] = json_encode(explode("\n", $ips));
@@ -903,7 +933,6 @@ class Aspirateur extends Controller
           $i++;
           }
          */
-
 
         $mem = trim($ssh->exec("ps aux | grep mysqld | grep -v grep | awk '{print $5,$6}'"));
 
