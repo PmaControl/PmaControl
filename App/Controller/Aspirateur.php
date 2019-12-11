@@ -13,10 +13,10 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\System;
-use App\Library\Chiffrement;
 use App\Library\Mysql;
 use \Glial\Cli\Color;
 use \Glial\Sgbd\Sgbd;
+use Pheanstalk\Pheanstalk;
 
 //require ROOT."/application/library/Filter.php";
 //https://blog.programster.org/php-multithreading-pool-example
@@ -25,7 +25,6 @@ use \Glial\Sgbd\Sgbd;
 
 class Aspirateur extends Controller
 {
- 
 
     use \App\Library\Filter;
     var $shared        = array();
@@ -692,7 +691,6 @@ class Aspirateur extends Controller
         }
     }
 
-
     public function trySshConnection($param)
     {
         $this->view      = false;
@@ -713,11 +711,11 @@ class Aspirateur extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $time_start             = microtime(true);
-            $ssh                    = Ssh::ssh($id_mysql_server);
-            $ping = microtime(true) - $time_start;
+            $time_start = microtime(true);
+            $ssh        = Ssh::ssh($id_mysql_server);
+            $ping       = microtime(true) - $time_start;
 
-           
+
             Debug::debug($data);
 
 
@@ -728,9 +726,9 @@ class Aspirateur extends Controller
             $date = array();
 
             $this->allocate_shared_storage('ssh_stats');
-            $date[date('Y-m-d H:i:s')][$ob->id]['stats'] = $stats;
+            $date[date('Y-m-d H:i:s')][$ob->id]['stats']         = $stats;
             $date[date('Y-m-d H:i:s')][$ob->id]['stats']['ping'] = $ping;
-            
+
             //$this->shared->$id                           = $date;
 
             $this->allocate_shared_storage('hardware');
@@ -817,9 +815,10 @@ class Aspirateur extends Controller
 
         $uptime = $ssh->exec("uptime");
 
-        
-        
-        
+
+
+        // récupération de l'uptime et du load average
+        $output_array = array();
         preg_match("/averages?:\s*([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)/", $uptime, $output_array);
 
         if (!empty($output_array[1])) {
@@ -827,7 +826,7 @@ class Aspirateur extends Controller
             $stats['load_average_5_min']  = $output_array[2];
             $stats['load_average_15_min'] = $output_array[3];
         }
-        
+
         preg_match("/([0-9]+)\s+user/", $uptime, $output_array);
         if (!empty($output_array[1])) {
             $stats['user_connected'] = $output_array[1];
@@ -838,7 +837,7 @@ class Aspirateur extends Controller
             $stats['uptime'] = $output_array[1];
         }
 
-        
+
         $membrut = trim($ssh->exec("free -b"));
         $lines   = explode("\n", $membrut);
 
@@ -863,13 +862,13 @@ class Aspirateur extends Controller
 
             $i++;
         }
-        
+
 
         //on exclu les montage nfs
-        $dd    = trim($ssh->exec("df -l"));
-        
-        
-        
+        $dd = trim($ssh->exec("df -l"));
+
+
+
         $lines = explode("\n", $dd);
         $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
         unset($lines[0]);
@@ -883,8 +882,8 @@ class Aspirateur extends Controller
 
         $stats['disks'] = json_encode($tmp);
 
-        
-        
+
+
         $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
 
         $stats['ips'] = json_encode(explode("\n", $ips));
@@ -950,7 +949,6 @@ class Aspirateur extends Controller
      * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
      * 
      */
-    
     public function addToQueue($param)
     {
 
@@ -1502,10 +1500,7 @@ class Aspirateur extends Controller
         // cat error.log | grep -oE 'tcp://[0-9]+.[0-9]+.[0-9]+.[0-9]+:4567' | sort -d | uniq -c | grep -v '0.0.0.0'
         // et retirer les IP presente dans la table alias et la table mysql_server
     }
-    
-    
-    
-    
+
     public function addToQueueSsh($param)
     {
 
@@ -1684,6 +1679,27 @@ class Aspirateur extends Controller
 
 //$stats = msg_stat_queue($queue);
 //debug($stats);
+    }
+
+    public function queue($param)
+    {
+        $pheanstalk = Pheanstalk::create('127.0.0.1');
+
+// ----------------------------------------
+// producer (queues jobs)
+
+        $pheanstalk
+            ->useTube('testtube')
+            ->put("job payload goes here\n");
+
+        $job = $pheanstalk
+            ->watch('testtube2')
+            ->ignore('default')
+            ->reserve();
+
+        echo $job->getData();
+
+        $pheanstalk->delete($job);
     }
 }
 /*
