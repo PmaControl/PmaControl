@@ -25,7 +25,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Aspirateur extends Controller
 {
-    const QUEUE = 21671;
+ 
 
     use \App\Library\Filter;
     var $shared        = array();
@@ -692,10 +692,7 @@ class Aspirateur extends Controller
         }
     }
 
-    /**
-     *
-     * @deprecated
-     */
+
     public function trySshConnection($param)
     {
         $this->view      = false;
@@ -802,9 +799,6 @@ class Aspirateur extends Controller
             }
         }
 
-
-
-
         $hardware['distributor']  = trim($distributor);
         $hardware['os']           = trim($os);
         $hardware['codename']     = trim($codename);
@@ -834,7 +828,6 @@ class Aspirateur extends Controller
             $stats['load_average_15_min'] = $output_array[3];
         }
         
-
         preg_match("/([0-9]+)\s+user/", $uptime, $output_array);
         if (!empty($output_array[1])) {
             $stats['user_connected'] = $output_array[1];
@@ -957,6 +950,7 @@ class Aspirateur extends Controller
      * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
      * 
      */
+    
     public function addToQueue($param)
     {
 
@@ -1507,6 +1501,189 @@ class Aspirateur extends Controller
     {
         // cat error.log | grep -oE 'tcp://[0-9]+.[0-9]+.[0-9]+.[0-9]+:4567' | sort -d | uniq -c | grep -v '0.0.0.0'
         // et retirer les IP presente dans la table alias et la table mysql_server
+    }
+    
+    
+    
+    
+    public function addToQueueSsh($param)
+    {
+
+        //$param[] = '--debug';
+        Debug::parseDebug($param);
+
+
+        $id_daemon = $param[0];
+
+        if (empty($id_daemon)) {
+            throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
+        }
+
+        if (Debug::$debug) {
+            echo "[".date('Y-m-d H:i:s')."]"." Start all tests\n";
+        }
+
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM daemon_main WHERE id=".$id_daemon.";";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $queue_key        = intval($ob->queue_key);
+            $maxExecutionTime = $ob->max_delay;
+        }
+
+//add message to queue
+        $queue    = msg_get_queue($queue_key);
+        $msg_qnum = (int) msg_stat_queue($queue)['msg_qnum'];
+
+        // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
+        if ($msg_qnum != 0) {
+
+            Debug::debug('On attends de vider la file d\'attente');
+
+            for ($i = 0; $i < $maxExecutionTime; $i++) {
+                $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
+                if ($msg_qnum == 0) {
+                    break;
+                } else {
+                    Debug::debug($msg_qnum, "Nombre de message en attente");
+                }
+                sleep(1);
+            }
+        }
+
+
+        $mysql_servers = array();
+
+        //mémoire partagé 
+
+        $lock_directory = TMP."lock/workerssh/*.lock";
+
+
+        $elems = array();
+        foreach (glob($lock_directory) as $filename) {
+
+            Debug::debug($filename, "filename");
+
+            $json = file_get_contents($filename);
+
+            $data    = json_decode($json, true);
+            $elems[] = $data;
+        }
+
+
+        Debug::debug($elems, "liste des serveur en retard !");
+
+        $list = array();
+
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        foreach ($elems as $server) {
+
+
+            //on verifie avec le double buffer qu'on est bien sur le même pid
+            //et ce dernier est toujours sur le serveur MySQL qui pose problème
+            $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
+
+            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
+            if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
+
+
+                Debug::debug($server['pid'], "GOOD");
+
+
+                $mysql_servers[] = $server['id'];
+                $list[]          = Color::getColoredString("MySQL server with id : ".$server['id']." is late !!! pid : ".$server['pid'], "grey", "red");
+
+                $time = microtime(true) - $server['microtime'];
+
+
+                //special case for timeout 60 seconds, else we see working since ... and not the real error
+                $sql = "SELECT error,is_available from mysql_server WHERE id = ".$server['id'].";";
+                $res = $db->sql_query($sql);
+
+                while ($ob = $db->sql_fetch_object($res)) {
+                    if ($ob->is_available != 0) {
+                        // UPDATE is_available X => YELLOW  (not answered)
+                        $sql = "UPDATE `mysql_server` SET is_available = -1,
+                            `date_refresh` = '".date("Y-m-d H:i:s")."',
+                            `error`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
+                        echo \SqlFormatter::format($sql);
+                        $db->sql_query($sql);
+                    }
+                }
+            } else {
+                //si pid n'existe plus alors on efface le fichier de lock
+                $lock_file = TMP."lock/worker/".$server['id'].".lock";
+
+                unlink($lock_file);
+            }
+        }
+
+        echo implode("\n", $list)."\n";
+
+
+        Debug::debug($list, "list");
+
+
+        $this->view = false;
+
+        $sql = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
+
+
+        if (!empty($mysql_servers)) {
+            $sql .= " AND id NOT IN (".implode(',', $mysql_servers).")";
+        }
+
+        $sql .= " ORDER by is_available ASC, date_refresh DESC;";
+
+
+        echo \SqlFormatter::format($sql);
+
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        $server_list = array();
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $server_list[] = $ob;
+        }
+
+
+
+        //Debug::debug($server_list, "Liste des serveurs monitoré");
+        //to prevent any trouble with fork
+        //$this->debugShowQueries();
+
+        $db->sql_close();
+
+        // filename: add_to_queue.php
+        //creating a queue requires we come up with an arbitrary number
+
+
+        foreach ($server_list as $server) {
+
+            // Create dummy message object
+            $object       = new \stdclass;
+            $object->name = $server['name'];
+            $object->id   = $server['id'];
+
+            //try to add message to queue
+            if (msg_send($queue, 1, $object)) {
+
+                Debug::debug($server, "Ajout dans la file d'attente");
+                //echo "added to queue  \n";
+                // you can use the msg_stat_queue() function to see queue status
+                //print_r(msg_stat_queue($queue));
+            } else {
+
+
+                echo "could not add message to queue \n";
+            }
+        }
+
+//$stats = msg_stat_queue($queue);
+//debug($stats);
     }
 }
 /*
