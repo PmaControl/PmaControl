@@ -32,12 +32,12 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.$daemon['name'].'</td>';
     echo '<td>'.$daemon['pid'].'</td>';
     echo '<td>'.$daemon['date'].'</td>';
-  //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
-  //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
+    //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
+    //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
     echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
     echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
-    echo '<td>'.$daemon['queue_number'].'</td>';
+    echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['queue_number'].'</td>';
     echo '<td>'.$daemon['nb_msg'].'</td>';
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
     echo '<td>'.$daemon['log_file'].'</td>';
@@ -61,7 +61,7 @@ foreach ($data['daemon'] as $daemon) {
         }
     }
 
-     echo '&nbsp;<a href="'.LINK.'Agent/logs/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon glyphicon-book" aria-hidden="true" style="font-size:12px"></span> Logs</a>';
+    echo '&nbsp;<a href="'.LINK.'Agent/logs/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon glyphicon-book" aria-hidden="true" style="font-size:12px"></span> Logs</a>';
 
     echo '</div>';
 

@@ -15,16 +15,15 @@ use App\Library\Post;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
-
-class Ssh extends Controller {
-
+class Ssh extends Controller
+{
     const KEY_WORKER_ASSOCIATE = 435665;
-    const NB_WORKER = 10;
+    const NB_WORKER            = 10;
 
-    public function keys() {
+    public function keys()
+    {
         
     }
-
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -35,18 +34,20 @@ class Ssh extends Controller {
      * @access public
      */
 
-    public function before($param) {
-        $logger = new Logger('Daemon');
-        $file_log = LOG_FILE;
-        $handler = new StreamHandler($file_log, Logger::INFO);
+    public function before($param)
+    {
+        $logger       = new Logger('Daemon');
+        $file_log     = LOG_FILE;
+        $handler      = new StreamHandler($file_log, Logger::INFO);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
     }
 
-    public function add($param) {
+    public function add($param)
+    {
 
-        $this->title = '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>' . " " . __("Add a key SSH");
+        $this->title = '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>'." ".__("Add a key SSH");
 
 
 
@@ -87,7 +88,7 @@ class Ssh extends Controller {
 
                     $keys = $_POST['ssh_key'];
 
-                    $keys['public_key'] = $_POST['ssh_key']['public_key'];
+                    $keys['public_key']  = $_POST['ssh_key']['public_key'];
                     $keys['private_key'] = $_POST['ssh_key']['private_key'];
 
 
@@ -119,16 +120,17 @@ class Ssh extends Controller {
          */
     }
 
-    private function save($keys) {
+    private function save($keys)
+    {
         if (!empty($keys)) {
             $fingerprint = \Glial\Cli\Ssh::ssh2_fingerprint($keys['public_key'], 1);
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT id from ssh_key WHERE fingerprint='" . $fingerprint . "'";
+            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
             $res = $db->sql_query($sql);
 
-            $data = array();
+            $data            = array();
             $data['ssh_key'] = $keys;
 
             while ($ob = $db->sql_fetch_object($res)) {
@@ -138,7 +140,7 @@ class Ssh extends Controller {
             if (empty($data['ssh_key']['id'])) {
                 $method = "add";
             } else {
-                $method = "edit/" . $data['ssh_key']['id'];
+                $method = "edit/".$data['ssh_key']['id'];
             }
 
             preg_match("/ssh\-(\w+)/", $keys['public_key'], $output_array);
@@ -162,8 +164,8 @@ class Ssh extends Controller {
                 $error[] = __("Your public key is not valid");
             } else {
                 $data['ssh_key']['comment'] = $ret['name'];
-                $data['ssh_key']['bit'] = $ret['bit'];
-                $data['ssh_key']['type'] = $ret['type'];
+                $data['ssh_key']['bit']     = $ret['bit'];
+                $data['ssh_key']['type']    = $ret['type'];
             }
 
             // c'est degeu, mais il faut trouver un autre moyen de tester la clef privée ED25519
@@ -180,7 +182,7 @@ class Ssh extends Controller {
 
 
             if (!empty($error)) {
-                $msg = I18n::getTranslation("<ul><li>" . implode("</li><li>", $error) . "</li><ul>");
+                $msg   = I18n::getTranslation("<ul><li>".implode("</li><li>", $error)."</li><ul>");
                 $title = I18n::getTranslation(__("Error"));
                 set_flash("error", $title, $msg);
 
@@ -191,20 +193,20 @@ class Ssh extends Controller {
                 }
 
                 $_SESSION['ssh_key']['private_key'] = $_POST['ssh_key']['private_key'];
-                $_SESSION['ssh_key']['public_key'] = $_POST['ssh_key']['public_key'];
+                $_SESSION['ssh_key']['public_key']  = $_POST['ssh_key']['public_key'];
 
                 unset($_POST['ssh_key']['private_key']);
                 unset($_POST['ssh_key']['public_key']);
 
-                header('location: ' . LINK . "ssh/" . $method . "/" . Post::getToPost());
+                header('location: '.LINK."ssh/".$method."/".Post::getToPost());
                 exit;
             }
 
-            $data['ssh_key']['added_on'] = date('Y-m-d H:i:s');
+            $data['ssh_key']['added_on']    = date('Y-m-d H:i:s');
             $data['ssh_key']['fingerprint'] = $db->sql_real_escape_string($fingerprint);
-            $data['ssh_key']['public_key'] = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public_key']));
+            $data['ssh_key']['public_key']  = Chiffrement::encrypt(str_replace('\n', "\n", $keys['public_key']));
             $data['ssh_key']['private_key'] = Chiffrement::encrypt(str_replace('\n', "\n", $keys['private_key']));
-            $data['ssh_key']['user'] = $keys['user'];
+            $data['ssh_key']['user']        = $keys['user'];
 
             if (empty($data['ssh_key']['id'])) {
                 unset($data['ssh_key']['id']);
@@ -225,21 +227,22 @@ class Ssh extends Controller {
             }
 
 
-            $msg = I18n::getTranslation(__("Your private key was " . $word));
+            $msg   = I18n::getTranslation(__("Your private key was ".$word));
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
-            header('location: ' . LINK . "ssh/index/");
+            header('location: '.LINK."ssh/index/");
         }
     }
 
-    private function parseConfig($configFile) {
+    private function parseConfig($configFile)
+    {
 
         if (empty($configFile) || !file_exists($configFile)) {
-            throw new \Exception('PMACTRL-255 : The file ' . $configFile . ' doesn\'t exit !');
+            throw new \Exception('PMACTRL-255 : The file '.$configFile.' doesn\'t exit !');
         }
 
-        $file = file_get_contents($configFile);
+        $file   = file_get_contents($configFile);
         $config = json_decode($file, true);
 
 
@@ -268,10 +271,11 @@ class Ssh extends Controller {
         }
 
 
-        throw new \Exception("PMACTRL-254 : JSON : " . $error, 80);
+        throw new \Exception("PMACTRL-254 : JSON : ".$error, 80);
     }
 
-    public function index() {
+    public function index()
+    {
 
         $this->title = '<i class="fa fa-key" aria-hidden="true"></i> SSH keys';
 
@@ -291,7 +295,7 @@ class Ssh extends Controller {
 
 
         $data['keys'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['public_key'] = Chiffrement::decrypt($arr['public_key']);
 
@@ -299,13 +303,13 @@ class Ssh extends Controller {
         }
 
 
-        $sql2 = "SELECT a.*, b.active, c.id as id_key FROM mysql_server a
+        $sql2            = "SELECT a.*, b.active, c.id as id_key FROM mysql_server a
             INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
             INNER JOIN ssh_key c ON c.id = b.id_ssh_key
             GROUP BY c.id, a.id";
-        $res2 = $db->sql_query($sql2);
+        $res2            = $db->sql_query($sql2);
         $data['servers'] = array();
-        while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+        while ($arr2            = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
             $data['servers'][$arr2['id_key']][] = $arr2;
         }
 
@@ -315,22 +319,24 @@ class Ssh extends Controller {
         $this->set('data', $data);
     }
 
-    public function delete($param) {
+    public function delete($param)
+    {
         $this->view = false;
 
         if (!empty($param[0])) {
-            $db = Sgbd::sql(DB_DEFAULT);
+            $db      = Sgbd::sql(DB_DEFAULT);
             $id_clef = intval($param[0]);
 
-            $sql = "DELETE FROM `ssh_key` WHERE `id`= " . $id_clef;
+            $sql = "DELETE FROM `ssh_key` WHERE `id`= ".$id_clef;
 
             $db->sql_query($sql);
         }
 
-        header("location: " . LINK .$this->getClass(). "/index");
+        header("location: ".LINK.$this->getClass()."/index");
     }
 
-    public function associate($param) {
+    public function associate($param)
+    {
         $this->view = false;
 
 
@@ -351,9 +357,9 @@ class Ssh extends Controller {
         $sql = "WITH z as (SELECT a.id
 FROM mysql_server a
 INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
-WHERE `active`=1 and b.id_ssh_key in(" . $id_ssh_key . "))
+WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
 SELECT b.id FROM mysql_server b, ssh_key c
-WHERE c.id in (" . $id_ssh_key . ")
+WHERE c.id in (".$id_ssh_key.")
 AND b.id NOT IN (select id from z)
 AND b.is_available = 1;";
 
@@ -401,41 +407,40 @@ AND b.is_available = 1;";
 
         for ($id_worker = 1; $id_worker <= self::NB_WORKER; $id_worker++) {
 
-            $cmd = $php . " " . GLIAL_INDEX . " Ssh workerAssociate " . $debug . ">> " . TMP . "log/" . __FUNCTION__ . "_" . $id_worker . ".log 2>&1 & echo $!";
+            $cmd = $php." ".GLIAL_INDEX." Ssh workerAssociate ".$debug.">> ".TMP."log/".__FUNCTION__."_".$id_worker.".log 2>&1 & echo $!";
             Debug::debug($cmd);
 
             $pids[] = trim(shell_exec($cmd));
         }
 
-        Debug::debug("Démarage des " . self::NB_WORKER . " workers terminé");
+        Debug::debug("Démarage des ".self::NB_WORKER." workers terminé");
         Debug::debug($pids, "PIDS");
         $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
 
 
-        Debug::debug($msg_qnum, "msg dans la liste d'attente : " . $msg_qnum);
+        Debug::debug($msg_qnum, "msg dans la liste d'attente : ".$msg_qnum);
 
 
-        $i = 0;
+        $i  = 0;
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             Debug::debug($ob, "ARRAY");
-
 
 
             //foreach ($keys as $key) {
             $i++;
 
             // Create dummy message object
-            $object = new stdclass;
+            $object         = new \stdclass;
             $object->server = $ob['id'];
-            $object->key = $id_ssh_key;
+            $object->key    = $id_ssh_key;
 
 
             Debug::debug($object, "MSG");
 
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
-                Debug::debug("Added to queue - msg n°" . $i);
+                Debug::debug("Added to queue - msg n°".$i);
                 // you can use the msg_stat_queue() function to see queue status
                 //print_r(msg_stat_queue($queue));
             } else {
@@ -453,7 +458,7 @@ AND b.is_available = 1;";
 
 
             sleep(2); // la queue est vide mais il faut prendre le temps de traité les msg
-            Debug::debug("Nombre de msg en attente : " . $msg_qnum);
+            Debug::debug("Nombre de msg en attente : ".$msg_qnum);
             if ($msg_qnum == 0) {
                 break;
             }
@@ -462,28 +467,29 @@ AND b.is_available = 1;";
 // kill des workers !
         foreach ($pids as $pid) {
 
-            $cmd = "kill " . $pid;
+            $cmd = "kill ".$pid;
             shell_exec($cmd);
         }
 
 
 
         if (!IS_CLI) {
-            header("location: " . LINK .$this->getClass(). "/index");
+            header("location: ".LINK.$this->getClass()."/index");
         }
     }
 
-    private function getSshKeys($id_ssh_key = "") {
+    private function getSshKeys($id_ssh_key = "")
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $where = "";
 
         if (!empty($id_ssh_key)) {
-            $where = " WHERE id = " . $id_ssh_key;
+            $where = " WHERE id = ".$id_ssh_key;
         }
 
 
-        $sql = "SELECT * FROM `ssh_key`" . $where;
+        $sql = "SELECT * FROM `ssh_key`".$where;
 
         $res = $db->sql_query($sql);
 
@@ -497,13 +503,14 @@ AND b.is_available = 1;";
         return $key;
     }
 
-    public function tryAssociate($param) {
+    public function tryAssociate($param)
+    {
 
         Debug::parseDebug($param);
 
 
         $id_mysql_server = $param[0];
-        $id_ssh_key = $param[1];
+        $id_ssh_key      = $param[1];
 
         Debug::debug($id_mysql_server, "SERVER");
         Debug::debug($id_ssh_key, "KEY");
@@ -514,7 +521,7 @@ AND b.is_available = 1;";
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM mysql_server WHERE id=" . $id_mysql_server . ";";
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_mysql_server.";";
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -522,7 +529,7 @@ AND b.is_available = 1;";
             $server = $arr;
         }
 
-        $sql2 = "SELECT * FROM ssh_key WHERE id=" . $id_ssh_key . ";";
+        $sql2 = "SELECT * FROM ssh_key WHERE id=".$id_ssh_key.";";
         Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
         while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
@@ -553,7 +560,7 @@ AND b.is_available = 1;";
         }
 
         $msg = ($login_successfull) ? "Successfull" : "Failed";
-        $ret = "Connection to server (" . $server['display_name'] . " " . $server['ip'] . ":22) : " . $msg;
+        $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
 
         $this->logger->info($ret);
         Debug::debug($ret);
@@ -566,11 +573,11 @@ AND b.is_available = 1;";
 
             Debug::debug($server['ip'], "Login Successfull");
 
-            $data = array();
+            $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
-            $data['link__mysql_server__ssh_key']['id_ssh_key'] = $key['id'];
-            $data['link__mysql_server__ssh_key']['added_on'] = date('Y-m-d H:i:s');
-            $data['link__mysql_server__ssh_key']['active'] = 1;
+            $data['link__mysql_server__ssh_key']['id_ssh_key']      = $key['id'];
+            $data['link__mysql_server__ssh_key']['added_on']        = date('Y-m-d H:i:s');
+            $data['link__mysql_server__ssh_key']['active']          = 1;
 
 
             $db->sql_save($data);
@@ -579,24 +586,26 @@ AND b.is_available = 1;";
         }
     }
 
-    public function display_public($param) {
+    public function display_public($param)
+    {
         $id_ssh_key = $param[0];
 
-        $this->view = false;
+        $this->view        = false;
         $this->layout_name = false;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "select public_key from ssh_key where id =" . $id_ssh_key;
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "select public_key from ssh_key where id =".$id_ssh_key;
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            echo Chiffrement::decrypt($ob->public_key) . "\n";
+            echo Chiffrement::decrypt($ob->public_key)."\n";
         }
     }
 
-    public function test_key($param) {
+    public function test_key($param)
+    {
         Debug::parseDebug($param);
 
 
@@ -631,7 +640,8 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         Debug::debug($ret);
     }
 
-    public function test2_key($param) {
+    public function test2_key($param)
+    {
         Debug::parseDebug($param);
 
 
@@ -640,15 +650,16 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         Debug::debug($ret);
     }
 
-    public function generate($param) {
+    public function generate($param)
+    {
 
-        $this->view = false;
+        $this->view        = false;
         $this->layout_name = false;
 
         Debug::parseDebug($param);
 
         $type = $param[0];
-        $bit = $param[1];
+        $bit  = $param[1];
 
 
         $key = SshLib::generate($type, $bit);
@@ -656,7 +667,6 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
         echo json_encode($key);
     }
-
     /*
      * (PmaControl 1.3.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -679,7 +689,8 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
       Please ensure to follow a good programming style and close/free all your message queues before your script exits to avoid those warning messages.
      */
 
-    public function workerAssociate($param) {
+    public function workerAssociate($param)
+    {
 
         Debug::parseDebug($param);
 
@@ -687,11 +698,11 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
         $queue = msg_get_queue(self::KEY_WORKER_ASSOCIATE);
 
-        $msg_type = NULL;
-        $msg = NULL;
+        $msg_type     = NULL;
+        $msg          = NULL;
         $max_msg_size = 20480;
 
-        $data = array();
+        $data        = array();
         $data['pid'] = $pid;
 
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
@@ -711,8 +722,9 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         }
     }
 
-    public function edit($param) {
-        $id_ssh_key = $param[0];
+    public function edit($param)
+    {
+        $id_ssh_key            = $param[0];
         $_GET['ssh_key']['id'] = $id_ssh_key;
 
         $this->add(array());
@@ -724,32 +736,32 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
         $id_ssh_key = $param[0];
 
-        $this->title = '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>' . " " . __("Edit a key SSH");
+        $this->title = '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>'." ".__("Edit a key SSH");
 
 
         if (!empty($id_ssh_key)) {
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id = " . $id_ssh_key;
+            $sql = "SELECT * FROM ssh_key WHERE id = ".$id_ssh_key;
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $_SESSION['ssh_key']['private_key'] = Chiffrement::decrypt($ob->private_key);
-                $_SESSION['ssh_key']['public_key'] = Chiffrement::decrypt($ob->public_key);
-                $_GET['ssh_key']['user'] = $ob->user;
-                $_GET['ssh_key']['name'] = $ob->name;
-                $_GET['ssh_key']['id'] = $ob->id;
+                $_SESSION['ssh_key']['public_key']  = Chiffrement::decrypt($ob->public_key);
+                $_GET['ssh_key']['user']            = $ob->user;
+                $_GET['ssh_key']['name']            = $ob->name;
+                $_GET['ssh_key']['id']              = $ob->id;
             }
         }
     }
 
-    public function testKey() {
+    public function testKey()
+    {
 
         $ret = SshLib::isValid("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAiS5y3TqYkl3061DXTVmL3p1sGnfBt5sJNOF5te1L/o PmaControl");
 
         debug($ret);
     }
-
 }
