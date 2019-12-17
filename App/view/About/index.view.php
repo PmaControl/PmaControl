@@ -21,7 +21,7 @@
 <ul>
     <li>Product Version: <b><?= SITE_NAME ?> <?= SITE_VERSION ?></b> (Build 123d00eab1c5d13e8f8d071e430e4369d8cb5c7b)</li>
     <li>Lisense: <b><a href="http://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL v3</a></b></li>
-    <li>Made in <b>FRANCE</b></li>
+    <li>Made in <b>🇫🇷 FRANCE</b></li>
 </ul>
 
 <h3>Dependencies</h3>
@@ -39,7 +39,7 @@
 
 <h3>Powered by</h3>
 <ul>
-    <li><img src="<?= IMG ?>main/esysteme.jpg" height="32" width="32" /><b>68 Koncept</b> (<a href="http://www.68koncept.com">www.esysteme.com</a>)</li>
+    <li><img src="<?= IMG ?>main/esysteme.jpg" height="32" width="32" /><b>68 Koncept</b> (<a href="http://www.68koncept.com">www.68koncept.com</a>)</li>
     <li>Author : <b>Aurélien LEQUOY</b></li>
     <!--<li>Email : <b><a href="mailto:pmacontrol@esysteme.com">pmacontrol@esysteme.com</a></b></li>-->
 </ul>

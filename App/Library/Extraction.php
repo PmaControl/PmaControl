@@ -7,6 +7,9 @@
 
 namespace App\Library;
 
+
+use \Glial\Sgbd\Sgbd;
+
 class Extraction
 {
 
@@ -28,6 +31,10 @@ class Extraction
           debug($server);
           debug($date);
          */
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        
         if (empty($server)) {
             $server = self::getServerList();
         }
@@ -159,7 +166,7 @@ class Extraction
 
         //echo \SqlFormatter::format($sql3)."\n";
 
-        $res2 = self::$db->sql_query($sql3);
+        $res2 = $db->sql_query($sql3);
 
         return $res2;
     }
@@ -168,14 +175,16 @@ class Extraction
     {
 
 
+        $db = Sgbd::sql(DB_DEFAULT);
+
         if (empty(self::$server)) {
             $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
 
             //debug($sql);
-            $res = self::$db->sql_query($sql);
+            $res = $db->sql_query($sql);
 
             $server = array();
-            while ($ob     = self::$db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            while ($ob     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $server[]       = $ob['id'];
                 self::$server[] = $ob;
             }
@@ -192,11 +201,14 @@ class Extraction
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
         $res = self::extract($var, $server, $date, $range, $graph);
 
 
         $table = array();
-        while ($ob    = self::$db->sql_fetch_object($res)) {
+        while ($ob    = $db->sql_fetch_object($res)) {
 
             //debug(self::$variable[$ob->id_ts_variable]);
 
@@ -217,6 +229,9 @@ class Extraction
 
     static public function getIdVariable($var)
     {
+        $db = Sgbd::sql(DB_DEFAULT);
+        
+
         $sqls = array();
         foreach ($var as $val) {
             $split = explode("::", $val);
@@ -241,12 +256,12 @@ class Extraction
 
         $sql = implode(' UNION ALL ', $sqls);
 
-        $res = self::$db->sql_query($sql);
+        $res = $db->sql_query($sql);
 
         //echo \SqlFormatter::format($sql)."\n";
         $from     = array();
         $variable = array();
-        while ($ob       = self::$db->sql_fetch_object($res)) {
+        while ($ob       = $db->sql_fetch_object($res)) {
             self::$variable[$ob->id]['name']                 = $ob->name;
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
             //$radical                              = $ob->radical;
@@ -273,7 +288,7 @@ class Extraction
     {
         $res   = self::extract($var, $server, $date  = "", $range, true);
         $graph = array();
-        while ($ar    = self::$db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($ar    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $graph[$ar['id_mysql_server']] = $ar;
         }
 

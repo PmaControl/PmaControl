@@ -330,6 +330,9 @@ if (!empty($data['servers'])) {
               echo $m." minutes\n"; */
         }
 
+
+        $data['last_date'][$server['id']]['date'] = $data['last_date'][$server['id']]['date'] ?? "";
+
         $date1   = strtotime($data['last_date'][$server['id']]['date']);
         $date2   = time();
         $subTime = $date2 - $date1;

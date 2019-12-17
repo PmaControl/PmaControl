@@ -16,7 +16,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Daemon extends Controller
 {
-    var $daemon = array(7, 10, 11, 12, 5);
+    var $daemon = array(7, 9, 11, 12, 5);
 
     public function index()
     {
