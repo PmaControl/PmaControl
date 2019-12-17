@@ -52,7 +52,7 @@ class Ssh
         Debug::Debug($user, "user");
         Debug::Debug($password, "password / private key");
 
-        $ssh = new SSH2($ip);
+        $ssh = new SSH2($ip, $port, 30);
         $rsa = new RSA();
 
         $login_successfull = true;
@@ -193,9 +193,9 @@ class Ssh
 
         $start = microtime(true);
 
-        $sftp = new SFTP($server.":".$port);
-        $ssh  = new SSH2($server.":".$port);
-        $rsa  = new RSA();
+        $sftp = new SFTP($server,$port);
+        $ssh  = new SSH2($server,$port);
+     
 
 
         // priorité a la clef privé si les 2 sont remplie
@@ -278,10 +278,14 @@ class Ssh
           INNER JOIN ssh_key c ON b.id_ssh_key = c.id
           WHERE `active` = 1";
 
+            Debug::sql($sql);
+
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 self::$server[$ob['id']] = $ob;
+
+                
             }
         }
 

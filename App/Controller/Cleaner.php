@@ -1322,6 +1322,8 @@ var myChart = new Chart(ctx, {
 
         $nbline = $db->sql_num_rows($res2);
 
+        $recursive = false;
+
         if ($nbline == 1) {
             $recursive = true;
 
@@ -1394,6 +1396,13 @@ var myChart = new Chart(ctx, {
                 Debug::debug($sql);
                 $db->sql_query($sql);
                 $this->setAffectedRows($this->main_table);
+
+                  if ($recursive === false) {
+                      break;
+                  }
+
+
+
                 //$this->exportToFile($this->main_table);
                 //
             } else {
@@ -1436,6 +1445,8 @@ var myChart = new Chart(ctx, {
 
 
         if (!empty($this->rows_to_delete[$this->main_table])) {
+            
+           
             $this->delete_rows();
         }
 
@@ -2026,7 +2037,7 @@ var myChart = new Chart(ctx, {
                   INNER JOIN `".$this->schema_delete."`.".$this->prefix.$table." as b ON  ".implode(" AND ", $join); // LIMIT 50000
 
                     if ($circular) {
-                        $sql .= " WHERE `".self::FIELD_LOOP."`=".$loop.";";
+                        $sql .= " WHERE `".self::FIELD_LOOP."`=".$loop;
                     }
                     $sql .= ";";
 

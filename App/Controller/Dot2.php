@@ -777,9 +777,10 @@ class Dot2 extends Controller {
 
     private function nodeHead($display_name, $id_mysql_server) {
 
-        $backup = '&#x25A1;';
+
+        $backup = '&#x2610;';
         if (in_array($id_mysql_server, $this->getServerBackuped($id_mysql_server))) {
-            $backup = '&#9635;';
+            $backup = '&#x2611;';
         }
 
         $line = '<tr><td bgcolor="black" color="white" align="center"><font color="white">' . $display_name . ' ' . $backup . '</font></td></tr>';

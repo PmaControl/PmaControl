@@ -1354,3 +1354,16 @@ td.line-edit{ligne-height:50px; }
   font-size: 13px;}
 .diff-wrapper td.old{width:47%;font-family: monospace;
   font-size: 13px;}
+
+
+
+
+/**********
+sql-formater
+*/
+
+
+.sql-keyword{font-weight: 700; color: #00f}
+.sql-reserved{font-weight: 700; color: #000}
+.sql-variable{color: green}
+.sql-string{color: #999}

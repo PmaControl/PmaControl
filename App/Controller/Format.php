@@ -9,7 +9,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use \Glial\Sgbd\Sgbd;
+
 
 
 class Format extends Controller {
@@ -34,9 +34,9 @@ class Format extends Controller {
 
             $data['sql'] = $_SESSION[$param[0]];
 
-            $queries = \SqlFormatter::splitQuery($_SESSION[$param[0]]);
+            $data['$queries']  = \SqlFormatter::splitQuery($data['sql']);
 
-            foreach ($queries as $query) {
+            foreach ($data['$queries'] as $query) {
                 $data['sql_formated'][] = \SqlFormatter::format($query);
             }
 
