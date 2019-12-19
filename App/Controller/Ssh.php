@@ -127,7 +127,10 @@ class Ssh extends Controller
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."'";
+
+            $_POST['ssh_key']['user'] = $_POST['ssh_key']['user'] ?? '';
+
+            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."' and user = '".$_POST['ssh_key']['user']."'";
             $res = $db->sql_query($sql);
 
             $data            = array();
@@ -358,7 +361,7 @@ class Ssh extends Controller
 FROM mysql_server a
 INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
 WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
-SELECT b.id FROM mysql_server b, ssh_key c
+SELECT b.id,b.ssh_port FROM mysql_server b, ssh_key c
 WHERE c.id in (".$id_ssh_key.")
 AND b.id NOT IN (select id from z)
 AND b.is_available = 1;";
@@ -521,7 +524,7 @@ AND b.is_available = 1;";
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM mysql_server WHERE id=".$id_mysql_server.";";
+        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -529,7 +532,7 @@ AND b.is_available = 1;";
             $server = $arr;
         }
 
-        $sql2 = "SELECT * FROM ssh_key WHERE id=".$id_ssh_key.";";
+        $sql2 = "SELECT * FROM `ssh_key` WHERE `id`=".$id_ssh_key.";";
         Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
         while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
@@ -537,8 +540,15 @@ AND b.is_available = 1;";
         }
 
 
-        $ssh = new SSH2($server['ip']);
+        $ip_port = $server['ip'].':'.$server['ssh_port'];
+
+
+        $ssh = new SSH2($server['ip'], $server['ssh_port']);
         $rsa = new RSA();
+
+
+        Debug::debug($ssh->host, "IP");
+        Debug::debug($ssh->port, "Port");
 
         $login_successfull = true;
 
@@ -548,30 +558,33 @@ AND b.is_available = 1;";
 
         if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
-            Debug::debug($server['ip'], "private key loading failed!");
+            Debug::debug($ip_port, "private key loading failed!");
 
             return false;
         }
 
+        Debug::debug($key['user'], "User");
 
         if (!$ssh->login($key['user'], $rsa)) {
-            Debug::debug($server['ip'], "Login Failed");
+            Debug::debug($key['user'], "Login Failed");
             $login_successfull = false;
+
+
+            //Debug($ssh, "ssh");
         }
 
+
+
         $msg = ($login_successfull) ? "Successfull" : "Failed";
-        $ret = "Connection to server (".$server['display_name']." ".$server['ip'].":22) : ".$msg;
+        $ret = "Connection to server (".$server['display_name']." ".$ip_port.") : ".$msg;
 
         $this->logger->info($ret);
         Debug::debug($ret);
 
 
-
-
-
         if ($login_successfull === true) {
 
-            Debug::debug($server['ip'], "Login Successfull");
+            Debug::debug($ip_port, "Login Successfull");
 
             $data                                                   = array();
             $data['link__mysql_server__ssh_key']['id_mysql_server'] = $server['id'];
@@ -582,7 +595,7 @@ AND b.is_available = 1;";
 
             $db->sql_save($data);
         } else {
-            Debug::debug($server['ip'], "Login Failed");
+            Debug::debug($ip_port, "Login Failed");
         }
     }
 
@@ -763,5 +776,38 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         $ret = SshLib::isValid("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAiS5y3TqYkl3061DXTVmL3p1sGnfBt5sJNOF5te1L/o PmaControl");
 
         debug($ret);
+    }
+
+    public function testPort($param)
+    {
+        Debug::parseDebug($param);
+
+
+        define('NET_SSH2_LOGGING', true);
+
+        $ssh = new SSH2('172.16.131.89', 37057);
+
+
+        $key = new RSA();
+        $key->loadKey(file_get_contents("/root/.ssh/id_ecdsa"));
+
+        Debug::debug($key, 'clef');
+
+        if (!$ssh->login('root_dsi', $key)) {
+
+
+            //Debug::debug($ssh);
+            echo $ssh->exec('ls -la');
+
+            Debug::debug($ssh->getLog(), "getLog");
+            exit('Login Failed'."\n");
+        }
+        else
+        {
+            exit('OK'."\n");
+        }
+
+        echo $ssh->exec('pwd');
+        echo $ssh->exec('ls -la');
     }
 }

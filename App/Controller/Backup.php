@@ -44,6 +44,8 @@ class Backup extends Controller {
      * mount -t nfs -o $mount_options $nfs_source $mount_point"
      *  mysql -h 127.0.0.1 -u user -p INFORMATION_SCHEMA --skip-column-names --batch -e "select table_name from tables where table_type = 'VIEW' and table_schema = 'mall'" | xargs mysqldump -h dgfjhdg -u user -p db > views.sql
      *
+     * mydumper --less-locking --triggers --events --routines -o /var/backups/automydumper/test -v 3 --use-savepoints --threads 4 --compress --user=root
+     *
      */
 
 //use \Glial\Neuron\Controller\PmaCliBackup;

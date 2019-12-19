@@ -7,7 +7,6 @@ use \App\Library\Debug;
 use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
-
 class Covage extends Controller
 {
     /*
@@ -71,15 +70,14 @@ class Covage extends Controller
     var $tables = array('CrStoc');
     //  NotifReprovisionning  flux_commande_acces
 
-    var $primary_key  = array('');
-    var $diff         = array('');
-    var $table_rename = array('action','cassette','cassette_modele','cassette_modele_equipement_modele','champs','commande_acces','constructeur','corbeille','couleur',
-        'couleur_table_couleur','droit','emplacement_cassette','enregistrement','etape','extraction','fibre','HistoriqueOntEligibilite','ipe','lien_optique','lien_route_optique',
-        'objet','OntEligibilite','otelligibiliteservice','parametres','planning','port','reporting','reporting_data','reseau_users',
-        'service_corbeille','table_couleur','type_cable','type_erreur','type_lien_optique','valeur', 'type_planning');
-
+    var $primary_key    = array('');
+    var $diff           = array('');
+    var $table_rename   = array('action', 'cassette', 'cassette_modele', 'cassette_modele_equipement_modele', 'champs', 'commande_acces', 'constructeur', 'corbeille', 'couleur',
+        'couleur_table_couleur', 'droit', 'emplacement_cassette', 'enregistrement', 'etape', 'extraction', 'fibre', 'HistoriqueOntEligibilite', 'ipe', 'lien_optique', 'lien_route_optique',
+        'objet', 'OntEligibilite', 'otelligibiliteservice', 'parametres', 'planning', 'port', 'reporting', 'reporting_data', 'reseau_users',
+        'service_corbeille', 'table_couleur', 'type_cable', 'type_erreur', 'type_lien_optique', 'valeur', 'type_planning');
     var $table_rollback = array('task');
-    
+
     public function creationTableSpider()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -395,6 +393,31 @@ class Covage extends Controller
             Debug::sql($sql);
 
             $db->sql_query($sql);
+        }
+    }
+
+    public function convertToUtf8($param)
+    {
+
+        $id_mysql_server = $param[0];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+
+        $sql = "SELECT concat('ALTER TABLE ',table_schema,'.',table_name,' CONVERT TO CHARACTER SET utf8 collate utf8_unicode_ci;') as gg, table_collation , table_schema, table_name "
+            ."FROM information_schema.tables where table_schema NOT IN ('mysql','information_schema', 'performance_schema') "
+            ."and TABLE_TYPE='BASE TABLE' and TABLE_COLLATION != 'utf8_unicode_ci' "
+            ."order by TABLE_SCHEMA, TABLE_COLLATION";
+
+
+        $res = $db->sql_query($sql);
+
+        $i  = 0;
+        while ($ob = $db->sql_fetch_object($res)) {
+            //echo "[".$ob->table_collation."]\t";
+            $i++;
+            echo "SELECT '[#".$i." ".$ob->table_collation."] ".$ob->table_schema.".".$ob->table_name."';\n";
+            echo $ob->gg."\n";
         }
     }
 }
