@@ -15,7 +15,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Mysql
 {
-    static $db;
+
     static $return;
 
     static function exportAllUser($db_link)
@@ -56,20 +56,23 @@ class Mysql
         return $users;
     }
 
-    static public function onAddMysqlServer($db)
+    static public function onAddMysqlServer()
     {
 
-        self::addMaxDate($db);
-        self::generateMySQLConfig($db);
+
+        self::addMaxDate();
+        self::generateMySQLConfig();
 
 //stopAll daemon
 //startAll daemon
     }
 
-    static public function generateMySQLConfig($db)
+    static public function generateMySQLConfig()
     {
 
-        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM mysql_server a ORDER BY id";
         $res = $db->sql_query($sql);
 
         $config = ';[name_of_connection] => will be acceded in framework with $this->di[\'db\']->sql(\'name_of_connection\')->method()
@@ -107,8 +110,11 @@ class Mysql
         }
     }
 
-    static public function addMaxDate($db, $id_mysql_server = '')
+    static public function addMaxDate($id_mysql_server = '')
     {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
         $sql1 = "select * from ts_file;";
         $res1 = $db->sql_query($sql1);
 
@@ -136,10 +142,10 @@ class Mysql
         }
     }
 
-    static public function getMaster($db, $id_mysql_server, $connection_name = '')
+    static public function getMaster($id_mysql_server, $connection_name = '')
     {
 
-        Extraction::setDb($db);
+        $db = Sgbd::sql(DB_DEFAULT);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
 
         $all_masters = array();
@@ -161,15 +167,15 @@ class Mysql
         return 0;
     }
 
-    static public function getDbLink($id_mysql_server, $link = DB_DEFAULT)
+    static public function getDbLink($id_mysql_server)
     {
-        /*
+        
 
-        if (!is_int(($id_mysql_server))) {
-            throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
-        }*/
+          if (!is_int(intval($id_mysql_server))) {
+          throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
+          } 
 
-        $dblink = Sgbd::sql($link);
+        $dblink = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
         $res = $dblink->sql_query($sql);
@@ -185,7 +191,7 @@ class Mysql
     {
         Debug::debug($data);
 
-        $db     = self::$db;
+        $db = Sgbd::sql(DB_DEFAULT);
         //debug($data);
         $server = array();
 

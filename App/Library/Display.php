@@ -7,16 +7,16 @@
 
 namespace App\Library;
 
+
+use \Glial\Sgbd\Sgbd;
+
 class Display
 {
-    static $db;
+    
 
     static $server = array();
 
-    static public function setDb($db)
-    {
-        self::$db = $db;
-    }
+
 
     static public function server($arr)
     {
@@ -26,6 +26,8 @@ class Display
 
     static public function srv($id_mysql_server)
     {
+        $db = Sgbd::sql(DB_DEFAULT);
+        
         if (empty(self::$server))
         {
 
@@ -34,15 +36,14 @@ class Display
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id";
 
-            $res = self::$db->sql_query($sql);
+            $res = $db->sql_query($sql);
 
-            while($arr = self::$db->sql_fetch_array($res, MYSQLI_ASSOC))
+            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
             {
                 self::$server[$arr['id_mysql_server']] = $arr;
             }
 
         }
-
 
         return '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
             .' <a href="">'.self::$server[$id_mysql_server]['display_name'].'</a> <small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small>';

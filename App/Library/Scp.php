@@ -13,6 +13,8 @@ use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
+
 
 trait Scp {
 

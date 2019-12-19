@@ -63,6 +63,9 @@ class System
         $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*",
             "variable" => "/dev/shm/variable_*", "worker" => "/dev/shm/worker");
 
+
+        $files_to_delete = array();
+
         if (!empty($file)) {
             if (!empty($to_delete[$file])) {
                 $files_to_delete[] = $to_delete[$file];
