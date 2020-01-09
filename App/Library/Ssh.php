@@ -10,13 +10,20 @@ namespace App\Library;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
-use \App\Library\Chiffrement;
 use \App\Library\Debug;
+use \Glial\Security\Crypt\Crypt;
+use \Glial\Sgbd\Sgbd;
 
 class Ssh
 {
-
-    static $ssh;
+    /*
+     * les connection active ssh
+     */
+    static $ssh    = array();
+    /*
+     * Server with active ssh key 
+     */
+    static $server = array();
 
     static function formatPrivateKey($key)
     {
@@ -27,21 +34,25 @@ class Ssh
 
         return $key;
     }
+    /*
+     * 
+     * return un objet de type phpseclib\Net\SSH2
+     */
 
     static function connect($ip, $port = 22, $user, $password)
     {
 
         /*
-        $debug = Debug::$debug;
-        Debug::$debug = false;
-        */
+          $debug = Debug::$debug;
+          Debug::$debug = false;
+         */
 
         Debug::Debug($ip, "ip");
         Debug::Debug($port, "port");
         Debug::Debug($user, "user");
         Debug::Debug($password, "password / private key");
 
-        $ssh = new SSH2($ip);
+        $ssh = new SSH2($ip, $port, 30);
         $rsa = new RSA();
 
         $login_successfull = true;
@@ -62,21 +73,15 @@ class Ssh
         if (!$ssh->login($user, $rsa)) {
             Debug::debug("Login Failed");
             $login_successfull = false;
+            return false;
         }
 
-        $msg = ($login_successfull) ? "Successfull" : "Failed";
-        $ret = "Connection to server (".$ip.":22) : ".$msg;
-
-        Debug::debug($ret);
-
-        self::$ssh = $ssh;
-
-
-        //Debug::$debug = $debug;
-
+        if ($login_successfull === true) {
+            return $ssh;
+        } else {
+            return false;
+        }
         //Debug::debug($ssh->exec("ls -l"), "ls -l");
-
-        return $login_successfull;
     }
 
     static function close()
@@ -188,9 +193,9 @@ class Ssh
 
         $start = microtime(true);
 
-        $sftp = new SFTP($server.":".$port);
-        $ssh  = new SSH2($server.":".$port);
-        $rsa  = new RSA();
+        $sftp = new SFTP($server,$port);
+        $ssh  = new SSH2($server,$port);
+     
 
 
         // priorité a la clef privé si les 2 sont remplie
@@ -235,13 +240,59 @@ class Ssh
         return false;
     }
 
-
     static function spaceAvailable($param)
     {
+        
+    }
 
+    static function ssh($id_mysql_server)
+    {
+        $server = self::getSsh($id_mysql_server);
 
+        if ($server === false) {
+            return false;
+        }
 
+        $ssh = self::connect($server['ip'], $server['port'], $server['user'], Crypt::decrypt($server['private_key'], CRYPT_KEY));
 
         
+
+        if ($ssh) {
+
+            Debug::debug($ssh->exec("ls -l"), "ls -l");
+
+            self::$ssh[$id_mysql_server] = $ssh;
+            return $ssh;
+        }
+
+        return false;
+    }
+
+    static function getSsh($id_mysql_server)
+    {
+        if (empty(self::$server[$id_mysql_server])) {
+
+            $db  = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT a.id, a.ip, c.user, a.ssh_port as port,c.public_key,c.private_key, c.type, c.fingerprint   FROM mysql_server a
+          LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
+          INNER JOIN ssh_key c ON b.id_ssh_key = c.id
+          WHERE `active` = 1";
+
+            Debug::sql($sql);
+
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                self::$server[$ob['id']] = $ob;
+
+                
+            }
+        }
+
+        if (empty(self::$server[$id_mysql_server])) {
+            return false;
+        }
+
+        return self::$server[$id_mysql_server];
     }
 }

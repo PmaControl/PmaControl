@@ -9,6 +9,7 @@ echo '<th>'.__("ID").'</th>';
 echo '<th>'.__("Available SSH").'</th>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>'.__("Hostname").'</th>';
+echo '<th>'.__("User").'</th>';
 echo '<th>'.__("IP").'</th>';
 
 
@@ -32,6 +33,9 @@ foreach ($data['servers'] as $server) {
     $i++;
 
 
+    $hardware = $data['hardware'][$server['id']][''];
+
+
     /*
       if (empty($server['operating_system'])) {
       continue;
@@ -44,31 +48,34 @@ foreach ($data['servers'] as $server) {
     }
 
 
-    echo '<tr>';
+    $hardware['cpu_thread_count'] = $hardware['cpu_thread_count'] ?? "n/a";
+
+    echo '<tr class="alternate">';
     echo '<td style="'.$style.'">'.$i.'</td>';
     echo '<td style="'.$style.'">'.$server['id'].'</td>';
     echo '<td style="'.$style.'">';
     echo '<span class="glyphicon '.($server['ssh_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
     echo '</td>';
-    echo '<td style="'.$style.'">'.str_replace('_', '-', $server['name']).'</td>';
-    echo '<td style="'.$style.'">'.$server['hostname'].'</td>';
-    echo '<td style="'.$style.'">'.$server['ip'].'</td>';
+    echo '<td style="'.$style.'">'. $server['display_name'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['hostname'].'</td>';
+    echo '<td style="'.$style.'">'."root".'</td>';
+    echo '<td style="'.$style.'">'.$server['ip'].':'.$server['ssh_port'].'</td>';
     echo '<td style="'.$style.'">';
 
-    if (!empty($server['distributor'])) {
-        echo '<img src="'.IMG.'/os/'.strtolower($server['distributor']).'.png" alt="['.$server['distributor'].']" title="'.$server['distributor'].'" style="width:16px;height:16px;vertical-align:middle;"> ';
+    if (!empty($hardware['distributor'])) {
+        echo '<img src="'.IMG.'/os/'.strtolower($hardware['distributor']).'.png" alt="['.$hardware['distributor'].']" title="'.$hardware['distributor'].'" style="width:16px;height:16px;vertical-align:middle;"> ';
     }
 
     
-    echo $server['operating_system'].'</td>';
-    echo '<td style="'.$style.'">'.$server['product_name'].'</td>';
-    $class = ("i686" == $server['arch']) ? "error" : "";
-    echo '<td style="'.$style.'" class="'.$class.'">'.$server['arch'].'</td>';
-    echo '<td style="'.$style.'">'.$server['kernel'].'</td>';
-    echo '<td style="'.$style.'">'.$server['processor'].'</td>';
-    echo '<td style="'.$style.'">'.$server['cpu_mhz'].'</td>';
-    echo '<td style="'.$style.'">'.round($server['memory_kb'] / 1024 / 1024, 2).' Go</td>';
-    echo '<td style="'.$style.'">'.$server['swappiness'].' </td>';
+    echo $hardware['os'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['product_name'].'</td>';
+    $class = ("i686" == $hardware['arch']) ? "error" : "";
+    echo '<td style="'.$style.'" class="'.$class.'">'.$hardware['arch'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['kernel'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['cpu_thread_count'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['cpu_frequency'].'</td>';
+    echo '<td style="'.$style.'">'.$hardware['memory'] .'</td>';
+    echo '<td style="'.$style.'">'.$hardware['swapiness'].' </td>';
     //echo '<td style="' . $style . '">' . round(0.75 * $server['processor'] * ($server['cpu_mhz'] / 1024) + 0.5 * ($server['memory_kb'] / 1024 / 1024), 2) . '</td>';
 
 

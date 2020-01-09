@@ -1797,4 +1797,10 @@ class Mysql extends Controller
 
         return "#".$color;
     }
+
+    public function bb()
+    {
+
+        Mysql2::generateMySQLConfig(Sgbd::sql(DB_DEFAULT));
+    }
 }

@@ -4,17 +4,20 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+
 //require ROOT."/application/library/Filter.php";
 
-class Architecture extends Controller {
+class Architecture extends Controller
+{
 
     use \App\Library\Filter;
 
-    public function index() {
+    public function index()
+    {
 
-        $this->title = '<i class="fa fa-object-group"></i> ' . __("Architecture");
-        $this->ariane = ' > <a href⁼"">' . '<span class="glyphicon glyphicon glyphicon-home" style="font-size:12px"></span> '
-                . __("Dashboard") . '</a> > <i class="fa fa-object-group" style="font-size:14px"></i> ' . __("Architecture");
+        $this->title  = '<i class="fa fa-object-group"></i> '.__("Architecture");
+        $this->ariane = ' > <a href⁼"">'.'<span class="glyphicon glyphicon glyphicon-home" style="font-size:12px"></span> '
+            .__("Dashboard").'</a> > <i class="fa fa-object-group" style="font-size:14px"></i> '.__("Architecture");
 
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -22,7 +25,7 @@ class Architecture extends Controller {
         $sql = "SELECT c.id,c.display,c.height,c.`date`, b.id_architecture FROM mysql_server a
             INNER JOIN link__architecture__mysql_server b ON a.id = b.id_mysql_server
             INNER JOIN architecture c ON c.id = b.id_architecture
-            WHERE 1 " . $this->getFilter() . " AND c.height > 8 GROUP BY c.id ORDER BY c.height DESC,c.width DESC ";
+            WHERE 1 ".$this->getFilter()." AND c.height > 8 GROUP BY c.id ORDER BY c.height DESC,c.width DESC ";
 
 
         //@TODO c.height > 8   => to fix on register table architecture on Dot
@@ -41,5 +44,4 @@ class Architecture extends Controller {
 
         $this->set('data', $data);
     }
-
 }
