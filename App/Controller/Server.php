@@ -11,7 +11,6 @@ use \App\Library\Mysql;
 use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
 
-
 class Server extends Controller {
 
     use \App\Library\Filter;
@@ -24,41 +23,41 @@ class Server extends Controller {
         $this->title = __("Hardware");
         $this->ariane = " > " . $this->title;
 
-
-        
-
         $data['hardware'] = Extraction::display(array("hardware::cpu_thread_count",
-            "hardware::cpu_frequency",
-            "hardware::memory",
-            "hardware::distributor",
-            "hardware::os",
-            "hardware::codename",
-            "hardware::product_name",
-            "hardware::arch",
-            "hardware::kernel",
-            "hardware::hostname",
-            "hardware::swapiness"
-            ));
-
-
-        //debug($data['hardware']);
+                    "hardware::cpu_frequency",
+                    "hardware::memory",
+                    "hardware::distributor",
+                    "hardware::os",
+                    "hardware::codename",
+                    "hardware::product_name",
+                    "hardware::arch",
+                    "hardware::kernel",
+                    "hardware::hostname",
+                    "hardware::swapiness"
+        ));
 
         $id_mysql_servers = array_keys($data['hardware']);
 
 
-        $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
+        if (!empty($id_mysql_servers)) {
+
+            $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
             FROM mysql_server a
             
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
          WHERE 1 " . self::getFilter() . "
-             AND a.id in (".implode(",", $id_mysql_servers).")
+             AND a.id in (" . implode(",", $id_mysql_servers) . ")
          order by `name`;";
 
 //echo SqlFormatter::format($sql);
 
-        $data['servers'] = $db->sql_fetch_yield($sql);
+            $data['servers'] = $db->sql_fetch_yield($sql);
+        } else {
+            $data['servers'] = array();
+        }
+
 
         $this->set('data', $data);
     }
@@ -199,11 +198,11 @@ class Server extends Controller {
     public function main() {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        
+
         //$this->title  = __("Dashboard");
         $this->ariane = " > " . $this->title;
 
-        
+
         $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
@@ -228,7 +227,7 @@ class Server extends Controller {
 
 //debug($servers);
 
-        Extraction::setDb($db);
+        
         $data['extra'] = Extraction::display(array("version", "hostname", "server::ping", "general_log"));
 
 
@@ -288,7 +287,7 @@ class Server extends Controller {
 
 
 //echo \SqlFormatter::format($sql);
-        Extraction::setDb($db);
+        
 
         $data['servers'] = Extraction::display(array("status::com_select", "status::com_update", "status::com_insert", "status::com_delete",
                     "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
@@ -355,7 +354,7 @@ class Server extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        Extraction::setDb($db);
+        
         $data['variables'] = Extraction::display(array("variables::innodb_buffer_pool_size", "variables::innodb_additional_mem_pool_size",
                     "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
                     "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
@@ -380,7 +379,7 @@ class Server extends Controller {
 })');
 
 
-        Extraction::setDb($db);
+        
 
 
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
@@ -487,7 +486,7 @@ class Server extends Controller {
             if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])
             ) {
 
-                Extraction::setDb($db);
+                
                 $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), $_GET['ts_variable']['date']);
 
                 /*
@@ -913,7 +912,7 @@ var myChart = new Chart(ctx, {
     public function updateHostname() {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
+        
         $data['hostname'] = Extraction::display(array("variables::hostname"));
 
 
@@ -986,11 +985,11 @@ var myChart = new Chart(ctx, {
                     set_flash("success", "Success", "Password updated !");
 
 
-                    header("location: " . LINK .$this->getClass(). '/settings');
+                    header("location: " . LINK . $this->getClass() . '/settings');
                 } else {
                     set_flash("error", "Error", "Password not updated !");
 
-                    header("location: " . LINK .$this->getClass(). '/' . __FUNCTION__ . '/' . $id_server);
+                    header("location: " . LINK . $this->getClass() . '/' . __FUNCTION__ . '/' . $id_server);
                 }
             }
         }
@@ -1027,7 +1026,7 @@ var myChart = new Chart(ctx, {
         debug($sql);
         $db->sql_query($sql);
 
-        header("location: " . LINK .$this->getClass(). "/main/");
+        header("location: " . LINK . $this->getClass() . "/main/");
     }
 
     public function remove($param) {
@@ -1055,7 +1054,7 @@ var myChart = new Chart(ctx, {
             }
         }
 
-        header("location: " . LINK .$this->getClass(). "/settings/");
+        header("location: " . LINK . $this->getClass() . "/settings/");
     }
 
     public function acknowledgedBy($param) {
