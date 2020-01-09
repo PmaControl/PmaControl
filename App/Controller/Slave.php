@@ -30,7 +30,7 @@ class Slave extends Controller
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
 
-        Extraction::setDb($db);
+        
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
@@ -224,7 +224,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 
-        Extraction::setDb($db);
+        
 
         Extraction::setOption('groupbyday', true);
 
@@ -314,7 +314,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
+        
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));

@@ -379,7 +379,7 @@ class Aspirateur extends Controller
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
 
-        $data['processlist'] = $mysql_tested->getProcesslist(1);
+        //$data['processlist'] = $mysql_tested->getProcesslist(1);
 
         if ($var['variables']['log_bin'] === "ON") {
             $data['binlog'] = $this->binaryLog($mysql_tested);
