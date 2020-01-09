@@ -24,13 +24,36 @@ class Server extends Controller {
         $this->title = __("Hardware");
         $this->ariane = " > " . $this->title;
 
+
+        
+
+        $data['hardware'] = Extraction::display(array("hardware::cpu_thread_count",
+            "hardware::cpu_frequency",
+            "hardware::memory",
+            "hardware::distributor",
+            "hardware::os",
+            "hardware::codename",
+            "hardware::product_name",
+            "hardware::arch",
+            "hardware::kernel",
+            "hardware::hostname",
+            "hardware::swapiness"
+            ));
+
+
+        //debug($data['hardware']);
+
+        $id_mysql_servers = array_keys($data['hardware']);
+
+
         $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
             FROM mysql_server a
-                 INNER JOIN ssh_key e ON e.id = a.id_ssh_key
+            
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
          WHERE 1 " . self::getFilter() . "
+             AND a.id in (".implode(",", $id_mysql_servers).")
          order by `name`;";
 
 //echo SqlFormatter::format($sql);

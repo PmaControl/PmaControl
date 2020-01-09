@@ -26,7 +26,7 @@ class Binlog extends Controller {
 
     public function index() {
 
-        Display::setDb(Sgbd::sql(DB_DEFAULT));
+        
 
         $data = array();
         $this->set('data', $data);
@@ -104,7 +104,6 @@ class Binlog extends Controller {
 
 
 
-        Extraction::setDb($db);
         $res = Extraction::extract(array("variables::max_binlog_size"), array($id_mysql_server));
 
         $data = array();
@@ -146,11 +145,18 @@ class Binlog extends Controller {
 
 
         $data['max_bin_log'] = array();
+
+
+        $all_id_mysql_server = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
 
-            $remote = Mysql::getDbLink($db, $arr['id_mysql_server']);
-            $db_remote = Sgbd::sql($remote);
+            $all_id_mysql_server[] = $arr['id_mysql_server'];
+
+            
+
+            
+            $db_remote = Mysql::getDbLink($arr['id_mysql_server']);
 
 
             $res2 = $db_remote->sql_query("show binary logs;");
@@ -171,10 +177,15 @@ class Binlog extends Controller {
         }
 
 
+
+
+        $res = Extraction::extract(array("binlog::max_binlog_size"), $all_id_mysql_server);
+
+
         /* */
 
 
-        Extraction::setDb($db);
+        
         $res = Extraction::extract(array("variables::max_binlog_size"), $mysql_server);
 
 
