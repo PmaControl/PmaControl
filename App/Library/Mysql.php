@@ -305,11 +305,7 @@ class Mysql
         return $server;
     }
 
-    static public function set_db($db)
-    {
 
-        self::$db = $db;
-    }
     /*
      * to export in Glial::MySQL ?
      *
@@ -337,7 +333,7 @@ class Mysql
             $list_key = ",`".implode('`,`', $keys)."`";
             $list_val = ",'".implode("','", $values)."'";
         }
-        $db = self::get_db();
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "
 IF (SELECT 1 FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."') THEN
@@ -406,19 +402,12 @@ END IF;";
 //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
     }
 
-    public static function get_db()
-    {
-        if (!empty(self::$db)) {
-            return self::$db;
-        } else {
-            throw new \Exception('PMACTRL-274 : DB Mysql::set_db() is not instantiate');
-        }
-    }
+
 
     static public function isPmaControl($ip, $port)
     {
 
-        $db = self::get_db();
+        $db = Sgbd::sql(DB_DEFAULT);
 
 
         $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
@@ -489,7 +478,7 @@ END IF;";
             $list_key = ",`".implode('`,`', $keys)."`";
             $list_val = ",'".implode("','", $values)."'";
         }
-        $db = self::get_db();
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT `id` FROM `".$table_name."` WHERE `".$field."`='".$db->sql_real_escape_string($value)."';";
         $res = $db->sql_query($sql);
@@ -525,7 +514,7 @@ END IF;";
 
     static public function getServerInfo($id_mysql_server)
     {
-        $db = self::get_db();
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = $db->sql_query($sql);
