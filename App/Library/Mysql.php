@@ -276,7 +276,7 @@ class Mysql
 
                     Debug::debug($data['tag'], "Tags");
 
-                    Tag::set_db(self::$db);
+                    
 
 
 

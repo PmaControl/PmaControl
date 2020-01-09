@@ -199,9 +199,11 @@ class Server extends Controller {
     public function main() {
         $db = Sgbd::sql(DB_DEFAULT);
 
+        
         //$this->title  = __("Dashboard");
         $this->ariane = " > " . $this->title;
 
+        
         $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
