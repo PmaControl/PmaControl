@@ -184,16 +184,17 @@ class Extraction {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        
+        
         if (empty(self::$server)) {
             $sql = "SELECT id FROM mysql_server a WHERE 1=1 " . self::getFilter();
 
-            //debug($sql);
             $res = $db->sql_query($sql);
 
             $server = array();
             while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $server[] = $ob['id'];
-                self::$server[] = $ob;
+                //self::$server[] = $ob;
             }
 
             if (count($server) === 0) {//int negatif pour être sur de rien remonté
@@ -203,7 +204,12 @@ class Extraction {
             self::$server = $server;
         }
 
+        
+        
         return self::$server;
+        
+        
+        
     }
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false) {
