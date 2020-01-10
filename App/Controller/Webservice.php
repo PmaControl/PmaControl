@@ -122,7 +122,7 @@ class Webservice extends Controller {
         Debug::debug($data, "data");
 
         $db = Sgbd::sql(DB_DEFAULT);
-        Mysql::set_db($db);
+        
 
 
         foreach ($data as $server_type => $servers) {
@@ -218,7 +218,7 @@ class Webservice extends Controller {
                     }
                 }
 
-                Mysql::set_db($db);
+                
                 $id_client = Mysql::getId($user['organization'], "client", "libelle");
 
 
