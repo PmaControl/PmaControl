@@ -148,9 +148,12 @@ class Mysql
         $db = Sgbd::sql(DB_DEFAULT);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
 
-        $all_masters = array();
+        
+        
+        //debug($masters);
 
         foreach ($masters as $master) {
+            
 
 //a mapper aussi avec les ip virtuel (version enterprise)
             $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
@@ -160,7 +163,15 @@ class Mysql
             while ($ob = $db->sql_fetch_object($res)) {
                 return $ob->id;
             }
+            
+            
+            
+            //if ()$master[$connection_name]['master_host']
+            
+            
         }
+        
+        
 
 
 

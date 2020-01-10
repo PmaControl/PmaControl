@@ -90,15 +90,23 @@ if (empty($data['replication_name'])) {
 
     <div class="col-md-4">
 
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <h3 class="panel-title"><?= __("Rebuild") ?></h3>
+        <?php
+        if (!empty($data['db_on_master'])):
+            ?>
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><?= __("Rebuild") ?></h3>
+                </div>
+
+                <div class="well">
+                    <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/reload/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Reload databases this server from Master') ?> (<?= implode(',',
+            $data['db_on_master'])
+            ?>)</a>
+                </div>
             </div>
-            <div class="well">
-                <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/reload/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Reload databases this server from Master') ?> (<?= implode(',',
-            $data['db_on_master']) ?>)</a>
-            </div>
-        </div>
+            <?php
+        endif;
+        ?>
     </div>
     <div class="col-md-4">
         <div class="panel panel-primary">
@@ -152,7 +160,7 @@ if (empty($data['replication_name'])) {
         //$line = each($part2);
         $line = array();
         foreach ($part2 as $k => $v) {
-            $line['key'] = $k;
+            $line['key']   = $k;
             $line['value'] = $v;
         }
 
