@@ -123,9 +123,11 @@ class Integrate extends Controller
 
                                                 if (empty($var_index[$type_metrics][$slave_variable])) {
                                                     $var_index[$type_metrics][$slave_variable] = 1;
-                                                    $variables_to_insert[]                     = '("'.$slave_variable.'", '.$this->getTypeOfData($slave_value).', "'.$type_metrics.'", "slave")';
+                                                    //$variables_to_insert[]                     = '("'.$slave_variable.'", '.$this->getTypeOfData($slave_value).', "'.$type_metrics.'", "slave")';
+                                                    //  '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
 
-
+                                                    $variables_to_insert[] = '('.$id_ts_file.',"'.$slave_variable.'", "'.$this->getTypeOfData($value).'", "'.$type_metrics.'", "slave")';
+                                                    
                                                     Debug::debug($value);
                                                     Debug::debug($variables_to_insert);
                                                     //exit;
@@ -342,7 +344,7 @@ class Integrate extends Controller
             }
         }
 
-        return $val;
+        return self::convert($val);
     }
 
     private function insert_variable($variables_to_insert)
@@ -353,7 +355,15 @@ class Integrate extends Controller
 
         // insert IGNORE in case of first save have 2 slave
         $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
-        $db->sql_query($sql);
+        $res = $db->sql_query($sql);
+        
+        
+        if (! $res)
+        {
+            throw new \Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
+            exit;
+        }
+        
     }
 
     private function insert_value($values)
@@ -474,6 +484,19 @@ class Integrate extends Controller
 
 
         $db->sql_query($sql4);
+    }
+
+    private static function convert($id, $revert = false)
+    {
+        $gg[1] = "INT";
+        $gg[2] = "DOUBLE";
+        $gg[3] = "TEXT";
+
+        if ($revert === true) {
+            $gg = array_flip($gg);
+        }
+
+        return $gg[$id];
     }
 
     private function getIdMemoryFile($memory_file)

@@ -99,7 +99,7 @@ class Dot2 extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        Extraction::setDb($db);
+        
         $this->slaves = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                     "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                     "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid"));
@@ -332,7 +332,7 @@ class Dot2 extends Controller {
     public function getInfoServer($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
+        
 
 //binlog-do-db binlog-ignore-db <= to extract from my.cnf ?
 

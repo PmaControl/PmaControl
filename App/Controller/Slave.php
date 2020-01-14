@@ -10,7 +10,6 @@ use App\Library\Extraction;
 use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
-
 class Slave extends Controller
 {
 
@@ -30,7 +29,7 @@ class Slave extends Controller
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
 
-        Extraction::setDb($db);
+
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
@@ -224,7 +223,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 
-        Extraction::setDb($db);
+
 
         Extraction::setOption('groupbyday', true);
 
@@ -238,6 +237,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $next_date = date(
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
+
 
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date, $date), true, true);
@@ -267,34 +267,38 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
         // find master
-        $_GET['mysql_server']['id'] = Mysql::getMaster($db, $id_mysql_server, $replication_name);
+        $_GET['mysql_server']['id'] = Mysql::getMaster($id_mysql_server, $replication_name);
 
         $data['id_slave']              = array($id_mysql_server);
         $_GET['mysql_slave']['server'] = $id_mysql_server;
 
 
 
+        
+        
+        
+        //le cas ou on arrive pas a trouver le master
+        if (!empty($_GET['mysql_server']['id'])) {
+            $db_master = Mysql::getDbLink($_GET['mysql_server']['id']);
 
-        //rebuild db
-        $db_master = Sgbd::sql(Mysql::getDbLink($db, $_GET['mysql_server']['id']));
+            $sql  = "show databases;";
+            $res7 = $db_master->sql_query($sql);
 
-        $sql  = "show databases;";
-        $res7 = $db_master->sql_query($sql);
+            $data['db_on_master'] = array();
+            $i                    = 0;
+            while ($ob7                  = $db->sql_fetch_object($res7)) {
+                if (in_array($ob7->Database, array('information_schema', 'performance_schema', 'mysql', 'sys'))) {
+                    continue;
+                }
 
-        $data['db_on_master'] = array();
-        $i                    = 0;
-        while ($ob7                  = $db->sql_fetch_object($res7)) {
-            if (in_array($ob7->Database, array('information_schema', 'performance_schema', 'mysql', 'sys'))) {
-                continue;
+                if ($i > 1) {
+                    $data['db_on_master'][] = "...";
+                    break;
+                }
+
+                $data['db_on_master'][] = $ob7->Database;
+                $i++;
             }
-
-            if ($i > 1) {
-                $data['db_on_master'][] = "...";
-                break;
-            }
-
-            $data['db_on_master'][] = $ob7->Database;
-            $i++;
         }
 
         //gtid
@@ -314,7 +318,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
+
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
