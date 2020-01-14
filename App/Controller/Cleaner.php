@@ -308,7 +308,7 @@ var myChart = new Chart(ctx, {
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Display::setDb($db);
+
 
 
         /** new cleaner with UI * */
