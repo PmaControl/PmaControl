@@ -105,10 +105,14 @@ if (! empty($data['variables'])) {
 
 
         $variable['memory_total'] = $variable['memory_total'] ?? 8*1024;
-        
-        $style = ($totalmemory > $variable['memory_total'] * 1024) ? "background:#d9534f; color:#fff" : "";
-        $style2 = ($totalmemoryused > $variable['memory_total'] * 1024) ? "background:#000000; color:#fff" : "";
-        $style3 = ($totalmemorytest > $variable['memory_total'] * 1024) ? "background:#000000; color:#fff" : "";
+
+
+
+
+
+        $style = ($totalmemory > $variable['memory_total'] ) ? "background:#d9534f; color:#fff" : "";
+        $style2 = ($totalmemoryused > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
+        $style3 = ($totalmemorytest > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
 
 
 
@@ -144,6 +148,17 @@ if (! empty($data['variables'])) {
 }
 
 echo '</table>';
+
+echo '<div class="well">';
+
+echo '$memory_physical : '.$variable['memory_total']."<br/>";
+echo '$totalmemory : '.$totalmemory."<br/>";
+echo '$totalmemoryused : '.$totalmemoryused."<br/>";
+echo '$totalmemorytest : '.$totalmemorytest."<br/>";
+
+echo '</div>';
+
+
 
 echo '<div class="well">';
 echo '<b>' . __('Memory is calculed as follow :') . '</b>';
