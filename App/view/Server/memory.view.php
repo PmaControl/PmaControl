@@ -94,19 +94,21 @@ if (! empty($data['variables'])) {
                 );
 
 
-        if (empty($data['memory'][$server])) {
+
+
+        if (empty($variable['memory_total'])) {
             $mem_kb = 'N/A';
         } else {
-            $mem_kb = format($data['memory'][$server] * 1024);
+            $mem_kb = format($variable['memory_total']);
         }
 
 
 
-        $data['memory'][$server] = $data['memory'][$server] ?? 8*1024;
+        $variable['memory_total'] = $variable['memory_total'] ?? 8*1024;
         
-        $style = ($totalmemory > $data['memory'][$server] * 1024) ? "background:#d9534f; color:#fff" : "";
-        $style2 = ($totalmemoryused > $data['memory'][$server] * 1024) ? "background:#000000; color:#fff" : "";
-        $style3 = ($totalmemorytest > $data['memory'][$server] * 1024) ? "background:#000000; color:#fff" : "";
+        $style = ($totalmemory > $variable['memory_total'] * 1024) ? "background:#d9534f; color:#fff" : "";
+        $style2 = ($totalmemoryused > $variable['memory_total'] * 1024) ? "background:#000000; color:#fff" : "";
+        $style3 = ($totalmemorytest > $variable['memory_total'] * 1024) ? "background:#000000; color:#fff" : "";
 
 
 
@@ -128,13 +130,12 @@ if (! empty($data['variables'])) {
         echo '<td>' . format($variable['binlog_cache_size']) . '</td>';
 
         echo '<td style="' . $style . '">' . format($totalmemory) . '</td>';
-
         echo '<td style="' . $style2 . '">' . format($totalmemoryused) . '</td>';
 
 
         //debug($data['status'][$server]);
         
-        echo '<td>' . $data['status'][$server]['max_used_connections'] . '</td>';
+        echo '<td>' . $variable['max_used_connections'] . '</td>';
         echo '<td>' . $mem_kb . '</td>';
 
         echo '</tr>';
