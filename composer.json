@@ -16,7 +16,7 @@
         "ext-curl": "*",
         "ext-mbstring": "*",
         "ext-dom": "*",
-        "glial/glial": "5.*",
+        "glial/glial": ">5.1.5",
         "phpunit/phpunit": "7.*",
         "sensiolabs/ansi-to-html": "1.1.1",
         "alfallouji/php_multithread": "0.1.4",
