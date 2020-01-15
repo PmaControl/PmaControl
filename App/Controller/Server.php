@@ -359,7 +359,7 @@ class Server extends Controller {
                     "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
                     "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
                     "variables::sort_buffer_size", "variables::read_rnd_buffer_size", "variables::join_buffer_size", "variables::thread_stack",
-                    "variables::binlog_cache_size"));
+                    "variables::binlog_cache_size", "stats::memory_total"));
 
 
 
