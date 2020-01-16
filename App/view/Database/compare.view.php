@@ -144,4 +144,7 @@ if (!empty($data['resultat'])) {
         </div>';
 
 
-</div>
+                        echo '</div>';
+                    }
+                }
+            }
