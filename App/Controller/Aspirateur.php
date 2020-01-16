@@ -596,6 +596,8 @@ class Aspirateur extends Controller
             $ping       = microtime(true) - $time_start;
 
 
+            if ($ssh !== false)
+            {
             //Debug::debug($data);
 
 
@@ -619,6 +621,12 @@ class Aspirateur extends Controller
             $this->shared['hardware']->{$id_mysql_server} = $date;
 
             Debug::debug($date);
+
+            }
+            else
+            {
+                //error connection ssh
+            }
         }
 
 
@@ -1484,7 +1492,7 @@ class Aspirateur extends Controller
                 $res = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->is_available != 0) {
+                    if (! empty($ob->is_available )) {
                         // UPDATE ssh_available X => YELLOW  (not answered)
                         $sql = "UPDATE `mysql_server` SET ssh_available  = -1,
                             ` 	ssh_date_refresh ` = '".date("Y-m-d H:i:s")."',

@@ -1627,7 +1627,7 @@ class Mysql extends Controller
             $string .= "user=".$ob->login."\n";
             $string .= "password=".$ob->passwd."\n";
             $string .= "crypted=1\n";
-            $string .= "database=mysql\n";
+            $string .= "database=".$ob->database."\n";
 
             $config .= $string."\n\n";
 
