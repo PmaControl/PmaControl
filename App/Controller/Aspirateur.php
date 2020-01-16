@@ -64,6 +64,7 @@ class Aspirateur extends Controller
      */
     public function testAllMysql($param)
     {
+    
 
 
         Debug::debug($param, "PARAM");
@@ -596,35 +597,31 @@ class Aspirateur extends Controller
             $ping       = microtime(true) - $time_start;
 
 
-            if ($ssh !== false)
-            {
-            //Debug::debug($data);
+            if ($ssh !== false) {
+                //Debug::debug($data);
 
 
-            $stats    = $this->getStats($ssh);
-            $hardware = $this->getHardware($ssh);
+                $stats    = $this->getStats($ssh);
+                $hardware = $this->getHardware($ssh);
 
-            $id   = $ob->id;
-            $date = array();
+                $id   = $ob->id;
+                $date = array();
 
-            $this->allocate_shared_storage('ssh_stats');
-            $date[date('Y-m-d H:i:s')][$ob->id]['stats']         = $stats;
-            $date[date('Y-m-d H:i:s')][$ob->id]['stats']['ping'] = $ping;
+                $this->allocate_shared_storage('ssh_stats');
+                $date[date('Y-m-d H:i:s')][$ob->id]['stats']         = $stats;
+                $date[date('Y-m-d H:i:s')][$ob->id]['stats']['ping'] = $ping;
 
-            //$this->shared->$id                           = $date;
-            $this->shared['ssh_stats']->{$id_mysql_server} = $date;
+                //$this->shared->$id                           = $date;
+                $this->shared['ssh_stats']->{$id_mysql_server} = $date;
 
-            $this->allocate_shared_storage('hardware');
-            $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
+                $this->allocate_shared_storage('hardware');
+                $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
 
 
-            $this->shared['hardware']->{$id_mysql_server} = $date;
+                $this->shared['hardware']->{$id_mysql_server} = $date;
 
-            Debug::debug($date);
-
-            }
-            else
-            {
+                Debug::debug($date);
+            } else {
                 //error connection ssh
             }
         }
@@ -714,9 +711,9 @@ class Aspirateur extends Controller
         preg_match("/averages?:\s*([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)/", $uptime, $output_array);
 
         if (!empty($output_array[1])) {
-            $stats['load_average_5_sec']  = $output_array[1];
-            $stats['load_average_5_min']  = $output_array[2];
-            $stats['load_average_15_min'] = $output_array[3];
+            $stats['load_average_5_sec']  = str_replace(',', '.', $output_array[1]);
+            $stats['load_average_5_min']  = str_replace(',', '.', $output_array[2]);
+            $stats['load_average_15_min'] = str_replace(',', '.', $output_array[3]);
         }
 
         preg_match("/([0-9]+)\s+user/", $uptime, $output_array);
@@ -1492,7 +1489,7 @@ class Aspirateur extends Controller
                 $res = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res)) {
-                    if (! empty($ob->is_available )) {
+                    if (!empty($ob->is_available)) {
                         // UPDATE ssh_available X => YELLOW  (not answered)
                         $sql = "UPDATE `mysql_server` SET ssh_available  = -1,
                             ` 	ssh_date_refresh ` = '".date("Y-m-d H:i:s")."',
