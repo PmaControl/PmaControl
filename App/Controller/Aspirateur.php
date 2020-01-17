@@ -65,17 +65,13 @@ class Aspirateur extends Controller
     public function testAllMysql($param)
     {
     
-
-
         Debug::debug($param, "PARAM");
-
 
         $id_daemon  = $param[0];
         $date_start = microtime(true);
 
         $this->allocate_shared_storage('answer');
         $this->allocate_shared_storage('variable');
-
 
         Debug::parseDebug($param);
 
@@ -109,12 +105,11 @@ class Aspirateur extends Controller
 
         Debug::debug("max execution time : ".$maxExecutionTime);
 
-
-//to prevent any trouble with fork
-//$this->debugShowQueries();
+        //to prevent any trouble with fork
+        //$this->debugShowQueries();
         $db->sql_close();
 
-//$maxThreads = \Glial\System\Cpu::getCpuCores();
+        //$maxThreads = \Glial\System\Cpu::getCpuCores();
 
         Debug::debug("Nombre de threads : ".$maxThreads);
 
@@ -126,7 +121,7 @@ class Aspirateur extends Controller
 
             $this->logger->info(Color::getColoredString('List of server to test is empty', "grey", "red"));
             sleep(1);
-//throw new \Exception("List of server to test is empty", 20);
+            //throw new \Exception("List of server to test is empty", 20);
         }
 
 
@@ -134,8 +129,8 @@ class Aspirateur extends Controller
 
         $father = false;
         foreach ($server_list as $server) {
-//
-//echo str_repeat("#", count($child_processes)) . "\n";
+            //
+            //echo str_repeat("#", count($child_processes)) . "\n";
 
             $pid                   = pcntl_fork();
             $child_processes[$pid] = 1;
@@ -155,18 +150,18 @@ class Aspirateur extends Controller
                 $father = true;
             } else {
 
-// one thread to test each MySQL server
+                // one thread to test each MySQL server
 
 
                 Debug::debug("Start server with id : ".$server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
                 $father = false;
-//we want that child exit the foreach
+                //we want that child exit the foreach
                 break;
             }
             usleep(500);
-//Debug::debug($child_processes);
+            //Debug::debug($child_processes);
         }
 
         if ($father) {
@@ -180,7 +175,7 @@ class Aspirateur extends Controller
                 unset($child_processes[$childPid]);
             }
 
-//$this->isGaleraCluster(array());
+            //$this->isGaleraCluster(array());
 
 
             /*
@@ -201,7 +196,7 @@ class Aspirateur extends Controller
 
         Debug::debugShowQueries($this->di['db']);
 
-//Debug::debugQueriesOff();
+        //Debug::debugQueriesOff();
     }
 
     /**
@@ -215,6 +210,7 @@ class Aspirateur extends Controller
      * @access public
      * @debug 
      */
+
     public function testMysqlServer($param)
     {
 
@@ -226,8 +222,8 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_server   = $param[1];
 
-//Debug::debug($name_server, "Name server");
-//Debug::debug($id_server, "Id server");
+        //Debug::debug($name_server, "Name server");
+        //Debug::debug($id_server, "Id server");
 
         if (empty($param[2])) {
             $max_execution_time = 3;
@@ -1665,7 +1661,16 @@ class Aspirateur extends Controller
 
 
 
+
+
 //remove pid and id_mysql_server
+    }
+
+
+
+    public function getLock()
+    {
+        $db = Sgbd::sql();
     }
 }
 /*
