@@ -125,7 +125,7 @@ class Audit extends Controller {
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            Extraction::setDb($db);
+            
             $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
 
             Debug::debug($data['logs']);
@@ -143,7 +143,7 @@ class Audit extends Controller {
 
 
         $db = Sgbd::sql(DB_DEFAULT);
-        Extraction::setDb($db);
+        
 
         $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
 

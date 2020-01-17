@@ -146,8 +146,6 @@ trait Galera {
     public function getInfoServer($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
-
 //binlog-do-db binlog-ignore-db <= to extract from my.cnf ?
 
 
