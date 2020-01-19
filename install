@@ -150,8 +150,6 @@ case "$dist" in
     esac
 
 
-adduser $user pmacontrol
-adduser pmacontrol $user
 
 
 # install crontab for user apache
