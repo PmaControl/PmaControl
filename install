@@ -134,12 +134,7 @@ chmod 777 -R data/
 #echo 'vm.swappiness = 1' >> /etc/sysctl.conf
 #sysctl -p
 #cat /proc/sys/vm/swappiness
-
 # add pmacontrol user and crontab
-passwd=`date +%s | sha256sum | base64 | head -c 32`
-echo "pmacontrol:${passwd}:::,,,:/home/pmacontrol:/bin/bash" > /tmp/users
-newusers /tmp/users
-rm /tmp/users
 
 
 
