@@ -24,12 +24,13 @@ class Display
             .' <a href="">'.$arr['display_name'].'</a> <small class="text-muted">'.$arr['ip'].'</small>';
     }
 
-    static public function srv($id_mysql_server)
+    static public function srv($id_mysql_server, $url = '')
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        
         
         if (empty(self::$server))
         {
+            $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT a.*, b.libelle as organization,c.*, a.id as id_mysql_server
             FROM mysql_server a            

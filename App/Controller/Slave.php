@@ -61,28 +61,21 @@ class Slave extends Controller
 
         $res = $db->sql_query($sql);
 
-
         $data['server'] = array();
         while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            
+            
             $data['server']['master'][$arr['ip'].':'.$arr['port']] = $arr;
             $data['server']['master'][$arr['id']]                  = $arr;
-
-
             $data['server']['slave'][$arr['id']] = $arr;
         }
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
-
-
-//debug($slaves);
-
         $this->generateGraph($slaves);
-
 
         foreach ($slaves as $slave) {
             $data['graph'][$slave['id_mysql_server']] = $slave;
         }
-
 
         $this->set('data', $data);
     }
@@ -303,14 +296,12 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             }
         }
 
-//gtid
-// https://mariadb.com/fr/node/493
-// https://mariadb.com/kb/en/library/gtid/
-
+        //gtid
+        // https://mariadb.com/fr/node/493
+        // https://mariadb.com/kb/en/library/gtid/
 
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
-
 
         $this->set('data', $data);
     }
@@ -319,20 +310,16 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     {
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
+        
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
-
-
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
                  ORDER by `name`;";
-
 
         $res = $db->sql_query($sql);
 
@@ -343,20 +330,15 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $data['server']['slave'][$arr['id']]                   = $arr;
         }
 
-
 //debug($data['slave']);
-
 
         $data['box'] = array();
 
         foreach ($data['slave'] as $id_mysql_server => $slaves) {
-
             foreach ($slaves as $connect_name => $slave) {
                 if ($slave['slave_sql_running'] !== "Yes" || $slave['slave_io_running'] !== "Yes" || $slave['seconds_behind_master'] !== "0"
                 ) {
-
                     $export = array();
-
 
                     if (empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
                         $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['display_name'] = "Unknow ".$slave['master_host'].':'.$slave['master_port'];
@@ -368,18 +350,14 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
                         }
                     }
 
-
                     $export['master']            = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']];
                     $export['slave']             = $data['server']['slave'][$id_mysql_server];
                     $export['connect']           = $connect_name;
                     $export['seconds']           = $slave['seconds_behind_master'];
                     $export['slave_sql_running'] = $slave['slave_sql_running'];
                     $export['slave_io_running']  = $slave['slave_io_running'];
-
                     $export['slave_sql_error'] = $slave['last_sql_error'];
                     $export['slave_io_error']  = $slave['last_io_error'];
-
-
                     $export['slave_sql_errno'] = $slave['last_sql_errno'];
                     $export['slave_io_errno']  = $slave['last_io_errno'];
 
@@ -473,17 +451,20 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function startSlave($param)
     {
-
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
             $db = Mysql::getDbLink();
         }
     }
-
+    
+    /*
+     * pust data into 
+     * 
+     * 
+     */
     public function updateAlias($param)
     {
         Debug::parseDebug($param);
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db   = Sgbd::sql(DB_DEFAULT);
         $list = Extraction::display(array("slave::master_host", "slave::master_port"));
 
         $list_host = array();
@@ -514,9 +495,9 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $sql = "SELECT id, ip, port FROM mysql_server";
         $res = $db->sql_query($sql);
-        
+
         $mysql_server = array();
-        while ($ob  = $db->sql_fetch_object($res)) {
+        while ($ob           = $db->sql_fetch_object($res)) {
             $uniq                = $ob->ip.':'.$ob->port;
             $mysql_server[$uniq] = $ob->id;
         }
@@ -532,7 +513,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
                 continue;
             }
 
-            $ip = System::getIp($dns['master_host']);
+            $ip   = System::getIp($dns['master_host']);
             $uniq = $ip.':'.$dns['master_port'];
 
             if (!empty($mysql_server[$uniq])) {
