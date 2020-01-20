@@ -64,7 +64,7 @@ class Aspirateur extends Controller
      */
     public function testAllMysql($param)
     {
-    
+
         Debug::debug($param, "PARAM");
 
         $id_daemon  = $param[0];
@@ -210,7 +210,6 @@ class Aspirateur extends Controller
      * @access public
      * @debug 
      */
-
     public function testMysqlServer($param)
     {
 
@@ -1666,28 +1665,49 @@ class Aspirateur extends Controller
 //remove pid and id_mysql_server
     }
 
-
-
-    public function getLock()
+    
+    
+    
+    public function getdatabases($mysql_tested)
     {
-        $db = Sgbd::sql();
+        //$grants = $this->getGrants();
+
+        $sql = 'SELECT table_schema as `database`,
+        engine,
+        ROW_FORMAT as "row_format", 
+        sum(data_length) as "size_data",
+        sum( index_length ) as "size_index",
+        sum( data_free ) as "size_free",
+        count(1) as "tables",
+        sum(TABLE_ROWS) as "rows",
+        GROUP_CONCAT(DISTINCT(TABLE_COLLATION)) as table_collation,
+        DEFAULT_CHARACTER_SET_NAME as "charset",
+        DEFAULT_COLLATION_NAME as "collation"
+        FROM information_schema.TABLES a
+        INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
+        WHERE table_schema NOT IN ("information_schema", "performance_schema", "mysql") AND a.TABLE_TYPE = "BASE TABLE"
+        GROUP BY table_schema, engine, ROW_FORMAT
+            ';
+
+
+        $res = $mysql_tested->sql_query($sql);
+        if ($res) {
+            if ($mysql_tested->sql_num_rows($res) > 0) {
+                $dbs = array();
+
+                while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $dbs[$arr['database']]['charset']   = $arr['charset'];
+                    $dbs[$arr['database']]['collation'] = $arr['collation'];
+
+                    unset($arr['charset']);
+                    unset($arr['collation']);
+
+                    $dbs[$arr['database']][$arr['engine']][$arr['row_format']] = $arr;
+                }
+                
+                return json_encode($dbs);
+            }
+        }
+        return false;
     }
 }
-/*
- *
- *
-                $sql2 = 'SELECT table_schema,
- sum( data_length ) as "data",
- sum( index_length ) as "index",
- sum( data_free ) as "data_free",
- count(1) as "tables",
- sum(TABLE_ROWS) as "rows",
- DEFAULT_CHARACTER_SET_NAME,
- DEFAULT_COLLATION_NAME
-FROM information_schema.TABLES a
-INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
-WHERE table_schema != "information_schema" AND table_schema != "performance_schema" AND table_schema != "mysql"
-GROUP BY table_schema;
-';
- *
- */
