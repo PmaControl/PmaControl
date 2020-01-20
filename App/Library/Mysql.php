@@ -15,7 +15,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Mysql
 {
-
+    static $master = array();
     static $return;
 
     static function exportAllUser($db_link)
@@ -145,15 +145,15 @@ class Mysql
     static public function getMaster($id_mysql_server, $connection_name = '')
     {
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db      = Sgbd::sql(DB_DEFAULT);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
 
-        
-        
+
+
         //debug($masters);
 
         foreach ($masters as $master) {
-            
+
 
 //a mapper aussi avec les ip virtuel (version enterprise)
             $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
@@ -163,15 +163,13 @@ class Mysql
             while ($ob = $db->sql_fetch_object($res)) {
                 return $ob->id;
             }
-            
-            
-            
+
+
+
             //if ()$master[$connection_name]['master_host']
-            
-            
         }
-        
-        
+
+
 
 
 
@@ -180,11 +178,11 @@ class Mysql
 
     static public function getDbLink($id_mysql_server)
     {
-        
 
-          if (!is_int(intval($id_mysql_server))) {
-          throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
-          } 
+
+        if (!is_int(intval($id_mysql_server))) {
+            throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
+        }
 
         $dblink = Sgbd::sql(DB_DEFAULT);
 
@@ -202,7 +200,7 @@ class Mysql
     {
         Debug::debug($data);
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db     = Sgbd::sql(DB_DEFAULT);
         //debug($data);
         $server = array();
 
@@ -287,7 +285,7 @@ class Mysql
 
                     Debug::debug($data['tag'], "Tags");
 
-                    
+
 
 
 
@@ -315,8 +313,6 @@ class Mysql
 
         return $server;
     }
-
-
     /*
      * to export in Glial::MySQL ?
      *
@@ -412,8 +408,6 @@ END IF;";
 //debug($row['id']);
 //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
     }
-
-
 
     static public function isPmaControl($ip, $port)
     {
@@ -677,5 +671,36 @@ END IF;";
 
 
         return $resultat;
+    }
+
+    
+    /*
+     * Récupère le id_mysql_server depuis un slave avec mater_host // master_port
+     * Si besoin on lie la table mysql_server avec alias_dns, dans les cas ou la réplication se fait par un VIP, DNS ou fqdn
+     * 
+     * 
+     */
+    static public function getIdFromDns($dns_port)
+    {
+        if (empty(self::$master[$dns_port])) {
+            
+            $db = Sgbd::sql(DB_DEFAULT);
+            
+            $sql = "SELECT ip, port, id as id_mysql_server FROM mysql_server a 
+                 UNION select dns as ip, port, id_mysql_server from alias_dns b;";
+
+            $res = $db->sql_query($sql);
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $uniq                = $ob->ip.':'.$ob->port;
+                self::$master[$uniq] = $ob->id_mysql_server;
+            }
+        }
+
+        if (!empty(self::$master[$dns_port])) {
+            return self::$master[$dns_port];
+        }
+
+        return false;
     }
 }
