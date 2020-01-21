@@ -18,13 +18,13 @@ class Display
 
 
 
-    static public function server($arr)
+    static public function server($arr )
     {
         return '<span title="'.$arr['libelle'].'" class="label label-'.$arr['class'].'">'.$arr['letter'].'</span>'
             .' <a href="">'.$arr['display_name'].'</a> <small class="text-muted">'.$arr['ip'].'</small>';
     }
 
-    static public function srv($id_mysql_server, $url = '')
+    static public function srv($id_mysql_server, $withip=true, $url = '')
     {
         
         
