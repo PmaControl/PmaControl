@@ -42,7 +42,6 @@ class Migration extends Controller {
 
             $table_name = pathinfo($file)['filename'];
 
-
             if (in_array($table_name, $this->exclude_tables)) {
                 continue;
             }

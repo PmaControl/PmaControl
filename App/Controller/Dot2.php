@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -10,9 +9,9 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
+use App\Library\Mysql;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
-
 
 // ""	&#9635;   ▣
 // "□"	&#9633;	&#x25A1;
@@ -24,10 +23,10 @@ use \Glial\Sgbd\Sgbd;
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
-class Dot2 extends Controller {
+class Dot2 extends Controller
+{
 
     use \App\Library\Filter;
-
     /**
      *
       MariaDB [pmacontrol]> select * from architecture_legend;
@@ -65,59 +64,60 @@ class Dot2 extends Controller {
       +----+---------------------------+---------------------------+------------+---------+-------+-------------+-----------+
       28 rows in set (0.000 sec)
      */
-    var $maping_master = array();
-    var $master_slave = array();
-    var $galera_cluster = array();
-//var $mysql_server            = array();
-    var $servers = array();
-    var $slaves = array();
-    var $groups = array();
-    var $graph_node = array();
-    var $graph_edge = array();
-    var $graph_master_master = array();
-    var $graph_galera_cluster = array();
-    var $graph_ha_proxy = array();
+    var $maping_master           = array();
+    var $master_slave            = array();
+    var $galera_cluster          = array();
+    //var $mysql_server            = array();
+    var $servers                 = array();
+    var $slaves                  = array();
+    var $groups                  = array();
+    var $graph_node              = array();
+    var $graph_edge              = array();
+    var $graph_master_master     = array();
+    var $graph_galera_cluster    = array();
+    var $graph_ha_proxy          = array();
     var $graph_group_replication = array();
-    var $serveur_affiche = array();
-    var $graph_arbitrator = array(); // containt all id of arbitrator
-    var $joiner = array();
-    var $galera_border = array();
+    var $serveur_affiche         = array();
+    var $graph_arbitrator        = array(); // containt all id of arbitrator
+    var $joiner                  = array();
+    var $galera_border           = array();
     //used for legend from architecture_legend
-
-    var $edge = array();
-    var $node = array();
-    var $galera = array();
-    var $segment = array();
+    var $edge                    = array();
+    var $node                    = array();
+    var $galera                  = array();
+    var $segment                 = array();
     // contain the list of cluster empty (made with offline node to get back full list of node from original cluster
-    var $cluster_black_list = array();
-    var $server_backup = array();
+    var $cluster_black_list      = array();
+    var $server_backup           = array();
 
-    public function getMasterSlave($param) {
+    public function getMasterSlave($param)
+    {
 
         Debug::parseDebug($param);
         $this->view = false;
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db         = Sgbd::sql(DB_DEFAULT);
 
 
-        
+
         $this->slaves = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
-                    "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                    "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid"));
+                "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid"));
 
-
-        $id_group = 0;
+        $id_group  = 0;
         $tmp_group = array();
         foreach ($this->slaves as $id_mysql_server => $rosae) {
 
             foreach ($rosae as $connection => $slave) {
 
-                if (!empty($this->maping_master[$slave['master_host'] . ":" . $slave['master_port']])) {
-                    $id_master = $this->maping_master[$slave['master_host'] . ":" . $slave['master_port']];
-                } else {
-//Debug::debug($slave['master_host'], "master_host --");
-//add server generate negative id ?
+
+
+                $id_master = Mysql::getIdFromDns($slave['master_host'].":".$slave['master_port']);
+
+
+                if ($id_master === false) {
                     continue;
                 }
+
 
                 $tmp_group[$id_group][] = $id_master;
                 $tmp_group[$id_group][] = $id_mysql_server;
@@ -135,13 +135,14 @@ class Dot2 extends Controller {
         return $this->master_slave;
     }
 
-    public function getGaleraCluster($param) {
+    public function getGaleraCluster($param)
+    {
         foreach ($this->servers as $server) {
             if (!empty($server['wsrep_on']) && $server['wsrep_on'] === "ON") {
                 //debug($server);
                 //$server['wsrep_incoming_addresses']
-                $nodes = explode(",", $server['wsrep_incoming_addresses']);
-                $to_match = $server['ip'] . ":" . $server['port'];
+                $nodes    = explode(",", $server['wsrep_incoming_addresses']);
+                $to_match = $server['ip'].":".$server['port'];
 
 
                 // the goal is to remove proxy (HaProxy, ProxySQL same server from and other port)
@@ -150,7 +151,7 @@ class Dot2 extends Controller {
 
                     //génération d'un identifiant unique (pour la détection des Split brain)
                     sort($nodes, SORT_REGULAR);
-                    $cluster_id = md5(implode(",", $nodes)) . ":" . $server['wsrep_cluster_name'];
+                    $cluster_id = md5(implode(",", $nodes)).":".$server['wsrep_cluster_name'];
 
 
                     //$server['wsrep_cluster_name']
@@ -189,7 +190,7 @@ class Dot2 extends Controller {
         }
 
         foreach ($nodes_to_move as $node_to_move) {
-            $to_move_in = $this->extractIncomming($node_to_move['wsrep_incoming_addresses'], $this->maping_master, array($node_to_move['id_mysql_server']));
+            $to_move_in = $this->extractIncomming($node_to_move['wsrep_incoming_addresses'], array($node_to_move['id_mysql_server']));
             foreach ($to_move_in as $id_mysql_server) {
                 if ($id_mysql_server === "Arbitre") {
                     continue;
@@ -201,7 +202,7 @@ class Dot2 extends Controller {
                     if ($node['id_mysql_server'] === $id_mysql_server) {
                         $this->galera_cluster[$cluster_name][] = $node_to_move;
 
-                        Debug::debug("Node : " . $node_to_move['id_mysql_server'] . " moved in Galera Cluster : " . $cluster_name);
+                        Debug::debug("Node : ".$node_to_move['id_mysql_server']." moved in Galera Cluster : ".$cluster_name);
                         break;
                     }
                 }
@@ -221,15 +222,15 @@ class Dot2 extends Controller {
             $group = 1;
             foreach ($this->galera_cluster as $cluster_name => $servers) {
 
-                $incomming = array();
+                $incomming    = array();
                 $galera_nodes = array();
                 foreach ($servers as $id_mysql_server => $server) {
                     //$group_galera[$group] = $id_mysql_server;
                     // to get offline node
                     $incomming[] = $server['wsrep_incoming_addresses'];
 
-                    $tab = explode(",", $server['wsrep_incoming_addresses']);
-                    $to_match = $server['ip'] . ":" . $server['port'];
+                    $tab      = explode(",", $server['wsrep_incoming_addresses']);
+                    $to_match = $server['ip'].":".$server['port'];
                     // the goal is to remove proxy
                     if (in_array($to_match, $tab)) {
                         $galera_nodes[] = $id_mysql_server;
@@ -264,14 +265,15 @@ class Dot2 extends Controller {
         return $group_galera;
     }
 
-    private function getAllMemberFromGalera($incomming, $galera_nodes, $group) {
+    private function getAllMemberFromGalera($incomming, $galera_nodes, $group)
+    {
         //need dertect split brain !!
 //        Debug::debug($incomming, "INCOMING");
 
 
         $all_node = array();
         foreach ($incomming as $listing) {
-            $ip_port = explode(",", $listing);
+            $ip_port  = explode(",", $listing);
             $all_node = array_merge($all_node, $ip_port);
         }
 
@@ -307,21 +309,22 @@ class Dot2 extends Controller {
         //debug($all_nodes);
 
         $ret['all_nodes'] = $all_nodes;
-        $ret['arbitres'] = $arbitres;
+        $ret['arbitres']  = $arbitres;
 
         return $ret;
     }
 
-    public function mappingMaster() {
+    public function mappingMaster()
+    {
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id,ip,port,is_available FROM mysql_server";
 
         $res = $db->sql_query($sql);
 
         while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $this->maping_master[$ar['ip'] . ":" . $ar['port']] = $ar['id'];
-            $this->servers[$ar['id']] = $ar;
+            $this->maping_master[$ar['ip'].":".$ar['port']] = $ar['id'];
+            $this->servers[$ar['id']]                       = $ar;
         }
 
         //Debug::debug($this->servers, 'gg');
@@ -329,10 +332,11 @@ class Dot2 extends Controller {
         return $this->maping_master;
     }
 
-    public function getInfoServer($param) {
+    public function getInfoServer($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        
+
 
 //binlog-do-db binlog-ignore-db <= to extract from my.cnf ?
 
@@ -340,10 +344,10 @@ class Dot2 extends Controller {
 
 
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                    "variables::system_time_zone", "variables::wsrep_desync",
-                    "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
-                    "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
-                    "status::wsrep_cluster_size"));
+                "variables::system_time_zone", "variables::wsrep_desync",
+                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
+                "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
+                "status::wsrep_cluster_size"));
 
         //Debug::debug($temp);
 
@@ -362,7 +366,8 @@ class Dot2 extends Controller {
         return $this->servers;
     }
 
-    public function generateGroup($groups) {
+    public function generateGroup($groups)
+    {
         Debug::parseDebug($param);
         $this->view = false;
 
@@ -373,7 +378,7 @@ class Dot2 extends Controller {
 
         //Debug::debug($groups, "groups");
 
-        $result['groups'] = $groups;
+        $result['groups']  = $groups;
         $result['grouped'] = $this->array_values_recursive($result['groups']);
 
         //Debug::debug($result);
@@ -381,16 +386,16 @@ class Dot2 extends Controller {
 
         return $this->groups;
     }
-
     /*
      * merge des groups de value, pour faire des regroupement avec les groupes qui ont les même id et retire les doublons
      */
 
-    private function array_merge_group($array) {
+    private function array_merge_group($array)
+    {
 
 //Debug::debug($array);
 
-        $all_values = $this->array_values_recursive($array);
+        $all_values  = $this->array_values_recursive($array);
         $group_merge = [];
         foreach ($all_values as $value) {
             $tmp = [];
@@ -406,7 +411,8 @@ class Dot2 extends Controller {
         return $array;
     }
 
-    private function array_values_recursive($ary) {
+    private function array_values_recursive($ary)
+    {
         $lst = array();
         foreach (array_keys($ary) as $k) {
             $v = $ary[$k];
@@ -420,7 +426,8 @@ class Dot2 extends Controller {
         return $lst;
     }
 
-    public function generateGraph($group) {
+    public function generateGraph($group)
+    {
 
 
 
@@ -478,10 +485,10 @@ class Dot2 extends Controller {
 
         return $graph;
     }
-
     /*     * **** generate table ******* */
 
-    public function pushServer() {
+    public function pushServer()
+    {
 //debug($this->servers);
 
 
@@ -514,7 +521,8 @@ class Dot2 extends Controller {
 //Debug::debug($this->graph_node);
     }
 
-    public function pushUpdateMS() {
+    public function pushUpdateMS()
+    {
         foreach ($this->slaves as $connections) {
             foreach ($connections as $connection_name => $slave) {
 
@@ -526,20 +534,20 @@ class Dot2 extends Controller {
                     continue;
                 }
 
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style'] = "filled";
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style']           = "filled";
                 $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
 
                 if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_OK'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_OK'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "";
                 } else if ($slave['seconds_behind_master'] !== "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
 
 
 
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_DELAY'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_DELAY'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
                 } elseif ($slave['slave_io_running'] === "No" && $slave['slave_sql_running'] === "No") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_STOPPED'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_STOPPED'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "STOPPED";
                 } else {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
@@ -547,17 +555,17 @@ class Dot2 extends Controller {
                 }
 
                 if ($slave['last_io_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_ERROR_IO'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_IO'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_io_errno'];
                 }
 
                 if ($slave['last_sql_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_ERROR_SQL'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_SQL'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
                 }
 
                 if ($slave['slave_io_running'] == "Connecting") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = $this->edge['REPLICATION_ERROR_CONNECT'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_CONNECT'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "wrong password";
                 }
 
@@ -578,7 +586,8 @@ class Dot2 extends Controller {
         }
     }
 
-    public function pushMasterMaster() {
+    public function pushMasterMaster()
+    {
         $couples = array();
 
         foreach ($this->slaves as $gg) {
@@ -589,8 +598,8 @@ class Dot2 extends Controller {
                     continue;
                 }
 
-                $tmp = array($server['id_master'], $server['id_mysql_server']);
-                $couples[] = min($tmp) . ":" . max($tmp);
+                $tmp       = array($server['id_master'], $server['id_mysql_server']);
+                $couples[] = min($tmp).":".max($tmp);
             }
         }
 
@@ -630,7 +639,8 @@ class Dot2 extends Controller {
         }
     }
 
-    public function run($param) {
+    public function run($param)
+    {
         Debug::parseDebug($param);
         //Debug::debugQueriesOff();
 
@@ -646,7 +656,7 @@ class Dot2 extends Controller {
 
 //Debug::debug($this->servers, "\$this->servers");
 
-        $master_slave = $this->getMasterSlave($param);
+        $master_slave   = $this->getMasterSlave($param);
         $galera_cluster = $this->getGaleraCluster($param);
 
         $all_groups = array_merge($master_slave, $galera_cluster);
@@ -685,7 +695,8 @@ class Dot2 extends Controller {
         Debug::checkPoint("generateAllGraph");
     }
 
-    public function generateAllGraph() {
+    public function generateAllGraph()
+    {
 
 
         foreach ($this->groups['groups'] as $group) {
@@ -697,21 +708,22 @@ class Dot2 extends Controller {
         }
     }
 
-    public function getRenderer($dot) {
+    public function getRenderer($dot)
+    {
         $file_id = uniqid();
 
-        $tmp_in = "/tmp/dot_" . $file_id . ".dot";
-        $tmp_out = "/tmp/svg_" . $file_id . ".svg";
+        $tmp_in  = "/tmp/dot_".$file_id.".dot";
+        $tmp_out = "/tmp/svg_".$file_id.".svg";
 
         file_put_contents($tmp_in, $dot);
 
-        $cmd = "dot " . $tmp_in . " -Tsvg -o " . $tmp_out . " 2>&1";
+        $cmd = "dot ".$tmp_in." -Tsvg -o ".$tmp_out." 2>&1";
 
         $ret = shell_exec($cmd);
 
 
         if (!empty($ret)) {
-            throw new \Exception('PMACTRL-842 : Dot2/getRenderer ' . trim($ret), 70);
+            throw new \Exception('PMACTRL-842 : Dot2/getRenderer '.trim($ret), 70);
         }
 
         $svg = file_get_contents($tmp_out);
@@ -722,7 +734,8 @@ class Dot2 extends Controller {
         return $svg;
     }
 
-    public function saveCache($code2D, $view2D, $group) {
+    public function saveCache($code2D, $view2D, $group)
+    {
 
 
 
@@ -739,14 +752,14 @@ class Dot2 extends Controller {
 
         $sql = "DELETE b FROM `link__architecture__mysql_server` a
         INNER JOIN `architecture` b ON b.id = a.id_architecture
-        WHERE a.`id_mysql_server` IN (" . $servers . ");";
+        WHERE a.`id_mysql_server` IN (".$servers.");";
         $db->sql_query($sql);
 
         preg_match_all("/width=\"([0-9]+)pt\"\sheight=\"([0-9]+)pt\"/", $view2D, $output);
 
         $sql = "INSERT INTO `architecture` (`date`, `data`, `display`,`height`,`width`)
-            VALUES ('" . date('Y-m-d H:i:s') . "','" . $db->sql_real_escape_string($code2D) . "','" . $db->sql_real_escape_string($view2D) . "',"
-                . $output[2][0] . " ," . $output[1][0] . ")";
+            VALUES ('".date('Y-m-d H:i:s')."','".$db->sql_real_escape_string($code2D)."','".$db->sql_real_escape_string($view2D)."',"
+            .$output[2][0]." ,".$output[1][0].")";
         $res = $db->sql_query($sql);
 
 
@@ -760,7 +773,7 @@ class Dot2 extends Controller {
         foreach ($group as $id_mysql_server) {
 
             if (!in_array($id_mysql_server, $this->graph_arbitrator)) {
-                $sql = "INSERT INTO `link__architecture__mysql_server` (`id_architecture`, `id_mysql_server`) VALUES ('" . $id_architecture . "','" . $id_mysql_server . "');";
+                $sql = "INSERT INTO `link__architecture__mysql_server` (`id_architecture`, `id_mysql_server`) VALUES ('".$id_architecture."','".$id_mysql_server."');";
                 $db->sql_query($sql);
             }
         }
@@ -770,12 +783,14 @@ class Dot2 extends Controller {
         $db->sql_query($sql);
     }
 
-    private function nodeLine($line) {
-        $line = '<tr><td bgcolor="lightgrey" align="left">' . $line . '</td></tr>';
+    private function nodeLine($line)
+    {
+        $line = '<tr><td bgcolor="lightgrey" align="left">'.$line.'</td></tr>';
         return $line;
     }
 
-    private function nodeHead($display_name, $id_mysql_server) {
+    private function nodeHead($display_name, $id_mysql_server)
+    {
 
 
         $backup = '&#x2610;';
@@ -783,11 +798,12 @@ class Dot2 extends Controller {
             $backup = '&#x2611;';
         }
 
-        $line = '<tr><td bgcolor="black" color="white" align="center"><font color="white">' . $display_name . ' ' . $backup . '</font></td></tr>';
+        $line = '<tr><td bgcolor="black" color="white" align="center"><font color="white">'.$display_name.' '.$backup.'</font></td></tr>';
         return $line;
     }
 
-    public function generateNode($id_mysql_server) {
+    public function generateNode($id_mysql_server)
+    {
 
         if (in_array($id_mysql_server, $this->graph_arbitrator)) {
             $data = $this->generateArbitrator($id_mysql_server);
@@ -798,18 +814,19 @@ class Dot2 extends Controller {
         return $data;
     }
 
-    private function generateArbitrator($id_mysql_server) {
+    private function generateArbitrator($id_mysql_server)
+    {
         $server = $this->servers[$id_mysql_server];
 
         $node = "";
-        $node .= "node [color = \"" . $this->node['NODE_OK']['color'] . "\"];\n";
-        $node .= '  ' . $id_mysql_server . ' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
+        $node .= "node [color = \"".$this->node['NODE_OK']['color']."\"];\n";
+        $node .= '  '.$id_mysql_server.' [style="" penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
         $node .= $this->nodeHead("Arbitrator", $id_mysql_server);
 
 
-        $lines = array();
-        $lines[] = "IP : n/a:" . $server['port'];
-        $lines[] = "Date : " . $server['date'];
+        $lines   = array();
+        $lines[] = "IP : n/a:".$server['port'];
+        $lines[] = "Date : ".$server['date'];
 
         foreach ($lines as $line) {
             $node .= $this->nodeLine($line);
@@ -821,7 +838,8 @@ class Dot2 extends Controller {
         return $node;
     }
 
-    private function generateServer($id_mysql_server) {
+    private function generateServer($id_mysql_server)
+    {
 
         $server = $this->servers[$id_mysql_server];
 
@@ -843,27 +861,27 @@ class Dot2 extends Controller {
 
 
 
-        $node .= 'node [color = "' . $this->graph_node[$id_mysql_server]['color'] . '" style="' . $this->graph_node[$id_mysql_server]['style'] . '"];' . "\n";
-        $node .= '  ' . $id_mysql_server . ' [penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
+        $node .= 'node [color = "'.$this->graph_node[$id_mysql_server]['color'].'" style="'.$this->graph_node[$id_mysql_server]['style'].'"];'."\n";
+        $node .= '  '.$id_mysql_server.' [penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
 
 
         //debug($server);
 
         $node .= $this->nodeHead($server['hostname'], $id_mysql_server);
 
-        $lines[] = "IP : " . $server['ip'] . ":" . $server['port'];
-        $lines[] = "Date : " . $server['date'];
-        $lines[] = "Time zone : " . $server['system_time_zone'];
+        $lines[] = "IP : ".$server['ip'].":".$server['port'];
+        $lines[] = "Date : ".$server['date'];
+        $lines[] = "Time zone : ".$server['system_time_zone'];
 
-        $lines[] = "Binlog : " . $server['binlog_format'];
+        $lines[] = "Binlog : ".$server['binlog_format'];
         $lines[] = $this->formatVersion($server['version']);
 
         if (!empty($server['wsrep_local_state_comment'])) {
 
             if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
-                $lines[] = "Galera status : " . $server['wsrep_local_state_comment'];
+                $lines[] = "Galera status : ".$server['wsrep_local_state_comment'];
             } else {
-                $lines[] = "Galera status : " . __("Out of order");
+                $lines[] = "Galera status : ".__("Out of order");
             }
         }
 
@@ -910,21 +928,21 @@ class Dot2 extends Controller {
 
         return $node;
     }
-
     /*
      * 
      * 
      * to move in library
      */
 
-    private function formatVersion($version) {
+    private function formatVersion($version)
+    {
 
         if (empty($version)) {
             return "Unknow";
         }
 
         if (strpos($version, "-")) {
-            $number = explode("-", $version)[0];
+            $number   = explode("-", $version)[0];
             $fork_sql = explode("-", $version)[1];
         } else {
             $number = $version;
@@ -947,11 +965,12 @@ class Dot2 extends Controller {
                 break;
         }
 
-        return $name . " " . $number;
+        return $name." ".$number;
     }
 
-    public function generateEdge($group) {
-        $edge = [];
+    public function generateEdge($group)
+    {
+        $edge  = [];
         $label = " ";
         $style = "filled";
 
@@ -1003,13 +1022,13 @@ class Dot2 extends Controller {
                     //Debug::debug($val['arrow'], 'ARROW');
 
                     if ($val['arrow'] == "double") {
-                        $val['color'] = $val['color'] . ":white:" . $val['color'];
+                        $val['color'] = $val['color'].":white:".$val['color'];
                     }
 
 
-                    $edge = $id_master . " -> " . $id_slave
-                            . " [ arrowsize=\"1.5\" style=" . $style . ",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
-                            . $val['color'] . "\" label=\"" . $val['label'] . "\" edgeURL=\"" . LINK . "slave/show/" . $id_slave . "/" . $connection_name . "/\" " . $extra . "];\n";
+                    $edge = $id_master." -> ".$id_slave
+                        ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
+                        .$val['color']."\" label=\"".$val['label']."\" edgeURL=\"".LINK."slave/show/".$id_slave."/".$connection_name."/\" ".$extra."];\n";
 
                     $edges .= $edge;
                 }
@@ -1019,8 +1038,9 @@ class Dot2 extends Controller {
         return $edges;
     }
 
-    public function extractProviderOption($wsrep_provider_options, $variable) {
-        preg_match("/" . preg_quote($variable) . "\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
+    public function extractProviderOption($wsrep_provider_options, $variable)
+    {
+        preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
 
         if (!empty($output_array[1])) {
             return $output_array[1];
@@ -1030,7 +1050,8 @@ class Dot2 extends Controller {
         }
     }
 
-    public function pushGaleraCluster() {
+    public function pushGaleraCluster()
+    {
 
         //debug($this->graph_node);
         //Debug::debug($this->galera_cluster, "galera_cluster");
@@ -1099,7 +1120,8 @@ class Dot2 extends Controller {
         return $this->graph_galera_cluster;
     }
 
-    public function generateGaleraCluster($group) {
+    public function generateGaleraCluster($group)
+    {
         $galera = "";
 
 
@@ -1117,31 +1139,20 @@ class Dot2 extends Controller {
             }
         }
 
-
-//        Debug::debug($this->graph_galera_cluster, "GaleraCluster");
-
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
-
 
             if (in_array($cluster_name, $this->cluster_black_list)) {
                 continue;
             }
 
-
             ksort($segments);
 
-
             $nb_node = count($cluster_check[$cluster_name]);
-
             $count_by_type = array_count_values($cluster_check[$cluster_name]);
 
-
             $count_by_type['-1'] = $count_by_type['-1'] ?? 0;
-            $count_by_type['0'] = $count_by_type['0'] ?? 0;
-            $count_by_type['1'] = $count_by_type['1'] ?? 0;
-
-            //debug($count_by_type);
-
+            $count_by_type['0']  = $count_by_type['0'] ?? 0;
+            $count_by_type['1']  = $count_by_type['1'] ?? 0;
 
             if ($count_by_type['1'] === $nb_node) {
                 $galera_style = $this->galera['GALERA_AVAILABLE'];
@@ -1165,76 +1176,56 @@ class Dot2 extends Controller {
                 $galera_style = $this->galera['GALERA_OUTOFORDER'];
             }
 
-
             $cluster_name_display = explode(":", $cluster_name)[1];
 
-
             $cluster = "";
-            $cluster .= 'subgraph cluster_' . str_replace(array('-', ':'), '', $cluster_name) . ' {' . "\n";
+            $cluster .= 'subgraph cluster_'.str_replace(array('-', ':'), '', $cluster_name).' {'."\n";
             $cluster .= 'rankdir="TB";';
-
-
             //style='.$galera_style['style'].';
-            $cluster .= 'style=solid;penwidth=2; color="' . $galera_style['color'] . '";' . "\n";
-
-
-
-            $cluster .= 'label = "' . $cluster_name_display . '";';
-
+            $cluster .= 'style=solid;penwidth=2; color="'.$galera_style['color'].'";'."\n";
+            $cluster .= 'label = "'.$cluster_name_display.'";';
             //Debug::debug($nodes_ordered, "nodes_ordered");
             //$cluster .= implode(" -> ", $all_segment)."[color=grey arrowhead=none];\n"; // [constraint=false]
             //$first_from_segment = array();
 
-
-
             foreach ($segments as $segment => $nodes) {
 
                 $nodes_ordered = $this->orderyBy($nodes, 'hostname');
-
-
                 //Debug::debug($nodes_ordered, "Node ordered");
                 //$first_from_segment[$segment] = end($nodes_ordered);
 
-                $cluster .= 'subgraph cluster_' . str_replace(array('-', ':'), '', $cluster_name) . "_" . $segment . " {\n";
-                $cluster .= 'label = "Segment : ' . $segment . '";' . "\n";
+                $cluster .= 'subgraph cluster_'.str_replace(array('-', ':'), '', $cluster_name)."_".$segment." {\n";
+                $cluster .= 'label = "Segment : '.$segment.'";'."\n";
                 $cluster .= 'rankdir="LR";';
                 $cluster .= 'rank="same"; penwidth=2;';
-                $cluster .= 'color="' . $this->galera['GALERA_AVAILABLE']['color'] . '";style=dashed;penwidth=2;fontname="arial";' . "\n";
+                $cluster .= 'color="'.$this->galera['GALERA_AVAILABLE']['color'].'";style=dashed;penwidth=2;fontname="arial";'."\n";
 
-//		ksort($nodes);
+                //ksort($nodes);
 
                 if (count($nodes) > 1) {
-
-
                     //$cluster .= "{".implode(";", $nodes_ordered)."; } ;\n";
-
-
-
                     $cluster .= "rank = same;";
                     foreach ($nodes_ordered as $node) {
-                        $cluster .= $node . ";\n";
+                        $cluster .= $node.";\n";
                     }/**/
 
                     //$cluster .= "{rank=same ".implode(" -> ", $nodes_ordered)." [style=invis]} ;\n"; //[style=invis]
                 } else {
-                    $cluster .= end($nodes) . ";\n"; // [constraint=false]
+                    $cluster .= end($nodes).";\n"; // [constraint=false]
                 }/**/
 
                 foreach ($nodes as $id_mysql_server) {
 
-                    $cluster .= $id_mysql_server . ";\n";
+                    $cluster .= $id_mysql_server.";\n";
                 }
 
 
-                $cluster .= ' }' . "\n";
+                $cluster .= ' }'."\n";
             }
 
-            $cluster .= ' }' . "\n";
-
-
+            $cluster .= ' }'."\n";
 
             if (in_array($id_mysql_server, $group)) {
-
 
                 /* pour ranger les segments horizontalement au lieu de verticalement
                   if (count($first_from_segment) > 1) { // evite que la fleche entre segment si un seul segment
@@ -1243,108 +1234,67 @@ class Dot2 extends Controller {
                   }
                   /*** */
 
-
                 $galera .= $cluster;
-
-
-                //debug only
-                if (in_array(7, $group)) {
-
-                    //$galera .= "27 -> 97 [style=invis];\n";
-                    //$galera .= "97 -> 21 ;\n";
-                    //$galera .= "6 -> 21 [style=invis];\n";
-
-                    Debug::debug($first_from_segment);
-                    Debug::debug($cluster, "GOOG");
-                }
             }
         }
 
-
-
-
-
-
         return $galera;
-
-
-//$ret .= $this->display_segment($galera, $name_galera);
-
-
-        if (count($galeras[$name_galera]) > 1) {
-            $ret .= $this->display_segment($galera, $name_galera);
-        } else {
-
-            Debug::debug(end($galera));
-            $ret .= $this->display_node_galera(end($galera));
-        }
     }
 
-    private function generate_segment($galera, $name_galera) {
+    private function generate_segment($galera, $name_galera)
+    {
         $ret = "";
-
-
 
         foreach ($galera as $segment_name => $segment) {
 
-            $ret .= 'subgraph cluster_' . str_replace('-', '', $name_galera) . "_" . $segment_name . " {\n";
-            $ret .= 'label = "Segment : ' . $segment_name . '";' . "\n";
-            $ret .= 'color=' . $this->segment['SEGMENT_OK']['color'] . ';style=dotted;penwidth=2;fontname="arial";' . "\n";
-
-
+            $ret .= 'subgraph cluster_'.str_replace('-', '', $name_galera)."_".$segment_name." {\n";
+            $ret .= 'label = "Segment : '.$segment_name.'";'."\n";
+            $ret .= 'color='.$this->segment['SEGMENT_OK']['color'].';style=dotted;penwidth=2;fontname="arial";'."\n";
             $ret .= $this->display_node_galera($segment);
-            $ret .= ' }' . "\n";
+            $ret .= ' }'."\n";
         }
 
         return $ret;
     }
 
-    private function getNewId() {
-
+    private function getNewId()
+    {
         $servers = $this->servers;
-
         $id = max(array_keys($servers));
-
         Debug::debug($id, "max id");
-
 
         $id++;
 
         return $id;
     }
-
     /*
      * shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false
      */
 
-    private function createArbitrator($group) {
+    private function createArbitrator($group)
+    {
         $id_arbitrator = $this->getNewId();
-
 
         Debug::debug($group, "GROUP");
 
         //debug($this->servers[$id_arbitrator-1]);
-
-        $this->servers[$id_arbitrator]["id_mysql_server"] = $id_arbitrator;
+        $this->servers[$id_arbitrator]["id_mysql_server"]        = $id_arbitrator;
         $this->servers[$id_arbitrator]["wsrep_provider_options"] = "gmcast.segment = 0;";
-        $this->servers[$id_arbitrator]["is_available"] = 1;
-        $this->servers[$id_arbitrator]["ip"] = "n/a";
-        $this->servers[$id_arbitrator]["port"] = "4567";
-        $this->servers[$id_arbitrator]["date"] = date('Y-m-d H:i:s');
-
+        $this->servers[$id_arbitrator]["is_available"]           = 1;
+        $this->servers[$id_arbitrator]["ip"]                     = "n/a";
+        $this->servers[$id_arbitrator]["port"]                   = "4567";
+        $this->servers[$id_arbitrator]["date"]                   = date('Y-m-d H:i:s');
         $this->graph_arbitrator[] = $id_arbitrator;
 
         return $id_arbitrator;
     }
 
-    private function getSstJoiner($data) {
+    private function getSstJoiner($data)
+    {
         $all_ip_port = explode(",", $data['wsrep_incoming_addresses']);
-
-
         //debug($this->maping_master);
 
         Debug::debug($all_ip_port);
-
 
         foreach ($all_ip_port as $key => $ip_port) {
             if (empty($ip_port)) { // on retire le ou les arbitres
@@ -1352,7 +1302,8 @@ class Dot2 extends Controller {
                 continue;
             }
 
-            $row = $this->servers[$this->maping_master[$ip_port]];
+            $id_master = Mysql::getIdFromDns($ip_port);
+            $row = $this->servers[$id_master];
 
             if ($row["is_available"] === "1") { // on retire tous les noeuds en etat de marche pour identifier le "JOINER"
                 unset($all_ip_port[$key]);
@@ -1362,44 +1313,40 @@ class Dot2 extends Controller {
 
         foreach ($all_ip_port as $joiner) {
             if (!in_array($joiner, $this->joiner)) {
-                $row = $this->servers[$this->maping_master[$joiner]];
 
+
+                $id_master = Mysql::getIdFromDns($joiner);
+                $row       = $this->servers[$id_master];
 
                 $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['color'] = $this->arrow['REPLICATION_SST']['color'];
                 $this->graph_edge[$row['id_mysql_server']][$data['id_mysql_server']]['label'] = "SST";
-
 
                 if ($data['wsrep_sst_method'] === "xtrabackup-v2" || $data['wsrep_sst_method'] === "mariabackup") {
                     $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR']['color'];
                 } else {
                     $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR_DESYNCED']['color'];
                 }
-
-
-
                 $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_JOINER']['color'];
-
-
                 $this->joiner[] = $joiner;
                 break;
             }
             Debug::debug($row);
         }
     }
-
     /*
      *
      * fait en sorte que si un MASTER // MASTER  est détecté celui-ci est automatiquement mis au même rang
      *
      */
 
-    public function generateRankForMM($group) {
+    public function generateRankForMM($group)
+    {
         $graph = '';
 
         foreach ($this->graph_master_master as $key => $mastermaster) {
             foreach ($mastermaster as $id_server) {
                 if (in_array($id_server, $group)) {
-                    $graph .= "{rank = same; " . implode(";", $mastermaster) . ";}\n";
+                    $graph .= "{rank = same; ".implode(";", $mastermaster).";}\n";
                     break;
                 }
             }
@@ -1408,16 +1355,14 @@ class Dot2 extends Controller {
         return $graph;
     }
 
-    public function legend() {
-
+    public function legend()
+    {
         $sql = "SELECT * FROM `architecture_legend` WHERE `type`= 'REPLICATION' order by `order`;";
-
         $db = Sgbd::sql(DB_DEFAULT);
-
         $res = $db->sql_query($sql);
 
         $edges = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr   = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $edges[] = $arr;
         }
 
@@ -1427,63 +1372,47 @@ class Dot2 extends Controller {
 	    node [fontname = "helvetica"];
 	    edge [fontname = "helvetica"];
 	    node [shape=plaintext fontsize=12];
-
 	    subgraph cluster_01 {
-
 	    label = "Replication : Legend";
-
 	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">';
 
         $i = 1;
         foreach ($edges as $edge) {
-            $legend .= '<tr><td align="right" port="i' . $i . '">' . $edge['name'] . '&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>' . "\n";
+            $legend .= '<tr><td align="right" port="i'.$i.'">'.$edge['name'].'&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>'."\n";
             $i++;
         }
-
 
         // GTID
-
-        $legend .= '<tr><td align="right" port="j' . $i . '"> ' . " " . ' </td></tr>' . "\n";
-
-
-        $legend .= '<tr><td align="right" port="i' . $i . '"> ' . "GTID" . ' </td></tr>' . "\n";
+        $legend .= '<tr><td align="right" port="j'.$i.'"> '." ".' </td></tr>'."\n";
+        $legend .= '<tr><td align="right" port="i'.$i.'"> '."GTID".' </td></tr>'."\n";
         $i++;
-        $legend .= '<tr><td align="right" port="i' . $i . '"> ' . "Standard" . ' </td></tr>' . "\n";
-
-
+        $legend .= '<tr><td align="right" port="i'.$i.'"> '."Standard".' </td></tr>'."\n";
         $legend .= '</table>>]
-		    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">' . "\n";
-
+		    key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">'."\n";
 
         $i = 1;
         foreach ($edges as $edge) {
-            $legend .= '<tr><td port="i' . $i . '">&nbsp;</td></tr>' . "\n";
+            $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
             $i++;
         }
 
-        $legend .= '<tr><td port="j' . $i . '">&nbsp;</td></tr>' . "\n";
-
-        $legend .= '<tr><td port="i' . $i . '">&nbsp;</td></tr>' . "\n";
+        $legend .= '<tr><td port="j'.$i.'">&nbsp;</td></tr>'."\n";
+        $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
         $i++;
-        $legend .= '<tr><td port="i' . $i . '">&nbsp;</td></tr>' . "\n";
-
-
-
-
-        $legend .= '</table>>]' . "\n";
+        $legend .= '<tr><td port="i'.$i.'">&nbsp;</td></tr>'."\n";
+        $legend .= '</table>>]'."\n";
 
         $i = 1;
         foreach ($edges as $edge) {
-            $legend .= 'key:i' . $i . ':e -> key2:i' . $i . ':w [color="' . $edge['color'] . '" arrowsize="1.5" style=' . $edge['style'] . ',penwidth="2"]' . "\n";
+            $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
             $i++;
         }
-
 
         $edge['color'] = "#000000";
 
-        $legend .= 'key:i' . $i . ':e -> key2:i' . $i . ':w [color="' . $edge['color'] . ':#ffffff:' . $edge['color'] . '" arrowsize="1.5" style=' . $edge['style'] . ',penwidth="2"]' . "\n";
+        $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].':#ffffff:'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
         $i++;
-        $legend .= 'key:i' . $i . ':e -> key2:i' . $i . ':w [color="' . $edge['color'] . '" arrowsize="1.5" style=' . $edge['style'] . ',penwidth="2"]' . "\n";
+        $legend .= 'key:i'.$i.':e -> key2:i'.$i.':w [color="'.$edge['color'].'" arrowsize="1.5" style='.$edge['style'].',penwidth="2"]'."\n";
         $i++;
 
         /*
@@ -1496,7 +1425,6 @@ class Dot2 extends Controller {
   }
 }';
 
-
         //echo str_replace("\n", "<br />",htmlentities($legend));
 
         $data['legend'] = $this->getRenderer($legend);
@@ -1506,15 +1434,16 @@ class Dot2 extends Controller {
         //https://dreampuf.github.io/GraphvizOnline/
     }
 
-    private function array_orderby() {
+    private function array_orderby()
+    {
         $args = func_get_args();
         $data = array_shift($args);
         foreach ($args as $n => $field) {
             if (is_string($field)) {
-                $tmp = array();
+                $tmp       = array();
                 foreach ($data as $key => $row)
                     $tmp[$key] = $row[$field];
-                $args[$n] = $tmp;
+                $args[$n]  = $tmp;
             }
         }
         $args[] = &$data;
@@ -1522,7 +1451,8 @@ class Dot2 extends Controller {
         return array_pop($args);
     }
 
-    public function orderyBy($array, $field) {
+    public function orderyBy($array, $field)
+    {
         $to_order = array();
 
         foreach ($array as $id_mysql_server) {
@@ -1535,18 +1465,15 @@ class Dot2 extends Controller {
 
         krsort($to_order);
 
-
         return $to_order;
     }
 
-    public function getColor() {
-
+    public function getColor()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM `architecture_legend` order by `order`;";
         $res = $db->sql_query($sql);
-
-
 
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             switch ($ob['type']) {
@@ -1569,16 +1496,15 @@ class Dot2 extends Controller {
             }
         }
     }
-
     /*
      * $incomming value from wsrep_incoming_addresses
      * $reference contain an array of all ip:port => $id_mysql_server that we know
      * $exclude array of all id_mysql_server we want to exclude
      */
 
-    public function extractIncomming($incomming, $reference, $exclude = array()) {
+    public function extractIncomming($incomming, $exclude = array())
+    {
         $servers = explode(",", $incomming);
-
         $nodes = array();
 
         foreach ($servers as $server) {
@@ -1588,46 +1514,44 @@ class Dot2 extends Controller {
                 continue;
             }
 
+            $id_master = Mysql::getIdFromDns($server);
 
-            if (!empty($this->maping_master[$server])) {
-                $id_mysql_server = $this->maping_master[$server];
-
-                if (!in_array($id_mysql_server, $exclude)) {
-                    $nodes[] = $id_mysql_server;
+            if ($id_master) {
+                if (!in_array($id_master, $exclude)) {
+                    $nodes[] = $id_master;
                 }
             } else {
-                trigger_error("Node unknow : " . $server, E_USER_WARNING);
+                trigger_error("Node unknow : ".$server, E_USER_WARNING);
             }
         }
-
 
         sort($nodes);
 
         return $nodes;
     }
 
-    public function getServerBackuped($id_mysql_server) {
-
-
+    /*
+     * 
+     * TODO : ni fait ni a faire
+     * 
+     */
+    public function getServerBackuped($id_mysql_server)
+    {
         if (!empty($this->server_backup) && count($this->server_backup) != 0) {
             $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT id_mysql_server FROM backup_main where is_active=1";
             $res = $db->sql_query($sql);
 
-
             $backup = array();
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob     = $db->sql_fetch_object($res)) {
                 $backup[] = $ob->id_mysql_server;
             }
-
 
             $sql = "SELECT id_mysql_server from mysql_server a
             INNER JOIN link__mysql_server__tag b ON a.id = b.id_mysql_server
             INNER JOIN tag c ON c.id = b.id_tag
             WHERE c.name='backup'";
-
-
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
@@ -1639,5 +1563,4 @@ class Dot2 extends Controller {
 
         return $this->server_backup;
     }
-
 }

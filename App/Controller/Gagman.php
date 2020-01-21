@@ -11,27 +11,12 @@ class Gagman extends Controller {
 
     public function index($param) {
 
-
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
 
-
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
-        Extraction::setDb($db);
-
-
-
         $res = Extraction::extract(array("status::com_insert"), array(), $_GET['ts_variable']['date']);
-
-
-
-
-
-
-
 
         if (!empty($data['graph'])) {
 
@@ -64,7 +49,6 @@ class Gagman extends Controller {
                 }
 
 
-
                 $point[] = "{ x: new Date('" . $value['date'] . "'), y: " . $val . "}";
 
                 $dates[] = $value['date'];
@@ -73,8 +57,6 @@ class Gagman extends Controller {
                 $old_value = $value['value'];
             }
         }
-
-
 
         $this->di['js']->code_javascript('
 var ctx = document.getElementById("myChart").getContext("2d");

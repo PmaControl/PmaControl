@@ -260,6 +260,9 @@ class Server extends Controller {
     public function database() {
 
         $db = Sgbd::sql(DB_DEFAULT);
+        
+        
+        
 
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
 			GROUP_CONCAT('',b.name) as dbs,
