@@ -252,7 +252,6 @@ class Binlog extends Controller {
         Debug::debug($last_binlog_file, "last element");
 
 
-        Extraction::setDb($db);
         $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"), array($id_mysql_server));
 
 
@@ -377,7 +376,7 @@ class Binlog extends Controller {
         while ($ob = $db->sql_fetch_object($res)) {
 
 
-            Extraction::setDb($db);
+            
             $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"), array($id_mysql_server));
 
 
@@ -431,7 +430,7 @@ class Binlog extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
+        
         $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"));
 
 

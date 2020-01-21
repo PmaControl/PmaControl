@@ -1,4 +1,5 @@
 <?php
+use App\Library\Display;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -59,7 +60,7 @@ echo '</tr>';
 $i = 0;
 
 //debug($data['variables']);
-if (! empty($data['variables'])) {
+if (!empty($data['variables'])) {
     foreach ($data['variables'] as $server => $var) {
 
         $variable = $var[''];
@@ -69,28 +70,20 @@ if (! empty($data['variables'])) {
          * Si memoire utilisé (avec max user) > RAM => Noir
          */
 
-        if (empty($variable['innodb_buffer_pool_size']))
+        if (empty($variable['innodb_buffer_pool_size'])) {
             $variable['innodb_buffer_pool_size'] = 0;
-        if (empty($variable['innodb_additional_mem_pool_size']))
+        }if (empty($variable['innodb_additional_mem_pool_size'])) {
             $variable['innodb_additional_mem_pool_size'] = 0;
-        if (empty($variable['innodb_log_buffer_size']))
+        }if (empty($variable['innodb_log_buffer_size'])) {
             $variable['innodb_log_buffer_size'] = 0;
+        }
 
+        $totalmemorytest = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] + $variable['innodb_buffer_pool_size'] + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size'] + $variable['max_connections'];
 
-        $totalmemorytest = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] 
-            + $variable['innodb_buffer_pool_size'] + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size']
-            + $variable['max_connections'];
-
-        $totalmemory = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] + $variable['innodb_buffer_pool_size']
-            + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size'] + $variable['max_connections']
-            * ( $variable['sort_buffer_size'] + $variable['read_buffer_size'] + $variable['read_rnd_buffer_size'] + $variable['join_buffer_size']
-            + $variable['thread_stack'] + $variable['binlog_cache_size']
+        $totalmemory = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] + $variable['innodb_buffer_pool_size'] + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size'] + $variable['max_connections'] * ( $variable['sort_buffer_size'] + $variable['read_buffer_size'] + $variable['read_rnd_buffer_size'] + $variable['join_buffer_size'] + $variable['thread_stack'] + $variable['binlog_cache_size']
                 );
 
-        $totalmemoryused = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] + $variable['innodb_buffer_pool_size']
-            + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size'] + $variable['max_used_connections']
-            * ( $variable['sort_buffer_size'] + $variable['read_buffer_size'] + $variable['read_rnd_buffer_size'] + $variable['join_buffer_size']
-            + $variable['thread_stack'] + $variable['binlog_cache_size']
+        $totalmemoryused = $variable['key_buffer_size'] + $variable['query_cache_size'] + $variable['tmp_table_size'] + $variable['innodb_buffer_pool_size'] + $variable['innodb_additional_mem_pool_size'] + $variable['innodb_log_buffer_size'] + $variable['max_used_connections'] * ( $variable['sort_buffer_size'] + $variable['read_buffer_size'] + $variable['read_rnd_buffer_size'] + $variable['join_buffer_size'] + $variable['thread_stack'] + $variable['binlog_cache_size']
                 );
 
 
@@ -98,27 +91,25 @@ if (! empty($data['variables'])) {
 
         if (empty($variable['memory_total'])) {
             $mem_kb = 'N/A';
+            $style = '';
+            $style2 = '';
+            $style3 = '';
+            $style4 = 'background:rgb(67, 132, 199); color:#fff';
         } else {
             $mem_kb = format($variable['memory_total']);
+            $style = ($totalmemory > $variable['memory_total'] ) ? "background:#d9534f; color:#fff" : "";
+            $style2 = ($totalmemoryused > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
+            $style3 = ($totalmemorytest > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
+            $style4 = '';
         }
 
 
-
-        $variable['memory_total'] = $variable['memory_total'] ?? 8*1024;
-
-
-
-
-
-        $style = ($totalmemory > $variable['memory_total'] ) ? "background:#d9534f; color:#fff" : "";
-        $style2 = ($totalmemoryused > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
-        $style3 = ($totalmemorytest > $variable['memory_total'] ) ? "background:#000000; color:#fff" : "";
 
 
 
 
         echo '<tr>';
-        echo '<td>' . str_replace("_", "-", $server) . '</td>';
+        echo '<td>' . Display::srv($server, false) . '</td>';
         echo '<td style="' . $style3 . '">' . format($variable['key_buffer_size']) . '</td>';
         echo '<td style="' . $style3 . '">' . format($variable['query_cache_size']) . '</td>';
         echo '<td style="' . $style3 . '">' . format($variable['tmp_table_size']) . '</td>';
@@ -138,9 +129,9 @@ if (! empty($data['variables'])) {
 
 
         //debug($data['status'][$server]);
-        
+
         echo '<td>' . $variable['max_used_connections'] . '</td>';
-        echo '<td>' . $mem_kb . '</td>';
+        echo '<td style="' . $style4 . '">' . $mem_kb . '</td>';
 
         echo '</tr>';
         $i++;
@@ -149,14 +140,6 @@ if (! empty($data['variables'])) {
 
 echo '</table>';
 
-echo '<div class="well">';
-
-echo '$memory_physical : '.$variable['memory_total']."<br/>";
-echo '$totalmemory : '.$totalmemory."<br/>";
-echo '$totalmemoryused : '.$totalmemoryused."<br/>";
-echo '$totalmemorytest : '.$totalmemorytest."<br/>";
-
-echo '</div>';
 
 
 

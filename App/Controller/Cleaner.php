@@ -308,9 +308,6 @@ var myChart = new Chart(ctx, {
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
-
         /** new cleaner with UI * */
         $sql = "SELECT *,a.id as id_cleaner_main,
             b.name as mysql_server_name,c.`libelle` as env, c.`class`, a.libelle as name_cleaner, a.database as db
