@@ -1515,16 +1515,9 @@ $(function () {
             }
         }
 
-
-
-
         $db = Sgbd::sql(DB_DEFAULT);
-
-        Extraction::setDb($db);
         $hostname = trim(Extraction::display(array("hostname"), array($backup->id_mysql_server))[$backup->id_mysql_server]['']['hostname']);
-
-
-
+        
         //nice zip
         //$cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
 
@@ -1550,7 +1543,6 @@ $(function () {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Extraction::setDb($db);
         $ret = Extraction::display(array("hostname"), array(11))[11]['']['hostname'];
 
 

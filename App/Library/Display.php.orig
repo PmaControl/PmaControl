@@ -24,7 +24,11 @@ class Display
             .' <a href="">'.$arr['display_name'].'</a> <small class="text-muted">'.$arr['ip'].'</small>';
     }
 
+<<<<<<< HEAD
+    static public function srv($id_mysql_server, $withip = true)
+=======
     static public function srv($id_mysql_server, $url = '')
+>>>>>>> 094d32b169d24cb23741a2d6d59f933db6b373c5
     {
         
         

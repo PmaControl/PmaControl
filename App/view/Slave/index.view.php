@@ -5,6 +5,11 @@
  * and open the template in the editor.
  */
 
+use App\Library\Mysql;
+use App\Library\Display;
+
+
+
 function display_db($dbs)
 {
     if (empty($dbs)) {
@@ -72,26 +77,24 @@ foreach ($data['slave'] as $slaves) {
         echo '<td class="'.$class.'">';
 
 
-        if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
+        
+        
+        
+        //if (Mysql::getMaster($id_mysql_server))
+        
+        
+        $uniq = $slave['master_host'].':'.$slave['master_port'];
+        $id_mysql_server = Mysql::getIdFromDns($uniq);
+        
+            
+            
+        if ($id_mysql_server) {
+            
+            
+            echo Display::srv($id_mysql_server);
+            
 
-            $id_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
-            $m_env = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['environment'];
-
-            echo '<span data-toggle="tooltip" data-placement="right" title="'.$m_env.'" class="label label-'.$data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['class'].'">'
-            .substr($m_env, 0, 1).'</span> ';
-
-
-            if (!empty($data['hostname'][$id_master]['']['hostname'])) {
-                echo '<a href="">'.$data['hostname'][$id_master]['']['hostname'].'</a>';
-            } else {
-
-                echo $data['server']['master'][$id_master]['display_name'];
-            }
-
-
-            //echo $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['display_name'];
-
-            echo ' ('.$slave['master_host'].')';
+  
         } else {
             echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }

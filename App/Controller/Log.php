@@ -56,7 +56,6 @@ class Log extends Controller {
         $data['log'] = array();
 
         if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['id'])) {
-            Extraction::setDb($db);
 
             $id_mysql_servers = explode(',', substr($_GET['mysql_server']['id'], 1, -1));
             $id_ts_variables = explode(',', substr($_GET['ts_variable']['id'], 1, -1));
