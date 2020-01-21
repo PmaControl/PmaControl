@@ -24,7 +24,7 @@ class Display
             .' <a href="">'.$arr['display_name'].'</a> <small class="text-muted">'.$arr['ip'].'</small>';
     }
 
-    static public function srv($id_mysql_server)
+    static public function srv($id_mysql_server, $withip = true)
     {
         $db = Sgbd::sql(DB_DEFAULT);
         
@@ -45,7 +45,15 @@ class Display
 
         }
 
-        return '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
-            .' <a href="">'.self::$server[$id_mysql_server]['display_name'].'</a> <small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small>';
+        $ret =  '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
+            .' <a href="">'.self::$server[$id_mysql_server]['display_name'].'</a> ';
+        
+        
+        if ($withip)
+        {
+            $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small> ';
+        }
+        
+        return $ret;
     }
 }
