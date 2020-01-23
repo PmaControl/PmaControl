@@ -221,7 +221,7 @@ class Integrate extends Controller
 
                                             if (empty($var_index[$type_metrics][$variable])) {
                                                 $var_index[$type_metrics][$variable] = 1;
-                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
+                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", "'.$this->getTypeOfData($value).'", "'.$type_metrics.'", "general")';
                                                 //$variables_to_insert[$type_metrics][$variable]['type'] = $this->getTypeOfData($value);
                                             }
                                         }
