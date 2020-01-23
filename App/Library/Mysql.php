@@ -164,13 +164,8 @@ class Mysql
                 return $ob->id;
             }
 
-
-
             //if ()$master[$connection_name]['master_host']
         }
-
-
-
 
 
         return 0;

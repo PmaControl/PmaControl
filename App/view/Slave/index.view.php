@@ -73,32 +73,21 @@ foreach ($data['slave'] as $slaves) {
             }
         }
 
-
         echo '<td class="'.$class.'">';
 
-
-        
-        
-        
         //if (Mysql::getMaster($id_mysql_server))
         
         
         $uniq = $slave['master_host'].':'.$slave['master_port'];
-        $id_mysql_server = Mysql::getIdFromDns($uniq);
+        $id_mysql_server = Mysql::getIdFromDns($uniq); 
         
-            
-            
         if ($id_mysql_server) {
-            
-            
-            echo Display::srv($id_mysql_server);
-            
 
-  
+            echo Display::srv($id_mysql_server);
+           
         } else {
             echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }
-
 
         echo '</td>';
 
@@ -110,8 +99,6 @@ foreach ($data['slave'] as $slaves) {
 
         }
 
-
-
         echo '<td class="'.$class.'">';
 
         $s_env = $data['server']['slave'][$slave['id_mysql_server']]['environment'];
@@ -120,8 +107,7 @@ foreach ($data['slave'] as $slaves) {
         .substr($s_env, 0, 1).'</span> ';
         //echo $data['server']['slave'][]['display_name'];
 
-
-//        echo $slave['id_mysql_server'];
+        //        echo $slave['id_mysql_server'];
         echo '<a href="">'.$data['hostname'][$slave['id_mysql_server']]['']['hostname'].'</a>';
         echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
         echo '</td>';
@@ -134,12 +120,9 @@ foreach ($data['slave'] as $slaves) {
             $disp = $connect_name;
         }
 
-
         echo '<a href="'.LINK.'slave/show/'.$slave['id_mysql_server'].'/'.$connect_name.'/">'.$disp.'</a>';
         echo '</td>';
         //echo '<td>'.$slave['seconds_behind_master'].'</td>';
-
-
 
         if ($slave['seconds_behind_master'] !== "0") {
             $class = "pma pma-warning";
@@ -147,10 +130,8 @@ foreach ($data['slave'] as $slaves) {
             $class = "";
         }
 
-
         echo '<td class="'.$class.'">';
         echo $slave['seconds_behind_master']."";
-
 
         if (!isset($data['graph'][$slave['id_mysql_server']]['max'])) {
             $data['graph'][$slave['id_mysql_server']]['max'] = "n/a";
@@ -207,7 +188,6 @@ foreach ($data['slave'] as $slaves) {
             echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.$slave['last_sql_error'].'">'.$slave['last_sql_errno'].'</a>';
         }
         echo '</td>';
-
 
         echo '<td>';
         display_db($slave['replicate_do_db']);

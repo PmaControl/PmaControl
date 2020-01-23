@@ -646,7 +646,7 @@ class Dot2 extends Controller
 
         $this->view = false;
 
-
+        Debug::debug("Start");
 
         $this->getColor();
 
@@ -674,7 +674,7 @@ class Dot2 extends Controller
         $this->pushMasterMaster();
         $this->pushGaleraCluster();
 
-//Debug::debug($this->slaves, "graph_edge");
+        Debug::debug($this->slaves, "graph_edge");
 //Debug::debug($this->graph_edge, "graph_edge");
 //exit;
 //generate and save graph
@@ -684,15 +684,12 @@ class Dot2 extends Controller
 
         Debug::checkPoint("Push data");
 
-
         $this->getColor();
-
-
-
-
 
         $this->generateAllGraph();
         Debug::checkPoint("generateAllGraph");
+
+        Debug::debug("Start");
     }
 
     public function generateAllGraph()

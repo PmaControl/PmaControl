@@ -30,6 +30,7 @@ class Aspirateur extends Controller
     var $shared        = array();
     var $log_file      = TMP."log/daemon.log";
     var $lock_variable = TMP."lock/variable/{id_mysql_server}.md5";
+    var $lock_database = TMP."lock/database/{id_mysql_server}.lock";
 
     /*
      * (PmaControl 0.8)<br/>
@@ -324,6 +325,8 @@ class Aspirateur extends Controller
             $sql = "UPDATE `mysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."', 
                 `date_refresh` = '".date("Y-m-d H:i:s")."',
                     `is_available` = 0 WHERE id =".$id_server;
+            Debug::sql($sql);
+            
             $db->sql_query($sql);
             $db->sql_close();
 
@@ -333,8 +336,7 @@ class Aspirateur extends Controller
         }
 
 
-        Debug::debug("on est la !!!!!!!!");
-
+        
         $data['server']['ping'] = microtime(true) - $time_start;
 
 //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
@@ -366,7 +368,6 @@ class Aspirateur extends Controller
             unset($var['variables']['timestamp']);
         }
 
-
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
         Debug::debug("apres status");
@@ -382,12 +383,6 @@ class Aspirateur extends Controller
         }
 
         Debug::debug("apres la récupération de la liste des binlogs");
-
-
-
-
-//Debug::debug($data['slave']);
-
         Debug::checkPoint('apres query');
 
         /* mysql > 5.6
@@ -396,41 +391,24 @@ class Aspirateur extends Controller
 
           while ($ob = $mysql_tested->sql_fetch_object($res)) {
           $data['innodb'][$ob->NAME] = $ob->COUNT;
-          } */
+          }
+         */
 
         $date[date('Y-m-d H:i:s')][$id_server] = $data;
-//Debug::debug($date);
-//$json                                  = json_encode($date);
-//Debug::debug($data['server']['ping'], "ping");
-
-
-
-
 
         if ($mysql_tested->is_connected === false) {
             echo "PAS BON DU TOUT ! ask creator of PmaControl";
             return false;
         }
 
-
-
-
-        $md5 = md5(json_encode($var));
-
-
-        //$this->allocate_tmp_storage('server_'.$id_server);
-
+        $md5      = md5(json_encode($var));
         $file_md5 = str_replace('{id_mysql_server}', $id_server, $this->lock_variable);
-
-
-
 
         $export_variables = false;
 
         Debug::debug($md5, "NEW MD5");
 
         if (file_exists($file_md5)) {
-
 
             $cmp_md5 = file_get_contents($file_md5);
 
@@ -442,8 +420,6 @@ class Aspirateur extends Controller
                 file_put_contents($file_md5, $md5);
             }
         } else {
-
-
             /*
               if (!is_writable(dirname($file_md5))) {
               Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
@@ -455,21 +431,57 @@ class Aspirateur extends Controller
 
 
 
-        if ($export_variables) {
-//Debug::debug($export_variables, "SET VARIABLES");
-            $this->allocate_shared_storage('variable');
+        //to know if we grab statistics on databases & tables
+        $lock_database = str_replace('{id_mysql_server}', $id_server, $this->lock_database);
+
+        Debug::debug($lock_database, "lock file database");
+        
+        
+        $get_databases = false;
+        if (file_exists($lock_database)) {
+
+
+            $date = file_get_contents($lock_database);
+
+            if ($date !== date('Y-m-d')) {
+                $get_databases = true;
+                
+            }
+        } else {
+            $get_databases = true;
         }
 
+        
+        Debug::debug($get_databases, "getDatabase");
+        
+        
+        if ($get_databases === true) {
+
+            
+            
+            
+            $data = $this->getdatabase($mysql_tested);
+
+            if ($data) {
+                $this->allocate_shared_storage('database');
+                $dbs['databases']['databases'] = $data;
+
+                $databases                                  = array();
+                $databases[date('Y-m-d H:i:s')][$id_server] = $dbs;
+                $this->shared['database']->{$id_server}     = $databases;
+                
+                
+                file_put_contents($lock_database, date('Y-m-d'));
+            }
+        }
+
+
+        //push data in memory
         $this->allocate_shared_storage('answer');
-
-
-
-//push data in memory
         $this->shared['answer']->{$id_server} = $date;
 
-
         if ($export_variables) {
-
+            $this->allocate_shared_storage('variable');
             $variables                                  = array();
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server}     = $variables;
@@ -477,9 +489,7 @@ class Aspirateur extends Controller
 
         $mysql_tested->sql_close();
 
-
         Debug::debugShowTime();
-
         ini_set("display_errors", $display_error);
     }
 
@@ -1522,8 +1532,6 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-
-
         //Debug::debug($server_list, "Liste des serveurs monitoré");
         //to prevent any trouble with fork
         //$this->debugShowQueries();
@@ -1532,7 +1540,6 @@ class Aspirateur extends Controller
 
         // filename: add_to_queue.php
         //creating a queue requires we come up with an arbitrary number
-
 
         foreach ($server_list as $server) {
 
@@ -1544,20 +1551,14 @@ class Aspirateur extends Controller
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
 
-
                 Debug::debug($server, "Ajout dans la file d'attente");
                 //echo "added to queue  \n";
                 // you can use the msg_stat_queue() function to see queue status
                 //print_r(msg_stat_queue($queue));
             } else {
-
-
                 echo "could not add message to queue \n";
             }
         }
-
-//$stats = msg_stat_queue($queue);
-//debug($stats);
     }
 
     public function queue($param)
@@ -1665,21 +1666,18 @@ class Aspirateur extends Controller
 //remove pid and id_mysql_server
     }
 
-    
-    
-    
-    public function getdatabases($mysql_tested)
+    public function getdatabase($mysql_tested)
     {
         //$grants = $this->getGrants();
 
         $sql = 'SELECT table_schema as `database`,
         engine,
         ROW_FORMAT as "row_format", 
-        sum(data_length) as "size_data",
-        sum( index_length ) as "size_index",
-        sum( data_free ) as "size_free",
-        count(1) as "tables",
-        sum(TABLE_ROWS) as "rows",
+        sum(`data_length`) as "size_data",
+        sum( `index_length` ) as "size_index",
+        sum( `data_free` ) as "size_free",
+        count(1) as `tables`,
+        sum(TABLE_ROWS) as `rows`,
         GROUP_CONCAT(DISTINCT(TABLE_COLLATION)) as table_collation,
         DEFAULT_CHARACTER_SET_NAME as "charset",
         DEFAULT_COLLATION_NAME as "collation"
@@ -1689,6 +1687,7 @@ class Aspirateur extends Controller
         GROUP BY table_schema, engine, ROW_FORMAT
             ';
 
+        Debug::sql($sql);
 
         $res = $mysql_tested->sql_query($sql);
         if ($res) {
@@ -1702,9 +1701,9 @@ class Aspirateur extends Controller
                     unset($arr['charset']);
                     unset($arr['collation']);
 
-                    $dbs[$arr['database']][$arr['engine']][$arr['row_format']] = $arr;
+                    $dbs[$arr['database']]['engine'][$arr['engine']][$arr['row_format']] = $arr;
                 }
-                
+
                 return json_encode($dbs);
             }
         }

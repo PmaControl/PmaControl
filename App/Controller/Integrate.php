@@ -211,6 +211,9 @@ class Integrate extends Controller
                                                 .$variables[$type_metrics][$variable]['id'].', "'
                                                 .$date.'", "'
                                                 .$value.'")';
+                                            
+                                            
+                                            Debug::debug($insert, "val to insert in ts_variable");
                                         } else {
                                             if ($value === "-1" || $value === "") {
                                                 continue;
@@ -221,7 +224,7 @@ class Integrate extends Controller
 
                                             if (empty($var_index[$type_metrics][$variable])) {
                                                 $var_index[$type_metrics][$variable] = 1;
-                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
+                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", "'.$this->getTypeOfData($value).'", "'.$type_metrics.'", "general")';
                                                 //$variables_to_insert[$type_metrics][$variable]['type'] = $this->getTypeOfData($value);
                                             }
                                         }
@@ -258,6 +261,7 @@ class Integrate extends Controller
         if (count($variables_to_insert) > 0) {
 
             Debug::checkPoint("variables");
+            Debug::debug($variables_to_insert, "variables_to_insert");
             $this->insert_variable($variables_to_insert);
         } else {
             Debug::checkPoint("values");
