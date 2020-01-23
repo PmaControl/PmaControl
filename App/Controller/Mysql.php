@@ -14,7 +14,6 @@ use \App\Library\Graphviz;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
 
-
 class Mysql extends Controller
 {
     const DEBUG = true;
@@ -888,7 +887,7 @@ class Mysql extends Controller
 
 
         $liste_table_connected = array();
-        while ($ob2    = $db->sql_fetch_object($res2)) {
+        while ($ob2                   = $db->sql_fetch_object($res2)) {
             $liste_table_connected[] = $ob2->table_name;
         }
 
@@ -915,15 +914,15 @@ class Mysql extends Controller
 
 
                 //pour retirer les tables en attente d'être éffacer
-                
-               
+
+
                 if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
                     continue;
                 }
 
                 // si c'est pas dans la liste des tables qui sont connecté on ne l'affiche pas
                 // On affiche pas les tables qui ne sont pas lié à une autre (on retire les tables singleton)
-                
+
                 if (!in_array($table['TABLE_NAME'], $liste_table_connected)) {
                     continue;
                 }
@@ -948,17 +947,17 @@ class Mysql extends Controller
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
                 fwrite($fp, '<tr><td bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
-                /*
 
-                  $sql = "SELECT * FROM information_schema.`COLUMNS`
+
+                $sql = "SELECT * FROM information_schema.`COLUMNS`
                   WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION";
 
 
-                  $columns = $db->sql_fetch_yield($sql);
-                  foreach ($columns as $column) {
-                  fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td></tr>'.PHP_EOL);
-                  }
-                 */
+                $columns = $db->sql_fetch_yield($sql);
+                foreach ($columns as $column) {
+                    fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td></tr>'.PHP_EOL);
+                }
+                /******/
 
 
                 fwrite($fp, '</table>> ];'.PHP_EOL);
@@ -1802,5 +1801,10 @@ class Mysql extends Controller
     {
 
         Mysql2::generateMySQLConfig(Sgbd::sql(DB_DEFAULT));
+    }
+
+    public function addDate()
+    {
+        Mysql2::addMaxDate();
     }
 }
