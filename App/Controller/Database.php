@@ -11,12 +11,12 @@ use \App\Library\Debug;
 use App\Library\Chiffrement;
 use App\Library\Mysql;
 use App\Library\System;
-use App\Library\Diff;
 //generate UUID avec PHP
 //documentation ici : https://github.com/ramsey/uuid
 use Ramsey\Uuid\Uuid;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Extraction;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
@@ -1138,5 +1138,19 @@ END;";
 
         $this->set("data", $data);
         return $data;
+    }
+    
+    function show($param)
+    {
+        
+        Debug::parseDebug($param);
+        
+
+        $data['database'] = Extraction::display(array("databases::databases"));
+        
+        Debug::debug($data);
+        Debug::debug(json_decode($data['database'][1]['']['databases'], true));
+        
+        $this->set("data", $data);
     }
 }
