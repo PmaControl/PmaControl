@@ -246,32 +246,17 @@ $("#export_all-all2").click(function(){
     public function import($param)
     {
         //$param[] = "--debug";
-//        debug($param);
+        //debug($param);
 
         Debug::debug(DB_DEFAULT, "DB");
 
-
         Crypt::$key = CRYPT_KEY;
         $db         = Sgbd::sql(DB_DEFAULT);
-        //$db = Sgbd::sql(DB_DEFAULT);
-
-
-        Mysql::set_db($db);
-
-
-
-
         Debug::parseDebug($param);
         $json = $param[0];
-
-
         //debug(json_decode($json,JSON_PRETTY_PRINT));
 
         $data = Json::isJson($json);
-
-
-
-
 
         foreach ($data as $server_type => $servers) {
             foreach ($servers as $server) {

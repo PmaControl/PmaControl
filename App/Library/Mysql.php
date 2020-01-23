@@ -669,7 +669,6 @@ END IF;";
 
         //Debug::debug($ret);
 
-
         return $resultat;
     }
 
