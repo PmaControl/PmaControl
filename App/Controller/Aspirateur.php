@@ -744,9 +744,10 @@ class Aspirateur extends Controller
 
         $i = 1;
         foreach ($titles as $title) {
-            $elems = preg_split('/\s+/', $lines[$i]);
-            unset($elems[0]); // to remove Mem: and Swap:
-
+            
+            // to remove Mem: and Swap:  (or other text in other language)
+            $value = explode(':',$line[$i])[1]; 
+            $elems = preg_split('/\s+/', $value);
 
             $j = 0;
             foreach ($elems as $elem) {
@@ -757,11 +758,8 @@ class Aspirateur extends Controller
             $i++;
         }
 
-
         //on exclu les montage nfs
         $dd = trim($ssh->exec("df -l"));
-
-
 
         $lines = explode("\n", $dd);
         $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
@@ -769,14 +767,12 @@ class Aspirateur extends Controller
 
         $tmp = array();
         foreach ($lines as $line) {
-            $elems = preg_split('/\s+/', $line);
 
+            $elems = preg_split('/\s+/', $line);
             $tmp[$elems[5]] = $elems;
         }
 
         $stats['disks'] = json_encode($tmp);
-
-
 
         $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
 
@@ -1684,7 +1680,7 @@ class Aspirateur extends Controller
         FROM information_schema.TABLES a
         INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
         WHERE table_schema NOT IN ("information_schema", "performance_schema", "mysql") AND a.TABLE_TYPE = "BASE TABLE"
-        GROUP BY table_schema, engine, ROW_FORMAT
+        GROUP BY table_schema, engine, ROW_FORMAT;
             ';
 
         Debug::sql($sql);
