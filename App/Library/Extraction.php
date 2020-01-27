@@ -14,21 +14,19 @@ class Extraction {
 
     use \App\Library\Filter;
 
-
     static $variable = array();
     static $server = array();
     static $groupbyday = false;
 
-
     static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false) {
-        
-        
-        
+
+
+
         /*
           debug($var);
           debug($server);
           debug($date);
-         /*****/
+          /**** */
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -73,16 +71,12 @@ class Extraction {
 
         $variable = self::getIdVariable($var);
 
-
         /*
           if (count($var) != self::count_recursive($variable)) {
-
           //echo from(__FILE__);
           //debug(self::count_recursive($variable));
           //debug($var);
           //debug($variable);
-
-
           throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
           } */
 
@@ -110,15 +104,12 @@ class Extraction {
                     $sql4 = "(SELECT " . $fields . "   FROM `ts_value_" . $radical . "_" . $type . "` a "
                             . $INNER . "
                 WHERE id_ts_variable = " . $id_ts_variable . "
-                    AND a.id_mysql_server IN (" . implode(",", $server) . ") $extra_where)";
-
-
-
+                   AND a.id_mysql_server IN (" . implode(",", $server) . ")  $extra_where)";
                     $sql2[] = $sql4;
                 }
             }
         }
-        
+
         //debug($sql2);
 
         $sql3 = implode(" UNION ALL ", $sql2);
@@ -132,7 +123,7 @@ class Extraction {
         }
 
 
-        //echo \SqlFormatter::format($sql3)."\n";
+        //echo \SqlFormatter::format($sql3) . "\n";
 
 
         if ($graph === true) {
@@ -163,8 +154,7 @@ class Extraction {
         }
 
 
-        if (empty($sql3))
-        {
+        if (empty($sql3)) {
             return false;
         }
 
@@ -184,8 +174,8 @@ class Extraction {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        
-        
+
+
         if (empty(self::$server)) {
             $sql = "SELECT id FROM mysql_server a WHERE 1=1 " . self::getFilter();
 
@@ -204,12 +194,9 @@ class Extraction {
             self::$server = $server;
         }
 
-        
-        
+
+
         return self::$server;
-        
-        
-        
     }
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false) {
@@ -217,8 +204,8 @@ class Extraction {
 
 
         //return(array());
-        
-        
+
+
         $res = self::extract($var, $server, $date, $range, $graph);
 
 
@@ -229,7 +216,6 @@ class Extraction {
         if ($res === false) {
             return $table;
         }
-
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -280,7 +266,7 @@ class Extraction {
 
         $res = $db->sql_query($sql);
 
-        //echo \SqlFormatter::format($sql)."\n";
+        //echo \SqlFormatter::format($sql) . "\n";
         $from = array();
         $variable = array();
         while ($ob = $db->sql_fetch_object($res)) {
