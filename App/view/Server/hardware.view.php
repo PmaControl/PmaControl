@@ -1,5 +1,10 @@
 <?php
 
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
+
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 
