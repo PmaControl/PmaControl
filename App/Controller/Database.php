@@ -1148,8 +1148,6 @@ END;";
 
         $data['database'] = Extraction::display(array("databases::databases"));
         
-        Debug::debug($data);
-        Debug::debug(json_decode($data['database'][1]['']['databases'], true));
         
         $this->set("data", $data);
     }

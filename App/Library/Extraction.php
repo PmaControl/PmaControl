@@ -305,4 +305,51 @@ class Extraction {
         self::$$var = $val;
     }
 
+    /*
+     * Cette fonction prend comme paramètres la sortie de la fonction 
+     * Extraction::display(array("databases::databases"));  
+     */
+
+    static public function getSizeByEngine($data) {
+        $res = array();
+        
+        $engines = array();
+
+        foreach ($data as $id_mysql_server => $elems) {
+            foreach ($elems as $databases) {
+
+                if (empty($databases['databases']))
+                {
+                    
+                    //Debug($databases);
+                    continue;
+                }
+                
+                $dbs = json_decode($databases['databases'], true);
+
+                foreach ($dbs as $db_attr) {
+                    foreach ($db_attr['engine'] as $engine => $row_formats) {
+                        foreach ($row_formats as $details) {
+
+                            $res['server'][$id_mysql_server][$engine]['size_data'] = $res['server'][$id_mysql_server][$engine]['size_data'] ?? 0;
+                            $res['server'][$id_mysql_server][$engine]['size_index'] = $res['server'][$id_mysql_server][$engine]['size_index'] ?? 0;
+                            $res['server'][$id_mysql_server][$engine]['size_free'] = $res['server'][$id_mysql_server][$engine]['size_free'] ?? 0;
+
+                            $res['server'][$id_mysql_server][$engine]['size_data'] += $details['size_data'];
+                            $res['server'][$id_mysql_server][$engine]['size_index'] += $details['size_index'];
+                            $res['server'][$id_mysql_server][$engine]['size_free'] += $details['size_free'];
+                            
+                            $engines[] = $engine;
+                        }
+                    }
+                }
+            }
+        }
+        
+        $res['engine'] = array_unique($engines);
+        sort($res['engine']);
+
+        return $res;
+    }
+
 }

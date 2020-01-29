@@ -433,9 +433,9 @@ class Aspirateur extends Controller {
         $get_databases = false;
         if (file_exists($lock_database)) {
 
-            $date = file_get_contents($lock_database);
+            $date_last_run_db = file_get_contents($lock_database);
 
-            if ($date !== date('Y-m-d')) {
+            if ($date_last_run_db !== date('Y-m-d')) {
                 $get_databases = true;
             }
         } else {
@@ -446,21 +446,21 @@ class Aspirateur extends Controller {
 
         if ($get_databases === true) {
 
-            //$data = $this->getdatabase($mysql_tested);
+            $data_db = $this->getDatabase($mysql_tested);
 
-            if (!empty($data)) {
+            if (!empty($data_db)) {
                 $this->allocate_shared_storage('database');
-                $dbs['databases']['databases'] = $data;
+
+                $dbs = array();
+                $dbs['databases']['databases'] = $data_db;
 
                 $databases = array();
                 $databases[date('Y-m-d H:i:s')][$id_server] = $dbs;
                 $this->shared['database']->{$id_server} = $databases;
 
-
                 file_put_contents($lock_database, date('Y-m-d'));
             }
         }
-
 
         //push data in memory
         $this->allocate_shared_storage('answer');
@@ -490,7 +490,6 @@ class Aspirateur extends Controller {
      */
     public function TrySystemSsh() {
         $ret = ParseCnf::getCnf("/etc/mysql/my.cnf");
-
         debug($ret);
     }
 
@@ -1596,14 +1595,10 @@ class Aspirateur extends Controller {
             $msg = NULL;
         }
 
-
-
-
-
-//remove pid and id_mysql_server
+        //remove pid and id_mysql_server
     }
 
-    public function getdatabase($mysql_tested) {
+    public function getDatabase($mysql_tested) {
         //$grants = $this->getGrants();
 
         $sql = 'SELECT table_schema as `database`,
@@ -1622,7 +1617,7 @@ class Aspirateur extends Controller {
         WHERE table_schema NOT IN ("information_schema", "performance_schema", "mysql") AND a.TABLE_TYPE = "BASE TABLE"
         GROUP BY table_schema, engine, ROW_FORMAT;
             ';
-
+                    
         Debug::sql($sql);
 
         $res = $mysql_tested->sql_query($sql);
@@ -1648,7 +1643,7 @@ class Aspirateur extends Controller {
 
     public function getSwap($membrut) {
         Debug::debug($membrut);
-       
+
         $lines = explode("\n", $membrut);
         unset($lines[0]);
         $titles = array('memory', 'swap');
@@ -1667,7 +1662,7 @@ class Aspirateur extends Controller {
             }
             $i++;
         }
-        
+
         Debug::debug($stats);
 
         return $stats;
