@@ -5,9 +5,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
-use App\Library\Util;
 use \Glial\Sgbd\Sgbd;
-
+use App\Library\Mysql;
 
 class Mysqlsys extends Controller {
 
@@ -16,14 +15,10 @@ class Mysqlsys extends Controller {
     public function index() {
 
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
-//$this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '.$this->title;
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
-//$this->di['js']->code_javascript('');
-
-
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+        
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_server']['id'])) {
@@ -41,7 +36,7 @@ class Mysqlsys extends Controller {
 
             $data = [];
 
-// get server available
+            // get server available
             $sql = "SELECT * FROM mysql_server a WHERE error = '' " . self::getFilter() . " order by a.name ASC";
             $res = $db->sql_query($sql);
             $data['servers'] = array();
@@ -68,7 +63,7 @@ class Mysqlsys extends Controller {
                     $data['view_available'][] = $ob->table_name;
                 }
 
-//test if InnoDB activated
+                //test if InnoDB activated
                 $sql = "select * from information_schema.engines where engine = 'InnoDB';";
                 $res = $remote->sql_query($sql);
 
@@ -79,10 +74,7 @@ class Mysqlsys extends Controller {
                     }
                 }
 
-//test if spider / rocksdb etc...
-
-
-
+                //test if spider / rocksdb etc...
                 if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
 
 
@@ -94,6 +86,7 @@ class Mysqlsys extends Controller {
 
                     $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
                     $data['table'] = $remote->sql_fetch_yield($sql);
+                    $data['name_table'] = $_GET['mysqlsys'];
                 }
 
                 $data['variables'] = $remote->getVersion();
@@ -246,6 +239,26 @@ class Mysqlsys extends Controller {
         set_flash("success", $title, $msg);
 
         header("location: " . $_SERVER['HTTP_REFERER']);
+    }
+
+    public function updateConfig($param) {
+        $this->view = false;
+        $this->layout_name = false;
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            
+            $db = Mysql::getDbLink($_POST['pk']);
+            
+            $sql = "UPDATE sys.sys_config SET `value` = '" . $_POST['value'] . "' 
+            WHERE `variable` = '" . $db->sql_real_escape_string($_POST['name']) . "'";
+            $db->sql_query($sql);
+
+            if ($db->sql_affected_rows() === 1) {
+                echo "OK";
+            } else {
+                header("HTTP/1.0 503 Internal Server Error");
+            }
+        }
     }
 
 }

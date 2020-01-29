@@ -2,6 +2,10 @@
 
 use App\Library\Display;
 
+echo '<div class="well">';
+\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+echo '</div>';
+
 function format($bytes, $decimals = 2)
 {
     $sz     = ' KMGTP';
@@ -36,8 +40,6 @@ function format($bytes, $decimals = 2)
         $total_table = array();
         $total_row   = array();
 
-
-
         foreach ($data['database'] as $id_mysql_server => $elems) {
             foreach ($elems as $databases) {
                 $dbs = json_decode($databases['databases'], true);
@@ -46,7 +48,6 @@ function format($bytes, $decimals = 2)
                     foreach ($db_attr['engine'] as $engine => $row_formats) {
                         foreach ($row_formats as $row_format => $details) {
                             echo '<tr>';
-
                             echo '<td>'.Display::srv($id_mysql_server).'</td>';
                             echo '<td><a href="'.LINK.'mysql/mpd/'.$id_mysql_server.'/'.$schema.'/">'.$schema.'</a></td>';
                             echo '<td>'.$db_attr['charset'].'</td>';
@@ -60,7 +61,6 @@ function format($bytes, $decimals = 2)
                             echo '<td style="text-align:right;">'.$details['rows'].'</td>';
                             echo '<td>'.$details['table_collation'].'</td>';
                             echo '<tr>';
-
 
                             $total_data[]  = $details['size_data'];
                             $total_index[] = $details['size_index'];
