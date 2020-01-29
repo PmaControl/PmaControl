@@ -227,7 +227,7 @@ class Server extends Controller {
 
 //debug($servers);
 
-        
+
         $data['extra'] = Extraction::display(array("version", "hostname", "server::ping", "general_log"));
 
 
@@ -260,9 +260,9 @@ class Server extends Controller {
     public function database() {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        
-        
-        
+
+
+
 
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
 			GROUP_CONCAT('',b.name) as dbs,
@@ -290,7 +290,7 @@ class Server extends Controller {
 
 
 //echo \SqlFormatter::format($sql);
-        
+
 
         $data['servers'] = Extraction::display(array("status::com_select", "status::com_update", "status::com_insert", "status::com_delete",
                     "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
@@ -357,13 +357,15 @@ class Server extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        
+
         $data['variables'] = Extraction::display(array("variables::innodb_buffer_pool_size", "variables::innodb_additional_mem_pool_size",
                     "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
                     "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
                     "variables::sort_buffer_size", "variables::read_rnd_buffer_size", "variables::join_buffer_size", "variables::thread_stack",
-                    "variables::binlog_cache_size", "stats::memory_total"));
+                    "variables::binlog_cache_size","variables::innodb_buffer_pool_chunk_size", "variables::innodb_buffer_pool_instances", "stats::memory_total", "databases::databases"));
 
+
+        $data['database'] = Extraction::getSizeByEngine($data['variables']);
 
 
 
@@ -382,7 +384,7 @@ class Server extends Controller {
 })');
 
 
-        
+
 
 
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
@@ -489,7 +491,7 @@ class Server extends Controller {
             if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])
             ) {
 
-                
+
                 $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), $_GET['ts_variable']['date']);
 
                 /*
@@ -915,7 +917,7 @@ var myChart = new Chart(ctx, {
     public function updateHostname() {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        
+
         $data['hostname'] = Extraction::display(array("variables::hostname"));
 
 
@@ -1036,18 +1038,14 @@ var myChart = new Chart(ctx, {
 
         Debug::parseDebug($param);
         $this->view = false;
-
         $id_server = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
 
         // pour eviter d'effacer la base de PmaControl !!!
         $sql = "SELECT * FROM mysql_server WHERE id=" . $id_server . ";";
         $res = $db->sql_query($sql);
         Debug::sql($sql);
-
 
         while ($ob = $db->sql_fetch_object($res)) {
             if ($ob->name != DB_DEFAULT) {
@@ -1076,7 +1074,6 @@ var myChart = new Chart(ctx, {
         $sql = "SELECT * FROM `mysql_server` WHERE `id`=" . $id_mysql_server . ";";
         Debug::sql($sql);
 
-
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -1094,9 +1091,7 @@ var myChart = new Chart(ctx, {
         Debug::sql($sql2);
 
         $remote->sql_query($sql2);
-
         $data['return'] = 'ok';
-
 
         echo json_encode($data);
     }
