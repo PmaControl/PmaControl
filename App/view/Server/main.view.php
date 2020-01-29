@@ -1,8 +1,6 @@
 <?php
 
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
-use \Glial\Synapse\FactoryController;
-use \Glial\Security\Crypt\Crypt;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
@@ -45,7 +43,6 @@ use App\Library\Format;
   $pow = 0;
   }
 
-
   // Uncomment one of the following alternatives
   // $bytes /= pow(1024, $pow);
   // $bytes /= (1 << (10 * $pow));
@@ -53,7 +50,6 @@ use App\Library\Format;
 
   return round($microtime, $precision).' '.$units[$pow];
   }
-
  */
 
 echo '<div class="well">';
@@ -149,14 +145,10 @@ if (!empty($data['servers'])) {
             $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
         }
 
-
-
-
         $alternate = 'alternate';
 
         if (!empty($style)) {
             $alternate = '';
-
             $style .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
         }
 
