@@ -116,7 +116,8 @@ class Install extends Controller {
 
 
         $db = $config->get("db");
-        $_DB = new Sgbd($db);
+        
+        Sgbd::setConfig($db);
 
 
         $log = new Logger('Glial');
@@ -128,14 +129,11 @@ class Install extends Controller {
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $log->pushHandler($handler);
 
-        $_DB->setLogger($log);
+        Sgbd::setLogger($log);
 
-        $this->installLanguage($_DB);
-
+        $this->installLanguage(Sgbd::sql(DB_DEFAULT));
         $this->importData($server);
-
         $this->updateCache();
-
         $this->cmd("echo 1", "Testing system & configuration");
 
         echo Color::getColoredString("\n" . SITE_NAME . " " . SITE_VERSION . " has been successfully installed !\n", "green");
