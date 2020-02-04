@@ -689,8 +689,6 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
             }
         }
 
-        //Debug::debugShowQueries($this->di['db']);
-
         return $nb_renamed;
     }
 

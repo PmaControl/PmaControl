@@ -152,9 +152,9 @@ class Mysql extends Controller
 
         Crypt::$key = CRYPT_KEY;
 
-        foreach ($this->di['db']->getAll() as $server) {
+        foreach (Sgbd::getAll() as $server) {
 
-            $info_server = $this->di['db']->getParam($server);
+            $info_server = Sgbd::getParam($server);
 
             $data['mysql_server']['name']   = $server;
             $data['mysql_server']['ip']     = $info_server['hostname'];
@@ -265,7 +265,7 @@ class Mysql extends Controller
         $i = 1;
 
         $password = array();
-        foreach ($this->di['db']->getAll() as $key => $db_name) {
+        foreach (Sgbd::getAll() as $key => $db_name) {
 
             $db = Sgbd::sql($db_name);
 
@@ -327,115 +327,6 @@ class Mysql extends Controller
         return $query;
     }
 
-    public function status()
-    {
-        $this->layout_name = 'default';
-        $this->view        = false;
-
-        $MS = new MasterSlave();
-
-        echo "\n";
-
-        foreach ($this->di['db'] as $key => $db) {
-
-            echo $key." ";
-
-            echo str_repeat(" ", 20 - strlen($key));
-            $server_config = $db->getParams();
-
-            $master = $MS->isMaster($db);
-            $slave  = $MS->isSlave($db);
-
-
-            echo $server_config['hostname'];
-            echo str_repeat(" ", 16 - strlen($server_config['hostname']));
-
-            $sql  = "SHOW GLOBAL VARIABLES LIKE 'version'";
-            $res  = $db->sql_query($sql);
-            $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-            echo $data['Value'];
-            echo str_repeat(" ", 29 - strlen($data['Value']));
-
-
-            $sql  = "show GLOBAL variables like 'character_set_database'";
-            $res  = $db->sql_query($sql);
-            $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-            echo $data['Value'];
-            echo str_repeat(" ", 10 - strlen($data['Value']));
-
-
-            $sql  = "SHOW GLOBAL VARIABLES LIKE 'version_compile_machine'";
-            $res  = $db->sql_query($sql);
-            $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-            echo $data['Value'];
-            echo str_repeat(" ", 7 - strlen($data['Value']));
-
-
-            $sql  = "SHOW GLOBAL VARIABLES LIKE 'innodb_version'";
-            $res  = $db->sql_query($sql);
-            $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-            echo $data['Value'];
-            echo str_repeat(" ", 12 - strlen($data['Value']));
-
-
-
-            $sql  = "SHOW GLOBAL VARIABLES LIKE 'innodb_version'";
-            $res  = $db->sql_query($sql);
-            $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-            echo $data['Value'];
-            echo str_repeat(" ", 12 - strlen($data['Value']));
-
-
-
-            if ($master && $slave) {
-                $type = " is master and slave";
-            } elseif ($master) {
-                $type = " is master";
-            } elseif ($slave) {
-                $type = " is slave";
-            } else {
-                $type = " is standalone";
-            }
-
-            echo $type;
-            echo str_repeat(" ", 21 - strlen($type));
-
-            if ($slave) {
-
-                echo $slave['Master_Host'];
-                echo str_repeat(" ", 21 - strlen($slave['Master_Host']));
-
-
-                if ((int) $slave['Seconds_Behind_Master'] > 100) {
-                    echo Color::getColoredString("Second behind master : ".$slave['Seconds_Behind_Master'], null, "red");
-                } else {
-
-                    if (isset($slave['Seconds_Behind_Master'])) {
-                        echo Color::getColoredString("Second behind master : ".$slave['Seconds_Behind_Master'], "green");
-                    } else {
-                        echo Color::getColoredString("Not started".$slave['Seconds_Behind_Master'], null, "red");
-                    }
-                }
-            } else {
-                echo str_repeat(" ", 42);
-            }
-
-            /*
-              echo " [";
-              $sql = "show databases";
-              $res = $db->sql_query($sql);
-              while ($data = $db->sql_fetch_array($res,MYSQLI_ASSOC))
-              {
-              if (! in_array( $data['Database'], array("mysql", "performance_schema","information_schema" )))
-              echo $data['Database']. " ";
-              }
-              echo " ]";
-             */
-
-
-            echo "\n";
-        }
-    }
 
     public function del($param)
     {
@@ -538,177 +429,8 @@ class Mysql extends Controller
         }
     }
 
-    public function replication()
-    {
-        $this->layout_name = false;
-        $this->view        = false;
-
-        $MS  = new MasterSlave();
-        $tab = new Table();
-
-        $tab->addHeader(array("Top", "Server", "IP", "Version", "M", "S", "IO", "SQL",
-            "Behind", "File", "Position", "Current file", "Position"));
-
-        $ip      = array();
-        $masters = array();
-        $i       = 0;
-        foreach ($this->di['db']->getAll() as $db) {
-            $i++;
-            $server_config = Sgbd::sql($db)->getParams();
-
-
-            $MS->setInstance(Sgbd::sql($db));
-            $master = $MS->isMaster();
-            $slave  = $MS->isSlave();
-
-            $is_master = ($master) ? "ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â " : "";
-            $is_slave  = ($slave) ? "ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â " : "";
-
-            $sql  = "SHOW GLOBAL VARIABLES LIKE 'version'";
-            $res  = Sgbd::sql($db)->sql_query($sql);
-            $data = Sgbd::sql($db)->sql_fetch_array($res, MYSQLI_ASSOC);
-
-            if (strpos($data['Value'], "-")) {
-                $version = strstr($data['Value'], '-', true);
-            } else {
-                $version = $data['Value'];
-            }
-
-            if ($slave) {
-                $io          = ($slave['Slave_IO_Running'] === 'Yes') ? "OK" : Color::getColoredString("KO", "grey", "red", "bold");
-                $sql         = ($slave['Slave_SQL_Running'] === 'Yes') ? "OK" : Color::getColoredString("KO", "grey", "red", "bold");
-                $time_behind = $slave['Seconds_Behind_Master'];
-            } else {
-                $io          = "";
-                $sql         = "";
-                $time_behind = "";
-            }
-
-            $master_binlog  = ($slave) ? $slave['Master_Log_File'] : "";
-            $master_postion = ($slave) ? $slave['Exec_Master_Log_Pos'] : "";
-
-            $file     = ($master) ? $master['File'] : "";
-            $position = ($master) ? $master['Position'] : "";
-
-            $addr = (!empty($server_config['port']) && is_numeric($server_config['port'])) ? $server_config['hostname'].":".$server_config['port'] : $server_config['hostname'];
-
-
-            $ip[$addr] = array($i, $db, $addr, $version, $is_master, $is_slave, $io,
-                $sql, $time_behind,
-                $file, $position, $master_binlog, $master_postion);
-
-
-            if ($slave) {
-                $masters[$slave['Master_Host']][] = $addr;
-            }
-        }
-
-
-//debug($masters);
-
-
-        $color = "purple";
-
-        $i = 1;
-        $j = 0;
-
-
-        $colors   = array("purple", "yellow", "blue", "cyan", "red", "green");
-        $nb_color = count($colors);
-
-        foreach ($masters as $master => $slaves) {
-            $color = $colors[$j];
-            $j++;
-            $j     = $j % $nb_color;
-
-
-            $ip[$master][0] = $i;
-            $ip[$master][1] = Color::getColoredString("ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ", $color).$ip[$master][1];
-
-            $tab->addLine($ip[$master]);
-            unset($ip[$master]);
-
-            foreach ($slaves as $id_slave => $slave) {
-
-                $i++;
-
-                $ip[$slave][0] = $i;
-
-                if ($cpt = count($masters[$master]) == 1) {
-                    $ip[$slave][1] = Color::getColoredString("ÃƒÂ¢Ã¢â‚¬ï¿½Ã¢â‚¬ï¿½ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ", $color).$ip[$slave][1];
-                } else {
-                    $ip[$slave][1] = Color::getColoredString("ÃƒÂ¢Ã¢â‚¬ï¿½Ã…â€œÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ", $color).$ip[$slave][1];
-                }
-
-                $tab->addLine($ip[$slave]);
-
-                unset($masters[$master][$id_slave]);
-                unset($ip[$slave]);
-            }
-
-            $i++;
-        }
-
-        foreach ($ip as $server) {
-            $server[1] = "ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â  ".$server[1];
-            $server[0] = $i;
-            $tab->addLine($server);
-
-            $i++;
-        }
-
-
-        /*
-         *             $tab->addLine(array($i, $db, $addr, $version, $is_master, $is_slave, $io, $sql, $time_behind,
-          $file, $position, $master_binlog, $master_postion, "Log space"));
-         */
-
-
-
-        /* $tab->addLine(array($server_name, $server_config['hostname'], $version, $is_master, $is_slave, $io, $sql, $time_behind,
-          $file, $position, $master_binlog,$master_postion, "Log space"));
-         */
-
-        echo PHP_EOL.$tab->display();
-
-
-//echo Color::printAll();
-    }
-
-    public function timezone()
-    {
-        $this->view = false;
-
-        $db = Sgbd::sql("itprod-dbhistory-sa-01");
-        /*
-          $sql = "select * from PROD_TRACES order by date_passage DESC limit 1";
-
-
-          $res = $db->sql_query($sql);
-
-          while ($ob = $db->sql_fetch_object($res)) {
-          debug($ob);
-          }
-
-
-
-          $sql = "select * from PROD_TRACES order by ID_TRACE DESC limit 1";
-          $res = $db->sql_query($sql);
-
-          while ($ob = $db->sql_fetch_object($res)) {
-          debug($ob);
-          }
-         */
-//804639125 => 804639129
-
-        $sql = "select * from PROD_TRACES where ID_TRACE >= 804639125 and ID_TRACE <= 804639129";
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            debug($ob);
-        }
-    }
+    
+    
 
     function uncrypt()
     {
@@ -813,7 +535,7 @@ class Mysql extends Controller
 
     public function playskool()
     {
-        $data['dbs'] = $this->di['db']->getAll();
+        $data['dbs'] = Sgbd::getAll();
 
         sort($data['dbs']);
 
@@ -1063,7 +785,7 @@ class Mysql extends Controller
         $i = 1;
 
         $password = array();
-        foreach ($this->di['db']->getAll() as $key => $db_name) {
+        foreach (Sgbd::getAll() as $key => $db_name) {
 
             $db = Sgbd::sql($db_name);
 

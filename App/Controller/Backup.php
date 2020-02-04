@@ -117,7 +117,7 @@ class Backup extends Controller {
 
         $this->view = false;
 
-        foreach ($this->di['db']->getAll() as $db) {
+        foreach (Sgbd::getAll() as $db) {
 
             $server_on = true;
 

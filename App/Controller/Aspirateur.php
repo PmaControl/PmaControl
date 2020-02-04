@@ -193,7 +193,7 @@ class Aspirateur extends Controller {
             exit;
         }
 
-        Debug::debugShowQueries($this->di['db']);
+        Debug::debugShowQueries(Sgbd::sql(DB_DEFAULT));
 
         //Debug::debugQueriesOff();
     }
