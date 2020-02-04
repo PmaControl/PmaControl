@@ -411,7 +411,7 @@ var myChart = new Chart(ctx, {
                 $data['execution_time'] = round(microtime(true) - $start, 0);
 
 
-                $conf = $this->di['db']->getParam($mysqlservertoload);
+                $conf = Sgbd::getParam($mysqlservertoload);
 
                 Debug::debug($conf, "Conf from getParam");
 

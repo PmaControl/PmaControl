@@ -310,10 +310,10 @@ class Agent extends Controller {
         Crypt::$key = CRYPT_KEY;
 
         $all = array();
-        foreach ($this->di['db']->getAll() as $server) {
+        foreach (Sgbd::getAll() as $server) {
 
             $all[] = $server;
-            $info_server = $this->di['db']->getParam($server);
+            $info_server = Sgbd::getParam($server);
             $data = array();
 
             if (!empty($all_server[$server])) {
