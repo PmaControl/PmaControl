@@ -771,7 +771,7 @@ class Aspirateur extends Controller {
           }
          */
 
-        $mem = trim($ssh->exec("ps aux | grep 'mysqld ' | grep -v grep | awk '{print $5,$6}'"));
+        $mem = trim($ssh->exec("ps aux | grep 'mysqld ' | head -n1 | grep -v grep | awk '{print $5,$6}'"));
 
         $mysql = explode(' ', $mem);
 
