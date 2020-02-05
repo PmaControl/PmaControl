@@ -176,7 +176,6 @@ else
     composer install
 fi
 
-
 if [ -f "$CONFIG_FILE" ]; then
 
 	php App/Webroot/index.php install webroot $CONFIG_FILE
@@ -188,7 +187,6 @@ if [ -f "$CONFIG_FILE" ]; then
 	if [ $? != 0 ]; then
 	    exit 2
 	fi
-
 
 	php App/Webroot/index.php install createOrganisation $CONFIG_FILE
 	if [ $? != 0 ]; then
@@ -210,20 +208,15 @@ if [ -f "$CONFIG_FILE" ]; then
 	   exit 6
 	fi
 
+	#php App/Webroot/index.php ssh add $CONFIG_FILE
+	#if [ $? != 0 ]; then
+	#   exit 7
+	#fi
 
-	php App/Webroot/index.php ssh add $CONFIG_FILE
-	if [ $? != 0 ]; then
-	   exit 7
-	fi
-
-
-	php App/Webroot/index.php ssh associate $CONFIG_FILE
-	if [ $? != 0 ]; then
-	   exit 7
-	fi
-
-        
-
+	#php App/Webroot/index.php ssh associate $CONFIG_FILE
+	#if [ $? != 0 ]; then
+	#   exit 7
+	#fi
 
 else
 	php App/Webroot/index.php install index
@@ -240,7 +233,6 @@ else
 	if [ $? != 0 ]; then
 	   exit 3
 	fi
-
 fi
 
 php App/Webroot/index.php control createTsTable
@@ -260,7 +252,6 @@ php App/Webroot/index.php administration generate_model
 if [ $? != 0 ]; then
     exit 5
 fi
-
 
 php App/Webroot/index.php administration admin_table
 

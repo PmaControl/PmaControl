@@ -46,12 +46,14 @@ class Ssh extends Controller
 
     public function add($param)
     {
-
         $this->title = '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>'." ".__("Add a key SSH");
 
+        $filename = $param[0] ?? "";
 
 
-        $this->di['js']->code_javascript('
+        if (!IS_CLI) {
+
+            $this->di['js']->code_javascript('
                 $(function(){
 
                 var priv = $("#ssh_key-key_priv");
@@ -75,11 +77,6 @@ class Ssh extends Controller
             });
         });');
 
-
-        $filename = $param[0] ?? "";
-
-
-        if (!IS_CLI) {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 //traitement du UI en post
 
@@ -96,8 +93,7 @@ class Ssh extends Controller
                 }
             }
         }
-
-
+        
         /*
           if (!empty($filename) && file_exists($filename)) {
 
@@ -801,9 +797,7 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
             Debug::debug($ssh->getLog(), "getLog");
             exit('Login Failed'."\n");
-        }
-        else
-        {
+        } else {
             exit('OK'."\n");
         }
 
