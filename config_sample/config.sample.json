@@ -34,7 +34,8 @@
         "lastname": "DUPONT",
         "country": "France",
         "city": "Paris",
-        "password": "secret_password"
+        "login": "nicolas", 
+	"password": "secret_password"
       }
     ]
   },
