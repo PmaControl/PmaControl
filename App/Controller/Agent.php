@@ -374,8 +374,7 @@ class Agent extends Controller {
             echo "[Warning] Removed : " . $to_delete['name'] . " from monitoring\n";
         }
 
-
-        Mysql::addMaxDate(Sgbd::sql(DB_DEFAULT));
+        Mysql::addMaxDate();
     }
 
     public function index() {
