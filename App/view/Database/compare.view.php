@@ -147,4 +147,4 @@ if (!empty($data['resultat'])) {
                         echo '</div>';
                     }
                 }
-            }
+            } // ✓]
