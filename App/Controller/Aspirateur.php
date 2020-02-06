@@ -371,6 +371,9 @@ class Aspirateur extends Controller {
         Debug::debug("apres master");
         $data['slave'] = $mysql_tested->isSlave();
         Debug::debug("apres slave");
+        
+        
+        //SHOW SLAVE HOSTS; => add in glial
 
         //$data['processlist'] = $mysql_tested->getProcesslist(1);
 
