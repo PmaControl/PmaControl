@@ -367,7 +367,7 @@ foreach ($data['variables'] as $server => $var) {
     }
 
 
-    $parameter[] = '<span style="text-decoration: line-through;"> slave-skip-errors   = 126,1062,1032,1051</span> # très important !';
+    $parameter[] = '<span style="text-decoration: line-through;"> slave-skip-errors   = OFF</span> # before 126,1062,1032,1051 (très important) !';
 
 
 
