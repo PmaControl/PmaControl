@@ -17,7 +17,7 @@ class Format
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
-    static public function mysqlVersion($version)
+    static public function mysqlVersion($version, $comment)
     {
         if (strpos($version, "-")) {
             $number = explode("-", $version)[0];
@@ -26,13 +26,20 @@ class Format
             $number = $version;
         }
 
+
+        $pos = strpos(strtolower($comment), "percona");
+        if ($pos !== false) {
+            $fork = "percona";
+        }
+
         switch (strtolower($fork)) {
             case 'mariadb':
                 $name = '<span class="geek">&#xF130;</span> MariaDB';
                 break;
 
             case 'percona':
-                $name = 'percona';
+                $name = '<span class="geek">&#xF137;</span> Percona Server';
+                //$name = 'percona';
                 break;
 
             default:
