@@ -159,31 +159,6 @@ if (!empty($data['servers'])) {
         echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : ($server['is_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
         echo '</td>';
 
-        /*
-          echo '<td style="'.$style.'">';
-          ?>
-          <div class="form-group">
-          <div class="checkbox checbox-switch switch-success">
-          <label>
-          <?php
-          if ($server['is_monitored'] === "1") {
-          $computed = array("class" => "form-control", "type" => "checkbox", "checked" => "checked");
-          } else {
-          $computed = array("class" => "form-control", "type" => "checkbox");
-          }
-
-          echo Form::input("monitored", $server['id'], $computed);
-          ?>
-          <span></span>
-
-          </label>
-          </div>
-          </div>
-
-          <?php
-          //.'<input type="checkbox" name="monitored['.$server['id'].']" '.($server['is_monitored'] == 1 ? 'checked="checked"' : '').'" />'.
-          echo '</td>';
-          /* */
 
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
@@ -192,8 +167,6 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1 hour/ts_variable:derivate:1">';
 
         echo $server['display_name'];
-        //echo $data['extra'][$server['id']]['']['hostname'];
-
         echo '</a></td>';
         echo '<td style="'.$style.'">';
 
@@ -212,14 +185,10 @@ if (!empty($data['servers'])) {
         \Glial\Synapse\FactoryController::addNode("Server", "passwd", array($server['passwd']));
 
         echo '</td>';
-        //echo '<td style="'.$style.'">'.$server['hostname'].'</td>';
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
-
-
-
-            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version']);
+            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
         }
 
         echo '</td>';
