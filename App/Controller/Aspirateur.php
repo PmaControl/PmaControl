@@ -589,10 +589,12 @@ class Aspirateur extends Controller {
             if ($ssh !== false) {
                 //Debug::debug($data);
 
-
                 $stats = $this->getStats($ssh);
                 $hardware = $this->getHardware($ssh);
 
+                //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
+                unset($ssh);
+                
                 $id = $ob->id;
                 $date = array();
 
@@ -605,7 +607,6 @@ class Aspirateur extends Controller {
 
                 $this->allocate_shared_storage('hardware');
                 $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
-
 
                 $this->shared['hardware']->{$id_mysql_server} = $date;
 
