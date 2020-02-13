@@ -1,0 +1,149 @@
+digraph G {
+
+
+
+splines=ortho;
+
+
+
+  subgraph cluster_0 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+    a1 [label="Aspirateur/addToQueueMySQL"]
+        a2 [label="Aspirateur/addToQueueSsh"]
+        a3 [label="Aspirateur/checkAllWorker"]
+        a4 [label="dot2/run"]
+        a5 [label="integrate/integrateAll"]
+
+    label = "Daemon";
+  }
+
+  subgraph cluster_1 {
+    node [style=filled];
+    b0 [label="maria40-par"]
+    b1 [label="maria41-par"]
+    b2 [label="maria33-par"]
+    b3 [label="maria21-par"]
+    b4 [label="maria15-par"]
+    
+
+    label = "   Queue #21457   ";
+    color=blue
+  }
+  
+  
+    subgraph cluster_2 {
+    node [style=filled];
+    
+        c0 [label="maria40-par"]
+    c1 [label="maria41-par"]
+    c2 [label="maria33-par"]
+    c3 [label="maria21-par"]
+    c4 [label="maria15-par"]
+
+    label = "   Queue #21671   ";
+    color=blue
+  }
+  
+  
+
+  a1 -> b0 [label=""];
+a1 -> b1;
+a1 -> b2;
+a1 -> b3;
+a1 -> b4;
+
+a2 -> c0;
+a2 -> c1;
+a2 -> c2;
+a2 -> c3;
+a2 -> c4;
+
+
+
+    subgraph cluster_3 {
+    node [style=filled];
+    
+    d0 [label="worker #1"]
+    d1 [label="worker #2"]
+    d2 [label="worker #3"]
+    d3 [label="worker #4"]
+
+    label = "   Worker MySQL   ";
+    color=red
+  }
+
+
+b0 -> d0;
+b1 -> d1;
+b2 -> d2;
+b3 -> d0;
+b4 -> d1;
+
+    subgraph cluster_4 {
+    node [style=filled];
+    
+    e0 [label="answer_1581343638"]
+    e1 [label="answer_1581343639"]
+    e2 [label="answer_1581343640"]
+    e3 [label="variable_1581343638"]
+    e4 [label="variable_1581343639"]
+    e5 [label="variable_1581343640"]
+
+    e0 -> e1 -> e2;
+    e3 -> e4 -> e5;
+    label = "   File tmp_file   ";
+    color=grey
+  }
+
+
+d0 -> e0;
+d1 -> e0
+d0 -> e3;
+d1 -> e3;
+d2 -> e1;
+d2 -> e4;
+d3 -> e2;
+d3 -> e5;
+
+
+e0 -> a5;
+e3 -> a5;
+
+a5 -> f0;
+a5 -> f1;
+a5 -> f2;
+a5 -> f3;
+a5 -> f4;
+a5 -> f5;
+a5 -> f6;
+a5 -> f7;
+a5 -> f8;
+a5 -> f9;
+
+    subgraph cluster_5 {
+    node [style=filled];
+    
+    f0 [label="ts_date_by_server"]
+    f1 [label="ts_file"]
+    f2 [label="ts_max_date"]
+    f3 [label="ts_value_general_double"]
+    f4 [label="ts_value_general_int"]
+    f5 [label="ts_value_general_text"]
+    f6 [label="ts_value_slave_double"]
+    f7 [label="ts_value_slave_int"]
+    f8 [label="ts_value_slave_text"]
+    f9 [label="ts_variable"]
+
+    label = "   Base de donnée (table RocksDB)   ";
+    color=green
+  }
+
+
+e5 -> f0;
+
+  #start [shape=Mdiamond];
+  #end [shape=Msquare];
+}
+
