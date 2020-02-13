@@ -1,0 +1,8 @@
+in Go
+
+XS : <100m              GREEN
+S :  100M - 1G          BLUE
+or M : 1 - 10           YELLOW
+or L : 10 - 50          ORANGE
+or XL : 50 - 200        RED
+or XXL : 200 and more   BLACK
