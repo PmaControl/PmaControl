@@ -593,7 +593,8 @@ class Aspirateur extends Controller {
                 $hardware = $this->getHardware($ssh);
 
                 //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
-                unset($ssh);
+                $ssh->disconnect();
+		unset($ssh);
                 
                 $id = $ob->id;
                 $date = array();
