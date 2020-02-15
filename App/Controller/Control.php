@@ -133,8 +133,6 @@ class Control extends Controller {
         }
 
         $combinaisons[] = "ts_date_by_server";
-
-
         return $combinaisons;
     }
 
@@ -214,7 +212,7 @@ class Control extends Controller {
 //delete server_*
                 System::deleteFiles("server");
 
-//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
                 Sleep(5);
 
                 $this->dropPartition(array($partitions['min']));
@@ -338,7 +336,6 @@ PARTITION BY RANGE (to_days(`date`))
 
         $partition = array();
         foreach ($dates as $date) {
-
             $partition_nb = $this->getToDays(array($date));
             $partition[] = "PARTITION `p" . $partition_nb . "` VALUES LESS THAN (" . $partition_nb . ") ENGINE = " . $this->engine . "";
         }
@@ -350,36 +347,26 @@ PARTITION BY RANGE (to_days(`date`))
     }
 
     public function rebuildAll($param = "") {
-
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         Debug::parseDebug($param);
-
-
+        
         $php = explode(" ", shell_exec("whereis php"))[1];
-
         $cmd = $php . " " . GLIAL_INDEX . " Daemon stopAll";
         Debug::debug($cmd);
-//shell_exec($cmd);
-
-
+        //shell_exec($cmd);
 
         $this->dropTsTable();
         $this->createTsTable();
 
         Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
-
-//drop lock sur
+        //drop lock sur
         $this->dropLock();
 
-
-
-
-//$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-//Debug::debug($cmd);
-//shell_exec($cmd);
+        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
+        //Debug::debug($cmd);
+        //shell_exec($cmd);
 
         sleep(1);
         $this->dropLock();
@@ -506,13 +493,20 @@ PARTITION BY RANGE (to_days(`date`))
         Mysql::generateMySQLConfig($db);
     }
 
-    public function dropLock() {
-// drop variables
-        $files_to_drop = array(TMP . "lock/variable/*.md5", TMP . "lock/worker/*.pid", TMP . "tmp_file/*");
+    public function dropLock($param = "") {
 
+        Debug::parseDebug($param);
 
-        foreach ($files_to_drop as $file_to_drop) {
-            foreach (glob($file_to_drop) as $filename) {
+        // drop variables
+
+        $scanned_directory = array_diff(scandir(TMP . "lock/"), array('..', '.'));
+        Debug::debug($scanned_directory);
+        
+        //$scanned_directory[]= TMP . "tmp_file/";
+
+        foreach ($scanned_directory as $file_to_drop) {
+            foreach (glob(TMP . "lock/".$file_to_drop."/*") as $filename) {
+                Debug::debug($filename, "file deleted");
                 unlink($filename);
             }
         }
@@ -536,15 +530,12 @@ INNER JOIN `ts_file` `b` ON `a`.`id_ts_file` = `b`.`id`
 LEFT JOIN `ts_value_general_text` c ON c.date = a.date_p4 AND a.id_mysql_server = c.id_mysql_server AND c.id_ts_variable = (SELECT id from z)
 WHERE b.file_name = 'variable' and  c.id is null;";
 
-
         Debug::sql($sql);
-
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $file = TMP . "lock/variable/" . $ob->id_mysql_server . ".md5";
-
 
             if (file_exists($file)) {
                 unlink($file);
@@ -555,12 +546,9 @@ WHERE b.file_name = 'variable' and  c.id is null;";
 
     public function purgefrm($param) {
 
-
-
         Debug::parseDebug($param);
 
         shell_exec("apt purge mariadb-plugin-rocksdb");
-
 
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SHOW GLOBAL VARIABLES LIKE 'datadir'";
@@ -570,7 +558,6 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         while ($arr = $db->sql_fetch_array($res)) {
             $datadir = $arr[1];
         }
-
 
         $sql = "SELECT `database` FROM mysql_server where name ='" . DB_DEFAULT . "';";
         $res = $db->sql_query($sql);
@@ -589,15 +576,11 @@ WHERE b.file_name = 'variable' and  c.id is null;";
                 $cmd = "rm " . $file;
 
                 Debug::debug($cmd);
-
-
                 shell_exec($cmd);
             }
         }
 
-
         $file = $datadir . '#rocksdb';
-
 
         if (is_dir($file)) {
             $cmd = "rm -rvf " . $file;
@@ -605,7 +588,6 @@ WHERE b.file_name = 'variable' and  c.id is null;";
             Debug::debug($cmd);
             shell_exec($cmd);
         }
-
 
         $cmd2 = "apt install mariadb-plugin-rocksdb";
         Debug::debug($cmd2);
