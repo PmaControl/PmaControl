@@ -104,8 +104,8 @@ class Aspirateur extends Controller {
 
         Debug::debug("max execution time : " . $maxExecutionTime);
 
-        //to prevent any trouble with fork
         //$this->debugShowQueries();
+        //to prevent any trouble with fork
         $db->sql_close();
 
         //$maxThreads = \Glial\System\Cpu::getCpuCores();
@@ -150,8 +150,6 @@ class Aspirateur extends Controller {
             } else {
 
                 // one thread to test each MySQL server
-
-
                 Debug::debug("Start server with id : " . $server['id']);
                 $this->testMysqlServer(array($server['name'], $server['id'], $maxExecutionTime));
 
@@ -175,26 +173,20 @@ class Aspirateur extends Controller {
             }
 
             //$this->isGaleraCluster(array());
-
-
             /*
               Debug::debug($server_list);
 
               foreach ($server_list as $server) {
               Debug::debug($this->shared[$server['name']], $server['name']);
-
               } */
-
 
             $time = microtime(true) - $date_start;
             Debug::debug("All tests termined : " . round($time, 2) . " sec");
         } else {
-
             exit;
         }
 
         Debug::debugShowQueries(Sgbd::sql(DB_DEFAULT));
-
         //Debug::debugQueriesOff();
     }
 
@@ -228,10 +220,10 @@ class Aspirateur extends Controller {
             $max_execution_time = $param[2];
         }
 
-//Debug::debug($max_execution_time, "Max execution time");
-//execute a process with a timelimit (in case of MySQL don't answer and keep connection)
-//$max_execution_time = 20; // in seconds
-//Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
+        //Debug::debug($max_execution_time, "Max execution time");
+        //execute a process with a timelimit (in case of MySQL don't answer and keep connection)
+        //$max_execution_time = 20; // in seconds
+        //Debug::debug("monitoring : " . $server['name'] . ":" . $server['id']);
 
         $debug = "";
         if (Debug::$debug) {
@@ -244,7 +236,7 @@ class Aspirateur extends Controller {
 
         Debug::checkPoint("Après TimeLimit");
 
-//Debug::debug($ret, "RET");
+        //Debug::debug($ret, "RET");
 
         if (!SetTimeLimit::exitWithoutError($ret)) {
             /* in case of somthing wrong :
@@ -255,7 +247,7 @@ class Aspirateur extends Controller {
              */
             $db = Sgbd::sql(DB_DEFAULT);
 
-//in case of no answer provided we create a msg of error
+            //in case of no answer provided we create a msg of error
             if (empty($ret['stdout'])) {
                 $ret['stdout'] = "[" . date("Y-m-d H:i:s") . "]" . " Server MySQL didn't answer in time (delay max : " . $max_execution_time . " seconds)";
             }
@@ -269,11 +261,11 @@ class Aspirateur extends Controller {
             (Debug::$debug) ? print_r($ret) : '';
             return false;
         } else {
-//echo (Debug::$debug) ? $server['name']." OK \n" : "";
+            //echo (Debug::$debug) ? $server['name']." OK \n" : "";
 
             return $ret;
 
-//return true;
+            //return true;
         }
     }
 
@@ -335,12 +327,12 @@ class Aspirateur extends Controller {
 
         $data['server']['ping'] = microtime(true) - $time_start;
 
-//$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
-// SHOW /*!50000 ENGINE*/ INNODB STATUS
+        //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
+        // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
         Debug::debug("Avant");
 
-// traitement SHOW GLOBAL VARIABLES
+        // traitement SHOW GLOBAL VARIABLES
 
         $var['variables'] = $mysql_tested->getVariables();
 
@@ -371,7 +363,6 @@ class Aspirateur extends Controller {
         Debug::debug("apres master");
         $data['slave'] = $mysql_tested->isSlave();
         Debug::debug("apres slave");
-        
         
         //SHOW SLAVE HOSTS; => add in glial
 
