@@ -1149,4 +1149,18 @@ END;";
         
         $this->set("data", $data);
     }
+
+    function size($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT * FROM database_size order by `min`;");
+
+        $data['color'] = array();
+        while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['color'][] = $ob;
+        }
+
+        $this->set("data", $data);
+    }
 }
