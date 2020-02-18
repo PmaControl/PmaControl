@@ -13,10 +13,9 @@ use \Glial\I18n\I18n;
 use \App\Library\Util;
 use \Glial\Sgbd\Sgbd;
 
-
 class Daemon extends Controller
 {
-    var $daemon = array(7, 9, 11, 12, 5);
+    private $daemon = array(7, 9, 11, 12, 5);
 
     public function index()
     {
@@ -67,20 +66,16 @@ class Daemon extends Controller
         }
 
         if ($commande === "stop") {
-
             $php = explode(" ", shell_exec("whereis php"))[1];
             $cmd = $php." ".GLIAL_INDEX." Aspirateur killAllWorker";
             Debug::debug($cmd);
             $pid = shell_exec($cmd);
-
-
 
             //test all pid before
 
             $msg   = I18n::getTranslation(__("All the daemon was successfully stopped"));
             $title = I18n::getTranslation(__("Success"));
         } else {
-
             $msg   = I18n::getTranslation(__("All the daemon was successfully started"));
             $title = I18n::getTranslation(__("Success"));
         }
@@ -143,8 +138,6 @@ class Daemon extends Controller
 
 
         if (!IS_CLI) {
-
-
             $msg   = I18n::getTranslation(__("All lock/pid/md5 has been deleted and partions has been updated"));
             $title = I18n::getTranslation(__("Success"));
 
@@ -164,13 +157,10 @@ class Daemon extends Controller
         Debug::debug($directories);
 
         foreach ($directories as $directory) {
-
-
             if (is_dir($directory)) {
                 $dh = opendir($directory);
                 if ($dh) {
                     while (($file = readdir($dh)) !== false) {
-
                         if (substr($file, 0, 1) == '.') {
                             continue;
                         }

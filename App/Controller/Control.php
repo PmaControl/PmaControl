@@ -16,38 +16,37 @@ use \Glial\Sgbd\Sgbd;
  * ./glial integrate evaluate --debug
  */
 
-class Control extends Controller {
+class Control extends Controller
+{
 
-    var $tables = array("ts_value_general", "ts_value_slave");
-    var $ext = array("int", "double", "text");
-    var $field_value = array("int" => "bigint(20) unsigned NULL", "double" => "double NOT NULL", "text" => "text NOT NULL");
-    var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)"
-        , "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
+    public $tables = array("ts_value_general", "ts_value_slave");
+    public $ext = array("int", "double", "text");
+    public $field_value = array("int" => "bigint(20) unsigned NULL",
+     "double" => "double NOT NULL", "text" => "text NOT NULL");
+    public $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
 //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
-    var $index = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+    public $index = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
-    var $engine = "tokudb";
-    var $engine_preference = array("ROCKSDB", "TokuDB");
-    var $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
-    var $percent_max_disk_used = 80;
+    private $engine = "tokudb";
+    private $engine_preference = array("ROCKSDB", "TokuDB");
+    public $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
+    public $percent_max_disk_used = 80;
 
     /*
      *
      * return space used on partition where is datadir of MySQL / MariaDB
      */
 
-    private function checkSize() {
+    private function checkSize()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
-
         $datadir = $db->getVariables("datadir");
 
-
-
-// connect to ssh to sql server
-//$ssh->
-// or local
+        // connect to ssh to sql server
+        //$ssh->
+        // or local
         $size = shell_exec('cd ' . $datadir . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
 
         $percent = substr($size, 0, -1);
@@ -74,7 +73,8 @@ class Control extends Controller {
         return $percent;
     }
 
-    public function before($param = "") {
+    public function before($param = "")
+    {
         $logger = new Logger($this->getClass());
         $file_log = LOG_FILE;
         $handler = new StreamHandler($file_log, Logger::DEBUG);
@@ -85,7 +85,8 @@ class Control extends Controller {
         $this->selectEngine();
     }
 
-    public function selectEngine() {
+    public function selectEngine()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select * from information_schema.ENGINES where SUPPORT = 'YES' and ENGINE in('" . implode("','", $this->engine_preference) . "');";
@@ -108,7 +109,8 @@ class Control extends Controller {
         throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '" . implode(",", $this->engine_preference) . "'", 80);
     }
 
-    public function addPartition($param) {
+    public function addPartition($param)
+    {
         $partition_number = $param[0];
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -123,7 +125,8 @@ class Control extends Controller {
         }
     }
 
-    private function makeCombinaison() {
+    private function makeCombinaison()
+    {
         $combinaisons = array();
 
         foreach ($this->tables as $table) {
@@ -136,7 +139,8 @@ class Control extends Controller {
         return $combinaisons;
     }
 
-    public function dropPartition($param) {
+    public function dropPartition($param)
+    {
         $partition_number = $param[0];
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -158,7 +162,8 @@ class Control extends Controller {
      * et la dernière
      */
 
-    public function getMinMaxPartition() {
+    public function getMinMaxPartition()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
         $combi = $this->makeCombinaison();
 
@@ -178,7 +183,8 @@ class Control extends Controller {
         return $older_partition;
     }
 
-    public function getToDays($param) {
+    public function getToDays($param)
+    {
         $date = $param[0];
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -198,7 +204,8 @@ class Control extends Controller {
      * and create new parttion
      */
 
-    public function service($param = "") {
+    public function service($param = "")
+    {
 
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
@@ -218,8 +225,6 @@ class Control extends Controller {
                 $this->dropPartition(array($partitions['min']));
             }
         }
-
-
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
@@ -257,10 +262,9 @@ class Control extends Controller {
 //Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
-    public function dropTsTable($param = array()) {
-
+    public function dropTsTable($param = array())
+    {
         Debug::parseDebug($param);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -277,7 +281,8 @@ class Control extends Controller {
         System::deleteFiles("server");
     }
 
-    public function createTsTable() {
+    public function createTsTable()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
@@ -303,7 +308,6 @@ PARTITION BY RANGE (to_days(`date`))
 
                 $partition = array();
                 foreach ($dates as $date) {
-
                     $partition_nb = $this->getToDays(array($date));
                     $partition[] = "PARTITION `p" . $partition_nb . "` VALUES LESS THAN (" . $partition_nb . ") ENGINE = " . $this->engine . "";
                 }
@@ -312,9 +316,7 @@ PARTITION BY RANGE (to_days(`date`))
                 $db->sql_query($sql);
                 echo Debug::sql($sql);
 
-
                 $db->sql_query("ALTER TABLE `" . $table_name . "` ADD " . $this->index[$table] . ";");
-
 
                 echo Debug::sql($sql);
                 $this->logger->info($sql);
@@ -346,7 +348,8 @@ PARTITION BY RANGE (to_days(`date`))
         $db->sql_query($sql);
     }
 
-    public function rebuildAll($param = "") {
+    public function rebuildAll($param = "")
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::parseDebug($param);
@@ -372,7 +375,8 @@ PARTITION BY RANGE (to_days(`date`))
         $this->dropLock();
     }
 
-    public function statistique($param = "") {
+    public function statistique($param = "")
+    {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -385,7 +389,8 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::debug(SqlFormatter::format($sql));
     }
 
-    private function getDates() {
+    private function getDates()
+    {
         $today = date("Y-m-d");
 
         $date = new \DateTime($today);
@@ -398,7 +403,8 @@ PARTITION BY RANGE (to_days(`date`))
         return $part;
     }
 
-    public function updateLinkVariableServeur() {
+    public function updateLinkVariableServeur()
+    {
 
         Debug::debug("UPDATE link__ts_variable__mysql_server");
 
@@ -416,7 +422,8 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
-    public function updateLinkServeur($param) {
+    public function updateLinkServeur($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $id_mysql_server = $param[0];
@@ -488,13 +495,14 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
-    public function updateConfig() {
+    public function updateConfig()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
         Mysql::generateMySQLConfig($db);
     }
 
-    public function dropLock($param = "") {
-
+    public function dropLock($param = "")
+    {
         Debug::parseDebug($param);
 
         // drop variables
@@ -518,8 +526,8 @@ PARTITION BY RANGE (to_days(`date`))
      *
      */
 
-    public function refreshVariable($param) {
-
+    public function refreshVariable($param)
+    {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -534,7 +542,6 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
             $file = TMP . "lock/variable/" . $ob->id_mysql_server . ".md5";
 
             if (file_exists($file)) {
@@ -544,8 +551,8 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         }
     }
 
-    public function purgefrm($param) {
-
+    public function purgefrm($param)
+    {
         Debug::parseDebug($param);
 
         shell_exec("apt purge mariadb-plugin-rocksdb");
@@ -569,7 +576,6 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-
             $file = $datadir . $database . "/" . $table . ".frm";
 
             if (file_exists($file)) {
