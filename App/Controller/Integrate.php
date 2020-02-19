@@ -227,7 +227,7 @@ class Integrate extends Controller
             Debug::checkPoint("before insert file : ".$file);
 
             if (file_exists($file)) {
-                //unlink($file);
+                unlink($file);
             } else {
                 throw new \Exception("PMACTRL-647 : deux integrateur lancer en même temps (suprimer le pas bon)");
             }
