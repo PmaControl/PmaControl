@@ -627,6 +627,8 @@ class Aspirateur extends Controller {
 
         $freq_brut = $ssh->exec("cat /proc/cpuinfo | grep 'cpu MHz'");
         preg_match("/[0-9]+\.[0-9]+/", $freq_brut, $freq);
+
+        // $freq[0] can be empty !!!
         $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000)) . " GHz";
         $os = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
         $distributor = trim($ssh->exec("lsb_release -si 2> /dev/null"));
