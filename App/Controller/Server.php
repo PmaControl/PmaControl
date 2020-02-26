@@ -498,9 +498,15 @@ class Server extends Controller {
                   and a.`date` > date_sub(now(), INTERVAL " . $_GET['status_value_int']['date'] . ") ORDER BY a.`date` ASC;";
                   $data['sql'] = $sql; */
 
+                
+                $data['graph'] = array();
+                if ($res !== false)
+                {
 
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data['graph'][] = $arr;
+
+                    while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $data['graph'][] = $arr;
+                    }
                 }
 
 
