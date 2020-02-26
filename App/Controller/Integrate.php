@@ -62,6 +62,8 @@ class Integrate extends Controller
             sleep(1);
         }
 
+        array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
+        //usort( $files, function( $a, $b ) { return filemtime($a) - filemtime($b); } );
 
         Debug::debug($files);
 
@@ -503,12 +505,11 @@ class Integrate extends Controller
 
     public function integrateAll($param)
     {
-
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `ts_file`;";
+        $sql = "SELECT * FROM `ts_file` order by id desc;";
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
