@@ -152,7 +152,7 @@ class Daemon extends Controller
     {
         Debug::parseDebug($param);
 
-        $directories = array(TMP."lock/variable", TMP."lock/worker");
+        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh");
 
         Debug::debug($directories);
 
