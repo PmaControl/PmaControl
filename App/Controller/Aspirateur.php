@@ -30,6 +30,7 @@ class Aspirateur extends Controller
     var $shared        = array();
     var $lock_variable = TMP."lock/variable/{id_mysql_server}.md5";
     var $lock_database = TMP."lock/database/{id_mysql_server}.lock";
+    var $files         = array();
 
     /*
      * (PmaControl 0.8)<br/>
@@ -259,14 +260,18 @@ class Aspirateur extends Controller
         $this->shared[$name] = new SharedMemory($storage);
     }
 
-    /**
-     * @deprecated
-     */
-    public function TrySystemSsh()
+    public function after()
     {
-        $ret = ParseCnf::getCnf("/etc/mysql/my.cnf");
-        debug($ret);
+
+        foreach($this->shared as $name => $array)
+        {
+
+
+        }
+
+
     }
+
 
     public function trySshConnection($param)
     {

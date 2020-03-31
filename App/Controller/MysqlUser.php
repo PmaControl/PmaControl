@@ -112,13 +112,10 @@ class MysqlUser extends Controller {
         $options = array('SELECT', 'USAGE', 'SHOW VIEW');
         $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol', 'grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication', 'sst');
 
-
-
         $data['revokes'] = array();
         $data['grant'] = array();
         $data['switch_to_ro'] = array();
         $data['revoke_all'] = array();
-
 
         if (!empty($data['all_user'])) {
 
@@ -128,19 +125,12 @@ class MysqlUser extends Controller {
                     continue;
                 }
 
-
                 foreach ($hosts as $host => $servers) {
 
 
                     $data['revoke_all'][] = "DROP USER '" . $user . "'@'" . $host . "';";
 
                     foreach ($servers as $server_name => $server) {
-
-
-
-
-
-
 
                         $i = 0;
                         foreach ($server['database'] as $db) {
@@ -167,11 +157,16 @@ class MysqlUser extends Controller {
                                 }
                             }
 
+                            //user proxy without password
+                            if (empty($server['password']))
+                            {
+                                $server['password'] = '';
+                            }
+
                             $extra = "";
                             if ($i === 0) {
                                 $extra = " IDENTIFIED BY PASSWORD '" . $server['password'] . "'";
                             }
-
 
                             $revoke = false;
                             if (!empty($server['match'][$i])) {
@@ -181,12 +176,9 @@ class MysqlUser extends Controller {
                                 }
                             }
 
-
                             if (!$revoke) {
                                 $data['grants'][] = "GRANT " . implode(",", $server['grant'][$i]) . " ON " . $db . " TO '" . $user . "'@'" . $host . "'" . $extra . ";";
                             }
-
-
 
                             $i++;
                         }

@@ -527,7 +527,6 @@ class Server extends Controller {
                 $old_date = "";
                 $point = [];
 
-
                 if (!empty($data['graph'])) {
 
                     foreach ($data['graph'] as $value) {
