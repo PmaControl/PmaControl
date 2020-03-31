@@ -13,7 +13,6 @@ use \Glial\Sgbd\Sgbd;
 
 class Integrate extends Controller
 {
-
     use \App\Library\Filter;
     const MAX_FILE_AT_ONCE = 20;
     const VARIABLES        = "variable";
@@ -28,11 +27,7 @@ class Integrate extends Controller
     public function evaluate($param)
     {
         Debug::parseDebug($param);
-
-
-
         Debug::debug($param);
-
 
         if (empty($param[0])) {
             $memory_file       = "answer";

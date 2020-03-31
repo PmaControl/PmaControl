@@ -30,6 +30,12 @@ function display_db($dbs)
 }
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+
+//have to put this in an other place and only if required
+//\Glial\Synapse\FactoryController::addNode("Alias", "updateAlias", array());
+
+
+
 echo '</div>';
 
 
@@ -86,6 +92,8 @@ foreach ($data['slave'] as $slaves) {
             echo Display::srv($id_mysql_server);
            
         } else {
+
+            //updateAlias
             echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }
 
