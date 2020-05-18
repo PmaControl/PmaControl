@@ -70,12 +70,17 @@ class Slave extends Controller
             $data['server']['slave'][$arr['id']]                   = $arr;
         }
 
+        
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
         $this->generateGraph($slaves);
 
-        foreach ($slaves as $slave) {
-            $data['graph'][$slave['id_mysql_server']] = $slave;
+        if (! empty($slave))
+        {
+            foreach ($slaves as $slave) {
+                $data['graph'][$slave['id_mysql_server']] = $slave;
+            }
         }
+
 
         $this->set('data', $data);
     }
@@ -84,6 +89,8 @@ class Slave extends Controller
     {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
+         if (! empty($slave))
+        {
         foreach ($slaves as $slave) {
 
             $this->di['js']->code_javascript('
@@ -162,6 +169,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 ');
+        }
         }
     }
 

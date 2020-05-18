@@ -124,13 +124,12 @@ if (!empty($data['servers'])) {
 
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
-        if (empty($server['is_available']) && $server['is_monitored'] === "1") {
-           $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+        if (empty($server['is_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+            $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
         }
 
         // cas des warning
-        if ($server['is_available'] == -1 && $server['is_monitored'] === "1") {
-
+        if ($server['is_available'] == -1 && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
         }
@@ -141,7 +140,7 @@ if (!empty($data['servers'])) {
         }
 
         // serveur non monitoré
-        if (empty($server['is_monitored'])) {
+        if (empty($server['is_monitored']) || empty($server['client_monitored'])) {
             $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
         }
 
@@ -149,7 +148,7 @@ if (!empty($data['servers'])) {
 
         if (!empty($style)) {
             $alternate = '';
-            $style .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
+            $style     .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
         }
 
         echo '<tr class="'.$alternate.'">';
@@ -312,16 +311,16 @@ if (!empty($data['servers'])) {
             echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
-        
+
         echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-                .__('Debug').'</span>';
-        
+        .__('Debug').'</span>';
+
 
 
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';

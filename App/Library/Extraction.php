@@ -253,12 +253,12 @@ class Extraction {
                     $sqls[] = "(SELECT * FROM ts_variable where `from` = '" . strtolower($from) . "')";
                 } else {
 
-                    $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "' AND `from` = '" . strtolower($from) . "')";
+                    $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "' AND `from` = '" . strtolower($from) . "' LIMIT 1)";
                 }
             } else {
 
                 $name = $split[0];
-                $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "')";
+                $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "' LIMIT 1)";
             }
         }
 

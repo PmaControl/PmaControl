@@ -188,13 +188,9 @@ class Debug
     static function sql($sql, $var = "")
     {
         if (self::$debug) {
-
-
             self::head();
 
             if (!empty($var)) {
-
-
 
                 if (IS_CLI) {
                     echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
@@ -203,12 +199,10 @@ class Debug
                 }
             }
 
-            
-
             if (mb_strlen($sql) > 5000) {
                 $suspention = Color::getColoredString("[...]", "grey", "blue");
                 $sql        = mb_substr($sql, 0, 2500)."\n".$suspention."\n".mb_substr($sql, -2500);
-                echo $sql;
+                echo $sql."\n";
             } else {
                 $sql = \SqlFormatter::highlight($sql);
                 echo trim($sql)."\n";
