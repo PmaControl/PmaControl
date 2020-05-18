@@ -18,11 +18,14 @@ use \Glial\Sgbd\Sgbd;
 
 class Export extends Controller
 {
-    var $table_with_data = array("menu", "menu_group", "translation_main", "geolocalisation_city",
-        "geolocalisation_continent", "geolocalisation_country", "history_etat", "ts_file",
+    var $table_with_data = array("translation_main", "geolocalisation_city",
+        "geolocalisation_continent", "geolocalisation_country");
+        
+    var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
-        "home_box", "backup_type", "export_option");
-    var $exlude_table    = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
+        "home_box", "backup_type", "export_option","database_size");
+
+    var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
     function generateDump($param)
     {
@@ -34,14 +37,24 @@ class Export extends Controller
         $tables = $db->getListTable()['table'];
 
         $table_with_data    = array();
+        $table_with_data_expand = array();
         $table_without_data = array();
-
+        
+        
         foreach ($tables as $key => $table) {
             if (in_array($table, $this->table_with_data)) {
                 $table_with_data[] = $table;
                 unset($tables[$key]);
             }
         }
+
+        foreach ($tables as $key => $table) {
+            if (in_array($table, $this->table_with_data_expand)) {
+                $table_with_data_expand[] = $table;
+                unset($tables[$key]);
+            }
+        }
+
 
         $to_remove = array();
 
@@ -57,6 +70,7 @@ class Export extends Controller
         $table_without_data = array_diff($tables, $to_remove);
 
         Debug::debug($table_with_data);
+        Debug::debug($table_with_data_expand);
         Debug::debug($table_without_data);
 
         $connect = $db->getParams();
@@ -67,13 +81,20 @@ class Export extends Controller
         }
 
 // a remplacer par une implementation full PHP
+
         $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
             ." -u ".$connect['user']
             ." -P ".$connect['port']
             ." -p'".Chiffrement::decrypt($connect['password'])
             ."' ".$connect['database']." ".implode(" ", $table_with_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' > ".ROOT."/sql/full/pmacontrol.sql 2>&1";
+        shell_exec($cmd);
 
-
+        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
+            ." -u ".$connect['user']
+            ." -P ".$connect['port']
+            ." --skip-extended-insert"
+            ." -p'".Chiffrement::decrypt($connect['password'])
+            ."' ".$connect['database']." ".implode(" ", $table_with_data_expand)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> ".ROOT."/sql/full/pmacontrol.sql 2>&1";
         shell_exec($cmd);
 
         $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
@@ -82,8 +103,6 @@ class Export extends Controller
             ." -d "
             ." -p'".Chiffrement::decrypt($connect['password'])
             ."' ".$connect['database']." ".implode(" ", $table_without_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> ".ROOT."/sql/full/pmacontrol.sql 2>&1";
-
-
         shell_exec($cmd);
     }
 

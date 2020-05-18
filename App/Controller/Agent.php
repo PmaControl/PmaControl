@@ -20,8 +20,8 @@ class Agent extends Controller {
 
     var $debug = false;
     var $url = "Daemon/index/";
-    var $log_file = TMP . "log/glial.log";
     var $logger;
+    var $log_file = LOG_FILE;
     var $loop = 0;
 
     /*
@@ -35,9 +35,8 @@ class Agent extends Controller {
      */
 
     public function before($param) {
-        $logger = new Logger('Daemon');
-        $file_log = $this->log_file;
-        $handler = new StreamHandler($file_log, Logger::INFO);
+        $logger = new Logger("Agent");
+        $handler = new StreamHandler(LOG_FILE, Logger::INFO);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
@@ -70,7 +69,7 @@ class Agent extends Controller {
 
         if (!$this->checkAllEngines()) {
 
-
+            
             $msg = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
@@ -105,15 +104,12 @@ class Agent extends Controller {
                 $debug = "--debug";
             }
 
-
             $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $id_daemon . " " . $debug . " >> " . $this->log_file . " & echo $!";
             Debug::debug($cmd);
             $pid = trim(shell_exec($cmd));
 
-            $this->logger->info("CMD : " . $cmd);
-
-
-            $this->logger->info(Color::getColoredString('Started daemon with pid : ' . $pid, "grey", "green"));
+            $this->logger->debug("CMD : " . $cmd);
+            $this->logger->info('Started daemon with pid : ' . $pid);
 
             $sql = "UPDATE daemon_main SET pid ='" . $pid . "' WHERE id = " . $id_daemon . ";";
             $db->sql_query($sql);
@@ -121,7 +117,7 @@ class Agent extends Controller {
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
         } else {
-            $this->logger->info(Color::getColoredString('Impossible to start daemon (Already running)', "yellow"));
+            $this->logger->warning('Impossible to start daemon (Already running)');
             $msg = I18n::getTranslation(__("Impossible to launch the daemon ") . "(" . __("Already running !") . ")");
             $title = I18n::getTranslation(__("Error"));
             set_flash("caution", $title, $msg);
@@ -179,13 +175,11 @@ class Agent extends Controller {
             $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
             $db->sql_query($sql);
 
-
-
-            $this->logger->info(Color::getColoredString('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid, "grey", "red"));
+            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid, "grey");
         } else {
 
             if (!empty($pid)) {
-                $this->logger->info(Color::getColoredString('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid, "yellow"));
+                $this->logger->info('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
             }
 
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
@@ -206,7 +200,7 @@ class Agent extends Controller {
             $sql = "UPDATE daemon_main SET pid =" . $ob->pid . " WHERE id = '" . $id_daemon . "'";
             $db->sql_query($sql);
 
-            $this->logger->info(Color::getColoredString('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid, "grey", "red"));
+            $this->logger->warning('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid);
             //throw new \Exception('PMACTRL-876 : Impossible to stop daemon (id=' . $id_daemon . ') with pid : "' . $ob->pid . '"');
         }
 
@@ -237,8 +231,8 @@ class Agent extends Controller {
             $debug = "--debug";
         }
 
-        if ($id == "6") {
-            // to prevent inactive daemon or crontab failure (to move to right place
+        if ($id == "11") {
+            // to prevent inactive daemon or crontab failure (to move to right place)
             $php = explode(" ", shell_exec("whereis php"))[1];
             $cmd = $php . " " . GLIAL_INDEX . " control service";
 
@@ -263,7 +257,7 @@ class Agent extends Controller {
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
                 $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . "";
 
-                $this->logger->info('Cmd loop : ' . $cmd);
+                
 
                 Debug::debug($cmd);
                 shell_exec($cmd);

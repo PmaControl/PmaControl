@@ -203,18 +203,18 @@ class Server extends Controller {
         $this->ariane = " > " . $this->title;
 
 
-        $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js'));
 
         $this->di['js']->code_javascript('(function() {
             new Clipboard(".copy-button");
         })();');
 
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`
+        $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
             FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 " . self::getFilter() . "
-                 ORDER by a.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
+                 ORDER by a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
 
         $res = $db->sql_query($sql);
 
@@ -229,9 +229,6 @@ class Server extends Controller {
 
 
         $data['extra'] = Extraction::display(array("version","version_comment", "hostname", "server::ping", "general_log"));
-
-
-
 
         $sql = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res = $db->sql_query($sql);
@@ -417,7 +414,7 @@ class Server extends Controller {
 //$this->di['js']->addJavascript(array("Chart.Core.js", "Chart.Scatter.min.js"));
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
-        $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js"));
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
@@ -501,9 +498,15 @@ class Server extends Controller {
                   and a.`date` > date_sub(now(), INTERVAL " . $_GET['status_value_int']['date'] . ") ORDER BY a.`date` ASC;";
                   $data['sql'] = $sql; */
 
+                
+                $data['graph'] = array();
+                if ($res !== false)
+                {
 
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data['graph'][] = $arr;
+
+                    while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $data['graph'][] = $arr;
+                    }
                 }
 
 
@@ -524,7 +527,6 @@ class Server extends Controller {
                 $old_date = "";
                 $point = [];
 
-
                 if (!empty($data['graph'])) {
 
                     foreach ($data['graph'] as $value) {
@@ -541,6 +543,12 @@ class Server extends Controller {
 
                             $secs = $datetime2 - $datetime1; // == <seconds between the two times>
 //echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
+
+                            //to prevent divide by zero
+                            if ($secs == 0)
+                            {
+                                continue;
+                            }
 
                             $derivate = round(($value['value'] - $old_value) / $secs, 2);
 
