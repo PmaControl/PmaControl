@@ -10,34 +10,21 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Debug;
-use App\Library\Extraction;
-use App\Library\System;
 
 class Alter extends Controller
 {
-
     public function dropsp($param)
     {
         Debug::parseDebug($param);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'pmaria%'";
-
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'maria%'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
-
             Debug::debug($ob->display_name, 'Display name');
             $remote = Sgbd::sql($ob->name);
-
             $remote->sql_query("DROP PROCEDURE IF EXISTS criteoadmin_db.mask_users;");
             $remote->sql_query("DROP PROCEDURE IF EXISTS criteoadmin_db.unmask_users;");
-//            $remote->sql_query("SET sql_log_bin=0;");
-//            $remote->sql_query("ALTER TABLE heartbeat.heartbeat CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;");
-//            ALTER TABLE heartbeat.heartbeat CHARACTER SET utf8 COLLATE utf8_general_ci;
-//            ALTER TABLE heartbeat.heartbeat CONVERT TO utf8 SET utf8 COLLATE utf8_general_ci;
         }
     }
 
@@ -45,36 +32,25 @@ class Alter extends Controller
     {
         Debug::parseDebug($param);
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'pmaria%'";
-
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'maria%'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
 
             Debug::debug($ob->display_name, 'Display name');
             $remote = Sgbd::sql($ob->name);
 
             $gg = $remote->isSlave();
-//Debug::debug($gg);
 
             if ($gg != false) {
                 Debug::debug("slave");
-
+                
                 $remote->sql_query("STOP SLAVE;");
                 $remote->sql_query("SET GLOBAL read_only = 1;");
                 $remote->sql_query("SET GLOBAL replicate_wild_ignore_table = '';");
                 $remote->sql_query("START SLAVE;");
             }
-
-//$remote->sql_query("DROP PROCEDURE IF EXISTS criteoadmin_db.mask_users;");
-//$remote->sql_query("DROP PROCEDURE IF EXISTS criteoadmin_db.unmask_users;");
-//            $remote->sql_query("SET sql_log_bin=0;");
-//            $remote->sql_query("ALTER TABLE heartbeat.heartbeat CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;");
-//            ALTER TABLE heartbeat.heartbeat CHARACTER SET utf8 COLLATE utf8_general_ci;
-//            ALTER TABLE heartbeat.heartbeat CONVERT TO utf8 SET utf8 COLLATE utf8_general_ci;
         }
     }
 
@@ -84,24 +60,19 @@ class Alter extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'pmaria%'";
+        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'maria37'";
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-
             Debug::debug($ob->display_name, 'Display name');
             $remote = Sgbd::sql($ob->name);
-
-            $gg = $remote->isSlave();
-
+            $gg     = $remote->isSlave();
 
             if ($gg === false) {
                 Debug::debug("isMAster");
                 $sql2 = "SELECT user,host from mysql.user where user not in ('adminprod', 'root')";
-
-
                 $res2 = $remote->sql_query($sql2);
 
                 while ($ob2 = $remote->sql_fetch_object($res2)) {
@@ -121,17 +92,15 @@ class Alter extends Controller
     public function dropRoot($param)
     {
         Debug::parseDebug($param);
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'pmaria%'";
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * from mysql_server where id_client = 5 and display_name like 'maria%'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
             Debug::debug($ob->display_name, 'Display name');
             $remote = Sgbd::sql($ob->name);
-            $sql2 = "SELECT user,host from mysql.user where user = 'root' and host like 'pma%';";
-
-            $res2 = $remote->sql_query($sql2);
+            $sql2   = "SELECT user,host from mysql.user where user = 'root' and host like 'ma%';";
+            $res2   = $remote->sql_query($sql2);
 
             while ($ob2 = $remote->sql_fetch_object($res2)) {
 
