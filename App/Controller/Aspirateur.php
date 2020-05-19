@@ -89,6 +89,8 @@ class Aspirateur extends Controller
             $error_msg = $err['message'];
         }
 
+        $data['server']['ping'] = microtime(true) - $time_start;
+
         if (!empty($error_msg)) {
             echo $name_server." : ".$error_msg."\n";
 
@@ -106,7 +108,7 @@ class Aspirateur extends Controller
             echo $name_server." : OK\n";
         }
 
-        $data['server']['ping'] = microtime(true) - $time_start;
+        
 
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
@@ -253,6 +255,7 @@ class Aspirateur extends Controller
         ini_set("display_errors", $display_error);
     }
 
+
     public function allocate_shared_storage($name = 'answer')
     {
 //storage shared
@@ -260,6 +263,7 @@ class Aspirateur extends Controller
         $this->shared[$name] = new SharedMemory($storage);
     }
 
+    /*
     public function after()
     {
 
@@ -268,9 +272,7 @@ class Aspirateur extends Controller
 
 
         }
-
-
-    }
+    }*/
 
 
     public function trySshConnection($param)
@@ -288,7 +290,7 @@ class Aspirateur extends Controller
         where a.id=".$id_mysql_server." AND b.`active` = 1 LIMIT 1;";
 
         Debug::sql($sql);
-
+        
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -394,7 +396,7 @@ class Aspirateur extends Controller
         $hardware['distributor']  = trim($distributor);
         $hardware['os']           = trim($os);
         $hardware['codename']     = trim($codename);
-        $hardware['product_name'] = trim($ssh->exec("dmidecode -s system-product-name 2> /dev/null"));
+        $hardware['product_name'] = trim($ssh->exec("sudo dmidecode -s system-product-name 2> /dev/null"));
         $hardware['arch']         = trim($ssh->exec("uname -m"));
         $hardware['kernel']       = trim($ssh->exec("uname -r"));
         $hardware['hostname']     = trim($ssh->exec("hostname"));
