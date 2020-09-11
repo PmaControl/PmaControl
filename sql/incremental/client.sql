@@ -1,1 +1,1 @@
-ALTER TABLE client ADD `is_monitored` int(11) NOT NULL;
+ALTER TABLE client MODIFY COLUMN `is_monitored` int(11) NOT NULL DEFAULT 1;
