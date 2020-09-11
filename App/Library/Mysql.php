@@ -39,17 +39,18 @@ class Mysql
 
     static function exportUserByUser($db_link)
     {
-        $sql1 = "select user, host from mysql.user;";
+        $sql1 = "select User, Host from mysql.user;";
         $res1 = $db_link->sql_query($sql1);
 
         $users = array();
         while ($ob1   = $db_link->sql_fetch_object($res1)) {
-            $sql2 = "SHOW GRANTS FOR '".$ob1->user."'@'".$ob1->host."'";
+            
+            $sql2 = "SHOW GRANTS FOR '".$ob1->User."'@'".$ob1->Host."'";
             $res2 = $db_link->sql_query($sql2);
 
             while ($ob2 = $db_link->sql_fetch_array($res2, MYSQLI_NUM)) {
 
-                $users[$ob1->user][$ob1->host][] = $ob2[0];
+                $users[$ob1->User][$ob1->Host][] = $ob2[0];
             }
         }
 
