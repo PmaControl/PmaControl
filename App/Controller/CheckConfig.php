@@ -35,18 +35,21 @@ class CheckConfig extends Controller {
             }
         } else {
 
-            if (!empty($_GET['mysql_cluster']['id'])) {
+            if (!empty($_GET['mysql_cluster']['id']) || !empty($_GET['mysql_server']['id'])) {
 
 
                 if (!empty($_GET['mysql_cluster']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (" . $_GET['mysql_cluster']['id'] . ")";
+                    $sql = "SELECT * FROM mysql_server WHERE id in (" . implode(',',$_GET['mysql_cluster']['id']) . ")";
+
+                    $id_mysql_servers = $_GET['mysql_cluster']['id'];
                 }
 
                 if (!empty($_GET['mysql_server']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (" . implode(',', $_GET['mysql_server']['id']) . ")";
+                    $sql = "SELECT * FROM mysql_server WHERE id in (" .  $_GET['mysql_server']['id']. ")";
+
+                    $id_mysql_servers = explode(',',$_GET['mysql_server']['id']);
+
                 }
-
-
 
                 $res = $db->sql_query($sql);
                 while ($ob = $db->sql_fetch_object($res)) {
@@ -55,7 +58,7 @@ class CheckConfig extends Controller {
 
                 $resultat = array();
 
-                $id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
+                //$id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
                 foreach ($id_mysql_servers as $id_mysql_server) {
 
                     $db_link = $this->getDbLinkFromId($id_mysql_server);
@@ -139,8 +142,6 @@ class CheckConfig extends Controller {
                             $groups[][] = $combi[0];
                         }
 
-
-
                         $found = false;
                         foreach ($groups as $group) {
                             if ($group[0] === $combi[1]) {
@@ -153,8 +154,6 @@ class CheckConfig extends Controller {
                         }
                     }
                 }
-
-
 
                 $data['groups'] = $groups;
             }
