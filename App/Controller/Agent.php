@@ -715,7 +715,13 @@ while(<>) { chomp; next if /^[^ ]+[ ]*$/;
 
 tcpdump -i any -XX dst port 3306
 
+
+tshark -i any -d tcp.port==3306,mysql -T fields -Y mysql.query -e mysql.query 'port 3306'
+
 tshark -i any -T fields -Y mysql.query -e mysql.query
+tshark -i any -d tcp.port==3306,mysql  'port 3306'
+
+
 
  *
  */
