@@ -108,13 +108,16 @@ class Dot2 extends Controller
         foreach ($this->slaves as $id_mysql_server => $rosae) {
 
             foreach ($rosae as $connection => $slave) {
-                Debug::debug($slave);
+
+
 
                 $id_master = Mysql::getIdFromDns($slave['master_host'].":".$slave['master_port']);
+
 
                 if ($id_master === false) {
                     continue;
                 }
+
 
                 $tmp_group[$id_group][] = $id_master;
                 $tmp_group[$id_group][] = $id_mysql_server;
@@ -871,6 +874,7 @@ class Dot2 extends Controller
         $lines[] = $this->formatVersion($server['version']);
 
         if (!empty($server['wsrep_local_state_comment'])) {
+
             if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
                 $lines[] = "Galera status : ".$server['wsrep_local_state_comment'];
             } else {
@@ -922,6 +926,8 @@ class Dot2 extends Controller
         return $node;
     }
     /*
+     * 
+     * 
      * to move in library
      */
 
@@ -971,7 +977,9 @@ class Dot2 extends Controller
 
         foreach ($this->graph_edge as $id_slave => $masters) {
             foreach ($masters as $id_master => $val) {
+
                 if (in_array($id_slave, $group)) {
+
                     if (empty($val['label'])) {
                         $val['label'] = " ";
                     }
@@ -979,7 +987,9 @@ class Dot2 extends Controller
                     // si le serveur est HS on surcharge la replication
 
                     if ($this->servers[$id_slave]['is_available'] === "0") {
+
                         if ($val['label'] != "SST") {
+
                             $val['color'] = $this->edge['REPLICATION_BLACKOUT']['color'];
                             $val['label'] = "HS";
                         }
@@ -1011,6 +1021,7 @@ class Dot2 extends Controller
                     if ($val['arrow'] == "double") {
                         $val['color'] = $val['color'].":white:".$val['color'];
                     }
+
 
                     $edge = $id_master." -> ".$id_slave
                         ." [ arrowsize=\"1.5\" style=".$style.",penwidth=\"2\" fontname=\"arial\" fontsize=8 color =\""
@@ -1427,9 +1438,8 @@ class Dot2 extends Controller
         foreach ($args as $n => $field) {
             if (is_string($field)) {
                 $tmp       = array();
-                foreach ($data as $key => $row) {
+                foreach ($data as $key => $row)
                     $tmp[$key] = $row[$field];
-                }
                 $args[$n]  = $tmp;
             }
         }

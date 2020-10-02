@@ -157,7 +157,7 @@ class Ssh extends Controller
             }
 
 
-
+            //test clef publique
             $ret = SshLib::isValid(str_replace('\n', "\n", $keys['public_key']));
             if ($ret === false) {
                 $error[] = __("Your public key is not valid");
@@ -168,16 +168,13 @@ class Ssh extends Controller
             }
 
             // c'est degeu, mais il faut trouver un autre moyen de tester la clef privée ED25519
-            if ($ret['type'] != "ED25519") {
-                $ret_priv = SshLib::isValid(str_replace('\n', "\n", $keys['private_key']));
 
-                if ($ret_priv === false) {
-                    $error[] = __("Your private key is not valid");
-                }
+                //test clef private
+            $ret_priv = SshLib::isValid(str_replace('\n', "\n", $keys['private_key']));
+
+            if ($ret_priv === false) {
+                $error[] = __("Your private key is not valid");
             }
-
-
-
 
 
             if (!empty($error)) {
