@@ -24,6 +24,7 @@ class Format
             $fork   = explode("-", $version)[1];
         } else {
             $number = $version;
+            $fork = 'mysql';
         }
 
 
