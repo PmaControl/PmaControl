@@ -1,0 +1,38 @@
+https://galeracluster.com/library/documentation/notification-cmd.html
+
+
+
+
+#install
+
+cat > /usr/bin/wsrep-notify.sh << EOF
+#!/bin/sh -eu
+
+# This is a simple example of wsrep notification script (wsrep_notify_cmd).
+
+date=$(date '+%Y-%m-%d %H:%M:%S')
+echo "[${date}] $@" >> /var/log/galera.log
+
+EOF
+
+touch /var/log/galera.log
+chown mysql. /var/log/galera.log
+sed -i 's/#wsrep_notify_cmd=/wsrep_notify_cmd=\/usr\/bin\/wsrep-notify.sh/g' /etc/mysql/my.cnf
+
+
+Node Status Strings
+
+The notification script may pass one of six values for the --status parameter to indicate the current state of the node:
+
+    Undefined indicates a starting node that is not part of the Primary Component.
+    Joiner indicates a node that is part of the Primary Component and is receiving a state snapshot transfer.
+    Donor indicates a node that is part of the Primary Component and is sending a state snapshot transfer.
+    Joined indicates a node that is part of the Primary Component and is in a complete state and is catching up with the cluster.
+    Synced indicates a node that is syncrhonized with the cluster.
+    Error indicates that an error has occurred. This status string may provide an error code with more information on what occurred.
+
+--status joined --uuid 5195fa9f-eabe-11ea-a52c-567e4a46a250 --primary yes --index 0 --members e875b9e0-04df-11eb-bf25-daaf30988227/192.168.1.61/AUTO
+
+--member <node UUID> / <node name> / <incoming address>
+
+

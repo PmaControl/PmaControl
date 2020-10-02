@@ -419,8 +419,6 @@ class Server extends Controller {
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
-            debug($_POST);
-
             $sql = "SELECT * FROM mysql_server where id='" . $_POST['mysql_server']['id'] . "'";
             $res = $db->sql_query($sql);
             while ($ob = $db->sql_fetch_object($res)) {
@@ -431,9 +429,8 @@ class Server extends Controller {
                         . '/ts_variable:name:' . $_POST['ts_variable']['name']
                         . '/ts_variable:date:' . $_POST['ts_variable']['date']
                         . '/ts_variable:derivate:' . $_POST['ts_variable']['derivate']);
-                /*                 * */
 
-                exit;
+                
             }
         } else {
 
