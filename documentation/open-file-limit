@@ -1,0 +1,6 @@
+https://haydenjames.io/could-not-increase-number-of-max_open_files-to-more-than/
+
+
+
+
+sed 's/LimitNOFILE=16384/LimitNOFILE=65536/g' -i /etc/systemd/system/mysqld.service
