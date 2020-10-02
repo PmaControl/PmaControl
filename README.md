@@ -5,7 +5,7 @@
 
 _UI & CLI Tools for DBA (monitoring / backup / install / cleaner ...)_
 
-This software is distribued under Free Software Lisense : GNU / GPL v3 (http://www.gnu.org/licenses/gpl-3.0.en.html)
+This software is distributed under Free Software Lisense : GNU / GPL v3 (http://www.gnu.org/licenses/gpl-3.0.en.html)
 
 
 **Distribution based on Linux. (don't work with windows!)**
@@ -51,7 +51,7 @@ plugin-load=ha_rocksdb
 
 ### Deploy this project
 
-* `git clone git@github.com:PmaControl/PmaControl.git pmacontrol`
+* `git clone https://github.com/PmaControl/PmaControl.git pmacontrol`
 
 
 ### Install dependencies
@@ -64,7 +64,7 @@ plugin-load=ha_rocksdb
 
 * ./install
 
-##You are ready !
+## You are ready !
 
 
 * go to http://127.0.0.1/pmacontrol/
