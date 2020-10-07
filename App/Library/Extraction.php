@@ -52,6 +52,7 @@ class Extraction {
                     $date_max = $date[1];
 
                     $extra_where = " AND a.`date` BETWEEN '" . $date_min . "' AND '" . $date_max . "' ";
+
                 } else {
                     $extra_where = " AND a.`date` IN ('" . implode("','", $date) . "') ";
                 }
@@ -63,6 +64,9 @@ class Extraction {
             }
 
 
+
+            //$extra_where .= " GROUP BY id_mysql_server, id_ts_variable, date(a.`date`), hour(a.`date`)";
+            //$extra_where .= ", minute(a.`date`)";
 
             $INNER = " INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` ";
             $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
@@ -94,6 +98,7 @@ class Extraction {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,a.`value` ";
+                   // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
                 }
 
 
@@ -105,6 +110,7 @@ class Extraction {
                             . $INNER . "
                 WHERE id_ts_variable = " . $id_ts_variable . "
                    AND a.id_mysql_server IN (" . implode(",", $server) . ")  $extra_where)";
+                    
                     $sql2[] = $sql4;
                 }
             }
@@ -146,6 +152,9 @@ class Extraction {
                 std(t.`value`) as `std`
             FROM t GROUP BY id_mysql_server ";
 
+
+            //$sql3 .= ", date(t.`date`), hour(t.`date`), minute(t.`date`)";
+
             if (self::$groupbyday) {
                 $sql3 .= " ,date(t.`date`) ";
             } else {
@@ -158,7 +167,7 @@ class Extraction {
             return false;
         }
 
-        //echo "##################################".\SqlFormatter::format($sql3)."\n";
+        //echo \SqlFormatter::format($sql3)."\n";
 
         $res2 = $db->sql_query($sql3);
 

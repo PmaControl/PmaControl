@@ -34,7 +34,7 @@ class PostMortem extends Controller
 
 
 
-        $slaves = Extraction::extract(array("status::memory_used"), array(9, 1), array("2019-02-19 05:40:00", "2020-02-20 18:00:00"), true, true);
+        $slaves = Extraction::extract(array("status::memory_used"), array(9, 1), array("2020-10-01 15:40:00", "2020-10-20 18:00:00"), true, true);
 
 
         $color = array("orange" => "rgb(255, 159, 64)",
