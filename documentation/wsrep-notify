@@ -10,10 +10,13 @@ cat > /usr/bin/wsrep-notify.sh << EOF
 
 # This is a simple example of wsrep notification script (wsrep_notify_cmd).
 
-date=$(date '+%Y-%m-%d %H:%M:%S')
-echo "[${date}] $@" >> /var/log/galera.log
+date=\$(date '+%Y-%m-%d %H:%M:%S')
+echo "[\${date}] \$@" >> /var/log/galera.log
 
 EOF
+
+chown mysql. /usr/bin/wsrep-notify.sh
+chmod 700 /usr/bin/wsrep-notify.sh
 
 touch /var/log/galera.log
 chown mysql. /var/log/galera.log
@@ -34,5 +37,18 @@ The notification script may pass one of six values for the --status parameter to
 --status joined --uuid 5195fa9f-eabe-11ea-a52c-567e4a46a250 --primary yes --index 0 --members e875b9e0-04df-11eb-bf25-daaf30988227/192.168.1.61/AUTO
 
 --member <node UUID> / <node name> / <incoming address>
+
+
+
+
+
+
+
+Galera check
+
+mbstream
+socat
+
+
 
 
