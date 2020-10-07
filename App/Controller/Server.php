@@ -1101,4 +1101,6 @@ var myChart = new Chart(ctx, {
         echo json_encode($data);
     }
 
+    
+
 }

@@ -301,6 +301,11 @@ if (!empty($data['servers'])) {
         $h = ($subTime / (60 * 60)) % 24;
         $m = ($subTime / 60) % 60;
 
+        if (!empty($data['processing'])) {
+            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
+        }
+
+
         if ($d >= 1) {
             echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
         } else if ($subTime < 60) {
