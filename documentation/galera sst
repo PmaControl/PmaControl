@@ -1,0 +1,3 @@
+[sst]
+sst-log-archive=1
+sst-log-archive-dir=/var/log/mysql/sst/
