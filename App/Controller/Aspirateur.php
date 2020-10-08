@@ -93,9 +93,9 @@ class Aspirateur extends Controller
 
         /*
          * test for processing long time
-        if ($id_server == 114) {
-            sleep(55);
-        }*/
+          if ($id_server == 114) {
+          sleep(55);
+          } */
 
 
 
@@ -360,7 +360,18 @@ class Aspirateur extends Controller
         // $freq[0] can be empty !!!
 
         if (empty($freq[0])) {
-            $hardware['cpu_frequency'] = $freq_brut;
+
+            //case of raspberry pi
+            $freq_2 = 0;
+            $freq_2 = trim($ssh->exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"));
+
+            if (!empty($freq_2)) {
+                $hardware['cpu_frequency'] = round($freq_2 / 1000000,2)." GHz";
+            }
+            else
+            {
+                $hardware['cpu_frequency'] = $freq_brut;
+            }
         } else {
             $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000))." GHz";
         }
