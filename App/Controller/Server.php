@@ -205,7 +205,7 @@ class Server extends Controller
         $this->ariane = " > ".$this->title;
 
 
-        $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
             new Clipboard(".copy-button");
