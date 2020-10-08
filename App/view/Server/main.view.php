@@ -301,8 +301,8 @@ if (!empty($data['servers'])) {
         $h = ($subTime / (60 * 60)) % 24;
         $m = ($subTime / 60) % 60;
 
-        if (!empty($data['processing'])) {
-            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
+        if (!empty($data['processing'][$server['id']])) {
+            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds").'</span>';
         }
 
 
@@ -317,8 +317,8 @@ if (!empty($data['servers'])) {
         }
 
 
-        echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-        .__('Debug').'</span>';
+        //echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
+        //.__('Debug').'</span>';
 
 
 
