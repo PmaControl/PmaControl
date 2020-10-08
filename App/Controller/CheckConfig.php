@@ -39,9 +39,9 @@ class CheckConfig extends Controller {
 
 
                 if (!empty($_GET['mysql_cluster']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (" . implode(',',$_GET['mysql_cluster']['id']) . ")";
+                    $sql = "SELECT * FROM mysql_server WHERE id in (" . $_GET['mysql_cluster']['id'] . ")";
 
-                    $id_mysql_servers = $_GET['mysql_cluster']['id'];
+                    $id_mysql_servers = explode(",",$_GET['mysql_cluster']['id']);
                 }
 
                 if (!empty($_GET['mysql_server']['id'])) {
