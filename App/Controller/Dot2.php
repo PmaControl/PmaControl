@@ -363,6 +363,8 @@ class Dot2 extends Controller
             }
         }
 
+        Debug::debug($this->servers);
+
         return $this->servers;
     }
 
