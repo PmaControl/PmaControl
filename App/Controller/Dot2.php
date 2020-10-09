@@ -134,6 +134,7 @@ class Dot2 extends Controller
 
         return $this->master_slave;
     }
+    /* auto discovery of unknow node */
 
     public function getGaleraCluster($param)
     {
@@ -159,6 +160,7 @@ class Dot2 extends Controller
                 }
             }
         }
+
 
 
         //cLuster to remove at end
@@ -214,7 +216,7 @@ class Dot2 extends Controller
             unset($this->galera_cluster[$cluster_name]);
         }
 
-        //debug($this->galera_cluster, "GALERA");
+        debug($this->galera_cluster, "GALERA ---------");
 
         $group_galera = array();
 
@@ -239,7 +241,6 @@ class Dot2 extends Controller
 
                 $nodes = $this->getAllMemberFromGalera($incomming, $galera_nodes, $group);
 
-
                 Debug::debug($nodes, "ALL MEMBERS");
 
                 if (count($nodes['all_nodes']) > 0) {
@@ -249,15 +250,11 @@ class Dot2 extends Controller
                 foreach ($nodes['all_nodes'] as $id_arbitre) {
                     $this->galera_cluster[$cluster_name][$id_arbitre] = $this->servers[$id_arbitre];
                 }
-
-
-
-
                 $group++;
             }
 
 
-//            Debug::debug($group_galera);
+            Debug::debug($group_galera, "GALERA");
         }
 
 
@@ -344,10 +341,10 @@ class Dot2 extends Controller
 
 
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone", "variables::wsrep_desync",
+                "variables::system_time_zone", "variables::wsrep_desync", "variables::port",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses",
-                "status::wsrep_cluster_size"));
+                "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid"));
 
         //Debug::debug($temp);
 
@@ -363,7 +360,7 @@ class Dot2 extends Controller
             }
         }
 
-        Debug::debug($this->servers);
+        //Debug::debug($this->servers);
 
         return $this->servers;
     }
@@ -659,7 +656,9 @@ class Dot2 extends Controller
 //Debug::debug($this->servers, "\$this->servers");
 
         $master_slave   = $this->getMasterSlave($param);
-        $galera_cluster = $this->getGaleraCluster($param);
+        $galera_cluster = $this->getGaleraClusterV2($param);
+
+        Debug::debug($galera_cluster, "to follow");
 
         $all_groups = array_merge($master_slave, $galera_cluster);
 
@@ -676,7 +675,7 @@ class Dot2 extends Controller
         $this->pushMasterMaster();
         $this->pushGaleraCluster();
 
-        Debug::debug($this->slaves, "graph_edge");
+        //Debug::debug($this->slaves, "graph_edge");
 //Debug::debug($this->graph_edge, "graph_edge");
 //exit;
 //generate and save graph
@@ -1146,7 +1145,7 @@ class Dot2 extends Controller
 
             ksort($segments);
 
-            $nb_node = count($cluster_check[$cluster_name]);
+            $nb_node       = count($cluster_check[$cluster_name]);
             $count_by_type = array_count_values($cluster_check[$cluster_name]);
 
             $count_by_type['-1'] = $count_by_type['-1'] ?? 0;
@@ -1259,7 +1258,7 @@ class Dot2 extends Controller
     private function getNewId()
     {
         $servers = $this->servers;
-        $id = max(array_keys($servers));
+        $id      = max(array_keys($servers));
         Debug::debug($id, "max id");
 
         $id++;
@@ -1283,7 +1282,7 @@ class Dot2 extends Controller
         $this->servers[$id_arbitrator]["ip"]                     = "n/a";
         $this->servers[$id_arbitrator]["port"]                   = "4567";
         $this->servers[$id_arbitrator]["date"]                   = date('Y-m-d H:i:s');
-        $this->graph_arbitrator[] = $id_arbitrator;
+        $this->graph_arbitrator[]                                = $id_arbitrator;
 
         return $id_arbitrator;
     }
@@ -1302,7 +1301,7 @@ class Dot2 extends Controller
             }
 
             $id_master = Mysql::getIdFromDns($ip_port);
-            $row = $this->servers[$id_master];
+            $row       = $this->servers[$id_master];
 
             if ($row["is_available"] === "1") { // on retire tous les noeuds en etat de marche pour identifier le "JOINER"
                 unset($all_ip_port[$key]);
@@ -1326,7 +1325,7 @@ class Dot2 extends Controller
                     $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_DONOR_DESYNCED']['color'];
                 }
                 $this->graph_node[$row['id_mysql_server']]['color'] = $this->node['NODE_JOINER']['color'];
-                $this->joiner[] = $joiner;
+                $this->joiner[]                                     = $joiner;
                 break;
             }
             Debug::debug($row);
@@ -1357,7 +1356,7 @@ class Dot2 extends Controller
     public function legend()
     {
         $sql = "SELECT * FROM `architecture_legend` WHERE `type`= 'REPLICATION' order by `order`;";
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
         $res = $db->sql_query($sql);
 
         $edges = array();
@@ -1504,7 +1503,7 @@ class Dot2 extends Controller
     public function extractIncomming($incomming, $exclude = array())
     {
         $servers = explode(",", $incomming);
-        $nodes = array();
+        $nodes   = array();
 
         foreach ($servers as $server) {
 
@@ -1528,14 +1527,16 @@ class Dot2 extends Controller
 
         return $nodes;
     }
-
     /*
      * 
      * TODO : ni fait ni a faire
      * 
      */
+
     public function getServerBackuped($id_mysql_server)
     {
+        $uniq = array();
+
         if (!empty($this->server_backup) && count($this->server_backup) != 0) {
             $db = Sgbd::sql(DB_DEFAULT);
 
@@ -1560,6 +1561,42 @@ class Dot2 extends Controller
             $uniq = array_unique($backup);
         }
 
-        return $this->server_backup;
+        return $uniq;
+    }
+
+    public function getGaleraClusterV2($param)
+    {
+        foreach ($this->servers as $server) {
+            if (!empty($server['wsrep_on']) && $server['wsrep_on'] === "ON") {
+                //debug($server);
+                //$server['wsrep_incoming_addresses']
+                //show global variables like 'port';
+                //must be the same than the one of cluster
+                // the goal is to remove proxy (HaProxy, ProxySQL same server from and other port)
+                //if ($server['port'] === "3306") {
+
+
+                    //génération d'un identifiant unique (pour la détection des Split brain)
+                    $cluster_id = md5($server['wsrep_cluster_state_uuid']).":".$server['wsrep_cluster_name'];
+
+
+                    //$server['wsrep_cluster_name']
+                    $this->galera_cluster[$cluster_id][$server['id_mysql_server']] = $server;
+                //}
+            }
+        }
+
+        $group = 1;
+        foreach ($this->galera_cluster as $cluster => $servers) {
+            foreach ($servers as $server) {
+                $group_galera[$group][] = $server['id_mysql_server'];
+            }
+
+            $group++;
+        }
+
+        Debug::debug($this->galera_cluster);
+
+        return $group_galera;
     }
 }
