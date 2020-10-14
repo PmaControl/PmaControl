@@ -141,10 +141,16 @@ if (!empty($data['index'])) {
             foreach ($data['groups'] as $group) {
                 if (isset($data['resultat'][$group[0]][$index])) {
 
-                    if (strlen($data['resultat'][$group[0]][$index]) > $length) {
-                        $var = substr($data['resultat'][$group[0]][$index], 0, $length)."...";
+
+                    $var_long = $data['resultat'][$group[0]][$index];
+
+                    if (strlen($var_long) > $length) {
+
+
+                        $var = substr($var_long, 0, $length)."...";
                     } else {
-                        $var = $data['resultat'][$group[0]][$index];
+                        $var = $var_long;
+                        //$var_long =
                     }
                 } else {
                     $var = "<b>N/A</b>";
@@ -157,7 +163,7 @@ if (!empty($data['index'])) {
                     $var   = "<b>".$var."</b>";
                 }
 
-                echo '<td style="'.$color.'">';
+                echo '<td style="'.$color.'" title="'.$var_long.'">';
                 echo $var;
                 echo '</td>';
             }
