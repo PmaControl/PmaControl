@@ -18,6 +18,13 @@ class CheckConfig extends Controller
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
+        $this->di['js']->code_javascript('(function() {
+            $( "#showdiff" ).click(function() {
+            $(".to_hide").toggleClass("hide")
+            });
+        })();');
+
+
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -51,8 +58,14 @@ class CheckConfig extends Controller
                 }
 
                 $res = $db->sql_query($sql);
-                while ($ob  = $db->sql_fetch_object($res)) {
+
+                $server_note_available = array();
+                while ($ob                    = $db->sql_fetch_object($res)) {
                     $data['mysql_server'][$ob->id] = $ob->display_name." (".$ob->ip.")";
+
+                    if ($ob->is_available !== "1") {
+                        $server_note_available[] = $ob->id;
+                    }
                 }
 
                 $resultat = array();
@@ -60,11 +73,35 @@ class CheckConfig extends Controller
                 //$id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
                 foreach ($id_mysql_servers as $id_mysql_server) {
 
-                    $db_link = $this->getDbLinkFromId($id_mysql_server);
 
-                    $res = $db_link->sql_query("SHOW GLOBAL VARIABLES;");
+                    $elems = array();
 
-                    while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+                    if (!in_array($id_mysql_server, $server_note_available)) {
+                        $db_link = $this->getDbLinkFromId($id_mysql_server);
+                        $res     = $db_link->sql_query("SHOW GLOBAL VARIABLES;");
+
+                        while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+                            $tmp                  = array();
+                            $tmp['Variable_name'] = $arr['Variable_name'];
+                            $tmp['Value']         = $arr['Value'];
+                            $elems[]              = $tmp;
+                        }
+                    } else { //in case server is not available we looking for in cache
+                        $res = $db->sql_query("SELECT variable as Variable_name, value as Value FROM mysql_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;");
+                        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+                            $tmp                  = array();
+                            $tmp['Variable_name'] = $arr['Variable_name'];
+                            $tmp['Value']         = $arr['Value'];
+                            $elems[]              = $tmp;
+                        }
+                    }
+
+
+                    foreach ($elems as $arr) {
+
 
                         $nb = count($arr);
                         if ($nb == 2) {
