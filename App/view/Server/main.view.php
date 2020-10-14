@@ -4,53 +4,6 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
-/*
-  function formatVersion($version)
-  {
-  if (strpos($version, "-")) {
-  $number = explode("-", $version)[0];
-  $fork   = explode("-", $version)[1];
-  } else {
-  $number = $version;
-  }
-
-  switch (strtolower($fork)) {
-  case 'mariadb':
-  $name = '<span class="geek">&#xF130;</span> MariaDB';
-  break;
-
-  case 'percona':
-  $name = 'percona';
-  break;
-
-  default:
-  $name = '<span class="geek">&#xF137;</span> MySQL';
-  }
-
-  return $name." ".$number;
-  }
-
-  function format_ping($microtime, $precision = 2)
-  {
-  $units = array('ms', 's');
-
-  $microtime = $microtime * 1000;
-
-  if ($microtime > 1000) {
-  $microtime = $microtime / 1000;
-  $pow       = 1;
-  } else {
-  $pow = 0;
-  }
-
-  // Uncomment one of the following alternatives
-  // $bytes /= pow(1024, $pow);
-  // $bytes /= (1 << (10 * $pow));
-
-
-  return round($microtime, $precision).' '.$units[$pow];
-  }
- */
 
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
@@ -188,6 +141,11 @@ if (!empty($data['servers'])) {
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
             echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
+        }
+
+        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on']==="ON")
+        {
+            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="https://192.168.1.11/pmacontrol/image/icon/logo.svg"/>';
         }
 
         echo '</td>';
