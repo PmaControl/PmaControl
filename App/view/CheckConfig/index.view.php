@@ -72,14 +72,16 @@ echo '</div>';
 //debug($data['resultat']);
 
 
-
+echo '<p>
+  <a class="btn btn-primary" role="button" id="showdiff">Show only differences</a>
+</p>';
 
 if (!empty($data['index'])) {
 
-
     echo '<table class="table table-condensed table-bordered table-striped">';
     echo '<tr>';
-
+    echo '<th>'.__('Top').'</th>';
+    echo '<th>'.__('Diff').'</th>';
     if (!empty($data['show']) && $data['show']) {
         echo '<th>'.__("Variable_name").'</th>';
     }
@@ -105,11 +107,12 @@ if (!empty($data['index'])) {
     $length = 23 * 9 / count($data['groups']);
 
 
-
-
+    $i = 0;
+    $j = 0;
 // cas SHOW
     foreach ($data['index'] as $index) {
 
+        $i++;
         // test egalité sur toutes les colones
         $test = array();
         foreach ($data['groups'] as $group) {
@@ -121,15 +124,20 @@ if (!empty($data['index'])) {
             }
         }
 
-
         $style = false;
+
+        $hide  = ' class="to_hide"';
 
         if (count(array_unique($test)) !== 1) {
             $style = true;
+            $hide  = '';
+            $j++;
         }
 
         if (true) {
-            echo '<tr>';
+            echo '<tr'.$hide.'>';
+            echo '<td>'.$i.'</td>';
+            echo '<td>'.$j.'</td>';
             echo '<td class="">';
             if ($style) {
                 echo '<b>'.$index.'</b>';
@@ -137,6 +145,7 @@ if (!empty($data['index'])) {
                 echo $index;
             }
             echo '</td>';
+
 
             foreach ($data['groups'] as $group) {
                 if (isset($data['resultat'][$group[0]][$index])) {
@@ -153,7 +162,8 @@ if (!empty($data['index'])) {
                         //$var_long =
                     }
                 } else {
-                    $var = "<b>N/A</b>";
+                    $var      = "<b>N/A</b>";
+                    $var_long = "N/A";
                 }
 
                 $color = "";
