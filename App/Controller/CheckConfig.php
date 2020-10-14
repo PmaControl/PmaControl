@@ -7,14 +7,14 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
-
-class CheckConfig extends Controller {
-
+class CheckConfig extends Controller
+{
     var $should_be_different = array("server_id", "report_host", "wsrep_node_name");
-    var $not_important = array("general_log_file", "gtid_binlog_state");
-    var $master_master = array("");
+    var $not_important       = array("general_log_file", "gtid_binlog_state");
+    var $master_master       = array("");
 
-    public function index($param) {
+    public function index($param)
+    {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
@@ -26,12 +26,12 @@ class CheckConfig extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['id'])) {
 
-                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']);
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_cluster:id:'.$_POST['mysql_cluster']['id']);
             }
 
             if (!empty($_POST['mysql_server']['id'])) {
 
-                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/mysql_server:id:' . implode(',', $_POST['mysql_server']['id']));
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_server:id:'.implode(',', $_POST['mysql_server']['id']));
             }
         } else {
 
@@ -39,21 +39,20 @@ class CheckConfig extends Controller {
 
 
                 if (!empty($_GET['mysql_cluster']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (" . $_GET['mysql_cluster']['id'] . ")";
+                    $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_cluster']['id'].")";
 
-                    $id_mysql_servers = explode(",",$_GET['mysql_cluster']['id']);
+                    $id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
                 }
 
                 if (!empty($_GET['mysql_server']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (" .  $_GET['mysql_server']['id']. ")";
+                    $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_server']['id'].")";
 
-                    $id_mysql_servers = explode(',',$_GET['mysql_server']['id']);
-
+                    $id_mysql_servers = explode(',', $_GET['mysql_server']['id']);
                 }
 
                 $res = $db->sql_query($sql);
-                while ($ob = $db->sql_fetch_object($res)) {
-                    $data['mysql_server'][$ob->id] = $ob->display_name . " (" . $ob->ip . ")";
+                while ($ob  = $db->sql_fetch_object($res)) {
+                    $data['mysql_server'][$ob->id] = $ob->display_name." (".$ob->ip.")";
                 }
 
                 $resultat = array();
@@ -79,10 +78,30 @@ class CheckConfig extends Controller {
                         }
 
                         if ($show) {
-                            $resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
-                            $data['show'] = true;
-                        } else {
+                            if (strtolower($arr['Variable_name']) === "wsrep_provider_options") {
 
+                                //$resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
+
+                                $vals = explode(";", trim($arr['Value'], ";"));
+                                array_pop($vals); // remove last ; (empty)
+
+                                foreach ($vals as $val) {
+                                    $varval = explode("=", $val);
+
+                                    $sous_variable = trim($varval[0]);
+                                    $sous_value    = trim($varval[1]);
+
+                                    if (!isset($varval[1])) {
+                                        debug($varval);
+                                    }
+
+                                    $resultat[$id_mysql_server][$arr['Variable_name']."<i>__".$sous_variable."</i>"] = $sous_value;
+                                }
+                            } else {
+                                $resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
+                                $data['show']                                      = true;
+                            }
+                        } else {
                             //debug($nb);
                             $resultat[$id_mysql_server][] = $arr;
                         }
@@ -171,9 +190,9 @@ class CheckConfig extends Controller {
         $res = $db->sql_query($sql);
 
         $data['grappe'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = array();
-            $tmp['id'] = $ob->id_mysql_servers;
+        while ($ob             = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id_mysql_servers;
             $tmp['libelle'] = $ob->name;
 
 
@@ -183,7 +202,8 @@ class CheckConfig extends Controller {
         $this->set('data', $data);
     }
 
-    public function getDatabasesByServers($param) {
+    public function getDatabasesByServers($param)
+    {
 
         $this->layout_name = false;
 
@@ -200,7 +220,7 @@ class CheckConfig extends Controller {
         foreach ($id_mysql_servers as $id_mysql_server) {
             $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
 
-            $sql = "SHOW DATABASES";
+            $sql  = "SHOW DATABASES";
             $res2 = $db_to_get_db->sql_query($sql);
 
 
@@ -212,9 +232,9 @@ class CheckConfig extends Controller {
         $database = array_count_values($data['db']);
 
         foreach ($database as $db => $count) {
-            $tmp = [];
-            $tmp['id'] = $db;
-            $tmp['libelle'] = "(" . $count . "/" . $max . ") " . $db;
+            $tmp                 = [];
+            $tmp['id']           = $db;
+            $tmp['libelle']      = "(".$count."/".$max.") ".$db;
             $data['databases'][] = $tmp;
         }
 
@@ -222,14 +242,15 @@ class CheckConfig extends Controller {
         return $data;
     }
 
-    private function getDbLinkFromId($id_db) {
+    private function getDbLinkFromId($id_db)
+    {
 
         if (IS_AJAX) {
             $this->layout_name = false;
         }
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_db) . "';";
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -239,16 +260,16 @@ class CheckConfig extends Controller {
         return $db_link;
     }
 
-    private function array_diff_assoc_recursive($array1, $array2) {
+    private function array_diff_assoc_recursive($array1, $array2)
+    {
         $difference = array();
         foreach ($array1 as $key => $value) {
             if (is_array($value)) {
                 if (!isset($array2[$key]) || !is_array($array2[$key])) {
                     $difference[$key] = $value;
                 } else {
-                    $new_diff = $this->array_diff_assoc_recursive($value, $array2[$key]);
-                    if (!empty($new_diff))
-                        $difference[$key] = $new_diff;
+                    $new_diff         = $this->array_diff_assoc_recursive($value, $array2[$key]);
+                    if (!empty($new_diff)) $difference[$key] = $new_diff;
                 }
             } else if (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
                 $difference[$key] = $value;
@@ -256,7 +277,6 @@ class CheckConfig extends Controller {
         }
         return $difference;
     }
-
     /*
       private function liste_combinaison($list)
       {
@@ -273,9 +293,10 @@ class CheckConfig extends Controller {
      * permet de testé 2 à 2 toutes les possibilitées
      */
 
-    private function perm($nbrs) {
+    private function perm($nbrs)
+    {
         $temp = $nbrs;
-        $ret = [];
+        $ret  = [];
 
         foreach ($nbrs as $server1) {
             foreach ($temp as $server2) {
@@ -295,12 +316,13 @@ class CheckConfig extends Controller {
         return $ret;
     }
 
-    public function see($param) {
+    public function see($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
         $display_name = $param[0];
-        $sql = "SELECT * FROM mysql_server WHERE display_name='" . $display_name . "'";
+        $sql          = "SELECT * FROM mysql_server WHERE display_name='".$display_name."'";
 
 
         $res = $db->sql_query($sql);
@@ -327,11 +349,10 @@ class CheckConfig extends Controller {
                     continue;
                 }
 
-                echo $user . ";\n";
+                echo $user.";\n";
             }
         } else {
             echo "Server not found !! \n";
         }
     }
-
 }

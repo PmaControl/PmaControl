@@ -4,7 +4,6 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
-
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -143,13 +142,11 @@ if (!empty($data['servers'])) {
             echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
         }
 
-        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on']==="ON")
-        {
+        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="https://192.168.1.11/pmacontrol/image/icon/logo.svg"/>';
         }
-
+        
         echo '</td>';
-
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['general_log'])) {
@@ -164,13 +161,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-                        echo Form::input("check", "all", $computed);
-                        ?>
+            echo Form::input("check", "all", $computed);
+            ?>
                         <span></span>
                     </label>
                 </div>
