@@ -7,6 +7,7 @@
 
 use Glial\Html\Form\Form;
 
+//to move
 function setColor($type)
 {
     $hex = substr(sha1($type), 0, 2).substr(sha1($type), 20, 2).substr(md5($type), -2, 2);
@@ -29,8 +30,40 @@ function getrgba($label, $alpha)
     list($r, $g, $b) = setColor($label);
     return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
 }
-echo '<div class="well">';
 
+function format($bytes, $decimals = 2)
+{
+
+    if (!is_numeric($bytes)) {
+        return $bytes;
+    }
+// && $bytes != 0
+    if (empty($bytes)) {
+        return "";
+    }
+    $sz = ' KMGTPE';
+
+    $factor = (int) floor(log($bytes) / log(1024));
+
+    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+}
+
+function onOff($string)
+{
+
+    if (strtolower($string) == 'on') {
+        return '<span class="label label-success">ON</span>';
+    } else
+    if (strtolower($string) == 'off') {
+        return '<span class="label label-warning">OFF</span>';
+    } else {
+        return $string;
+    }
+
+
+    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+}
+echo '<div class="well">';
 
 
 echo '<div class="row">';
@@ -49,8 +82,6 @@ echo '<div class="row">';
 echo '<br />';
 echo '</div>';
 
-
-
 echo '<div class="row">';
 echo '<form method="POST" action="">';
 echo '<div class="col-md-10">';
@@ -63,21 +94,13 @@ echo '</div>';
 echo '</form>';
 echo '</div>';
 
-
-
-
 echo '</div>';
 
 
-//debug($data['resultat']);
-
-
-echo '<p>
-  <a class="btn btn-primary" role="button" id="showdiff">Show only differences</a>
-</p>';
 
 if (!empty($data['index'])) {
 
+    echo '<p><a class="btn btn-info showdiff" role="button">Show only differences</a></p>';
     echo '<table class="table table-condensed table-bordered table-striped">';
     echo '<tr>';
     echo '<th>'.__('Top').'</th>';
@@ -87,25 +110,20 @@ if (!empty($data['index'])) {
     }
 
 
-
-    foreach ($data['groups'] as $group) {
+    foreach ($data['mysql_server'] as $id_mysql_server => $title) {
         echo '<th>';
 
-        $servers = array();
-
-        foreach ($group as $value) {
-            $servers[] = $data['mysql_server'][$value];
-        }
-        //debug($servers);
-
-        echo implode(", ", $servers);
+        echo $title;
 
         echo '</th>';
     }
     echo '</tr>';
 
-    $length = 23 * 9 / count($data['groups']);
-
+    $length = 23 * 9;
+//definit la taille max de chaque colone en fonction du nombre de serveurs
+    if (!empty($data['mysql_server'])) {
+        $length = 23 * 9 / count($data['mysql_server']);
+    }
 
     $i = 0;
     $j = 0;
@@ -113,12 +131,12 @@ if (!empty($data['index'])) {
     foreach ($data['index'] as $index) {
 
         $i++;
-        // test egalité sur toutes les colones
+// test egalité sur toutes les colones
         $test = array();
-        foreach ($data['groups'] as $group) {
+        foreach ($data['mysql_server'] as $id_mysql_server => $title) {
 
-            if (isset($data['resultat'][$group[0]][$index])) {
-                $test[] = $data['resultat'][$group[0]][$index];
+            if (isset($data['resultat'][$id_mysql_server][$index])) {
+                $test[] = $data['resultat'][$id_mysql_server][$index];
             } else {
                 $test[] = "N/A";
             }
@@ -126,7 +144,7 @@ if (!empty($data['index'])) {
 
         $style = false;
 
-        $hide  = ' class="to_hide"';
+        $hide = ' class="to_hide"';
 
         if (count(array_unique($test)) !== 1) {
             $style = true;
@@ -146,12 +164,14 @@ if (!empty($data['index'])) {
             }
             echo '</td>';
 
+            foreach ($data['mysql_server'] as $id_mysql_server => $title) {
 
-            foreach ($data['groups'] as $group) {
-                if (isset($data['resultat'][$group[0]][$index])) {
+                if (isset($data['resultat'][$id_mysql_server][$index])) {
 
 
-                    $var_long = $data['resultat'][$group[0]][$index];
+                    $var_long = $data['resultat'][$id_mysql_server][$index];
+
+
 
                     if (strlen($var_long) > $length) {
 
@@ -159,22 +179,28 @@ if (!empty($data['index'])) {
                         $var = substr($var_long, 0, $length)."...";
                     } else {
                         $var = $var_long;
-                        //$var_long =
+//$var_long =
                     }
                 } else {
                     $var      = "<b>N/A</b>";
                     $var_long = "N/A";
                 }
 
+                $pos = strpos($index, "performance_schema");
+
+                if ((substr($index, -5) === "_size" && $pos === false) || $index === "join_buffer_space_limit") {
+                    $var = format($var, 0);
+                }
+
                 $color = "";
 
                 if ($style) {
                     $color = "background: ".getrgba($var, 0.5);
-                    $var   = "<b>".$var."</b>";
+                    $var   = "<b>".onOff($var)."</b>";
                 }
 
                 echo '<td style="'.$color.'" title="'.$var_long.'">';
-                echo $var;
+                echo onOff($var);
                 echo '</td>';
             }
 
@@ -182,5 +208,7 @@ if (!empty($data['index'])) {
         }
     }
     echo '</table>';
+
+    echo '<p><a class="btn btn-info showdiff" role="button">Show only differences</a></p>';
 }
 //debug($data['resultat']);
