@@ -37,15 +37,21 @@ function format($bytes, $decimals = 2)
     if (!is_numeric($bytes)) {
         return $bytes;
     }
-// && $bytes != 0
+
     if (empty($bytes)) {
         return "";
     }
-    $sz = ' KMGTPE';
+    $sz = ' KMGTPEZY';
 
     $factor = (int) floor(log($bytes) / log(1024));
 
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    if ($factor === 0) {
+        $unit = '';
+    } else {
+        $unit = " ".$sz[$factor].'o';
+    }
+
+    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).$unit;
 }
 
 function onOff($string)
@@ -85,7 +91,7 @@ echo '</div>';
 echo '<div class="row">';
 echo '<form method="POST" action="">';
 echo '<div class="col-md-10">';
-\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("multiple" => "multiple", "data-width" => "100%")));
+\Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("multiple" => "multiple", "data-width" => "100%", "all_server"=>"true")));
 echo '</div>';
 echo '<div class="col-md-2">';
 echo '<button type="submit" class="btn btn-primary">Check Result on these servers</button>';
@@ -156,11 +162,14 @@ if (!empty($data['index'])) {
             echo '<tr'.$hide.'>';
             echo '<td>'.$i.'</td>';
             echo '<td>'.$j.'</td>';
-            echo '<td class="">';
+
+            //<span data-toggle="tooltip" data-placement="right" title="Le nombre naire maiset ont utilisées un  de la transaction.">
+
+            echo '<td>';
             if ($style) {
                 echo '<b>'.$index.'</b>';
             } else {
-                echo $index;
+                echo ''.$index.'';
             }
             echo '</td>';
 

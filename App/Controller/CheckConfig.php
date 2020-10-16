@@ -24,11 +24,12 @@ class CheckConfig extends Controller
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
-        $this->di['js']->code_javascript('(function() {
+        $this->di['js']->code_javascript('
             $( ".showdiff" ).click(function() {
-            $(".to_hide").toggleClass("hide")
+                $(".to_hide").toggleClass("hide")
             });
-        })();');
+            $(\'[data-toggle="tooltip"]\').tooltip();
+       ');
 
 
         Debug::parseDebug($param);
@@ -190,33 +191,45 @@ class CheckConfig extends Controller
                 }
 
                 //if ($data['show']) {
+
+                $index = array();
                 foreach ($resultat as $res) {
-                    $index = array_merge($res);
+                    $index = array_merge($res, $index);
                 }
 
+                //debug($index);
                 $data['index'] = array_keys($index);
-                sort($data['index']);
+                //sort($data['index']);
 
                 $data['resultat'] = $resultat;
             }
         }
 
-
-
-
-        $sql = "select group_concat(b.display_name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
+        //generate liste of cluster (for select)
+        $sql = "select group_concat(a.id_mysql_server) as id_mysql_servers, group_concat(b.display_name) as display_name
             from link__architecture__mysql_server a
             INNER JOIN mysql_server b ON a.id_mysql_server= b.id
             group by id_architecture having count(1) > 1;";
-
 
         $res = $db->sql_query($sql);
 
         $data['grappe'] = array();
         while ($ob             = $db->sql_fetch_object($res)) {
+
+            $id_mysql_server_splited = explode(",", $ob->id_mysql_servers);
+            $libelle                 = array();
+
+            foreach ($id_mysql_server_splited as $id_mysql_server) {
+                $pretty_server = str_replace('"', "'", \App\Library\Display::srv($id_mysql_server));
+                $libelle[]     = strip_tags($pretty_server, '<span><small>');
+            }
+
+            $item = implode(' , ', $libelle);
+
             $tmp            = array();
             $tmp['id']      = $ob->id_mysql_servers;
-            $tmp['libelle'] = $ob->name;
+            $tmp['extra']   = array("data-content" => $item);
+            $tmp['libelle'] = $ob->display_name;
 
 
             $data['grappe'][] = $tmp;
@@ -283,51 +296,6 @@ class CheckConfig extends Controller
         return $db_link;
     }
 
-    private function arrayDiffAssocRecursive($array1, $array2)
-    {
-        $difference = array();
-        foreach ($array1 as $key => $value) {
-            if (is_array($value)) {
-                if (!isset($array2[$key]) || !is_array($array2[$key])) {
-                    $difference[$key] = $value;
-                } else {
-                    $new_diff         = $this->array_diff_assoc_recursive($value, $array2[$key]);
-                    if (!empty($new_diff)) $difference[$key] = $new_diff;
-                }
-            } else if (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
-                $difference[$key] = $value;
-            }
-        }
-        return $difference;
-    }
-    /*
-     * add doc
-     * permet de testé 2 à 2 toutes les possibilitées
-     */
-
-    private function perm($nbrs)
-    {
-        $temp = $nbrs;
-        $ret  = [];
-
-        foreach ($nbrs as $server1) {
-            foreach ($temp as $server2) {
-
-                if (($key = array_search($server1, $temp)) !== false) {
-                    unset($temp[$key]);
-                }
-
-                if ($server1 === $server2) {
-                    continue;
-                }
-
-                $ret[] = array($server1, $server2);
-            }
-        }
-
-        return $ret;
-    }
-
     public function see($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -360,59 +328,5 @@ class CheckConfig extends Controller
         } else {
             echo "Server not found !! \n";
         }
-    }
-    /*
-     * traitement des données
-     */
-
-    private function fetchData($elems, $id_mysql_server, $id_number)
-    {
-        $resultat = array();
-
-        foreach ($elems as $arr) {
-
-
-            $nb = count($arr);
-            if ($nb == 2) {
-                if (!empty($arr['Variable_name']) && isset($arr['Value'])) {
-                    $show = true;
-                } else {
-                    $show = false;
-                }
-            } else {
-                $show = false;
-            }
-
-            if ($show) {
-                if (strtolower($arr['Variable_name']) === "wsrep_provider_options") {
-
-                    //$resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
-
-                    $vals = explode(";", trim($arr['Value'], ";"));
-                    array_pop($vals); // remove last ; (empty)
-
-                    foreach ($vals as $val) {
-                        $varval = explode("=", $val);
-
-                        $sous_variable = trim($varval[0]);
-                        $sous_value    = trim($varval[1]);
-
-                        if (!isset($varval[1])) {
-                            debug($varval);
-                        }
-
-                        $resultat[$id_mysql_server][$arr['Variable_name']."<i>__".$sous_variable."</i>"] = $sous_value;
-                    }
-                } else {
-                    $resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
-                    //$data['show']                                      = true;
-                }
-            } else {
-                //debug($nb);
-                $resultat[$id_mysql_server][] = $arr;
-            }
-        }
-
-        return $resultat;
     }
 }
