@@ -143,7 +143,7 @@ if (!empty($data['servers'])) {
         }
 
         if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
-            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="https://192.168.1.11/pmacontrol/image/icon/logo.svg"/>';
+            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
         }
         
         echo '</td>';

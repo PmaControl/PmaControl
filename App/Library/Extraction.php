@@ -53,7 +53,7 @@ class Extraction
 
                     $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
-                    $extra_where = " AND a.`date` IN ('".implode("','", $date)."') ";
+                    $extra_where = " AND a.`date` IN ('".implode('","', $date)."') ";
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) ";
