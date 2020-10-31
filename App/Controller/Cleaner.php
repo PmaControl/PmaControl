@@ -78,8 +78,6 @@ class Cleaner extends Controller
 
     public function statistics($param)
     {
-
-
         $this->title = '<i class="fa fa-area-chart" aria-hidden="true"></i> '.__("Statistics");
 
         $id_cleaner = $this->get_id_cleaner($param);

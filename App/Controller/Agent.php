@@ -268,6 +268,8 @@ class Agent extends Controller {
             Debug::debug("refresh time : " . $refresh_time);
 
 
+            shell_exec('date=$(date "+%Y-%m-%d %H:%M:%S") && echo "[${date}] $@" >> '.TMP.'run.'.$id.'.log');
+
             // in case of mysql gone away, like this daemon restart when mysql is back
             Sgbd::sql(DB_DEFAULT)->sql_close();
 

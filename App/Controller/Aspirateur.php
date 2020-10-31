@@ -91,6 +91,14 @@ class Aspirateur extends Controller
 
         $data['server']['ping'] = microtime(true) - $time_start;
 
+        /*
+         * test for processing long time
+          if ($id_server == 114) {
+          sleep(55);
+          } */
+
+
+
         if (!empty($error_msg)) {
             echo $name_server." : ".$error_msg."\n";
 
@@ -108,6 +116,7 @@ class Aspirateur extends Controller
             echo $name_server." : OK\n";
         }
 
+<<<<<<< HEAD
         if($id_server == 199)
         {
             sleep(50);
@@ -115,6 +124,11 @@ class Aspirateur extends Controller
 
         
 
+||||||| merged common ancestors
+        
+
+=======
+>>>>>>> 683d68e2ed3269fa8ebe8c38d91ecaf40063019c
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
@@ -260,25 +274,22 @@ class Aspirateur extends Controller
         ini_set("display_errors", $display_error);
     }
 
-
     public function allocate_shared_storage($name = 'answer')
     {
 //storage shared
         $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
-
     /*
-    public function after()
-    {
+      public function after()
+      {
 
-        foreach($this->shared as $name => $array)
-        {
+      foreach($this->shared as $name => $array)
+      {
 
 
-        }
-    }*/
-
+      }
+      } */
 
     public function trySshConnection($param)
     {
@@ -295,7 +306,7 @@ class Aspirateur extends Controller
         where a.id=".$id_mysql_server." AND b.`active` = 1 LIMIT 1;";
 
         Debug::sql($sql);
-        
+
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -354,14 +365,32 @@ class Aspirateur extends Controller
 
         $hardware['memory'] = $memory;
 
+
+
         $freq_brut = $ssh->exec("cat /proc/cpuinfo | grep 'cpu MHz'");
         preg_match("/[0-9]+\.[0-9]+/", $freq_brut, $freq);
 
         // $freq[0] can be empty !!!
-        $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000))." GHz";
-        $os                        = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
-        $distributor               = trim($ssh->exec("lsb_release -si 2> /dev/null"));
-        $codename                  = trim($ssh->exec("lsb_release -cs 2> /dev/null"));
+
+        if (empty($freq[0])) {
+
+            //case of raspberry pi
+            $freq_2 = 0;
+            $freq_2 = trim($ssh->exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"));
+
+            if (!empty($freq_2)) {
+                $hardware['cpu_frequency'] = round($freq_2 / 1000000,2)." GHz";
+            }
+            else
+            {
+                $hardware['cpu_frequency'] = $freq_brut;
+            }
+        } else {
+            $hardware['cpu_frequency'] = sprintf('%.2f', ($freq[0] / 1000))." GHz";
+        }
+        $os          = trim($ssh->exec("lsb_release -ds 2> /dev/null"));
+        $distributor = trim($ssh->exec("lsb_release -si 2> /dev/null"));
+        $codename    = trim($ssh->exec("lsb_release -cs 2> /dev/null"));
 
         if ($distributor === "RedHatEnterpriseServer") {
             $distributor = "RedHat";
@@ -965,18 +994,22 @@ class Aspirateur extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `daemon_main` WHERE `id`=".$id_daemon_main.";";
-        Debug::sql($sql);
-        $res = $db->sql_query($sql);
 
-        while ($ob = $db->sql_fetch_object($res)) {
-            $worker_name = $ob->worker_name;
-        }
+        /*
+          $sql = "SELECT * FROM `daemon_main` WHERE `id`=".$id_daemon_main.";";
+          Debug::sql($sql);
+          $res = $db->sql_query($sql);
 
-        Debug::debug($worker_name, 'worker_name');
+          while ($ob = $db->sql_fetch_object($res)) {
+          $worker_name = $ob->worker_name;
+          }
 
+          Debug::debug($worker_name, 'worker_name');
+         */
 
-        $sql = "SELECT * FROM `daemon_worker` ";
+        $sql = "SELECT a.*,b.worker_name  FROM `daemon_worker` a
+            INNER JOIN `daemon_main` b ON a.`id_daemon_main` = b.id
+            ";
 
         if ($id_daemon_main != 0) {
             $sql .= "WHERE `id_daemon_main`=".$id_daemon_main;
@@ -989,10 +1022,10 @@ class Aspirateur extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
             $this->removeWorker(array($ob->id_daemon_main));
-            array_map('unlink', glob(TMP."tmp/lock/".$worker_name."/*.lock"));
+            //array_map('unlink', glob(TMP."tmp/lock/".$worker_name."/*.lock"));
         }
 
-        System::deleteFiles($worker_name);
+        //System::deleteFiles($worker_name);
     }
 
     public function checkAllWorker($param)

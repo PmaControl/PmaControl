@@ -1,12 +1,13 @@
 <?php
-
 //https://nagix.github.io/chartjs-plugin-streaming/samples/interactions.html
+
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Display;
 use App\Library\Debug;
+use \Glial\Sgbd\Sgbd;
 
 class PostMortem extends Controller
 {
@@ -28,15 +29,14 @@ class PostMortem extends Controller
     {
         Debug::parseDebug($param);
 
-        //$db = Sgbd::sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
+        $slaves = Extraction::extract(array("status::com_select", "status::com_select"), array(1), "10 minute", true, true);
+        //$slaves2 = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
+        //Debug::$debug = true;
 
-
-
-        $slaves = Extraction::extract(array("status::memory_used"), array(9, 1), array("2019-02-19 05:40:00", "2020-02-20 18:00:00"), true, true);
-
-
+        //$slave = array_merge($slaves1,$slaves2);
         $color = array("orange" => "rgb(255, 159, 64)",
             "blue" => "rgb(54, 162, 235)",
             "red" => "rgb(255, 99, 132)",
@@ -46,8 +46,7 @@ class PostMortem extends Controller
             "grey" => "rgb(201, 203, 207)"
         );
 
-        
-        $alpha = 0.1;
+        $alpha      = 0.1;
         $background = array("orange" => "rgba(255, 159, 64, $alpha)",
             "blue" => "rgba(54, 162, 235, $alpha)",
             "red" => "rgba(255, 99, 132, $alpha)",
@@ -57,13 +56,11 @@ class PostMortem extends Controller
             "grey" => "rgba(201, 203, 207, $alpha)"
         );
 
-
-
         $graph   = array();
         $tooltip = "var agregat = []\n";
         $i       = 0;
         foreach ($slaves as $slave) {
-            Debug::debug($slave);
+            //Debug::debug($slave);
 
             $coul = next($color);
             $back = next($background);
@@ -71,7 +68,7 @@ class PostMortem extends Controller
             $label = 'server'.$slave['id_mysql_server'];
 
             $graph[] = '{
-                label: "'.Display::srvjs($slave['id_mysql_server']).'",
+                label: "'.Display::srvjs($slave['id_mysql_server']).''.$slave['id_ts_variable'].'",
                 data: ['.$slave['graph'].'],
                 borderColor: "'.$coul.'",
                 fill:true,
@@ -92,7 +89,19 @@ class PostMortem extends Controller
         }
 
 
+        //debug($graph);
 
+        $y_access = '';
+        if (false) {
+            $y_access = ",yAxes: [{
+                ticks:
+                {
+                    callback: function(value, index, values){
+                        return FileConvertSize(value)
+                    },
+                }
+            }]";
+        }
 
 // //..' -  Max : '.self::format($slave['max']).' - Avg : '.self::format($slave['avg']).' - Std : '.$slave['std'].'"
         $this->di['js']->code_javascript('
@@ -105,9 +114,8 @@ function FileConvertSize(aSize){
             if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
     }
 }
-'.$tooltip.'
-var ctx = document.getElementById("myChart2").getContext("2d");
 
+var ctx = document.getElementById("myChart2").getContext("2d");
 
 var myChart = new Chart(ctx, {
     type: "line",
@@ -126,7 +134,7 @@ options:
               dashPattern: [1, 1]   // crosshair line dash pattern
             },
             sync: {
-              enabled: false,            // enable trace line syncing with other charts
+              enabled: true,            // enable trace line syncing with other charts
               group: 1,                 // chart group
               suppressTooltips: false   // suppress tooltips when showing a synced tracer
             },
@@ -146,8 +154,6 @@ options:
             }
           }
         },
-
-
 
         //end plugin
         bezierCurve: false,
@@ -174,9 +180,6 @@ options:
                     }
                     label += FileConvertSize(tooltipItem.yLabel);
                     label += agregat[tooltipItem.datasetIndex];
-
-
-
                     return label;
                 }
             }
@@ -199,19 +202,8 @@ options:
                             minute: "HH:mm"
                         }
                     }
-                }],
-            yAxes: [{
-                    
-                    ticks:
-                    {
-                     
-                        callback: function(value, index, values){
-                            
-                            return FileConvertSize(value)
-                        },
-                    }
-
                 }]
+                '.$y_access.'
         }
     }
 });

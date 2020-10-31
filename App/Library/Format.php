@@ -39,7 +39,10 @@ class Format
                 break;
 
             case 'percona':
-                $name = '<span class="geek">&#xF137;</span> Percona Server';
+
+                //$name = 'percona.svg'
+                $name = '<img title="Percona Server" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/percona.svg"/>';
+                $name .= ' Percona Server';
                 //$name = 'percona';
                 break;
 
