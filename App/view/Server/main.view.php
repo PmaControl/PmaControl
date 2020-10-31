@@ -280,18 +280,6 @@ if (!empty($data['servers'])) {
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;" title="'.__('Kill').'">'        .__('Kill').'</span>';
         }
 
-<<<<<<< HEAD
-        //echo '&nbsp;<span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'.__('Debug').'</span>';
-||||||| merged common ancestors
-        echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-        .__('Debug').'</span>';
-=======
-        //echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-        //.__('Debug').'</span>';
->>>>>>> 683d68e2ed3269fa8ebe8c38d91ecaf40063019c
-
-
-
         echo '</td>';
         echo '<td style="'.$style.'">';
 

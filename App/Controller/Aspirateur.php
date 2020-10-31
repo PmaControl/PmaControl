@@ -116,19 +116,6 @@ class Aspirateur extends Controller
             echo $name_server." : OK\n";
         }
 
-<<<<<<< HEAD
-        if($id_server == 199)
-        {
-            sleep(50);
-        }
-
-        
-
-||||||| merged common ancestors
-        
-
-=======
->>>>>>> 683d68e2ed3269fa8ebe8c38d91ecaf40063019c
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
