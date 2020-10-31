@@ -275,6 +275,10 @@ if (!empty($data['servers'])) {
         } else {
             echo str_replace("\n", '<br>', trim($server['error']));
 
+
+
+
+
             if (!empty(trim($server['error']))) {
                 if (!empty($data['last_date'][$server['id']]['date'])) {
                     echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
@@ -311,9 +315,12 @@ if (!empty($data['servers'])) {
             echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
+        if ($server['is_available'] == -1) {
+            echo '&nbsp;'.$server['warning'];
+            echo '&nbsp;<span class="label label-warning" style="cursor:pointer;" title="'.__('Kill').'">'        .__('Kill').'</span>';
+        }
 
-        echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-        .__('Debug').'</span>';
+        //echo '&nbsp;<span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'.__('Debug').'</span>';
 
 
 

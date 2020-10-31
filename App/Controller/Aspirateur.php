@@ -108,6 +108,11 @@ class Aspirateur extends Controller
             echo $name_server." : OK\n";
         }
 
+        if($id_server == 199)
+        {
+            sleep(50);
+        }
+
         
 
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
@@ -625,7 +630,7 @@ class Aspirateur extends Controller
                         // UPDATE is_available X => YELLOW  (not answered)
                         $sql = "UPDATE `mysql_server` SET is_available = -1,
                             `date_refresh` = '".date("Y-m-d H:i:s")."',
-                            `error`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
+                            `warning`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
                         echo \SqlFormatter::format($sql);
                         $db->sql_query($sql);
                     }
@@ -649,7 +654,7 @@ class Aspirateur extends Controller
             WHERE a.is_monitored =1 and b.is_monitored=1";
 
         if (!empty($mysql_servers)) {
-            $sql .= " AND id NOT IN (".implode(',', $mysql_servers).")";
+            $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
 
         $sql .= " ORDER by is_available ASC, date_refresh DESC;";
@@ -1170,7 +1175,7 @@ class Aspirateur extends Controller
                         $sql = "UPDATE `mysql_server` SET ssh_available  = -1,
                             ` 	ssh_date_refresh ` = '".date("Y-m-d H:i:s")."',
                             `ssh_error`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
-                        Debug::sql($sql);
+                        //Debug::sql($sql);
                         $db->sql_query($sql);
                     }
                 }
