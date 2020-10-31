@@ -8,9 +8,15 @@
 use Glial\Html\Form\Form;
 
 //mise en forme sur 2 colones
+
 $midle = ceil(count($data['slave']) / 2);
 $part1 = array_slice($data['slave'], 0, $midle, true);
 $part2 = array_slice($data['slave'], $midle, count($data['slave']), true);
+
+
+$i = 0;
+$j = 0;
+
 
 
 
@@ -99,9 +105,9 @@ if (empty($data['replication_name'])) {
                 </div>
 
                 <div class="well">
-                    <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/reload/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Reload databases this server from Master') ?> (<?= implode(',',
-            $data['db_on_master'])
-            ?>)</a>
+                    <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/reload/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Reload databases this server from Master') ?> (<?=
+                        implode(',', $data['db_on_master'])
+                        ?>)</a>
                 </div>
             </div>
             <?php
@@ -123,61 +129,73 @@ if (empty($data['replication_name'])) {
 </div>
 
 
-
-
-
-
 <div class="panel panel-primary">
     <div class="panel-heading">
 
         <h3 class="panel-title"><?= $show ?></h3>
     </div>
-    <?php
-    echo '<table class="table table-condensed table-bordered table-striped">';
-
-    echo '<tr>';
-    echo '<th>'.__('Top').'</th>';
-
-
-    echo '<th>'.__('Variables').'</th>';
-    echo '<th>'.__('Values').'</th>';
-    echo '<th>'.__('Variables').'</th>';
-    echo '<th>'.__('Values').'</th>';
-
-
-    echo '</tr>';
 
 
 
-    $i = 0;
-    foreach ($part1 as $key => $value) {
+    <div class="row">
+        <div class="col-md-6" style="padding-right: 0">
 
-        $i++;
-        echo '<tr>';
-        echo '<td>'.$i.'</td>';
+            <?php
+            echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0">';
+            echo '<tr>';
+            echo '<th>'.__('Top').'</th>';
+            echo '<th>'.__('Variables').'</th>';
+            echo '<th>'.__('Values').'</th>';
 
-        //issues 33
-        //$line = each($part2);
-        $line = array();
-        foreach ($part2 as $k => $v) {
-            $line['key']   = $k;
-            $line['value'] = $v;
-        }
+            echo '</tr>';
 
-        echo '<td><b>'.$key.'</b></td>';
-        echo '<td>'.$value.'</td>';
-        echo '<td><b>'.$line['key'].'</b></td>';
-        echo '<td>'.$line['value'].'</td>';
+            $i = 0;
 
-        echo '</tr>';
-    }
-    ?>
+            foreach ($part1 as $line => $value) {
 
-</table>
+
+                $i++;
+                echo '<tr>';
+                echo '<td>'.$i.'</td>';
+
+
+                echo '<td><b>'.$line.'</b></td>';
+                echo '<td>'.$value.'</td>';
+
+                echo '</tr>';
+            }
+            echo '</table>';
+            ?>
+        </div>
+
+        <div class="col-md-6" style="padding-left: 0">
+
+            <?php
+            echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0">';
+            echo '<tr>';
+            echo '<th style="border-left:0">'.__('Variables').'</th>';
+            echo '<th>'.__('Values').'</th>';
+            echo '</tr>';
+
+            $i = 0;
+
+            foreach ($part2 as $line => $value) {
+
+
+                $i++;
+                echo '<tr>';
+                echo '<td style="border-left:0"><b>'.$line.'</b></td>';
+                echo '<td>'.$value.'</td>';
+
+                echo '</tr>';
+            }
+            echo '</table>';
+            ?>
+        </div>
+
+    </div>
+
 </div>
-
-
-
 <div class="panel panel-primary" style="background:#f9f9f9">
     <div class="panel-heading">
 

@@ -4,54 +4,6 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
-/*
-  function formatVersion($version)
-  {
-  if (strpos($version, "-")) {
-  $number = explode("-", $version)[0];
-  $fork   = explode("-", $version)[1];
-  } else {
-  $number = $version;
-  }
-
-  switch (strtolower($fork)) {
-  case 'mariadb':
-  $name = '<span class="geek">&#xF130;</span> MariaDB';
-  break;
-
-  case 'percona':
-  $name = 'percona';
-  break;
-
-  default:
-  $name = '<span class="geek">&#xF137;</span> MySQL';
-  }
-
-  return $name." ".$number;
-  }
-
-  function format_ping($microtime, $precision = 2)
-  {
-  $units = array('ms', 's');
-
-  $microtime = $microtime * 1000;
-
-  if ($microtime > 1000) {
-  $microtime = $microtime / 1000;
-  $pow       = 1;
-  } else {
-  $pow = 0;
-  }
-
-  // Uncomment one of the following alternatives
-  // $bytes /= pow(1024, $pow);
-  // $bytes /= (1 << (10 * $pow));
-
-
-  return round($microtime, $precision).' '.$units[$pow];
-  }
- */
-
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -190,8 +142,11 @@ if (!empty($data['servers'])) {
             echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
         }
 
+        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
+            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
+        }
+        
         echo '</td>';
-
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['general_log'])) {
@@ -206,13 +161,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-                        echo Form::input("check", "all", $computed);
-                        ?>
+            echo Form::input("check", "all", $computed);
+            ?>
                         <span></span>
                     </label>
                 </div>
@@ -305,6 +260,11 @@ if (!empty($data['servers'])) {
         $h = ($subTime / (60 * 60)) % 24;
         $m = ($subTime / 60) % 60;
 
+        if (!empty($data['processing'][$server['id']])) {
+            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds").'</span>';
+        }
+
+
         if ($d >= 1) {
             echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
         } else if ($subTime < 60) {
@@ -320,7 +280,15 @@ if (!empty($data['servers'])) {
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;" title="'.__('Kill').'">'        .__('Kill').'</span>';
         }
 
+<<<<<<< HEAD
         //echo '&nbsp;<span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'.__('Debug').'</span>';
+||||||| merged common ancestors
+        echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
+        .__('Debug').'</span>';
+=======
+        //echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
+        //.__('Debug').'</span>';
+>>>>>>> 683d68e2ed3269fa8ebe8c38d91ecaf40063019c
 
 
 
