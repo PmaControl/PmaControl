@@ -11,7 +11,8 @@ use \Glial\Sgbd\Sgbd;
 
 class Display
 {
-    static $server = array();
+    static $server      = array();
+    static $ts_variable = array();
 
     static public function server($arr)
     {
@@ -48,8 +49,6 @@ class Display
 
     static public function srvjs($id_mysql_server)
     {
-
-
         if (empty(self::$server)) {
             $db = Sgbd::sql(DB_DEFAULT);
 
@@ -67,8 +66,37 @@ class Display
 
         $ret = self::$server[$id_mysql_server]['display_name'];
 
+        return $ret;
+    }
 
+    static public function icon($icon)
+    {
+        return str_replace(array('[IMG]', '{IMG}'), IMG, $icon);
+    }
 
+    static public function icon32($icon)
+    {
+        $icon = preg_replace('/height="(\d+)"/', 'height="32"', $icon);
+        $icon = preg_replace('/width="(\d+)"/', 'width="32"', $icon);
+
+        return str_replace(array('[IMG]', '{IMG}'), IMG, $icon);
+    }
+
+    static public function ts_variable($id_ts_variable)
+    {
+        if (empty(self::$ts_variable)) {
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            $sql = "SELECT id, name from ts_variable";
+
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                self::$ts_variable[$arr['id']] = $arr;
+            }
+        }
+
+        $ret = self::$ts_variable[$id_ts_variable]['name'];
 
         return $ret;
     }

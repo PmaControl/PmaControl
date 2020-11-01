@@ -11,7 +11,7 @@ use Glial\Html\Form\Form;
 
     <?php
     \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
-    
+
     //print_r($_GET);
     //echo $data['sql'];
 
@@ -31,9 +31,11 @@ use Glial\Html\Form\Form;
 
 
 <ul class="nav nav-tabs">
-  <li><a href="#">phpMyAdmin</a></li>
-  <li class="active"><a href="#"><?= __("Editor") ?></a></li>
-  <li><a href="#"><?= __("Graph") ?></a></li>
-  <li><a href="#"><?= __("Alert") ?></a></li>
-  <li><a href="#"><?= __("Configuration") ?></a></li>
+    <li><a href="#">phpMyAdmin</a></li>
+    <li class="active"><a href="#"><?= __("Editor") ?></a></li>
+    <li><a href="#"><?= __("Graph") ?></a></li>
+    <li><a href="#"><?= __("Alert") ?></a></li>
+    <li><a href="#"><?= __("Configuration") ?></a></li>
 </ul>
+
+

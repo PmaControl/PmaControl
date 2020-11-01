@@ -41,7 +41,7 @@ class Format
             case 'percona':
 
                 //$name = 'percona.svg'
-                $name = '<img title="Percona Server" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/percona.svg"/>';
+                $name = '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
                 $name .= ' Percona Server';
                 //$name = 'percona';
                 break;
