@@ -32,7 +32,12 @@ class Control extends Controller
     private $engine = "tokudb";
     private $engine_preference = array("ROCKSDB", "TokuDB");
     public $extra_field = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
+
+    //when mysql reach 80% of disk we start to drop partition
     public $percent_max_disk_used = 80;
+
+    //0 = keep all partitions,
+    public $partition_to_keep = 0;
 
     /*
      *
@@ -228,11 +233,11 @@ class Control extends Controller
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
-        //On drop les partitions supérieur a 14 jours
-        if (count($partitions['other']) > 14) {
+        //On drop les partitions supérieur a X jours
+        if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
             System::deleteFiles("server");
 
-//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernieères infos se retrouveraient dans cette partitions
+//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
             Sleep(5);
 
             $this->dropPartition(array($partitions['min']));

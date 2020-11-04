@@ -105,6 +105,8 @@ function FileConvertSize(aSize){
             if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
     }
 }
+
+
 '.$tooltip.'
 var ctx = document.getElementById("myChart2").getContext("2d");
 

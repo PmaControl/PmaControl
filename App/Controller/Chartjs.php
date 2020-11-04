@@ -1,69 +1,56 @@
 <?php
-//https://nagix.github.io/chartjs-plugin-streaming/samples/interactions.html
 
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use App\Library\Extraction;
-use App\Library\Display;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
-class Detail extends Controller
+class Chartjs extends Controller
 {
-
-    static function format($bytes, $decimals = 2)
+/*
+ *
+ * lineBasic(int id_mysql_server, array ts_variable, mixed time )
+ * Liste de paramètres
+ * @param (int) id_mysql_server : id du serveur mysql
+ * @param (array) ts_variable : list of metrics to chart example  array("status::com_select", "status::com_insert")
+ * @param (mixed) date : if string interval according to : https://mariadb.com/kb/en/date-and-time-units/
+ *                       if array should be equal to 2 with first date min and date max
+ * @param (array) color : colors to use for graph
+ * @param (array) options
+ * 
+ *
+ */
+    public function lineBasic($param)
     {
-        // && $bytes != 0
-        if (empty($bytes)) {
-            return "";
-        }
-        $sz = ' KMGTP';
 
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
-    }
-
-    public function index($param)
-    {
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
-        $db = Sgbd::sql(DB_DEFAULT);
-
-
-        $id_mysql_server = $param[0];
-    }
-
-    public function graph($param)
-    {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         // in case of no id_mysql_server set, we relaod the page with the fist one
-        if (empty($param[0]))
-        {
-            $sql ="SELECT min(id) as id_mysql_server FROM mysql_server";
-
+        if (empty($param[0])) {
+            $sql = "SELECT min(id) as id_mysql_server FROM mysql_server";
             $res = $db->sql_query($sql);
-            while($ob = $db->sql_fetch_object($res))
-            {
+            while ($ob  = $db->sql_fetch_object($res)) {
                 $link = LINK.$this->getClass().'/'.__FUNCTION__.'/'.$ob->id_mysql_server.'/';
                 header('location: '.$link);
                 exit;
             }
-
         }
 
-
         $id_mysql_server = $param[0];
+        $ts_variable = $param[1];
+        $date = $param[2];
+        $chart_name = "chart".uniqid();
+
+
         Debug::parseDebug($param);
 
         //$this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
         $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
-        $slaves = Extraction::extract(array("status::com_select", "status::com_insert", "status::com_update", "status::com_delete"), array(1), "1 hour", true, true);
-        //$slaves2 = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
-        //Debug::$debug = true;
-        //$slave = array_merge($slaves1,$slaves2);
+        $slaves = Extraction::extract(array("status::com_select", "status::com_insert", "status::com_update", "status::com_delete"), array($id_mysql_server), $date, true, true);
+
+
         $color  = array("orange" => "rgb(255, 159, 64)",
             "blue" => "rgb(54, 162, 235)",
             "red" => "rgb(255, 99, 132)",
@@ -96,7 +83,7 @@ class Detail extends Controller
             $back = next($background);
 
 
-            $slave['color'] = $coul;
+            $slave['color']   = $coul;
             $data['legend'][] = $slave;
             // id_ts_variable
 
@@ -117,8 +104,8 @@ class Detail extends Controller
             //$tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.self::format($slave['min']).' - Max : '.self::format($slave['max']).' - Avg : '
             //    .' '.self::format($slave['avg']).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
 
-            $tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.round($slave['min'],0).' - Max : '.round($slave['max'],0).' - Avg : '
-                .' '.round($slave['avg'],2).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
+            $tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.round($slave['min'], 0).' - Max : '.round($slave['max'], 0).' - Avg : '
+                .' '.round($slave['avg'], 2).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
 
 
 
@@ -141,8 +128,7 @@ class Detail extends Controller
         }
 
         $zoom = '';
-        if (false)
-        {
+        if (false) {
             $zoom = '            zoom: {
               enabled: true,                                      // enable zooming
               zoomboxBackgroundColor: "rgba(66,133,244,1)",     // background color of zoom box
@@ -193,9 +179,8 @@ $(".toggle").click(function() {
         $(this).addClass( "selected" ).closest("tr").removeClass("fadeout");
     }
 
-    myChart.data.datasets.forEach(function(ds) {
-        console.log(ds);
-
+    '.$chart_name.'.data.datasets.forEach(function(ds) {
+        
         if (activate_all)
         {
             ds.hidden = false;
@@ -208,14 +193,14 @@ $(".toggle").click(function() {
                 ds.hidden = false;
             }
         }
-
+        
     });
-  myChart.update();
+  '.$chart_name.'.update();
 });
 
-var ctx = document.getElementById("myChart2").getContext("2d");
+var ctx = document.getElementById("'.$chart_name.'").getContext("2d");
 
-var myChart = new Chart(ctx, {
+var '.$chart_name.' = new Chart(ctx, {
     type: "line",
     data: {
         datasets: ['.implode(",", $graph).']
@@ -228,9 +213,9 @@ options:
             duration: 0
         },
         hover: {
-            animationDuration: 0
+            animationDuration: 0 
         },
-        responsiveAnimationDuration: 0,
+        responsiveAnimationDuration: 0, 
         responsive: true,
 
         plugins: {
@@ -245,7 +230,7 @@ options:
               group: 1,                 // chart group
               suppressTooltips: false   // suppress tooltips when showing a synced tracer
             },
-            '.$zoom.'
+            '.$zoom.' 
           }
         },
 
@@ -266,7 +251,7 @@ options:
             mode: "interpolate",
             intersect: false,
 
-
+            
             callbacks: {
                 title: function(a, d) {
                     return a[0].xLabel.format("dddd D MMMM YYYY HH:mm:ss")
@@ -285,7 +270,7 @@ options:
         pointDot: false,
         legend: {
             position: "top",
-
+            
             labels: {
                 generateLabels: function(chart) {
                   var data = chart.data;
@@ -303,15 +288,15 @@ options:
                         lineWidth: dataset.borderWidth,
                         strokeStyle: dataset.borderColor,
                         pointStyle: dataset.pointStyle,
-
+                
                         // Below is extra data used for toggling the datasets
                         datasetIndex: i
                     };
                   }, this) : [];
                 },
             },
-
-
+            
+            
         },
         scales:
         {
@@ -339,7 +324,5 @@ options:
 
 ');
         $this->set('data', $data);
-
-
     }
 }

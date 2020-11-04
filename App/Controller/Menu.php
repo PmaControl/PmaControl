@@ -25,6 +25,9 @@ INNER JOIN `menu` b ON a.id = b.group_id
 LEFT JOIN `menu` c ON b.bg < c.bg AND b.bd > c.bd AND c.active = 1
 WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP BY b.id "
                 . "ORDER BY b.bg";
+
+
+
         $data['sql'] = $sql;
         $data['menu'] = $db->sql_fetch_yield($sql);
 

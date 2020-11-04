@@ -1,4 +1,8 @@
+<?php
 
+use \App\Library\Display;
+
+?>
 <div>
     <nav class="navbar navbar-inverse navbar-static navbar-fixed-<?= $data['position'] ?>">
 
@@ -8,7 +12,7 @@
             if ($data['position'] === "top"):
                 ?>
                 <div class="navbar-header">
-                    <button class="navbar-toggle collapsed" type="button" data-toggle="collapse">
+                    <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target=".pmacontrol-js-navbar-collapse">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -28,13 +32,17 @@
             }
             ?>
 
-            <div class="collapse navbar-collapse bs-example-js-navbar-collapse<?= $class ?>">
-                <ul class="nav navbar-nav">
+            <div class="collapse navbar-collapse pmacontrol-js-navbar-collapse <?= $class ?>">
+                <ul class="nav navbar-nav multi-level">
                     <?php
                     $close_at = [];
                     $i        = 1;
 
+
                     foreach ($data['menu'] as $item) {
+
+                        $item['icon'] = Display::icon($item['icon']);
+
 
                         foreach ($close_at as $key => $to_close) {
                             if ($item['bg'] > $to_close) {
@@ -55,21 +63,35 @@
 
 
                         if (($item['bd'] - $item['bg'] > 1) && (!empty($item['dropdown']) )) {
+
+                            // can change need to put an other solution with level inside of menu
+                            if ($item['parent_id'] === "92") {
+                                $class = "";
+                            } else {
+                                $class = "dropdown-submenu";
+                            }
+
+
+
+
                             echo '
-                                <li class="dropdown'.$active.'">
+                                <li class="'.$class.' dropdown'.$active.'">
                                 <a id="drop'.$i.'" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">
-                                '.$item['icon'].' '.__($item['title']).'
-                                <span class="caret"></span>
-                                </a>
+                                '.$item['icon'].' '.__($item['title']).'';
+
+                            if ($item['parent_id'] === "92") {
+                                echo '<span class="caret"></span>';
+                            }
+
+
+
+                            echo '</a>
                                 <ul class="dropdown-menu" role="menu" aria-labelledby="drop'.$i.'">';
 
                             $close_at[] = $item['bd'];
                             $i++;
                         } else {
-                            $item['url']  = str_replace(array('[IMG]', '{IMG}'), IMG, $item['url']);
-                            $item['icon'] = str_replace(array('[IMG]', '{IMG}'), IMG, $item['icon']);
-
-
+                            
                             $item['url'] = str_replace(array('{LINK}'), array(LINK), $item['url']);
 
                             if (strstr($item['url'], '{PATH}')) {
@@ -80,7 +102,7 @@
                             $PATH = WWW_ROOT.substr($_GET['glial_path'], 3);
 
 
-                            echo '<li class="'.$active.'" role="presentation"><a role="menuitem" tabindex="-1" href="'.$item['url'].'">'.$item['icon'].' '.__($item['title']).'</a></li>';
+                            echo '<li class="'.$active.'" role="presentation"><a role="menuitem" tabindex="-1" href="'.$item['url'].'">'.$item['icon'].' '.__($item['title']).'</a></li>'."\n";
                         }
                     }
                     ?>
