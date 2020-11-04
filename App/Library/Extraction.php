@@ -3,7 +3,16 @@
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
- */
+  https://github.com/fanthos/chartjs-chart-timeline/wiki  => changement de variable
+ * https://jsfiddle.net/fanthos/8vrme4bt/ => demo
+ *
+ * https://nagix.github.io/chartjs-plugin-datasource/
+ * https://www.npmjs.com/package/chartjs-plugin-datasource-prometheus
+
+ *
+ * vertical line
+ * https://jsfiddle.net/pu68rhLd/7/
+ *  */
 
 namespace App\Library;
 
@@ -19,8 +28,6 @@ class Extraction
 
     static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
-
-
 
         /*
           debug($var);
@@ -53,12 +60,12 @@ class Extraction
 
                     $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
+
+                    //still used ?
                     $extra_where = " AND a.`date` IN ('".implode('","', $date)."') ";
                 }
             } else {
-                $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) ";
-
-                // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
+                $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
                 $extra_where .= " AND a.`date` <= now() ";
             }
 
@@ -71,21 +78,9 @@ class Extraction
             $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
         }
 
-
         $variable = self::getIdVariable($var);
-
-        /*
-          if (count($var) != self::count_recursive($variable)) {
-          //echo from(__FILE__);
-          //debug(self::count_recursive($variable));
-          //debug($var);
-          //debug($variable);
-          throw new \Exception('PMACTRL-058 : The number of row is not the same please check you data '.count($var).' != '.self::count_recursive($variable).' :'.json_encode($var));
-          } */
-
-        $sql2 = array();
-
-
+        $sql2     = array();
+        $WINDOW   = "";
 
         foreach ($variable as $radical => $data_type) {
             foreach ($data_type as $type => $tab_ids) {
@@ -99,7 +94,11 @@ class Extraction
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
 
                     if ($graph === true) {
-                        $fields .= ", a.`value` - LAG(a.`value`) OVER (ORDER BY date) as value ";
+                        //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
+                        //$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
+                        $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
+
+                        $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
                     } else {
                         $fields .= ", a.`value` as value ";
                     }
@@ -116,8 +115,11 @@ class Extraction
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                     $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
                         .$INNER."
+
                 WHERE id_ts_variable = ".$id_ts_variable."
-                   AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where)";
+                   AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
+
+
 
                     $sql2[] = $sql4;
                 }
@@ -153,11 +155,11 @@ class Extraction
 
             $sql3 .= "
                 connection_name,
-                group_concat(concat('{ x: new Date(\'',t.`date`, '\'), y: ',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
-                min(t.`value`) as `min`,
-                max(t.`value`) as `max`,
-                avg(t.`value`) as `avg`,
-                std(t.`value`) as `std`
+                group_concat(concat('{x:new Date(\'',t.`date`, '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
+                round(min(t.`value`),2) as `min`,
+                round(max(t.`value`),2) as `max`,
+                round(avg(t.`value`),2) as `avg`,
+                round(std(t.`value`),2) as `std`
             FROM t GROUP BY id_mysql_server, id_ts_variable ";
 
 
@@ -176,6 +178,8 @@ class Extraction
         }
 
         //echo \SqlFormatter::format($sql3)."\n";
+
+        $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
         $res2 = $db->sql_query($sql3);
 

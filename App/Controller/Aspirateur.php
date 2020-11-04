@@ -113,6 +113,7 @@ class Aspirateur extends Controller
 
             return false;
         } else {
+            
             echo $name_server." : OK\n";
         }
 

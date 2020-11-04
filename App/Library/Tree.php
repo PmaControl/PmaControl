@@ -134,6 +134,8 @@ class Tree
             ."SELECT b.`".$this->fields['bg']."`, b.`".$this->fields['bd']."` from `".$this->table_name."` b INNER JOIN a ON b.`".$this->fields['bd']."`=a.`".$this->fields['bg']."`-1;";
 
 
+        debug($sql2);
+
         $res2 = $this->db->sql_query($sql2);
 
         while ($ob2 = $this->db->sql_fetch_object($res2)) {
