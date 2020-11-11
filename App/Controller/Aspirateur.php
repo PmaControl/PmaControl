@@ -89,6 +89,7 @@ class Aspirateur extends Controller
             $error_msg = $err['message'];
         }
 
+        $data = array();
         $data['server']['ping'] = microtime(true) - $time_start;
 
         /*
@@ -97,8 +98,21 @@ class Aspirateur extends Controller
           sleep(55);
           } */
 
+        $service = array();
+        $service['mysql_server']['available'] = empty($error_msg)? 1:0;
+        $service['mysql_server']['ping'] = $data['server']['ping'];
+        $service['mysql_server']['error'] = $error_msg;
+        
+        $services = array();
+        $services[date('Y-m-d H:i:s')][$id_server] = $service;
+        
+        $this->allocate_shared_storage('service');
+        $this->shared['service']->{$id_server} = $services;
 
 
+        
+        
+        
         if (!empty($error_msg)) {
             echo $name_server." : ".$error_msg."\n";
 
@@ -112,11 +126,9 @@ class Aspirateur extends Controller
             $db->sql_close();
 
             return false;
-        } else {
-            
-            echo $name_server." : OK\n";
         }
-
+        
+        
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
@@ -222,6 +234,8 @@ class Aspirateur extends Controller
                 $get_databases = true;
             }
         } else {
+            
+            //test if first run, if yes remove grabbing of databases because getting to much time
             $get_databases = true;
         }
 
