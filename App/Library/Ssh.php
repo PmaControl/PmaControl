@@ -92,7 +92,7 @@ class Ssh
     static function isValid($pubkeyssh)
     {
         // check public key
-        //Debug::$debug = true;
+        Debug::$debug = true;
 
         Debug::debug(str_repeat("#", 80));
         //Debug::debug($pubkeyssh);
@@ -103,7 +103,10 @@ class Ssh
             $pubkeyssh = file_get_contents($pubkeyssh);
         }
 
-        //Debug::debug($pubkeyssh, "public key");
+        Debug::debug($pubkeyssh, "public key");
+
+        // remove ^M (happen with php 7.3 ? )
+        $pubkeyssh = str_ireplace("\x0D", "", $pubkeyssh);
 
         $path_puplic_key = TMP."trash/key".uniqid();
         file_put_contents($path_puplic_key, $pubkeyssh."\n");
@@ -139,7 +142,6 @@ class Ssh
             }
             unlink($file_error);
         }
-
 
         unlink($path_puplic_key);
 

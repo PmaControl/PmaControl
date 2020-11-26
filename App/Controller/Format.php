@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -10,52 +9,57 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 
+class Format extends Controller
+{
 
+    public function index($param)
+    {
 
-class Format extends Controller {
-
-    public function index($param) {
-
-        $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> ' . __("Format SQL");
+        $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Format SQL");
 
 
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
 
-            $md5 = md5($_POST['sql']);
+            $md5            = md5($_POST['sql']);
             $_SESSION[$md5] = $_POST['sql'];
 
-            header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $md5);
+            header("location: ".LINK.$this->getClass()."/".__FUNCTION__."/".$md5);
         }
+
+        $data = array();
 
         if (!empty($param[0])) {
 
+            if (!empty($_SESSION[$param[0]])) {
+                $data['sql'] = $_SESSION[$param[0]];
 
-            $data['sql'] = $_SESSION[$param[0]];
+                $data['$queries'] = \SqlFormatter::splitQuery($data['sql']);
 
-            $data['$queries']  = \SqlFormatter::splitQuery($data['sql']);
-
-            foreach ($data['$queries'] as $query) {
-                $data['sql_formated'][] = \SqlFormatter::format($query);
+                foreach ($data['$queries'] as $query) {
+                    $data['sql_formated'][] = \SqlFormatter::format($query);
+                }
             }
+
+
 
             $this->set('data', $data);
         }
     }
 
-    private function base64url_encode($data) {
+    private function base64url_encode($data)
+    {
         return strtr(base64_encode($val), '+/=', '-_,');
         //return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
-    private function base64url_decode($data) {
+    private function base64url_decode($data)
+    {
         return base64_decode(strtr($val, '-_,', '+/='));
         //return base64_decode(strtr($data, '-_', '+/').str_repeat('=', 3 - ( 3 + strlen($data)) % 4));
     }
-
 }
-
 /*
  * select if(`performance_schema`.`threads`.`PROCESSLIST_ID` is null,substring_index(`performance_schema`.`threads`.`NAME`,'/',-1),
  * concat(`performance_schema`.`threads`.`PROCESSLIST_USER`,'@',`performance_schema`.`threads`.`PROCESSLIST_HOST`)) AS `user`,

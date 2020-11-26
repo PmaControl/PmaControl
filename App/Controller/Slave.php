@@ -8,8 +8,6 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
-
-
 use \Glial\Sgbd\Sgbd;
 
 class Slave extends Controller
@@ -70,12 +68,11 @@ class Slave extends Controller
             $data['server']['slave'][$arr['id']]                   = $arr;
         }
 
-        
+
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
         $this->generateGraph($slaves);
 
-        if (! empty($slave))
-        {
+        if (!empty($slave)) {
             foreach ($slaves as $slave) {
                 $data['graph'][$slave['id_mysql_server']] = $slave;
             }
@@ -89,11 +86,10 @@ class Slave extends Controller
     {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
-         if (! empty($slave))
-        {
-        foreach ($slaves as $slave) {
+        if (!empty($slave)) {
+            foreach ($slaves as $slave) {
 
-            $this->di['js']->code_javascript('
+                $this->di['js']->code_javascript('
 
 Chart.defaults.global.legend.display = false;
 
@@ -169,7 +165,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 ');
-        }
+            }
         }
     }
 
@@ -219,15 +215,8 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
         ksort($data['slave']);
-//debug($data['slave']);
-
 
         $data['replication_name'] = $replication_name;
-
-
-
-
-
         Extraction::setOption('groupbyday', true);
 
 

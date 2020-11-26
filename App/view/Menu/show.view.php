@@ -66,8 +66,8 @@
                             $close_at[] = $item['bd'];
                             $i++;
                         } else {
-                            $item['url']  = str_replace('[IMG]', IMG, $item['url']);
-                            $item['icon'] = str_replace('[IMG]', IMG, $item['icon']);
+                            $item['url']  = str_replace(array('[IMG]', '{IMG}'), IMG, $item['url']);
+                            $item['icon'] = str_replace(array('[IMG]', '{IMG}'), IMG, $item['icon']);
 
 
                             $item['url'] = str_replace(array('{LINK}'), array(LINK), $item['url']);
