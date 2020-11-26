@@ -57,6 +57,10 @@ class System
         return false;
     }
 
+    /*
+     *
+     * deprecated
+     */
     static public function deleteFiles($file = "")
     {
 

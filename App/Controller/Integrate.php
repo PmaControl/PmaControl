@@ -412,7 +412,7 @@ class Integrate extends Controller
 
         if (!empty($ids)) {
             //il faut ajouter le non primary pour les neud galera qui prenne pas de query
-            $sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (".$ids.")";
+            $sql = "UPDATE mysql_server SET is_available = 1, error = '', warning = '',is_acknowledged=0  WHERE id in (".$ids.")";
             $db->sql_query($sql);
         }
     }
