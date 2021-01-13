@@ -54,13 +54,12 @@ class Detail extends Controller
 
         }
 
-
         $id_mysql_server = $param[0];
         Debug::parseDebug($param);
 
         //$this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
         $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
-        $slaves = Extraction::extract(array("status::com_select", "status::com_insert", "status::com_update", "status::com_delete"), array(1), "1 hour", true, true);
+        $slaves = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
         //$slaves2 = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
         //Debug::$debug = true;
         //$slave = array_merge($slaves1,$slaves2);
@@ -343,3 +342,37 @@ options:
 
     }
 }
+
+
+/*
+ * 
+ * 
+ * WITH t as (
+SELECT 
+  a.`id_mysql_server`, 
+  a.`id_ts_variable`, 
+  '' as connection_name, 
+  a.`date`, 
+   GREATEST(CAST(a.`value` as SIGNED) - CAST(LAG(a.`value`) OVER W AS SIGNED),0 )/( TIME_TO_SEC(TIMEDIFF(a.date,lag(a.date) OVER W))) as value,
+   a.`value` as gg
+FROM 
+  `ts_value_general_int` a 
+  INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` 
+  INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` 
+WHERE 
+  id_ts_variable = 484 
+  AND a.id_mysql_server IN (1) 
+  AND a.`date` between "2020-10-25 01:55:59" and "2020-10-25 05:19:54"
+  AND a.`date` <= now() 
+  AND a.`date` <= now() 
+  WINDOW W AS (    ORDER BY   a.date ))
+select 
+  id_mysql_server, 
+  id_ts_variable, 
+  max(`date`), 
+  avg(`value`) é
+from 
+  t 
+group by 
+  UNIX_TIMESTAMP(`date`) DIV 10;
+ */
