@@ -1425,6 +1425,8 @@ class Dot2 extends Controller
 
         //echo str_replace("\n", "<br />",htmlentities($legend));
 
+        file_put_contents(TMP."/legend",$legend);
+        
         $data['legend'] = $this->getRenderer($legend);
 
         $this->set('data', $data);

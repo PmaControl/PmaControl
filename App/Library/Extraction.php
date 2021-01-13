@@ -62,7 +62,8 @@ class Extraction
                 } else {
 
                     //still used ?
-                    $extra_where = " AND a.`date` IN ('".implode('","', $date)."') ";
+                    $all_date    = implode('","', $date);
+                    $extra_where = " AND a.`date` IN ('".$all_date."') ";
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
@@ -99,6 +100,7 @@ class Extraction
                         $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
 
                         $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
+                        //$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
                     } else {
                         $fields .= ", a.`value` as value ";
                     }

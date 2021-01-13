@@ -73,8 +73,10 @@ class Control extends Controller
 
           $percent = ceil($data['used'] / $data['size'] * 100);
 
-          Debug::debug($percent);
+          
          */
+        Debug::debug($percent);
+        
         return $percent;
     }
 
