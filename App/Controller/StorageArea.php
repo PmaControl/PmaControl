@@ -5,11 +5,12 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
-use phpseclib\Crypt\RSA;
-use phpseclib\Net\SSH2;
+use \phpseclib\Crypt\RSA;
+use \phpseclib\Net\SSH2;
 use \App\Library\Debug;
 use \App\Library\Post;
 use \Glial\Sgbd\Sgbd;
+
 
 
 class StorageArea extends Controller {
@@ -41,7 +42,8 @@ class StorageArea extends Controller {
 
 //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
-
+        
+        set_include_path(get_include_path() . ROOT . 'vendor/phpseclib/phpseclib');
 
 
         if (!empty($_GET['backup_storage_area']['path'])) {
@@ -55,8 +57,6 @@ class StorageArea extends Controller {
             Crypt::$key = CRYPT_KEY;
 
             $storage_area['backup_storage_area'] = $_POST['backup_storage_area'];
-
-
 
             //debug($storage_area);
 
@@ -127,7 +127,6 @@ class StorageArea extends Controller {
             }
         }
 
-
         $this->di['js']->addJavascript(array("jquery.browser.min.js", "jquery.autocomplete.min.js"));
         $this->di['js']->code_javascript('$("#backup_storage_area-id_geolocalisation_city-auto").autocomplete("' . LINK . 'user/city/none>none", {
 		extraParams: {
@@ -155,21 +154,16 @@ class StorageArea extends Controller {
         $res = $db->sql_query($sql);
         $data['geolocalisation_country'] = $db->sql_to_array($res);
 
-
         $sql = "SELECT * FROM ssh_key order by name";
-
         $res = $db->sql_query($sql);
-
 
         $data['ssh_key'] = array();
         while ($ob = $db->sql_fetch_object($res)) {
             $tmp = array();
             $tmp['id'] = $ob->id;
             $tmp['libelle'] = $ob->name . " (" . $ob->type . ":" . $ob->bit . " bit) " . $ob->fingerprint;
-
             $data['ssh_key'][] = $tmp;
         }
-
 
         $data['menu'] = __FUNCTION__;
 
@@ -234,7 +228,6 @@ class StorageArea extends Controller {
             $ssh = new SSH2($storage['ip']);
 
             //$publicHostKey = $ssh->getServerPublicHostKey();
-
 
             if (!$ssh->login($login, $password)) {
 
@@ -301,16 +294,11 @@ class StorageArea extends Controller {
 
     public function menu($param) {
 
-
-
         if (empty($param[0])) {
             $data['menu'] = "listStorage";
         } else {
             $data['menu'] = $param[0];
         }
-
-
-
 
         $this->set("data", $data);
     }
@@ -331,5 +319,4 @@ class StorageArea extends Controller {
             header("HTTP/1.0 503 Internal Server Error");
         }
     }
-
 }
