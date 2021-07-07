@@ -5,7 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
-
+use \App\Library\Debug;
 
 class MysqlUser extends Controller {
 
@@ -43,9 +43,6 @@ class MysqlUser extends Controller {
                 while ($ob = $db_link->sql_fetch_object($res152)) {
                     $all_databases[] = $ob->Database;
                 }
-
-
-
 
                 $data['user'][$ob1->name] = $users;
 
@@ -188,15 +185,10 @@ class MysqlUser extends Controller {
                 }
             }
         }
-
+        
         if (!empty($data['grants'])) {
             $data['grants'] = array_unique($data['grants']);
         }
-
-
-
-
-
 
         $this->set('data', $data);
     }
@@ -205,4 +197,48 @@ class MysqlUser extends Controller {
         
     }
 
+    public function cmpHost($param)
+    {
+        Debug::parseDebug($param);
+        Debug::debug($param);
+
+        $id_mysql_server = $param[0];
+        $host1 = $param[1];
+        $host2 = $param[2];
+        $remote = Mysql::getDbLink($id_mysql_server);
+        
+        $sql = "select distinct user from mysql.user where host in('".$host1."', '".$host2."');";
+        //$sql ="SELECT @@hostname as user;";
+        Debug::sql($sql);
+
+        $data = array();
+        $res1 = $remote->sql_query($sql);  
+        
+        //Debug::debug($remote);
+
+        $hosts = array($host1);
+        Debug::debug($hosts);
+
+        while ($ob1 = $remote->sql_fetch_object($res1)) {
+            
+            //Debug::debug($ob1);
+            //Debug::debug($hosts);
+
+            foreach($hosts as $host)
+            {
+                $sql4 = "SHOW GRANTS FOR '".$ob1->user."'@'".$host."';";
+                //Debug::sql($sql4);
+                $res4 = $remote->sql_query($sql4);
+
+                while ($ob4 = $remote->sql_fetch_array($res4, MYSQLI_NUM)) {
+
+                    $data[$host][$ob1->user][md5($ob4[0])] = $ob4[0];
+
+                    echo $ob4[0]."\n";
+                }
+            }
+        }
+        exit;
+        print_r($data);
+    }
 }
