@@ -411,7 +411,7 @@ class Mysql extends Controller
 //$grants[] = str_replace('`', '\`', $table[0]);
                         $grants[] = $table[0];
                     }
-                    $export = implode(";", $grants);
+                    $export = implode(";\n", $grants);
 
                     if (strpos($db->host, ":")) {
                         $param = explode(":", $db->host);

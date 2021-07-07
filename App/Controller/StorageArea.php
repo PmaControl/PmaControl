@@ -39,12 +39,9 @@ class StorageArea extends Controller {
     }
 
     public function add($param) {
+        //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
-//df -Ph . | tail -1 | awk '{print $2}' => to know space
-
-        
         set_include_path(get_include_path() . ROOT . 'vendor/phpseclib/phpseclib');
-
 
         if (!empty($_GET['backup_storage_area']['path'])) {
             $_GET['backup_storage_area']['path'] = str_replace("[DS]", "/", $_GET['backup_storage_area']['path']);
@@ -180,6 +177,8 @@ class StorageArea extends Controller {
         ORDER BY a.libelle";
 
         $data['storage'] = $db->sql_fetch_yield($sql);
+        
+        $data['storage2'] = $db->sql_fetch_yield($sql);
 
         $sql = "SELECT * FROM backup_storage_space b  
         JOIN (select max(id) as id from backup_storage_space a group by id_backup_storage_area) a ON a.id = b.id";
