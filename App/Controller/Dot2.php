@@ -1568,6 +1568,7 @@ class Dot2 extends Controller
 
     public function getGaleraClusterV2($param)
     {
+        $group_galera = array();
         foreach ($this->servers as $server) {
             if (!empty($server['wsrep_on']) && $server['wsrep_on'] === "ON") {
                 //debug($server);

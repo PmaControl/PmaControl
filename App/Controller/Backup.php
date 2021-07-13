@@ -56,7 +56,7 @@ class Backup extends Controller {
     }
 
     public function sendKeyPub() {
-        foreach ($this->db as $key => $db) {
+        foreach ($this->db as $db) {
 
             $server_config = $db->getParams();
 
