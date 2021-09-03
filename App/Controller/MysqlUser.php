@@ -259,6 +259,9 @@ class MysqlUser extends Controller
             $data[$ob->id]['account']      = array();
             while ($arr2                          = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
                 $data[$ob->id]['account'][] = $arr2;
+
+
+                print_r($arr2);
             }
         }
 
