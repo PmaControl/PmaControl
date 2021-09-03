@@ -12,6 +12,7 @@
     </div>
     <table class="table table-condensed table-bordered table-striped" id="table">
         <tr>
+            <th><?= __("Top") ?></th>
             <th><?= __("Server") ?></th>
             <th><?= __("IP") ?></th>
             <th><?= __("Port") ?></th>
@@ -23,9 +24,11 @@
         <?php
         $account_without_password = 0;
 
+        $i = 0;
         foreach ($data as $id => $servers) {
             foreach ($servers['account'] as $account) {
 
+                $i++;
                 $style = '';
                 if (empty($account['Password'])) {
                     $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
@@ -33,6 +36,7 @@
                 }
 
                 echo '<tr>';
+                echo '<td style="'.$style.'">'.$i."</td>";
                 echo '<td style="'.$style.'">'.$servers['display_name']."</td>";
                 echo '<td style="'.$style.'">'.$servers['ip']."</td>";
                 echo '<td style="'.$style.'">'.$servers['port']."</td>";
