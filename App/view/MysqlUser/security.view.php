@@ -6,7 +6,6 @@
  */
 ?>
 
-
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title"><?= __('Accounts') ?></h3>
@@ -28,7 +27,7 @@
             foreach ($servers['account'] as $account) {
 
                 $style = '';
-                if (empty($account['password'])) {
+                if (empty($account['Password'])) {
                     $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
                     $account_without_password++;
                 }
@@ -37,14 +36,12 @@
                 echo '<td style="'.$style.'">'.$servers['display_name']."</td>";
                 echo '<td style="'.$style.'">'.$servers['ip']."</td>";
                 echo '<td style="'.$style.'">'.$servers['port']."</td>";
-                echo '<td style="'.$style.'">'.$account['user']."</td>";
-                echo '<td style="'.$style.'">'.$account['host']."</td>";
-                echo '<td style="'.$style.'">'.$account['password']."</td>";
+                echo '<td style="'.$style.'">'.$account['User']."</td>";
+                echo '<td style="'.$style.'">'.$account['Host']."</td>";
+                echo '<td style="'.$style.'">'.$account['Password']."</td>";
                 echo '<td style="'.$style.'">'.$account['Super_priv']."</td>";
                 echo '</tr>';
             }
-
-
 
             echo '<tr>';
             echo '<td colspan="7" style="border-bottom:1px solid #333"></td>';
