@@ -7,13 +7,15 @@ use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 
-class MysqlUser extends Controller {
+class MysqlUser extends Controller
+{
 
-    public function index($param) {
+    public function index($param)
+    {
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             if (!empty($_POST['mysql_server']['id'])) {
-                header('location: ' . LINK .$this->getClass(). '/' . __FUNCTION__ . "/mysql_server:id:[" . implode(',', $_POST['mysql_server']['id']) . "]");
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__."/mysql_server:id:[".implode(',', $_POST['mysql_server']['id'])."]");
             }
         }
 
@@ -22,30 +24,27 @@ class MysqlUser extends Controller {
         //debug($_GET);
 
         if (!empty($_GET['mysql_server']['id'])) {
-            $db = Sgbd::sql(DB_DEFAULT);
+            $db  = Sgbd::sql(DB_DEFAULT);
             $ids = substr($_GET['mysql_server']['id'], 1, -1);
 
-            $sql = "SELECT * FROM mysql_server where id in (" . $ids . ")";
+            $sql = "SELECT * FROM mysql_server where id in (".$ids.")";
 
             $res1 = $db->sql_query($sql);
 
             while ($ob1 = $db->sql_fetch_object($res1)) {
                 $db_link = Sgbd::sql($ob1->name);
 
-
                 $users = Mysql::exportUserByUser($db_link);
 
                 $sql152 = "SHOW DATABASES;";
                 $res152 = $db_link->sql_query($sql152);
 
-
                 $all_databases = array();
-                while ($ob = $db_link->sql_fetch_object($res152)) {
+                while ($ob            = $db_link->sql_fetch_object($res152)) {
                     $all_databases[] = $ob->Database;
                 }
 
                 $data['user'][$ob1->name] = $users;
-
 
                 foreach ($users as $user => $arr) {
                     foreach ($arr as $host => $bla) {
@@ -66,10 +65,8 @@ class MysqlUser extends Controller {
                             //preg_match_all('/ON\s(.*)\sTO/', $grant, $output_array);
                             $data['all_user'][$user][$host][$ob1->name]['database'][] = $output_array[1][0];
 
-
                             $output_array2 = array();
                             preg_match_all('/`([^`]+)`\./', $output_array[1][0], $output_array2);
-
 
                             if (!empty($output_array2[1][0])) {
                                 $data['all_user'][$user][$host][$ob1->name]['match'][] = $output_array2[1][0];
@@ -79,10 +76,9 @@ class MysqlUser extends Controller {
 
 
                             // liste des droits
-                            $output_array = array();
+                            $output_array                                          = array();
                             preg_match('/GRANT\s(.*)\sON/', $grant, $out_grant);
                             $data['all_user'][$user][$host][$ob1->name]['grant'][] = explode(", ", $out_grant[1]);
-
 
                             //le droit de créé des users ?
                             $pos = strpos($grant, "WITH GRANT OPTION");
@@ -106,13 +102,13 @@ class MysqlUser extends Controller {
         }
 
 
-        $options = array('SELECT', 'USAGE', 'SHOW VIEW');
+        $options         = array('SELECT', 'USAGE', 'SHOW VIEW');
         $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol', 'grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication', 'sst');
 
-        $data['revokes'] = array();
-        $data['grant'] = array();
+        $data['revokes']      = array();
+        $data['grant']        = array();
         $data['switch_to_ro'] = array();
-        $data['revoke_all'] = array();
+        $data['revoke_all']   = array();
 
         if (!empty($data['all_user'])) {
 
@@ -125,7 +121,7 @@ class MysqlUser extends Controller {
                 foreach ($hosts as $host => $servers) {
 
 
-                    $data['revoke_all'][] = "DROP USER '" . $user . "'@'" . $host . "';";
+                    $data['revoke_all'][] = "DROP USER '".$user."'@'".$host."';";
 
                     foreach ($servers as $server_name => $server) {
 
@@ -155,26 +151,25 @@ class MysqlUser extends Controller {
                             }
 
                             //user proxy without password
-                            if (empty($server['password']))
-                            {
+                            if (empty($server['password'])) {
                                 $server['password'] = '';
                             }
 
                             $extra = "";
                             if ($i === 0) {
-                                $extra = " IDENTIFIED BY PASSWORD '" . $server['password'] . "'";
+                                $extra = " IDENTIFIED BY PASSWORD '".$server['password']."'";
                             }
 
                             $revoke = false;
                             if (!empty($server['match'][$i])) {
                                 if (!in_array($server['match'][$i], $all_databases)) {
-                                    $data['revokes'][$server_name][] = "REVOKE " . implode(",", $all_right) . " ON " . $db . " FROM '" . $user . "'@'" . $host . "';";
-                                    $revoke = true;
+                                    $data['revokes'][$server_name][] = "REVOKE ".implode(",", $all_right)." ON ".$db." FROM '".$user."'@'".$host."';";
+                                    $revoke                          = true;
                                 }
                             }
 
                             if (!$revoke) {
-                                $data['grants'][] = "GRANT " . implode(",", $server['grant'][$i]) . " ON " . $db . " TO '" . $user . "'@'" . $host . "'" . $extra . ";";
+                                $data['grants'][] = "GRANT ".implode(",", $server['grant'][$i])." ON ".$db." TO '".$user."'@'".$host."'".$extra.";";
                             }
 
                             $i++;
@@ -185,7 +180,7 @@ class MysqlUser extends Controller {
                 }
             }
         }
-        
+
         if (!empty($data['grants'])) {
             $data['grants'] = array_unique($data['grants']);
         }
@@ -193,7 +188,8 @@ class MysqlUser extends Controller {
         $this->set('data', $data);
     }
 
-    public function backup() {
+    public function backup()
+    {
         
     }
 
@@ -203,29 +199,28 @@ class MysqlUser extends Controller {
         Debug::debug($param);
 
         $id_mysql_server = $param[0];
-        $host1 = $param[1];
-        $host2 = $param[2];
-        $remote = Mysql::getDbLink($id_mysql_server);
-        
+        $host1           = $param[1];
+        $host2           = $param[2];
+        $remote          = Mysql::getDbLink($id_mysql_server);
+
         $sql = "select distinct user from mysql.user where host in('".$host1."', '".$host2."');";
         //$sql ="SELECT @@hostname as user;";
         Debug::sql($sql);
 
         $data = array();
-        $res1 = $remote->sql_query($sql);  
-        
+        $res1 = $remote->sql_query($sql);
+
         //Debug::debug($remote);
 
         $hosts = array($host1);
         Debug::debug($hosts);
 
         while ($ob1 = $remote->sql_fetch_object($res1)) {
-            
+
             //Debug::debug($ob1);
             //Debug::debug($hosts);
 
-            foreach($hosts as $host)
-            {
+            foreach ($hosts as $host) {
                 $sql4 = "SHOW GRANTS FOR '".$ob1->user."'@'".$host."';";
                 //Debug::sql($sql4);
                 $res4 = $remote->sql_query($sql4);
@@ -240,5 +235,35 @@ class MysqlUser extends Controller {
         }
         exit;
         print_r($data);
+    }
+
+    public function security($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM mysql_server WHERE is_available = 1";
+        $res = $db->sql_query($sql);
+
+        $data = array();
+        while ($ob   = $db->sql_fetch_object($res)) {
+            $link = Mysql::getDbLink($ob->id);
+
+            $sql2 = "SELECT user, host, password,Super_priv from mysql.user ORDER BY user, host, password";
+            $res2 = $link->sql_query($sql2);
+
+            $data[$ob->id]['display_name'] = $ob->display_name;
+            $data[$ob->id]['ip']           = $ob->ip;
+            $data[$ob->id]['port']         = $ob->port;
+            $data[$ob->id]['account']      = array();
+            while ($arr2                          = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                $data[$ob->id]['account'][] = $arr2;
+            }
+        }
+
+        Debug::debug($data);
+
+        $this->set('data',$data);
     }
 }
