@@ -265,10 +265,11 @@ class MysqlUser extends Controller
 
         Debug::debug($data);
 
+        /*
         echo '<pre>';
         print_r($data);
         echo '</pre>';
-
+        /***/
         $this->set('data', $data);
     }
 }
