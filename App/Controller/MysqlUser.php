@@ -257,7 +257,8 @@ class MysqlUser extends Controller
             $data[$ob->id]['ip']           = $ob->ip;
             $data[$ob->id]['port']         = $ob->port;
             $data[$ob->id]['account']      = array();
-            while ($arr2                          = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+
+            while ($arr2 = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
                 $data[$ob->id]['account'][] = $arr2;
             }
         }
