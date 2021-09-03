@@ -19,6 +19,7 @@
             <th><?= __("User") ?></th>
             <th><?= __("Host") ?></th>
             <th><?= __("Password") ?></th>
+            <th><?= __("Plugin") ?></th>
             <th><?= __("Is super") ?></th>
         </tr>
         <?php
@@ -43,6 +44,7 @@
                 echo '<td style="'.$style.'">'.$account['User']."</td>";
                 echo '<td style="'.$style.'">'.$account['Host']."</td>";
                 echo '<td style="'.$style.'">'.$account['Password']."</td>";
+                echo '<td style="'.$style.'">'.$account['Plugin']."</td>";
                 echo '<td style="'.$style.'">'.$account['Super_priv']."</td>";
                 echo '</tr>';
             }
