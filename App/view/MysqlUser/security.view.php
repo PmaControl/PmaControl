@@ -31,7 +31,7 @@
 
                 $i++;
                 $style = '';
-                if (empty($account['Password'])) {
+                if (empty($account['Password']) && $account['Plugin'] !== "unix_socket") {
                     $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
                     $account_without_password++;
                 }
