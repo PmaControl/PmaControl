@@ -29,20 +29,22 @@
 
                 $style = '';
                 if (empty($account['password'])) {
-                    //$style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+                    $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
                     $account_without_password++;
-
-                    echo '<tr>';
-                    echo '<td style="'.$style.'">'.$servers['display_name']."</td>";
-                    echo '<td style="'.$style.'">'.$servers['ip']."</td>";
-                    echo '<td style="'.$style.'">'.$servers['port']."</td>";
-                    echo '<td style="'.$style.'">'.$account['user']."</td>";
-                    echo '<td style="'.$style.'">'.$account['host']."</td>";
-                    echo '<td style="'.$style.'">'.$account['password']."</td>";
-                    echo '<td style="'.$style.'">'.$account['Super_priv']."</td>";
-                    echo '</tr>';
                 }
+
+                echo '<tr>';
+                echo '<td style="'.$style.'">'.$servers['display_name']."</td>";
+                echo '<td style="'.$style.'">'.$servers['ip']."</td>";
+                echo '<td style="'.$style.'">'.$servers['port']."</td>";
+                echo '<td style="'.$style.'">'.$account['user']."</td>";
+                echo '<td style="'.$style.'">'.$account['host']."</td>";
+                echo '<td style="'.$style.'">'.$account['password']."</td>";
+                echo '<td style="'.$style.'">'.$account['Super_priv']."</td>";
+                echo '</tr>';
             }
+
+
 
             echo '<tr>';
             echo '<td colspan="7" style="border-bottom:1px solid #333"></td>';
@@ -53,5 +55,5 @@
     </table>
 </div>
 
-        <?php
-        echo __('Number of account without password:').$account_without_password;
+<?php
+echo __('Number of account without password:').$account_without_password;
