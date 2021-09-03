@@ -250,7 +250,7 @@ class MysqlUser extends Controller
         while ($ob   = $db->sql_fetch_object($res)) {
             $link = Mysql::getDbLink($ob->id);
 
-            $sql2 = "SELECT user, host, password,Super_priv from mysql.user ORDER BY user, host, password";
+            $sql2 = "SELECT user as User, host as Host, password as Password,Super_priv from mysql.user ORDER BY user, host, password";
             $res2 = $link->sql_query($sql2);
 
             $data[$ob->id]['display_name'] = $ob->display_name;
