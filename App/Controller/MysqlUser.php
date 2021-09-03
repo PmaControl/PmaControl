@@ -250,13 +250,14 @@ class MysqlUser extends Controller
         while ($ob   = $db->sql_fetch_object($res)) {
             $link = Mysql::getDbLink($ob->id);
 
-            $sql2 = "SELECT user as User, host as Host, password as Password,Super_priv from mysql.user ORDER BY user, host, password";
+            $sql2 = "SELECT user as User, host as Host, password as Password,Super_priv,plugin as Plugin  from mysql.user ORDER BY user, host, password";
             $res2 = $link->sql_query($sql2);
 
             $data[$ob->id]['display_name'] = $ob->display_name;
             $data[$ob->id]['ip']           = $ob->ip;
             $data[$ob->id]['port']         = $ob->port;
-            $data[$ob->id]['account']      = array();
+            
+            $data[$ob->id]['account'] = array();
 
             while ($arr2 = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
                 $data[$ob->id]['account'][] = $arr2;
@@ -265,10 +266,10 @@ class MysqlUser extends Controller
 
         Debug::debug($data);
         /*
-        echo '<pre>';
-        print_r($data);
-        echo '</pre>';
-        /**/
+          echo '<pre>';
+          print_r($data);
+          echo '</pre>';
+          /* */
         $this->set('data', $data);
     }
 }
