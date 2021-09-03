@@ -259,15 +259,15 @@ class MysqlUser extends Controller
             $data[$ob->id]['account']      = array();
             while ($arr2                          = $link->sql_fetch_array($res2, MYSQLI_ASSOC)) {
                 $data[$ob->id]['account'][] = $arr2;
-
-                echo '<pre>';
-                print_r($arr2);
-                echo '</pre>';
             }
         }
 
         Debug::debug($data);
 
-        $this->set('data',$data);
+        echo '<pre>';
+        print_r($data);
+        echo '</pre>';
+
+        $this->set('data', $data);
     }
 }
