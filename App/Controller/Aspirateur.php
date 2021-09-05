@@ -18,6 +18,19 @@ use \Glial\Cli\Color;
 use \Glial\Sgbd\Sgbd;
 use Pheanstalk\Pheanstalk;
 
+/*
+ *
+ *
+ * MySQL [(none)]> select @@version_comment limit 1;
++-------------------+
+| @@version_comment |
++-------------------+
+| (ProxySQL)        |
++-------------------+
+1 row in set (0.000 sec)
+
+ *
+ */
 // https://github.com/php-amqplib/php-amqplib
 //each minute ?
 //require ROOT."/application/library/Filter.php";
@@ -408,7 +421,10 @@ class Aspirateur extends Controller
             if (!empty($version)) {
                 $distributor = trim("Debian");
 
-                switch ($version{0}) {
+
+		$ver = explode(".", $version)[0];
+
+                switch ($ver) {
                     case "4": $codename = "Etch";
                         break;
                     case "5": $codename = "Lenny";
