@@ -146,7 +146,14 @@ if (!empty($data['servers'])) {
         if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
         }
-        
+
+
+        if (!empty($data['extra'][$server['id']]['']['is_proxy']) && $data['extra'][$server['id']]['']['is_proxy'] === "1") {
+
+            echo '&nbsp;<img title="Galera Cluster" alt="ProxySQL" height="16" width="16" src="'.IMG.'/icon/proxysql.png"/>';
+        }
+
+
         echo '</td>';
         echo '<td style="'.$style.'">';
 
