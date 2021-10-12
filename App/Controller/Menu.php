@@ -62,5 +62,4 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
             return $ob->id;
         }
     }
-
 }
