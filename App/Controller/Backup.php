@@ -14,10 +14,10 @@ use App\Library\Extraction;
 use Ramsey\Uuid\Uuid;
 use \Glial\Sgbd\Sgbd;
 
-class Backup extends Controller {
+class Backup extends Controller
+{
 
     use \App\Library\Scp;
-
     const BACKUP_DIR = "/data/backup";
 
     var $backup_dir = self::BACKUP_DIR;
@@ -49,46 +49,51 @@ class Backup extends Controller {
      */
 
 //use \Glial\Neuron\Controller\PmaCliBackup;
-    function before($param) {
+    function before($param)
+    {
         if (!IS_CLI) {
             
         }
     }
 
-    public function sendKeyPub() {
+    public function sendKeyPub()
+    {
         foreach ($this->db as $db) {
 
             $server_config = $db->getParams();
 
-            shell_exec("ssh-copy-id -i ~/.ssh/id_dsa.pub alequoy@" . $server_config['hostname'] . "");
+            shell_exec("ssh-copy-id -i ~/.ssh/id_dsa.pub alequoy@".$server_config['hostname']."");
         }
     }
 
-    public function checkDirectory($dir) {
+    public function checkDirectory($dir)
+    {
 
         if (!(file_exists($dir) && is_dir($dir))) {
-            passthru("mkdir -p " . $dir, $exit);
+            passthru("mkdir -p ".$dir, $exit);
             if ($exit !== 0) {
                 throw new \Exception(
-                        "GLI-017 : Impossible to create the directory : " . $dir, $exit);
+                        "GLI-017 : Impossible to create the directory : ".$dir, $exit);
             }
         }
 
         return true;
     }
 
-    public function cmd($cmd) {
+    public function cmd($cmd)
+    {
 
         passthru($cmd, $exit);
 
         if ($exit !== 0) {
 
             $cmd = preg_replace("/-p[^ ]*/", "-p", $cmd);
-            throw new \Exception("GLI-018 : CMD FAIL ! : " . $cmd . PHP_EOL, $exit);
+            throw new \Exception("GLI-018 : CMD FAIL ! : ".$cmd.PHP_EOL, $exit);
         }
     }
 
-    public function compress_dump() {
+    public function compress_dump()
+    {
 
         $this->view = false;
 
@@ -100,8 +105,8 @@ class Backup extends Controller {
 
         while ($ob = $db->sql_fetch_object($res)) {
             try {
-                $cmd = "gzip " . $ob->file_name;
-                echo $cmd . "\n";
+                $cmd = "gzip ".$ob->file_name;
+                echo $cmd."\n";
                 $this->cmd($cmd);
             } catch (Exception $e) {
                 echo $e->getMessage();
@@ -112,7 +117,8 @@ class Backup extends Controller {
         $db->sql_query($sql);
     }
 
-    public function backupUser() {
+    public function backupUser()
+    {
 
 
         $this->view = false;
@@ -125,16 +131,12 @@ class Backup extends Controller {
 
                 $dblink = Sgbd::sql($db);
 
+                echo '#'.$dblink->host."\n";
 
+                $path = "/data/backup/user/".$dblink->host."-".$dblink->port;
+                $this->cmd("mkdir -p ".$path);
 
-                echo '#' . $dblink->host . "\n";
-
-
-
-                $path = "/data/backup/user/" . $dblink->host . "-" . $dblink->port;
-                $this->cmd("mkdir -p " . $path);
-
-                $handle = fopen($path . "/" . date("Y-m-d_H-i-s") . ".sql", "w");
+                $handle = fopen($path."/".date("Y-m-d_H-i-s").".sql", "w");
 
                 if ($handle) {
 
@@ -166,11 +168,11 @@ class Backup extends Controller {
                           }
                           } */
 
-                        $sql = "show grants for '" . $ob->user . "'@'" . $ob->hostname . "'";
+                        $sql  = "show grants for '".$ob->user."'@'".$ob->hostname."'";
                         $res2 = $dblink->sql_query($sql);
 
                         while ($tab = $dblink->sql_fetch_array($res2, MYSQLI_NUM)) {
-                            fwrite($handle, $tab[0] . ";\n");
+                            fwrite($handle, $tab[0].";\n");
                         }
                     }
 
@@ -183,10 +185,10 @@ class Backup extends Controller {
         }
     }
 
-    public function listing() {
-        $this->title = __("Backup's list");
-        $this->ariane = " > " . __("Backup management") . " > " . $this->title;
-
+    public function listing()
+    {
+        $this->title  = __("Backup's list");
+        $this->ariane = " > ".__("Backup management")." > ".$this->title;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -197,15 +199,15 @@ class Backup extends Controller {
 
         $data['dump'] = $db->sql_fetch_yield($sql);
 
-
         $this->set('data', $data);
     }
 
-    public function getDump($param) {
+    public function getDump($param)
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `mysql_dump` WHERE id=" . $db->sql_real_escape_string($param[0]) . "";
+        $sql = "SELECT * FROM `mysql_dump` WHERE id=".$db->sql_real_escape_string($param[0])."";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) == 1) {
@@ -215,14 +217,14 @@ class Backup extends Controller {
             $filename = true;
             if (file_exists($ob->file_name)) {
                 $filename = $ob->file_name;
-            } elseif (file_exists($ob->file_name . ".gz")) {
-                $filename = $ob->file_name . ".gz";
+            } elseif (file_exists($ob->file_name.".gz")) {
+                $filename = $ob->file_name.".gz";
             }
 
             if ($filename) {
 
                 $this->layout_name = false;
-                $this->view = false;
+                $this->view        = false;
 
                 $pathinfo = pathinfo($filename);
                 header("Cache-Control: no-cache, must-revalidate");
@@ -231,9 +233,8 @@ class Backup extends Controller {
                 header("Pragma: no-cache");
                 header("Expires: 0");
                 header("Content-Type: application/force-download");
-                header('Content-Disposition: attachment; filename="' . $pathinfo['basename'] . '"');
-                header("Content-Length: " . shell_exec("stat -c %s " . $filename));
-
+                header('Content-Disposition: attachment; filename="'.$pathinfo['basename'].'"');
+                header("Content-Length: ".shell_exec("stat -c %s ".$filename));
 
                 $handle = fopen($filename, "r");
                 if ($handle) {
@@ -250,12 +251,11 @@ class Backup extends Controller {
 //fail
     }
 
-    public function settings() {
+    public function settings()
+    {
 
-        $this->title = __("Schedules");
-        $this->ariane = ' > <a href="#"><span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span> ' . __("Backup management") . '</a> > <span class="glyphicon glyphicon-cog" style="font-size:12px"></span> ' . $this->title;
-
-
+        $this->title  = __("Schedules");
+        $this->ariane = ' > <a href="#"><span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span> '.__("Backup management").'</a> > <span class="glyphicon glyphicon-cog" style="font-size:12px"></span> '.$this->title;
 
         $this->di['js']->code_javascript('$("#mysql-server-").change(function () {
     data = $(this).val();
@@ -333,12 +333,9 @@ class Backup extends Controller {
             INNER JOIN crontab f on f.id = b.id_crontab
             ORDER BY d.key";
 
-
         $data['backup_list'] = $db->sql_fetch_yield($sql);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js", "jquery.autocomplete.min.js", "Backup/settings.js"));
-
-
 
         $sql = "SELECT a.name, a.id, a.ip, group_concat('',b.id) as id_mysql_database, group_concat('',b.name) as db
                 from mysql_server a
@@ -352,34 +349,33 @@ class Backup extends Controller {
 
         $res = $db->sql_query($sql);
 
-
         $data['type_backup'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+        while ($ob                  = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['type_backup'][] = $tmp;
         }
 
-        $sql = "SELECT * FROM backup_storage_area order by libelle";
-        $res = $db->sql_query($sql);
+        $sql                  = "SELECT * FROM backup_storage_area order by libelle";
+        $res                  = $db->sql_query($sql);
         $data['storage_area'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->libelle . " (" . $ob->ip . ")";
+        while ($ob                   = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->libelle." (".$ob->ip.")";
 
             $data['storage_area'][] = $tmp;
         }
 
-        $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = (SELECT min(id_mysql_server) from mysql_database) order by name";
-        $res = $db->sql_query($sql);
+        $sql               = "SELECT id,name FROM mysql_database WHERE id_mysql_server = (SELECT min(id_mysql_server) from mysql_database) order by name";
+        $res               = $db->sql_query($sql);
         $data['databases'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->name;
+        while ($ob                = $db->sql_fetch_object($res)) {
+            $tmp                 = [];
+            $tmp['id']           = $ob->id;
+            $tmp['libelle']      = $ob->name;
             $data['databases'][] = $tmp;
         }
 
@@ -388,7 +384,6 @@ class Backup extends Controller {
 
         $this->set('data', $data);
     }
-
     /* used for ajax */
 
 
@@ -400,20 +395,20 @@ class Backup extends Controller {
      * DEPRECATED
      */
 
-    function getDatabaseByServer($param) {
+    function getDatabaseByServer($param)
+    {
 
         $this->layout_name = false;
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db                = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = '" . $db->sql_real_escape_string($param[0]) . "';";
-
+        $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = '".$db->sql_real_escape_string($param[0])."';";
 
         $res = $db->sql_query($sql);
 
         $data['databases'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+        while ($ob                = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->name;
 
             $data['databases'][] = $tmp;
@@ -422,28 +417,27 @@ class Backup extends Controller {
 
         $this->set("data", $data);
     }
-
     /*
      *
      *
      * DEPRECATED
      */
 
-    function getServerByName($param) {
+    function getServerByName($param)
+    {
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `mysql_server` WHERE `name` LIKE '%" . $db->sql_real_escape_string($_GET['q']) . "%';";
+        $sql = "SELECT * FROM `mysql_server` WHERE `name` LIKE '%".$db->sql_real_escape_string($_GET['q'])."%';";
 
         $data = $db->sql_fetch_yield($sql);
 
         foreach ($data as $line) {
-            echo $line['name'] . "|" . $line['id'] . "|" . $line['ip'] . "\n";
+            echo $line['name']."|".$line['id']."|".$line['ip']."\n";
         }
     }
-
     /* used for ajax */
 
 
@@ -454,22 +448,24 @@ class Backup extends Controller {
      * DEPRECATED
      */
 
-    function getServerByIp($server) {
+    function getServerByIp($server)
+    {
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `mysql_server` WHERE `ip` LIKE '%" . $db->sql_real_escape_string($_GET['q']) . "%';";
+        $sql = "SELECT * FROM `mysql_server` WHERE `ip` LIKE '%".$db->sql_real_escape_string($_GET['q'])."%';";
 
         $data = $db->sql_fetch_yield($sql);
 
         foreach ($data as $line) {
-            echo $line['ip'] . "|" . $line['id'] . "|" . $line['name'] . "\n";
+            echo $line['ip']."|".$line['id']."|".$line['name']."\n";
         }
     }
 
-    public function saveDb($param) {
+    public function saveDb($param)
+    {
         Debug::parseDebug($param);
 
 //23 heures max pour effectuer le backup
@@ -494,7 +490,7 @@ class Backup extends Controller {
             INNER JOIN mysql_server c ON c.id = a.id_mysql_server
             INNER JOIN backup_type e ON e.id = a.id_backup_type
             INNER JOIN crontab f on f.id = a.id_crontab
-            WHERE a.id = '" . $id_backup_database . "';";
+            WHERE a.id = '".$id_backup_database."';";
 
         $res = $db->sql_query($sql);
 
@@ -505,21 +501,17 @@ class Backup extends Controller {
         }
 
         $backups = $db->sql_to_array($res);
-        $backup = $backups[0];
+        $backup  = $backups[0];
 
-        $backup_dump = [];
+        $backup_dump                                      = [];
         $backup_dump['backup_dump']['id_backup_database'] = $backup['id_backup_database'];
-        $backup_dump['backup_dump']['date_start'] = date("Y-m-d H:i:s");
-
+        $backup_dump['backup_dump']['date_start']         = date("Y-m-d H:i:s");
 
         $id_backup_dump = $db->sql_save($backup_dump);
 
-
         $start_time = microtime(true);
 
-
         $db->sql_close();
-
 
         $this->time_backup_start = microtime(true);
 
@@ -529,7 +521,6 @@ class Backup extends Controller {
                 $source = $this->mysqldump($backup);
                 break;
 
-
             case 'mydumper':
 
                 $source = $this->mydumper($backup);
@@ -537,59 +528,52 @@ class Backup extends Controller {
 
             default:
 
-                throw new \Exception('PMACTRL-056 Backup with "' . $backup['backup_type'] . '" not supported yet');
+                throw new \Exception('PMACTRL-056 Backup with "'.$backup['backup_type'].'" not supported yet');
                 break;
         }
 
 
 
-        Crypt::$key = CRYPT_KEY;
+        Crypt::$key              = CRYPT_KEY;
         $paramSource['hostname'] = $backup['mysql_ip'];
-        $paramSource['port'] = $backup['mysql_port'];
-        $paramSource['login'] = "pmacontrol";
-        $paramSource['passwd'] = Crypt::decrypt(PMACONTROL_PASSWD);
+        $paramSource['port']     = $backup['mysql_port'];
+        $paramSource['login']    = "pmacontrol";
+        $paramSource['passwd']   = Crypt::decrypt(PMACONTROL_PASSWD);
 
         $paramDestination['hostname'] = $backup['ip_nas'];
-        $paramDestination['port'] = $backup['port_nas'];
-        $paramDestination['login'] = Crypt::decrypt($backup['nas_ssh_login']);
-        $paramDestination['passwd'] = Crypt::decrypt($backup['nas_ssh_password']);
+        $paramDestination['port']     = $backup['port_nas'];
+        $paramDestination['login']    = Crypt::decrypt($backup['nas_ssh_login']);
+        $paramDestination['passwd']   = Crypt::decrypt($backup['nas_ssh_password']);
 
         $file_name = pathinfo($source)['basename'];
 
-        $destination = $backup['path_nas'] . "/" . $backup['server_name'] . "/" . $backup['db_name'] . "/" . $file_name;
+        $destination = $backup['path_nas']."/".$backup['server_name']."/".$backup['db_name']."/".$file_name;
 
         $this->sendBackup($source, $destination, $paramSource, $paramDestination);
 
-
         $this->time_transfert = microtime(true);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-        $data = [];
-        $data['backup_dump']['id'] = $id_backup_dump;
-        $data['backup_dump']['date_end'] = date("Y-m-d H:i:s");
-        $data['backup_dump']['time'] = round($this->time_backup_end - $this->time_backup_start, 0);
-        $data['backup_dump']['time_gz'] = round($this->time_gzip - $this->time_backup_end, 0);
+        $data                                   = [];
+        $data['backup_dump']['id']              = $id_backup_dump;
+        $data['backup_dump']['date_end']        = date("Y-m-d H:i:s");
+        $data['backup_dump']['time']            = round($this->time_backup_end - $this->time_backup_start, 0);
+        $data['backup_dump']['time_gz']         = round($this->time_gzip - $this->time_backup_end, 0);
         $data['backup_dump']['time_transfered'] = round($this->time_transfert - $this->time_gzip, 0);
 
-        $data['backup_dump']['md5'] = $this->md5_file;
-        $data['backup_dump']['md5_gz'] = $this->md5_gz;
+        $data['backup_dump']['md5']            = $this->md5_file;
+        $data['backup_dump']['md5_gz']         = $this->md5_gz;
         $data['backup_dump']['md5_transfered'] = $this->md5_transfered;
 
         $data['backup_dump']['is_completed'] = 1;
 
-
-        $data['backup_dump']['size_file'] = $this->size_file;
-        $data['backup_dump']['size_gz'] = $this->size_gz;
+        $data['backup_dump']['size_file']       = $this->size_file;
+        $data['backup_dump']['size_gz']         = $this->size_gz;
         $data['backup_dump']['size_transfered'] = $this->size_transfered;
 
-
         $data['backup_dump']['master_data'] = $this->master_data;
-        $data['backup_dump']['slave_data'] = $this->slave_data;
-
-
+        $data['backup_dump']['slave_data']  = $this->slave_data;
 
         $res = $db->sql_save($data);
 
@@ -599,37 +583,39 @@ class Backup extends Controller {
         }
     }
 
-    public function deleteShedule($param) {
+    public function deleteShedule($param)
+    {
         $this->layout_name = false;
-        $this->view = false;
-        $db = Sgbd::sql(DB_DEFAULT);
-        $id = $param[0];
+        $this->view        = false;
+        $db                = Sgbd::sql(DB_DEFAULT);
+        $id                = $param[0];
 
-        $sql = "SELECT id_crontab FROM backup_main WHERE id ='" . $id . "'";
+        $sql = "SELECT id_crontab FROM backup_main WHERE id ='".$id."'";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_crontab = $ob->id_crontab;
         }
-        $sql = "DELETE FROM backup_main WHERE id='" . $id . "'";
+        $sql = "DELETE FROM backup_main WHERE id='".$id."'";
         $db->sql_query($sql);
         Crontab::delete($id_crontab);
-        $sql = "DELETE FROM crontab WHERE id='" . $id_crontab . "'";
+        $sql = "DELETE FROM crontab WHERE id='".$id_crontab."'";
         $db->sql_query($sql);
 
-        header('location: ' . LINK . 'backup/settings');
+        header('location: '.LINK.'backup/settings');
     }
 
-    public function toggleShedule($param) {
+    public function toggleShedule($param)
+    {
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $db = Sgbd::sql(DB_DEFAULT);
         $id = $param[0];
 
         $sql = "SELECT * FROM backup_main a
                 INNER JOIN crontab b ON a.id_crontab = b.id
-                WHERE a.id ='" . $id . "'";
+                WHERE a.id ='".$id."'";
 
         $res = $db->sql_query($sql);
 
@@ -645,8 +631,8 @@ class Backup extends Controller {
                 Crontab::insert($ob->minute, $ob->hour, $ob->day_of_month, $ob->month, $ob->day_of_week, $ob->command, $ob->comment, $ob->id_crontab);
             }
 
-            $backup_database = [];
-            $backup_database['backup_main']['id'] = $id;
+            $backup_database                             = [];
+            $backup_database['backup_main']['id']        = $id;
             $backup_database['backup_main']['is_active'] = $is_active;
 
             debug($backup_database);
@@ -657,7 +643,7 @@ class Backup extends Controller {
 
                 throw new \Exception('PMACTRL-025 : impossible to update is_active');
             }
-            header('location: ' . LINK . 'backup/settings');
+            header('location: '.LINK.'backup/settings');
         }
 
 
@@ -666,7 +652,8 @@ class Backup extends Controller {
         throw new \Exception('PMACTRL-026 : impossible to find line in backup_main');
     }
 
-    function mysqldump($backup) {
+    function mysqldump($backup)
+    {
 //$this->backup_dir = $this->backup_dir;
 
         $MS = new MasterSlave();
@@ -678,16 +665,13 @@ class Backup extends Controller {
 
         $server_config = $db_to_backup->getParams();
 
-
         debug($backup['id_connection']);
         debug($server_config);
 
-
-        $slave = $MS->isSlave();
+        $slave  = $MS->isSlave();
         $master = $MS->isMaster();
 
-        $userpassword = " -h " . $server_config['hostname'] . " -P " . $backup['port'] . " -u " . $server_config['user'] . " -p" . $server_config['password'];
-
+        $userpassword = " -h ".$server_config['hostname']." -P ".$backup['port']." -u ".$server_config['user']." -p".$server_config['password'];
 
         if ($slave) {
 
@@ -695,12 +679,10 @@ class Backup extends Controller {
             if ($db_to_backup->isMultiMaster()) {
                 $stop_slave = "STOP ALL SLAVES;";
             }
-            $cmd = "mysql " . $userpassword . " -e '" . $stop_slave . ";'";
+            $cmd = "mysql ".$userpassword." -e '".$stop_slave.";'";
             $this->cmd($cmd);
 
-
             debug($slave);
-
 
             $slave = $MS->isSlave();
 
@@ -716,7 +698,7 @@ class Backup extends Controller {
 //$backup['path']
 
 
-        $file_name = $backup['db_name'] . "_" . date("Y-m-d_His") . "__" . $backup['db_name'] . ".sql";
+        $file_name = $backup['db_name']."_".date("Y-m-d_His")."__".$backup['db_name'].".sql";
         $this->checkDirectory($this->backup_dir);
 
         $extra = " ";
@@ -736,16 +718,15 @@ class Backup extends Controller {
 //Sgbd::sql(DB_DEFAULT);
 //echo $mysql_dump . "\n";
 
-        Crypt::$key = CRYPT_KEY;
-        $mysql_ssh_login = Crypt::decrypt($backup['mysql_ssh_login']);
+        Crypt::$key         = CRYPT_KEY;
+        $mysql_ssh_login    = Crypt::decrypt($backup['mysql_ssh_login']);
         $mysql_ssh_password = Crypt::decrypt($backup['mysql_ssh_password']);
 
-        $nas_ssh_login = Crypt::decrypt($backup['nas_ssh_login']);
+        $nas_ssh_login    = Crypt::decrypt($backup['nas_ssh_login']);
         $nas_ssh_password = Crypt::decrypt($backup['nas_ssh_password']);
 
-        $pmauser = 'pmacontrol';
+        $pmauser   = 'pmacontrol';
         $pmapasswd = Crypt::decrypt(PMACONTROL_PASSWD);
-
 
         echo "{$backup['ip']}, 22, $pmauser, $pmapasswd);\n";
 
@@ -761,36 +742,32 @@ class Backup extends Controller {
 
         $mysqldump = $ccc->whereis("mysqldump");
 
-        $cmd = $mysqldump . $userpassword . $dumpoptions . $extra . " " . $backup['db_name'] . " > " . $this->backup_dir . "/" . $file_name;
+        $cmd       = $mysqldump.$userpassword.$dumpoptions.$extra." ".$backup['db_name']." > ".$this->backup_dir."/".$file_name;
         $id_backup = $backup['id_backup_database'];
 
+        echo "MYSQL_DUMP CMD : ".$cmd."\n";
 
-        echo "MYSQL_DUMP CMD : " . $cmd . "\n";
+        $ccc->exec("echo \"#!/bin/sh\n$cmd\" > ".$this->backup_dir."/mysqldump.$id_backup.sh");
 
-        $ccc->exec("echo \"#!/bin/sh\n$cmd\" > " . $this->backup_dir . "/mysqldump.$id_backup.sh");
+        $ccc->exec("echo \"#!/bin/sh\n$screen -S backup_database_$id_backup -d -m ".$this->backup_dir."/mysqldump.$id_backup.sh\n"
+            ."$screen -list | grep backup_database_$id_backup | head -n1 | cut -f1 -d'.' | sed 's/\s//g' > ".$this->backup_dir."/pid.$id_backup.pid\n"
+            ."\" > ".$this->backup_dir."/backup.$id_backup.sh");
 
-        $ccc->exec("echo \"#!/bin/sh\n$screen -S backup_database_$id_backup -d -m " . $this->backup_dir . "/mysqldump.$id_backup.sh\n"
-                . "$screen -list | grep backup_database_$id_backup | head -n1 | cut -f1 -d'.' | sed 's/\s//g' > " . $this->backup_dir . "/pid.$id_backup.pid\n"
-                . "\" > " . $this->backup_dir . "/backup.$id_backup.sh");
+        $ccc->exec("chmod +x ".$this->backup_dir."/mysqldump.".$backup['id_backup_database'].".sh");
+        $ccc->exec("chmod +x ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
+        $exec = $ccc->exec("sh ".$this->backup_dir."/backup.".$backup['id_backup_database'].".sh");
 
-        $ccc->exec("chmod +x " . $this->backup_dir . "/mysqldump." . $backup['id_backup_database'] . ".sh");
-        $ccc->exec("chmod +x " . $this->backup_dir . "/backup." . $backup['id_backup_database'] . ".sh");
-        $exec = $ccc->exec("sh " . $this->backup_dir . "/backup." . $backup['id_backup_database'] . ".sh");
-
-
-        $pid = trim($ccc->exec("cat " . $this->backup_dir . "/pid." . $backup['id_backup_database'] . ".pid"));
-
+        $pid = trim($ccc->exec("cat ".$this->backup_dir."/pid.".$backup['id_backup_database'].".pid"));
 
         $waiting = ['/', '-', '\\', '|'];
-        $i = 0;
-
+        $i       = 0;
 
         echo "backup in progress ... ";
         do {
             $i++;
 
             $mod = $i % 4;
-            echo " " . $waiting[$mod];
+            echo " ".$waiting[$mod];
             echo "\033[2D";
             sleep(1);
 
@@ -812,14 +789,12 @@ class Backup extends Controller {
             }
         } while ($continue);
 
-
-
         if (!strpos("dump-slave", $extra) && $slave) {
             $start_slave = "START SLAVE;"; //because option --dump-slave restart replication after made the dump
             if ($db_to_backup->isMultiMaster()) {
                 $start_slave = "START ALL SLAVES;";
             }
-            $cmd = "mysql " . $userpassword . " -e '" . $start_slave . ";'";
+            $cmd = "mysql ".$userpassword." -e '".$start_slave.";'";
             $this->cmd($cmd);
         }
 
@@ -827,55 +802,56 @@ class Backup extends Controller {
 
 
         $this->time_backup_end = microtime(true);
-        $full_path = $this->backup_dir . "/" . $file_name;
-        $file_gz = $this->backup_dir . "/" . $file_name . ".gz";
+        $full_path             = $this->backup_dir."/".$file_name;
+        $file_gz               = $this->backup_dir."/".$file_name.".gz";
 
 //get md5 of file
-        $this->md5_file = trim($ccc->exec("md5sum " . $this->backup_dir . "/" . $file_name . " | awk '{ print $1 }'"));
+        $this->md5_file  = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
 //get size of file
-        $this->size_file = trim($ccc->exec("du -s " . $this->backup_dir . "/" . $file_name . " | awk '{ print $1 }'"));
+        $this->size_file = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name." | awk '{ print $1 }'"));
 
-        $cmd = "nice gzip -c " . $this->backup_dir . "/" . $file_name . ">" . $file_gz;
+        $cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
 
         $ret = $ccc->exec($cmd);
 
 //get md5 of file
-        $this->md5_gz = trim($ccc->exec("md5sum " . $this->backup_dir . "/" . $file_name . ".gz | awk '{ print $1 }'"));
+        $this->md5_gz = trim($ccc->exec("md5sum ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
 
-
-        $this->size_gz = trim($ccc->exec("du -s " . $this->backup_dir . "/" . $file_name . ".gz | awk '{ print $1 }'"));
+        $this->size_gz = trim($ccc->exec("du -s ".$this->backup_dir."/".$file_name.".gz | awk '{ print $1 }'"));
 
         $this->time_gzip = microtime(true);
 
 //remove old backup
 
 
-        $grep = $ccc->whereis("grep");
-        $ls = $ccc->whereis("ls");
-        $sed = $ccc->whereis("sed");
+        $grep  = $ccc->whereis("grep");
+        $ls    = $ccc->whereis("ls");
+        $sed   = $ccc->whereis("sed");
         $xargs = $ccc->whereis("xargs");
-        $rm = $ccc->whereis("rm");
+        $rm    = $ccc->whereis("rm");
 
-        $cmd = 'cd ' . $this->backup_dir . ' && ' . $ls . ' -t | ' . $grep . ' \'__' . $backup['db_name'] . '.sql\' | ' . $sed . ' -e \'1,2d\' | ' . $xargs . ' -d \'\n\' ' . $rm . '' . "\n";
+        $cmd = 'cd '.$this->backup_dir.' && '.$ls.' -t | '.$grep.' \'__'.$backup['db_name'].'.sql\' | '.$sed.' -e \'1,2d\' | '.$xargs.' -d \'\n\' '.$rm.''."\n";
         $ret = $ccc->exec($cmd);
 
-        $ret = $ccc->exec("ls " . $file_gz . " | wc -l");
+        $ret = $ccc->exec("ls ".$file_gz." | wc -l");
 
         if (trim($ret) === "1") {
             return $file_gz;
         }
 
-        throw new \Exception("PMACTRL-052 : file not found '" . $file_gz . "'");
+        throw new \Exception("PMACTRL-052 : file not found '".$file_gz."'");
         echo "\n";
 
         return false;
     }
 
-    private function deleteBackup() {
+    private function deleteBackup()
+    {
         
     }
 
-    public function test() {
+    public function test()
+    {
 // "/[\w-\d_-]+@[\w\d_-]+:[\~]?(?:\/[\w\d_-]+)*(?:\$|\#)[\s]?/";
 
         $input_lines = 'logftp@srv-backup-01:/data/Save/DB_ITPROD$';
@@ -887,10 +863,10 @@ class Backup extends Controller {
         $this->view = false;
     }
 
-    public function dump() {
-        $this->title = __("Backup's list");
-        $this->ariane = " > " . __("Backup management") . " > " . $this->title;
-
+    public function dump()
+    {
+        $this->title  = __("Backup's list");
+        $this->ariane = " > ".__("Backup management")." > ".$this->title;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -908,7 +884,8 @@ class Backup extends Controller {
         $this->set('data', $data);
     }
 
-    private function sendBackup($source, $destination, $paramSource = array(), $paramDestination = array()) {
+    private function sendBackup($source, $destination, $paramSource = array(), $paramDestination = array())
+    {
         $this->view = false;
 
         $nas = new Ssh($paramDestination['hostname'], $paramDestination['port'], $paramDestination['login'], $paramDestination['passwd']);
@@ -916,13 +893,12 @@ class Backup extends Controller {
 
         $target_directory = pathinfo($destination)['dirname'];
 
-
-        $line = $nas->exec("mkdir -p " . $target_directory);
-        $pos = strpos($line, "Permission denied");
+        $line = $nas->exec("mkdir -p ".$target_directory);
+        $pos  = strpos($line, "Permission denied");
 
         if ($pos !== false) {
 
-            throw new \Exception("\nPMACTRL-077 : Impossible to create the directory : '" . $target_directory . "'");
+            throw new \Exception("\nPMACTRL-077 : Impossible to create the directory : '".$target_directory."'");
         }
 
 
@@ -934,10 +910,8 @@ class Backup extends Controller {
         sleep(1);
         $mysql->waitPrompt($buffer);
 
-
-
         sleep(1);
-        $scp = "scp $source " . $paramDestination['login'] . "@" . $paramDestination['hostname'] . ":" . $target_directory;
+        $scp = "scp $source ".$paramDestination['login']."@".$paramDestination['hostname'].":".$target_directory;
         $mysql->shellCmd($scp);
 
         $ret = $mysql->waitPrompt($buffer, '\?');
@@ -962,46 +936,42 @@ class Backup extends Controller {
 
         $mysql->waitPrompt($buffer);
 
-        $file = pathinfo($source)['basename'];
-        $this->size_transfered = trim($nas->exec("du -s " . $target_directory . "/" . $file . " | awk '{ print $1 }'"));
-        $this->md5_transfered = trim($nas->exec("md5sum " . $target_directory . "/" . $file . " | awk '{ print $1 }'"));
+        $file                  = pathinfo($source)['basename'];
+        $this->size_transfered = trim($nas->exec("du -s ".$target_directory."/".$file." | awk '{ print $1 }'"));
+        $this->md5_transfered  = trim($nas->exec("md5sum ".$target_directory."/".$file." | awk '{ print $1 }'"));
 
         unset($nas);
     }
 
-    public function addUserPmaControl() {
+    public function addUserPmaControl()
+    {
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
-
-        fwrite(STDOUT, str_repeat("#", 80) . "\n");
+        fwrite(STDOUT, str_repeat("#", 80)."\n");
         $text = "Create user pmacontrol, Generating SSH keys and install it !";
-        fwrite(STDOUT, "#" . str_repeat(" ", (80 - strlen($text) - 2) / 2) . $text . str_repeat(" ", (80 - strlen($text) - 2) / 2) . "#\n");
-        fwrite(STDOUT, str_repeat("#", 80) . "\n");
-
+        fwrite(STDOUT, "#".str_repeat(" ", (80 - strlen($text) - 2) / 2).$text.str_repeat(" ", (80 - strlen($text) - 2) / 2)."#\n");
+        fwrite(STDOUT, str_repeat("#", 80)."\n");
 
         $passwdpma = $this->setPasswdPmaControl();
 
-        fwrite(STDOUT, str_repeat("-", 80) . "\n");
+        fwrite(STDOUT, str_repeat("-", 80)."\n");
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM mysql_server";
+        $db      = Sgbd::sql(DB_DEFAULT);
+        $sql     = "SELECT * FROM mysql_server";
         $servers = $db->sql_fetch_yield($sql);
-
-
 
         $account_valided = [];
 
-
         foreach ($servers as $server) {
 
-            fwrite(STDOUT, "try to connect in ssh to " . $server['ip'] . " \n");
-            $login = Crypt::decrypt($server['ssh_login'], CRYPT_KEY);
+            fwrite(STDOUT, "try to connect in ssh to ".$server['ip']." \n");
+            $login    = Crypt::decrypt($server['ssh_login'], CRYPT_KEY);
             $password = Crypt::decrypt($server['ssh_password'], CRYPT_KEY);
 
             $failed = true;
-            $run = 1;
+            $run    = 1;
 
             reset($account_valided);
 
@@ -1013,17 +983,17 @@ class Backup extends Controller {
 
             do {
 
-                echo "Trying credential (" . $server['ip'] . " login : " . $login . " - password : " . $password . ")- run n°" . $run . "\n";
+                echo "Trying credential (".$server['ip']." login : ".$login." - password : ".$password.")- run n°".$run."\n";
                 $ssh = new Ssh($server['ip'], 22, $login, $password);
 
                 if ($ssh->connect(Ssh::DEBUG_ON)) {
                     fwrite(STDOUT, "Successfully connected\n");
 
-                    $tmp = [];
-                    $tmp['login'] = $login;
+                    $tmp             = [];
+                    $tmp['login']    = $login;
                     $tmp['password'] = $password;
 
-                    $account_valided[md5($tmp['login'] . $tmp['password'])] = $tmp;
+                    $account_valided[md5($tmp['login'].$tmp['password'])] = $tmp;
 
 // create account pmacontrol
 
@@ -1040,7 +1010,6 @@ class Backup extends Controller {
 
                     $ssh->shellCmd("getent passwd pmacontrol");
                     $ret = $ssh->waitPrompt($buffer, 'pmacontrol\:');
-
 
                     if ($ret !== false) {
                         $ssh->shellCmd("useradd -ou 0 -g 0 pmacontrol");
@@ -1061,11 +1030,11 @@ class Backup extends Controller {
                     list($elem) = each($account_valided);
 
                     if (isset($elem)) {
-                        $login = $account_valided[$elem]['login'];
+                        $login    = $account_valided[$elem]['login'];
                         $password = $account_valided[$elem]['password'];
                     } else {
-                        $user = $this->getLoginPassword();
-                        $login = $user['login'];
+                        $user     = $this->getLoginPassword();
+                        $login    = $user['login'];
                         $password = $user['passwd'];
                     }
                 }
@@ -1076,21 +1045,21 @@ class Backup extends Controller {
 //fwrite(STDOUT, "useradd -ou 0 -g 0 pmacontrol\n");
 
 
-            fwrite(STDOUT, str_repeat("-", 80) . "\n");
-
+            fwrite(STDOUT, str_repeat("-", 80)."\n");
 
             unset($ssh);
         }
     }
 
-    function promptSilent($prompt = "Enter Password:") {
+    function promptSilent($prompt = "Enter Password:")
+    {
         if (preg_match('/^win/i', PHP_OS)) {
-            $vbscript = sys_get_temp_dir() . 'prompt_password.vbs';
+            $vbscript = sys_get_temp_dir().'prompt_password.vbs';
             file_put_contents(
-                    $vbscript, 'wscript.echo(InputBox("'
-                    . addslashes($prompt)
-                    . '", "", "password here"))');
-            $command = "cscript //nologo " . escapeshellarg($vbscript);
+                $vbscript, 'wscript.echo(InputBox("'
+                .addslashes($prompt)
+                .'", "", "password here"))');
+            $command  = "cscript //nologo ".escapeshellarg($vbscript);
             $password = rtrim(shell_exec($command));
             unlink($vbscript);
             return $password;
@@ -1100,39 +1069,40 @@ class Backup extends Controller {
                 trigger_error("Can't invoke bash");
                 return;
             }
-            $command = "/usr/bin/env bash -c 'read -s -p \""
-                    . addslashes($prompt)
-                    . "\" mypassword && echo \$mypassword'";
+            $command  = "/usr/bin/env bash -c 'read -s -p \""
+                .addslashes($prompt)
+                ."\" mypassword && echo \$mypassword'";
             $password = rtrim(shell_exec($command));
             echo "\n";
             return $password;
         }
     }
 
-    function getLoginPassword() {
+    function getLoginPassword()
+    {
 
         fwrite(STDOUT, "Login :");
 //$login = fread(STDIN);
         $login = trim(fgets(STDIN));
 
+        $passwd = self::promptSilent($login.' s password: ');
 
-        $passwd = self::promptSilent($login . ' s password: ');
-
-        $ret = [];
-        $ret['login'] = $login;
+        $ret           = [];
+        $ret['login']  = $login;
         $ret['passwd'] = $passwd;
 
         return $ret;
     }
 
-    public function setPasswdPmaControl() {
+    public function setPasswdPmaControl()
+    {
 
 
         $this->view = false;
 
         do {
             fwrite(STDOUT, "Choose password for remote user pmacontrol\n");
-            $passwdpma = self::promptSilent("Enter new UNIX password:");
+            $passwdpma  = self::promptSilent("Enter new UNIX password:");
             $passwdpma2 = self::promptSilent("Retype new UNIX password:");
 
             if ($passwdpma != $passwdpma2) {
@@ -1147,46 +1117,44 @@ class Backup extends Controller {
         $file = "<?php
 if (! defined('PMACONTROL_PASSWD'))
 {
-    define('PMACONTROL_PASSWD', '" . $password_crypted . "');
+    define('PMACONTROL_PASSWD', '".$password_crypted."');
 }
 ";
-        file_put_contents(CONFIG . "pmacontrol.config.php", $file);
+        file_put_contents(CONFIG."pmacontrol.config.php", $file);
 
         return $passwdpma;
     }
 
-    public function graph($param) {
+    public function graph($param)
+    {
         $sql = "SELECT *
         FROM backup_database a
         INNER JOIN backup_dump b ON a.id = b.id_backup_database
-        WHERE a.id = '" . $param[0] . "'
+        WHERE a.id = '".$param[0]."'
         ORDER BY b.date_start asc";
-
 
 //echo $sql;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $res = $db->sql_query($sql);
 
-        $time_backup = [];
-        $time_gz = [];
+        $time_backup     = [];
+        $time_gz         = [];
         $time_transfered = [];
-        $dates = [];
-        $size_file = [];
-        $size_gz = [];
+        $dates           = [];
+        $size_file       = [];
+        $size_gz         = [];
         $size_transfered = [];
 
-
         while ($ob = $db->sql_fetch_object($res)) {
-            $time_backup[] = $ob->time;
-            $time_gz[] = $ob->time_gz;
+            $time_backup[]     = $ob->time;
+            $time_gz[]         = $ob->time_gz;
             $time_transfered[] = $ob->time_transfered;
-            $dates[] = $ob->date_start;
+            $dates[]           = $ob->date_start;
 
             $size_file[] = $ob->size_file;
-            $size_gz[] = $ob->size_gz;
+            $size_gz[]   = $ob->size_gz;
 
             $size_transfered[] = $ob->size_transfered;
 
@@ -1195,7 +1163,6 @@ if (! defined('PMACONTROL_PASSWD'))
 
 
         $this->di['js']->addJavascript(array("http://code.highcharts.com/highcharts.js", "http://code.highcharts.com/modules/exporting.js"));
-
 
         $this->di['js']->code_javascript("$(function () {
     $('#container').highcharts({
@@ -1209,7 +1176,7 @@ if (! defined('PMACONTROL_PASSWD'))
             text: 'Backup, gzip and transfert'
         },
         xAxis: {
-            categories: ['" . implode("','", $dates) . "'],
+            categories: ['".implode("','", $dates)."'],
             tickmarkPlacement: 'on',
             title: {
                 enabled: false
@@ -1242,13 +1209,13 @@ if (! defined('PMACONTROL_PASSWD'))
         },
         series: [{
             name: 'Time to backup',
-            data: [" . implode(",", $time_backup) . "]
+            data: [".implode(",", $time_backup)."]
         }, {
             name: 'Time to gzip',
-            data: [" . implode(",", $time_gz) . "]
+            data: [".implode(",", $time_gz)."]
         }, {
             name: 'Time to scp',
-            data: [" . implode(",", $time_transfered) . "]
+            data: [".implode(",", $time_transfered)."]
         }]
     });
 });");
@@ -1279,7 +1246,7 @@ $(function () {
             text: 'After backup, After Gzip, After transfered'
         },
         xAxis: {
-            categories: ['" . implode("','", $dates) . "'],
+            categories: ['".implode("','", $dates)."'],
             tickmarkPlacement: 'on',
             title: {
                 enabled: false
@@ -1312,25 +1279,27 @@ $(function () {
         },
         series: [{
             name: 'Time to backup',
-            data: [" . implode(",", $size_file) . "]
+            data: [".implode(",", $size_file)."]
         }, {
             name: 'Time to gzip',
-            data: [" . implode(",", $size_gz) . "]
+            data: [".implode(",", $size_gz)."]
         }, {
             name: 'Time to scp',
-            data: [" . implode(",", $size_transfered) . "]
+            data: [".implode(",", $size_transfered)."]
         }]
     });
 });");
     }
 
-    public function gant() {
+    public function gant()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.colorbox-min.js", "timetable-script.min.js"));
     }
 
-    public function add() {
+    public function add()
+    {
 
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1340,16 +1309,13 @@ $(function () {
                 $db->sql_query('SET AUTOCOMMIT=0;');
                 $db->sql_query('START TRANSACTION;');
 
-                $crontab = [];
+                $crontab            = [];
                 $crontab['crontab'] = $_POST['crontab'];
 
                 $cmd = "";
 
                 $crontab['crontab']['command'] = $cmd;
                 $crontab['crontab']['comment'] = "";
-
-
-
 
                 $id_crontab = $db->sql_save($crontab);
                 if (!$id_crontab) {
@@ -1361,11 +1327,10 @@ $(function () {
 
 
 
-                $backup_database = [];
-                $backup_database['backup_main'] = $_POST['backup_main'];
+                $backup_database                              = [];
+                $backup_database['backup_main']               = $_POST['backup_main'];
                 $backup_database['backup_main']['id_crontab'] = $id_crontab;
-                $backup_database['backup_main']['is_active'] = 1;
-
+                $backup_database['backup_main']['is_active']  = 1;
 
                 if (empty($backup_database['backup_main']['database'])) {
                     $backup_database['backup_main']['database'] = 0;
@@ -1374,11 +1339,8 @@ $(function () {
                 }
 
 
-                $backup_database['backup_main']['database'] = $backup_database['backup_main']['database'];
+                $backup_database['backup_main']['database']      = $backup_database['backup_main']['database'];
                 $backup_database['backup_main']['date_inserted'] = date('Y-m-d H:i:s');
-
-
-
 
                 if (!$id_backup_database = $db->sql_save($backup_database)) {
                     debug($backup_database);
@@ -1387,10 +1349,9 @@ $(function () {
                 } else {
 
                     $php = explode(" ", shell_exec("whereis php"))[1];
-                    $cmd = $php . " " . GLIAL_INDEX . " crontab monitor backup launchBackup " . $id_backup_database;
+                    $cmd = $php." ".GLIAL_INDEX." crontab monitor backup launchBackup ".$id_backup_database;
 
-
-                    $backup_database['backup_main']['id'] = $id_backup_database;
+                    $backup_database['backup_main']['id']      = $id_backup_database;
                     $backup_database['backup_main']['command'] = $cmd;
 
                     $db->sql_save($backup_database);
@@ -1403,8 +1364,7 @@ $(function () {
 
 
                 Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
-                        "Backup database with PmaControl", $id_crontab);
-
+                    "Backup database with PmaControl", $id_crontab);
 
                 $db->sql_query('COMMIT;');
             } catch (\Exception $ex) {
@@ -1416,12 +1376,12 @@ $(function () {
 
 
 //select for type of backup
-        $sql = "SELECT * FROM backup_type order by libelle";
-        $res = $db->sql_query($sql);
+        $sql                 = "SELECT * FROM backup_type order by libelle";
+        $res                 = $db->sql_query($sql);
         $data['type_backup'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+        while ($ob                  = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['type_backup'][] = $tmp;
@@ -1429,13 +1389,13 @@ $(function () {
 
 
 //select for storage area
-        $sql = "SELECT * FROM backup_storage_area order by libelle";
-        $res = $db->sql_query($sql);
+        $sql                  = "SELECT * FROM backup_storage_area order by libelle";
+        $res                  = $db->sql_query($sql);
         $data['storage_area'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->libelle . " (" . $ob->ip . ")";
+        while ($ob                   = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
+            $tmp['libelle'] = $ob->libelle." (".$ob->ip.")";
 
             $data['storage_area'][] = $tmp;
         }
@@ -1444,14 +1404,15 @@ $(function () {
         $this->set('data', $data);
     }
 
-    public function editShedule() {
+    public function editShedule()
+    {
         
     }
 
-    function mydumper($backup, $temp_dir, $uuid) {
+    function mydumper($backup, $temp_dir, $uuid)
+    {
 
         Debug::debug($backup);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -1463,7 +1424,7 @@ $(function () {
 
 
 
-        $sql = "SHOW DATABASES;";
+        $sql  = "SHOW DATABASES;";
         $res2 = $db_to_backup->sql_query($sql);
 
         $dbs = array();
@@ -1473,7 +1434,6 @@ $(function () {
 
         Debug::debug($dbs, "list backup Database");
 
-
         if ($backup->databases === "ALL") {
             $backup->databases = implode(',', $dbs);
         }
@@ -1482,9 +1442,7 @@ $(function () {
 
         $logs = $this->getLogFile($uuid);
 
-
         Debug::debug($logs);
-
 
         $db_to_backup->sql_close();
         $db->sql_close();
@@ -1504,8 +1462,8 @@ $(function () {
             if (in_array($database, $dbs)) {
 
 
-                $cmd = "mydumper -h " . $backup->ip . " -u " . $backup->login . " -p " . Crypt::decrypt($backup->passwd, CRYPT_KEY)
-                        . " -P " . $backup->port . " -B " . $database . " -G -E -R -o " . $temp_dir . "/" . $database . " >> " . $logs['log'] . " 2>> " . $logs['error'] . " ";
+                $cmd = "mydumper -h ".$backup->ip." -u ".$backup->login." -p ".Crypt::decrypt($backup->passwd, CRYPT_KEY)
+                    ." -P ".$backup->port." -B ".$database." -G -E -R -o ".$temp_dir."/".$database." >> ".$logs['log']." 2>> ".$logs['error']." ";
 
                 Debug::debug($cmd);
 
@@ -1515,60 +1473,51 @@ $(function () {
             }
         }
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db       = Sgbd::sql(DB_DEFAULT);
         $hostname = trim(Extraction::display(array("hostname"), array($backup->id_mysql_server))[$backup->id_mysql_server]['']['hostname']);
-        
+
         //nice zip
         //$cmd = "nice gzip -c ".$this->backup_dir."/".$file_name.">".$file_gz;
 
-        $file_gz = $hostname . '__' . date('Y-m-d_H-i-s') . ".tar.gz";
+        $file_gz = $hostname.'__'.date('Y-m-d_H-i-s').".tar.gz";
 
-        $cmd = "cd " . TMP_BACKUP . " && nice tar -cvzf " . $file_gz . " -C " . $temp_dir . " .";
+        $cmd = "cd ".TMP_BACKUP." && nice tar -cvzf ".$file_gz." -C ".$temp_dir." .";
 
         Debug::debug($cmd, "CMD");
 
         shell_exec($cmd);
 
-
         Debug::debug("Fin de la compression");
-
 
         return array("gzip" => $file_gz, "directory" => $temp_dir, "hostname" => $hostname);
     }
 
-    public function testHost($param) {
+    public function testHost($param)
+    {
 
         Debug::parseDebug($param);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $ret = Extraction::display(array("hostname"), array(11))[11]['']['hostname'];
 
-
-
-
-
         Debug:debug($ret);
     }
 
-    public function myloader($param) {
+    public function myloader($param)
+    {
 
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
-
-        $id_mysql_server = $param[0];
+        $id_mysql_server  = $param[0];
         $directory_backup = $param[1];
 
-
-
-
-        $remote = Mysql::getDbLink($db, $id_mysql_server);
+        $remote    = Mysql::getDbLink($db, $id_mysql_server);
         $db_remote = Sgbd::sql($remote);
 
         if (!is_dir($directory_backup)) {
@@ -1577,24 +1526,23 @@ $(function () {
 //SET FOREIGN_KEY_CHECKS=0;
 
 
-        $db_list = glob($directory_backup . "*-schema-create.sql");
-        $db_elems = glob($directory_backup . "*-schema-post.sql");
+        $db_list  = glob($directory_backup."*-schema-create.sql");
+        $db_elems = glob($directory_backup."*-schema-post.sql");
 //$tables = glob($directory_backup."/*-schema.sql");
 //$data     = glob($directory_backup."/*.sql");
 
 
         Debug::debug($db_list);
 
-
         foreach ($db_list as $file) {
             $elems = explode('-', $file);
 
             Debug::debug($elems);
 
-            $split = explode('/', $elems[0]);
+            $split    = explode('/', $elems[0]);
             $database = end($split);
 
-            $sql = "DROP DATABASE IF EXISTS `" . $database . "`;";
+            $sql = "DROP DATABASE IF EXISTS `".$database."`;";
             $db_remote->sql_query($sql);
             Debug::sql($sql);
 
@@ -1605,28 +1553,28 @@ $(function () {
         }
 
 
-        $tables_schema = glob($directory_backup . "*-schema.sql");
+        $tables_schema = glob($directory_backup."*-schema.sql");
 
         Debug::debug($tables_schema);
 
         foreach ($tables_schema as $table_link) {
 
             $db_table = str_replace("-schema.sql", "", $table_link);
-            $elems = explode("/", $db_table);
+            $elems    = explode("/", $db_table);
 
-            $tmp = end($elems);
+            $tmp   = end($elems);
             $elem2 = explode(".", $tmp);
 
             $table_name = $elem2[1];
-            $db_name = $elem2[0];
+            $db_name    = $elem2[0];
 
-            echo $db_name . " - " . $table_name . "\n";
+            echo $db_name." - ".$table_name."\n";
 
             //$sql = "DROP TABLE `".$db_bame."`.`".$table_name."`;";
 
             $db_remote = $this->discReco($db_remote, $remote, $db_name);
-            $sql = file_get_contents($table_link);
-            $queries = SqlFormatter::splitQuery($sql);
+            $sql       = file_get_contents($table_link);
+            $queries   = SqlFormatter::splitQuery($sql);
 
             foreach ($queries as $query) {
 
@@ -1641,7 +1589,7 @@ $(function () {
 
 
 
-        $tables_data = glob($directory_backup . "*.*.sql");
+        $tables_data = glob($directory_backup."*.*.sql");
 
         //Debug::debug($tables_data);
 
@@ -1654,18 +1602,18 @@ $(function () {
 
             $elems = explode("/", $table_data);
 
-            $tmp = end($elems);
+            $tmp   = end($elems);
             $elem2 = explode(".", $tmp);
 
             $table_name = $elem2[1];
-            $db_name = $elem2[0];
+            $db_name    = $elem2[0];
 
             $db_remote->sql_select_db($db_name);
 
             $total = filesize($table_data);
-            echo $table_data . " : " . $this->human_filesize($total, 2) . "\n";
+            echo $table_data." : ".$this->human_filesize($total, 2)."\n";
 
-            $avancement = 0;
+            $avancement  = 0;
             $percent_mem = 0;
 
             $handle = fopen($table_data, "r");
@@ -1684,20 +1632,16 @@ $(function () {
 
                         $db_remote->sql_query($query);
 
-
-
                         $avancement += strlen($query);
 
                         unset($query);
                         $query = '';
 
-
                         $percent = round($avancement / $total * 100, 0);
-
 
                         if ($percent > $percent_mem) {
 
-                            echo round($percent, 2) . "%\t";
+                            echo round($percent, 2)."%\t";
                             $percent_mem = $percent;
 
                             $db_remote = $this->discReco($db_remote, $remote, $db_name);
@@ -1708,7 +1652,6 @@ $(function () {
                     echo "Erreur: fgets() a échoué\n";
                 }
                 fclose($handle);
-
 
                 echo "\n";
             }
@@ -1727,14 +1670,14 @@ $(function () {
          */
     }
 
-    function discReco($db_link, $remote, $db) {
+    function discReco($db_link, $remote, $db)
+    {
 
 
         $db_link->sql_close($db);
         $db_link = Sgbd::sql($remote);
 
         $db_link->sql_select_db($db);
-
 
         $sql = '/*!40101 SET NAMES binary*/';
         $db_link->sql_query($sql);
@@ -1749,23 +1692,25 @@ $(function () {
         $db_link->sql_query($sql);
         Debug::sql($sql);
 
-
         return $db_link;
     }
 
-    function human_filesize($bytes, $decimals = 2) {
-        $sz = 'BKMGTP';
+    function human_filesize($bytes, $decimals = 2)
+    {
+        $sz     = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . " " . @$sz[$factor] . "o";
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
-    function splitFile($param) {
+    function splitFile($param)
+    {
         $file = $param[0];
 
         $this->split_file("/data/backup/sdp_prod/sdp.checkouts.sql");
     }
 
-    function split_file($dump_file) {
+    function split_file($dump_file)
+    {
         /* Number of 'insert' statements per file */
         $max_lines_per_split = 50000;
 
@@ -1773,12 +1718,12 @@ $(function () {
 
         $path_parts = pathinfo($dump_file);
 
-        $split_file = $path_parts['filename'] . ".%d." . $path_parts['extension'];
+        $split_file     = $path_parts['filename'].".%d.".$path_parts['extension'];
         //$split_file     = "dump-split-%d.sql";
-        $dump_directory = $path_parts['dirname'] . "/";
+        $dump_directory = $path_parts['dirname']."/";
 
-        $line_count = 0;
-        $file_count = 1;
+        $line_count  = 0;
+        $file_count  = 1;
         $total_lines = 0;
 
         $handle = @fopen($dump_file, "r");
@@ -1787,18 +1732,17 @@ $(function () {
         if ($handle) {
             while (($line = fgets($handle)) !== false) {
                 /* Only read 'insert' statements */
-                if (!preg_match("/insert/i", $line))
-                    continue;
+                if (!preg_match("/insert/i", $line)) continue;
                 $buffer .= $line;
                 $line_count++;
 
                 /* Copy buffer to the split file */
                 if ($line_count >= $max_lines_per_split) {
-                    $file_name = $dump_directory . sprintf($split_file, $file_count);
-                    $out_write = fopen($file_name, "w+");
+                    $file_name  = $dump_directory.sprintf($split_file, $file_count);
+                    $out_write  = fopen($file_name, "w+");
                     fputs($out_write, $buffer);
                     fclose($out_write);
-                    $buffer = '';
+                    $buffer     = '';
                     $line_count = 0;
                     $file_count++;
                 }
@@ -1806,7 +1750,7 @@ $(function () {
 
             if ($buffer) {
                 /* Write out the remaining buffer */
-                $file_name = $dump_directory . sprintf($split_file, $file_count);
+                $file_name = $dump_directory.sprintf($split_file, $file_count);
                 $out_write = fopen($file_name, "w+");
                 fputs($out_write, $buffer);
                 fclose($out_write);
@@ -1817,31 +1761,31 @@ $(function () {
         }
     }
 
-    public function warningTest($param) {
+    public function warningTest($param)
+    {
 
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $sql = "CREATE TABLE IF NOT EXISTS `test_warning`(`a` varchar(10));";
         $db->sql_query($sql);
         Debug::sql($sql);
 
-
         $sql = "INSERT INTO `test_warning` SET `a`='FGHFTHGftgbnhxfthTFHFTRH';";
         $db->sql_query($sql);
         Debug::sql($sql);
-
 
         $sql = "DROP TABLE IF NOT EXISTS `test_warning`;";
         $db->sql_query($sql);
         Debug::sql($sql);
     }
 
-    public function launchBackup($param) {
+    public function launchBackup($param)
+    {
         $id_backup_main = $param[0];
 
         Debug::parseDebug($param);
@@ -1849,18 +1793,17 @@ $(function () {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $sql = "SELECT * FROM backup_main a
             INNER JOIN mysql_server b ON a.id_mysql_server = b.id
             LEFT JOIN link__mysql_server__ssh_key c ON c.id_mysql_server = b.id
             INNER JOIN ssh_key d ON d.id = c.id_ssh_key
-            WHERE a.id = " . $id_backup_main . " LIMIT 1;";
+            WHERE a.id = ".$id_backup_main." LIMIT 1;";
 
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
-
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $ret = $this->checkConfig($arr);
@@ -1882,9 +1825,9 @@ $(function () {
         //todo if no SSH KEY available found
     }
 
-    public function checkConfig($param) {
+    public function checkConfig($param)
+    {
         Debug::parseDebug($param);
-
 
         // check everything without make the backup
         //test command (mydumper, mysqldump, xtrabackup and version)
@@ -1894,10 +1837,10 @@ $(function () {
         return true;
     }
 
-    public function runBackup($param) {
+    public function runBackup($param)
+    {
 
         Debug::parseDebug($param);
-
 
         $id_backup_main = $param[0];
 
@@ -1907,16 +1850,15 @@ $(function () {
 
         $uuid = Uuid::uuid4()->toString();
 
-
         $debug = "";
         if (Debug::$debug === true) {
             $debug = "--debug";
         }
 
-        $log = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
-        $log_error = TMP . "log/" .$this->getClass(). "-" . __FUNCTION__ . "-" . uniqid() . '.log';
+        $log       = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.log';
+        $log_error = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.log';
 
-        $cmd = $php . " " . GLIAL_INDEX . " " .$this->getClass(). " doBackup " . $id_backup_main . " " . $uuid . " " . $debug . " >> " . $log . " 2>> " . $log_error . " & echo $!";
+        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." doBackup ".$id_backup_main." ".$uuid." ".$debug." >> ".$log." 2>> ".$log_error." & echo $!";
         //$cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." doBackup ".$id_backup_main." & echo $!";
 
 
@@ -1924,51 +1866,43 @@ $(function () {
         Debug::debug($cmd);
         $pid = trim(shell_exec($cmd));
 
-
         Debug::debug($pid, "PID");
 
-
-
         \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
-
-
-
 
         return $pid;
     }
 
-    public function doBackup($param) {
+    public function doBackup($param)
+    {
 
         $id_backup_main = $param[0];
-        $uuid = $param[1];
-
-
+        $uuid           = $param[1];
 
         Debug::parseDebug($param);
         Debug::debug($param, 'param');
 
-
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql3 = "SELECT id FROM job WHERE uuid='" . $uuid . "'";
+        $sql3 = "SELECT id FROM job WHERE uuid='".$uuid."'";
         Debug::sql($sql3);
         $res3 = $db->sql_query($sql3);
-        while ($ob3 = $db->sql_fetch_object($res3)) {
+        while ($ob3  = $db->sql_fetch_object($res3)) {
             $id_job = $ob3->id;
         }
 
 
-        $sql2 = "SELECT * FROM `backup_main` where `id` = " . $id_backup_main . ";";
+        $sql2 = "SELECT * FROM `backup_main` where `id` = ".$id_backup_main.";";
         Debug::sql($sql2);
 
         $res2 = $db->sql_query($sql2);
 
         while ($ob2 = $db->sql_fetch_object($res2)) {
 
-            $sql2 = "INSERT INTO backup_dump SET id_backup_main= " . $id_backup_main . " ,"
-                    . "id_mysql_server = " . $ob2->id_mysql_server . ","
-                    . " id_job='" . $id_job . "', "
-                    . "date_start='" . date("Y-m-d H:i:s") . "';";
+            $sql2 = "INSERT INTO backup_dump SET id_backup_main= ".$id_backup_main." ,"
+                ."id_mysql_server = ".$ob2->id_mysql_server.","
+                ." id_job='".$id_job."', "
+                ."date_start='".date("Y-m-d H:i:s")."';";
             Debug::sql($sql2);
 
             $id_backup_dump = $db->sql_query($sql2);
@@ -1983,17 +1917,13 @@ $(function () {
             INNER JOIN backup_type e ON e.id = a.id_backup_type
             LEFT JOIN link__mysql_server__ssh_key c ON c.id_mysql_server = b.id
             INNER JOIN ssh_key d ON d.id = c.id_ssh_key
-            WHERE a.id = " . $id_backup_main . " LIMIT 1;";
-
+            WHERE a.id = ".$id_backup_main." LIMIT 1;";
 
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
-
-
-        $temp_dir = TMP_BACKUP . '/bak-' . uniqid();
-
+        $temp_dir = TMP_BACKUP.'/bak-'.uniqid();
 
         mkdir($temp_dir);
 
@@ -2006,14 +1936,11 @@ $(function () {
 
             Debug::debug('send file', $export['gzip']);
 
-
-            $src = TMP_BACKUP . "/" . $export['gzip'];
-            $dst = "backup/" . $export['hostname'] . "/" . $export['gzip'];
-
+            $src = TMP_BACKUP."/".$export['gzip'];
+            $dst = "backup/".$export['hostname']."/".$export['gzip'];
 
             Debug::debug($src, "Source file");
             Debug::debug($dst, "Destination file");
-
 
             $this->sendFile($ob->id_backup_storage_area, $src, $dst);
 
@@ -2025,37 +1952,73 @@ $(function () {
         $db->sql_close();
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $backup_dump = array();
-        $backup_dump['backup_dump']['id'] = $id_backup_dump;
+        $backup_dump                            = array();
+        $backup_dump['backup_dump']['id']       = $id_backup_dump;
         $backup_dump['backup_dump']['date_end'] = date("Y-m-d H:i:s");
-        $tmp = $db->sql_save($backup_dump);
-
+        $tmp                                    = $db->sql_save($backup_dump);
 
         Debug::debug($tmp, '$db->sql_save($backup_dump);');
 
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
 
-
-
-
-
-
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
     }
 
-    public function getLogFile($uuid) {
+    public function getLogFile($uuid)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT `log`,`error` FROM `job` where `uuid` = '" . $uuid . "'";
+        $sql = "SELECT `log`,`error` FROM `job` where `uuid` = '".$uuid."'";
         $res = $db->sql_query($sql);
-
 
         while ($ob = $db->sql_fetch_object($res)) {
             return array("log" => $ob->log, "error" => $ob->error);
         }
     }
 
+    public function backupServer($param)
+    {
+
+
+        $id_server       = $param[0];
+        $id_storage_area = $param[1]; // default 1
+        $type_backup     = $param[2]; // defalut mydumper
+        $databases       = "all"; // defalut all
+
+
+
+
+
+        switch ($type_backup) {
+
+            case "mydumper":
+
+                break;
+
+            case "xtrabackup":
+
+                break;
+
+            case "mysqldump":
+
+                break;
+        }
+    }
+
+    public function backupAll($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql1 = "SELECT * FROM mysql_server";
+        $res1 = $db->sql_query($sql1);
+
+        while ($ob1 = $db->sql_fetch_object($res1))
+        {
+            echo "backup server id : ".$ob1->id."\n";
+            $cmd = 'mydumper --rows=1000000 -c -t 20 -E -R -G -h 10.93.253.248 -u pmacontrol -p "Marneuse127*" --kill-long-queries';
+        }
+    }
 }
+
 
 /*
  * echo "$(du -c /var/lib/mysql/mysql-bin.* | tail -1 | cut -f 1) $(df / | tail -1 | awk '{print $4}')" | awk '{printf "MySQL binlog consuming " "%3.2f Gigabytes of disk space:\n", $1 / 1024 / 1024; printf "%3.2f percent of total disk space\n", $1 / $2 *100}'

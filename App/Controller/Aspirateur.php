@@ -551,8 +551,6 @@ class Aspirateur extends Controller
           $tmp_mem = trim($ssh->exec("ps aux | grep 'mysqld ' | grep -v grep | awk '{print $5,$6}'"));
 
           $mem = explode("\n", $tmp_mem);
-
-
           $mysql = explode(' ', end($mem));
 
           $stats['mysqld_mem_physical'] = $mysql[1];
