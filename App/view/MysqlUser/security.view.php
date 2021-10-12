@@ -36,6 +36,17 @@
                     $account_without_password++;
                 }
 
+
+                if ((empty($account['Password'])  && $account['User'] === "mariadb.sys" && $account['Host'] === "localhost" ))
+                {
+                    $style = '';
+                    $account_without_password--;
+                }
+                
+
+
+
+
                 echo '<tr>';
                 echo '<td style="'.$style.'">'.$i."</td>";
                 echo '<td style="'.$style.'">'.$servers['display_name']."</td>";

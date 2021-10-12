@@ -58,6 +58,7 @@ echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
 echo '<th>'."general_log".'</th>';
+echo '<th>'."P_S".'</th>';
 echo '<th>'.__("Date refresh").'</th>';
 echo '<th>'.__("Ping").'</th>';
 
@@ -178,6 +179,11 @@ if (!empty($data['servers'])) {
 
         echo '</td>';
 
+
+
+        echo '<td style="'.$style.'">';
+        echo $data['extra'][$server['id']]['']['performance_schema'];
+        echo '</td>';
         echo '<td style="'.$style.'">';
 
         if (!empty($server['is_available'])) {
