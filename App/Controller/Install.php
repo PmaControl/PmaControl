@@ -789,7 +789,7 @@ if (! defined('CRYPT_KEY'))
         }
 
         $this->testVectorDB();
-        $this->testSpider();
+        //$this->testSpider();
 
         $ret = $this->testDatabase($config['mysql']['database']);
         if ($ret !== true) {
