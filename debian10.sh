@@ -59,10 +59,17 @@ mv composer.phar /usr/local/bin/composer
 
 cd /srv/www/
 
-git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+
+ssh -T git@github.com
+ret=$(echo $?)
+
+if [[ $ret = 1 ]] then
+  git clone git@github.com:PmaControl/PmaControl.git
+else
+  git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+fi
 
 cd pmacontrol
-
 
 git pull origin develop
 git config core.fileMode false
@@ -70,7 +77,6 @@ git config core.fileMode false
 composer install -n
 
 service apache2 restart
-
 
 
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
