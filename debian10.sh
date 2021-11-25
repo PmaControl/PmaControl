@@ -64,7 +64,7 @@ ssh -T git@github.com
 ret=$(echo $?)
 
 if [[ $ret -eq 1 ]]; then
-  git clone git@github.com:PmaControl/PmaControl.git
+  git clone git@github.com:PmaControl/PmaControl.git pmacontrol
 else
   git clone https://github.com/PmaControl/PmaControl.git pmacontrol
 fi
