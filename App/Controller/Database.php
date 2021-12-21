@@ -451,7 +451,7 @@ INNER JOIN information_schema.VIEWS AS views
 ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW';";
 
 
-            Debug::debug(SqlFormatter::format($sql20));
+//            Debug::sql($sql20));
 
 
             $res20 = $db2->sql_query($sql20);
@@ -536,7 +536,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 FROM information_schema.tables
                 where table_schema='".$OLD_DB."' AND TABLE_TYPE='VIEW';";
 
-            Debug::debug(SqlFormatter::format($sql9));
+  //          Debug::debug(SqlFormatter::format($sql9));
 
             $res9  = $db2->sql_query($sql9);
             $views = array();
