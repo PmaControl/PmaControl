@@ -139,18 +139,14 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
+	$is_proxysql = (empty($data['extra'][$server['id']]['']['is_proxysql']))?0:$data['extra'][$server['id']]['']['is_proxysql']; 
+
         if (!empty($data['extra'][$server['id']]['']['version'])) {
-            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
+            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment'], $is_proxysql);
         }
 
         if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
-        }
-
-
-        if (!empty($data['extra'][$server['id']]['']['is_proxy']) && $data['extra'][$server['id']]['']['is_proxy'] === "1") {
-
-            echo '&nbsp;<img title="Galera Cluster" alt="ProxySQL" height="16" width="16" src="'.IMG.'/icon/proxysql.png"/>';
         }
 
 
