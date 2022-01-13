@@ -231,7 +231,7 @@ class Install extends Controller
         //check Spider
         //
 
-        $this->testSpider();
+        //$this->testSpider();
 
         wrong_db:
         $good = false;
@@ -789,7 +789,7 @@ if (! defined('CRYPT_KEY'))
         }
 
         $this->testVectorDB();
-        $this->testSpider();
+        //$this->testSpider();
 
         $ret = $this->testDatabase($config['mysql']['database']);
         if ($ret !== true) {
