@@ -151,6 +151,10 @@ class Aspirateur extends Controller
 
         $var['variables'] = $mysql_tested->getVariables();
 
+	Debug::debug($var['variables']['is_proxysql'],"is_proxysql");
+	//shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
+
+
         if (!empty($var['variables']['gtid_binlog_pos'])) {
             unset($var['variables']['gtid_binlog_pos']);
         }
