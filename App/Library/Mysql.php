@@ -12,6 +12,8 @@ use App\Library\System;
 use App\Library\Tag;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Debug;
+
 
 class Mysql
 {
@@ -310,19 +312,16 @@ class Mysql
     /*
      * to export in Glial::MySQL ?
      *
+     * if ID not found we insert this line and get back, the line
      */
 
     static function getId($value, $table_name, $field, $list = array())
     {
-
         $list_key = '';
         $list_val = '';
 
-
         if (count($list) > 0) {
             $keys = array_keys($list);
-
-
 
             if (in_array($field, $keys)) {
                 throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "'.$field.'"');
@@ -695,5 +694,29 @@ END IF;";
         }
 
         return false;
+    }
+
+
+    static function testMySQL($param)
+    {
+        Debug::parseDebug($param);
+
+        $hostname = $param[0];
+        $port     = $param[1];
+        $user     = $param[2];
+        $password = $param[3];
+
+        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+
+        if ($link) {
+            Debug::debug("Connection sucessfull");
+
+            mysqli_close($link);
+            return true;
+        } else {
+            $error = 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+            Debug::debug($error, "[ERROR]");
+            return $error;
+        }
     }
 }

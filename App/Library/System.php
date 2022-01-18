@@ -56,17 +56,16 @@ class System
 
         return false;
     }
-
     /*
      *
      * deprecated
      */
+
     static public function deleteFiles($file = "")
     {
-
+        //to do add list from pmacontrol.ts_files
         $to_delete = array("server" => "/dev/shm/server_*", "answer" => "/dev/shm/answer_*",
             "variable" => "/dev/shm/variable_*", "worker" => "/dev/shm/worker");
-
 
         $files_to_delete = array();
 
@@ -98,5 +97,18 @@ class System
         $ip = shell_exec("dig +short ".$hostname);
 
         return trim($ip);
+    }
+
+    static function scanPort($ip, $port, $timeOut = 1)
+    {
+        $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);
+
+        if (is_resource($connection)) {
+
+            fclose($connection);
+            return true;
+        }
+
+        return false;
     }
 }

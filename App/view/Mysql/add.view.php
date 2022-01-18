@@ -2,32 +2,17 @@
 
 use Glial\Html\Form\Form;
 ?>
-
 <form action="" method="post">
-
-
-
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Parameters') ?></h3>
         </div>
 
         <div class="well">
-
-
-
-
-
-
-
-
             <div class="row">
-
-
                 <div class="col-md-12">
                     <b>Name</b><br><br>
                 </div>
-
                 <div class="col-md-6">
                     <?= __("Connection name") ?>
                     <?=
@@ -35,21 +20,14 @@ use Glial\Html\Form\Form;
                         array("class" => "form-control", "placeholder" => __("Type a name for the connection, if you let empty we will take 'select @@hostname'")))
                     ?>
                 </div>
-
             </div>
-
 
             <div class="row"><br><br></div>
 
-
-
             <div class="row">
-
-
                 <div class="col-md-12">
                     <b>Parameters</b><br><br>
                 </div>
-
                 <div class="col-md-8">
                     <?= __("IP") ?>
                     <?=
@@ -61,7 +39,6 @@ use Glial\Html\Form\Form;
                     Form::input("mysql_server", "port", array("class" => "form-control", "placeholder" => "port of mysql server"))
                     ?></div>
             </div>
-
 
             <div class="row">
                 <div class="col-md-6"><?= __("Login") ?>
@@ -75,29 +52,20 @@ use Glial\Html\Form\Form;
                     ?></div>
             </div>
 
-
-
-
-
             <div class="row">
-
                 <div class="col-md-12">
                     <br><br><b>Others</b><br><br>
                 </div>
-
 
                 <div class="col-md-4"><?= __("Clients") ?>
                     <?=
                     Form::select("mysql_server", "id_client", $data['client'], "", array("class" => "form-control"))
                     ?></div>
-
                 <div class="col-md-4"><?= __("Environement") ?>
-
                     <?=
                     Form::select("mysql_server", "id_environement", $data['environment']
                         , "", array("class" => "form-control"))
                     ?></div>
-
                 <!--
                 <div class="col-md-4"><?= __("Tags") ?><?=
                 Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
@@ -105,11 +73,6 @@ use Glial\Html\Form\Form;
                 ?></div>
                 -->
             </div>
-
-
-
-
-
             <div class="row">
                 <br >
                 <div class="col-md-12">
@@ -119,12 +82,7 @@ use Glial\Html\Form\Form;
             </div>
         </div>
     </div>
-
-
 </form>
-
-
-
 
 
 <!--
