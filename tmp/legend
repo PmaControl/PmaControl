@@ -6,7 +6,7 @@ digraph {
 	    node [shape=plaintext fontsize=12];
 	    subgraph cluster_01 {
 	    label = "Replication : Legend";
-	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right" port="i1">Healthy&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
+	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right" port="i1">Healty&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
 <tr><td align="right" port="i2">Delay&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
 <tr><td align="right" port="i3">Stopped&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
 <tr><td align="right" port="i4">Error SQL&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>

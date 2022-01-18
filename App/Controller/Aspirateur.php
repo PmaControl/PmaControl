@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use \Glial\Cli\SetTimeLimit;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 use App\Library\ParseCnf;
@@ -22,15 +21,16 @@ use Pheanstalk\Pheanstalk;
  *
  *
  * MySQL [(none)]> select @@version_comment limit 1;
-+-------------------+
-| @@version_comment |
-+-------------------+
-| (ProxySQL)        |
-+-------------------+
-1 row in set (0.000 sec)
+  +-------------------+
+  | @@version_comment |
+  +-------------------+
+  | (ProxySQL)        |
+  +-------------------+
+  1 row in set (0.000 sec)
 
  *
  */
+
 // https://github.com/php-amqplib/php-amqplib
 //each minute ?
 //require ROOT."/application/library/Filter.php";
@@ -102,7 +102,7 @@ class Aspirateur extends Controller
             $error_msg = $err['message'];
         }
 
-        $data = array();
+        $data                   = array();
         $data['server']['ping'] = microtime(true) - $time_start;
 
         /*
@@ -111,21 +111,17 @@ class Aspirateur extends Controller
           sleep(55);
           } */
 
-        $service = array();
-        $service['mysql_server']['available'] = empty($error_msg)? 1:0;
-        $service['mysql_server']['ping'] = $data['server']['ping'];
-        $service['mysql_server']['error'] = $error_msg;
-        
-        $services = array();
+        $service                              = array();
+        $service['mysql_server']['available'] = empty($error_msg) ? 1 : 0;
+        $service['mysql_server']['ping']      = $data['server']['ping'];
+        $service['mysql_server']['error']     = $error_msg;
+
+        $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_server] = $service;
-        
+
         $this->allocate_shared_storage('service');
         $this->shared['service']->{$id_server} = $services;
 
-
-        
-        
-        
         if (!empty($error_msg)) {
             echo $name_server." : ".$error_msg."\n";
 
@@ -140,8 +136,8 @@ class Aspirateur extends Controller
 
             return false;
         }
-        
-        
+
+
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
@@ -151,8 +147,8 @@ class Aspirateur extends Controller
 
         $var['variables'] = $mysql_tested->getVariables();
 
-	Debug::debug($var['variables']['is_proxysql'],"is_proxysql");
-	//shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
+        Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
+        //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
 
 
         if (!empty($var['variables']['gtid_binlog_pos'])) {
@@ -251,8 +247,9 @@ class Aspirateur extends Controller
                 $get_databases = true;
             }
         } else {
-            
+
             //test if first run, if yes remove grabbing of databases because getting to much time
+            // test if last all 5 ts_dates before made it to grab data more faster
             $get_databases = true;
         }
 
@@ -334,7 +331,6 @@ class Aspirateur extends Controller
             $ssh        = Ssh::ssh($id_mysql_server);
             $ping       = microtime(true) - $time_start;
 
-
             if ($ssh !== false) {
                 //Debug::debug($data);
 
@@ -384,8 +380,6 @@ class Aspirateur extends Controller
 
         $hardware['memory'] = $memory;
 
-
-
         $freq_brut = $ssh->exec("cat /proc/cpuinfo | grep 'cpu MHz'");
         preg_match("/[0-9]+\.[0-9]+/", $freq_brut, $freq);
 
@@ -398,10 +392,8 @@ class Aspirateur extends Controller
             $freq_2 = trim($ssh->exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"));
 
             if (!empty($freq_2)) {
-                $hardware['cpu_frequency'] = round($freq_2 / 1000000,2)." GHz";
-            }
-            else
-            {
+                $hardware['cpu_frequency'] = round($freq_2 / 1000000, 2)." GHz";
+            } else {
                 $hardware['cpu_frequency'] = $freq_brut;
             }
         } else {
@@ -425,8 +417,7 @@ class Aspirateur extends Controller
             if (!empty($version)) {
                 $distributor = trim("Debian");
 
-
-		$ver = explode(".", $version)[0];
+                $ver = explode(".", $version)[0];
 
                 switch ($ver) {
                     case "4": $codename = "Etch";
@@ -466,8 +457,6 @@ class Aspirateur extends Controller
         $stats = array();
 
         $uptime = $ssh->exec("uptime");
-
-
 
         // récupération de l'uptime et du load average
         $output_array = array();
@@ -515,7 +504,6 @@ class Aspirateur extends Controller
 //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
 
         $cpu_lines = explode("\n", $cpus);
-
 
         $i = 0;
         foreach ($cpu_lines as $line) {
@@ -584,7 +572,6 @@ class Aspirateur extends Controller
         //$param[] = '--debug';
         Debug::parseDebug($param);
 
-
         $id_daemon = $param[0];
 
         if (empty($id_daemon)) {
@@ -631,7 +618,6 @@ class Aspirateur extends Controller
 
         $lock_directory = TMP."lock/worker/*.lock";
 
-
         $elems = array();
         foreach (glob($lock_directory) as $filename) {
 
@@ -662,7 +648,6 @@ class Aspirateur extends Controller
 
 
                 Debug::debug($server['pid'], "GOOD");
-
 
                 $mysql_servers[] = $server['id'];
                 //$list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
@@ -707,7 +692,6 @@ class Aspirateur extends Controller
         }
 
         $sql .= " ORDER by is_available ASC, date_refresh DESC;";
-
 
         //echo \SqlFormatter::format($sql);
 
@@ -774,7 +758,6 @@ class Aspirateur extends Controller
 
         $db->sql_close();
 
-
         $queue = msg_get_queue($queue_key);
 
         $msg_type     = NULL;
@@ -783,7 +766,6 @@ class Aspirateur extends Controller
 
         $data        = array();
         $data['pid'] = $pid;
-
 
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
             //echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} [[" . $pid . "]]\n";
@@ -810,7 +792,6 @@ class Aspirateur extends Controller
             //do your business logic here and process this message!
 
             $this->tryMysqlConnection(array($msg->name, $msg->id));
-
 
             /*
               if ($msg->id == "16") {
@@ -901,7 +882,6 @@ class Aspirateur extends Controller
             } elseif ($ob->thread_concurency < $nb_thread) {
                 $todelete = $nb_thread - $ob->thread_concurency;
 
-
                 for ($i = 0; $i < $todelete; $i++) {
                     $this->removeWorker(array($id_daemon_main, $debug));
 
@@ -917,7 +897,6 @@ class Aspirateur extends Controller
 
         $id_daemon_worker = $param[0];
         $id_daemon_main   = $param[1];
-
 
         $debug = '';
         if (Debug::$debug === true) {
@@ -952,7 +931,6 @@ class Aspirateur extends Controller
 
         $pid = shell_exec($cmd);
 
-
         $sql = "UPDATE `daemon_worker` SET `pid`=".$pid." WHERE `id`=".$id_daemon_worker.";";
         Debug::sql($sql);
         $db->sql_query($sql);
@@ -964,7 +942,6 @@ class Aspirateur extends Controller
         $id_daemon_main = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $sql = "SELECT * FROM daemon_main where id=".intval($id_daemon_main);
         $res = $db->sql_query($sql);
@@ -981,9 +958,7 @@ class Aspirateur extends Controller
             $cmd = "kill ".$ob->pid;
             shell_exec($cmd);
 
-
             $double_buffer = TMP."lock/".$worker_name."/".$ob->pid.".pid";
-
 
             if (file_exists($double_buffer)) {
                 unlink($double_buffer);
@@ -1013,7 +988,6 @@ class Aspirateur extends Controller
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         /*
           $sql = "SELECT * FROM `daemon_main` WHERE `id`=".$id_daemon_main.";";
@@ -1107,7 +1081,6 @@ class Aspirateur extends Controller
 
         $id_mysql_server = $param[0];
 
-
         $db     = Sgbd::sql(DB_DEFAULT);
         $remote = Mysql::getDbLink($db, $id_mysql_server);
 
@@ -1130,7 +1103,6 @@ class Aspirateur extends Controller
 
         //$param[] = '--debug';
         Debug::parseDebug($param);
-
 
         $id_daemon = $param[0];
 
@@ -1178,7 +1150,6 @@ class Aspirateur extends Controller
 
         $lock_directory = TMP."lock/".$worker_type."/*.lock";
 
-
         $elems = array();
         foreach (glob($lock_directory) as $filename) {
 
@@ -1193,10 +1164,7 @@ class Aspirateur extends Controller
 
         Debug::debug($elems, "liste des serveur en retard !");
 
-
-
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $mysql_servers = array();
         foreach ($elems as $server) {
@@ -1212,11 +1180,9 @@ class Aspirateur extends Controller
 
                 Debug::debug($server['pid'], "GOOD");
 
-
                 $mysql_servers[] = $server['id'];
                 $time            = microtime(true) - $server['microtime'];
                 $this->logger->warning("SSH server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
-
 
                 //special case for timeout 60 seconds, else we see working since ... and not the real error
                 $sql = "SELECT ssh_error,ssh_available  from mysql_server WHERE id = ".$server['id'].";";
@@ -1331,7 +1297,6 @@ class Aspirateur extends Controller
 
         $db->sql_close();
 
-
         $queue = msg_get_queue($queue_key);
 
         $msg_type     = NULL;
@@ -1340,7 +1305,6 @@ class Aspirateur extends Controller
 
         $data        = array();
         $data['pid'] = $pid;
-
 
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
             //echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} [[" . $pid . "]]\n";
@@ -1364,11 +1328,8 @@ class Aspirateur extends Controller
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
 
-
             //do your business logic here and process this message!
             $this->trySshConnection(array($msg->id));
-
-
 
             /*
               if ($msg->id == "16") {
@@ -1459,5 +1420,74 @@ class Aspirateur extends Controller
         Debug::debug($stats);
 
         return $stats;
+    }
+    
+    /*
+     * Récuperation des tables : (dans le cadre d'un serveur Galera 4
+     * - wsrep_cluster
+     * - wsrep_cluster_members
+     * - wsrep_streaming_log
+     * 
+     */
+
+    public function getWsrep($param = array())
+    {
+        Debug::parseDebug($param);
+
+        if (empty($param[0])) {
+            echo "INVALID";
+        } else {
+            $name_server = $param[0];
+        }
+
+        $mysql_tested = Sgbd::sql($name_server);
+        $sql1         = "SELECT * FROM `mysql`.`wsrep_cluster`;";
+        $res1         = $mysql_tested->sql_query($sql1);
+        if ($res1) {
+
+            $data['wsrep_cluster'] = array();
+            if ($mysql_tested->sql_num_rows($res1) > 0) {
+
+                //should be only one line
+                while ($arr1 = $mysql_tested->sql_fetch_array($res1, MYSQLI_ASSOC)) {
+                    $data['wsrep_cluster'][] = $arr1;
+                }
+            }
+        }
+        $data['wsrep_cluster'] = json_encode($data['wsrep_cluster']);
+
+        $sql2 = "SELECT * FROM `mysql`.`wsrep_cluster_members`;";
+        $res2 = $mysql_tested->sql_query($sql2);
+        if ($res2) {
+
+            $data['wsrep_cluster_members'] = array();
+            if ($mysql_tested->sql_num_rows($res2) > 0) {
+
+                while ($arr2 = $mysql_tested->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                    $data['wsrep_cluster_members'][] = $arr2;
+                }
+            }
+        }
+        $data['wsrep_cluster_members'] = json_encode($data['wsrep_cluster_members']);
+
+        $sql3 = "SELECT * FROM `mysql`.`wsrep_streaming_log`;";
+        $res3 = $mysql_tested->sql_query($sql3);
+        if ($res3) {
+
+            $data['wsrep_streaming_log'] = array();
+            if ($mysql_tested->sql_num_rows($res3) > 0) {
+
+                while ($arr3 = $mysql_tested->sql_fetch_array($res3, MYSQLI_ASSOC)) {
+                    $data['wsrep_streaming_log'][] = $arr3;
+                }
+            }
+        }
+        $data['wsrep_streaming_log'] = json_encode($data['wsrep_streaming_log']);
+
+        Debug::debug($data);
+
+        return $data;
+
+        //$sql2 = "SELECT * FROM wsrep_cluster_members;";
     }
 }

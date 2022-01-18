@@ -39,7 +39,6 @@ class Server extends Controller
 
         $id_mysql_servers = array_keys($data['hardware']);
 
-
         if (!empty($id_mysql_servers)) {
 
             $sql = "SELECT c.libelle as client,d.libelle as environment,a.*
@@ -200,10 +199,8 @@ class Server extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         //$this->title  = __("Dashboard");
         $this->ariane = " > ".$this->title;
-
 
         $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
 
@@ -220,7 +217,6 @@ class Server extends Controller
 
         $res = $db->sql_query($sql);
 
-
         $servers = array();
         while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr;
@@ -230,7 +226,7 @@ class Server extends Controller
 //debug($servers);
 
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql","performance_schema"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema"));
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res               = $db->sql_query($sql);
@@ -262,9 +258,6 @@ class Server extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
-
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
 			GROUP_CONCAT('',b.name) as dbs,
 			GROUP_CONCAT('',b.id) as id_db,
@@ -289,15 +282,12 @@ class Server extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
 //echo \SqlFormatter::format($sql);
 
 
         $data['servers'] = Extraction::display(array("status::com_select", "status::com_update", "status::com_insert", "status::com_delete",
                 "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
                 "variables::hostname"));
-
 
         $data['mysql'] = $this->getServer();
 
@@ -361,18 +351,13 @@ class Server extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
         $data['variables'] = Extraction::display(array("variables::innodb_buffer_pool_size", "variables::innodb_additional_mem_pool_size",
                 "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
                 "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
                 "variables::sort_buffer_size", "variables::read_rnd_buffer_size", "variables::join_buffer_size", "variables::thread_stack",
                 "variables::binlog_cache_size", "variables::innodb_buffer_pool_chunk_size", "variables::innodb_buffer_pool_instances", "stats::memory_total", "databases::databases"));
 
-
         $data['database'] = Extraction::getSizeByEngine($data['variables']);
-
-
 
         $this->set('data', $data);
     }
@@ -388,10 +373,6 @@ class Server extends Controller
         $(function () {
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
-
-
-
-
 
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
                 "status::handler_read_next", "status::handler_read_key", "status::handler_read_prev"));
@@ -649,7 +630,6 @@ var myChart = new Chart(ctx, {
 
 ');
 
-
                 /*
                   Chart.defaults.global.responsive = true;
                   Chart.defaults.global.animation = false;
@@ -755,7 +735,6 @@ var myChart = new Chart(ctx, {
                     $server_main['mysql_server']['id_environment'] = $_POST['mysql_server'][$key]['id_environment'];
                     $server_main['mysql_server']['is_monitored']   = $_POST['mysql_server'][$key]['is_monitored'];
 
-
                     $ret = $db->sql_save($server_main);
 
                     if (!$ret) {
@@ -802,15 +781,11 @@ var myChart = new Chart(ctx, {
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
             .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
 
-
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
-
         $data['clients']      = $this->getClients();
         $data['environments'] = $this->getEnvironments();
-
-
 
         // tag
         $sql         = "SELECT * FROM tag order by name";
@@ -842,7 +817,6 @@ var myChart = new Chart(ctx, {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $sql = "SELECT * from client order by libelle";
         $res = $db->sql_query($sql);
 
@@ -867,7 +841,6 @@ var myChart = new Chart(ctx, {
         $sql = "SELECT * from environment order by libelle";
         $res = $db->sql_query($sql);
 
-
         $data['environment'] = array();
         while ($ob                  = $db->sql_fetch_object($res)) {
             $tmp            = [];
@@ -890,7 +863,6 @@ var myChart = new Chart(ctx, {
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
 // Qcache_hits / (Qcache_hits + Com_select )
     }
 
@@ -898,7 +870,6 @@ var myChart = new Chart(ctx, {
     {
 
         $this->di['js']->addJavascript(array('clipboard.min.js'));
-
 
         /**
          * @todo Add a new version code_javascript  => Once
@@ -909,20 +880,13 @@ var myChart = new Chart(ctx, {
           })();');
          */
 
-
-
-
-
         Crypt::$key       = CRYPT_KEY;
         $data['password'] = Crypt::decrypt($param[0]);
-
         $this->set('data', $data);
     }
 
     public function show($param)
     {
-
-
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
@@ -930,9 +894,7 @@ var myChart = new Chart(ctx, {
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $data['hostname'] = Extraction::display(array("variables::hostname"));
-
 
         foreach ($data['hostname'] as $id_mysql_server => $servers) {
             $server = $servers[''];
@@ -945,12 +907,9 @@ var myChart = new Chart(ctx, {
 
     public function box()
     {
-        $db = Sgbd::sql(DB_DEFAULT);
-
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * from mysql_server where is_available = 0;";
-
         $res = $db->sql_query($sql);
-
 
         $data = array();
 
@@ -1001,9 +960,7 @@ var myChart = new Chart(ctx, {
 
                     Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
-
                     set_flash("success", "Success", "Password updated !");
-
 
                     header("location: ".LINK.$this->getClass().'/settings');
                 } else {
@@ -1041,7 +998,6 @@ var myChart = new Chart(ctx, {
         $id_server = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
 

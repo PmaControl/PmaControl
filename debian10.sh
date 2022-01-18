@@ -149,5 +149,13 @@ EOF
 
 ./install -c /tmp/config.json
 
-echo "Login : admin"
+echo "Save these credentials"
+echo "#########################################################"
+echo "# Account MySQL
+echo "Login : pmacontrol"
 echo "Password : ${pwd_pmacontrol}"
+echo "#########################################################"
+echo "# Account SuperAdmin on PmaControl
+echo "Login : admin"
+echo "Password : ${pwd_admin}"
+echo "#########################################################"
