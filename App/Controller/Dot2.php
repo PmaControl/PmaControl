@@ -107,8 +107,6 @@ class Dot2 extends Controller
 
             foreach ($rosae as $connection => $slave) {
 
-
-
                 $id_master = Mysql::getIdFromDns($slave['master_host'].":".$slave['master_port']);
 
                 if ($id_master === false) {
