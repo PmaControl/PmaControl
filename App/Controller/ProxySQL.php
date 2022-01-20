@@ -83,22 +83,104 @@ class ProxySQL extends Controller
         if ($this->testProxySQLAdmin($param)) {
             $db = Sgbd::sql(DB_DEFAULT);
 
-            
             //add proxy => mysql_server
-
-            
-
             //add admin => mysql_server
-
-
-
             //add proxysql admin module
-            $table['proysql_main']['hostname'] = $param[0];
-            $table['proysql_main']['port']     = $param[1];
-            $table['proysql_main']['user']     = $param[2];
-            $table['proysql_main']['password'] = $param[3];
 
-            $ret = $db->sql_save($table);
+            $proxysql_admin                      = "tmp".uniqid();
+            $config[$proxysql_admin]['driver']   = "mysql";
+            $config[$proxysql_admin]['hostname'] = $param[0];
+            $config[$proxysql_admin]['port']     = $param[1];
+            $config[$proxysql_admin]['user']     = $param[2];
+            $config[$proxysql_admin]['password'] = $param[3];
+            $config[$proxysql_admin]['crypted']  = "0";
+            $config[$proxysql_admin]['database'] = "main";
+            Sgbd::setConfig($config);
+
+            $proxy_admin = Sgbd::sql($proxysql_admin);
+
+            $sql = "select * from runtime_global_variables where variable_name IN('admin-cluster_username','admin-cluster_password', 'mysql-interfaces',"
+                ."'mysql-monitor_username', 'mysql-monitor_password' );";
+
+            $res = $proxy_admin->sql_query($sql);
+
+            $variable = array();
+
+            while ($ob = $proxy_admin->sql_fetch_object($res)) {
+                $variable[$ob->variable_name] = $ob->variable_value;
+            }
+
+            print_r($variable);
+
+            // test if cluster proxySQL
+            $sql2 = "select * from runtime_proxysql_servers;";
+            $res2 = $proxy_admin->sql_query($sql2);
+
+            while ($arr = $proxy_admin->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                
+            }
+
+            $server_mysql = array();
+
+
+            $elems = explode (':',$variable['mysql-interfaces']);
+
+            $host = $elems[0];
+            $port = $elems[1];
+
+
+            if ($host === "0.0.0.0")
+            {
+                //same host we take the one of ProySQL Admin
+                $host = $config[$proxysql_admin]['hostname'];
+            }
+            else if ($host === "::1")
+            {
+                 $host = $config[$proxysql_admin]['hostname'];
+            }
+
+            $tmp                             = array();
+            $tmp['mysql_server']['hostname'] = $host;
+            $tmp['mysql_server']['port']     = $port;
+            $tmp['mysql_server']['login']    = $variable['mysql-monitor_username'];
+            $tmp['mysql_server']['password'] = $variable['mysql-monitor_password'];
+            $tmp['mysql_server']['type']     = "proxysql";
+
+
+            $server_mysql[$host.":".$port] = $tmp;
+
+
+            //get all mysql_server from ProxySQL Admin module
+            $sql3 = "select * from runtime_mysql_servers";
+            $res3 = $proxy_admin->sql_query($sql3);
+
+            while ($ob3 = $proxy_admin->sql_fetch_object($res3, MYSQLI_ASSOC)) {
+
+
+                $tmp                             = array();
+                $tmp['mysql_server']['hostname'] = $ob3->hostname;
+                $tmp['mysql_server']['port']     = $ob3->port;
+                $tmp['mysql_server']['login']    = $variable['mysql-monitor_username'];
+                $tmp['mysql_server']['password'] = $variable['mysql-monitor_password'];
+                $tmp['mysql_server']['type']     = "mysql";
+
+                $server_mysql[$ob3->hostname.":".$ob3->port] = $tmp;
+            }
+
+
+            print_r($server_mysql);
+
+
+            foreach($server_mysql as $server)
+            {
+
+                Mysql::testMySQL($server['hostname'] );
+                
+            }
+
+
+
+            //$ret = $db->sql_save($table);
 
             if ($ret) {
                 Debug::debug("ProxySQL Admin Module added", "[SUCCESS]");
