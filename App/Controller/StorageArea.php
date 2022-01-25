@@ -11,7 +11,12 @@ use \App\Library\Debug;
 use \App\Library\Post;
 use \Glial\Sgbd\Sgbd;
 
-
+/*
+ *
+ * Module de gestion des espaces de stockage
+ * 
+ *
+ */
 
 class StorageArea extends Controller {
 

@@ -7,7 +7,11 @@ use Glial\Synapse\Controller;
 use App\Library\Post;
 use \Glial\Sgbd\Sgbd;
 
-
+/*
+ * Module pour gérer les tag sur les equipements pour les régrouper
+ *
+ *
+ */
 class Tag extends Controller {
 
     function index($params) {

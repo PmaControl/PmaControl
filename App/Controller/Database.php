@@ -17,9 +17,9 @@ use Ramsey\Uuid\Uuid;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction;
+use \Glial\I18n\I18n;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
-
 
 class Database extends Controller
 {
@@ -35,8 +35,6 @@ class Database extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-
             if (!empty($_POST['database'][__FUNCTION__])) {
 
                 $compte       = array();
@@ -959,7 +957,6 @@ END;";
         $id_mysql_server_b = $param[2];
         $database_b        = $param[3];
 
-
         $db_a = Mysql::getDbLink($id_mysql_server_a);
         $db_b = Mysql::getDbLink($id_mysql_server_b);
 
@@ -972,13 +969,10 @@ END;";
         $db_a->sql_select_db($database_a);
         $db_b->sql_select_db($database_b);
 
-
         $objects = array("TABLE", "VIEW", "TRIGGER", "FUNCTION", "PROCEDURE", "EVENT");
 
         $result_a = array();
         $result_b = array();
-
-
 
         foreach ($objects as $object) {
             $data_a[$object]   = Mysql::getListObject($db_a, $database_a, $object);
@@ -990,11 +984,9 @@ END;";
             $data_a[$object] = array_flip($data_a[$object]);
             $data_b[$object] = array_flip($data_b[$object]);
 
-
             ksort($data_a[$object]);
             ksort($data_b[$object]);
         }
-
 
         $all_objects = array_merge_recursive($data_a, $data_b);
 
@@ -1036,10 +1028,8 @@ END;";
             }
         }
 
-
         $db_a->sql_select_db($db_name_a_ori);
         $db_b->sql_select_db($db_name_b_ori);
-
 
         return $data;
     }

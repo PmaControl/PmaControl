@@ -680,4 +680,22 @@ END IF;";
             return $error;
         }
     }
+
+    static function getMysqlById($param)
+    {
+        //need to save in case of multiple ask
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+
+        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $name = $ob->name;
+        }
+
+        $db = Sgbd::sql($name);
+
+        return $db;
+    }
 }
