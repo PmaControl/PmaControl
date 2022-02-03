@@ -2732,10 +2732,7 @@ var myChart = new Chart(ctx, {
     public function getPrimaryKey($table, $database)
     {
         $db = Sgbd::sql($this->link_to_purge);
-
-
-
-
+        
         if (empty($this->primary_key[$database][$table])) {
 
             $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` ='PRIMARY';";

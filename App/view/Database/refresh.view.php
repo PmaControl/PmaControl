@@ -12,7 +12,7 @@ use Glial\Html\Form\Form;
 
 
 
-<form action="<?= LINK ?>database/index" method="POST">
+<form action="<?= LINK ?>database/refresh" method="POST">
     <?= Form::input("database", "refresh", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
