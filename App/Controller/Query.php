@@ -126,9 +126,8 @@ SQL;
 
     public function setDefault($param)
     {
-
         $id_mysql_server = $param[0];
-        $fields = $this->getFielsWithoutDefault($id_mysql_server);
+        $fields          = $this->getFielsWithoutDefault($id_mysql_server);
 
         foreach ($fields as $field) {
 
@@ -136,8 +135,7 @@ SQL;
                 continue;
             }
             $default_value = $this->getDefaultValueByType($field->data_type);
-
-            $ret = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
+            $ret           = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
 
             //print_r($field);
             echo $ret."\n";

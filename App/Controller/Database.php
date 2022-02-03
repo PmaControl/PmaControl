@@ -16,8 +16,9 @@ use App\Library\System;
 use Ramsey\Uuid\Uuid;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
-use App\Library\Extraction;
+use \App\Library\Extraction;
 use \Glial\I18n\I18n;
+use \Glial\Cli\Table;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
@@ -27,7 +28,25 @@ class Database extends Controller
 
     public function index()
     {
-        
+
+        $data['menu']['TABLE']['name']  = __("Create database");
+        $data['menu']['TABLE']['icone'] = '<i class="fa fa-table"></i>';
+        $data['menu']['VIEW']['name']   = __("Rename database");
+        $data['menu']['VIEW']['icone']  = '<i class="fa fa-eye"></i>';
+
+        $data['menu']['TRIGGER']['name']  = __("Refresh database");
+        $data['menu']['TRIGGER']['icone'] = '<i class="fa fa-random"></i>';
+
+        $data['menu']['FUNCTION']['name']  = __("Compare database");
+        $data['menu']['FUNCTION']['icone'] = '<i class="fa fa-cog"></i>';
+
+        $data['menu']['PROCEDURE']['name']  = __("Analyze tables");
+        $data['menu']['PROCEDURE']['icone'] = '<i class="fa fa-cogs"></i>';
+
+        $data['menu']['EVENT']['name']  = __("Compare table");
+        $data['menu']['EVENT']['icone'] = '<i class="fa fa-calendar"></i>';
+
+        $this->set('data', $data);
     }
 
     public function create()
@@ -61,9 +80,8 @@ class Database extends Controller
                             $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                             $db_remote->sql_query($sql);
 
-
-                            //$sql = "set sql_log_bin =0;";
-                            //$db_remote->sql_query($sql);
+//$sql = "set sql_log_bin =0;";
+//$db_remote->sql_query($sql);
 
 
 
@@ -107,7 +125,7 @@ class Database extends Controller
             }
         }
 
-        //a déporté dans une librairy ?
+//a déporté dans une librairy ?
         $sql = "SELECT * FROM mysql_privilege ORDER BY `type`, `privilege`";
         $res = $db->sql_query($sql);
 
@@ -126,7 +144,7 @@ class Database extends Controller
 
 
 
-        //fin de la déportation
+//fin de la déportation
         $this->set('data', $data);
     }
 
@@ -146,9 +164,8 @@ class Database extends Controller
     public function refresh($param)
     {
 
-        //Debug::$debug = true;
+//Debug::$debug = true;
         Debug::parseDebug($param);
-
 
         $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
     data = $(this).val();
@@ -168,8 +185,6 @@ class Database extends Controller
                     $id_mysql_server__destination = $_POST['database']['id_mysql_server__target'];
                     $databases                    = implode(',', $_POST['database']['list']);
                     $path                         = $_POST['database']['path'];
-
-
 
                     $debug = "";
                     if (Debug::$debug === true) {
@@ -206,11 +221,7 @@ class Database extends Controller
         $path                    = $param[3];
         $uuid                    = $param[4];
 
-
-
-
         $directory = $path."/".uniqid();
-
 
         if (count($databases) > 1) {
 
@@ -221,22 +232,20 @@ class Database extends Controller
 
         $this->databaseDump(array($id_mysql_server__source, $database, $directory));
 
-        //shell_exec("cd ".$directory." && rename 's///g' ".);
+//shell_exec("cd ".$directory." && rename 's///g' ".);
 
         $metadata = file_get_contents($directory."/metadata");
 
         echo $metadata."\n";
 
-
-        //Mysql::set_db($db);
-        //$ob = Mysql::getServerInfo($id_mysql_server__source);
-        //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
-        //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
+//Mysql::set_db($db);
+//$ob = Mysql::getServerInfo($id_mysql_server__source);
+//echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
+//    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
 
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
         \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
-
 
         shell_exec("rm -rvf ".$directory);
     }
@@ -251,7 +260,6 @@ class Database extends Controller
     {
 
         Debug::parseDebug($param);
-
 
         $id_mysql_server = $param[0];
         $database        = $param[1];
@@ -289,7 +297,7 @@ class Database extends Controller
     /*
      *
      *
-     * example : 
+     * example :
      */
 
     public function databaseLoad($param)
@@ -306,7 +314,6 @@ class Database extends Controller
 
         $res = $db->sql_query($sql);
 
-
         while ($ar = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
@@ -317,7 +324,6 @@ class Database extends Controller
             $db_to_load = Sgbd::sql($ob->name);
 
             $password = Chiffrement::decrypt($ob->passwd);
-
 
             if ($databases != "ALL") {
 
@@ -390,7 +396,6 @@ class Database extends Controller
         $NEW_DB          = $param[2];
         $AP              = $param[3] ?? "";
 
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id=".$id_mysql_server;
@@ -400,7 +405,6 @@ class Database extends Controller
 
             $db2 = Sgbd::sql($ob->name);
 
-
             $db2->sql_select_db($OLD_DB);
 
             $res3 = $db2->sql_query("select DEFAULT_CHARACTER_SET_NAME from information_schema.SCHEMATA where SCHEMA_NAME= '".$OLD_DB."';");
@@ -409,7 +413,7 @@ class Database extends Controller
                 $db2->sql_query("CREATE DATABASE IF NOT EXISTS `".$NEW_DB."` DEFAULT CHARACTER SET ".$ob3->DEFAULT_CHARACTER_SET_NAME);
             }
 
-            // backup trigger view
+// backup trigger view
 
             $db2->sql_select_db($OLD_DB);
 
@@ -434,9 +438,9 @@ class Database extends Controller
             }
 
 
-            // VIEW
-            //get Orderby
-            // dependance des vues entre elles
+// VIEW
+//get Orderby
+// dependance des vues entre elles
 
             $sql20 = "SELECT  views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
 FROM information_schema.`TABLES` AS tab
@@ -447,7 +451,6 @@ SELECT views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
 FROM information_schema.`TABLES` AS tab
 INNER JOIN information_schema.VIEWS AS views
 ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW';";
-
 
 //            Debug::sql($sql20));
 
@@ -486,7 +489,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 }
                 $temp = $relations;
 
-                // retirer les tableaux vides, et remplissage avec clefs
+// retirer les tableaux vides, et remplissage avec clefs
                 foreach ($temp as $key => $tmp) {
                     if (count($tmp) == 0) {
                         unset($relations[$key]);
@@ -499,7 +502,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 if ($last == count($relations)) {
                     $cas_found = false;
 
-                    //cas de deux chemins differents pour arriver à la même table enfant
+//cas de deux chemins differents pour arriver à la même table enfant
                     $temp = $relations;
                     foreach ($temp as $key1 => $tab2) {
                         foreach ($tab2 as $key2 => $val) {
@@ -528,13 +531,11 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             Debug::debug($level);
 
-
-
             $sql9 = "select table_name
                 FROM information_schema.tables
                 where table_schema='".$OLD_DB."' AND TABLE_TYPE='VIEW';";
 
-  //          Debug::debug(SqlFormatter::format($sql9));
+//          Debug::debug(SqlFormatter::format($sql9));
 
             $res9  = $db2->sql_query($sql9);
             $views = array();
@@ -553,7 +554,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 $db2->sql_query($sql11);
             }
 
-            // backup functions
+// backup functions
 
             $functions = array();
 
@@ -576,7 +577,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
             }
 
 
-            //procedures
+//procedures
 
             $sql17 = "SHOW PROCEDURE STATUS WHERE db = '".$OLD_DB."';";
             $res17 = $db2->sql_query($sql17);
@@ -598,7 +599,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
 
 
-            // DÉPLACEMENT DES TABLES
+// DÉPLACEMENT DES TABLES
 
             $sql2 = "select table_name "
                 ."from information_schema.tables "
@@ -608,7 +609,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             $nb_renamed = 0;
             while ($ob2        = $db2->sql_fetch_object($res2)) {
-                //SET FOREIGN_KEY_CHECKS=0;
+//SET FOREIGN_KEY_CHECKS=0;
                 $sql3 = " RENAME TABLE `".$OLD_DB."`.`".$ob2->table_name."` TO `".$NEW_DB."`.`".$ob2->table_name."`;";
 
                 Debug::debug($sql3);
@@ -619,13 +620,12 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             $db2->sql_select_db($NEW_DB);
 
-
-            //Debug::debug($triggers);
+//Debug::debug($triggers);
 
 
             foreach ($functions as $function) {
                 $sql16 = $function;
-                //Debug::debug(SqlFormatter::format($sql16));
+//Debug::debug(SqlFormatter::format($sql16));
                 $db2->sql_multi_query($sql16);
             }
 
@@ -643,27 +643,26 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             foreach ($views as $view) {
                 $sql12 = $view;
-                //Debug::debug($sql12);
+//Debug::debug($sql12);
                 $db2->sql_query($sql12);
             }
 
             foreach ($procedures as $procedure) {
                 $sql19 = $procedure;
-                //Debug::debug($sql19);
+//Debug::debug($sql19);
                 $db2->sql_multi_query($sql19);
             }
 
 
             foreach ($triggers as $trigger) {
                 $sql7 = $trigger;
-                //Debug::debug($sql7);
+//Debug::debug($sql7);
                 $db2->sql_multi_query($sql7);
             }
 
 
 
             $grants = $this->getChangeGrant($db2, $OLD_DB, $NEW_DB);
-
 
             foreach ($grants as $grant) {
                 if (!empty($AP)) {
@@ -675,7 +674,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
 
 
-            // DROP DATABASE IF NO OBJECT
+// DROP DATABASE IF NO OBJECT
             $sql4 = "select count(1) as cpt from information_schema.tables where table_schema='".$OLD_DB."';";
             $res4 = $db2->sql_query($sql4);
 
@@ -764,38 +763,29 @@ END;";
         $databases               = explode(",", $param[2]);
         $path                    = $param[3];
 
-
-
         $uuid = Uuid::uuid4()->toString();
 
         $log       = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.log';
         $log_error = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.error.log';
 
-
         $php = explode(" ", shell_exec("whereis php"))[1];
-
 
         $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '"
             .implode(",", $databases)."' '".$path."' ".$uuid." --debug > ".$log." 2> ".$log_error." & echo $!";
 
         Debug::debug($cmd);
 
-
         $pid = trim(shell_exec($cmd));
 
         Debug::debug($pid, "PID");
 
-
-
         \Glial\Synapse\FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
         \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
 
-
-        //unlink($cmd_file);
+//unlink($cmd_file);
 
         if (!System::isRunningPid($pid)) {
             Debug::debug($pid, "The refresh failed");
-
 
             if (file_exists($log)) {
                 Debug::debug(file_get_contents($log), "Debug");
@@ -820,13 +810,17 @@ END;";
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             if (!empty($_POST['database'][__FUNCTION__])) {
-
-
-
-                $this->updateStats($param);
+                $this->updateStats(array($_POST['analyze']['id_mysql_server'], implode(',', $_POST['analyze']['database'])));
             }
         }
     }
+    /*
+     *
+     * UPDATE STATISTICS
+     * ANALYZE TABLE `TABLE_SCHEMA`.`TABLE_NAME`;
+     *
+     *
+     */
 
     public function updateStats($param)
     {
@@ -837,25 +831,66 @@ END;";
         $db              = Sgbd::sql(DB_DEFAULT);
         $remote          = Mysql::getDbLink($id_mysql_server);
 
-        //au cas ou une connexion est deja ouverte avec un autre database (pour prevenir un probleme de conflit avec pmacontrol)
+//au cas ou une connexion est deja ouverte avec un autre database (pour prevenir un probleme de conflit avec pmacontrol)
         $res = $remote->sql_query("select database() as db");
         while ($ob  = $remote->sql_fetch_object($res)) {
             $init_db = $ob->db;
         }
+
         $databases = explode(',', $all_dbs);
 
+        if ($all_dbs === "all" || $all_dbs === "ALL") {
+            $sql = "SHOW DATABASES;";
+            $res = $remote->sql_query($sql);
+
+            $all_dbs = array();
+
+            while ($ob = $remote->sql_fetch_object($res)) {
+
+                if (in_array($ob->Database, array('information_schema', 'mysql', 'performance_schema'))) {
+                    continue;
+                }
+                $all_dbs[] = $ob->Database;
+            }
+            $databases = $all_dbs;
+        }
+
+        Debug::debug($databases);
+
+        $sqls = array();
         foreach ($databases as $database) {
             $remote->sql_select_db($database);
             $tables = $remote->getListTable()['table'];
 
             foreach ($tables as $table) {
-
-                $sql = "ANALYZE TABLE `".$database."`.`".$table."`;";
+                $sql    = "ANALYZE TABLE `".$database."`.`".$table."`;";
+                $sqls[] = "<li>".$sql."</li>";
                 Debug::debug($sql);
-                $remote->sql_query($sql);
+                $res    = $remote->sql_query($sql);
+
+                while ($arr = $remote->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    if ($arr['Msg_text'] !== "OK" && $arr['Msg_text'] !== "Table is already up to date") {
+
+                        $sqls[] = "<li>".$sql."</li>";
+                        Debug::debug($arr['Msg_text'], "ERROR");
+//exit(1);
+                    }
+                }
             }
         }
         $remote->sql_select_db($init_db);
+
+        if (IS_CLI === false) {
+
+            $extra = "<ul>";
+            $extra .= implode('', $sqls);
+            $extra .= "</ul>";
+
+            $msg   = I18n::getTranslation(__("Analyze made :").$extra);
+            $title = I18n::getTranslation(__("Success"));
+            set_flash("success", $title, $msg);
+            header('location:'.LINK.'database/index');
+        }
     }
 
     public function compare($param)
@@ -894,8 +929,8 @@ END;";
                 .'/compare_main:'.'database__compare:'.$db2
             );
         }
-        //134217728
-        //375394272
+//134217728
+//375394272
 
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
@@ -939,9 +974,9 @@ END;";
 
                 $data['display'] = true;
 
-                //log
-                //$this->di['log']->warning('[Compare] '.$_GET['compare_main']['id_mysql_server__original'].":".$_GET['compare_main']['database__original']." vs ".
-                //    $_GET['compare_main']['id_mysql_server__compare'].":".$_GET['compare_main']['database__compare']."(".$_SERVER["REMOTE_ADDR"].")");
+//log
+//$this->di['log']->warning('[Compare] '.$_GET['compare_main']['id_mysql_server__original'].":".$_GET['compare_main']['database__original']." vs ".
+//    $_GET['compare_main']['id_mysql_server__compare'].":".$_GET['compare_main']['database__compare']."(".$_SERVER["REMOTE_ADDR"].")");
             }
         }
 
@@ -990,32 +1025,29 @@ END;";
 
         $all_objects = array_merge_recursive($data_a, $data_b);
 
-
         $data = array();
 
         foreach ($all_objects as $type_object => $elems) {
             foreach ($elems as $elem => $order) {
 
-                //remplir à vide si jamais un élément s n'est pas définis d'un coté ou de l'autre
+//remplir à vide si jamais un élément s n'est pas définis d'un coté ou de l'autre
                 $result_a[$type_object][$elem] = $result_a[$type_object][$elem] ?? "";
                 $result_b[$type_object][$elem] = $result_b[$type_object][$elem] ?? "";
 
-                //on transforme les retour chariot windows en retour chariot linux
+//on transforme les retour chariot windows en retour chariot linux
                 $res_a = str_replace("\r\n", "\n", $result_a[$type_object][$elem]);
                 $res_b = str_replace("\r\n", "\n", $result_b[$type_object][$elem]);
 
-                //pour retirer les commentaires SQL dans les function et les procedure
+//pour retirer les commentaires SQL dans les function et les procedure
                 if (in_array($type_object, array('FUNCTION', 'PROCEDURE'))) {
                     $res_a = preg_replace('/(--[^\r\n]*)|(\#[^\r\n]*)|(\/\*[\w\W]*?(?=\*\/)\*\/)/ms', '', $res_a);
                     $res_b = preg_replace('/(--[^\r\n]*)|(\#[^\r\n]*)|(\/\*[\w\W]*?(?=\*\/)\*\/)/ms', '', $res_b);
                 }
 
-                //et on convertit en utf8, car on peu avoir des caractère accentuer en latin1 qui vont faire crasher le diff
-                //$res_a = utf8_encode($res_a);
-                //$res_b = utf8_encode($res_b);
-                
-                
-                // On met en forme les vue pour faire apparaitre les differences (sur plusieurs lignes au lieu d'une seule)
+//et on convertit en utf8, car on peu avoir des caractère accentuer en latin1 qui vont faire crasher le diff
+//$res_a = utf8_encode($res_a);
+//$res_b = utf8_encode($res_b);
+// On met en forme les vue pour faire apparaitre les differences (sur plusieurs lignes au lieu d'une seule)
                 if ($type_object === 'VIEW') {
                     $res_a = \SqlFormatter::format($res_a, false);
                     $res_b = \SqlFormatter::format($res_b, false);
@@ -1127,30 +1159,399 @@ END;";
         $this->set("data", $data);
         return $data;
     }
-    
+
     function show($param)
     {
-        
+
         Debug::parseDebug($param);
-        
 
         $data['database'] = Extraction::display(array("databases::databases"));
-        
-        
+
         $this->set("data", $data);
     }
 
     function size($param)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
         $res = $db->sql_query("SELECT * FROM database_size order by `min`;");
 
         $data['color'] = array();
-        while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC))
-        {
+        while ($ob            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['color'][] = $ob;
         }
 
         $this->set("data", $data);
+    }
+
+    function data($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $redirect = false;
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
+            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
+            $db1        = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
+            $db2        = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
+
+            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
+
+            if ($out !== true) {
+                $extra = "";
+
+                foreach ($out as $msg) {
+                    $extra .= "<br />".__($msg);
+                }
+
+                $msg   = I18n::getTranslation(__("Please correct your paramaters !").$extra);
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+
+                $redirect = true;
+            }
+
+            header('location: '.LINK.'database/compare/compare_main:id_mysql_server__original:'.$id_server1
+                .'/compare_main:'.'id_mysql_server__compare:'.$id_server2
+                .'/compare_main:'.'database__original:'.$db1
+                .'/compare_main:'.'database__compare:'.$db2
+            );
+        }
+//134217728
+//375394272
+
+
+        $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
+            "jquery.autocomplete.min.js", "bootstrap-select.min.js", "database/data.js"));
+
+        $sql     = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
+        $servers = $db->sql_fetch_yield($sql);
+
+        $data['server'] = [];
+        foreach ($servers as $server) {
+            $tmp              = [];
+            $tmp['id']        = $server['id'];
+            $tmp['libelle']   = str_replace('_', '-', $server['name'])." (".$server['ip'].")";
+            $data['server'][] = $tmp;
+        }
+
+        $data['listdb1'] = array();
+        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
+            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+            $data['listdb1'] = $select1['databases'];
+        }
+
+        $data['listdb2'] = array();
+        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
+            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+            $data['listdb2'] = $select1['databases'];
+        }
+
+
+        $data['display'] = false;
+
+        if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
+            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+
+                $id_mysql_server_a = $_GET['compare_main']['id_mysql_server__original'];
+                $database_a        = $_GET['compare_main']['database__original'];
+                $id_mysql_server_b = $_GET['compare_main']['id_mysql_server__compare'];
+                $database_b        = $_GET['compare_main']['database__compare'];
+
+                $data['resultat'] = $this->analyse(array($id_mysql_server_a, $database_a, $id_mysql_server_b, $database_b));
+
+                $data['display'] = true;
+
+//log
+//$this->di['log']->warning('[Compare] '.$_GET['compare_main']['id_mysql_server__original'].":".$_GET['compare_main']['database__original']." vs ".
+//    $_GET['compare_main']['id_mysql_server__compare'].":".$_GET['compare_main']['database__compare']."(".$_SERVER["REMOTE_ADDR"].")");
+            }
+        }
+
+        $this->set('data', $data);
+    }
+
+    public function dataCompate($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server__ori = $param[0];
+        $database__ori        = $param[1];
+        $table__ori           = $param[2];
+        $id_mysql_server__cmp = $param[3];
+        $database__cmp        = $param[4];
+        $table__cmp           = $param[5];
+
+        $db = Mysql::getDbLink($id_mysql_server__ori);
+
+        $table1 = $this->getTableInfo(array($id_mysql_server__ori, $database__ori, $table__ori));
+        $table2 = $this->getTableInfo(array($id_mysql_server__cmp, $database__cmp, $table__cmp));
+
+        $ret = array();
+
+        $ret['count_table_1'] = $table1['count'];
+        $ret['count_table_2'] = $table2['count'];
+
+        // data identique des 2 coté !
+        $sql = "SELECT COUNT(1) as cpt FROM `".$database__ori."`.`".$table__ori."` a
+                INNER JOIN `".$database__cmp."`.`".$table__cmp."` b ON ";
+
+        $sql .= " 1=1 ";
+
+        foreach ($table1['column_name'] as $column_name) {
+            $sql .= " AND a.`".$column_name."` = b.`".$column_name."`";
+        }
+        $sql .= ";\n";
+        //Debug::sql($sql);
+        $res = $db->sql_query($sql);
+        while ($ob  = $db->sql_fetch_object($res)) {
+            $ret['identical'] = $ob->cpt;
+        }
+
+        //
+        $sql2 = "SELECT count(1) as cpt from `".$database__ori."`.`".$table__ori."` a
+LEFT JOIN `".$database__cmp."`.`".$table__cmp."` b ON 1=1";
+
+        Debug::debug($table1['primary_key'], "pk");
+
+        foreach ($table1['primary_key'] as $pk) {
+
+            $primary_key = $pk;
+            $sql2        .= " AND a.`".$pk."` = b.`".$pk."`";
+        }
+
+        $sql2 .= " WHERE b.`".$primary_key."` IS NULL;";
+
+        $res2 = $db->sql_query($sql2);
+        while ($ob2  = $db->sql_fetch_object($res2)) {
+            $ret['only in table 1'] = $ob2->cpt;
+        }
+
+        Debug::sql($sql2);
+        //
+        $sql3 = "SELECT count(1) as cpt from `".$database__cmp."`.`".$table__cmp."` b
+LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
+
+        foreach ($table1['primary_key'] as $pk) {
+
+            $primary_key = $pk;
+            $sql3        .= " AND a.`".$pk."` = b.`".$pk."`";
+        }
+
+        $sql3 .= " WHERE a.`".$primary_key."` IS NULL;";
+
+        $res3 = $db->sql_query($sql3);
+        while ($ob3  = $db->sql_fetch_object($res3)) {
+            $ret['only in table 2'] = $ob3->cpt;
+        }
+
+        //Debug::sql($sql3);
+        //line missing
+        $sql4 = "WITH pk as (SELECT * from  (
+            SELECT a.`".implode("`,a.`", $table1['primary_key'])."`, 'a' as `from` FROM `".$database__ori."`.`".$table__ori."` a
+                UNION ALL
+            SELECT b.`".implode("`,b.`", $table1['primary_key'])."`, 'b' as `from` FROM `".$database__cmp."`.`".$table__cmp."` b
+                ) z
+                GROUP BY ".implode(",", $table1['primary_key'])." HAVING count(1) = 1)
+                  SELECT d.*, '1' as `from` FROM pk c
+                  INNER JOIN `".$database__cmp."`.`".$table__cmp."` d ON 1=1";
+
+        foreach ($table1['primary_key'] as $pk) {
+
+            $primary_key = $pk;
+            $sql4        .= " AND c.`".$pk."` = d.`".$pk."`";
+        }
+
+        $sql4 .= "   UNION ALL
+                  SELECT e.*, '2' as `from` FROM pk c INNER JOIN `".$database__ori."`.`".$table__ori."` e ON 1=1";
+        foreach ($table1['primary_key'] as $pk) {
+
+            $primary_key = $pk;
+            $sql4        .= " AND c.`".$pk."` = e.`".$pk."`";
+        }
+
+        $sql4 .= ";";
+
+        //Debug::sql($sql4);
+
+        $table = new Table(2);
+        $table->addHeader(array_merge($table1['column_name'], array("from")));
+
+        $res4 = $db->sql_query($sql4);
+
+        $ret['line_missing'] = array();
+        while ($arr4                = $db->sql_fetch_array($res4, MYSQLI_ASSOC)) {
+
+            $table->addLine($arr4);
+            //$ret['line_missing'][] = $arr4;
+        }
+
+
+        // data differents
+
+        $sql5 = "WITH `all` as (SELECT a.`".implode("`,a.`", $table1['primary_key'])."` FROM `".$database__ori."`.`".$table__ori."` a
+                INNER JOIN `".$database__cmp."`.`".$table__cmp."` b ON ";
+
+        $sql5 .= " 1=1 ";
+
+        foreach ($table1['primary_key'] as $pk) {
+            $sql5 .= " AND a.`".$pk."` = b.`".$pk."`";
+        }
+
+        $sql5 .= " WHERE ";
+
+        $tmp5 = array();
+        foreach ($table1['column_name'] as $column_name) {
+
+            //on retire les champs de la PK
+            if (in_array($column_name, $table1['primary_key'])) {
+                continue;
+            }
+
+            $tmp5[] = " a.`".$column_name."` !=  b.`".$column_name."`";
+        }
+
+        $sql5 .= implode(" OR ", $tmp5);
+
+        $sql5 .= ")
+        SELECT y.*,z.* FROM `all` as x
+        INNER JOIN `".$database__ori."`.`".$table__ori."` y ON 1=1";
+        foreach ($table1['primary_key'] as $pk) {
+            $primary_key = $pk;
+            $sql5        .= " AND x.`".$pk."` = y.`".$pk."`";
+        }
+        $sql5 .= "\nINNER JOIN `".$database__cmp."`.`".$table__cmp."` z ON 1=1";
+        foreach ($table1['primary_key'] as $pk) {
+            $primary_key = $pk;
+            $sql5        .= " AND x.`".$pk."` = z.`".$pk."`";
+        }
+
+
+        Debug::sql($sql5);
+
+        $middle = count($table1['column_name']) / 2;
+
+        $key_pos = array_flip($table1['column_name']);
+
+        foreach ($table1['primary_key'] as $pk) {
+            if (!empty($key_pos[$pk])) {
+            
+                
+            } else {
+                echo "Impossible to find PK";
+                exit;
+            }
+        }
+
+
+
+        Debug::debug($gggg, "PKKKKKKKKKKKKKKKKKKKK");
+
+        $res5 = $db->sql_query($sql5);
+        while ($arr5 = $db->sql_fetch_array($res5, MYSQLI_NUM)) {
+
+
+
+            for ($i = 0; $i <= $middle; $i++) {
+                if ($arr5[$i] !== $arr5[($i + $middle)]) {
+
+                }
+            }
+
+            //$ret['diff'][] = $ob5;
+        }
+
+
+
+
+
+        //echo $table->display();
+        Debug::debug($ret
+        );
+    }
+
+    public function getTableInfo($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+        $table           = $param[2];
+
+        $ret['table_schema'] = $database;
+        $ret['table_name']   = $table;
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT COUNT(*) as cpt FROM information_schema.tables WHERE table_schema = '".$database."' AND table_name = '".$table."';
+            ";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->cpt !== "1") {
+                Debug::debug($ob->cpt, '[ERROR] : Should be equal to 1, found table :');
+                return false;
+            }
+        }
+
+        $sql2 = "SELECT COLUMN_NAME as column_name FROM INFORMATION_SCHEMA.COLUMNS "
+            ."WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."' ORDER BY ORDINAL_POSITION;
+            ";
+        $res2 = $db->sql_query($sql2);
+
+        while ($ob2 = $db->sql_fetch_object($res2)) {
+            $ret['column_name'][] = $ob2->column_name;
+        }
+
+        $ret['primary_key'] = $this->getPrimaryKey($param);
+
+        $ret['number_fields'] = count($ret['column_name']);
+
+        $sql3 = "SELECT count(1) as cpt from `".$database."`.`".$table."`;
+            ";
+        $res3 = $db->sql_query($sql3);
+        while ($ob3  = $db->sql_fetch_object($res3)) {
+            $ret['count'] = $ob3->cpt;
+        }
+
+
+
+        Debug::debug($ret, "[TABLE]");
+
+        return $ret;
+    }
+
+    public function getPrimaryKey(
+        $param)
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+        $table           = $param[2];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` = 'PRIMARY';";
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) == "0") {
+            return false;
+            //throw new \Exception("DATA-COPARE-067 : this table '".$table."' haven't primary key !");
+        } else {
+
+            $primary_key = array();
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $primary_key[] = $arr['Column_name'];
+            }
+        }
+
+        return $primary_key;
     }
 }
