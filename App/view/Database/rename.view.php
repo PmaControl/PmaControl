@@ -9,7 +9,7 @@ use Glial\Html\Form\Form;
 
 ?>
 
-<form action="" method="POST">
+<form action="<?= LINK ?>database/rename" method="POST">
     <?= Form::input("database", "rename", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
@@ -27,7 +27,6 @@ use Glial\Html\Form\Form;
 
                     echo '</div><div class="col-md-3">';
 
-
                     echo __("Database")."<br />";
                     $data['listdb1'] = array();
 
@@ -38,10 +37,7 @@ use Glial\Html\Form\Form;
                     echo __('Rename database to');
                     echo Form::input("rename", "new_name", array("class" => "form-control"));
 
-
                     echo '</div><div class="col-md-3">';
-
-
                     echo '<div class="form-group"><br />
     <div class="checkbox checbox-switch switch-success">
         <label>
@@ -54,10 +50,7 @@ use Glial\Html\Form\Form;
                     ?>
                 </div>
             </div>
-
-
             <br />
-
             <button type="submit" class="btn btn-primary">Go</button>
         </div>
     </div>

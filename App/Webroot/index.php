@@ -40,11 +40,7 @@ try {
       set_error_handler("exception_error_handler");
      */
 
-
     define("TIME_START", microtime(true));
-
-
-    
 
 //Use the DS to separate the directories in other defines
     define('DS', DIRECTORY_SEPARATOR);
@@ -85,7 +81,6 @@ try {
 //The absolute path to the webroot directory.
     define('WEBROOT_DIR', basename(dirname(__FILE__)).DS);
 
-
     if (!IS_CLI) {
         require(CONFIG."webroot.config.php");
         define('IMG', WWW_ROOT."image".DS);
@@ -95,10 +90,7 @@ try {
         define('JS', WWW_ROOT."js".DS);
     }
 
-
     define('GLIAL_INDEX', __FILE__);
-
-
 
     if (isset($_GET['glial_path']) && strpos($_GET['glial_path'], 'favicon.ico')) {
         //case where navigator ask favicon.ico even if it's not set in your html

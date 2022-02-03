@@ -4,54 +4,6 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
-/*
-  function formatVersion($version)
-  {
-  if (strpos($version, "-")) {
-  $number = explode("-", $version)[0];
-  $fork   = explode("-", $version)[1];
-  } else {
-  $number = $version;
-  }
-
-  switch (strtolower($fork)) {
-  case 'mariadb':
-  $name = '<span class="geek">&#xF130;</span> MariaDB';
-  break;
-
-  case 'percona':
-  $name = 'percona';
-  break;
-
-  default:
-  $name = '<span class="geek">&#xF137;</span> MySQL';
-  }
-
-  return $name." ".$number;
-  }
-
-  function format_ping($microtime, $precision = 2)
-  {
-  $units = array('ms', 's');
-
-  $microtime = $microtime * 1000;
-
-  if ($microtime > 1000) {
-  $microtime = $microtime / 1000;
-  $pow       = 1;
-  } else {
-  $pow = 0;
-  }
-
-  // Uncomment one of the following alternatives
-  // $bytes /= pow(1024, $pow);
-  // $bytes /= (1 << (10 * $pow));
-
-
-  return round($microtime, $precision).' '.$units[$pow];
-  }
- */
-
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -106,6 +58,7 @@ echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
 echo '<th>'."general_log".'</th>';
+echo '<th>'."P_S".'</th>';
 echo '<th>'.__("Date refresh").'</th>';
 echo '<th>'.__("Ping").'</th>';
 
@@ -124,13 +77,12 @@ if (!empty($data['servers'])) {
 
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
-        if (empty($server['is_available']) && $server['is_monitored'] === "1") {
-           $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+        if (empty($server['is_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+            $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
         }
 
         // cas des warning
-        if ($server['is_available'] == -1 && $server['is_monitored'] === "1") {
-
+        if ($server['is_available'] == -1 && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
         }
@@ -141,7 +93,7 @@ if (!empty($data['servers'])) {
         }
 
         // serveur non monitoré
-        if (empty($server['is_monitored'])) {
+        if (empty($server['is_monitored']) || empty($server['client_monitored'])) {
             $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
         }
 
@@ -149,7 +101,7 @@ if (!empty($data['servers'])) {
 
         if (!empty($style)) {
             $alternate = '';
-            $style .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
+            $style     .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
         }
 
         echo '<tr class="'.$alternate.'">';
@@ -187,12 +139,18 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
+	$is_proxysql = (empty($data['extra'][$server['id']]['']['is_proxysql']))?0:$data['extra'][$server['id']]['']['is_proxysql']; 
+
         if (!empty($data['extra'][$server['id']]['']['version'])) {
-            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment']);
+            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment'], $is_proxysql);
         }
 
-        echo '</td>';
+        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
+            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
+        }
 
+
+        echo '</td>';
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['general_log'])) {
@@ -207,13 +165,13 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
 
 
 
-                        echo Form::input("check", "all", $computed);
-                        ?>
+            echo Form::input("check", "all", $computed);
+            ?>
                         <span></span>
                     </label>
                 </div>
@@ -224,6 +182,11 @@ if (!empty($data['servers'])) {
 
         echo '</td>';
 
+
+
+        echo '<td style="'.$style.'">';
+        echo $data['extra'][$server['id']]['']['performance_schema'];
+        echo '</td>';
         echo '<td style="'.$style.'">';
 
         if (!empty($server['is_available'])) {
@@ -276,6 +239,10 @@ if (!empty($data['servers'])) {
         } else {
             echo str_replace("\n", '<br>', trim($server['error']));
 
+
+
+
+
             if (!empty(trim($server['error']))) {
                 if (!empty($data['last_date'][$server['id']]['date'])) {
                     echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
@@ -302,6 +269,11 @@ if (!empty($data['servers'])) {
         $h = ($subTime / (60 * 60)) % 24;
         $m = ($subTime / 60) % 60;
 
+        if (!empty($data['processing'][$server['id']])) {
+            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds").'</span>';
+        }
+
+
         if ($d >= 1) {
             echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
         } else if ($subTime < 60) {
@@ -312,16 +284,15 @@ if (!empty($data['servers'])) {
             echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
-        
-        echo ' <span data-clipboard-text="cd '.ROOT.' && ./glial Aspirateur tryMysqlConnection '.$server['name'].' '.$server['id'].'" onclick="return false;" class="copy-button clipboard label label-info" style="cursor:pointer;" title="'.__('Debug in SSH').'">'
-                .__('Debug').'</span>';
-        
-
+        if ($server['is_available'] == -1) {
+            echo '&nbsp;'.$server['warning'];
+            echo '&nbsp;<span class="label label-warning" style="cursor:pointer;" title="'.__('Kill').'">'        .__('Kill').'</span>';
+        }
 
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';

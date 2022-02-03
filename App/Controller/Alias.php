@@ -56,7 +56,7 @@ class Alias extends Controller
                 $list_host[] = $master['master_host'];
             }
         }
-
+        
         //Debug::debug($host);
         Debug::debug($list_host);
 
@@ -110,4 +110,5 @@ class Alias extends Controller
             header("location: ".LINK."alias/index");
         }
     }
+    
 }

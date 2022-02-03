@@ -54,13 +54,13 @@ class Mysqlsys extends Controller {
             if (!empty($link_name)) {
 
                 $remote = Sgbd::sql($link_name);
-                $sql = "select table_name from information_schema.tables "
+                $sql = "select TABLE_NAME from information_schema.tables "
                         . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
                 $res = $remote->sql_query($sql);
                 $data['view_available'] = [];
                 while ($ob = $remote->sql_fetch_object($res)) {
                     //$data['view_available'][] = str_replace('x$','',$ob->table_name);
-                    $data['view_available'][] = $ob->table_name;
+                    $data['view_available'][] = $ob->TABLE_NAME;
                 }
 
                 //test if InnoDB activated
@@ -83,8 +83,7 @@ class Mysqlsys extends Controller {
 //$remote->sql_query($sql);
 //fin patch
 
-
-                    $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                    $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 2000";
                     $data['table'] = $remote->sql_fetch_yield($sql);
                     $data['name_table'] = $_GET['mysqlsys'];
                 }

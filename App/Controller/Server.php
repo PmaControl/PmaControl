@@ -11,33 +11,33 @@ use \App\Library\Mysql;
 use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
 
-class Server extends Controller {
+class Server extends Controller
+{
 
     use \App\Library\Filter;
-
     var $clip = 0;
 
 //dba_source
-    public function hardware() {
-        $db = Sgbd::sql(DB_DEFAULT);
-        $this->title = __("Hardware");
-        $this->ariane = " > " . $this->title;
+    public function hardware()
+    {
+        $db           = Sgbd::sql(DB_DEFAULT);
+        $this->title  = __("Hardware");
+        $this->ariane = " > ".$this->title;
 
         $data['hardware'] = Extraction::display(array("hardware::cpu_thread_count",
-                    "hardware::cpu_frequency",
-                    "hardware::memory",
-                    "hardware::distributor",
-                    "hardware::os",
-                    "hardware::codename",
-                    "hardware::product_name",
-                    "hardware::arch",
-                    "hardware::kernel",
-                    "hardware::hostname",
-                    "hardware::swapiness"
+                "hardware::cpu_frequency",
+                "hardware::memory",
+                "hardware::distributor",
+                "hardware::os",
+                "hardware::codename",
+                "hardware::product_name",
+                "hardware::arch",
+                "hardware::kernel",
+                "hardware::hostname",
+                "hardware::swapiness"
         ));
 
         $id_mysql_servers = array_keys($data['hardware']);
-
 
         if (!empty($id_mysql_servers)) {
 
@@ -47,8 +47,8 @@ class Server extends Controller {
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
-         WHERE 1 " . self::getFilter() . "
-             AND a.id in (" . implode(",", $id_mysql_servers) . ")
+         WHERE 1 ".self::getFilter()."
+             AND a.id in (".implode(",", $id_mysql_servers).")
          order by `name`;";
 
 //echo SqlFormatter::format($sql);
@@ -62,10 +62,10 @@ class Server extends Controller {
         $this->set('data', $data);
     }
 
-    public function before($param) {
+    public function before($param)
+    {
         
     }
-
     /*
 
       public function listing($param)
@@ -195,74 +195,68 @@ class Server extends Controller {
       /*
      */
 
-    public function main() {
+    public function main()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         //$this->title  = __("Dashboard");
-        $this->ariane = " > " . $this->title;
+        $this->ariane = " > ".$this->title;
 
-
-        $this->di['js']->addJavascript(array('clipboard.min.js', 'Server/main.js'));
+        $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
 
         $this->di['js']->code_javascript('(function() {
             new Clipboard(".copy-button");
         })();');
 
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`
+        $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
             FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE 1 " . self::getFilter() . "
-                 ORDER by a.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
+                 WHERE 1 ".self::getFilter()."
+                 ORDER by a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
 
         $res = $db->sql_query($sql);
 
-
         $servers = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr;
-            $servers[] = $arr['id'];
+            $servers[]         = $arr['id'];
         }
 
 //debug($servers);
 
 
-        $data['extra'] = Extraction::display(array("version","version_comment", "hostname", "server::ping", "general_log"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema"));
 
-
-
-
-        $sql = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
-        $res = $db->sql_query($sql);
+        $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
+        $res               = $db->sql_query($sql);
         $data['last_date'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['last_date'][$arr['id_mysql_server']] = $arr;
         }
 
 
         // get Tag
-        $sql = "SELECT * FROM link__mysql_server__tag a 
+        $sql          = "SELECT * FROM link__mysql_server__tag a
             INNER JOIN tag b ON b.id =a.id_tag";
-        $res = $db->sql_query($sql);
+        $res          = $db->sql_query($sql);
         $data['tags'] = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['tag'][$arr['id_mysql_server']][] = $arr;
         }
 
 
         //debug($data['tag']);
 
+        $data['processing'] = $this->getDaemonRunning(array());
 
         $this->set('data', $data);
     }
 
-    public function database() {
+    public function database()
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
-
 
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
 			GROUP_CONCAT('',b.name) as dbs,
@@ -277,25 +271,23 @@ class Server extends Controller {
 			GROUP_CONCAT('',b.rows) as `rows`
 			FROM mysql_server a
 			INNER JOIN mysql_database b ON b.id_mysql_server = a.id
-                        " . $this->getFilter() . "
+                        ".$this->getFilter()."
 			GROUP BY a.id";
 
         $data['servers'] = $db->sql_fetch_yield($sql);
         $this->set('data', $data);
     }
 
-    public function statistics() {
+    public function statistics()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
-
-
 
 //echo \SqlFormatter::format($sql);
 
 
         $data['servers'] = Extraction::display(array("status::com_select", "status::com_update", "status::com_insert", "status::com_delete",
-                    "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
-                    "variables::hostname"));
-
+                "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
+                "variables::hostname"));
 
         $data['mysql'] = $this->getServer();
 
@@ -311,14 +303,16 @@ class Server extends Controller {
         $this->set('data', $data);
     }
 
-    public function logs() {
+    public function logs()
+    {
 //used with recursive
     }
 
-    private function buildQuery($fields) {
+    private function buildQuery($fields)
+    {
         $sql = 'select a.ip, a.port, a.id, a.name,';
 
-        $i = 0;
+        $i   = 0;
         $tmp = [];
         foreach ($fields as $field) {
             $tmp[] = " c$i.value as $field";
@@ -330,19 +324,19 @@ class Server extends Controller {
         $sql .= " INNER JOIN status_max_date b ON a.id = b.id_mysql_server ";
 
         $tmp = [];
-        $i = 0;
+        $i   = 0;
         foreach ($fields as $field) {
             $sql .= " LEFT JOIN status_value_int c$i ON c$i.id_mysql_server = a.id AND b.date = c$i.date";
             $sql .= " LEFT JOIN status_name d$i ON d$i.id = c$i.id_status_name ";
             $i++;
         }
 
-        $sql .= " WHERE 1 " . $this->getFilter() . "";
+        $sql .= " WHERE 1 ".$this->getFilter()."";
 
         $tmp = [];
-        $i = 0;
+        $i   = 0;
         foreach ($fields as $field) {
-            $sql .= " AND d$i.name = '" . $field . "'  ";
+            $sql .= " AND d$i.name = '".$field."'  ";
             $i++;
         }
 
@@ -350,31 +344,28 @@ class Server extends Controller {
         return $sql;
     }
 
-    public function memory() {
-        $this->title = __("Memory");
-        $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
+    public function memory()
+    {
+        $this->title  = __("Memory");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
         $data['variables'] = Extraction::display(array("variables::innodb_buffer_pool_size", "variables::innodb_additional_mem_pool_size",
-                    "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
-                    "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
-                    "variables::sort_buffer_size", "variables::read_rnd_buffer_size", "variables::join_buffer_size", "variables::thread_stack",
-                    "variables::binlog_cache_size","variables::innodb_buffer_pool_chunk_size", "variables::innodb_buffer_pool_instances", "stats::memory_total", "databases::databases"));
-
+                "variables::innodb_log_buffer_size", "variables::key_buffer_size", "variables::read_buffer_size",
+                "variables::query_cache_size", "variables::tmp_table_size", "variables::max_connections", "status::max_used_connections",
+                "variables::sort_buffer_size", "variables::read_rnd_buffer_size", "variables::join_buffer_size", "variables::thread_stack",
+                "variables::binlog_cache_size", "variables::innodb_buffer_pool_chunk_size", "variables::innodb_buffer_pool_instances", "stats::memory_total", "databases::databases"));
 
         $data['database'] = Extraction::getSizeByEngine($data['variables']);
-
-
 
         $this->set('data', $data);
     }
 
-    public function index() {
-        $this->title = __("Index usage");
-        $this->ariane = " > " . __("Tools Box") . " > " . $this->title;
+    public function index()
+    {
+        $this->title  = __("Index usage");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -383,25 +374,21 @@ class Server extends Controller {
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
 
-
-
-
-
         $data['status'] = Extraction::display(array("status::handler_read_rnd_next", "status::handler_read_rnd", "status::handler_read_first",
-                    "status::handler_read_next", "status::handler_read_key", "status::handler_read_prev"));
+                "status::handler_read_next", "status::handler_read_key", "status::handler_read_prev"));
 
         $data['mysql'] = $this->getServer();
 
         $this->set('data', $data);
     }
-
     /*
      *
      * graph with Chart.js
      *
      */
 
-    public function id($param) {
+    public function id($param)
+    {
 
         /*
           select avg(Column), convert((min(datetime) div 500)*500 + 230, datetime) as time
@@ -417,49 +404,44 @@ class Server extends Controller {
 //$this->di['js']->addJavascript(array("Chart.Core.js", "Chart.Scatter.min.js"));
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
-        $this->di['js']->addJavascript(array("moment.js", "Chart.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js"));
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
-            debug($_POST);
-
-            $sql = "SELECT * FROM mysql_server where id='" . $_POST['mysql_server']['id'] . "'";
+            $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
             $res = $db->sql_query($sql);
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob  = $db->sql_fetch_object($res)) {
                 $id_mysql_server = $ob->id;
 
-                header('location: ' . LINK . $this->getClass()
-                        . '/' . __FUNCTION__ . '/mysql_server:id:' . $id_mysql_server
-                        . '/ts_variable:name:' . $_POST['ts_variable']['name']
-                        . '/ts_variable:date:' . $_POST['ts_variable']['date']
-                        . '/ts_variable:derivate:' . $_POST['ts_variable']['derivate']);
-                /*                 * */
-
-                exit;
+                header('location: '.LINK.$this->getClass()
+                    .'/'.__FUNCTION__.'/mysql_server:id:'.$id_mysql_server
+                    .'/ts_variable:name:'.$_POST['ts_variable']['name']
+                    .'/ts_variable:date:'.$_POST['ts_variable']['date']
+                    .'/ts_variable:derivate:'.$_POST['ts_variable']['derivate']);
             }
         } else {
 
 // get server available
-            $sql = "SELECT * FROM mysql_server a WHERE error = '' " . $this->getFilter() . " order by a.name ASC";
-            $res = $db->sql_query($sql);
+            $sql             = "SELECT * FROM mysql_server a WHERE error = '' ".$this->getFilter()." order by a.name ASC";
+            $res             = $db->sql_query($sql);
             $data['servers'] = array();
-            while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = [];
-                $tmp['id'] = $ob->id;
-                $tmp['libelle'] = $ob->name . " (" . $ob->ip . ")";
+            while ($ob              = $db->sql_fetch_object($res)) {
+                $tmp               = [];
+                $tmp['id']         = $ob->id;
+                $tmp['libelle']    = $ob->name." (".$ob->ip.")";
                 $data['servers'][] = $tmp;
             }
 
 
 // get variable available
-            $sql = "SELECT name FROM ts_variable WHERE `from` in('status','slave','server') order by name ASC";
-            $res = $db->sql_query($sql);
+            $sql            = "SELECT name FROM ts_variable WHERE `from` in('status','slave','server') order by name ASC";
+            $res            = $db->sql_query($sql);
             $data['status'] = array();
-            while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = [];
-                $tmp['id'] = $ob->name;
-                $tmp['libelle'] = $ob->name;
+            while ($ob             = $db->sql_fetch_object($res)) {
+                $tmp              = [];
+                $tmp['id']        = $ob->name;
+                $tmp['libelle']   = $ob->name;
                 $data['status'][] = $tmp;
             }
 
@@ -467,21 +449,21 @@ class Server extends Controller {
             $interval = array('5 minute', '15 minute', '1 hour', '2 hour', '6 hour', '12 hour', '1 day', '2 day', '1 week', '2 week', '1 month');
             $libelles = array('5 minutes', '15 minutes', '1 hour', '2 hours', '6 hours', '12 hours', '1 day', '2 days', '1 week', '2 weeks',
                 '1 month');
-            $elems = array(60 * 5, 60 * 15, 3600, 3600 * 2, 3600 * 6, 3600 * 12, 3600 * 24, 3600 * 48, 3600 * 24 * 7, 3600 * 24 * 14, 3600 * 24 * 30);
+            $elems    = array(60 * 5, 60 * 15, 3600, 3600 * 2, 3600 * 6, 3600 * 12, 3600 * 24, 3600 * 48, 3600 * 24 * 7, 3600 * 24 * 14, 3600 * 24 * 30);
 
             $data['interval'] = array();
-            $i = 0;
+            $i                = 0;
             foreach ($libelles as $libelle) {
-                $tmp = [];
-                $tmp['id'] = $interval[$i];
-                $tmp['libelle'] = $libelle;
+                $tmp                = [];
+                $tmp['id']          = $interval[$i];
+                $tmp['libelle']     = $libelle;
                 $data['interval'][] = $tmp;
                 $i++;
             }
 
-            $data['derivate'][0]['id'] = 1;
+            $data['derivate'][0]['id']      = 1;
             $data['derivate'][0]['libelle'] = __("Yes");
-            $data['derivate'][1]['id'] = 2;
+            $data['derivate'][1]['id']      = 2;
             $data['derivate'][1]['libelle'] = __("No");
 
             if (empty($_GET['ts_variable']['date'])) {
@@ -502,13 +484,18 @@ class Server extends Controller {
                   $data['sql'] = $sql; */
 
 
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data['graph'][] = $arr;
+                $data['graph'] = array();
+                if ($res !== false) {
+
+
+                    while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $data['graph'][] = $arr;
+                    }
                 }
 
 
                 $dates = [];
-                $val = [];
+                $val   = [];
 
                 /*
                   $sql2 = "SELECT name FROM ts_variables WHERE from ='status' and id= '" . $_GET['status_name']['name'] . "'";
@@ -519,11 +506,10 @@ class Server extends Controller {
                   } */
 
                 $name = $_GET['ts_variable']['name'];
-                $i = 0;
+                $i    = 0;
 
                 $old_date = "";
-                $point = [];
-
+                $point    = [];
 
                 if (!empty($data['graph'])) {
 
@@ -531,7 +517,7 @@ class Server extends Controller {
 
                         if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
 
-                            $old_date = $value['date'];
+                            $old_date  = $value['date'];
                             $old_value = $value['value'];
                             continue;
                         } elseif ($_GET['ts_variable']['derivate'] == "1") {
@@ -541,6 +527,10 @@ class Server extends Controller {
 
                             $secs = $datetime2 - $datetime1; // == <seconds between the two times>
 //echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
+                            //to prevent divide by zero
+                            if ($secs == 0) {
+                                continue;
+                            }
 
                             $derivate = round(($value['value'] - $old_value) / $secs, 2);
 
@@ -557,11 +547,11 @@ class Server extends Controller {
 
 
 
-                        $point[] = "{ x: new Date('" . $value['date'] . "'), y: " . $val . "}";
+                        $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
 
                         $dates[] = $value['date'];
 
-                        $old_date = $value['date'];
+                        $old_date  = $value['date'];
                         $old_value = $value['value'];
                     }
                 }
@@ -583,8 +573,8 @@ var myChart = new Chart(ctx, {
     type: "line",
     data: {
         datasets: [{
-            label: "' . $name . '",
-            data: [' . $points . '],
+            label: "'.$name.'",
+            data: ['.$points.'],
                 borderWidth: 1,
              pointRadius :0,
              lineTension: 0
@@ -613,7 +603,7 @@ var myChart = new Chart(ctx, {
                 distribution: "linear",
                 time: {
 
-                    max: new Date("' . date('Y-m-d H:i:s') . '"),
+                    max: new Date("'.date('Y-m-d H:i:s').'"),
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
           minute: "dddd YYYY-MM-DD, HH:mm"
@@ -639,7 +629,6 @@ var myChart = new Chart(ctx, {
 
 
 ');
-
 
                 /*
                   Chart.defaults.global.responsive = true;
@@ -707,14 +696,10 @@ var myChart = new Chart(ctx, {
                  *
                  */
             } else {
-                if (empty($data['servers']))
-                    $data['servers'] = "";
-                if (empty($data['status']))
-                    $data['status'] = "";
-                if (empty($data['interval']))
-                    $data['interval'] = "";
-                if (empty($data['derivate']))
-                    $data['derivate'] = "";
+                if (empty($data['servers'])) $data['servers']  = "";
+                if (empty($data['status'])) $data['status']   = "";
+                if (empty($data['interval'])) $data['interval'] = "";
+                if (empty($data['derivate'])) $data['derivate'] = "";
 
 
                 $data['fields_required'] = 1;
@@ -724,7 +709,8 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function settings() {
+    public function settings()
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -742,13 +728,12 @@ var myChart = new Chart(ctx, {
                     }
 
 
-                    $server_main = array();
-                    $server_main['mysql_server']['id'] = $value;
-                    $server_main['mysql_server']['display_name'] = $_POST['mysql_server'][$key]['display_name'];
-                    $server_main['mysql_server']['id_client'] = $_POST['mysql_server'][$key]['id_client'];
+                    $server_main                                   = array();
+                    $server_main['mysql_server']['id']             = $value;
+                    $server_main['mysql_server']['display_name']   = $_POST['mysql_server'][$key]['display_name'];
+                    $server_main['mysql_server']['id_client']      = $_POST['mysql_server'][$key]['id_client'];
                     $server_main['mysql_server']['id_environment'] = $_POST['mysql_server'][$key]['id_environment'];
-                    $server_main['mysql_server']['is_monitored'] = $_POST['mysql_server'][$key]['is_monitored'];
-
+                    $server_main['mysql_server']['is_monitored']   = $_POST['mysql_server'][$key]['is_monitored'];
 
                     $ret = $db->sql_save($server_main);
 
@@ -765,14 +750,14 @@ var myChart = new Chart(ctx, {
 
                     try {
 
-                        $sql = "delete from link__mysql_server__tag where id_mysql_server in (" . implode(",", $_POST['id']) . ")";
+                        $sql = "delete from link__mysql_server__tag where id_mysql_server in (".implode(",", $_POST['id']).")";
                         $db->sql_query($sql);
                         foreach ($_POST['link__mysql_server_tag'] as $key => $servers) {
 
                             foreach ($servers as $tags) {
                                 foreach ($tags as $tag) {
 
-                                    $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('" . $_POST['id'][$key] . "','" . $tag . "')";
+                                    $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('".$_POST['id'][$key]."','".$tag."')";
                                     $db->sql_query($sql);
                                 }
                             }
@@ -785,36 +770,32 @@ var myChart = new Chart(ctx, {
                     }
                 }
 
-                header("location: " . LINK . "Server/settings");
+                header("location: ".LINK."Server/settings");
                 exit;
             }
         }
 
 
 
-        $this->title = '<i class="fa fa-server"></i> ' . __("Servers");
-        $this->ariane = ' > <a href⁼"">' . '<i class="fa fa-cog" style="font-size:14px"></i> '
-                . __("Settings") . '</a> > <i class="fa fa-server"  style="font-size:14px"></i> ' . __("Servers");
+        $this->title  = '<i class="fa fa-server"></i> '.__("Servers");
+        $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
+            .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
 
-
-        $sql = "SELECT * FROM mysql_server a WHERE 1=1 " . self::getFilter() . " ORDER by name";
+        $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
-
-        $data['clients'] = $this->getClients();
+        $data['clients']      = $this->getClients();
         $data['environments'] = $this->getEnvironments();
 
-
-
         // tag
-        $sql = "SELECT * FROM tag order by name";
-        $res = $db->sql_query($sql);
+        $sql         = "SELECT * FROM tag order by name";
+        $res         = $db->sql_query($sql);
         $data['tag'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = array();
-            $tmp['id'] = $ob->id;
+        while ($ob          = $db->sql_fetch_object($res)) {
+            $tmp            = array();
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->name;
-            $tmp['extra'] = array("data-content" => "<span title='" . $ob->name . "' class='label' style='color:" . $ob->color . "; background:" . $ob->background . "'>" . $ob->name . "</span>");
+            $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
 
             $data['tag'][] = $tmp;
         }
@@ -822,7 +803,7 @@ var myChart = new Chart(ctx, {
 
         $sql = "SELECT * FROM link__mysql_server__tag";
         $res = $db->sql_query($sql);
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ob  = $db->sql_fetch_object($res)) {
 
             $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
         }
@@ -831,10 +812,10 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function getClients() {
+    public function getClients()
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $sql = "SELECT * from client order by libelle";
         $res = $db->sql_query($sql);
@@ -842,8 +823,8 @@ var myChart = new Chart(ctx, {
         $data['client'] = array();
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['client'][] = $tmp;
@@ -852,18 +833,18 @@ var myChart = new Chart(ctx, {
         return $data['client'];
     }
 
-    public function getEnvironments() {
+    public function getEnvironments()
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * from environment order by libelle";
         $res = $db->sql_query($sql);
 
-
         $data['environment'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+        while ($ob                  = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['environment'][] = $tmp;
@@ -873,21 +854,22 @@ var myChart = new Chart(ctx, {
         return $data['environment'];
     }
 
-    public function add() {
+    public function add()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
-    public function cache() {
+    public function cache()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
-
 
 // Qcache_hits / (Qcache_hits + Com_select )
     }
 
-    public function passwd($param) {
+    public function passwd($param)
+    {
 
         $this->di['js']->addJavascript(array('clipboard.min.js'));
-
 
         /**
          * @todo Add a new version code_javascript  => Once
@@ -898,45 +880,36 @@ var myChart = new Chart(ctx, {
           })();');
          */
 
-
-
-
-
-        Crypt::$key = CRYPT_KEY;
+        Crypt::$key       = CRYPT_KEY;
         $data['password'] = Crypt::decrypt($param[0]);
-
         $this->set('data', $data);
     }
 
-    public function show($param) {
-
-
+    public function show($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
-    public function updateHostname() {
+    public function updateHostname()
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $data['hostname'] = Extraction::display(array("variables::hostname"));
-
 
         foreach ($data['hostname'] as $id_mysql_server => $servers) {
             $server = $servers[''];
 
-            echo $server['hostname'] . "\n";
-            $sql = "UPDATE mysql_server SET display_name ='" . $server['hostname'] . "' WHERE id = " . $id_mysql_server;
+            echo $server['hostname']."\n";
+            $sql = "UPDATE mysql_server SET display_name ='".$server['hostname']."' WHERE id = ".$id_mysql_server;
             $db->sql_query($sql);
         }
     }
 
-    public function box() {
-        $db = Sgbd::sql(DB_DEFAULT);
-
+    public function box()
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * from mysql_server where is_available = 0;";
-
         $res = $db->sql_query($sql);
-
 
         $data = array();
 
@@ -962,7 +935,8 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function password($param) {
+    public function password($param)
+    {
         $id_server = $param[0];
 
         if (empty($id_server)) {
@@ -977,8 +951,8 @@ var myChart = new Chart(ctx, {
 
             if (!empty($_POST['mysql_server']['passwd'])) {
                 $server['mysql_server']['passwd'] = Chiffrement::encrypt($_POST['mysql_server']['passwd']);
-                $server['mysql_server']['login'] = $_POST['mysql_server']['login'];
-                $server['mysql_server']['id'] = $id_server;
+                $server['mysql_server']['login']  = $_POST['mysql_server']['login'];
+                $server['mysql_server']['id']     = $id_server;
 
                 $ret = $db->sql_save($server);
 
@@ -986,25 +960,23 @@ var myChart = new Chart(ctx, {
 
                     Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
-
                     set_flash("success", "Success", "Password updated !");
 
-
-                    header("location: " . LINK . $this->getClass() . '/settings');
+                    header("location: ".LINK.$this->getClass().'/settings');
                 } else {
                     set_flash("error", "Error", "Password not updated !");
 
-                    header("location: " . LINK . $this->getClass() . '/' . __FUNCTION__ . '/' . $id_server);
+                    header("location: ".LINK.$this->getClass().'/'.__FUNCTION__.'/'.$id_server);
                 }
             }
         }
 
-        $sql = "SELECT * FROM mysql_server WHERE id =" . $id_server;
+        $sql = "SELECT * FROM mysql_server WHERE id =".$id_server;
 
         $res = $db->sql_query($sql);
 
         $data['server'] = array();
-        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($ob             = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['server'] = $ob;
         }
 
@@ -1012,66 +984,70 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
-    public function upd() {
+    public function upd()
+    {
 
 
         Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
-    public function acknowledge($param) {
+    public function acknowledge($param)
+    {
         $this->view = false;
 
         $id_server = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-        $sql = "UPDATE mysql_server set is_acknowledged='" . ($this->di['auth']->getUser()->id) . "' WHERE id=" . $id_server . ";";
+        $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
 
         debug($sql);
         $db->sql_query($sql);
 
-        header("location: " . LINK . $this->getClass() . "/main/");
+        header("location: ".LINK.$this->getClass()."/main/");
     }
 
-    public function remove($param) {
+    public function remove($param)
+    {
 
         Debug::parseDebug($param);
         $this->view = false;
-        $id_server = $param[0];
+        $id_server  = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         // pour eviter d'effacer la base de PmaControl !!!
-        $sql = "SELECT * FROM mysql_server WHERE id=" . $id_server . ";";
+        $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             if ($ob->name != DB_DEFAULT) {
-                $sql = "DELETE FROM mysql_server WHERE id=" . $id_server . ";";
+                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
                 $db->sql_query($sql);
                 Debug::sql($sql);
             }
         }
 
-        header("location: " . LINK . $this->getClass() . "/settings/");
+        header("location: ".LINK.$this->getClass()."/settings/");
     }
 
-    public function acknowledgedBy($param) {
+    public function acknowledgedBy($param)
+    {
         
     }
 
-    public function toggleGeneralLog($param) {
+    public function toggleGeneralLog($param)
+    {
         $this->view = false;
 
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $general_log = $param[1];
+        $general_log     = $param[1];
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_server` WHERE `id`=" . $id_mysql_server . ";";
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -1096,4 +1072,27 @@ var myChart = new Chart(ctx, {
         echo json_encode($data);
     }
 
+    public function getDaemonRunning($param)
+    {
+        Debug::parseDebug($param);
+        $lock_directory = TMP."lock/worker/*.lock";
+        $elems          = array();
+        foreach (glob($lock_directory) as $filename) {
+
+            Debug::debug($filename, "filename");
+            if (file_exists($filename)) {
+                $json         = file_get_contents($filename);
+                $data         = json_decode($json, true);
+                $data['time'] = round(microtime(true) - $data['microtime'], 2);
+
+                if ($data['time'] > 1) {
+                    $elems[$data['id']] = $data;
+                }
+            }
+        }
+
+        Debug::debug($elems);
+
+        return $elems;
+    }
 }

@@ -1367,3 +1367,112 @@ sql-formater
 .sql-reserved{font-weight: 700; color: #000}
 .sql-variable{color: green}
 .sql-string{color: #999}
+
+
+
+/* diplsay chartjs as grafana legend */
+.graph-legend > td,.graph-legend > th {padding:5px; line-height: 1.5;}
+
+.graph-legend-value, .graph-legend-table td {
+    float: none;
+    display: table-cell;
+    white-space: nowrap;
+    padding: 2px 8px;
+    padding-left: 10px;
+    text-align: right;
+    
+}
+
+.graph-legend-value {
+    padding-left: 15px;
+}
+
+
+.graph-legend-table th {
+    text-align: right;
+    padding: 0 10px 1px 0;
+    font-weight: 700;
+    color: #666;
+    font-size: 85%;
+    white-space: nowrap;
+}
+
+
+.graph-legend-table .graph-legend-alias {
+    padding-left: 7px;
+    text-align: left;
+    width: 95%;
+    max-width: 650px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+
+.graph-legend a, .graph-legend td {
+    color: #666;
+}
+
+.graph-legend a:hover {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+tr.graph-underline td {
+    background: #eee;
+}
+
+
+.graph-legend tr.fadeout a, .graph-legend tr.fadeout td {
+    color: #999;
+}
+
+/* menu */
+
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    margin-left: -1px;
+    -webkit-border-radius: 0 6px 6px 6px;
+    -moz-border-radius: 0 6px 6px;
+    border-radius: 0 6px 6px 6px;
+}
+
+.dropdown-submenu:hover>.dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu>a:after {
+    display: block;
+    content: " ";
+    float: right;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+    border-width: 5px 0 5px 5px;
+    border-left-color: #666;
+    margin-top: 5px;
+    margin-right: -10px;
+}
+
+.dropdown-submenu:hover>a:after {
+    border-left-color: #fff;
+}
+
+.dropdown-submenu.pull-left {
+    float: none;
+}
+
+.dropdown-submenu.pull-left>.dropdown-menu {
+    left: -100%;
+    margin-left: 10px;
+    -webkit-border-radius: 6px 0 6px 6px;
+    -moz-border-radius: 6px 0 6px 6px;
+    border-radius: 6px 0 6px 6px;
+}

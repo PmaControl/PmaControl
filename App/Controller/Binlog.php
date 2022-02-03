@@ -401,6 +401,8 @@ class Binlog extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
         $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files", "variables::expire_logs_days"));
 
+
+        
         $sql = "SELECT a.*, b.libelle as organization,c.*, d.*, a.id as id_mysql_server
             FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id

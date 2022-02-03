@@ -1,8 +1,8 @@
--- MariaDB dump 10.17  Distrib 10.4.12-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.4.12-MariaDB-1:10.4.12+maria~bionic-log
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -14,162 +14,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `architecture_legend`
---
-
-DROP TABLE IF EXISTS `architecture_legend`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `architecture_legend` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `const` varchar(30) NOT NULL,
-  `name` varchar(50) NOT NULL,
-  `color` varchar(20) NOT NULL,
-  `style` varchar(20) NOT NULL,
-  `order` int(11) NOT NULL,
-  `type` varchar(20) NOT NULL,
-  `condition` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `architecture_legend`
---
-
-LOCK TABLES `architecture_legend` WRITE;
-/*!40000 ALTER TABLE `architecture_legend` DISABLE KEYS */;
-INSERT INTO `architecture_legend` VALUES (1,'REPLICATION_OK','Healthy','#008000','filled',1,'REPLICATION',''),(2,'NODE_IST','Receive IST','#FFD700','solid',20,'NODE',''),(3,'REPLICATION_SST','Galera SST','#e3ea12','dashed',12,'REPLICATION',''),(4,'REPLICATION_STOPPED','Stopped','#0000FF','filled',3,'REPLICATION',''),(5,'REPLICATION_ERROR_SQL','Error SQL','#FF0000','filled',3,'REPLICATION',''),(7,'REPLICATION_DELAY','Delay','#FFA500','filled',2,'REPLICATION',''),(10,'REPLICATION_ERROR_IO','Error IO','#FF0000','dashed',3,'REPLICATION',''),(11,'REPLICATION_ERROR_CONNECT','Error connecting','#696969','dashed',3,'REPLICATION',''),(13,'NODE_OK','Healty','#008000','solid',1,'NODE',''),(14,'NODE_ERROR','Out of order','#FF0000','solid',2,'NODE',''),(15,'NODE_BUSY','Going down','brown','dashed',3,'NODE',''),(16,'NODE_NOT_PRIMARY','Node probably desynced','Orange','solid',10,'NODE',''),(17,'NODE_DONOR','Node donnor','#00FF00','solid',11,'NODE',''),(18,'NODE_DONOR_DESYNCED','Node donor desynced','#e3ea12','solid',11,'NODE',''),(19,'NODE_MANUAL_DESYNC','node desync manually','#0000ff','solid',12,'NODE',''),(20,'NODE_JOINER','node joining cluster','#000000','dashed',15,'NODE',''),(21,'GALERA_AVAILABLE','galera all ok','#008000','filled',1,'GALERA',''),(22,'GALERA_DEGRADED','','#e3ea12','filled',2,'GALERA',''),(23,'GALERA_WARNING','N*2  node should be N*2+1','orange','filled',3,'GALERA',''),(24,'GALERA_CRITICAL','only 2 node','#FF0000','filled',4,'GALERA',''),(25,'GALERA_EMERGENCY','only one node in galera','#FF0000','dashed',5,'GALERA',''),(26,'GALERA_OUTOFORDER','galera HS','#000000','filled',6,'GALERA',''),(27,'REPLICATION_BLACKOUT','Out of order','#000000','filled',15,'REPLICATION',''),(28,'SEGMENT_OK','segment ok','#008000','dashed',1,'SEGMENT',''),(29,'SEGMENT_KO','segment out of order','#FF0000','dashed',2,'SEGMENT',''),(32,'SEGMENT_PARTIAL','un neud est hs','#FFA500','dashed',3,'SEGMENT',''),(33,'NODE_INITIALIZED','Node initialized','#7FFF00','solid',16,'NODE',''),(34,'NODE_WAITING','Waiting for SST','#00008B','dashed',17,'NODE',''),(35,'NODE_RECEIVE_IST','Node receiving Incremental State Transfert','#ec971f','filled',5,'NODE','');
-/*!40000 ALTER TABLE `architecture_legend` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `backup_type`
---
-
-DROP TABLE IF EXISTS `backup_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `backup_type` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(50) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `backup_type`
---
-
-LOCK TABLES `backup_type` WRITE;
-/*!40000 ALTER TABLE `backup_type` DISABLE KEYS */;
-INSERT INTO `backup_type` VALUES (3,'mariabackup'),(4,'mydumper'),(1,'mysqldump'),(2,'xtrabackup');
-/*!40000 ALTER TABLE `backup_type` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `daemon_main`
---
-
-DROP TABLE IF EXISTS `daemon_main`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `daemon_main` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL,
-  `date` datetime NOT NULL,
-  `pid` int(11) NOT NULL,
-  `id_user_main` int(11) NOT NULL,
-  `log_file` varchar(255) NOT NULL,
-  `refresh_time` int(11) NOT NULL,
-  `thread_concurency` int(11) NOT NULL,
-  `max_delay` int(11) NOT NULL,
-  `class` varchar(64) NOT NULL,
-  `method` varchar(64) NOT NULL,
-  `params` varchar(255) NOT NULL,
-  `debug` int(11) NOT NULL,
-  `queue_number` int(11) NOT NULL,
-  `tube` varchar(32) NOT NULL,
-  `queue_key` int(11) NOT NULL,
-  `worker_command` varchar(255) NOT NULL,
-  `worker_param` varchar(255) NOT NULL COMMENT 'coma separated in array',
-  `worker_name` varchar(32) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `daemon_main`
---
-
-LOCK TABLES `daemon_main` WRITE;
-/*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','',''),(3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','',''),(5,'Generate architecture graph','2016-11-08 00:00:00',16348,64,'log/daemon_5.log',15,1,10,'Dot2','run','',1,0,'',0,'','',''),(7,'integrate data','2017-12-05 12:27:30',16298,64,'log/daemon_7.log',5,1,1,'integrate','integrateAll','',0,0,'',0,'','',''),(9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',16311,64,'log/daemon_9.log',200,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh'),(11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',16323,64,'log/daemon_11.log',380,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker'),(12,'check all queue','2018-11-27 18:15:54',16336,64,'log/daemon_12.log',10,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
-/*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `environment`
---
-
-DROP TABLE IF EXISTS `environment`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `environment` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(20) NOT NULL,
-  `key` char(13) NOT NULL,
-  `class` varchar(50) NOT NULL,
-  `letter` char(1) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `environment`
---
-
-LOCK TABLES `environment` WRITE;
-/*!40000 ALTER TABLE `environment` DISABLE KEYS */;
-INSERT INTO `environment` VALUES (1,'Production','prod','danger','P'),(2,'UAT / Preprod','preprod','warning','U'),(3,'Recipe','recette','default','R'),(4,'Integration','integration','info','I'),(5,'Developpement','dev','success','D'),(6,'Test','test','primary','T'),(8,'SANDBOX','sandbox','info','S'),(16,'Recette','recette','info','R'),(17,'Dev','dev','info','D'),(18,'Backup','backup','info','B'),(19,'Prod','prod','info','P'),(20,'','','info','');
-/*!40000 ALTER TABLE `environment` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `export_option`
---
-
-DROP TABLE IF EXISTS `export_option`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `export_option` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(64) NOT NULL,
-  `key` varchar(32) NOT NULL,
-  `active` int(11) NOT NULL,
-  `table_name` varchar(64) NOT NULL,
-  `config_file` varchar(64) NOT NULL,
-  `crypted_fields` varchar(250) NOT NULL COMMENT 'coma separated',
-  `splited_fields` varchar(255) NOT NULL,
-  `sql` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `export_option`
---
-
-LOCK TABLES `export_option` WRITE;
-/*!40000 ALTER TABLE `export_option` DISABLE KEYS */;
-INSERT INTO `export_option` VALUES (1,'MySQL Servers','mysql',1,'mysql_server','','passwd','','select a.*,b.libelle as environment, c.libelle as organization, GROUP_CONCAT(e.name) as tag from mysql_server a INNER JOIN environment b ON a.id_environment = b.id INNER JOIN client c ON c.id = a.id_client INNER JOIN link__mysql_server__tag d ON d.id_mysql_server = a.id LEFT JOIN tag e ON e.id = d.id_tag GROUP BY a.id;'),(2,'HA Proxy','haproxy',0,'','','','',''),(3,'Maxscale','maxscale',1,'','','','',''),(4,'Proxy SQL','proxysql',0,'','','','',''),(5,'Arbitrator','arbitrator',0,'','','','',''),(6,'Cleaners','cleaner',1,'cleaner_main,cleaner_foreign_key','','','',''),(7,'Storage Area','storage_area',0,'','','ssh_key,ssh_password,ssh_login','',''),(8,'Backup schedule','backup',0,'','','','',''),(9,'Keys (ssh, gpg, ...)','key',0,'ssh_key','','public_key,private_key','',''),(10,' Users ','user',1,'user_main','','','',''),(11,'LDAP','ldap',1,'','ldap.config.php','','',''),(12,'Organization','oraganization',1,'','','','',''),(13,'Environment','environment',1,'','','','','');
-/*!40000 ALTER TABLE `export_option` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `geolocalisation_city`
@@ -282,6 +126,315 @@ INSERT INTO `geolocalisation_country` VALUES (1,1,'Zimbabwe','ZIMBABWE','Zimbabw
 UNLOCK TABLES;
 
 --
+-- Table structure for table `translation_main`
+--
+
+DROP TABLE IF EXISTS `translation_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `translation_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_history_etat` int(11) NOT NULL,
+  `key` char(40) NOT NULL,
+  `source` char(5) NOT NULL,
+  `destination` char(5) NOT NULL,
+  `text` text NOT NULL,
+  `date_inserted` datetime NOT NULL,
+  `date_updated` datetime NOT NULL,
+  `translate_auto` int(11) NOT NULL,
+  `file_found` varchar(255) NOT NULL,
+  `line_found` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key` (`key`,`destination`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `translation_main`
+--
+
+LOCK TABLES `translation_main` WRITE;
+/*!40000 ALTER TABLE `translation_main` DISABLE KEYS */;
+/*!40000 ALTER TABLE `translation_main` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
+--
+-- Host: 127.0.0.1    Database: pmacontrol
+-- ------------------------------------------------------
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `architecture_legend`
+--
+
+DROP TABLE IF EXISTS `architecture_legend`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `architecture_legend` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `const` varchar(30) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `color` varchar(20) NOT NULL,
+  `style` varchar(20) NOT NULL,
+  `order` int(11) NOT NULL,
+  `type` varchar(20) NOT NULL,
+  `condition` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `architecture_legend`
+--
+
+LOCK TABLES `architecture_legend` WRITE;
+/*!40000 ALTER TABLE `architecture_legend` DISABLE KEYS */;
+INSERT INTO `architecture_legend` VALUES (1,'REPLICATION_OK','Healty','#008000','filled',1,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (2,'NODE_IST','Receive IST','#FFD700','solid',20,'NODE','');
+INSERT INTO `architecture_legend` VALUES (3,'REPLICATION_SST','Galera SST','#e3ea12','dashed',12,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (4,'REPLICATION_STOPPED','Stopped','#0000FF','filled',3,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (5,'REPLICATION_ERROR_SQL','Error SQL','#FF0000','filled',3,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (7,'REPLICATION_DELAY','Delay','#FFA500','filled',2,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (10,'REPLICATION_ERROR_IO','Error IO','#FF0000','dashed',3,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (11,'REPLICATION_ERROR_CONNECT','Error connecting','#696969','dashed',3,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (13,'NODE_OK','Healty','#008000','solid',1,'NODE','');
+INSERT INTO `architecture_legend` VALUES (14,'NODE_ERROR','Out of order','#FF0000','solid',2,'NODE','');
+INSERT INTO `architecture_legend` VALUES (15,'NODE_BUSY','Going down','brown','dashed',3,'NODE','');
+INSERT INTO `architecture_legend` VALUES (16,'NODE_NOT_PRIMARY','Node probably desynced','Orange','solid',10,'NODE','');
+INSERT INTO `architecture_legend` VALUES (17,'NODE_DONOR','Node donnor','#00FF00','solid',11,'NODE','');
+INSERT INTO `architecture_legend` VALUES (18,'NODE_DONOR_DESYNCED','Node donor desynced','#e3ea12','solid',11,'NODE','');
+INSERT INTO `architecture_legend` VALUES (19,'NODE_MANUAL_DESYNC','node desync manually','#0000ff','solid',12,'NODE','');
+INSERT INTO `architecture_legend` VALUES (20,'NODE_JOINER','node joining cluster','#000000','dashed',15,'NODE','');
+INSERT INTO `architecture_legend` VALUES (21,'GALERA_AVAILABLE','galera all ok','#008000','filled',1,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (22,'GALERA_DEGRADED','','#e3ea12','filled',2,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (23,'GALERA_WARNING','N*2  node should be N*2+1','orange','filled',3,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (24,'GALERA_CRITICAL','only 2 node','#FF0000','filled',4,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (25,'GALERA_EMERGENCY','only one node in galera','#FF0000','dashed',5,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (26,'GALERA_OUTOFORDER','galera HS','#000000','filled',6,'GALERA','');
+INSERT INTO `architecture_legend` VALUES (27,'REPLICATION_BLACKOUT','Out of order','#000000','filled',15,'REPLICATION','');
+INSERT INTO `architecture_legend` VALUES (28,'SEGMENT_OK','segment ok','#008000','dashed',1,'SEGMENT','');
+INSERT INTO `architecture_legend` VALUES (29,'SEGMENT_KO','segment out of order','#FF0000','dashed',2,'SEGMENT','');
+INSERT INTO `architecture_legend` VALUES (32,'SEGMENT_PARTIAL','un neud est hs','#FFA500','dashed',3,'SEGMENT','');
+INSERT INTO `architecture_legend` VALUES (33,'NODE_INITIALIZED','Node initialized','#7FFF00','solid',16,'NODE','');
+INSERT INTO `architecture_legend` VALUES (34,'NODE_WAITING','Waiting for SST','#00008B','dashed',17,'NODE','');
+INSERT INTO `architecture_legend` VALUES (35,'NODE_RECEIVE_IST','Node receiving Incremental State Transfert','#ec971f','filled',5,'NODE','');
+/*!40000 ALTER TABLE `architecture_legend` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `backup_type`
+--
+
+DROP TABLE IF EXISTS `backup_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `backup_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `libelle` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `libelle` (`libelle`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `backup_type`
+--
+
+LOCK TABLES `backup_type` WRITE;
+/*!40000 ALTER TABLE `backup_type` DISABLE KEYS */;
+INSERT INTO `backup_type` VALUES (3,'mariabackup');
+INSERT INTO `backup_type` VALUES (4,'mydumper');
+INSERT INTO `backup_type` VALUES (1,'mysqldump');
+INSERT INTO `backup_type` VALUES (2,'xtrabackup');
+/*!40000 ALTER TABLE `backup_type` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `daemon_main`
+--
+
+DROP TABLE IF EXISTS `daemon_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `daemon_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `date` datetime NOT NULL,
+  `pid` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `log_file` varchar(255) NOT NULL,
+  `refresh_time` int(11) NOT NULL,
+  `thread_concurency` int(11) NOT NULL,
+  `max_delay` int(11) NOT NULL,
+  `class` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `params` varchar(255) NOT NULL,
+  `debug` int(11) NOT NULL,
+  `queue_number` int(11) NOT NULL,
+  `tube` varchar(32) NOT NULL,
+  `queue_key` int(11) NOT NULL,
+  `worker_command` varchar(255) NOT NULL,
+  `worker_param` varchar(255) NOT NULL COMMENT 'coma separated in array',
+  `worker_name` varchar(32) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `daemon_main`
+--
+
+LOCK TABLES `daemon_main` WRITE;
+/*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',18310,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',18235,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',18253,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',18271,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',18290,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
+/*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `database_size`
+--
+
+DROP TABLE IF EXISTS `database_size`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `database_size` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label` char(3) NOT NULL,
+  `min` bigint(20) NOT NULL,
+  `max` bigint(20) NOT NULL,
+  `color` varchar(20) NOT NULL,
+  `background` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `database_size`
+--
+
+LOCK TABLES `database_size` WRITE;
+/*!40000 ALTER TABLE `database_size` DISABLE KEYS */;
+INSERT INTO `database_size` VALUES (1,'XS',0,104857600,'#ffffff','green');
+INSERT INTO `database_size` VALUES (2,'S',104857600,1073741824,'#ffffff','blue');
+INSERT INTO `database_size` VALUES (3,'M',1073741824,10737418240,'#000000','yellow');
+INSERT INTO `database_size` VALUES (4,'L',10737418240,53687091200,'#000000','orange');
+INSERT INTO `database_size` VALUES (5,'XL',53687091200,214748364800,'#ffffff','red');
+INSERT INTO `database_size` VALUES (6,'XXL',214748364800,1152921504606846976,'#ffffff','black');
+/*!40000 ALTER TABLE `database_size` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `environment`
+--
+
+DROP TABLE IF EXISTS `environment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `environment` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `libelle` varchar(20) NOT NULL,
+  `key` char(13) NOT NULL,
+  `class` varchar(50) NOT NULL,
+  `letter` char(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `libelle` (`libelle`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `environment`
+--
+
+LOCK TABLES `environment` WRITE;
+/*!40000 ALTER TABLE `environment` DISABLE KEYS */;
+INSERT INTO `environment` VALUES (1,'Production','prod','danger','P');
+INSERT INTO `environment` VALUES (2,'UAT / Preprod','preprod','warning','U');
+INSERT INTO `environment` VALUES (3,'Recipe','recette','default','R');
+INSERT INTO `environment` VALUES (4,'Integration','integration','info','I');
+INSERT INTO `environment` VALUES (5,'Developpement','dev','success','D');
+INSERT INTO `environment` VALUES (6,'Test','test','primary','T');
+INSERT INTO `environment` VALUES (8,'SANDBOX','sandbox','info','S');
+INSERT INTO `environment` VALUES (16,'Recette','recette','info','R');
+INSERT INTO `environment` VALUES (17,'Dev','dev','info','D');
+INSERT INTO `environment` VALUES (18,'Backup','backup','info','B');
+INSERT INTO `environment` VALUES (19,'Prod','prod','info','P');
+INSERT INTO `environment` VALUES (20,'','','info','');
+/*!40000 ALTER TABLE `environment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `export_option`
+--
+
+DROP TABLE IF EXISTS `export_option`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `export_option` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `libelle` varchar(64) NOT NULL,
+  `key` varchar(32) NOT NULL,
+  `active` int(11) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `config_file` varchar(64) NOT NULL,
+  `crypted_fields` varchar(250) NOT NULL COMMENT 'coma separated',
+  `splited_fields` varchar(255) NOT NULL,
+  `sql` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `export_option`
+--
+
+LOCK TABLES `export_option` WRITE;
+/*!40000 ALTER TABLE `export_option` DISABLE KEYS */;
+INSERT INTO `export_option` VALUES (1,'MySQL Servers','mysql',1,'mysql_server','','passwd','','select a.*,b.libelle as environment, c.libelle as organization, GROUP_CONCAT(e.name) as tag from mysql_server a INNER JOIN environment b ON a.id_environment = b.id INNER JOIN client c ON c.id = a.id_client INNER JOIN link__mysql_server__tag d ON d.id_mysql_server = a.id LEFT JOIN tag e ON e.id = d.id_tag GROUP BY a.id;');
+INSERT INTO `export_option` VALUES (2,'HA Proxy','haproxy',0,'','','','','');
+INSERT INTO `export_option` VALUES (3,'Maxscale','maxscale',1,'','','','','');
+INSERT INTO `export_option` VALUES (4,'Proxy SQL','proxysql',0,'','','','','');
+INSERT INTO `export_option` VALUES (5,'Arbitrator','arbitrator',0,'','','','','');
+INSERT INTO `export_option` VALUES (6,'Cleaners','cleaner',1,'cleaner_main,cleaner_foreign_key','','','','');
+INSERT INTO `export_option` VALUES (7,'Storage Area','storage_area',0,'','','ssh_key,ssh_password,ssh_login','','');
+INSERT INTO `export_option` VALUES (8,'Backup schedule','backup',0,'','','','','');
+INSERT INTO `export_option` VALUES (9,'Keys (ssh, gpg, ...)','key',0,'ssh_key','','public_key,private_key','','');
+INSERT INTO `export_option` VALUES (10,' Users ','user',1,'user_main','','','','');
+INSERT INTO `export_option` VALUES (11,'LDAP','ldap',1,'','ldap.config.php','','','');
+INSERT INTO `export_option` VALUES (12,'Organization','oraganization',1,'','','','','');
+INSERT INTO `export_option` VALUES (13,'Environment','environment',1,'','','','','');
+/*!40000 ALTER TABLE `export_option` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `group`
 --
 
@@ -303,7 +456,13 @@ CREATE TABLE `group` (
 
 LOCK TABLES `group` WRITE;
 /*!40000 ALTER TABLE `group` DISABLE KEYS */;
-INSERT INTO `group` VALUES (1,0,'Visitor',NULL),(2,1,'Member',NULL),(3,2,'Administrator',NULL),(4,3,'Super administrator',NULL),(7,0,'OutSourcer',NULL),(8,0,'TechOps',NULL),(9,0,'Support',NULL);
+INSERT INTO `group` VALUES (1,0,'Visitor',NULL);
+INSERT INTO `group` VALUES (2,1,'Member',NULL);
+INSERT INTO `group` VALUES (3,2,'Administrator',NULL);
+INSERT INTO `group` VALUES (4,3,'Super administrator',NULL);
+INSERT INTO `group` VALUES (7,0,'OutSourcer',NULL);
+INSERT INTO `group` VALUES (8,0,'TechOps',NULL);
+INSERT INTO `group` VALUES (9,0,'Support',NULL);
 /*!40000 ALTER TABLE `group` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -327,7 +486,9 @@ CREATE TABLE `history_etat` (
 
 LOCK TABLES `history_etat` WRITE;
 /*!40000 ALTER TABLE `history_etat` DISABLE KEYS */;
-INSERT INTO `history_etat` VALUES (1,'Activated'),(2,'Read only'),(3,'Deleted');
+INSERT INTO `history_etat` VALUES (1,'Activated');
+INSERT INTO `history_etat` VALUES (2,'Read only');
+INSERT INTO `history_etat` VALUES (3,'Deleted');
 /*!40000 ALTER TABLE `history_etat` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -358,7 +519,10 @@ CREATE TABLE `home_box` (
 
 LOCK TABLES `home_box` WRITE;
 /*!40000 ALTER TABLE `home_box` DISABLE KEYS */;
-INSERT INTO `home_box` VALUES (1,'Master / Slave','<i class=\"fa fa-sitemap  fa-5x fa-icon-image\"></i>','slave','box',2,'<span class=\"glyphicon glyphicon-plus\"></span> Add a MySQL server',''),(2,'Cleaner','<i class=\"fa fa-trash fa-5x fa-icon-image\"></i>','cleaner','box',3,'',''),(3,'Plugins','<i class=\"fa fa-puzzle-piece fa-5x fa-icon-image\"></i>','plugin','box',4,'',''),(4,'Servers','<i class=\"fa fa-server fa-5x fa-icon-image\"></i>\r\n\r\n','server','box',1,'<span class=\"glyphicon glyphicon-plus\"></span> Add a MySQL server','{LINK}/mysql/add');
+INSERT INTO `home_box` VALUES (1,'Master / Slave','<i class=\"fa fa-sitemap  fa-5x fa-icon-image\"></i>','slave','box',2,'<span class=\"glyphicon glyphicon-plus\"></span> Add a MySQL server','');
+INSERT INTO `home_box` VALUES (2,'Cleaner','<i class=\"fa fa-trash fa-5x fa-icon-image\"></i>','cleaner','box',3,'','');
+INSERT INTO `home_box` VALUES (3,'Plugins','<i class=\"fa fa-puzzle-piece fa-5x fa-icon-image\"></i>','plugin','box',4,'','');
+INSERT INTO `home_box` VALUES (4,'Servers','<i class=\"fa fa-server fa-5x fa-icon-image\"></i>\r\n\r\n','server','box',1,'<span class=\"glyphicon glyphicon-plus\"></span> Add a MySQL server','{LINK}/mysql/add');
 /*!40000 ALTER TABLE `home_box` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -394,7 +558,92 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,199,200,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,''),(61,0,201,202,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,''),(62,0,203,204,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,''),(92,NULL,1,166,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,''),(95,92,4,21,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,''),(96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,''),(97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,''),(98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,''),(99,95,13,14,0,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,''),(100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,''),(101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,''),(102,92,22,31,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,''),(103,92,32,69,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,''),(104,103,33,34,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,''),(105,103,35,50,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,''),(108,92,72,95,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,''),(109,92,96,101,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,''),(110,109,97,98,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,''),(111,109,99,100,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,''),(112,103,51,52,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,''),(113,92,102,145,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,''),(114,108,73,82,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,''),(115,108,83,90,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,''),(116,92,146,155,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,''),(117,116,147,148,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,''),(118,116,149,150,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,''),(119,116,151,152,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,''),(120,116,153,154,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,''),(121,113,103,104,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,''),(122,113,105,106,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,''),(123,113,107,110,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,''),(124,113,111,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,''),(125,113,115,116,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,''),(126,113,117,122,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,''),(127,103,53,54,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,''),(128,103,55,56,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,''),(129,92,2,3,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,''),(131,113,123,124,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,''),(132,113,125,126,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,''),(133,113,127,132,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,''),(136,103,57,58,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,''),(137,92,156,157,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,''),(138,113,133,138,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,''),(139,103,59,60,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,''),(140,108,91,94,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,''),(141,113,139,140,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,''),(142,92,158,165,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,''),(143,142,159,160,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,''),(144,142,161,164,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,''),(145,113,141,144,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,''),(146,103,61,62,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,''),(147,102,23,24,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,''),(148,102,25,28,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,''),(149,102,29,30,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,''),(150,103,63,66,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,''),(153,144,162,163,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,''),(154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,''),(155,105,36,39,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,''),(156,114,74,75,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,''),(157,114,76,77,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,''),(158,115,84,85,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,''),(159,115,86,87,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,''),(160,150,64,65,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,''),(161,126,118,119,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,''),(162,126,120,121,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,''),(163,123,108,109,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,''),(164,138,134,135,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,''),(165,138,136,137,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,''),(166,92,70,71,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,''),(167,148,26,27,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,''),(168,145,142,143,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,''),(169,124,112,113,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,''),(170,133,128,129,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,''),(171,133,130,131,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,''),(172,105,40,41,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,''),(173,105,42,43,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,''),(174,155,37,38,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,''),(175,105,44,45,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,''),(176,105,46,47,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,''),(177,114,78,79,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,''),(178,105,48,49,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,''),(179,103,67,68,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,''),(180,115,88,89,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,''),(181,140,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,''),(182,114,80,81,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,''),(183,95,19,20,1,'<i class=\"fa fa-database fa-lg\"></i>','Databases','{LINK}/database/show','database','show',0,1,'');
+INSERT INTO `menu` VALUES (60,0,199,200,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,201,202,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,203,204,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,166,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (95,92,4,21,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
+INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
+INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
+INSERT INTO `menu` VALUES (98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
+INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
+INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
+INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
+INSERT INTO `menu` VALUES (102,92,22,31,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,32,69,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (104,103,33,34,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
+INSERT INTO `menu` VALUES (105,103,35,50,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,72,95,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,96,101,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,97,98,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,99,100,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (112,103,51,52,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
+INSERT INTO `menu` VALUES (113,92,102,145,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,73,82,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,83,90,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,146,155,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,147,148,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,149,150,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,151,152,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,153,154,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,103,104,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,105,106,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,107,110,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,111,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,115,116,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,117,122,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (127,103,53,54,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
+INSERT INTO `menu` VALUES (128,103,55,56,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
+INSERT INTO `menu` VALUES (129,92,2,3,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (131,113,123,124,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,125,126,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,127,132,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (136,103,57,58,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,156,157,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,133,138,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (139,103,59,60,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,91,94,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,139,140,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,158,165,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,159,160,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,161,164,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,141,144,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (146,103,61,62,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
+INSERT INTO `menu` VALUES (147,102,23,24,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
+INSERT INTO `menu` VALUES (148,102,25,28,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
+INSERT INTO `menu` VALUES (149,102,29,30,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
+INSERT INTO `menu` VALUES (150,103,63,66,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (153,144,162,163,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
+INSERT INTO `menu` VALUES (155,105,36,39,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
+INSERT INTO `menu` VALUES (156,114,74,75,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,76,77,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,84,85,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,86,87,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (160,150,64,65,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
+INSERT INTO `menu` VALUES (161,126,118,119,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,120,121,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,108,109,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,134,135,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,136,137,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,70,71,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (167,148,26,27,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
+INSERT INTO `menu` VALUES (168,145,142,143,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,112,113,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,128,129,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,130,131,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (172,105,40,41,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
+INSERT INTO `menu` VALUES (173,105,42,43,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
+INSERT INTO `menu` VALUES (174,155,37,38,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
+INSERT INTO `menu` VALUES (175,105,44,45,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
+INSERT INTO `menu` VALUES (176,105,46,47,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
+INSERT INTO `menu` VALUES (177,114,78,79,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (178,105,48,49,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
+INSERT INTO `menu` VALUES (179,103,67,68,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
+INSERT INTO `menu` VALUES (180,115,88,89,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,80,81,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (183,95,19,20,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -418,7 +667,10 @@ CREATE TABLE `menu_group` (
 
 LOCK TABLES `menu_group` WRITE;
 /*!40000 ALTER TABLE `menu_group` DISABLE KEYS */;
-INSERT INTO `menu_group` VALUES (1,'Main Menu'),(2,'Footer Menu'),(3,'Member Menu'),(4,'Admin Menu');
+INSERT INTO `menu_group` VALUES (1,'Main Menu');
+INSERT INTO `menu_group` VALUES (2,'Footer Menu');
+INSERT INTO `menu_group` VALUES (3,'Member Menu');
+INSERT INTO `menu_group` VALUES (4,'Admin Menu');
 /*!40000 ALTER TABLE `menu_group` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -446,41 +698,11 @@ CREATE TABLE `sharding` (
 
 LOCK TABLES `sharding` WRITE;
 /*!40000 ALTER TABLE `sharding` DISABLE KEYS */;
-INSERT INTO `sharding` VALUES (1,'slave','slave','2017-01-24 14:22:24','mysql_replication_thread__Connection_name'),(2,'variables','variables','2017-02-21 16:15:07','mysql_server'),(3,'status','status','2017-02-21 16:15:22','mysql_server'),(4,'master','master','2017-02-21 16:15:35','mysql_server');
+INSERT INTO `sharding` VALUES (1,'slave','slave','2017-01-24 14:22:24','mysql_replication_thread__Connection_name');
+INSERT INTO `sharding` VALUES (2,'variables','variables','2017-02-21 16:15:07','mysql_server');
+INSERT INTO `sharding` VALUES (3,'status','status','2017-02-21 16:15:22','mysql_server');
+INSERT INTO `sharding` VALUES (4,'master','master','2017-02-21 16:15:35','mysql_server');
 /*!40000 ALTER TABLE `sharding` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `translation_main`
---
-
-DROP TABLE IF EXISTS `translation_main`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `translation_main` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_history_etat` int(11) NOT NULL,
-  `key` char(40) NOT NULL,
-  `source` char(5) NOT NULL,
-  `destination` char(5) NOT NULL,
-  `text` text NOT NULL,
-  `date_inserted` datetime NOT NULL,
-  `date_updated` datetime NOT NULL,
-  `translate_auto` int(11) NOT NULL,
-  `file_found` varchar(255) NOT NULL,
-  `line_found` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`,`destination`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `translation_main`
---
-
-LOCK TABLES `translation_main` WRITE;
-/*!40000 ALTER TABLE `translation_main` DISABLE KEYS */;
-/*!40000 ALTER TABLE `translation_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -504,7 +726,11 @@ CREATE TABLE `ts_file` (
 
 LOCK TABLES `ts_file` WRITE;
 /*!40000 ALTER TABLE `ts_file` DISABLE KEYS */;
-INSERT INTO `ts_file` VALUES (3,'answer'),(5,'database'),(2,'hardware'),(1,'ssh_stats'),(4,'variable');
+INSERT INTO `ts_file` VALUES (3,'answer');
+INSERT INTO `ts_file` VALUES (5,'database');
+INSERT INTO `ts_file` VALUES (2,'hardware');
+INSERT INTO `ts_file` VALUES (1,'ssh_stats');
+INSERT INTO `ts_file` VALUES (4,'variable');
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -535,7 +761,2334 @@ CREATE TABLE `ts_variable` (
 
 LOCK TABLES `ts_variable` WRITE;
 /*!40000 ALTER TABLE `ts_variable` DISABLE KEYS */;
-INSERT INTO `ts_variable` VALUES (1,3,'ping','DOUBLE','server','general',1,1),(2,4,'aria_block_size','INT','variables','general',1,1),(3,4,'aria_checkpoint_interval','INT','variables','general',1,1),(4,4,'aria_checkpoint_log_activity','INT','variables','general',1,1),(5,4,'aria_force_start_after_recovery_failures','INT','variables','general',1,1),(6,4,'aria_group_commit','TEXT','variables','general',1,1),(7,4,'aria_group_commit_interval','INT','variables','general',1,1),(8,4,'aria_log_file_size','INT','variables','general',1,1),(9,4,'aria_log_purge_type','TEXT','variables','general',1,1),(10,4,'aria_max_sort_file_size','INT','variables','general',1,1),(11,4,'aria_page_checksum','TEXT','variables','general',1,1),(12,4,'aria_pagecache_age_threshold','INT','variables','general',1,1),(13,4,'aria_pagecache_buffer_size','INT','variables','general',1,1),(14,4,'aria_pagecache_division_limit','INT','variables','general',1,1),(15,4,'aria_recover','TEXT','variables','general',1,1),(16,4,'aria_repair_threads','INT','variables','general',1,1),(17,4,'aria_sort_buffer_size','INT','variables','general',1,1),(18,4,'aria_stats_method','TEXT','variables','general',1,1),(19,4,'aria_sync_log_dir','TEXT','variables','general',1,1),(20,4,'aria_used_for_temp_tables','TEXT','variables','general',1,1),(21,4,'auto_increment_increment','INT','variables','general',1,1),(22,4,'auto_increment_offset','INT','variables','general',1,1),(23,4,'autocommit','TEXT','variables','general',1,1),(24,4,'automatic_sp_privileges','TEXT','variables','general',1,1),(25,4,'back_log','INT','variables','general',1,1),(26,4,'basedir','TEXT','variables','general',1,1),(27,4,'big_tables','TEXT','variables','general',1,1),(28,4,'binlog_annotate_row_events','TEXT','variables','general',1,1),(29,4,'binlog_cache_size','INT','variables','general',1,1),(30,4,'binlog_checksum','TEXT','variables','general',1,1),(31,4,'binlog_direct_non_transactional_updates','TEXT','variables','general',1,1),(32,4,'binlog_format','TEXT','variables','general',1,1),(33,4,'binlog_optimize_thread_scheduling','TEXT','variables','general',1,1),(34,4,'binlog_stmt_cache_size','INT','variables','general',1,1),(35,4,'bulk_insert_buffer_size','INT','variables','general',1,1),(36,4,'character_set_client','TEXT','variables','general',1,1),(37,4,'character_set_connection','TEXT','variables','general',1,1),(38,4,'character_set_database','TEXT','variables','general',1,1),(39,4,'character_set_filesystem','TEXT','variables','general',1,1),(40,4,'character_set_results','TEXT','variables','general',1,1),(41,4,'character_set_server','TEXT','variables','general',1,1),(42,4,'character_set_system','TEXT','variables','general',1,1),(43,4,'character_sets_dir','TEXT','variables','general',1,1),(44,4,'collation_connection','TEXT','variables','general',1,1),(45,4,'collation_database','TEXT','variables','general',1,1),(46,4,'collation_server','TEXT','variables','general',1,1),(47,4,'completion_type','TEXT','variables','general',1,1),(48,4,'concurrent_insert','TEXT','variables','general',1,1),(49,4,'connect_timeout','INT','variables','general',1,1),(50,4,'datadir','TEXT','variables','general',1,1),(51,4,'date_format','TEXT','variables','general',1,1),(52,4,'datetime_format','TEXT','variables','general',1,1),(53,4,'deadlock_search_depth_long','INT','variables','general',1,1),(54,4,'deadlock_search_depth_short','INT','variables','general',1,1),(55,4,'deadlock_timeout_long','INT','variables','general',1,1),(56,4,'deadlock_timeout_short','INT','variables','general',1,1),(57,4,'debug_no_thread_alarm','TEXT','variables','general',1,1),(58,4,'default_storage_engine','TEXT','variables','general',1,1),(59,4,'default_week_format','INT','variables','general',1,1),(60,4,'delay_key_write','TEXT','variables','general',1,1),(61,4,'delayed_insert_limit','INT','variables','general',1,1),(62,4,'delayed_insert_timeout','INT','variables','general',1,1),(63,4,'delayed_queue_size','INT','variables','general',1,1),(64,4,'div_precision_increment','INT','variables','general',1,1),(65,4,'engine_condition_pushdown','TEXT','variables','general',1,1),(66,4,'event_scheduler','TEXT','variables','general',1,1),(67,4,'expensive_subquery_limit','INT','variables','general',1,1),(68,4,'expire_logs_days','INT','variables','general',1,1),(69,4,'extra_max_connections','INT','variables','general',1,1),(70,4,'extra_port','INT','variables','general',1,1),(71,4,'flush','TEXT','variables','general',1,1),(72,4,'flush_time','INT','variables','general',1,1),(73,4,'foreign_key_checks','TEXT','variables','general',1,1),(74,4,'ft_boolean_syntax','TEXT','variables','general',1,1),(75,4,'ft_max_word_len','INT','variables','general',1,1),(76,4,'ft_min_word_len','INT','variables','general',1,1),(77,4,'ft_query_expansion_limit','INT','variables','general',1,1),(78,4,'ft_stopword_file','TEXT','variables','general',1,1),(79,4,'general_log','TEXT','variables','general',1,1),(80,4,'general_log_file','TEXT','variables','general',1,1),(81,4,'group_concat_max_len','INT','variables','general',1,1),(82,4,'have_compress','TEXT','variables','general',1,1),(83,4,'have_crypt','TEXT','variables','general',1,1),(84,4,'have_csv','TEXT','variables','general',1,1),(85,4,'have_dynamic_loading','TEXT','variables','general',1,1),(86,4,'have_geometry','TEXT','variables','general',1,1),(87,4,'have_innodb','TEXT','variables','general',1,1),(88,4,'have_ndbcluster','TEXT','variables','general',1,1),(89,4,'have_openssl','TEXT','variables','general',1,1),(90,4,'have_partitioning','TEXT','variables','general',1,1),(91,4,'have_profiling','TEXT','variables','general',1,1),(92,4,'have_query_cache','TEXT','variables','general',1,1),(93,4,'have_rtree_keys','TEXT','variables','general',1,1),(94,4,'have_ssl','TEXT','variables','general',1,1),(95,4,'have_symlink','TEXT','variables','general',1,1),(96,4,'hostname','TEXT','variables','general',1,1),(97,4,'ignore_builtin_innodb','TEXT','variables','general',1,1),(98,4,'init_connect','TEXT','variables','general',1,1),(99,4,'innodb_adaptive_flushing','TEXT','variables','general',1,1),(100,4,'innodb_adaptive_flushing_method','TEXT','variables','general',1,1),(101,4,'innodb_adaptive_hash_index','TEXT','variables','general',1,1),(102,4,'innodb_adaptive_hash_index_partitions','INT','variables','general',1,1),(103,4,'innodb_additional_mem_pool_size','INT','variables','general',1,1),(104,4,'innodb_autoextend_increment','INT','variables','general',1,1),(105,4,'innodb_autoinc_lock_mode','INT','variables','general',1,1),(106,4,'innodb_blocking_buffer_pool_restore','TEXT','variables','general',1,1),(107,4,'innodb_buffer_pool_instances','INT','variables','general',1,1),(108,4,'innodb_buffer_pool_restore_at_startup','INT','variables','general',1,1),(109,4,'innodb_buffer_pool_shm_checksum','TEXT','variables','general',1,1),(110,4,'innodb_buffer_pool_shm_key','INT','variables','general',1,1),(111,4,'innodb_buffer_pool_size','INT','variables','general',1,1),(112,4,'innodb_change_buffering','TEXT','variables','general',1,1),(113,4,'innodb_changed_pages_limit','INT','variables','general',1,1),(114,4,'innodb_checkpoint_age_target','INT','variables','general',1,1),(115,4,'innodb_checksums','TEXT','variables','general',1,1),(116,4,'innodb_commit_concurrency','INT','variables','general',1,1),(117,4,'innodb_concurrency_tickets','INT','variables','general',1,1),(118,4,'innodb_corrupt_table_action','TEXT','variables','general',1,1),(119,4,'innodb_data_file_path','TEXT','variables','general',1,1),(120,4,'innodb_dict_size_limit','INT','variables','general',1,1),(121,4,'innodb_doublewrite','TEXT','variables','general',1,1),(122,4,'innodb_fake_changes','TEXT','variables','general',1,1),(123,4,'innodb_fast_checksum','TEXT','variables','general',1,1),(124,4,'innodb_fast_shutdown','INT','variables','general',1,1),(125,4,'innodb_file_format','TEXT','variables','general',1,1),(126,4,'innodb_file_format_check','TEXT','variables','general',1,1),(127,4,'innodb_file_format_max','TEXT','variables','general',1,1),(128,4,'innodb_file_per_table','TEXT','variables','general',1,1),(129,4,'innodb_flush_log_at_trx_commit','INT','variables','general',1,1),(130,4,'innodb_flush_method','TEXT','variables','general',1,1),(131,4,'innodb_flush_neighbor_pages','TEXT','variables','general',1,1),(132,4,'innodb_force_load_corrupted','TEXT','variables','general',1,1),(133,4,'innodb_force_recovery','INT','variables','general',1,1),(134,4,'innodb_ibuf_accel_rate','INT','variables','general',1,1),(135,4,'innodb_ibuf_active_contract','INT','variables','general',1,1),(136,4,'innodb_ibuf_max_size','INT','variables','general',1,1),(137,4,'innodb_import_table_from_xtrabackup','INT','variables','general',1,1),(138,4,'innodb_io_capacity','INT','variables','general',1,1),(139,4,'innodb_kill_idle_transaction','INT','variables','general',1,1),(140,4,'innodb_large_prefix','TEXT','variables','general',1,1),(141,4,'innodb_lazy_drop_table','INT','variables','general',1,1),(142,4,'innodb_lock_wait_timeout','INT','variables','general',1,1),(143,4,'innodb_locks_unsafe_for_binlog','TEXT','variables','general',1,1),(144,4,'innodb_log_block_size','INT','variables','general',1,1),(145,4,'innodb_log_buffer_size','INT','variables','general',1,1),(146,4,'innodb_log_file_size','INT','variables','general',1,1),(147,4,'innodb_log_files_in_group','INT','variables','general',1,1),(148,4,'innodb_log_group_home_dir','TEXT','variables','general',1,1),(149,4,'innodb_max_dirty_pages_pct','INT','variables','general',1,1),(150,4,'innodb_max_purge_lag','INT','variables','general',1,1),(151,4,'innodb_merge_sort_block_size','INT','variables','general',1,1),(152,4,'innodb_mirrored_log_groups','INT','variables','general',1,1),(153,4,'innodb_old_blocks_pct','INT','variables','general',1,1),(154,4,'innodb_old_blocks_time','INT','variables','general',1,1),(155,4,'innodb_open_files','INT','variables','general',1,1),(156,4,'innodb_page_size','INT','variables','general',1,1),(157,4,'innodb_purge_batch_size','INT','variables','general',1,1),(158,4,'innodb_purge_threads','INT','variables','general',1,1),(159,4,'innodb_random_read_ahead','TEXT','variables','general',1,1),(160,4,'innodb_read_ahead','TEXT','variables','general',1,1),(161,4,'innodb_read_ahead_threshold','INT','variables','general',1,1),(162,4,'innodb_read_io_threads','INT','variables','general',1,1),(163,4,'innodb_recovery_stats','TEXT','variables','general',1,1),(164,4,'innodb_recovery_update_relay_log','TEXT','variables','general',1,1),(165,4,'innodb_replication_delay','INT','variables','general',1,1),(166,4,'innodb_rollback_on_timeout','TEXT','variables','general',1,1),(167,4,'innodb_rollback_segments','INT','variables','general',1,1),(168,4,'innodb_show_locks_held','INT','variables','general',1,1),(169,4,'innodb_show_verbose_locks','INT','variables','general',1,1),(170,4,'innodb_spin_wait_delay','INT','variables','general',1,1),(171,4,'innodb_stats_auto_update','INT','variables','general',1,1),(172,4,'innodb_stats_method','TEXT','variables','general',1,1),(173,4,'innodb_stats_on_metadata','TEXT','variables','general',1,1),(174,4,'innodb_stats_sample_pages','INT','variables','general',1,1),(175,4,'innodb_stats_update_need_lock','INT','variables','general',1,1),(176,4,'innodb_strict_mode','TEXT','variables','general',1,1),(177,4,'innodb_support_xa','TEXT','variables','general',1,1),(178,4,'innodb_sync_spin_loops','INT','variables','general',1,1),(179,4,'innodb_table_locks','TEXT','variables','general',1,1),(180,4,'innodb_thread_concurrency','INT','variables','general',1,1),(181,4,'innodb_thread_concurrency_timer_based','TEXT','variables','general',1,1),(182,4,'innodb_thread_sleep_delay','INT','variables','general',1,1),(183,4,'innodb_track_changed_pages','TEXT','variables','general',1,1),(184,4,'innodb_use_global_flush_log_at_trx_commit','TEXT','variables','general',1,1),(185,4,'innodb_use_native_aio','TEXT','variables','general',1,1),(186,4,'innodb_use_sys_malloc','TEXT','variables','general',1,1),(187,4,'innodb_use_sys_stats_table','TEXT','variables','general',1,1),(188,4,'innodb_version','TEXT','variables','general',1,1),(189,4,'innodb_write_io_threads','INT','variables','general',1,1),(190,4,'interactive_timeout','INT','variables','general',1,1),(191,4,'join_buffer_size','INT','variables','general',1,1),(192,4,'join_buffer_space_limit','INT','variables','general',1,1),(193,4,'join_cache_level','INT','variables','general',1,1),(194,4,'keep_files_on_create','TEXT','variables','general',1,1),(195,4,'key_buffer_size','INT','variables','general',1,1),(196,4,'key_cache_age_threshold','INT','variables','general',1,1),(197,4,'key_cache_block_size','INT','variables','general',1,1),(198,4,'key_cache_division_limit','INT','variables','general',1,1),(199,4,'key_cache_segments','INT','variables','general',1,1),(200,4,'large_files_support','TEXT','variables','general',1,1),(201,4,'large_page_size','INT','variables','general',1,1),(202,4,'large_pages','TEXT','variables','general',1,1),(203,4,'lc_messages','TEXT','variables','general',1,1),(204,4,'lc_messages_dir','TEXT','variables','general',1,1),(205,4,'lc_time_names','TEXT','variables','general',1,1),(206,4,'license','TEXT','variables','general',1,1),(207,4,'local_infile','TEXT','variables','general',1,1),(208,4,'lock_wait_timeout','INT','variables','general',1,1),(209,4,'locked_in_memory','TEXT','variables','general',1,1),(210,4,'log','TEXT','variables','general',1,1),(211,4,'log_bin','TEXT','variables','general',1,1),(212,4,'log_bin_trust_function_creators','TEXT','variables','general',1,1),(213,4,'log_error','TEXT','variables','general',1,1),(214,4,'log_output','TEXT','variables','general',1,1),(215,4,'log_queries_not_using_indexes','TEXT','variables','general',1,1),(216,4,'log_slave_updates','TEXT','variables','general',1,1),(217,4,'log_slow_filter','TEXT','variables','general',1,1),(218,4,'log_slow_queries','TEXT','variables','general',1,1),(219,4,'log_slow_rate_limit','INT','variables','general',1,1),(220,4,'log_warnings','INT','variables','general',1,1),(221,4,'long_query_time','DOUBLE','variables','general',1,1),(222,4,'low_priority_updates','TEXT','variables','general',1,1),(223,4,'lower_case_file_system','TEXT','variables','general',1,1),(224,4,'lower_case_table_names','INT','variables','general',1,1),(225,4,'master_verify_checksum','TEXT','variables','general',1,1),(226,4,'max_allowed_packet','INT','variables','general',1,1),(227,4,'max_binlog_cache_size','INT','variables','general',1,1),(228,4,'max_binlog_size','INT','variables','general',1,1),(229,4,'max_binlog_stmt_cache_size','INT','variables','general',1,1),(230,4,'max_connect_errors','INT','variables','general',1,1),(231,4,'max_connections','INT','variables','general',1,1),(232,4,'max_delayed_threads','INT','variables','general',1,1),(233,4,'max_error_count','INT','variables','general',1,1),(234,4,'max_heap_table_size','INT','variables','general',1,1),(235,4,'max_insert_delayed_threads','INT','variables','general',1,1),(236,4,'max_join_size','DOUBLE','variables','general',1,1),(237,4,'max_length_for_sort_data','INT','variables','general',1,1),(238,4,'max_long_data_size','INT','variables','general',1,1),(239,4,'max_prepared_stmt_count','INT','variables','general',1,1),(240,4,'max_relay_log_size','INT','variables','general',1,1),(241,4,'max_seeks_for_key','INT','variables','general',1,1),(242,4,'max_sort_length','INT','variables','general',1,1),(243,4,'max_sp_recursion_depth','INT','variables','general',1,1),(244,4,'max_tmp_tables','INT','variables','general',1,1),(245,4,'max_user_connections','INT','variables','general',1,1),(246,4,'max_write_lock_count','INT','variables','general',1,1),(247,4,'metadata_locks_cache_size','INT','variables','general',1,1),(248,4,'min_examined_row_limit','INT','variables','general',1,1),(249,4,'mrr_buffer_size','INT','variables','general',1,1),(250,4,'multi_range_count','INT','variables','general',1,1),(251,4,'myisam_block_size','INT','variables','general',1,1),(252,4,'myisam_data_pointer_size','INT','variables','general',1,1),(253,4,'myisam_max_sort_file_size','INT','variables','general',1,1),(254,4,'myisam_mmap_size','DOUBLE','variables','general',1,1),(255,4,'myisam_recover_options','TEXT','variables','general',1,1),(256,4,'myisam_repair_threads','INT','variables','general',1,1),(257,4,'myisam_sort_buffer_size','INT','variables','general',1,1),(258,4,'myisam_stats_method','TEXT','variables','general',1,1),(259,4,'myisam_use_mmap','TEXT','variables','general',1,1),(260,4,'net_buffer_length','INT','variables','general',1,1),(261,4,'net_read_timeout','INT','variables','general',1,1),(262,4,'net_retry_count','INT','variables','general',1,1),(263,4,'net_write_timeout','INT','variables','general',1,1),(264,4,'old','TEXT','variables','general',1,1),(265,4,'old_alter_table','TEXT','variables','general',1,1),(266,4,'old_passwords','TEXT','variables','general',1,1),(267,4,'open_files_limit','INT','variables','general',1,1),(268,4,'optimizer_prune_level','INT','variables','general',1,1),(269,4,'optimizer_search_depth','INT','variables','general',1,1),(270,4,'optimizer_switch','TEXT','variables','general',1,1),(271,4,'performance_schema','TEXT','variables','general',1,1),(272,4,'performance_schema_events_waits_history_long_size','INT','variables','general',1,1),(273,4,'performance_schema_events_waits_history_size','INT','variables','general',1,1),(274,4,'performance_schema_max_cond_classes','INT','variables','general',1,1),(275,4,'performance_schema_max_cond_instances','INT','variables','general',1,1),(276,4,'performance_schema_max_file_classes','INT','variables','general',1,1),(277,4,'performance_schema_max_file_handles','INT','variables','general',1,1),(278,4,'performance_schema_max_file_instances','INT','variables','general',1,1),(279,4,'performance_schema_max_mutex_classes','INT','variables','general',1,1),(280,4,'performance_schema_max_mutex_instances','INT','variables','general',1,1),(281,4,'performance_schema_max_rwlock_classes','INT','variables','general',1,1),(282,4,'performance_schema_max_rwlock_instances','INT','variables','general',1,1),(283,4,'performance_schema_max_table_handles','INT','variables','general',1,1),(284,4,'performance_schema_max_table_instances','INT','variables','general',1,1),(285,4,'performance_schema_max_thread_classes','INT','variables','general',1,1),(286,4,'performance_schema_max_thread_instances','INT','variables','general',1,1),(287,4,'pid_file','TEXT','variables','general',1,1),(288,4,'plugin_dir','TEXT','variables','general',1,1),(289,4,'plugin_maturity','TEXT','variables','general',1,1),(290,4,'port','INT','variables','general',1,1),(291,4,'preload_buffer_size','INT','variables','general',1,1),(292,4,'profiling','TEXT','variables','general',1,1),(293,4,'profiling_history_size','INT','variables','general',1,1),(294,4,'progress_report_time','INT','variables','general',1,1),(295,4,'protocol_version','INT','variables','general',1,1),(296,4,'query_alloc_block_size','INT','variables','general',1,1),(297,4,'query_cache_limit','INT','variables','general',1,1),(298,4,'query_cache_min_res_unit','INT','variables','general',1,1),(299,4,'query_cache_size','INT','variables','general',1,1),(300,4,'query_cache_strip_comments','TEXT','variables','general',1,1),(301,4,'query_cache_type','TEXT','variables','general',1,1),(302,4,'query_cache_wlock_invalidate','TEXT','variables','general',1,1),(303,4,'query_prealloc_size','INT','variables','general',1,1),(304,4,'range_alloc_block_size','INT','variables','general',1,1),(305,4,'read_buffer_size','INT','variables','general',1,1),(306,4,'read_only','TEXT','variables','general',1,1),(307,4,'read_rnd_buffer_size','INT','variables','general',1,1),(308,4,'relay_log','TEXT','variables','general',1,1),(309,4,'relay_log_info_file','TEXT','variables','general',1,1),(310,4,'relay_log_purge','TEXT','variables','general',1,1),(311,4,'relay_log_recovery','TEXT','variables','general',1,1),(312,4,'relay_log_space_limit','INT','variables','general',1,1),(313,4,'replicate_annotate_row_events','TEXT','variables','general',1,1),(314,4,'replicate_do_db','TEXT','variables','general',1,1),(315,4,'replicate_events_marked_for_skip','TEXT','variables','general',1,1),(316,4,'replicate_ignore_db','TEXT','variables','general',1,1),(317,4,'report_host','TEXT','variables','general',1,1),(318,4,'report_port','INT','variables','general',1,1),(319,4,'rowid_merge_buff_size','INT','variables','general',1,1),(320,4,'rpl_recovery_rank','INT','variables','general',1,1),(321,4,'secure_auth','TEXT','variables','general',1,1),(322,4,'server_id','INT','variables','general',1,1),(323,4,'skip_external_locking','TEXT','variables','general',1,1),(324,4,'skip_name_resolve','TEXT','variables','general',1,1),(325,4,'skip_networking','TEXT','variables','general',1,1),(326,4,'skip_show_database','TEXT','variables','general',1,1),(327,4,'slave_compressed_protocol','TEXT','variables','general',1,1),(328,4,'slave_exec_mode','TEXT','variables','general',1,1),(329,4,'slave_load_tmpdir','TEXT','variables','general',1,1),(330,4,'slave_max_allowed_packet','INT','variables','general',1,1),(331,4,'slave_net_timeout','INT','variables','general',1,1),(332,4,'slave_skip_errors','TEXT','variables','general',1,1),(333,4,'slave_sql_verify_checksum','TEXT','variables','general',1,1),(334,4,'slave_transaction_retries','INT','variables','general',1,1),(335,4,'slow_launch_time','INT','variables','general',1,1),(336,4,'slow_query_log','TEXT','variables','general',1,1),(337,4,'slow_query_log_file','TEXT','variables','general',1,1),(338,4,'socket','TEXT','variables','general',1,1),(339,4,'sort_buffer_size','INT','variables','general',1,1),(340,4,'sql_auto_is_null','TEXT','variables','general',1,1),(341,4,'sql_big_selects','TEXT','variables','general',1,1),(342,4,'sql_big_tables','TEXT','variables','general',1,1),(343,4,'sql_buffer_result','TEXT','variables','general',1,1),(344,4,'sql_log_bin','TEXT','variables','general',1,1),(345,4,'sql_log_off','TEXT','variables','general',1,1),(346,4,'sql_low_priority_updates','TEXT','variables','general',1,1),(347,4,'sql_max_join_size','DOUBLE','variables','general',1,1),(348,4,'sql_notes','TEXT','variables','general',1,1),(349,4,'sql_quote_show_create','TEXT','variables','general',1,1),(350,4,'sql_safe_updates','TEXT','variables','general',1,1),(351,4,'sql_select_limit','DOUBLE','variables','general',1,1),(352,4,'sql_slave_skip_counter','INT','variables','general',1,1),(353,4,'sql_warnings','TEXT','variables','general',1,1),(354,4,'storage_engine','TEXT','variables','general',1,1),(355,4,'stored_program_cache','INT','variables','general',1,1),(356,4,'sync_binlog','INT','variables','general',1,1),(357,4,'sync_frm','TEXT','variables','general',1,1),(358,4,'sync_master_info','INT','variables','general',1,1),(359,4,'sync_relay_log','INT','variables','general',1,1),(360,4,'sync_relay_log_info','INT','variables','general',1,1),(361,4,'system_time_zone','TEXT','variables','general',1,1),(362,4,'table_definition_cache','INT','variables','general',1,1),(363,4,'table_open_cache','INT','variables','general',1,1),(364,4,'thread_cache_size','INT','variables','general',1,1),(365,4,'thread_concurrency','INT','variables','general',1,1),(366,4,'thread_handling','TEXT','variables','general',1,1),(367,4,'thread_pool_idle_timeout','INT','variables','general',1,1),(368,4,'thread_pool_max_threads','INT','variables','general',1,1),(369,4,'thread_pool_oversubscribe','INT','variables','general',1,1),(370,4,'thread_pool_size','INT','variables','general',1,1),(371,4,'thread_pool_stall_limit','INT','variables','general',1,1),(372,4,'thread_stack','INT','variables','general',1,1),(373,4,'time_format','TEXT','variables','general',1,1),(374,4,'time_zone','TEXT','variables','general',1,1),(375,4,'timed_mutexes','TEXT','variables','general',1,1),(376,4,'tmp_table_size','INT','variables','general',1,1),(377,4,'tmpdir','TEXT','variables','general',1,1),(378,4,'transaction_alloc_block_size','INT','variables','general',1,1),(379,4,'transaction_prealloc_size','INT','variables','general',1,1),(380,4,'tx_isolation','TEXT','variables','general',1,1),(381,4,'unique_checks','TEXT','variables','general',1,1),(382,4,'updatable_views_with_limit','TEXT','variables','general',1,1),(383,4,'userstat','TEXT','variables','general',1,1),(384,4,'version','TEXT','variables','general',1,1),(385,4,'version_comment','TEXT','variables','general',1,1),(386,4,'version_compile_machine','TEXT','variables','general',1,1),(387,4,'version_compile_os','TEXT','variables','general',1,1),(388,4,'wait_timeout','INT','variables','general',1,1),(389,3,'aborted_clients','INT','status','general',1,1),(390,3,'aborted_connects','INT','status','general',1,1),(391,3,'access_denied_errors','INT','status','general',1,1),(392,3,'aria_pagecache_blocks_not_flushed','INT','status','general',1,1),(393,3,'aria_pagecache_blocks_unused','INT','status','general',1,1),(394,3,'aria_pagecache_blocks_used','INT','status','general',1,1),(395,3,'aria_pagecache_read_requests','INT','status','general',1,1),(396,3,'aria_pagecache_reads','INT','status','general',1,1),(397,3,'aria_pagecache_write_requests','INT','status','general',1,1),(398,3,'aria_pagecache_writes','INT','status','general',1,1),(399,3,'aria_transaction_log_syncs','INT','status','general',1,1),(400,3,'binlog_bytes_written','INT','status','general',1,1),(401,3,'binlog_cache_disk_use','INT','status','general',1,1),(402,3,'binlog_cache_use','INT','status','general',1,1),(403,3,'binlog_stmt_cache_disk_use','INT','status','general',1,1),(404,3,'binlog_stmt_cache_use','INT','status','general',1,1),(405,3,'busy_time','DOUBLE','status','general',1,1),(406,3,'bytes_received','INT','status','general',1,1),(407,3,'bytes_sent','INT','status','general',1,1),(408,3,'com_admin_commands','INT','status','general',1,1),(409,3,'com_assign_to_keycache','INT','status','general',1,1),(410,3,'com_alter_db','INT','status','general',1,1),(411,3,'com_alter_db_upgrade','INT','status','general',1,1),(412,3,'com_alter_event','INT','status','general',1,1),(413,3,'com_alter_function','INT','status','general',1,1),(414,3,'com_alter_procedure','INT','status','general',1,1),(415,3,'com_alter_server','INT','status','general',1,1),(416,3,'com_alter_table','INT','status','general',1,1),(417,3,'com_alter_tablespace','INT','status','general',1,1),(418,3,'com_analyze','INT','status','general',1,1),(419,3,'com_begin','INT','status','general',1,1),(420,3,'com_binlog','INT','status','general',1,1),(421,3,'com_call_procedure','INT','status','general',1,1),(422,3,'com_change_db','INT','status','general',1,1),(423,3,'com_change_master','INT','status','general',1,1),(424,3,'com_check','INT','status','general',1,1),(425,3,'com_checksum','INT','status','general',1,1),(426,3,'com_commit','INT','status','general',1,1),(427,3,'com_create_db','INT','status','general',1,1),(428,3,'com_create_event','INT','status','general',1,1),(429,3,'com_create_function','INT','status','general',1,1),(430,3,'com_create_index','INT','status','general',1,1),(431,3,'com_create_procedure','INT','status','general',1,1),(432,3,'com_create_server','INT','status','general',1,1),(433,3,'com_create_table','INT','status','general',1,1),(434,3,'com_create_trigger','INT','status','general',1,1),(435,3,'com_create_udf','INT','status','general',1,1),(436,3,'com_create_user','INT','status','general',1,1),(437,3,'com_create_view','INT','status','general',1,1),(438,3,'com_dealloc_sql','INT','status','general',1,1),(439,3,'com_delete','INT','status','general',1,1),(440,3,'com_delete_multi','INT','status','general',1,1),(441,3,'com_do','INT','status','general',1,1),(442,3,'com_drop_db','INT','status','general',1,1),(443,3,'com_drop_event','INT','status','general',1,1),(444,3,'com_drop_function','INT','status','general',1,1),(445,3,'com_drop_index','INT','status','general',1,1),(446,3,'com_drop_procedure','INT','status','general',1,1),(447,3,'com_drop_server','INT','status','general',1,1),(448,3,'com_drop_table','INT','status','general',1,1),(449,3,'com_drop_trigger','INT','status','general',1,1),(450,3,'com_drop_user','INT','status','general',1,1),(451,3,'com_drop_view','INT','status','general',1,1),(452,3,'com_empty_query','INT','status','general',1,1),(453,3,'com_execute_sql','INT','status','general',1,1),(454,3,'com_flush','INT','status','general',1,1),(455,3,'com_grant','INT','status','general',1,1),(456,3,'com_ha_close','INT','status','general',1,1),(457,3,'com_ha_open','INT','status','general',1,1),(458,3,'com_ha_read','INT','status','general',1,1),(459,3,'com_help','INT','status','general',1,1),(460,3,'com_insert','INT','status','general',1,1),(461,3,'com_insert_select','INT','status','general',1,1),(462,3,'com_install_plugin','INT','status','general',1,1),(463,3,'com_kill','INT','status','general',1,1),(464,3,'com_load','INT','status','general',1,1),(465,3,'com_lock_tables','INT','status','general',1,1),(466,3,'com_optimize','INT','status','general',1,1),(467,3,'com_preload_keys','INT','status','general',1,1),(468,3,'com_prepare_sql','INT','status','general',1,1),(469,3,'com_purge','INT','status','general',1,1),(470,3,'com_purge_before_date','INT','status','general',1,1),(471,3,'com_release_savepoint','INT','status','general',1,1),(472,3,'com_rename_table','INT','status','general',1,1),(473,3,'com_rename_user','INT','status','general',1,1),(474,3,'com_repair','INT','status','general',1,1),(475,3,'com_replace','INT','status','general',1,1),(476,3,'com_replace_select','INT','status','general',1,1),(477,3,'com_reset','INT','status','general',1,1),(478,3,'com_resignal','INT','status','general',1,1),(479,3,'com_revoke','INT','status','general',1,1),(480,3,'com_revoke_all','INT','status','general',1,1),(481,3,'com_rollback','INT','status','general',1,1),(482,3,'com_rollback_to_savepoint','INT','status','general',1,1),(483,3,'com_savepoint','INT','status','general',1,1),(484,3,'com_select','INT','status','general',1,1),(485,3,'com_set_option','INT','status','general',1,1),(486,3,'com_signal','INT','status','general',1,1),(487,3,'com_show_authors','INT','status','general',1,1),(488,3,'com_show_binlog_events','INT','status','general',1,1),(489,3,'com_show_binlogs','INT','status','general',1,1),(490,3,'com_show_charsets','INT','status','general',1,1),(491,3,'com_show_client_statistics','INT','status','general',1,1),(492,3,'com_show_collations','INT','status','general',1,1),(493,3,'com_show_contributors','INT','status','general',1,1),(494,3,'com_show_create_db','INT','status','general',1,1),(495,3,'com_show_create_event','INT','status','general',1,1),(496,3,'com_show_create_func','INT','status','general',1,1),(497,3,'com_show_create_proc','INT','status','general',1,1),(498,3,'com_show_create_table','INT','status','general',1,1),(499,3,'com_show_create_trigger','INT','status','general',1,1),(500,3,'com_show_databases','INT','status','general',1,1),(501,3,'com_show_engine_logs','INT','status','general',1,1),(502,3,'com_show_engine_mutex','INT','status','general',1,1),(503,3,'com_show_engine_status','INT','status','general',1,1),(504,3,'com_show_events','INT','status','general',1,1),(505,3,'com_show_errors','INT','status','general',1,1),(506,3,'com_show_fields','INT','status','general',1,1),(507,3,'com_show_function_status','INT','status','general',1,1),(508,3,'com_show_grants','INT','status','general',1,1),(509,3,'com_show_keys','INT','status','general',1,1),(510,3,'com_show_index_statistics','INT','status','general',1,1),(511,3,'com_show_master_status','INT','status','general',1,1),(512,3,'com_show_open_tables','INT','status','general',1,1),(513,3,'com_show_plugins','INT','status','general',1,1),(514,3,'com_show_privileges','INT','status','general',1,1),(515,3,'com_show_procedure_status','INT','status','general',1,1),(516,3,'com_show_processlist','INT','status','general',1,1),(517,3,'com_show_profile','INT','status','general',1,1),(518,3,'com_show_profiles','INT','status','general',1,1),(519,3,'com_show_relaylog_events','INT','status','general',1,1),(520,3,'com_show_slave_hosts','INT','status','general',1,1),(521,3,'com_show_slave_status','INT','status','general',1,1),(522,3,'com_show_status','INT','status','general',1,1),(523,3,'com_show_storage_engines','INT','status','general',1,1),(524,3,'com_show_table_statistics','INT','status','general',1,1),(525,3,'com_show_table_status','INT','status','general',1,1),(526,3,'com_show_tables','INT','status','general',1,1),(527,3,'com_show_triggers','INT','status','general',1,1),(528,3,'com_show_user_statistics','INT','status','general',1,1),(529,3,'com_show_variables','INT','status','general',1,1),(530,3,'com_show_warnings','INT','status','general',1,1),(531,3,'com_slave_start','INT','status','general',1,1),(532,3,'com_slave_stop','INT','status','general',1,1),(533,3,'com_stmt_close','INT','status','general',1,1),(534,3,'com_stmt_execute','INT','status','general',1,1),(535,3,'com_stmt_fetch','INT','status','general',1,1),(536,3,'com_stmt_prepare','INT','status','general',1,1),(537,3,'com_stmt_reprepare','INT','status','general',1,1),(538,3,'com_stmt_reset','INT','status','general',1,1),(539,3,'com_stmt_send_long_data','INT','status','general',1,1),(540,3,'com_truncate','INT','status','general',1,1),(541,3,'com_uninstall_plugin','INT','status','general',1,1),(542,3,'com_unlock_tables','INT','status','general',1,1),(543,3,'com_update','INT','status','general',1,1),(544,3,'com_update_multi','INT','status','general',1,1),(545,3,'com_xa_commit','INT','status','general',1,1),(546,3,'com_xa_end','INT','status','general',1,1),(547,3,'com_xa_prepare','INT','status','general',1,1),(548,3,'com_xa_recover','INT','status','general',1,1),(549,3,'com_xa_rollback','INT','status','general',1,1),(550,3,'com_xa_start','INT','status','general',1,1),(551,3,'compression','TEXT','status','general',1,1),(552,3,'connections','INT','status','general',1,1),(553,3,'cpu_time','DOUBLE','status','general',1,1),(554,3,'created_tmp_disk_tables','INT','status','general',1,1),(555,3,'created_tmp_files','INT','status','general',1,1),(556,3,'created_tmp_tables','INT','status','general',1,1),(557,3,'delayed_errors','INT','status','general',1,1),(558,3,'delayed_insert_threads','INT','status','general',1,1),(559,3,'delayed_writes','INT','status','general',1,1),(560,3,'empty_queries','INT','status','general',1,1),(561,3,'executed_events','INT','status','general',1,1),(562,3,'executed_triggers','INT','status','general',1,1),(563,3,'feature_dynamic_columns','INT','status','general',1,1),(564,3,'feature_fulltext','INT','status','general',1,1),(565,3,'feature_gis','INT','status','general',1,1),(566,3,'feature_locale','INT','status','general',1,1),(567,3,'feature_subquery','INT','status','general',1,1),(568,3,'feature_timezone','INT','status','general',1,1),(569,3,'feature_trigger','INT','status','general',1,1),(570,3,'feature_xml','INT','status','general',1,1),(571,3,'flush_commands','INT','status','general',1,1),(572,3,'handler_commit','INT','status','general',1,1),(573,3,'handler_delete','INT','status','general',1,1),(574,3,'handler_discover','INT','status','general',1,1),(575,3,'handler_icp_attempts','INT','status','general',1,1),(576,3,'handler_icp_match','INT','status','general',1,1),(577,3,'handler_mrr_init','INT','status','general',1,1),(578,3,'handler_mrr_key_refills','INT','status','general',1,1),(579,3,'handler_mrr_rowid_refills','INT','status','general',1,1),(580,3,'handler_prepare','INT','status','general',1,1),(581,3,'handler_read_first','INT','status','general',1,1),(582,3,'handler_read_key','INT','status','general',1,1),(583,3,'handler_read_last','INT','status','general',1,1),(584,3,'handler_read_next','INT','status','general',1,1),(585,3,'handler_read_prev','INT','status','general',1,1),(586,3,'handler_read_rnd','INT','status','general',1,1),(587,3,'handler_read_rnd_deleted','INT','status','general',1,1),(588,3,'handler_read_rnd_next','INT','status','general',1,1),(589,3,'handler_rollback','INT','status','general',1,1),(590,3,'handler_savepoint','INT','status','general',1,1),(591,3,'handler_savepoint_rollback','INT','status','general',1,1),(592,3,'handler_tmp_update','INT','status','general',1,1),(593,3,'handler_tmp_write','INT','status','general',1,1),(594,3,'handler_update','INT','status','general',1,1),(595,3,'handler_write','INT','status','general',1,1),(596,3,'innodb_adaptive_hash_cells','INT','status','general',1,1),(597,3,'innodb_adaptive_hash_heap_buffers','INT','status','general',1,1),(598,3,'innodb_adaptive_hash_hash_searches','INT','status','general',1,1),(599,3,'innodb_adaptive_hash_non_hash_searches','INT','status','general',1,1),(600,3,'innodb_background_log_sync','INT','status','general',1,1),(601,3,'innodb_buffer_pool_pages_data','INT','status','general',1,1),(602,3,'innodb_buffer_pool_pages_dirty','INT','status','general',1,1),(603,3,'innodb_buffer_pool_pages_flushed','INT','status','general',1,1),(604,3,'innodb_buffer_pool_pages_lru_flushed','INT','status','general',1,1),(605,3,'innodb_buffer_pool_pages_free','INT','status','general',1,1),(606,3,'innodb_buffer_pool_pages_made_not_young','INT','status','general',1,1),(607,3,'innodb_buffer_pool_pages_made_young','INT','status','general',1,1),(608,3,'innodb_buffer_pool_pages_misc','INT','status','general',1,1),(609,3,'innodb_buffer_pool_pages_old','INT','status','general',1,1),(610,3,'innodb_buffer_pool_pages_total','INT','status','general',1,1),(611,3,'innodb_buffer_pool_read_ahead_rnd','INT','status','general',1,1),(612,3,'innodb_buffer_pool_read_ahead','INT','status','general',1,1),(613,3,'innodb_buffer_pool_read_ahead_evicted','INT','status','general',1,1),(614,3,'innodb_buffer_pool_read_requests','INT','status','general',1,1),(615,3,'innodb_buffer_pool_reads','INT','status','general',1,1),(616,3,'innodb_buffer_pool_wait_free','INT','status','general',1,1),(617,3,'innodb_buffer_pool_write_requests','INT','status','general',1,1),(618,3,'innodb_checkpoint_age','INT','status','general',1,1),(619,3,'innodb_checkpoint_max_age','INT','status','general',1,1),(620,3,'innodb_checkpoint_target_age','INT','status','general',1,1),(621,3,'innodb_data_fsyncs','INT','status','general',1,1),(622,3,'innodb_data_pending_fsyncs','INT','status','general',1,1),(623,3,'innodb_data_pending_reads','INT','status','general',1,1),(624,3,'innodb_data_pending_writes','INT','status','general',1,1),(625,3,'innodb_data_read','INT','status','general',1,1),(626,3,'innodb_data_reads','INT','status','general',1,1),(627,3,'innodb_data_writes','INT','status','general',1,1),(628,3,'innodb_data_written','INT','status','general',1,1),(629,3,'innodb_dblwr_pages_written','INT','status','general',1,1),(630,3,'innodb_dblwr_writes','INT','status','general',1,1),(631,3,'innodb_deadlocks','INT','status','general',1,1),(632,3,'innodb_dict_tables','INT','status','general',1,1),(633,3,'innodb_have_atomic_builtins','TEXT','status','general',1,1),(634,3,'innodb_history_list_length','INT','status','general',1,1),(635,3,'innodb_ibuf_discarded_delete_marks','INT','status','general',1,1),(636,3,'innodb_ibuf_discarded_deletes','INT','status','general',1,1),(637,3,'innodb_ibuf_discarded_inserts','INT','status','general',1,1),(638,3,'innodb_ibuf_free_list','INT','status','general',1,1),(639,3,'innodb_ibuf_merged_delete_marks','INT','status','general',1,1),(640,3,'innodb_ibuf_merged_deletes','INT','status','general',1,1),(641,3,'innodb_ibuf_merged_inserts','INT','status','general',1,1),(642,3,'innodb_ibuf_merges','INT','status','general',1,1),(643,3,'innodb_ibuf_segment_size','INT','status','general',1,1),(644,3,'innodb_ibuf_size','INT','status','general',1,1),(645,3,'innodb_log_waits','INT','status','general',1,1),(646,3,'innodb_log_write_requests','INT','status','general',1,1),(647,3,'innodb_log_writes','INT','status','general',1,1),(648,3,'innodb_lsn_current','INT','status','general',1,1),(649,3,'innodb_lsn_flushed','INT','status','general',1,1),(650,3,'innodb_lsn_last_checkpoint','INT','status','general',1,1),(651,3,'innodb_master_thread_1_second_loops','INT','status','general',1,1),(652,3,'innodb_master_thread_10_second_loops','INT','status','general',1,1),(653,3,'innodb_master_thread_background_loops','INT','status','general',1,1),(654,3,'innodb_master_thread_main_flush_loops','INT','status','general',1,1),(655,3,'innodb_master_thread_sleeps','INT','status','general',1,1),(656,3,'innodb_max_trx_id','INT','status','general',1,1),(657,3,'innodb_mem_adaptive_hash','INT','status','general',1,1),(658,3,'innodb_mem_dictionary','INT','status','general',1,1),(659,3,'innodb_mem_total','INT','status','general',1,1),(660,3,'innodb_mutex_os_waits','INT','status','general',1,1),(661,3,'innodb_mutex_spin_rounds','INT','status','general',1,1),(662,3,'innodb_mutex_spin_waits','INT','status','general',1,1),(663,3,'innodb_oldest_view_low_limit_trx_id','INT','status','general',1,1),(664,3,'innodb_os_log_fsyncs','INT','status','general',1,1),(665,3,'innodb_os_log_pending_fsyncs','INT','status','general',1,1),(666,3,'innodb_os_log_pending_writes','INT','status','general',1,1),(667,3,'innodb_os_log_written','INT','status','general',1,1),(668,3,'innodb_page_size','INT','status','general',1,1),(669,3,'innodb_pages_created','INT','status','general',1,1),(670,3,'innodb_pages_read','INT','status','general',1,1),(671,3,'innodb_pages_written','INT','status','general',1,1),(672,3,'innodb_purge_trx_id','INT','status','general',1,1),(673,3,'innodb_purge_undo_no','INT','status','general',1,1),(674,3,'innodb_row_lock_current_waits','INT','status','general',1,1),(675,3,'innodb_current_row_locks','INT','status','general',1,1),(676,3,'innodb_row_lock_time','INT','status','general',1,1),(677,3,'innodb_row_lock_time_avg','INT','status','general',1,1),(678,3,'innodb_row_lock_time_max','INT','status','general',1,1),(679,3,'innodb_row_lock_waits','INT','status','general',1,1),(680,3,'innodb_rows_deleted','INT','status','general',1,1),(681,3,'innodb_rows_inserted','INT','status','general',1,1),(682,3,'innodb_rows_read','INT','status','general',1,1),(683,3,'innodb_rows_updated','INT','status','general',1,1),(684,3,'innodb_s_lock_os_waits','INT','status','general',1,1),(685,3,'innodb_s_lock_spin_rounds','INT','status','general',1,1),(686,3,'innodb_s_lock_spin_waits','INT','status','general',1,1),(687,3,'innodb_truncated_status_writes','INT','status','general',1,1),(688,3,'innodb_x_lock_os_waits','INT','status','general',1,1),(689,3,'innodb_x_lock_spin_rounds','INT','status','general',1,1),(690,3,'innodb_x_lock_spin_waits','INT','status','general',1,1),(691,3,'key_blocks_not_flushed','INT','status','general',1,1),(692,3,'key_blocks_unused','INT','status','general',1,1),(693,3,'key_blocks_used','INT','status','general',1,1),(694,3,'key_blocks_warm','INT','status','general',1,1),(695,3,'key_read_requests','INT','status','general',1,1),(696,3,'key_reads','INT','status','general',1,1),(697,3,'key_write_requests','INT','status','general',1,1),(698,3,'key_writes','INT','status','general',1,1),(699,3,'last_query_cost','DOUBLE','status','general',1,1),(700,3,'max_used_connections','INT','status','general',1,1),(701,3,'not_flushed_delayed_rows','INT','status','general',1,1),(702,3,'open_files','INT','status','general',1,1),(703,3,'open_streams','INT','status','general',1,1),(704,3,'open_table_definitions','INT','status','general',1,1),(705,3,'open_tables','INT','status','general',1,1),(706,3,'opened_files','INT','status','general',1,1),(707,3,'opened_table_definitions','INT','status','general',1,1),(708,3,'opened_tables','INT','status','general',1,1),(709,3,'opened_views','INT','status','general',1,1),(710,3,'performance_schema_cond_classes_lost','INT','status','general',1,1),(711,3,'performance_schema_cond_instances_lost','INT','status','general',1,1),(712,3,'performance_schema_file_classes_lost','INT','status','general',1,1),(713,3,'performance_schema_file_handles_lost','INT','status','general',1,1),(714,3,'performance_schema_file_instances_lost','INT','status','general',1,1),(715,3,'performance_schema_locker_lost','INT','status','general',1,1),(716,3,'performance_schema_mutex_classes_lost','INT','status','general',1,1),(717,3,'performance_schema_mutex_instances_lost','INT','status','general',1,1),(718,3,'performance_schema_rwlock_classes_lost','INT','status','general',1,1),(719,3,'performance_schema_rwlock_instances_lost','INT','status','general',1,1),(720,3,'performance_schema_table_handles_lost','INT','status','general',1,1),(721,3,'performance_schema_table_instances_lost','INT','status','general',1,1),(722,3,'performance_schema_thread_classes_lost','INT','status','general',1,1),(723,3,'performance_schema_thread_instances_lost','INT','status','general',1,1),(724,3,'prepared_stmt_count','INT','status','general',1,1),(725,3,'qcache_free_blocks','INT','status','general',1,1),(726,3,'qcache_free_memory','INT','status','general',1,1),(727,3,'qcache_hits','INT','status','general',1,1),(728,3,'qcache_inserts','INT','status','general',1,1),(729,3,'qcache_lowmem_prunes','INT','status','general',1,1),(730,3,'qcache_not_cached','INT','status','general',1,1),(731,3,'qcache_queries_in_cache','INT','status','general',1,1),(732,3,'qcache_total_blocks','INT','status','general',1,1),(733,3,'queries','INT','status','general',1,1),(734,3,'questions','INT','status','general',1,1),(735,3,'rows_read','INT','status','general',1,1),(736,3,'rows_sent','INT','status','general',1,1),(737,3,'rows_tmp_read','INT','status','general',1,1),(738,3,'rpl_status','TEXT','status','general',1,1),(739,3,'select_full_join','INT','status','general',1,1),(740,3,'select_full_range_join','INT','status','general',1,1),(741,3,'select_range','INT','status','general',1,1),(742,3,'select_range_check','INT','status','general',1,1),(743,3,'select_scan','INT','status','general',1,1),(744,3,'slave_heartbeat_period','DOUBLE','status','general',1,1),(745,3,'slave_open_temp_tables','INT','status','general',1,1),(746,3,'slave_received_heartbeats','INT','status','general',1,1),(747,3,'slave_retried_transactions','INT','status','general',1,1),(748,3,'slave_running','TEXT','status','general',1,1),(749,3,'slow_launch_threads','INT','status','general',1,1),(750,3,'slow_queries','INT','status','general',1,1),(751,3,'sort_merge_passes','INT','status','general',1,1),(752,3,'sort_range','INT','status','general',1,1),(753,3,'sort_rows','INT','status','general',1,1),(754,3,'sort_scan','INT','status','general',1,1),(755,3,'ssl_accept_renegotiates','INT','status','general',1,1),(756,3,'ssl_accepts','INT','status','general',1,1),(757,3,'ssl_callback_cache_hits','INT','status','general',1,1),(758,3,'ssl_client_connects','INT','status','general',1,1),(759,3,'ssl_connect_renegotiates','INT','status','general',1,1),(760,3,'ssl_ctx_verify_depth','INT','status','general',1,1),(761,3,'ssl_ctx_verify_mode','INT','status','general',1,1),(762,3,'ssl_default_timeout','INT','status','general',1,1),(763,3,'ssl_finished_accepts','INT','status','general',1,1),(764,3,'ssl_finished_connects','INT','status','general',1,1),(765,3,'ssl_session_cache_hits','INT','status','general',1,1),(766,3,'ssl_session_cache_misses','INT','status','general',1,1),(767,3,'ssl_session_cache_mode','TEXT','status','general',1,1),(768,3,'ssl_session_cache_overflows','INT','status','general',1,1),(769,3,'ssl_session_cache_size','INT','status','general',1,1),(770,3,'ssl_session_cache_timeouts','INT','status','general',1,1),(771,3,'ssl_sessions_reused','INT','status','general',1,1),(772,3,'ssl_used_session_cache_entries','INT','status','general',1,1),(773,3,'ssl_verify_depth','INT','status','general',1,1),(774,3,'ssl_verify_mode','INT','status','general',1,1),(775,3,'subquery_cache_hit','INT','status','general',1,1),(776,3,'subquery_cache_miss','INT','status','general',1,1),(777,3,'syncs','INT','status','general',1,1),(778,3,'table_locks_immediate','INT','status','general',1,1),(779,3,'table_locks_waited','INT','status','general',1,1),(780,3,'tc_log_max_pages_used','INT','status','general',1,1),(781,3,'tc_log_page_size','INT','status','general',1,1),(782,3,'tc_log_page_waits','INT','status','general',1,1),(783,3,'threadpool_idle_threads','INT','status','general',1,1),(784,3,'threadpool_threads','INT','status','general',1,1),(785,3,'threads_cached','INT','status','general',1,1),(786,3,'threads_connected','INT','status','general',1,1),(787,3,'threads_created','INT','status','general',1,1),(788,3,'threads_running','INT','status','general',1,1),(789,3,'uptime','INT','status','general',1,1),(790,3,'uptime_since_flush_status','INT','status','general',1,1),(791,3,'binlog_commits','INT','status','general',1,1),(792,3,'binlog_group_commits','INT','status','general',1,1),(793,3,'binlog_snapshot_position','INT','status','general',1,1),(794,3,'slave_io_state','TEXT','slave','slave',1,1),(795,3,'master_host','TEXT','slave','slave',1,1),(796,3,'master_user','TEXT','slave','slave',1,1),(797,3,'master_port','INT','slave','slave',1,1),(798,3,'connect_retry','INT','slave','slave',1,1),(799,3,'master_log_file','TEXT','slave','slave',1,1),(800,3,'read_master_log_pos','INT','slave','slave',1,1),(801,3,'relay_log_file','TEXT','slave','slave',1,1),(802,3,'relay_log_pos','INT','slave','slave',1,1),(803,3,'relay_master_log_file','TEXT','slave','slave',1,1),(804,3,'slave_io_running','TEXT','slave','slave',1,1),(805,3,'slave_sql_running','TEXT','slave','slave',1,1),(806,3,'replicate_do_db','TEXT','slave','slave',1,1),(807,3,'replicate_ignore_db','TEXT','slave','slave',1,1),(808,3,'last_errno','INT','slave','slave',1,1),(809,3,'skip_counter','INT','slave','slave',1,1),(810,3,'exec_master_log_pos','INT','slave','slave',1,1),(811,3,'relay_log_space','INT','slave','slave',1,1),(812,3,'until_condition','TEXT','slave','slave',1,1),(813,3,'until_log_pos','INT','slave','slave',1,1),(814,3,'master_ssl_allowed','TEXT','slave','slave',1,1),(815,3,'seconds_behind_master','INT','slave','slave',1,1),(816,3,'master_ssl_verify_server_cert','TEXT','slave','slave',1,1),(817,3,'last_io_errno','INT','slave','slave',1,1),(818,3,'last_sql_errno','INT','slave','slave',1,1),(819,3,'master_server_id','INT','slave','slave',1,1),(820,3,'binlog_snapshot_file','TEXT','status','general',1,1),(821,3,'file','TEXT','master','general',1,1),(822,3,'position','INT','master','general',1,1),(823,4,'aria_encrypt_tables','TEXT','variables','general',1,1),(824,4,'aria_pagecache_file_hash_size','INT','variables','general',1,1),(825,4,'binlog_commit_wait_count','INT','variables','general',1,1),(826,4,'binlog_commit_wait_usec','INT','variables','general',1,1),(827,4,'binlog_row_image','TEXT','variables','general',1,1),(828,4,'connect_conv_size','INT','variables','general',1,1),(829,4,'connect_exact_info','TEXT','variables','general',1,1),(830,4,'connect_indx_map','TEXT','variables','general',1,1),(831,4,'connect_java_wrapper','TEXT','variables','general',1,1),(832,4,'connect_json_grp_size','INT','variables','general',1,1),(833,4,'connect_type_conv','TEXT','variables','general',1,1),(834,4,'connect_use_tempfile','TEXT','variables','general',1,1),(835,4,'connect_work_size','INT','variables','general',1,1),(836,4,'connect_xtrace','INT','variables','general',1,1),(837,4,'encrypt_binlog','TEXT','variables','general',1,1),(838,4,'encrypt_tmp_disk_tables','TEXT','variables','general',1,1),(839,4,'encrypt_tmp_files','TEXT','variables','general',1,1),(840,4,'explicit_defaults_for_timestamp','TEXT','variables','general',1,1),(841,4,'gtid_binlog_pos','TEXT','variables','general',1,1),(842,4,'gtid_binlog_state','TEXT','variables','general',1,1),(843,4,'gtid_current_pos','TEXT','variables','general',1,1),(844,4,'gtid_domain_id','INT','variables','general',1,1),(845,4,'gtid_ignore_duplicates','TEXT','variables','general',1,1),(846,4,'gtid_slave_pos','TEXT','variables','general',1,1),(847,4,'gtid_strict_mode','TEXT','variables','general',1,1),(848,4,'histogram_size','INT','variables','general',1,1),(849,4,'histogram_type','TEXT','variables','general',1,1),(850,4,'host_cache_size','INT','variables','general',1,1),(851,4,'innodb_adaptive_flushing_lwm','DOUBLE','variables','general',1,1),(852,4,'innodb_adaptive_max_sleep_delay','INT','variables','general',1,1),(853,4,'innodb_api_bk_commit_interval','INT','variables','general',1,1),(854,4,'innodb_api_disable_rowlock','TEXT','variables','general',1,1),(855,4,'innodb_api_enable_binlog','TEXT','variables','general',1,1),(856,4,'innodb_api_enable_mdl','TEXT','variables','general',1,1),(857,4,'innodb_api_trx_level','INT','variables','general',1,1),(858,4,'innodb_background_scrub_data_check_interval','INT','variables','general',1,1),(859,4,'innodb_background_scrub_data_compressed','TEXT','variables','general',1,1),(860,4,'innodb_background_scrub_data_interval','INT','variables','general',1,1),(861,4,'innodb_background_scrub_data_uncompressed','TEXT','variables','general',1,1),(862,4,'innodb_buf_dump_status_frequency','INT','variables','general',1,1),(863,4,'innodb_buffer_pool_dump_at_shutdown','TEXT','variables','general',1,1),(864,4,'innodb_buffer_pool_dump_now','TEXT','variables','general',1,1),(865,4,'innodb_buffer_pool_dump_pct','INT','variables','general',1,1),(866,4,'innodb_buffer_pool_filename','TEXT','variables','general',1,1),(867,4,'innodb_buffer_pool_load_abort','TEXT','variables','general',1,1),(868,4,'innodb_buffer_pool_load_at_startup','TEXT','variables','general',1,1),(869,4,'innodb_buffer_pool_load_now','TEXT','variables','general',1,1),(870,4,'innodb_buffer_pool_populate','TEXT','variables','general',1,1),(871,4,'innodb_change_buffer_max_size','INT','variables','general',1,1),(872,4,'innodb_checksum_algorithm','TEXT','variables','general',1,1),(873,4,'innodb_cleaner_lsn_age_factor','TEXT','variables','general',1,1),(874,4,'innodb_cmp_per_index_enabled','TEXT','variables','general',1,1),(875,4,'innodb_compression_algorithm','TEXT','variables','general',1,1),(876,4,'innodb_compression_failure_threshold_pct','INT','variables','general',1,1),(877,4,'innodb_compression_level','INT','variables','general',1,1),(878,4,'innodb_compression_pad_pct_max','INT','variables','general',1,1),(879,4,'innodb_default_encryption_key_id','INT','variables','general',1,1),(880,4,'innodb_defragment','TEXT','variables','general',1,1),(881,4,'innodb_defragment_fill_factor','DOUBLE','variables','general',1,1),(882,4,'innodb_defragment_fill_factor_n_recs','INT','variables','general',1,1),(883,4,'innodb_defragment_frequency','INT','variables','general',1,1),(884,4,'innodb_defragment_n_pages','INT','variables','general',1,1),(885,4,'innodb_defragment_stats_accuracy','INT','variables','general',1,1),(886,4,'innodb_disable_sort_file_cache','TEXT','variables','general',1,1),(887,4,'innodb_disallow_writes','TEXT','variables','general',1,1),(888,4,'innodb_empty_free_list_algorithm','TEXT','variables','general',1,1),(889,4,'innodb_encrypt_log','TEXT','variables','general',1,1),(890,4,'innodb_encrypt_tables','TEXT','variables','general',1,1),(891,4,'innodb_encryption_rotate_key_age','INT','variables','general',1,1),(892,4,'innodb_encryption_rotation_iops','INT','variables','general',1,1),(893,4,'innodb_encryption_threads','INT','variables','general',1,1),(894,4,'innodb_fatal_semaphore_wait_threshold','INT','variables','general',1,1),(895,4,'innodb_flush_log_at_timeout','INT','variables','general',1,1),(896,4,'innodb_flush_neighbors','INT','variables','general',1,1),(897,4,'innodb_flushing_avg_loops','INT','variables','general',1,1),(898,4,'innodb_force_primary_key','TEXT','variables','general',1,1),(899,4,'innodb_foreground_preflush','TEXT','variables','general',1,1),(900,4,'innodb_ft_cache_size','INT','variables','general',1,1),(901,4,'innodb_ft_enable_diag_print','TEXT','variables','general',1,1),(902,4,'innodb_ft_enable_stopword','TEXT','variables','general',1,1),(903,4,'innodb_ft_max_token_size','INT','variables','general',1,1),(904,4,'innodb_ft_min_token_size','INT','variables','general',1,1),(905,4,'innodb_ft_num_word_optimize','INT','variables','general',1,1),(906,4,'innodb_ft_result_cache_limit','INT','variables','general',1,1),(907,4,'innodb_ft_sort_pll_degree','INT','variables','general',1,1),(908,4,'innodb_ft_total_cache_size','INT','variables','general',1,1),(909,4,'innodb_idle_flush_pct','INT','variables','general',1,1),(910,4,'innodb_immediate_scrub_data_uncompressed','TEXT','variables','general',1,1),(911,4,'innodb_instrument_semaphores','TEXT','variables','general',1,1),(912,4,'innodb_io_capacity_max','INT','variables','general',1,1),(913,4,'innodb_lock_schedule_algorithm','TEXT','variables','general',1,1),(914,4,'innodb_locking_fake_changes','TEXT','variables','general',1,1),(915,4,'innodb_log_arch_dir','TEXT','variables','general',1,1),(916,4,'innodb_log_arch_expire_sec','INT','variables','general',1,1),(917,4,'innodb_log_archive','TEXT','variables','general',1,1),(918,4,'innodb_log_checksum_algorithm','TEXT','variables','general',1,1),(919,4,'innodb_log_compressed_pages','TEXT','variables','general',1,1),(920,4,'innodb_lru_scan_depth','INT','variables','general',1,1),(921,4,'innodb_max_bitmap_file_size','INT','variables','general',1,1),(922,4,'innodb_max_changed_pages','INT','variables','general',1,1),(923,4,'innodb_max_dirty_pages_pct_lwm','DOUBLE','variables','general',1,1),(924,4,'innodb_max_purge_lag_delay','INT','variables','general',1,1),(925,4,'innodb_mtflush_threads','INT','variables','general',1,1),(926,4,'innodb_online_alter_log_max_size','INT','variables','general',1,1),(927,4,'innodb_optimize_fulltext_only','TEXT','variables','general',1,1),(928,4,'innodb_prefix_index_cluster_optimization','TEXT','variables','general',1,1),(929,4,'innodb_print_all_deadlocks','TEXT','variables','general',1,1),(930,4,'innodb_read_only','TEXT','variables','general',1,1),(931,4,'innodb_sched_priority_cleaner','INT','variables','general',1,1),(932,4,'innodb_scrub_log','TEXT','variables','general',1,1),(933,4,'innodb_scrub_log_speed','INT','variables','general',1,1),(934,4,'innodb_simulate_comp_failures','INT','variables','general',1,1),(935,4,'innodb_sort_buffer_size','INT','variables','general',1,1),(936,4,'innodb_stats_auto_recalc','TEXT','variables','general',1,1),(937,4,'innodb_stats_include_delete_marked','TEXT','variables','general',1,1),(938,4,'innodb_stats_modified_counter','INT','variables','general',1,1),(939,4,'innodb_stats_persistent','TEXT','variables','general',1,1),(940,4,'innodb_stats_persistent_sample_pages','INT','variables','general',1,1),(941,4,'innodb_stats_traditional','TEXT','variables','general',1,1),(942,4,'innodb_stats_transient_sample_pages','INT','variables','general',1,1),(943,4,'innodb_status_output','TEXT','variables','general',1,1),(944,4,'innodb_status_output_locks','TEXT','variables','general',1,1),(945,4,'innodb_sync_array_size','INT','variables','general',1,1),(946,4,'innodb_undo_directory','TEXT','variables','general',1,1),(947,4,'innodb_undo_logs','INT','variables','general',1,1),(948,4,'innodb_undo_tablespaces','INT','variables','general',1,1),(949,4,'innodb_use_atomic_writes','TEXT','variables','general',1,1),(950,4,'innodb_use_fallocate','TEXT','variables','general',1,1),(951,4,'innodb_use_mtflush','TEXT','variables','general',1,1),(952,4,'innodb_use_stacktrace','TEXT','variables','general',1,1),(953,4,'innodb_use_trim','TEXT','variables','general',1,1),(954,4,'key_cache_file_hash_size','INT','variables','general',1,1),(955,4,'log_bin_basename','TEXT','variables','general',1,1),(956,4,'log_bin_index','TEXT','variables','general',1,1),(957,4,'log_slow_admin_statements','TEXT','variables','general',1,1),(958,4,'log_slow_slave_statements','TEXT','variables','general',1,1),(959,4,'log_tc_size','INT','variables','general',1,1),(960,4,'max_digest_length','INT','variables','general',1,1),(961,4,'max_session_mem_used','INT','variables','general',1,1),(962,4,'max_statement_time','DOUBLE','variables','general',1,1),(963,4,'metadata_locks_hash_instances','INT','variables','general',1,1),(964,4,'mroonga_action_on_fulltext_query_error','TEXT','variables','general',1,1),(965,4,'mroonga_boolean_mode_syntax_flags','TEXT','variables','general',1,1),(966,4,'mroonga_default_parser','TEXT','variables','general',1,1),(967,4,'mroonga_default_tokenizer','TEXT','variables','general',1,1),(968,4,'mroonga_dry_write','TEXT','variables','general',1,1),(969,4,'mroonga_enable_optimization','TEXT','variables','general',1,1),(970,4,'mroonga_libgroonga_embedded','TEXT','variables','general',1,1),(971,4,'mroonga_libgroonga_support_lz4','TEXT','variables','general',1,1),(972,4,'mroonga_libgroonga_support_zlib','TEXT','variables','general',1,1),(973,4,'mroonga_libgroonga_version','TEXT','variables','general',1,1),(974,4,'mroonga_lock_timeout','INT','variables','general',1,1),(975,4,'mroonga_log_file','TEXT','variables','general',1,1),(976,4,'mroonga_log_level','TEXT','variables','general',1,1),(977,4,'mroonga_match_escalation_threshold','INT','variables','general',1,1),(978,4,'mroonga_max_n_records_for_estimate','INT','variables','general',1,1),(979,4,'mroonga_vector_column_delimiter','TEXT','variables','general',1,1),(980,4,'mroonga_version','DOUBLE','variables','general',1,1),(981,4,'mysql56_temporal_format','TEXT','variables','general',1,1),(982,4,'optimizer_selectivity_sampling_limit','INT','variables','general',1,1),(983,4,'optimizer_use_condition_selectivity','INT','variables','general',1,1),(984,4,'performance_schema_accounts_size','INT','variables','general',1,1),(985,4,'performance_schema_digests_size','INT','variables','general',1,1),(986,4,'performance_schema_events_stages_history_long_size','INT','variables','general',1,1),(987,4,'performance_schema_events_stages_history_size','INT','variables','general',1,1),(988,4,'performance_schema_events_statements_history_long_size','INT','variables','general',1,1),(989,4,'performance_schema_events_statements_history_size','INT','variables','general',1,1),(990,4,'performance_schema_hosts_size','INT','variables','general',1,1),(991,4,'performance_schema_max_digest_length','INT','variables','general',1,1),(992,4,'performance_schema_max_socket_classes','INT','variables','general',1,1),(993,4,'performance_schema_max_socket_instances','INT','variables','general',1,1),(994,4,'performance_schema_max_stage_classes','INT','variables','general',1,1),(995,4,'performance_schema_max_statement_classes','INT','variables','general',1,1),(996,4,'performance_schema_session_connect_attrs_size','INT','variables','general',1,1),(997,4,'performance_schema_setup_actors_size','INT','variables','general',1,1),(998,4,'performance_schema_setup_objects_size','INT','variables','general',1,1),(999,4,'performance_schema_users_size','INT','variables','general',1,1),(1000,4,'relay_log_basename','TEXT','variables','general',1,1),(1001,4,'relay_log_index','TEXT','variables','general',1,1),(1002,4,'slave_ddl_exec_mode','TEXT','variables','general',1,1),(1003,4,'slave_domain_parallel_threads','INT','variables','general',1,1),(1004,4,'slave_parallel_max_queued','INT','variables','general',1,1),(1005,4,'slave_parallel_mode','TEXT','variables','general',1,1),(1006,4,'slave_parallel_threads','INT','variables','general',1,1),(1007,4,'slave_run_triggers_for_rbr','TEXT','variables','general',1,1),(1008,4,'sql_mode','TEXT','variables','general',1,1),(1009,4,'strict_password_validation','TEXT','variables','general',1,1),(1010,4,'tx_read_only','TEXT','variables','general',1,1),(1011,4,'use_stat_tables','TEXT','variables','general',1,1),(1012,4,'version_malloc_library','TEXT','variables','general',1,1),(1013,4,'version_ssl_library','TEXT','variables','general',1,1),(1014,4,'wsrep_osu_method','TEXT','variables','general',1,1),(1015,4,'wsrep_auto_increment_control','TEXT','variables','general',1,1),(1016,4,'wsrep_causal_reads','TEXT','variables','general',1,1),(1017,4,'wsrep_certify_nonpk','TEXT','variables','general',1,1),(1018,4,'wsrep_cluster_name','TEXT','variables','general',1,1),(1019,4,'wsrep_convert_lock_to_trx','TEXT','variables','general',1,1),(1020,4,'wsrep_data_home_dir','TEXT','variables','general',1,1),(1021,4,'wsrep_debug','TEXT','variables','general',1,1),(1022,4,'wsrep_desync','TEXT','variables','general',1,1),(1023,4,'wsrep_dirty_reads','TEXT','variables','general',1,1),(1024,4,'wsrep_drupal_282555_workaround','TEXT','variables','general',1,1),(1025,4,'wsrep_forced_binlog_format','TEXT','variables','general',1,1),(1026,4,'wsrep_gtid_domain_id','INT','variables','general',1,1),(1027,4,'wsrep_gtid_mode','TEXT','variables','general',1,1),(1028,4,'wsrep_load_data_splitting','TEXT','variables','general',1,1),(1029,4,'wsrep_log_conflicts','TEXT','variables','general',1,1),(1030,4,'wsrep_max_ws_rows','INT','variables','general',1,1),(1031,4,'wsrep_max_ws_size','INT','variables','general',1,1),(1032,4,'wsrep_mysql_replication_bundle','INT','variables','general',1,1),(1033,4,'wsrep_node_incoming_address','TEXT','variables','general',1,1),(1034,4,'wsrep_node_name','TEXT','variables','general',1,1),(1035,4,'wsrep_on','TEXT','variables','general',1,1),(1036,4,'wsrep_patch_version','TEXT','variables','general',1,1),(1037,4,'wsrep_provider','TEXT','variables','general',1,1),(1038,4,'wsrep_recover','TEXT','variables','general',1,1),(1039,4,'wsrep_replicate_myisam','TEXT','variables','general',1,1),(1040,4,'wsrep_restart_slave','TEXT','variables','general',1,1),(1041,4,'wsrep_retry_autocommit','INT','variables','general',1,1),(1042,4,'wsrep_slave_fk_checks','TEXT','variables','general',1,1),(1043,4,'wsrep_slave_uk_checks','TEXT','variables','general',1,1),(1044,4,'wsrep_slave_threads','INT','variables','general',1,1),(1045,4,'wsrep_sst_donor_rejects_queries','TEXT','variables','general',1,1),(1046,4,'wsrep_sst_method','TEXT','variables','general',1,1),(1047,4,'wsrep_sst_receive_address','TEXT','variables','general',1,1),(1048,4,'wsrep_start_position','TEXT','variables','general',1,1),(1049,4,'wsrep_sync_wait','INT','variables','general',1,1),(1050,3,'acl_column_grants','INT','status','general',1,1),(1051,3,'acl_database_grants','INT','status','general',1,1),(1052,3,'acl_function_grants','INT','status','general',1,1),(1053,3,'acl_procedure_grants','INT','status','general',1,1),(1054,3,'acl_proxy_users','INT','status','general',1,1),(1055,3,'acl_role_grants','INT','status','general',1,1),(1056,3,'acl_roles','INT','status','general',1,1),(1057,3,'acl_table_grants','INT','status','general',1,1),(1058,3,'acl_users','INT','status','general',1,1),(1059,3,'binlog_group_commit_trigger_count','INT','status','general',1,1),(1060,3,'binlog_group_commit_trigger_lock_wait','INT','status','general',1,1),(1061,3,'binlog_group_commit_trigger_timeout','INT','status','general',1,1),(1062,3,'com_compound_sql','INT','status','general',1,1),(1063,3,'com_create_role','INT','status','general',1,1),(1064,3,'com_create_temporary_table','INT','status','general',1,1),(1065,3,'com_drop_role','INT','status','general',1,1),(1066,3,'com_drop_temporary_table','INT','status','general',1,1),(1067,3,'com_get_diagnostics','INT','status','general',1,1),(1068,3,'com_grant_role','INT','status','general',1,1),(1069,3,'com_revoke_role','INT','status','general',1,1),(1070,3,'com_show_explain','INT','status','general',1,1),(1071,3,'com_show_generic','INT','status','general',1,1),(1072,3,'com_shutdown','INT','status','general',1,1),(1073,3,'com_start_all_slaves','INT','status','general',1,1),(1074,3,'com_start_slave','INT','status','general',1,1),(1075,3,'com_stop_all_slaves','INT','status','general',1,1),(1076,3,'com_stop_slave','INT','status','general',1,1),(1077,3,'connection_errors_accept','INT','status','general',1,1),(1078,3,'connection_errors_internal','INT','status','general',1,1),(1079,3,'connection_errors_max_connections','INT','status','general',1,1),(1080,3,'connection_errors_peer_address','INT','status','general',1,1),(1081,3,'connection_errors_select','INT','status','general',1,1),(1082,3,'connection_errors_tcpwrap','INT','status','general',1,1),(1083,3,'delete_scan','INT','status','general',1,1),(1084,3,'feature_delay_key_write','INT','status','general',1,1),(1085,3,'handler_external_lock','INT','status','general',1,1),(1086,3,'handler_read_retry','INT','status','general',1,1),(1087,3,'innodb_available_undo_logs','INT','status','general',1,1),(1088,3,'innodb_buffer_pool_bytes_data','INT','status','general',1,1),(1089,3,'innodb_buffer_pool_bytes_dirty','INT','status','general',1,1),(1090,3,'innodb_buffer_pool_dump_status','TEXT','status','general',1,1),(1091,3,'innodb_buffer_pool_load_status','TEXT','status','general',1,1),(1092,3,'innodb_master_thread_active_loops','INT','status','general',1,1),(1093,3,'innodb_master_thread_idle_loops','INT','status','general',1,1),(1094,3,'innodb_pages0_read','INT','status','general',1,1),(1095,3,'innodb_read_views_memory','INT','status','general',1,1),(1096,3,'innodb_system_rows_deleted','INT','status','general',1,1),(1097,3,'innodb_system_rows_inserted','INT','status','general',1,1),(1098,3,'innodb_system_rows_read','INT','status','general',1,1),(1099,3,'innodb_system_rows_updated','INT','status','general',1,1),(1100,3,'innodb_page_compression_saved','INT','status','general',1,1),(1101,3,'innodb_page_compression_trim_sect512','INT','status','general',1,1),(1102,3,'innodb_page_compression_trim_sect1024','INT','status','general',1,1),(1103,3,'innodb_page_compression_trim_sect2048','INT','status','general',1,1),(1104,3,'innodb_page_compression_trim_sect4096','INT','status','general',1,1),(1105,3,'innodb_page_compression_trim_sect8192','INT','status','general',1,1),(1106,3,'innodb_page_compression_trim_sect16384','INT','status','general',1,1),(1107,3,'innodb_page_compression_trim_sect32768','INT','status','general',1,1),(1108,3,'innodb_num_index_pages_written','INT','status','general',1,1),(1109,3,'innodb_num_non_index_pages_written','INT','status','general',1,1),(1110,3,'innodb_num_pages_page_compressed','INT','status','general',1,1),(1111,3,'innodb_num_page_compressed_trim_op','INT','status','general',1,1),(1112,3,'innodb_num_page_compressed_trim_op_saved','INT','status','general',1,1),(1113,3,'innodb_num_pages_page_decompressed','INT','status','general',1,1),(1114,3,'innodb_num_pages_page_compression_error','INT','status','general',1,1),(1115,3,'innodb_num_pages_encrypted','INT','status','general',1,1),(1116,3,'innodb_num_pages_decrypted','INT','status','general',1,1),(1117,3,'innodb_have_lz4','TEXT','status','general',1,1),(1118,3,'innodb_have_lzo','TEXT','status','general',1,1),(1119,3,'innodb_have_lzma','TEXT','status','general',1,1),(1120,3,'innodb_have_bzip2','TEXT','status','general',1,1),(1121,3,'innodb_have_snappy','TEXT','status','general',1,1),(1122,3,'innodb_defragment_compression_failures','INT','status','general',1,1),(1123,3,'innodb_defragment_failures','INT','status','general',1,1),(1124,3,'innodb_defragment_count','INT','status','general',1,1),(1125,3,'innodb_onlineddl_rowlog_rows','INT','status','general',1,1),(1126,3,'innodb_onlineddl_rowlog_pct_used','INT','status','general',1,1),(1127,3,'innodb_onlineddl_pct_progress','INT','status','general',1,1),(1128,3,'innodb_secondary_index_triggered_cluster_reads','INT','status','general',1,1),(1129,3,'innodb_secondary_index_triggered_cluster_reads_avoided','INT','status','general',1,1),(1130,3,'innodb_encryption_rotation_pages_read_from_cache','INT','status','general',1,1),(1131,3,'innodb_encryption_rotation_pages_read_from_disk','INT','status','general',1,1),(1132,3,'innodb_encryption_rotation_pages_modified','INT','status','general',1,1),(1133,3,'innodb_encryption_rotation_pages_flushed','INT','status','general',1,1),(1134,3,'innodb_encryption_rotation_estimated_iops','INT','status','general',1,1),(1135,3,'innodb_encryption_key_rotation_list_length','INT','status','general',1,1),(1136,3,'innodb_scrub_background_page_reorganizations','INT','status','general',1,1),(1137,3,'innodb_scrub_background_page_splits','INT','status','general',1,1),(1138,3,'innodb_scrub_background_page_split_failures_underflow','INT','status','general',1,1),(1139,3,'innodb_scrub_background_page_split_failures_out_of_filespace','INT','status','general',1,1),(1140,3,'innodb_scrub_background_page_split_failures_missing_index','INT','status','general',1,1),(1141,3,'innodb_scrub_background_page_split_failures_unknown','INT','status','general',1,1),(1142,3,'innodb_encryption_num_key_requests','INT','status','general',1,1),(1143,3,'master_gtid_wait_count','INT','status','general',1,1),(1144,3,'master_gtid_wait_time','INT','status','general',1,1),(1145,3,'master_gtid_wait_timeouts','INT','status','general',1,1),(1146,3,'max_statement_time_exceeded','INT','status','general',1,1),(1147,3,'memory_used','INT','status','general',1,1),(1148,3,'mroonga_count_skip','INT','status','general',1,1),(1149,3,'mroonga_fast_order_limit','INT','status','general',1,1),(1150,3,'opened_plugin_libraries','INT','status','general',1,1),(1151,3,'performance_schema_accounts_lost','INT','status','general',1,1),(1152,3,'performance_schema_digest_lost','INT','status','general',1,1),(1153,3,'performance_schema_hosts_lost','INT','status','general',1,1),(1154,3,'performance_schema_session_connect_attrs_lost','INT','status','general',1,1),(1155,3,'performance_schema_socket_classes_lost','INT','status','general',1,1),(1156,3,'performance_schema_socket_instances_lost','INT','status','general',1,1),(1157,3,'performance_schema_stage_classes_lost','INT','status','general',1,1),(1158,3,'performance_schema_statement_classes_lost','INT','status','general',1,1),(1159,3,'performance_schema_users_lost','INT','status','general',1,1),(1160,3,'slave_connections','INT','status','general',1,1),(1161,3,'slave_skipped_errors','INT','status','general',1,1),(1162,3,'slaves_connected','INT','status','general',1,1),(1163,3,'slaves_running','INT','status','general',1,1),(1164,3,'sort_priority_queue_sorts','INT','status','general',1,1),(1165,3,'update_scan','INT','status','general',1,1),(1166,3,'wsrep_cluster_conf_id','DOUBLE','status','general',1,1),(1167,3,'wsrep_cluster_size','INT','status','general',1,1),(1168,3,'wsrep_cluster_status','TEXT','status','general',1,1),(1169,3,'wsrep_connected','TEXT','status','general',1,1),(1170,3,'wsrep_local_bf_aborts','INT','status','general',1,1),(1171,3,'wsrep_local_index','DOUBLE','status','general',1,1),(1172,3,'wsrep_ready','TEXT','status','general',1,1),(1173,3,'wsrep_thread_count','INT','status','general',1,1),(1174,3,'slave_sql_state','TEXT','slave','slave',1,1),(1175,3,'using_gtid','TEXT','slave','slave',1,1),(1176,3,'parallel_mode','TEXT','slave','slave',1,1),(1177,3,'retried_transactions','INT','slave','slave',1,1),(1178,3,'max_relay_log_size','INT','slave','slave',1,1),(1179,3,'executed_log_entries','INT','slave','slave',1,1),(1180,3,'slave_received_heartbeats','INT','slave','slave',1,1),(1181,3,'slave_heartbeat_period','DOUBLE','slave','slave',1,1),(1182,3,'gtid_slave_pos','TEXT','slave','slave',1,1),(1183,3,'gtid_io_pos','TEXT','slave','slave',1,1),(1184,4,'aria_recover_options','TEXT','variables','general',1,1),(1185,4,'check_constraint_checks','TEXT','variables','general',1,1),(1186,4,'innodb_adaptive_hash_index_parts','INT','variables','general',1,1),(1187,4,'innodb_buffer_pool_chunk_size','INT','variables','general',1,1),(1188,4,'innodb_compression_default','TEXT','variables','general',1,1),(1189,4,'innodb_deadlock_detect','TEXT','variables','general',1,1),(1190,4,'innodb_default_row_format','TEXT','variables','general',1,1),(1191,4,'innodb_fill_factor','INT','variables','general',1,1),(1192,4,'innodb_flush_sync','TEXT','variables','general',1,1),(1193,4,'innodb_log_checksums','TEXT','variables','general',1,1),(1194,4,'innodb_log_write_ahead_size','INT','variables','general',1,1),(1195,4,'innodb_max_undo_log_size','INT','variables','general',1,1),(1196,4,'innodb_numa_interleave','TEXT','variables','general',1,1),(1197,4,'innodb_page_cleaners','INT','variables','general',1,1),(1198,4,'innodb_purge_rseg_truncate_frequency','INT','variables','general',1,1),(1199,4,'innodb_temp_data_file_path','TEXT','variables','general',1,1),(1200,4,'innodb_track_redo_log_now','TEXT','variables','general',1,1),(1201,4,'innodb_undo_log_truncate','TEXT','variables','general',1,1),(1202,4,'log_bin_compress','TEXT','variables','general',1,1),(1203,4,'log_bin_compress_min_len','INT','variables','general',1,1),(1204,4,'log_slow_verbosity','TEXT','variables','general',1,1),(1205,4,'max_recursive_iterations','INT','variables','general',1,1),(1206,4,'read_binlog_speed_limit','INT','variables','general',1,1),(1207,4,'session_track_schema','TEXT','variables','general',1,1),(1208,4,'session_track_state_change','TEXT','variables','general',1,1),(1209,4,'session_track_transaction_info','TEXT','variables','general',1,1),(1210,4,'slave_parallel_workers','INT','variables','general',1,1),(1211,4,'standard_compliant_cte','TEXT','variables','general',1,1),(1212,4,'table_open_cache_instances','INT','variables','general',1,1),(1213,4,'thread_pool_prio_kickup_timer','INT','variables','general',1,1),(1214,4,'thread_pool_priority','TEXT','variables','general',1,1),(1215,4,'tmp_disk_table_size','DOUBLE','variables','general',1,1),(1216,4,'tmp_memory_table_size','INT','variables','general',1,1),(1217,4,'wsrep_cluster_address','TEXT','variables','general',1,1),(1218,4,'wsrep_node_address','TEXT','variables','general',1,1),(1219,4,'wsrep_sst_auth','TEXT','variables','general',1,1),(1220,3,'com_alter_user','INT','status','general',1,1),(1221,3,'com_execute_immediate','INT','status','general',1,1),(1222,3,'com_multi','INT','status','general',1,1),(1223,3,'com_show_create_user','INT','status','general',1,1),(1224,3,'feature_check_constraint','INT','status','general',1,1),(1225,3,'feature_window_functions','INT','status','general',1,1),(1226,3,'innodb_num_open_files','INT','status','general',1,1),(1227,3,'innodb_have_punch_hole','TEXT','status','general',1,1),(1228,3,'innodb_encryption_n_merge_blocks_encrypted','INT','status','general',1,1),(1229,3,'innodb_encryption_n_merge_blocks_decrypted','INT','status','general',1,1),(1230,3,'innodb_encryption_n_rowlog_blocks_encrypted','INT','status','general',1,1),(1231,3,'innodb_encryption_n_rowlog_blocks_decrypted','INT','status','general',1,1),(1232,3,'innodb_scrub_log','INT','status','general',1,1),(1233,3,'sql_delay','INT','slave','slave',1,1),(1234,3,'sql_remaining_delay','TEXT','slave','slave',1,1),(1235,3,'slave_sql_running_state','TEXT','slave','slave',1,1),(1236,4,'error_count','INT','variables','general',1,1),(1237,4,'have_community_features','TEXT','variables','general',1,1),(1238,4,'identity','INT','variables','general',1,1),(1239,4,'insert_id','INT','variables','general',1,1),(1240,4,'language','TEXT','variables','general',1,1),(1241,4,'last_insert_id','INT','variables','general',1,1),(1242,4,'log_bin_trust_routine_creators','TEXT','variables','general',1,1),(1243,4,'new','TEXT','variables','general',1,1),(1244,4,'pseudo_thread_id','INT','variables','general',1,1),(1245,4,'sql_log_update','TEXT','variables','general',1,1),(1246,4,'table_lock_wait_timeout','INT','variables','general',1,1),(1247,4,'table_type','TEXT','variables','general',1,1),(1248,4,'timestamp','INT','variables','general',1,1),(1249,4,'warning_count','INT','variables','general',1,1),(1250,3,'com_backup_table','INT','status','general',1,1),(1251,3,'com_load_master_data','INT','status','general',1,1),(1252,3,'com_load_master_table','INT','status','general',1,1),(1253,3,'com_restore_table','INT','status','general',1,1),(1254,3,'com_show_column_types','INT','status','general',1,1),(1255,3,'com_show_new_master','INT','status','general',1,1),(1256,3,'innodb_descriptors_memory','INT','status','general',1,1),(1257,4,'server_audit_file_path','TEXT','variables','general',1,1),(1258,4,'server_audit_file_rotate_now','TEXT','variables','general',1,1),(1259,4,'server_audit_file_rotate_size','INT','variables','general',1,1),(1260,4,'server_audit_file_rotations','INT','variables','general',1,1),(1261,4,'server_audit_logging','TEXT','variables','general',1,1),(1262,4,'server_audit_mode','INT','variables','general',1,1),(1263,4,'server_audit_output_type','TEXT','variables','general',1,1),(1264,4,'server_audit_syslog_facility','TEXT','variables','general',1,1),(1265,4,'server_audit_syslog_ident','TEXT','variables','general',1,1),(1266,4,'server_audit_syslog_priority','TEXT','variables','general',1,1),(1267,3,'server_audit_active','TEXT','status','general',1,1),(1268,3,'server_audit_writes_failed','INT','status','general',1,1),(1269,4,'innodb_file_io_threads','INT','variables','general',1,1),(1270,4,'innodb_use_legacy_cardinality_algorithm','TEXT','variables','general',1,1),(1271,3,'innodb_buffer_pool_read_ahead_seq','INT','status','general',1,1),(1272,4,'connect_json_null','TEXT','variables','general',1,1),(1273,4,'secure_file_priv','TEXT','variables','general',1,1),(1274,4,'log_result_errors','INT','variables','general',1,1),(1275,4,'partition_skip_pk_sort_for_non_clustered_pk_table','TEXT','variables','general',1,1),(1276,4,'slave_transaction_retry_interval','INT','variables','general',1,1),(1277,4,'sp_general_log','TEXT','variables','general',1,1),(1278,4,'sp_slow_query_log','TEXT','variables','general',1,1),(1279,4,'spider_block_size','INT','variables','general',1,1),(1280,4,'spider_conn_recycle_mode','INT','variables','general',1,1),(1281,4,'spider_conn_recycle_strict','INT','variables','general',1,1),(1282,4,'spider_conn_wait_timeout','INT','variables','general',1,1),(1283,4,'spider_connect_error_interval','INT','variables','general',1,1),(1284,4,'spider_connect_mutex','TEXT','variables','general',1,1),(1285,4,'spider_connect_retry_count','INT','variables','general',1,1),(1286,4,'spider_connect_retry_interval','INT','variables','general',1,1),(1287,4,'spider_dry_access','TEXT','variables','general',1,1),(1288,4,'spider_force_commit','INT','variables','general',1,1),(1289,4,'spider_general_log','TEXT','variables','general',1,1),(1290,4,'spider_index_hint_pushdown','TEXT','variables','general',1,1),(1291,4,'spider_internal_sql_log_off','TEXT','variables','general',1,1),(1292,4,'spider_internal_unlock','TEXT','variables','general',1,1),(1293,4,'spider_internal_xa','TEXT','variables','general',1,1),(1294,4,'spider_internal_xa_id_type','INT','variables','general',1,1),(1295,4,'spider_internal_xa_snapshot','INT','variables','general',1,1),(1296,4,'spider_local_lock_table','TEXT','variables','general',1,1),(1297,4,'spider_lock_exchange','TEXT','variables','general',1,1),(1298,4,'spider_log_result_error_with_sql','INT','variables','general',1,1),(1299,4,'spider_log_result_errors','INT','variables','general',1,1),(1300,4,'spider_max_connections','INT','variables','general',1,1),(1301,4,'spider_ping_interval_at_trx_start','INT','variables','general',1,1),(1302,4,'spider_same_server_link','TEXT','variables','general',1,1),(1303,4,'spider_semi_table_lock','INT','variables','general',1,1),(1304,4,'spider_semi_trx','TEXT','variables','general',1,1),(1305,4,'spider_support_xa','TEXT','variables','general',1,1),(1306,4,'spider_sync_autocommit','TEXT','variables','general',1,1),(1307,4,'spider_sync_time_zone','TEXT','variables','general',1,1),(1308,4,'spider_sync_trx_isolation','TEXT','variables','general',1,1),(1309,4,'spider_table_crd_thread_count','INT','variables','general',1,1),(1310,4,'spider_table_init_error_interval','INT','variables','general',1,1),(1311,4,'spider_table_sts_thread_count','INT','variables','general',1,1),(1312,4,'spider_udf_table_lock_mutex_count','INT','variables','general',1,1),(1313,4,'spider_udf_table_mon_mutex_count','INT','variables','general',1,1),(1314,4,'spider_use_all_conns_snapshot','TEXT','variables','general',1,1),(1315,4,'spider_use_consistent_snapshot','TEXT','variables','general',1,1),(1316,4,'spider_use_default_database','TEXT','variables','general',1,1),(1317,4,'spider_use_flash_logs','TEXT','variables','general',1,1),(1318,4,'spider_use_snapshot_with_flush_tables','INT','variables','general',1,1),(1319,4,'spider_version','TEXT','variables','general',1,1),(1320,4,'spider_xa_register_mode','INT','variables','general',1,1),(1321,4,'tokudb_alter_print_error','TEXT','variables','general',1,1),(1322,4,'tokudb_analyze_delete_fraction','DOUBLE','variables','general',1,1),(1323,4,'tokudb_analyze_time','INT','variables','general',1,1),(1324,4,'tokudb_block_size','INT','variables','general',1,1),(1325,4,'tokudb_bulk_fetch','TEXT','variables','general',1,1),(1326,4,'tokudb_cache_size','INT','variables','general',1,1),(1327,4,'tokudb_cachetable_pool_threads','INT','variables','general',1,1),(1328,4,'tokudb_check_jemalloc','TEXT','variables','general',1,1),(1329,4,'tokudb_checkpoint_lock','TEXT','variables','general',1,1),(1330,4,'tokudb_checkpoint_on_flush_logs','TEXT','variables','general',1,1),(1331,4,'tokudb_checkpoint_pool_threads','INT','variables','general',1,1),(1332,4,'tokudb_checkpointing_period','INT','variables','general',1,1),(1333,4,'tokudb_cleaner_iterations','INT','variables','general',1,1),(1334,4,'tokudb_cleaner_period','INT','variables','general',1,1),(1335,4,'tokudb_client_pool_threads','INT','variables','general',1,1),(1336,4,'tokudb_commit_sync','TEXT','variables','general',1,1),(1337,4,'tokudb_compress_buffers_before_eviction','TEXT','variables','general',1,1),(1338,4,'tokudb_create_index_online','TEXT','variables','general',1,1),(1339,4,'tokudb_debug','INT','variables','general',1,1),(1340,4,'tokudb_directio','TEXT','variables','general',1,1),(1341,4,'tokudb_disable_hot_alter','TEXT','variables','general',1,1),(1342,4,'tokudb_disable_prefetching','TEXT','variables','general',1,1),(1343,4,'tokudb_disable_slow_alter','TEXT','variables','general',1,1),(1344,4,'tokudb_empty_scan','TEXT','variables','general',1,1),(1345,4,'tokudb_enable_partial_eviction','TEXT','variables','general',1,1),(1346,4,'tokudb_fanout','INT','variables','general',1,1),(1347,4,'tokudb_fs_reserve_percent','INT','variables','general',1,1),(1348,4,'tokudb_fsync_log_period','INT','variables','general',1,1),(1349,4,'tokudb_hide_default_row_format','TEXT','variables','general',1,1),(1350,4,'tokudb_killed_time','INT','variables','general',1,1),(1351,4,'tokudb_load_save_space','TEXT','variables','general',1,1),(1352,4,'tokudb_loader_memory_size','INT','variables','general',1,1),(1353,4,'tokudb_lock_timeout','INT','variables','general',1,1),(1354,4,'tokudb_lock_timeout_debug','INT','variables','general',1,1),(1355,4,'tokudb_max_lock_memory','INT','variables','general',1,1),(1356,4,'tokudb_optimize_index_fraction','DOUBLE','variables','general',1,1),(1357,4,'tokudb_optimize_throttle','INT','variables','general',1,1),(1358,4,'tokudb_pk_insert_mode','INT','variables','general',1,1),(1359,4,'tokudb_prelock_empty','TEXT','variables','general',1,1),(1360,4,'tokudb_read_block_size','INT','variables','general',1,1),(1361,4,'tokudb_read_buf_size','INT','variables','general',1,1),(1362,4,'tokudb_read_status_frequency','INT','variables','general',1,1),(1363,4,'tokudb_row_format','TEXT','variables','general',1,1),(1364,4,'tokudb_rpl_check_readonly','TEXT','variables','general',1,1),(1365,4,'tokudb_rpl_lookup_rows','TEXT','variables','general',1,1),(1366,4,'tokudb_rpl_lookup_rows_delay','INT','variables','general',1,1),(1367,4,'tokudb_rpl_unique_checks','TEXT','variables','general',1,1),(1368,4,'tokudb_rpl_unique_checks_delay','INT','variables','general',1,1),(1369,4,'tokudb_support_xa','TEXT','variables','general',1,1),(1370,4,'tokudb_version','TEXT','variables','general',1,1),(1371,4,'tokudb_write_status_frequency','INT','variables','general',1,1),(1372,4,'vp_support_xa','TEXT','variables','general',1,1),(1373,4,'vp_version','TEXT','variables','general',1,1),(1374,3,'com_hs_open','INT','status','general',1,1),(1375,3,'com_hs_close','INT','status','general',1,1),(1376,3,'com_hs_read','INT','status','general',1,1),(1377,3,'com_hs_insert','INT','status','general',1,1),(1378,3,'com_hs_update','INT','status','general',1,1),(1379,3,'com_hs_delete','INT','status','general',1,1),(1380,3,'spider_direct_aggregate','INT','status','general',1,1),(1381,3,'spider_direct_delete','INT','status','general',1,1),(1382,3,'spider_direct_order_limit','INT','status','general',1,1),(1383,3,'spider_direct_update','INT','status','general',1,1),(1384,3,'spider_mon_table_cache_version','INT','status','general',1,1),(1385,3,'spider_mon_table_cache_version_req','INT','status','general',1,1),(1386,3,'spider_parallel_search','INT','status','general',1,1),(1387,3,'tokudb_db_opens','INT','status','general',1,1),(1388,3,'tokudb_db_closes','INT','status','general',1,1),(1389,3,'tokudb_db_open_current','INT','status','general',1,1),(1390,3,'tokudb_db_open_max','INT','status','general',1,1),(1391,3,'tokudb_leaf_entry_max_committed_xr','INT','status','general',1,1),(1392,3,'tokudb_leaf_entry_max_provisional_xr','INT','status','general',1,1),(1393,3,'tokudb_leaf_entry_expanded','INT','status','general',1,1),(1394,3,'tokudb_leaf_entry_max_memsize','INT','status','general',1,1),(1395,3,'tokudb_leaf_entry_apply_gc_bytes_in','INT','status','general',1,1),(1396,3,'tokudb_leaf_entry_apply_gc_bytes_out','INT','status','general',1,1),(1397,3,'tokudb_leaf_entry_normal_gc_bytes_in','INT','status','general',1,1),(1398,3,'tokudb_leaf_entry_normal_gc_bytes_out','INT','status','general',1,1),(1399,3,'tokudb_checkpoint_period','INT','status','general',1,1),(1400,3,'tokudb_checkpoint_footprint','INT','status','general',1,1),(1401,3,'tokudb_checkpoint_last_began','TEXT','status','general',1,1),(1402,3,'tokudb_checkpoint_last_complete_began','TEXT','status','general',1,1),(1403,3,'tokudb_checkpoint_last_complete_ended','TEXT','status','general',1,1),(1404,3,'tokudb_checkpoint_duration','INT','status','general',1,1),(1405,3,'tokudb_checkpoint_duration_last','INT','status','general',1,1),(1406,3,'tokudb_checkpoint_last_lsn','INT','status','general',1,1),(1407,3,'tokudb_checkpoint_taken','INT','status','general',1,1),(1408,3,'tokudb_checkpoint_failed','INT','status','general',1,1),(1409,3,'tokudb_checkpoint_waiters_now','INT','status','general',1,1),(1410,3,'tokudb_checkpoint_waiters_max','INT','status','general',1,1),(1411,3,'tokudb_checkpoint_client_wait_on_mo','INT','status','general',1,1),(1412,3,'tokudb_checkpoint_client_wait_on_cs','INT','status','general',1,1),(1413,3,'tokudb_checkpoint_begin_time','INT','status','general',1,1),(1414,3,'tokudb_checkpoint_long_begin_time','INT','status','general',1,1),(1415,3,'tokudb_checkpoint_long_begin_count','INT','status','general',1,1),(1416,3,'tokudb_checkpoint_end_time','INT','status','general',1,1),(1417,3,'tokudb_checkpoint_long_end_time','INT','status','general',1,1),(1418,3,'tokudb_checkpoint_long_end_count','INT','status','general',1,1),(1419,3,'tokudb_cachetable_miss','INT','status','general',1,1),(1420,3,'tokudb_cachetable_miss_time','INT','status','general',1,1),(1421,3,'tokudb_cachetable_prefetches','INT','status','general',1,1),(1422,3,'tokudb_cachetable_size_current','INT','status','general',1,1),(1423,3,'tokudb_cachetable_size_limit','INT','status','general',1,1),(1424,3,'tokudb_cachetable_size_writing','INT','status','general',1,1),(1425,3,'tokudb_cachetable_size_nonleaf','INT','status','general',1,1),(1426,3,'tokudb_cachetable_size_leaf','INT','status','general',1,1),(1427,3,'tokudb_cachetable_size_rollback','INT','status','general',1,1),(1428,3,'tokudb_cachetable_size_cachepressure','INT','status','general',1,1),(1429,3,'tokudb_cachetable_size_cloned','INT','status','general',1,1),(1430,3,'tokudb_cachetable_evictions','INT','status','general',1,1),(1431,3,'tokudb_cachetable_cleaner_executions','INT','status','general',1,1),(1432,3,'tokudb_cachetable_cleaner_period','INT','status','general',1,1),(1433,3,'tokudb_cachetable_cleaner_iterations','INT','status','general',1,1),(1434,3,'tokudb_cachetable_wait_pressure_count','INT','status','general',1,1),(1435,3,'tokudb_cachetable_wait_pressure_time','INT','status','general',1,1),(1436,3,'tokudb_cachetable_long_wait_pressure_count','INT','status','general',1,1),(1437,3,'tokudb_cachetable_long_wait_pressure_time','INT','status','general',1,1),(1438,3,'tokudb_cachetable_pool_client_num_threads','INT','status','general',1,1),(1439,3,'tokudb_cachetable_pool_client_num_threads_active','INT','status','general',1,1),(1440,3,'tokudb_cachetable_pool_client_queue_size','INT','status','general',1,1),(1441,3,'tokudb_cachetable_pool_client_max_queue_size','INT','status','general',1,1),(1442,3,'tokudb_cachetable_pool_client_total_items_processed','INT','status','general',1,1),(1443,3,'tokudb_cachetable_pool_client_total_execution_time','INT','status','general',1,1),(1444,3,'tokudb_cachetable_pool_cachetable_num_threads','INT','status','general',1,1),(1445,3,'tokudb_cachetable_pool_cachetable_num_threads_active','INT','status','general',1,1),(1446,3,'tokudb_cachetable_pool_cachetable_queue_size','INT','status','general',1,1),(1447,3,'tokudb_cachetable_pool_cachetable_max_queue_size','INT','status','general',1,1),(1448,3,'tokudb_cachetable_pool_cachetable_total_items_processed','INT','status','general',1,1),(1449,3,'tokudb_cachetable_pool_cachetable_total_execution_time','INT','status','general',1,1),(1450,3,'tokudb_cachetable_pool_checkpoint_num_threads','INT','status','general',1,1),(1451,3,'tokudb_cachetable_pool_checkpoint_num_threads_active','INT','status','general',1,1),(1452,3,'tokudb_cachetable_pool_checkpoint_queue_size','INT','status','general',1,1),(1453,3,'tokudb_cachetable_pool_checkpoint_max_queue_size','INT','status','general',1,1),(1454,3,'tokudb_cachetable_pool_checkpoint_total_items_processed','INT','status','general',1,1),(1455,3,'tokudb_cachetable_pool_checkpoint_total_execution_time','INT','status','general',1,1),(1456,3,'tokudb_locktree_memory_size','INT','status','general',1,1),(1457,3,'tokudb_locktree_memory_size_limit','INT','status','general',1,1),(1458,3,'tokudb_locktree_escalation_num','INT','status','general',1,1),(1459,3,'tokudb_locktree_escalation_seconds','DOUBLE','status','general',1,1),(1460,3,'tokudb_locktree_latest_post_escalation_memory_size','INT','status','general',1,1),(1461,3,'tokudb_locktree_open_current','INT','status','general',1,1),(1462,3,'tokudb_locktree_pending_lock_requests','INT','status','general',1,1),(1463,3,'tokudb_locktree_sto_eligible_num','INT','status','general',1,1),(1464,3,'tokudb_locktree_sto_ended_num','INT','status','general',1,1),(1465,3,'tokudb_locktree_sto_ended_seconds','DOUBLE','status','general',1,1),(1466,3,'tokudb_locktree_wait_count','INT','status','general',1,1),(1467,3,'tokudb_locktree_wait_time','INT','status','general',1,1),(1468,3,'tokudb_locktree_long_wait_count','INT','status','general',1,1),(1469,3,'tokudb_locktree_long_wait_time','INT','status','general',1,1),(1470,3,'tokudb_locktree_timeout_count','INT','status','general',1,1),(1471,3,'tokudb_locktree_wait_escalation_count','INT','status','general',1,1),(1472,3,'tokudb_locktree_wait_escalation_time','INT','status','general',1,1),(1473,3,'tokudb_locktree_long_wait_escalation_count','INT','status','general',1,1),(1474,3,'tokudb_locktree_long_wait_escalation_time','INT','status','general',1,1),(1475,3,'tokudb_dictionary_updates','INT','status','general',1,1),(1476,3,'tokudb_dictionary_broadcast_updates','INT','status','general',1,1),(1477,3,'tokudb_descriptor_set','INT','status','general',1,1),(1478,3,'tokudb_messages_ignored_by_leaf_due_to_msn','INT','status','general',1,1),(1479,3,'tokudb_total_search_retries','INT','status','general',1,1),(1480,3,'tokudb_search_tries_gt_height','INT','status','general',1,1),(1481,3,'tokudb_search_tries_gt_heightplus3','INT','status','general',1,1),(1482,3,'tokudb_leaf_nodes_flushed_not_checkpoint','INT','status','general',1,1),(1483,3,'tokudb_leaf_nodes_flushed_not_checkpoint_bytes','INT','status','general',1,1),(1484,3,'tokudb_leaf_nodes_flushed_not_checkpoint_uncompressed_bytes','INT','status','general',1,1),(1485,3,'tokudb_leaf_nodes_flushed_not_checkpoint_seconds','DOUBLE','status','general',1,1),(1486,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint','INT','status','general',1,1),(1487,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_bytes','INT','status','general',1,1),(1488,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_uncompresse','INT','status','general',1,1),(1489,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_seconds','DOUBLE','status','general',1,1),(1490,3,'tokudb_leaf_nodes_flushed_checkpoint','INT','status','general',1,1),(1491,3,'tokudb_leaf_nodes_flushed_checkpoint_bytes','INT','status','general',1,1),(1492,3,'tokudb_leaf_nodes_flushed_checkpoint_uncompressed_bytes','INT','status','general',1,1),(1493,3,'tokudb_leaf_nodes_flushed_checkpoint_seconds','DOUBLE','status','general',1,1),(1494,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint','INT','status','general',1,1),(1495,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_bytes','INT','status','general',1,1),(1496,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_uncompressed_by','INT','status','general',1,1),(1497,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_seconds','DOUBLE','status','general',1,1),(1498,3,'tokudb_leaf_node_compression_ratio','DOUBLE','status','general',1,1),(1499,3,'tokudb_nonleaf_node_compression_ratio','DOUBLE','status','general',1,1),(1500,3,'tokudb_overall_node_compression_ratio','DOUBLE','status','general',1,1),(1501,3,'tokudb_nonleaf_node_partial_evictions','INT','status','general',1,1),(1502,3,'tokudb_nonleaf_node_partial_evictions_bytes','INT','status','general',1,1),(1503,3,'tokudb_leaf_node_partial_evictions','INT','status','general',1,1),(1504,3,'tokudb_leaf_node_partial_evictions_bytes','INT','status','general',1,1),(1505,3,'tokudb_leaf_node_full_evictions','INT','status','general',1,1),(1506,3,'tokudb_leaf_node_full_evictions_bytes','INT','status','general',1,1),(1507,3,'tokudb_nonleaf_node_full_evictions','INT','status','general',1,1),(1508,3,'tokudb_nonleaf_node_full_evictions_bytes','INT','status','general',1,1),(1509,3,'tokudb_leaf_nodes_created','INT','status','general',1,1),(1510,3,'tokudb_nonleaf_nodes_created','INT','status','general',1,1),(1511,3,'tokudb_leaf_nodes_destroyed','INT','status','general',1,1),(1512,3,'tokudb_nonleaf_nodes_destroyed','INT','status','general',1,1),(1513,3,'tokudb_messages_injected_at_root_bytes','INT','status','general',1,1),(1514,3,'tokudb_messages_flushed_from_h1_to_leaves_bytes','INT','status','general',1,1),(1515,3,'tokudb_messages_in_trees_estimate_bytes','INT','status','general',1,1),(1516,3,'tokudb_messages_injected_at_root','INT','status','general',1,1),(1517,3,'tokudb_broadcase_messages_injected_at_root','INT','status','general',1,1),(1518,3,'tokudb_basements_decompressed_target_query','INT','status','general',1,1),(1519,3,'tokudb_basements_decompressed_prelocked_range','INT','status','general',1,1),(1520,3,'tokudb_basements_decompressed_prefetch','INT','status','general',1,1),(1521,3,'tokudb_basements_decompressed_for_write','INT','status','general',1,1),(1522,3,'tokudb_buffers_decompressed_target_query','INT','status','general',1,1),(1523,3,'tokudb_buffers_decompressed_prelocked_range','INT','status','general',1,1),(1524,3,'tokudb_buffers_decompressed_prefetch','INT','status','general',1,1),(1525,3,'tokudb_buffers_decompressed_for_write','INT','status','general',1,1),(1526,3,'tokudb_pivots_fetched_for_query','INT','status','general',1,1),(1527,3,'tokudb_pivots_fetched_for_query_bytes','INT','status','general',1,1),(1528,3,'tokudb_pivots_fetched_for_query_seconds','DOUBLE','status','general',1,1),(1529,3,'tokudb_pivots_fetched_for_prefetch','INT','status','general',1,1),(1530,3,'tokudb_pivots_fetched_for_prefetch_bytes','INT','status','general',1,1),(1531,3,'tokudb_pivots_fetched_for_prefetch_seconds','DOUBLE','status','general',1,1),(1532,3,'tokudb_pivots_fetched_for_write','INT','status','general',1,1),(1533,3,'tokudb_pivots_fetched_for_write_bytes','INT','status','general',1,1),(1534,3,'tokudb_pivots_fetched_for_write_seconds','DOUBLE','status','general',1,1),(1535,3,'tokudb_basements_fetched_target_query','INT','status','general',1,1),(1536,3,'tokudb_basements_fetched_target_query_bytes','INT','status','general',1,1),(1537,3,'tokudb_basements_fetched_target_query_seconds','DOUBLE','status','general',1,1),(1538,3,'tokudb_basements_fetched_prelocked_range','INT','status','general',1,1),(1539,3,'tokudb_basements_fetched_prelocked_range_bytes','INT','status','general',1,1),(1540,3,'tokudb_basements_fetched_prelocked_range_seconds','DOUBLE','status','general',1,1),(1541,3,'tokudb_basements_fetched_prefetch','INT','status','general',1,1),(1542,3,'tokudb_basements_fetched_prefetch_bytes','INT','status','general',1,1),(1543,3,'tokudb_basements_fetched_prefetch_seconds','DOUBLE','status','general',1,1),(1544,3,'tokudb_basements_fetched_for_write','INT','status','general',1,1),(1545,3,'tokudb_basements_fetched_for_write_bytes','INT','status','general',1,1),(1546,3,'tokudb_basements_fetched_for_write_seconds','DOUBLE','status','general',1,1),(1547,3,'tokudb_buffers_fetched_target_query','INT','status','general',1,1),(1548,3,'tokudb_buffers_fetched_target_query_bytes','INT','status','general',1,1),(1549,3,'tokudb_buffers_fetched_target_query_seconds','DOUBLE','status','general',1,1),(1550,3,'tokudb_buffers_fetched_prelocked_range','INT','status','general',1,1),(1551,3,'tokudb_buffers_fetched_prelocked_range_bytes','INT','status','general',1,1),(1552,3,'tokudb_buffers_fetched_prelocked_range_seconds','DOUBLE','status','general',1,1),(1553,3,'tokudb_buffers_fetched_prefetch','INT','status','general',1,1),(1554,3,'tokudb_buffers_fetched_prefetch_bytes','INT','status','general',1,1),(1555,3,'tokudb_buffers_fetched_prefetch_seconds','DOUBLE','status','general',1,1),(1556,3,'tokudb_buffers_fetched_for_write','INT','status','general',1,1),(1557,3,'tokudb_buffers_fetched_for_write_bytes','INT','status','general',1,1),(1558,3,'tokudb_buffers_fetched_for_write_seconds','DOUBLE','status','general',1,1),(1559,3,'tokudb_leaf_compression_to_memory_seconds','DOUBLE','status','general',1,1),(1560,3,'tokudb_leaf_serialization_to_memory_seconds','DOUBLE','status','general',1,1),(1561,3,'tokudb_leaf_decompression_to_memory_seconds','DOUBLE','status','general',1,1),(1562,3,'tokudb_leaf_deserialization_to_memory_seconds','DOUBLE','status','general',1,1),(1563,3,'tokudb_nonleaf_compression_to_memory_seconds','DOUBLE','status','general',1,1),(1564,3,'tokudb_nonleaf_serialization_to_memory_seconds','DOUBLE','status','general',1,1),(1565,3,'tokudb_nonleaf_decompression_to_memory_seconds','DOUBLE','status','general',1,1),(1566,3,'tokudb_nonleaf_deserialization_to_memory_seconds','DOUBLE','status','general',1,1),(1567,3,'tokudb_promotion_roots_split','INT','status','general',1,1),(1568,3,'tokudb_promotion_leaf_roots_injected_into','INT','status','general',1,1),(1569,3,'tokudb_promotion_h1_roots_injected_into','INT','status','general',1,1),(1570,3,'tokudb_promotion_injections_at_depth_0','INT','status','general',1,1),(1571,3,'tokudb_promotion_injections_at_depth_1','INT','status','general',1,1),(1572,3,'tokudb_promotion_injections_at_depth_2','INT','status','general',1,1),(1573,3,'tokudb_promotion_injections_at_depth_3','INT','status','general',1,1),(1574,3,'tokudb_promotion_injections_lower_than_depth_3','INT','status','general',1,1),(1575,3,'tokudb_promotion_stopped_nonempty_buffer','INT','status','general',1,1),(1576,3,'tokudb_promotion_stopped_at_height_1','INT','status','general',1,1),(1577,3,'tokudb_promotion_stopped_child_locked_or_not_in_memory','INT','status','general',1,1),(1578,3,'tokudb_promotion_stopped_child_not_fully_in_memory','INT','status','general',1,1),(1579,3,'tokudb_promotion_stopped_after_locking_child','INT','status','general',1,1),(1580,3,'tokudb_basement_deserialization_fixed_key','INT','status','general',1,1),(1581,3,'tokudb_basement_deserialization_variable_key','INT','status','general',1,1),(1582,3,'tokudb_pro_rightmost_leaf_shortcut_success','INT','status','general',1,1),(1583,3,'tokudb_pro_rightmost_leaf_shortcut_fail_pos','INT','status','general',1,1),(1584,3,'tokudb_rightmost_leaf_shortcut_fail_reactive','INT','status','general',1,1),(1585,3,'tokudb_cursor_skip_deleted_leaf_entry','INT','status','general',1,1),(1586,3,'tokudb_flusher_cleaner_total_nodes','INT','status','general',1,1),(1587,3,'tokudb_flusher_cleaner_h1_nodes','INT','status','general',1,1),(1588,3,'tokudb_flusher_cleaner_hgt1_nodes','INT','status','general',1,1),(1589,3,'tokudb_flusher_cleaner_empty_nodes','INT','status','general',1,1),(1590,3,'tokudb_flusher_cleaner_nodes_dirtied','INT','status','general',1,1),(1591,3,'tokudb_flusher_cleaner_max_buffer_size','INT','status','general',1,1),(1592,3,'tokudb_flusher_cleaner_min_buffer_size','DOUBLE','status','general',1,1),(1593,3,'tokudb_flusher_cleaner_total_buffer_size','INT','status','general',1,1),(1594,3,'tokudb_flusher_cleaner_max_buffer_workdone','INT','status','general',1,1),(1595,3,'tokudb_flusher_cleaner_min_buffer_workdone','DOUBLE','status','general',1,1),(1596,3,'tokudb_flusher_cleaner_total_buffer_workdone','INT','status','general',1,1),(1597,3,'tokudb_flusher_cleaner_num_leaf_merges_started','INT','status','general',1,1),(1598,3,'tokudb_flusher_cleaner_num_leaf_merges_running','INT','status','general',1,1),(1599,3,'tokudb_flusher_cleaner_num_leaf_merges_completed','INT','status','general',1,1),(1600,3,'tokudb_flusher_cleaner_num_dirtied_for_leaf_merge','INT','status','general',1,1),(1601,3,'tokudb_flusher_flush_total','INT','status','general',1,1),(1602,3,'tokudb_flusher_flush_in_memory','INT','status','general',1,1),(1603,3,'tokudb_flusher_flush_needed_io','INT','status','general',1,1),(1604,3,'tokudb_flusher_flush_cascades','INT','status','general',1,1),(1605,3,'tokudb_flusher_flush_cascades_1','INT','status','general',1,1),(1606,3,'tokudb_flusher_flush_cascades_2','INT','status','general',1,1),(1607,3,'tokudb_flusher_flush_cascades_3','INT','status','general',1,1),(1608,3,'tokudb_flusher_flush_cascades_4','INT','status','general',1,1),(1609,3,'tokudb_flusher_flush_cascades_5','INT','status','general',1,1),(1610,3,'tokudb_flusher_flush_cascades_gt_5','INT','status','general',1,1),(1611,3,'tokudb_flusher_split_leaf','INT','status','general',1,1),(1612,3,'tokudb_flusher_split_nonleaf','INT','status','general',1,1),(1613,3,'tokudb_flusher_merge_leaf','INT','status','general',1,1),(1614,3,'tokudb_flusher_merge_nonleaf','INT','status','general',1,1),(1615,3,'tokudb_flusher_balance_leaf','INT','status','general',1,1),(1616,3,'tokudb_hot_num_started','INT','status','general',1,1),(1617,3,'tokudb_hot_num_completed','INT','status','general',1,1),(1618,3,'tokudb_hot_num_aborted','INT','status','general',1,1),(1619,3,'tokudb_hot_max_root_flush_count','INT','status','general',1,1),(1620,3,'tokudb_txn_begin','INT','status','general',1,1),(1621,3,'tokudb_txn_begin_read_only','INT','status','general',1,1),(1622,3,'tokudb_txn_commits','INT','status','general',1,1),(1623,3,'tokudb_txn_aborts','INT','status','general',1,1),(1624,3,'tokudb_logger_next_lsn','INT','status','general',1,1),(1625,3,'tokudb_logger_writes','INT','status','general',1,1),(1626,3,'tokudb_logger_writes_bytes','INT','status','general',1,1),(1627,3,'tokudb_logger_writes_uncompressed_bytes','INT','status','general',1,1),(1628,3,'tokudb_logger_writes_seconds','DOUBLE','status','general',1,1),(1629,3,'tokudb_logger_wait_long','INT','status','general',1,1),(1630,3,'tokudb_loader_num_created','INT','status','general',1,1),(1631,3,'tokudb_loader_num_current','INT','status','general',1,1),(1632,3,'tokudb_loader_num_max','INT','status','general',1,1),(1633,3,'tokudb_memory_malloc_count','INT','status','general',1,1),(1634,3,'tokudb_memory_free_count','INT','status','general',1,1),(1635,3,'tokudb_memory_realloc_count','INT','status','general',1,1),(1636,3,'tokudb_memory_malloc_fail','INT','status','general',1,1),(1637,3,'tokudb_memory_realloc_fail','INT','status','general',1,1),(1638,3,'tokudb_memory_requested','INT','status','general',1,1),(1639,3,'tokudb_memory_used','INT','status','general',1,1),(1640,3,'tokudb_memory_freed','INT','status','general',1,1),(1641,3,'tokudb_memory_max_requested_size','INT','status','general',1,1),(1642,3,'tokudb_memory_last_failed_size','INT','status','general',1,1),(1643,3,'tokudb_mem_estimated_maximum_memory_footprint','INT','status','general',1,1),(1644,3,'tokudb_memory_mallocator_version','TEXT','status','general',1,1),(1645,3,'tokudb_memory_mmap_threshold','INT','status','general',1,1),(1646,3,'tokudb_filesystem_threads_blocked_by_full_disk','INT','status','general',1,1),(1647,3,'tokudb_filesystem_fsync_time','INT','status','general',1,1),(1648,3,'tokudb_filesystem_fsync_num','INT','status','general',1,1),(1649,3,'tokudb_filesystem_long_fsync_time','INT','status','general',1,1),(1650,3,'tokudb_filesystem_long_fsync_num','INT','status','general',1,1),(1651,3,'binlog_ignore_db','TEXT','master','general',1,1),(1652,4,'bind_address','TEXT','variables','general',1,1),(1653,4,'binlog_file_cache_size','INT','variables','general',1,1),(1654,4,'column_compression_threshold','INT','variables','general',1,1),(1655,4,'column_compression_zlib_level','INT','variables','general',1,1),(1656,4,'column_compression_zlib_strategy','TEXT','variables','general',1,1),(1657,4,'column_compression_zlib_wrap','TEXT','variables','general',1,1),(1658,4,'idle_readonly_transaction_timeout','INT','variables','general',1,1),(1659,4,'idle_transaction_timeout','INT','variables','general',1,1),(1660,4,'idle_write_transaction_timeout','INT','variables','general',1,1),(1661,4,'ignore_db_dirs','TEXT','variables','general',1,1),(1662,4,'log_disabled_statements','TEXT','variables','general',1,1),(1663,4,'log_slow_disabled_statements','TEXT','variables','general',1,1),(1664,4,'mroonga_enable_operations_recording','TEXT','variables','general',1,1),(1665,4,'mroonga_libgroonga_support_zstd','TEXT','variables','general',1,1),(1666,4,'rocksdb_access_hint_on_compaction_start','INT','variables','general',1,1),(1667,4,'rocksdb_advise_random_on_open','TEXT','variables','general',1,1),(1668,4,'rocksdb_allow_concurrent_memtable_write','TEXT','variables','general',1,1),(1669,4,'rocksdb_allow_mmap_reads','TEXT','variables','general',1,1),(1670,4,'rocksdb_allow_mmap_writes','TEXT','variables','general',1,1),(1671,4,'rocksdb_blind_delete_primary_key','TEXT','variables','general',1,1),(1672,4,'rocksdb_block_cache_size','INT','variables','general',1,1),(1673,4,'rocksdb_block_restart_interval','INT','variables','general',1,1),(1674,4,'rocksdb_block_size','INT','variables','general',1,1),(1675,4,'rocksdb_block_size_deviation','INT','variables','general',1,1),(1676,4,'rocksdb_bulk_load','TEXT','variables','general',1,1),(1677,4,'rocksdb_bulk_load_allow_unsorted','TEXT','variables','general',1,1),(1678,4,'rocksdb_bulk_load_size','INT','variables','general',1,1),(1679,4,'rocksdb_bytes_per_sync','INT','variables','general',1,1),(1680,4,'rocksdb_cache_index_and_filter_blocks','TEXT','variables','general',1,1),(1681,4,'rocksdb_checksums_pct','INT','variables','general',1,1),(1682,4,'rocksdb_collect_sst_properties','TEXT','variables','general',1,1),(1683,4,'rocksdb_commit_in_the_middle','TEXT','variables','general',1,1),(1684,4,'rocksdb_compaction_readahead_size','INT','variables','general',1,1),(1685,4,'rocksdb_compaction_sequential_deletes','INT','variables','general',1,1),(1686,4,'rocksdb_compaction_sequential_deletes_count_sd','TEXT','variables','general',1,1),(1687,4,'rocksdb_compaction_sequential_deletes_file_size','INT','variables','general',1,1),(1688,4,'rocksdb_compaction_sequential_deletes_window','INT','variables','general',1,1),(1689,4,'rocksdb_concurrent_prepare','TEXT','variables','general',1,1),(1690,4,'rocksdb_create_if_missing','TEXT','variables','general',1,1),(1691,4,'rocksdb_create_missing_column_families','TEXT','variables','general',1,1),(1692,4,'rocksdb_datadir','TEXT','variables','general',1,1),(1693,4,'rocksdb_db_write_buffer_size','INT','variables','general',1,1),(1694,4,'rocksdb_deadlock_detect','TEXT','variables','general',1,1),(1695,4,'rocksdb_deadlock_detect_depth','INT','variables','general',1,1),(1696,4,'rocksdb_debug_optimizer_no_zero_cardinality','TEXT','variables','general',1,1),(1697,4,'rocksdb_debug_ttl_ignore_pk','TEXT','variables','general',1,1),(1698,4,'rocksdb_debug_ttl_read_filter_ts','INT','variables','general',1,1),(1699,4,'rocksdb_debug_ttl_rec_ts','INT','variables','general',1,1),(1700,4,'rocksdb_debug_ttl_snapshot_ts','INT','variables','general',1,1),(1701,4,'rocksdb_delayed_write_rate','INT','variables','general',1,1),(1702,4,'rocksdb_delete_obsolete_files_period_micros','INT','variables','general',1,1),(1703,4,'rocksdb_enable_2pc','TEXT','variables','general',1,1),(1704,4,'rocksdb_enable_bulk_load_api','TEXT','variables','general',1,1),(1705,4,'rocksdb_enable_thread_tracking','TEXT','variables','general',1,1),(1706,4,'rocksdb_enable_ttl','TEXT','variables','general',1,1),(1707,4,'rocksdb_enable_ttl_read_filtering','TEXT','variables','general',1,1),(1708,4,'rocksdb_enable_write_thread_adaptive_yield','TEXT','variables','general',1,1),(1709,4,'rocksdb_error_if_exists','TEXT','variables','general',1,1),(1710,4,'rocksdb_flush_log_at_trx_commit','INT','variables','general',1,1),(1711,4,'rocksdb_flush_memtable_on_analyze','TEXT','variables','general',1,1),(1712,4,'rocksdb_force_compute_memtable_stats','TEXT','variables','general',1,1),(1713,4,'rocksdb_force_compute_memtable_stats_cachetime','INT','variables','general',1,1),(1714,4,'rocksdb_force_flush_memtable_and_lzero_now','TEXT','variables','general',1,1),(1715,4,'rocksdb_force_flush_memtable_now','TEXT','variables','general',1,1),(1716,4,'rocksdb_force_index_records_in_range','INT','variables','general',1,1),(1717,4,'rocksdb_git_hash','TEXT','variables','general',1,1),(1718,4,'rocksdb_hash_index_allow_collision','TEXT','variables','general',1,1),(1719,4,'rocksdb_index_type','TEXT','variables','general',1,1),(1720,4,'rocksdb_info_log_level','TEXT','variables','general',1,1),(1721,4,'rocksdb_io_write_timeout','INT','variables','general',1,1),(1722,4,'rocksdb_is_fd_close_on_exec','TEXT','variables','general',1,1),(1723,4,'rocksdb_keep_log_file_num','INT','variables','general',1,1),(1724,4,'rocksdb_large_prefix','TEXT','variables','general',1,1),(1725,4,'rocksdb_lock_scanned_rows','TEXT','variables','general',1,1),(1726,4,'rocksdb_lock_wait_timeout','INT','variables','general',1,1),(1727,4,'rocksdb_log_file_time_to_roll','INT','variables','general',1,1),(1728,4,'rocksdb_manifest_preallocation_size','INT','variables','general',1,1),(1729,4,'rocksdb_manual_wal_flush','TEXT','variables','general',1,1),(1730,4,'rocksdb_master_skip_tx_api','TEXT','variables','general',1,1),(1731,4,'rocksdb_max_background_jobs','INT','variables','general',1,1),(1732,4,'rocksdb_max_latest_deadlocks','INT','variables','general',1,1),(1733,4,'rocksdb_max_log_file_size','INT','variables','general',1,1),(1734,4,'rocksdb_max_manifest_file_size','DOUBLE','variables','general',1,1),(1735,4,'rocksdb_max_row_locks','INT','variables','general',1,1),(1736,4,'rocksdb_max_subcompactions','INT','variables','general',1,1),(1737,4,'rocksdb_max_total_wal_size','INT','variables','general',1,1),(1738,4,'rocksdb_merge_buf_size','INT','variables','general',1,1),(1739,4,'rocksdb_merge_combine_read_size','INT','variables','general',1,1),(1740,4,'rocksdb_merge_tmp_file_removal_delay_ms','INT','variables','general',1,1),(1741,4,'rocksdb_new_table_reader_for_compaction_inputs','TEXT','variables','general',1,1),(1742,4,'rocksdb_no_block_cache','TEXT','variables','general',1,1),(1743,4,'rocksdb_paranoid_checks','TEXT','variables','general',1,1),(1744,4,'rocksdb_pause_background_work','TEXT','variables','general',1,1),(1745,4,'rocksdb_perf_context_level','INT','variables','general',1,1),(1746,4,'rocksdb_persistent_cache_size_mb','INT','variables','general',1,1),(1747,4,'rocksdb_pin_l0_filter_and_index_blocks_in_cache','TEXT','variables','general',1,1),(1748,4,'rocksdb_print_snapshot_conflict_queries','TEXT','variables','general',1,1),(1749,4,'rocksdb_rate_limiter_bytes_per_sec','INT','variables','general',1,1),(1750,4,'rocksdb_records_in_range','INT','variables','general',1,1),(1751,4,'rocksdb_reset_stats','TEXT','variables','general',1,1),(1752,4,'rocksdb_seconds_between_stat_computes','INT','variables','general',1,1),(1753,4,'rocksdb_signal_drop_index_thread','TEXT','variables','general',1,1),(1754,4,'rocksdb_sim_cache_size','INT','variables','general',1,1),(1755,4,'rocksdb_skip_bloom_filter_on_read','TEXT','variables','general',1,1),(1756,4,'rocksdb_skip_fill_cache','TEXT','variables','general',1,1),(1757,4,'rocksdb_skip_unique_check_tables','TEXT','variables','general',1,1),(1758,4,'rocksdb_sst_mgr_rate_bytes_per_sec','INT','variables','general',1,1),(1759,4,'rocksdb_stats_dump_period_sec','INT','variables','general',1,1),(1760,4,'rocksdb_store_row_debug_checksums','TEXT','variables','general',1,1),(1761,4,'rocksdb_strict_collation_check','TEXT','variables','general',1,1),(1762,4,'rocksdb_supported_compression_types','TEXT','variables','general',1,1),(1763,4,'rocksdb_table_cache_numshardbits','INT','variables','general',1,1),(1764,4,'rocksdb_table_stats_sampling_pct','INT','variables','general',1,1),(1765,4,'rocksdb_trace_sst_api','TEXT','variables','general',1,1),(1766,4,'rocksdb_unsafe_for_binlog','TEXT','variables','general',1,1),(1767,4,'rocksdb_use_adaptive_mutex','TEXT','variables','general',1,1),(1768,4,'rocksdb_use_clock_cache','TEXT','variables','general',1,1),(1769,4,'rocksdb_use_direct_io_for_flush_and_compaction','TEXT','variables','general',1,1),(1770,4,'rocksdb_use_direct_reads','TEXT','variables','general',1,1),(1771,4,'rocksdb_use_fsync','TEXT','variables','general',1,1),(1772,4,'rocksdb_validate_tables','INT','variables','general',1,1),(1773,4,'rocksdb_verify_row_debug_checksums','TEXT','variables','general',1,1),(1774,4,'rocksdb_wal_bytes_per_sync','INT','variables','general',1,1),(1775,4,'rocksdb_wal_recovery_mode','INT','variables','general',1,1),(1776,4,'rocksdb_wal_size_limit_mb','INT','variables','general',1,1),(1777,4,'rocksdb_wal_ttl_seconds','INT','variables','general',1,1),(1778,4,'rocksdb_whole_key_filtering','TEXT','variables','general',1,1),(1779,4,'rocksdb_write_batch_max_bytes','INT','variables','general',1,1),(1780,4,'rocksdb_write_disable_wal','TEXT','variables','general',1,1),(1781,4,'rocksdb_write_ignore_missing_column_families','TEXT','variables','general',1,1),(1782,4,'rpl_semi_sync_master_enabled','TEXT','variables','general',1,1),(1783,4,'rpl_semi_sync_master_timeout','INT','variables','general',1,1),(1784,4,'rpl_semi_sync_master_trace_level','INT','variables','general',1,1),(1785,4,'rpl_semi_sync_master_wait_no_slave','TEXT','variables','general',1,1),(1786,4,'rpl_semi_sync_master_wait_point','TEXT','variables','general',1,1),(1787,4,'rpl_semi_sync_slave_delay_master','TEXT','variables','general',1,1),(1788,4,'rpl_semi_sync_slave_enabled','TEXT','variables','general',1,1),(1789,4,'rpl_semi_sync_slave_kill_conn_timeout','INT','variables','general',1,1),(1790,4,'rpl_semi_sync_slave_trace_level','INT','variables','general',1,1),(1791,4,'session_track_system_variables','TEXT','variables','general',1,1),(1792,4,'slave_transaction_retry_errors','TEXT','variables','general',1,1),(1793,4,'system_versioning_alter_history','TEXT','variables','general',1,1),(1794,4,'system_versioning_asof','TEXT','variables','general',1,1),(1795,4,'system_versioning_innodb_algorithm_simple','TEXT','variables','general',1,1),(1796,4,'tcp_keepalive_interval','INT','variables','general',1,1),(1797,4,'tcp_keepalive_probes','INT','variables','general',1,1),(1798,4,'tcp_keepalive_time','INT','variables','general',1,1),(1799,4,'tokudb_analyze_in_background','TEXT','variables','general',1,1),(1800,4,'tokudb_analyze_mode','TEXT','variables','general',1,1),(1801,4,'tokudb_analyze_throttle','INT','variables','general',1,1),(1802,4,'tokudb_auto_analyze','INT','variables','general',1,1),(1803,4,'tokudb_cardinality_scale_percent','INT','variables','general',1,1),(1804,4,'tokudb_dir_per_db','TEXT','variables','general',1,1),(1805,4,'tokudb_strip_frm_data','TEXT','variables','general',1,1),(1806,4,'version_source_revision','TEXT','variables','general',1,1),(1807,3,'column_compressions','INT','status','general',1,1),(1808,3,'column_decompressions','INT','status','general',1,1),(1809,3,'com_alter_sequence','INT','status','general',1,1),(1810,3,'com_create_sequence','INT','status','general',1,1),(1811,3,'com_drop_sequence','INT','status','general',1,1),(1812,3,'feature_invisible_columns','INT','status','general',1,1),(1813,3,'handler_tmp_delete','INT','status','general',1,1),(1814,3,'innodb_instant_alter_column','INT','status','general',1,1),(1815,3,'memory_used_initial','INT','status','general',1,1),(1816,3,'rocksdb_rows_deleted','INT','status','general',1,1),(1817,3,'rocksdb_rows_inserted','INT','status','general',1,1),(1818,3,'rocksdb_rows_read','INT','status','general',1,1),(1819,3,'rocksdb_rows_updated','INT','status','general',1,1),(1820,3,'rocksdb_rows_deleted_blind','INT','status','general',1,1),(1821,3,'rocksdb_rows_expired','INT','status','general',1,1),(1822,3,'rocksdb_system_rows_deleted','INT','status','general',1,1),(1823,3,'rocksdb_system_rows_inserted','INT','status','general',1,1),(1824,3,'rocksdb_system_rows_read','INT','status','general',1,1),(1825,3,'rocksdb_system_rows_updated','INT','status','general',1,1),(1826,3,'rocksdb_memtable_total','INT','status','general',1,1),(1827,3,'rocksdb_memtable_unflushed','INT','status','general',1,1),(1828,3,'rocksdb_queries_point','INT','status','general',1,1),(1829,3,'rocksdb_queries_range','INT','status','general',1,1),(1830,3,'rocksdb_covered_secondary_key_lookups','INT','status','general',1,1),(1831,3,'rocksdb_block_cache_add','INT','status','general',1,1),(1832,3,'rocksdb_block_cache_data_hit','INT','status','general',1,1),(1833,3,'rocksdb_block_cache_data_miss','INT','status','general',1,1),(1834,3,'rocksdb_block_cache_filter_hit','INT','status','general',1,1),(1835,3,'rocksdb_block_cache_filter_miss','INT','status','general',1,1),(1836,3,'rocksdb_block_cache_hit','INT','status','general',1,1),(1837,3,'rocksdb_block_cache_index_hit','INT','status','general',1,1),(1838,3,'rocksdb_block_cache_index_miss','INT','status','general',1,1),(1839,3,'rocksdb_block_cache_miss','INT','status','general',1,1),(1840,3,'rocksdb_block_cachecompressed_hit','INT','status','general',1,1),(1841,3,'rocksdb_block_cachecompressed_miss','INT','status','general',1,1),(1842,3,'rocksdb_bloom_filter_prefix_checked','INT','status','general',1,1),(1843,3,'rocksdb_bloom_filter_prefix_useful','INT','status','general',1,1),(1844,3,'rocksdb_bloom_filter_useful','INT','status','general',1,1),(1845,3,'rocksdb_bytes_read','INT','status','general',1,1),(1846,3,'rocksdb_bytes_written','INT','status','general',1,1),(1847,3,'rocksdb_compact_read_bytes','INT','status','general',1,1),(1848,3,'rocksdb_compact_write_bytes','INT','status','general',1,1),(1849,3,'rocksdb_compaction_key_drop_new','INT','status','general',1,1),(1850,3,'rocksdb_compaction_key_drop_obsolete','INT','status','general',1,1),(1851,3,'rocksdb_compaction_key_drop_user','INT','status','general',1,1),(1852,3,'rocksdb_flush_write_bytes','INT','status','general',1,1),(1853,3,'rocksdb_getupdatessince_calls','INT','status','general',1,1),(1854,3,'rocksdb_memtable_hit','INT','status','general',1,1),(1855,3,'rocksdb_memtable_miss','INT','status','general',1,1),(1856,3,'rocksdb_no_file_closes','INT','status','general',1,1),(1857,3,'rocksdb_no_file_errors','INT','status','general',1,1),(1858,3,'rocksdb_no_file_opens','INT','status','general',1,1),(1859,3,'rocksdb_num_iterators','INT','status','general',1,1),(1860,3,'rocksdb_number_block_not_compressed','INT','status','general',1,1),(1861,3,'rocksdb_number_deletes_filtered','INT','status','general',1,1),(1862,3,'rocksdb_number_keys_read','INT','status','general',1,1),(1863,3,'rocksdb_number_keys_updated','INT','status','general',1,1),(1864,3,'rocksdb_number_keys_written','INT','status','general',1,1),(1865,3,'rocksdb_number_merge_failures','INT','status','general',1,1),(1866,3,'rocksdb_number_multiget_bytes_read','INT','status','general',1,1),(1867,3,'rocksdb_number_multiget_get','INT','status','general',1,1),(1868,3,'rocksdb_number_multiget_keys_read','INT','status','general',1,1),(1869,3,'rocksdb_number_reseeks_iteration','INT','status','general',1,1),(1870,3,'rocksdb_number_sst_entry_delete','INT','status','general',1,1),(1871,3,'rocksdb_number_sst_entry_merge','INT','status','general',1,1),(1872,3,'rocksdb_number_sst_entry_other','INT','status','general',1,1),(1873,3,'rocksdb_number_sst_entry_put','INT','status','general',1,1),(1874,3,'rocksdb_number_sst_entry_singledelete','INT','status','general',1,1),(1875,3,'rocksdb_number_stat_computes','INT','status','general',1,1),(1876,3,'rocksdb_number_superversion_acquires','INT','status','general',1,1),(1877,3,'rocksdb_number_superversion_cleanups','INT','status','general',1,1),(1878,3,'rocksdb_number_superversion_releases','INT','status','general',1,1),(1879,3,'rocksdb_rate_limit_delay_millis','INT','status','general',1,1),(1880,3,'rocksdb_snapshot_conflict_errors','INT','status','general',1,1),(1881,3,'rocksdb_stall_l0_file_count_limit_slowdowns','INT','status','general',1,1),(1882,3,'rocksdb_stall_locked_l0_file_count_limit_slowdowns','INT','status','general',1,1),(1883,3,'rocksdb_stall_l0_file_count_limit_stops','INT','status','general',1,1),(1884,3,'rocksdb_stall_locked_l0_file_count_limit_stops','INT','status','general',1,1),(1885,3,'rocksdb_stall_pending_compaction_limit_stops','INT','status','general',1,1),(1886,3,'rocksdb_stall_pending_compaction_limit_slowdowns','INT','status','general',1,1),(1887,3,'rocksdb_stall_memtable_limit_stops','INT','status','general',1,1),(1888,3,'rocksdb_stall_memtable_limit_slowdowns','INT','status','general',1,1),(1889,3,'rocksdb_stall_total_stops','INT','status','general',1,1),(1890,3,'rocksdb_stall_total_slowdowns','INT','status','general',1,1),(1891,3,'rocksdb_stall_micros','INT','status','general',1,1),(1892,3,'rocksdb_wal_bytes','INT','status','general',1,1),(1893,3,'rocksdb_wal_group_syncs','INT','status','general',1,1),(1894,3,'rocksdb_wal_synced','INT','status','general',1,1),(1895,3,'rocksdb_write_other','INT','status','general',1,1),(1896,3,'rocksdb_write_self','INT','status','general',1,1),(1897,3,'rocksdb_write_timedout','INT','status','general',1,1),(1898,3,'rocksdb_write_wal','INT','status','general',1,1),(1899,3,'rpl_semi_sync_master_clients','INT','status','general',1,1),(1900,3,'rpl_semi_sync_master_get_ack','INT','status','general',1,1),(1901,3,'rpl_semi_sync_master_net_avg_wait_time','INT','status','general',1,1),(1902,3,'rpl_semi_sync_master_net_wait_time','INT','status','general',1,1),(1903,3,'rpl_semi_sync_master_net_waits','INT','status','general',1,1),(1904,3,'rpl_semi_sync_master_no_times','INT','status','general',1,1),(1905,3,'rpl_semi_sync_master_no_tx','INT','status','general',1,1),(1906,3,'rpl_semi_sync_master_request_ack','INT','status','general',1,1),(1907,3,'rpl_semi_sync_master_status','TEXT','status','general',1,1),(1908,3,'rpl_semi_sync_master_timefunc_failures','INT','status','general',1,1),(1909,3,'rpl_semi_sync_master_tx_avg_wait_time','INT','status','general',1,1),(1910,3,'rpl_semi_sync_master_tx_wait_time','INT','status','general',1,1),(1911,3,'rpl_semi_sync_master_tx_waits','INT','status','general',1,1),(1912,3,'rpl_semi_sync_master_wait_pos_backtraverse','INT','status','general',1,1),(1913,3,'rpl_semi_sync_master_wait_sessions','INT','status','general',1,1),(1914,3,'rpl_semi_sync_master_yes_tx','INT','status','general',1,1),(1915,3,'rpl_semi_sync_slave_send_ack','INT','status','general',1,1),(1916,3,'rpl_semi_sync_slave_status','TEXT','status','general',1,1),(1917,3,'rpl_transactions_multi_engine','INT','status','general',1,1),(1918,3,'table_open_cache_active_instances','INT','status','general',1,1),(1919,3,'table_open_cache_hits','INT','status','general',1,1),(1920,3,'table_open_cache_misses','INT','status','general',1,1),(1921,3,'table_open_cache_overflows','INT','status','general',1,1),(1922,3,'transactions_gtid_foreign_engine','INT','status','general',1,1),(1923,3,'transactions_multi_engine','INT','status','general',1,1),(1924,3,'last_io_error','TEXT','slave','slave',1,1),(1925,4,'wsrep_provider_options','TEXT','variables','general',1,1),(1926,3,'replicate_do_table','TEXT','slave','slave',1,1),(1927,3,'replicate_ignore_table','TEXT','slave','slave',1,1),(1928,3,'replicate_wild_do_table','TEXT','slave','slave',1,1),(1929,3,'replicate_wild_ignore_table','TEXT','slave','slave',1,1),(1930,3,'last_error','TEXT','slave','slave',1,1),(1931,3,'until_log_file','TEXT','slave','slave',1,1),(1932,3,'master_ssl_ca_file','TEXT','slave','slave',1,1),(1933,3,'master_ssl_ca_path','TEXT','slave','slave',1,1),(1934,3,'master_ssl_cert','TEXT','slave','slave',1,1),(1935,3,'master_ssl_cipher','TEXT','slave','slave',1,1),(1936,3,'master_ssl_key','TEXT','slave','slave',1,1),(1937,3,'last_sql_error','TEXT','slave','slave',1,1),(1938,3,'replicate_ignore_server_ids','TEXT','slave','slave',1,1),(1939,3,'connection_name','TEXT','slave','slave',1,1),(1940,3,'master_ssl_crl','TEXT','slave','slave',1,1),(1941,3,'master_ssl_crlpath','TEXT','slave','slave',1,1),(1942,3,'replicate_do_domain_ids','TEXT','slave','slave',1,1),(1943,3,'replicate_ignore_domain_ids','TEXT','slave','slave',1,1),(1944,3,'wsrep_apply_oooe','DOUBLE','status','general',1,1),(1945,3,'wsrep_apply_oool','DOUBLE','status','general',1,1),(1946,3,'wsrep_apply_window','DOUBLE','status','general',1,1),(1947,3,'wsrep_causal_reads','INT','status','general',1,1),(1948,3,'wsrep_cert_deps_distance','DOUBLE','status','general',1,1),(1949,3,'wsrep_cert_index_size','INT','status','general',1,1),(1950,3,'wsrep_cert_interval','DOUBLE','status','general',1,1),(1951,3,'wsrep_cluster_state_uuid','TEXT','status','general',1,1),(1952,3,'wsrep_commit_oooe','DOUBLE','status','general',1,1),(1953,3,'wsrep_commit_oool','DOUBLE','status','general',1,1),(1954,3,'wsrep_commit_window','DOUBLE','status','general',1,1),(1955,3,'wsrep_desync_count','INT','status','general',1,1),(1956,3,'wsrep_evs_repl_latency','TEXT','status','general',1,1),(1957,3,'wsrep_evs_state','TEXT','status','general',1,1),(1958,3,'wsrep_flow_control_paused','DOUBLE','status','general',1,1),(1959,3,'wsrep_flow_control_paused_ns','INT','status','general',1,1),(1960,3,'wsrep_flow_control_recv','INT','status','general',1,1),(1961,3,'wsrep_flow_control_sent','INT','status','general',1,1),(1962,3,'wsrep_gcomm_uuid','TEXT','status','general',1,1),(1963,3,'wsrep_incoming_addresses','TEXT','status','general',1,1),(1964,3,'wsrep_last_committed','INT','status','general',1,1),(1965,3,'wsrep_local_cached_downto','INT','status','general',1,1),(1966,3,'wsrep_local_cert_failures','INT','status','general',1,1),(1967,3,'wsrep_local_commits','INT','status','general',1,1),(1968,3,'wsrep_local_recv_queue','INT','status','general',1,1),(1969,3,'wsrep_local_recv_queue_avg','DOUBLE','status','general',1,1),(1970,3,'wsrep_local_recv_queue_max','INT','status','general',1,1),(1971,3,'wsrep_local_recv_queue_min','INT','status','general',1,1),(1972,3,'wsrep_local_replays','INT','status','general',1,1),(1973,3,'wsrep_local_send_queue','INT','status','general',1,1),(1974,3,'wsrep_local_send_queue_avg','DOUBLE','status','general',1,1),(1975,3,'wsrep_local_send_queue_max','INT','status','general',1,1),(1976,3,'wsrep_local_send_queue_min','INT','status','general',1,1),(1977,3,'wsrep_local_state','INT','status','general',1,1),(1978,3,'wsrep_local_state_comment','TEXT','status','general',1,1),(1979,3,'wsrep_local_state_uuid','TEXT','status','general',1,1),(1980,3,'wsrep_protocol_version','INT','status','general',1,1),(1981,3,'wsrep_provider_name','TEXT','status','general',1,1),(1982,3,'wsrep_provider_vendor','TEXT','status','general',1,1),(1983,3,'wsrep_provider_version','TEXT','status','general',1,1),(1984,3,'wsrep_received','INT','status','general',1,1),(1985,3,'wsrep_received_bytes','INT','status','general',1,1),(1986,3,'wsrep_repl_data_bytes','INT','status','general',1,1),(1987,3,'wsrep_repl_keys','INT','status','general',1,1),(1988,3,'wsrep_repl_keys_bytes','INT','status','general',1,1),(1989,3,'wsrep_repl_other_bytes','INT','status','general',1,1),(1990,3,'wsrep_replicated','INT','status','general',1,1),(1991,3,'wsrep_replicated_bytes','INT','status','general',1,1),(1992,3,'wsrep_evs_delayed','TEXT','status','general',1,1),(1993,4,'wsrep_reject_queries','TEXT','variables','general',1,1),(1994,4,'connect_cond_push','TEXT','variables','general',1,1),(1995,4,'connect_enable_mongo','TEXT','variables','general',1,1),(1996,4,'alter_algorithm','TEXT','variables','general',1,1),(1997,4,'rocksdb_allow_to_start_after_corruption','TEXT','variables','general',1,1),(1998,4,'rocksdb_ignore_unknown_options','TEXT','variables','general',1,1),(1999,4,'rocksdb_max_open_files','INT','variables','general',1,1),(2000,4,'rocksdb_two_write_queues','TEXT','variables','general',1,1),(2001,4,'secure_timestamp','TEXT','variables','general',1,1),(2002,3,'acl_package_spec_grants','INT','status','general',1,1),(2003,3,'acl_package_body_grants','INT','status','general',1,1),(2004,3,'com_create_package','INT','status','general',1,1),(2005,3,'com_create_package_body','INT','status','general',1,1),(2006,3,'com_drop_package','INT','status','general',1,1),(2007,3,'com_drop_package_body','INT','status','general',1,1),(2008,3,'com_show_create_package','INT','status','general',1,1),(2009,3,'com_show_create_package_body','INT','status','general',1,1),(2010,3,'com_show_package_status','INT','status','general',1,1),(2011,3,'com_show_package_body_status','INT','status','general',1,1),(2012,3,'feature_custom_aggregate_functions','INT','status','general',1,1),(2013,3,'feature_json','INT','status','general',1,1),(2014,3,'feature_system_versioning','INT','status','general',1,1),(2015,3,'innodb_buffer_pool_load_incomplete','TEXT','status','general',1,1),(2016,3,'rocksdb_rows_filtered','INT','status','general',1,1),(2017,3,'rocksdb_block_cache_add_failures','INT','status','general',1,1),(2018,3,'rocksdb_block_cache_bytes_read','INT','status','general',1,1),(2019,3,'rocksdb_block_cache_bytes_write','INT','status','general',1,1),(2020,3,'rocksdb_block_cache_data_add','INT','status','general',1,1),(2021,3,'rocksdb_block_cache_data_bytes_insert','INT','status','general',1,1),(2022,3,'rocksdb_block_cache_filter_add','INT','status','general',1,1),(2023,3,'rocksdb_block_cache_filter_bytes_evict','INT','status','general',1,1),(2024,3,'rocksdb_block_cache_filter_bytes_insert','INT','status','general',1,1),(2025,3,'rocksdb_block_cache_index_add','INT','status','general',1,1),(2026,3,'rocksdb_block_cache_index_bytes_evict','INT','status','general',1,1),(2027,3,'rocksdb_block_cache_index_bytes_insert','INT','status','general',1,1),(2028,3,'rocksdb_get_hit_l0','INT','status','general',1,1),(2029,3,'rocksdb_get_hit_l1','INT','status','general',1,1),(2030,3,'rocksdb_get_hit_l2_and_up','INT','status','general',1,1),(2031,3,'rocksdb_iter_bytes_read','INT','status','general',1,1),(2032,3,'rocksdb_number_db_next','INT','status','general',1,1),(2033,3,'rocksdb_number_db_next_found','INT','status','general',1,1),(2034,3,'rocksdb_number_db_prev','INT','status','general',1,1),(2035,3,'rocksdb_number_db_prev_found','INT','status','general',1,1),(2036,3,'rocksdb_number_db_seek','INT','status','general',1,1),(2037,3,'rocksdb_number_db_seek_found','INT','status','general',1,1),(2038,3,'rocksdb_row_lock_deadlocks','INT','status','general',1,1),(2039,3,'rocksdb_row_lock_wait_timeouts','INT','status','general',1,1),(2040,3,'slave_ddl_groups','INT','slave','slave',1,1),(2041,3,'slave_non_transactional_groups','INT','slave','slave',1,1),(2042,3,'slave_transactional_groups','INT','slave','slave',1,1),(2043,4,'init_file','TEXT','variables','general',1,1),(2044,4,'rocksdb_remove_mariabackup_checkpoint','TEXT','variables','general',1,1),(2045,4,'core_file','TEXT','variables','general',1,1),(2046,4,'innodb_log_optimize_ddl','TEXT','variables','general',1,1),(2047,4,'innodb_print_lock_wait_timeout_info','TEXT','variables','general',1,1),(2048,3,'innodb_buffered_aio_submitted','INT','status','general',1,1),(2049,4,'replicate_ignore_table','TEXT','variables','general',1,1),(2050,4,'slave_type_conversions','TEXT','variables','general',1,1),(2051,3,'eq_range_index_dive_limit','INT','variables','general',1,1),(2052,3,'rocksdb_bulk_load_allow_sk','TEXT','variables','general',1,1),(2053,3,'rocksdb_commit_time_batch_for_recovery','TEXT','variables','general',1,1),(2054,3,'rocksdb_debug_manual_compaction_delay','INT','variables','general',1,1),(2055,3,'rocksdb_error_on_suboptimal_collation','TEXT','variables','general',1,1),(2056,3,'rocksdb_manual_compaction_threads','INT','variables','general',1,1),(2057,3,'rocksdb_max_manual_compactions','INT','variables','general',1,1),(2058,3,'rocksdb_stats_recalc_rate','INT','variables','general',1,1),(2059,3,'rocksdb_write_policy','TEXT','variables','general',1,1),(2060,3,'innodb_undo_truncations','INT','status','general',1,1),(2061,3,'rocksdb_bloom_filter_full_positive','INT','status','general',1,1),(2062,3,'rocksdb_bloom_filter_full_true_positive','INT','status','general',1,1),(2063,3,'rocksdb_manual_compactions_processed','INT','status','general',1,1),(2064,3,'rocksdb_manual_compactions_running','INT','status','general',1,1),(2065,3,'proxy_protocol_networks','TEXT','variables','general',1,1),(2066,4,'innodb_safe_truncate','TEXT','variables','general',1,1),(2067,3,'wsrep_cluster_weight','INT','status','general',1,1),(2068,3,'wsrep_open_connections','INT','status','general',1,1),(2069,3,'wsrep_open_transactions','INT','status','general',1,1),(2070,3,'com_alter_instance','INT','status','general',1,1),(2071,3,'com_change_repl_filter','INT','status','general',1,1),(2072,3,'com_explain_other','INT','status','general',1,1),(2073,3,'com_show_function_code','INT','status','general',1,1),(2074,3,'com_show_procedure_code','INT','status','general',1,1),(2075,3,'com_group_replication_start','INT','status','general',1,1),(2076,3,'com_group_replication_stop','INT','status','general',1,1),(2077,3,'locked_connects','INT','status','general',1,1),(2078,3,'max_execution_time_exceeded','INT','status','general',1,1),(2079,3,'max_execution_time_set','INT','status','general',1,1),(2080,3,'max_execution_time_set_failed','INT','status','general',1,1),(2081,3,'max_used_connections_time','TEXT','status','general',1,1),(2082,3,'ongoing_anonymous_transaction_count','INT','status','general',1,1),(2083,3,'performance_schema_index_stat_lost','INT','status','general',1,1),(2084,3,'performance_schema_memory_classes_lost','INT','status','general',1,1),(2085,3,'performance_schema_metadata_lock_lost','INT','status','general',1,1),(2086,3,'performance_schema_nested_statement_lost','INT','status','general',1,1),(2087,3,'performance_schema_prepared_statements_lost','INT','status','general',1,1),(2088,3,'performance_schema_program_lost','INT','status','general',1,1),(2089,3,'performance_schema_table_lock_stat_lost','INT','status','general',1,1),(2090,3,'ssl_server_not_after','TEXT','status','general',1,1),(2091,3,'ssl_server_not_before','TEXT','status','general',1,1),(2092,3,'validate_password_dictionary_file_last_parsed','TEXT','status','general',1,1),(2093,3,'validate_password_dictionary_file_words_count','INT','status','general',1,1),(2094,4,'avoid_temporal_upgrade','TEXT','variables','general',1,1),(2095,4,'binlog_error_action','TEXT','variables','general',1,1),(2096,4,'binlog_group_commit_sync_delay','INT','variables','general',1,1),(2097,4,'binlog_group_commit_sync_no_delay_count','INT','variables','general',1,1),(2098,4,'binlog_gtid_simple_recovery','TEXT','variables','general',1,1),(2099,4,'binlog_max_flush_queue_time','INT','variables','general',1,1),(2100,4,'binlog_order_commits','TEXT','variables','general',1,1),(2101,4,'binlog_rows_query_log_events','TEXT','variables','general',1,1),(2102,4,'binlog_transaction_dependency_history_size','INT','variables','general',1,1),(2103,4,'binlog_transaction_dependency_tracking','TEXT','variables','general',1,1),(2104,4,'block_encryption_mode','TEXT','variables','general',1,1),(2105,4,'check_proxy_users','TEXT','variables','general',1,1),(2106,4,'default_authentication_plugin','TEXT','variables','general',1,1),(2107,4,'default_password_lifetime','INT','variables','general',1,1),(2108,4,'default_tmp_storage_engine','TEXT','variables','general',1,1),(2109,4,'disconnect_on_expired_password','TEXT','variables','general',1,1),(2110,4,'end_markers_in_json','TEXT','variables','general',1,1),(2111,4,'enforce_gtid_consistency','TEXT','variables','general',1,1),(2112,4,'gtid_executed_compression_period','INT','variables','general',1,1),(2113,4,'gtid_mode','TEXT','variables','general',1,1),(2114,4,'have_statement_timeout','TEXT','variables','general',1,1),(2115,4,'internal_tmp_disk_storage_engine','TEXT','variables','general',1,1),(2116,4,'keyring_operations','TEXT','variables','general',1,1),(2117,4,'log_bin_use_v1_row_events','TEXT','variables','general',1,1),(2118,4,'log_builtin_as_identified_by_password','TEXT','variables','general',1,1),(2119,4,'log_error_verbosity','INT','variables','general',1,1),(2120,4,'log_statements_unsafe_for_binlog','TEXT','variables','general',1,1),(2121,4,'log_syslog','TEXT','variables','general',1,1),(2122,4,'log_syslog_facility','TEXT','variables','general',1,1),(2123,4,'log_syslog_include_pid','TEXT','variables','general',1,1),(2124,4,'log_throttle_queries_not_using_indexes','INT','variables','general',1,1),(2125,4,'log_timestamps','TEXT','variables','general',1,1),(2126,4,'master_info_repository','TEXT','variables','general',1,1),(2127,4,'max_execution_time','INT','variables','general',1,1),(2128,4,'max_points_in_geometry','INT','variables','general',1,1),(2129,4,'mysql_native_password_proxy_users','TEXT','variables','general',1,1),(2130,4,'ngram_token_size','INT','variables','general',1,1),(2131,4,'offline_mode','TEXT','variables','general',1,1),(2132,4,'optimizer_trace','TEXT','variables','general',1,1),(2133,4,'optimizer_trace_features','TEXT','variables','general',1,1),(2134,4,'optimizer_trace_limit','INT','variables','general',1,1),(2135,4,'optimizer_trace_max_mem_size','INT','variables','general',1,1),(2136,4,'parser_max_mem_size','DOUBLE','variables','general',1,1),(2137,4,'performance_schema_events_transactions_history_long_size','INT','variables','general',1,1),(2138,4,'performance_schema_events_transactions_history_size','INT','variables','general',1,1),(2139,4,'performance_schema_max_memory_classes','INT','variables','general',1,1),(2140,4,'performance_schema_max_sql_text_length','INT','variables','general',1,1),(2141,4,'performance_schema_max_statement_stack','INT','variables','general',1,1),(2142,4,'range_optimizer_max_mem_size','INT','variables','general',1,1),(2143,4,'rbr_exec_mode','TEXT','variables','general',1,1),(2144,4,'relay_log_info_repository','TEXT','variables','general',1,1),(2145,4,'require_secure_transport','TEXT','variables','general',1,1),(2146,4,'rpl_stop_slave_timeout','INT','variables','general',1,1),(2147,4,'server_id_bits','INT','variables','general',1,1),(2148,4,'server_uuid','TEXT','variables','general',1,1),(2149,4,'session_track_gtids','TEXT','variables','general',1,1),(2150,4,'sha256_password_proxy_users','TEXT','variables','general',1,1),(2151,4,'show_compatibility_56','TEXT','variables','general',1,1),(2152,4,'show_create_table_verbosity','TEXT','variables','general',1,1),(2153,4,'show_old_temporals','TEXT','variables','general',1,1),(2154,4,'slave_allow_batching','TEXT','variables','general',1,1),(2155,4,'slave_checkpoint_group','INT','variables','general',1,1),(2156,4,'slave_checkpoint_period','INT','variables','general',1,1),(2157,4,'slave_parallel_type','TEXT','variables','general',1,1),(2158,4,'slave_pending_jobs_size_max','INT','variables','general',1,1),(2159,4,'slave_preserve_commit_order','TEXT','variables','general',1,1),(2160,4,'slave_rows_search_algorithms','TEXT','variables','general',1,1),(2161,4,'ssl_ca','TEXT','variables','general',1,1),(2162,4,'ssl_cert','TEXT','variables','general',1,1),(2163,4,'ssl_key','TEXT','variables','general',1,1),(2164,4,'super_read_only','TEXT','variables','general',1,1),(2165,4,'tls_version','TEXT','variables','general',1,1),(2166,4,'transaction_isolation','TEXT','variables','general',1,1),(2167,4,'transaction_read_only','TEXT','variables','general',1,1),(2168,4,'transaction_write_set_extraction','TEXT','variables','general',1,1),(2169,4,'validate_password_check_user_name','TEXT','variables','general',1,1),(2170,4,'validate_password_length','INT','variables','general',1,1),(2171,4,'validate_password_mixed_case_count','INT','variables','general',1,1),(2172,4,'validate_password_number_count','INT','variables','general',1,1),(2173,4,'validate_password_policy','TEXT','variables','general',1,1),(2174,4,'validate_password_special_char_count','INT','variables','general',1,1),(2175,4,'wsrep_certification_rules','TEXT','variables','general',1,1),(2176,4,'wsrep_preordered','TEXT','variables','general',1,1),(2177,4,'spider_use_cond_other_than_pk_for_update','INT','variables','general',1,1),(2178,3,'file_first','TEXT','binlog','general',1,1),(2179,3,'file_last','TEXT','binlog','general',1,1),(2180,3,'files','TEXT','binlog','general',1,1),(2181,3,'sizes','TEXT','binlog','general',1,1),(2182,3,'total_size','INT','binlog','general',1,1),(2183,3,'nb_files','INT','binlog','general',1,1),(2184,3,'com_backup','INT','status','general',1,1),(2185,3,'com_backup_lock','INT','status','general',1,1),(2186,3,'feature_application_time_periods','INT','status','general',1,1),(2187,3,'wsrep','INT','status','general',1,1),(2188,4,'analyze_sample_percentage','DOUBLE','variables','general',1,1),(2189,4,'gtid_cleanup_batch_size','INT','variables','general',1,1),(2190,4,'max_password_errors','INT','variables','general',1,1),(2191,4,'max_rowid_filter_size','INT','variables','general',1,1),(2192,4,'tcp_nodelay','TEXT','variables','general',1,1),(2193,4,'wsrep_sr_store','TEXT','variables','general',1,1),(2194,4,'wsrep_ignore_apply_errors','INT','variables','general',1,1),(2195,4,'wsrep_trx_fragment_size','INT','variables','general',1,1),(2196,4,'wsrep_trx_fragment_unit','TEXT','variables','general',1,1),(2197,4,'spider_wait_timeout','INT','variables','general',1,1),(2198,3,'aborted_connects_preauth','INT','status','general',1,1),(2199,4,'wsrep_notify_cmd','TEXT','variables','general',1,1),(2200,4,'sql_error_log_filename','TEXT','variables','general',1,1),(2201,4,'sql_error_log_rate','INT','variables','general',1,1),(2202,4,'sql_error_log_rotate','TEXT','variables','general',1,1),(2203,4,'sql_error_log_rotations','INT','variables','general',1,1),(2204,4,'sql_error_log_size_limit','INT','variables','general',1,1),(2205,3,'server_audit_current_log','TEXT','status','general',1,1),(2206,3,'innodb_encryption_n_temp_blocks_encrypted','INT','status','general',1,1),(2207,3,'innodb_encryption_n_temp_blocks_decrypted','INT','status','general',1,1),(2208,3,'wsrep_applier_thread_count','INT','status','general',1,1),(2209,3,'wsrep_rollbacker_thread_count','INT','status','general',1,1),(2210,4,'in_predicate_conversion_threshold','INT','variables','general',1,1),(2211,4,'innodb_encrypt_temporary_tables','TEXT','variables','general',1,1),(2212,4,'rocksdb_cache_dump','TEXT','variables','general',1,1),(2213,4,'rocksdb_cache_high_pri_pool_ratio','DOUBLE','variables','general',1,1),(2214,4,'rocksdb_cache_index_and_filter_with_high_priority','TEXT','variables','general',1,1),(2215,4,'rocksdb_enable_insert_with_update_caching','TEXT','variables','general',1,1),(2216,4,'rocksdb_rollback_on_timeout','TEXT','variables','general',1,1),(2217,4,'rocksdb_stats_level','INT','variables','general',1,1),(2218,4,'spider_sync_sql_mode','TEXT','variables','general',1,1),(2219,3,'binlog_do_db','TEXT','master','general',1,1),(2220,2,'load_average_5_sec','TEXT','stats','general',1,1),(2221,2,'load_average_5_min','TEXT','stats','general',1,1),(2222,2,'load_average_15_min','TEXT','stats','general',1,1),(2223,2,'user_connected','INT','stats','general',1,1),(2224,2,'uptime','TEXT','stats','general',1,1),(2225,2,'memory_total','INT','stats','general',1,1),(2226,2,'memory_used','INT','stats','general',1,1),(2227,2,'memory_free','INT','stats','general',1,1),(2228,2,'memory_shared','INT','stats','general',1,1),(2229,2,'memory_buff/cache','INT','stats','general',1,1),(2230,2,'memory_available','INT','stats','general',1,1),(2231,2,'swap_total','TEXT','stats','general',1,1),(2232,2,'swap_used','INT','stats','general',1,1),(2233,2,'swap_free','INT','stats','general',1,1),(2234,2,'swap_shared','INT','stats','general',1,1),(2235,2,'disks','TEXT','stats','general',1,1),(2236,2,'ips','TEXT','stats','general',1,1),(2237,2,'cpu_usage','DOUBLE','stats','general',1,1),(2238,2,'cpu_detail','TEXT','stats','general',1,1),(2239,2,'mysqld_mem_physical','INT','stats','general',1,1),(2240,2,'mysqld_mem_virtual','INT','stats','general',1,1),(2241,2,'ping','DOUBLE','stats','general',1,1),(2242,2,'cpu_thread_count','INT','hardware','general',1,1),(2243,2,'memory','TEXT','hardware','general',1,1),(2244,2,'cpu_frequency','TEXT','hardware','general',1,1),(2245,2,'distributor','TEXT','hardware','general',1,1),(2246,2,'os','TEXT','hardware','general',1,1),(2247,2,'codename','TEXT','hardware','general',1,1),(2248,2,'product_name','TEXT','hardware','general',1,1),(2249,2,'arch','TEXT','hardware','general',1,1),(2250,2,'kernel','TEXT','hardware','general',1,1),(2251,2,'hostname','TEXT','hardware','general',1,1),(2252,2,'swapiness','TEXT','hardware','general',1,1),(2253,4,'replicate_wild_ignore_table','TEXT','variables','general',1,1),(2254,4,'gssapi_keytab_path','TEXT','variables','general',1,1),(2255,4,'gssapi_principal_name','TEXT','variables','general',1,1),(2256,4,'pam_use_cleartext_plugin','TEXT','variables','general',1,1),(2257,4,'query_response_time_flush','TEXT','variables','general',1,1),(2258,4,'query_response_time_range_base','INT','variables','general',1,1),(2259,4,'query_response_time_stats','TEXT','variables','general',1,1),(2260,4,'server_audit_query_log_limit','INT','variables','general',1,1),(2261,5,'databases','TEXT','databases','general',1,1);
+INSERT INTO `ts_variable` VALUES (1,3,'ping','DOUBLE','server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2,4,'aria_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3,4,'aria_checkpoint_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4,4,'aria_checkpoint_log_activity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5,4,'aria_force_start_after_recovery_failures','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (6,4,'aria_group_commit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (7,4,'aria_group_commit_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (8,4,'aria_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (9,4,'aria_log_purge_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (10,4,'aria_max_sort_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (11,4,'aria_page_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (12,4,'aria_pagecache_age_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (13,4,'aria_pagecache_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (14,4,'aria_pagecache_division_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (15,4,'aria_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (16,4,'aria_repair_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (17,4,'aria_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (18,4,'aria_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (19,4,'aria_sync_log_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (20,4,'aria_used_for_temp_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (21,4,'auto_increment_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (22,4,'auto_increment_offset','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (23,4,'autocommit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (24,4,'automatic_sp_privileges','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (25,4,'back_log','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (26,4,'basedir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (27,4,'big_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (28,4,'binlog_annotate_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (29,4,'binlog_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (30,4,'binlog_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (31,4,'binlog_direct_non_transactional_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (32,4,'binlog_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (33,4,'binlog_optimize_thread_scheduling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (34,4,'binlog_stmt_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (35,4,'bulk_insert_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (36,4,'character_set_client','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (37,4,'character_set_connection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (38,4,'character_set_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (39,4,'character_set_filesystem','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (40,4,'character_set_results','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (41,4,'character_set_server','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (42,4,'character_set_system','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (43,4,'character_sets_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (44,4,'collation_connection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (45,4,'collation_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (46,4,'collation_server','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (47,4,'completion_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (48,4,'concurrent_insert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (49,4,'connect_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (50,4,'datadir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (51,4,'date_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (52,4,'datetime_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (53,4,'deadlock_search_depth_long','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (54,4,'deadlock_search_depth_short','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (55,4,'deadlock_timeout_long','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (56,4,'deadlock_timeout_short','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (57,4,'debug_no_thread_alarm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (58,4,'default_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (59,4,'default_week_format','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (60,4,'delay_key_write','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (61,4,'delayed_insert_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (62,4,'delayed_insert_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (63,4,'delayed_queue_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (64,4,'div_precision_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (65,4,'engine_condition_pushdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (66,4,'event_scheduler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (67,4,'expensive_subquery_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (68,4,'expire_logs_days','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (69,4,'extra_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (70,4,'extra_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (71,4,'flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (72,4,'flush_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (73,4,'foreign_key_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (74,4,'ft_boolean_syntax','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (75,4,'ft_max_word_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (76,4,'ft_min_word_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (77,4,'ft_query_expansion_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (78,4,'ft_stopword_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (79,4,'general_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (80,4,'general_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (81,4,'group_concat_max_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (82,4,'have_compress','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (83,4,'have_crypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (84,4,'have_csv','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (85,4,'have_dynamic_loading','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (86,4,'have_geometry','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (87,4,'have_innodb','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (88,4,'have_ndbcluster','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (89,4,'have_openssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (90,4,'have_partitioning','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (91,4,'have_profiling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (92,4,'have_query_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (93,4,'have_rtree_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (94,4,'have_ssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (95,4,'have_symlink','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (96,4,'hostname','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (97,4,'ignore_builtin_innodb','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (98,4,'init_connect','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (99,4,'innodb_adaptive_flushing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (100,4,'innodb_adaptive_flushing_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (101,4,'innodb_adaptive_hash_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (102,4,'innodb_adaptive_hash_index_partitions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (103,4,'innodb_additional_mem_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (104,4,'innodb_autoextend_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (105,4,'innodb_autoinc_lock_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (106,4,'innodb_blocking_buffer_pool_restore','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (107,4,'innodb_buffer_pool_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (108,4,'innodb_buffer_pool_restore_at_startup','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (109,4,'innodb_buffer_pool_shm_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (110,4,'innodb_buffer_pool_shm_key','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (111,4,'innodb_buffer_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (112,4,'innodb_change_buffering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (113,4,'innodb_changed_pages_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (114,4,'innodb_checkpoint_age_target','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (115,4,'innodb_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (116,4,'innodb_commit_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (117,4,'innodb_concurrency_tickets','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (118,4,'innodb_corrupt_table_action','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (119,4,'innodb_data_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (120,4,'innodb_dict_size_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (121,4,'innodb_doublewrite','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (122,4,'innodb_fake_changes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (123,4,'innodb_fast_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (124,4,'innodb_fast_shutdown','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (125,4,'innodb_file_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (126,4,'innodb_file_format_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (127,4,'innodb_file_format_max','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (128,4,'innodb_file_per_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (129,4,'innodb_flush_log_at_trx_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (130,4,'innodb_flush_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (131,4,'innodb_flush_neighbor_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (132,4,'innodb_force_load_corrupted','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (133,4,'innodb_force_recovery','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (134,4,'innodb_ibuf_accel_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (135,4,'innodb_ibuf_active_contract','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (136,4,'innodb_ibuf_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (137,4,'innodb_import_table_from_xtrabackup','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (138,4,'innodb_io_capacity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (139,4,'innodb_kill_idle_transaction','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (140,4,'innodb_large_prefix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (141,4,'innodb_lazy_drop_table','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (142,4,'innodb_lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (143,4,'innodb_locks_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (144,4,'innodb_log_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (145,4,'innodb_log_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (146,4,'innodb_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (147,4,'innodb_log_files_in_group','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (148,4,'innodb_log_group_home_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (149,4,'innodb_max_dirty_pages_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (150,4,'innodb_max_purge_lag','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (151,4,'innodb_merge_sort_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (152,4,'innodb_mirrored_log_groups','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (153,4,'innodb_old_blocks_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (154,4,'innodb_old_blocks_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (155,4,'innodb_open_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (156,4,'innodb_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (157,4,'innodb_purge_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (158,4,'innodb_purge_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (159,4,'innodb_random_read_ahead','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (160,4,'innodb_read_ahead','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (161,4,'innodb_read_ahead_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (162,4,'innodb_read_io_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (163,4,'innodb_recovery_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (164,4,'innodb_recovery_update_relay_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (165,4,'innodb_replication_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (166,4,'innodb_rollback_on_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (167,4,'innodb_rollback_segments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (168,4,'innodb_show_locks_held','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (169,4,'innodb_show_verbose_locks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (170,4,'innodb_spin_wait_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (171,4,'innodb_stats_auto_update','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (172,4,'innodb_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (173,4,'innodb_stats_on_metadata','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (174,4,'innodb_stats_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (175,4,'innodb_stats_update_need_lock','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (176,4,'innodb_strict_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (177,4,'innodb_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (178,4,'innodb_sync_spin_loops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (179,4,'innodb_table_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (180,4,'innodb_thread_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (181,4,'innodb_thread_concurrency_timer_based','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (182,4,'innodb_thread_sleep_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (183,4,'innodb_track_changed_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (184,4,'innodb_use_global_flush_log_at_trx_commit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (185,4,'innodb_use_native_aio','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (186,4,'innodb_use_sys_malloc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (187,4,'innodb_use_sys_stats_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (188,4,'innodb_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (189,4,'innodb_write_io_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (190,4,'interactive_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (191,4,'join_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (192,4,'join_buffer_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (193,4,'join_cache_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (194,4,'keep_files_on_create','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (195,4,'key_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (196,4,'key_cache_age_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (197,4,'key_cache_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (198,4,'key_cache_division_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (199,4,'key_cache_segments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (200,4,'large_files_support','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (201,4,'large_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (202,4,'large_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (203,4,'lc_messages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (204,4,'lc_messages_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (205,4,'lc_time_names','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (206,4,'license','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (207,4,'local_infile','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (208,4,'lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (209,4,'locked_in_memory','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (210,4,'log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (211,4,'log_bin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (212,4,'log_bin_trust_function_creators','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (213,4,'log_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (214,4,'log_output','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (215,4,'log_queries_not_using_indexes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (216,4,'log_slave_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (217,4,'log_slow_filter','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (218,4,'log_slow_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (219,4,'log_slow_rate_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (220,4,'log_warnings','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (221,4,'long_query_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (222,4,'low_priority_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (223,4,'lower_case_file_system','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (224,4,'lower_case_table_names','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (225,4,'master_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (226,4,'max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (227,4,'max_binlog_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (228,4,'max_binlog_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (229,4,'max_binlog_stmt_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (230,4,'max_connect_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (231,4,'max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (232,4,'max_delayed_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (233,4,'max_error_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (234,4,'max_heap_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (235,4,'max_insert_delayed_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (236,4,'max_join_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (237,4,'max_length_for_sort_data','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (238,4,'max_long_data_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (239,4,'max_prepared_stmt_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (240,4,'max_relay_log_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (241,4,'max_seeks_for_key','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (242,4,'max_sort_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (243,4,'max_sp_recursion_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (244,4,'max_tmp_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (245,4,'max_user_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (246,4,'max_write_lock_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (247,4,'metadata_locks_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (248,4,'min_examined_row_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (249,4,'mrr_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (250,4,'multi_range_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (251,4,'myisam_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (252,4,'myisam_data_pointer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (253,4,'myisam_max_sort_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (254,4,'myisam_mmap_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (255,4,'myisam_recover_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (256,4,'myisam_repair_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (257,4,'myisam_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (258,4,'myisam_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (259,4,'myisam_use_mmap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (260,4,'net_buffer_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (261,4,'net_read_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (262,4,'net_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (263,4,'net_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (264,4,'old','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (265,4,'old_alter_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (266,4,'old_passwords','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (267,4,'open_files_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (268,4,'optimizer_prune_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (269,4,'optimizer_search_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (270,4,'optimizer_switch','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (271,4,'performance_schema','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (272,4,'performance_schema_events_waits_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (273,4,'performance_schema_events_waits_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (274,4,'performance_schema_max_cond_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (275,4,'performance_schema_max_cond_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (276,4,'performance_schema_max_file_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (277,4,'performance_schema_max_file_handles','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (278,4,'performance_schema_max_file_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (279,4,'performance_schema_max_mutex_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (280,4,'performance_schema_max_mutex_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (281,4,'performance_schema_max_rwlock_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (282,4,'performance_schema_max_rwlock_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (283,4,'performance_schema_max_table_handles','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (284,4,'performance_schema_max_table_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (285,4,'performance_schema_max_thread_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (286,4,'performance_schema_max_thread_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (287,4,'pid_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (288,4,'plugin_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (289,4,'plugin_maturity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (290,4,'port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (291,4,'preload_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (292,4,'profiling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (293,4,'profiling_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (294,4,'progress_report_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (295,4,'protocol_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (296,4,'query_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (297,4,'query_cache_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (298,4,'query_cache_min_res_unit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (299,4,'query_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (300,4,'query_cache_strip_comments','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (301,4,'query_cache_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (302,4,'query_cache_wlock_invalidate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (303,4,'query_prealloc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (304,4,'range_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (305,4,'read_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (306,4,'read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (307,4,'read_rnd_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (308,4,'relay_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (309,4,'relay_log_info_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (310,4,'relay_log_purge','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (311,4,'relay_log_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (312,4,'relay_log_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (313,4,'replicate_annotate_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (314,4,'replicate_do_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (315,4,'replicate_events_marked_for_skip','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (316,4,'replicate_ignore_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (317,4,'report_host','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (318,4,'report_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (319,4,'rowid_merge_buff_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (320,4,'rpl_recovery_rank','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (321,4,'secure_auth','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (322,4,'server_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (323,4,'skip_external_locking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (324,4,'skip_name_resolve','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (325,4,'skip_networking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (326,4,'skip_show_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (327,4,'slave_compressed_protocol','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (328,4,'slave_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (329,4,'slave_load_tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (330,4,'slave_max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (331,4,'slave_net_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (332,4,'slave_skip_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (333,4,'slave_sql_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (334,4,'slave_transaction_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (335,4,'slow_launch_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (336,4,'slow_query_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (337,4,'slow_query_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (338,4,'socket','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (339,4,'sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (340,4,'sql_auto_is_null','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (341,4,'sql_big_selects','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (342,4,'sql_big_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (343,4,'sql_buffer_result','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (344,4,'sql_log_bin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (345,4,'sql_log_off','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (346,4,'sql_low_priority_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (347,4,'sql_max_join_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (348,4,'sql_notes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (349,4,'sql_quote_show_create','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (350,4,'sql_safe_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (351,4,'sql_select_limit','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (352,4,'sql_slave_skip_counter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (353,4,'sql_warnings','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (354,4,'storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (355,4,'stored_program_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (356,4,'sync_binlog','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (357,4,'sync_frm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (358,4,'sync_master_info','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (359,4,'sync_relay_log','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (360,4,'sync_relay_log_info','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (361,4,'system_time_zone','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (362,4,'table_definition_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (363,4,'table_open_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (364,4,'thread_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (365,4,'thread_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (366,4,'thread_handling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (367,4,'thread_pool_idle_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (368,4,'thread_pool_max_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (369,4,'thread_pool_oversubscribe','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (370,4,'thread_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (371,4,'thread_pool_stall_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (372,4,'thread_stack','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (373,4,'time_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (374,4,'time_zone','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (375,4,'timed_mutexes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (376,4,'tmp_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (377,4,'tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (378,4,'transaction_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (379,4,'transaction_prealloc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (380,4,'tx_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (381,4,'unique_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (382,4,'updatable_views_with_limit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (383,4,'userstat','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (384,4,'version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (385,4,'version_comment','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (386,4,'version_compile_machine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (387,4,'version_compile_os','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (388,4,'wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (389,3,'aborted_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (390,3,'aborted_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (391,3,'access_denied_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (392,3,'aria_pagecache_blocks_not_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (393,3,'aria_pagecache_blocks_unused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (394,3,'aria_pagecache_blocks_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (395,3,'aria_pagecache_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (396,3,'aria_pagecache_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (397,3,'aria_pagecache_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (398,3,'aria_pagecache_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (399,3,'aria_transaction_log_syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (400,3,'binlog_bytes_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (401,3,'binlog_cache_disk_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (402,3,'binlog_cache_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (403,3,'binlog_stmt_cache_disk_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (404,3,'binlog_stmt_cache_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (405,3,'busy_time','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (406,3,'bytes_received','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (407,3,'bytes_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (408,3,'com_admin_commands','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (409,3,'com_assign_to_keycache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (410,3,'com_alter_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (411,3,'com_alter_db_upgrade','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (412,3,'com_alter_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (413,3,'com_alter_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (414,3,'com_alter_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (415,3,'com_alter_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (416,3,'com_alter_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (417,3,'com_alter_tablespace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (418,3,'com_analyze','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (419,3,'com_begin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (420,3,'com_binlog','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (421,3,'com_call_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (422,3,'com_change_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (423,3,'com_change_master','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (424,3,'com_check','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (425,3,'com_checksum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (426,3,'com_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (427,3,'com_create_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (428,3,'com_create_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (429,3,'com_create_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (430,3,'com_create_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (431,3,'com_create_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (432,3,'com_create_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (433,3,'com_create_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (434,3,'com_create_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (435,3,'com_create_udf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (436,3,'com_create_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (437,3,'com_create_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (438,3,'com_dealloc_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (439,3,'com_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (440,3,'com_delete_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (441,3,'com_do','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (442,3,'com_drop_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (443,3,'com_drop_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (444,3,'com_drop_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (445,3,'com_drop_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (446,3,'com_drop_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (447,3,'com_drop_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (448,3,'com_drop_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (449,3,'com_drop_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (450,3,'com_drop_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (451,3,'com_drop_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (452,3,'com_empty_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (453,3,'com_execute_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (454,3,'com_flush','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (455,3,'com_grant','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (456,3,'com_ha_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (457,3,'com_ha_open','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (458,3,'com_ha_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (459,3,'com_help','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (460,3,'com_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (461,3,'com_insert_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (462,3,'com_install_plugin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (463,3,'com_kill','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (464,3,'com_load','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (465,3,'com_lock_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (466,3,'com_optimize','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (467,3,'com_preload_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (468,3,'com_prepare_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (469,3,'com_purge','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (470,3,'com_purge_before_date','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (471,3,'com_release_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (472,3,'com_rename_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (473,3,'com_rename_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (474,3,'com_repair','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (475,3,'com_replace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (476,3,'com_replace_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (477,3,'com_reset','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (478,3,'com_resignal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (479,3,'com_revoke','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (480,3,'com_revoke_all','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (481,3,'com_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (482,3,'com_rollback_to_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (483,3,'com_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (484,3,'com_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (485,3,'com_set_option','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (486,3,'com_signal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (487,3,'com_show_authors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (488,3,'com_show_binlog_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (489,3,'com_show_binlogs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (490,3,'com_show_charsets','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (491,3,'com_show_client_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (492,3,'com_show_collations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (493,3,'com_show_contributors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (494,3,'com_show_create_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (495,3,'com_show_create_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (496,3,'com_show_create_func','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (497,3,'com_show_create_proc','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (498,3,'com_show_create_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (499,3,'com_show_create_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (500,3,'com_show_databases','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (501,3,'com_show_engine_logs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (502,3,'com_show_engine_mutex','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (503,3,'com_show_engine_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (504,3,'com_show_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (505,3,'com_show_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (506,3,'com_show_fields','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (507,3,'com_show_function_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (508,3,'com_show_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (509,3,'com_show_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (510,3,'com_show_index_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (511,3,'com_show_master_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (512,3,'com_show_open_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (513,3,'com_show_plugins','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (514,3,'com_show_privileges','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (515,3,'com_show_procedure_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (516,3,'com_show_processlist','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (517,3,'com_show_profile','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (518,3,'com_show_profiles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (519,3,'com_show_relaylog_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (520,3,'com_show_slave_hosts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (521,3,'com_show_slave_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (522,3,'com_show_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (523,3,'com_show_storage_engines','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (524,3,'com_show_table_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (525,3,'com_show_table_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (526,3,'com_show_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (527,3,'com_show_triggers','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (528,3,'com_show_user_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (529,3,'com_show_variables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (530,3,'com_show_warnings','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (531,3,'com_slave_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (532,3,'com_slave_stop','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (533,3,'com_stmt_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (534,3,'com_stmt_execute','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (535,3,'com_stmt_fetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (536,3,'com_stmt_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (537,3,'com_stmt_reprepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (538,3,'com_stmt_reset','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (539,3,'com_stmt_send_long_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (540,3,'com_truncate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (541,3,'com_uninstall_plugin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (542,3,'com_unlock_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (543,3,'com_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (544,3,'com_update_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (545,3,'com_xa_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (546,3,'com_xa_end','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (547,3,'com_xa_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (548,3,'com_xa_recover','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (549,3,'com_xa_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (550,3,'com_xa_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (551,3,'compression','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (552,3,'connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (553,3,'cpu_time','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (554,3,'created_tmp_disk_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (555,3,'created_tmp_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (556,3,'created_tmp_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (557,3,'delayed_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (558,3,'delayed_insert_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (559,3,'delayed_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (560,3,'empty_queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (561,3,'executed_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (562,3,'executed_triggers','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (563,3,'feature_dynamic_columns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (564,3,'feature_fulltext','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (565,3,'feature_gis','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (566,3,'feature_locale','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (567,3,'feature_subquery','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (568,3,'feature_timezone','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (569,3,'feature_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (570,3,'feature_xml','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (571,3,'flush_commands','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (572,3,'handler_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (573,3,'handler_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (574,3,'handler_discover','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (575,3,'handler_icp_attempts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (576,3,'handler_icp_match','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (577,3,'handler_mrr_init','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (578,3,'handler_mrr_key_refills','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (579,3,'handler_mrr_rowid_refills','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (580,3,'handler_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (581,3,'handler_read_first','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (582,3,'handler_read_key','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (583,3,'handler_read_last','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (584,3,'handler_read_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (585,3,'handler_read_prev','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (586,3,'handler_read_rnd','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (587,3,'handler_read_rnd_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (588,3,'handler_read_rnd_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (589,3,'handler_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (590,3,'handler_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (591,3,'handler_savepoint_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (592,3,'handler_tmp_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (593,3,'handler_tmp_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (594,3,'handler_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (595,3,'handler_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (596,3,'innodb_adaptive_hash_cells','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (597,3,'innodb_adaptive_hash_heap_buffers','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (598,3,'innodb_adaptive_hash_hash_searches','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (599,3,'innodb_adaptive_hash_non_hash_searches','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (600,3,'innodb_background_log_sync','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (601,3,'innodb_buffer_pool_pages_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (602,3,'innodb_buffer_pool_pages_dirty','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (603,3,'innodb_buffer_pool_pages_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (604,3,'innodb_buffer_pool_pages_lru_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (605,3,'innodb_buffer_pool_pages_free','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (606,3,'innodb_buffer_pool_pages_made_not_young','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (607,3,'innodb_buffer_pool_pages_made_young','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (608,3,'innodb_buffer_pool_pages_misc','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (609,3,'innodb_buffer_pool_pages_old','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (610,3,'innodb_buffer_pool_pages_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (611,3,'innodb_buffer_pool_read_ahead_rnd','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (612,3,'innodb_buffer_pool_read_ahead','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (613,3,'innodb_buffer_pool_read_ahead_evicted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (614,3,'innodb_buffer_pool_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (615,3,'innodb_buffer_pool_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (616,3,'innodb_buffer_pool_wait_free','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (617,3,'innodb_buffer_pool_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (618,3,'innodb_checkpoint_age','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (619,3,'innodb_checkpoint_max_age','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (620,3,'innodb_checkpoint_target_age','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (621,3,'innodb_data_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (622,3,'innodb_data_pending_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (623,3,'innodb_data_pending_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (624,3,'innodb_data_pending_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (625,3,'innodb_data_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (626,3,'innodb_data_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (627,3,'innodb_data_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (628,3,'innodb_data_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (629,3,'innodb_dblwr_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (630,3,'innodb_dblwr_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (631,3,'innodb_deadlocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (632,3,'innodb_dict_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (633,3,'innodb_have_atomic_builtins','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (634,3,'innodb_history_list_length','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (635,3,'innodb_ibuf_discarded_delete_marks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (636,3,'innodb_ibuf_discarded_deletes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (637,3,'innodb_ibuf_discarded_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (638,3,'innodb_ibuf_free_list','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (639,3,'innodb_ibuf_merged_delete_marks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (640,3,'innodb_ibuf_merged_deletes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (641,3,'innodb_ibuf_merged_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (642,3,'innodb_ibuf_merges','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (643,3,'innodb_ibuf_segment_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (644,3,'innodb_ibuf_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (645,3,'innodb_log_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (646,3,'innodb_log_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (647,3,'innodb_log_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (648,3,'innodb_lsn_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (649,3,'innodb_lsn_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (650,3,'innodb_lsn_last_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (651,3,'innodb_master_thread_1_second_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (652,3,'innodb_master_thread_10_second_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (653,3,'innodb_master_thread_background_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (654,3,'innodb_master_thread_main_flush_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (655,3,'innodb_master_thread_sleeps','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (656,3,'innodb_max_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (657,3,'innodb_mem_adaptive_hash','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (658,3,'innodb_mem_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (659,3,'innodb_mem_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (660,3,'innodb_mutex_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (661,3,'innodb_mutex_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (662,3,'innodb_mutex_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (663,3,'innodb_oldest_view_low_limit_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (664,3,'innodb_os_log_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (665,3,'innodb_os_log_pending_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (666,3,'innodb_os_log_pending_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (667,3,'innodb_os_log_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (668,3,'innodb_page_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (669,3,'innodb_pages_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (670,3,'innodb_pages_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (671,3,'innodb_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (672,3,'innodb_purge_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (673,3,'innodb_purge_undo_no','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (674,3,'innodb_row_lock_current_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (675,3,'innodb_current_row_locks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (676,3,'innodb_row_lock_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (677,3,'innodb_row_lock_time_avg','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (678,3,'innodb_row_lock_time_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (679,3,'innodb_row_lock_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (680,3,'innodb_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (681,3,'innodb_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (682,3,'innodb_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (683,3,'innodb_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (684,3,'innodb_s_lock_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (685,3,'innodb_s_lock_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (686,3,'innodb_s_lock_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (687,3,'innodb_truncated_status_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (688,3,'innodb_x_lock_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (689,3,'innodb_x_lock_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (690,3,'innodb_x_lock_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (691,3,'key_blocks_not_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (692,3,'key_blocks_unused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (693,3,'key_blocks_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (694,3,'key_blocks_warm','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (695,3,'key_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (696,3,'key_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (697,3,'key_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (698,3,'key_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (699,3,'last_query_cost','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (700,3,'max_used_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (701,3,'not_flushed_delayed_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (702,3,'open_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (703,3,'open_streams','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (704,3,'open_table_definitions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (705,3,'open_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (706,3,'opened_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (707,3,'opened_table_definitions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (708,3,'opened_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (709,3,'opened_views','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (710,3,'performance_schema_cond_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (711,3,'performance_schema_cond_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (712,3,'performance_schema_file_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (713,3,'performance_schema_file_handles_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (714,3,'performance_schema_file_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (715,3,'performance_schema_locker_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (716,3,'performance_schema_mutex_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (717,3,'performance_schema_mutex_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (718,3,'performance_schema_rwlock_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (719,3,'performance_schema_rwlock_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (720,3,'performance_schema_table_handles_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (721,3,'performance_schema_table_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (722,3,'performance_schema_thread_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (723,3,'performance_schema_thread_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (724,3,'prepared_stmt_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (725,3,'qcache_free_blocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (726,3,'qcache_free_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (727,3,'qcache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (728,3,'qcache_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (729,3,'qcache_lowmem_prunes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (730,3,'qcache_not_cached','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (731,3,'qcache_queries_in_cache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (732,3,'qcache_total_blocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (733,3,'queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (734,3,'questions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (735,3,'rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (736,3,'rows_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (737,3,'rows_tmp_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (738,3,'rpl_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (739,3,'select_full_join','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (740,3,'select_full_range_join','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (741,3,'select_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (742,3,'select_range_check','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (743,3,'select_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (744,3,'slave_heartbeat_period','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (745,3,'slave_open_temp_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (746,3,'slave_received_heartbeats','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (747,3,'slave_retried_transactions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (748,3,'slave_running','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (749,3,'slow_launch_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (750,3,'slow_queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (751,3,'sort_merge_passes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (752,3,'sort_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (753,3,'sort_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (754,3,'sort_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (755,3,'ssl_accept_renegotiates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (756,3,'ssl_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (757,3,'ssl_callback_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (758,3,'ssl_client_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (759,3,'ssl_connect_renegotiates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (760,3,'ssl_ctx_verify_depth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (761,3,'ssl_ctx_verify_mode','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (762,3,'ssl_default_timeout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (763,3,'ssl_finished_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (764,3,'ssl_finished_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (765,3,'ssl_session_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (766,3,'ssl_session_cache_misses','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (767,3,'ssl_session_cache_mode','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (768,3,'ssl_session_cache_overflows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (769,3,'ssl_session_cache_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (770,3,'ssl_session_cache_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (771,3,'ssl_sessions_reused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (772,3,'ssl_used_session_cache_entries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (773,3,'ssl_verify_depth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (774,3,'ssl_verify_mode','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (775,3,'subquery_cache_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (776,3,'subquery_cache_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (777,3,'syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (778,3,'table_locks_immediate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (779,3,'table_locks_waited','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (780,3,'tc_log_max_pages_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (781,3,'tc_log_page_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (782,3,'tc_log_page_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (783,3,'threadpool_idle_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (784,3,'threadpool_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (785,3,'threads_cached','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (786,3,'threads_connected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (787,3,'threads_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (788,3,'threads_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (789,3,'uptime','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (790,3,'uptime_since_flush_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (791,3,'binlog_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (792,3,'binlog_group_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (793,3,'binlog_snapshot_position','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (794,3,'slave_io_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (795,3,'master_host','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (796,3,'master_user','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (797,3,'master_port','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (798,3,'connect_retry','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (799,3,'master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (800,3,'read_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (801,3,'relay_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (802,3,'relay_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (803,3,'relay_master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (804,3,'slave_io_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (805,3,'slave_sql_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (806,3,'replicate_do_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (807,3,'replicate_ignore_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (808,3,'last_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (809,3,'skip_counter','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (810,3,'exec_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (811,3,'relay_log_space','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (812,3,'until_condition','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (813,3,'until_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (814,3,'master_ssl_allowed','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (815,3,'seconds_behind_master','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (816,3,'master_ssl_verify_server_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (817,3,'last_io_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (818,3,'last_sql_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (819,3,'master_server_id','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (820,3,'binlog_snapshot_file','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (821,3,'file','TEXT','master','general',1,1);
+INSERT INTO `ts_variable` VALUES (822,3,'position','INT','master','general',1,1);
+INSERT INTO `ts_variable` VALUES (823,4,'aria_encrypt_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (824,4,'aria_pagecache_file_hash_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (825,4,'binlog_commit_wait_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (826,4,'binlog_commit_wait_usec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (827,4,'binlog_row_image','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (828,4,'connect_conv_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (829,4,'connect_exact_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (830,4,'connect_indx_map','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (831,4,'connect_java_wrapper','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (832,4,'connect_json_grp_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (833,4,'connect_type_conv','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (834,4,'connect_use_tempfile','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (835,4,'connect_work_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (836,4,'connect_xtrace','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (837,4,'encrypt_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (838,4,'encrypt_tmp_disk_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (839,4,'encrypt_tmp_files','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (840,4,'explicit_defaults_for_timestamp','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (841,4,'gtid_binlog_pos','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (842,4,'gtid_binlog_state','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (843,4,'gtid_current_pos','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (844,4,'gtid_domain_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (845,4,'gtid_ignore_duplicates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (846,4,'gtid_slave_pos','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (847,4,'gtid_strict_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (848,4,'histogram_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (849,4,'histogram_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (850,4,'host_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (851,4,'innodb_adaptive_flushing_lwm','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (852,4,'innodb_adaptive_max_sleep_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (853,4,'innodb_api_bk_commit_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (854,4,'innodb_api_disable_rowlock','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (855,4,'innodb_api_enable_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (856,4,'innodb_api_enable_mdl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (857,4,'innodb_api_trx_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (858,4,'innodb_background_scrub_data_check_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (859,4,'innodb_background_scrub_data_compressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (860,4,'innodb_background_scrub_data_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (861,4,'innodb_background_scrub_data_uncompressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (862,4,'innodb_buf_dump_status_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (863,4,'innodb_buffer_pool_dump_at_shutdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (864,4,'innodb_buffer_pool_dump_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (865,4,'innodb_buffer_pool_dump_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (866,4,'innodb_buffer_pool_filename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (867,4,'innodb_buffer_pool_load_abort','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (868,4,'innodb_buffer_pool_load_at_startup','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (869,4,'innodb_buffer_pool_load_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (870,4,'innodb_buffer_pool_populate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (871,4,'innodb_change_buffer_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (872,4,'innodb_checksum_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (873,4,'innodb_cleaner_lsn_age_factor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (874,4,'innodb_cmp_per_index_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (875,4,'innodb_compression_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (876,4,'innodb_compression_failure_threshold_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (877,4,'innodb_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (878,4,'innodb_compression_pad_pct_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (879,4,'innodb_default_encryption_key_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (880,4,'innodb_defragment','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (881,4,'innodb_defragment_fill_factor','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (882,4,'innodb_defragment_fill_factor_n_recs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (883,4,'innodb_defragment_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (884,4,'innodb_defragment_n_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (885,4,'innodb_defragment_stats_accuracy','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (886,4,'innodb_disable_sort_file_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (887,4,'innodb_disallow_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (888,4,'innodb_empty_free_list_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (889,4,'innodb_encrypt_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (890,4,'innodb_encrypt_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (891,4,'innodb_encryption_rotate_key_age','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (892,4,'innodb_encryption_rotation_iops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (893,4,'innodb_encryption_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (894,4,'innodb_fatal_semaphore_wait_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (895,4,'innodb_flush_log_at_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (896,4,'innodb_flush_neighbors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (897,4,'innodb_flushing_avg_loops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (898,4,'innodb_force_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (899,4,'innodb_foreground_preflush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (900,4,'innodb_ft_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (901,4,'innodb_ft_enable_diag_print','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (902,4,'innodb_ft_enable_stopword','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (903,4,'innodb_ft_max_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (904,4,'innodb_ft_min_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (905,4,'innodb_ft_num_word_optimize','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (906,4,'innodb_ft_result_cache_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (907,4,'innodb_ft_sort_pll_degree','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (908,4,'innodb_ft_total_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (909,4,'innodb_idle_flush_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (910,4,'innodb_immediate_scrub_data_uncompressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (911,4,'innodb_instrument_semaphores','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (912,4,'innodb_io_capacity_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (913,4,'innodb_lock_schedule_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (914,4,'innodb_locking_fake_changes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (915,4,'innodb_log_arch_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (916,4,'innodb_log_arch_expire_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (917,4,'innodb_log_archive','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (918,4,'innodb_log_checksum_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (919,4,'innodb_log_compressed_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (920,4,'innodb_lru_scan_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (921,4,'innodb_max_bitmap_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (922,4,'innodb_max_changed_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (923,4,'innodb_max_dirty_pages_pct_lwm','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (924,4,'innodb_max_purge_lag_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (925,4,'innodb_mtflush_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (926,4,'innodb_online_alter_log_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (927,4,'innodb_optimize_fulltext_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (928,4,'innodb_prefix_index_cluster_optimization','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (929,4,'innodb_print_all_deadlocks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (930,4,'innodb_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (931,4,'innodb_sched_priority_cleaner','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (932,4,'innodb_scrub_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (933,4,'innodb_scrub_log_speed','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (934,4,'innodb_simulate_comp_failures','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (935,4,'innodb_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (936,4,'innodb_stats_auto_recalc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (937,4,'innodb_stats_include_delete_marked','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (938,4,'innodb_stats_modified_counter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (939,4,'innodb_stats_persistent','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (940,4,'innodb_stats_persistent_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (941,4,'innodb_stats_traditional','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (942,4,'innodb_stats_transient_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (943,4,'innodb_status_output','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (944,4,'innodb_status_output_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (945,4,'innodb_sync_array_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (946,4,'innodb_undo_directory','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (947,4,'innodb_undo_logs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (948,4,'innodb_undo_tablespaces','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (949,4,'innodb_use_atomic_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (950,4,'innodb_use_fallocate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (951,4,'innodb_use_mtflush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (952,4,'innodb_use_stacktrace','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (953,4,'innodb_use_trim','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (954,4,'key_cache_file_hash_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (955,4,'log_bin_basename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (956,4,'log_bin_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (957,4,'log_slow_admin_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (958,4,'log_slow_slave_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (959,4,'log_tc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (960,4,'max_digest_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (961,4,'max_session_mem_used','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (962,4,'max_statement_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (963,4,'metadata_locks_hash_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (964,4,'mroonga_action_on_fulltext_query_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (965,4,'mroonga_boolean_mode_syntax_flags','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (966,4,'mroonga_default_parser','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (967,4,'mroonga_default_tokenizer','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (968,4,'mroonga_dry_write','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (969,4,'mroonga_enable_optimization','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (970,4,'mroonga_libgroonga_embedded','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (971,4,'mroonga_libgroonga_support_lz4','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (972,4,'mroonga_libgroonga_support_zlib','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (973,4,'mroonga_libgroonga_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (974,4,'mroonga_lock_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (975,4,'mroonga_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (976,4,'mroonga_log_level','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (977,4,'mroonga_match_escalation_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (978,4,'mroonga_max_n_records_for_estimate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (979,4,'mroonga_vector_column_delimiter','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (980,4,'mroonga_version','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (981,4,'mysql56_temporal_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (982,4,'optimizer_selectivity_sampling_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (983,4,'optimizer_use_condition_selectivity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (984,4,'performance_schema_accounts_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (985,4,'performance_schema_digests_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (986,4,'performance_schema_events_stages_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (987,4,'performance_schema_events_stages_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (988,4,'performance_schema_events_statements_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (989,4,'performance_schema_events_statements_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (990,4,'performance_schema_hosts_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (991,4,'performance_schema_max_digest_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (992,4,'performance_schema_max_socket_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (993,4,'performance_schema_max_socket_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (994,4,'performance_schema_max_stage_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (995,4,'performance_schema_max_statement_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (996,4,'performance_schema_session_connect_attrs_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (997,4,'performance_schema_setup_actors_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (998,4,'performance_schema_setup_objects_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (999,4,'performance_schema_users_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1000,4,'relay_log_basename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1001,4,'relay_log_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1002,4,'slave_ddl_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1003,4,'slave_domain_parallel_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1004,4,'slave_parallel_max_queued','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1005,4,'slave_parallel_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1006,4,'slave_parallel_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1007,4,'slave_run_triggers_for_rbr','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1008,4,'sql_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1009,4,'strict_password_validation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1010,4,'tx_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1011,4,'use_stat_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1012,4,'version_malloc_library','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1013,4,'version_ssl_library','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1014,4,'wsrep_osu_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1015,4,'wsrep_auto_increment_control','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1016,4,'wsrep_causal_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1017,4,'wsrep_certify_nonpk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1018,4,'wsrep_cluster_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1019,4,'wsrep_convert_lock_to_trx','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1020,4,'wsrep_data_home_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1021,4,'wsrep_debug','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1022,4,'wsrep_desync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1023,4,'wsrep_dirty_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1024,4,'wsrep_drupal_282555_workaround','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1025,4,'wsrep_forced_binlog_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1026,4,'wsrep_gtid_domain_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1027,4,'wsrep_gtid_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1028,4,'wsrep_load_data_splitting','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1029,4,'wsrep_log_conflicts','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1030,4,'wsrep_max_ws_rows','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1031,4,'wsrep_max_ws_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1032,4,'wsrep_mysql_replication_bundle','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1033,4,'wsrep_node_incoming_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1034,4,'wsrep_node_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1035,4,'wsrep_on','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1036,4,'wsrep_patch_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1037,4,'wsrep_provider','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1038,4,'wsrep_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1039,4,'wsrep_replicate_myisam','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1040,4,'wsrep_restart_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1041,4,'wsrep_retry_autocommit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1042,4,'wsrep_slave_fk_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1043,4,'wsrep_slave_uk_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1044,4,'wsrep_slave_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1045,4,'wsrep_sst_donor_rejects_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1046,4,'wsrep_sst_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1047,4,'wsrep_sst_receive_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1048,4,'wsrep_start_position','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1049,4,'wsrep_sync_wait','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1050,3,'acl_column_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1051,3,'acl_database_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1052,3,'acl_function_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1053,3,'acl_procedure_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1054,3,'acl_proxy_users','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1055,3,'acl_role_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1056,3,'acl_roles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1057,3,'acl_table_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1058,3,'acl_users','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1059,3,'binlog_group_commit_trigger_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1060,3,'binlog_group_commit_trigger_lock_wait','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1061,3,'binlog_group_commit_trigger_timeout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1062,3,'com_compound_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1063,3,'com_create_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1064,3,'com_create_temporary_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1065,3,'com_drop_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1066,3,'com_drop_temporary_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1067,3,'com_get_diagnostics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1068,3,'com_grant_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1069,3,'com_revoke_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1070,3,'com_show_explain','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1071,3,'com_show_generic','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1072,3,'com_shutdown','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1073,3,'com_start_all_slaves','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1074,3,'com_start_slave','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1075,3,'com_stop_all_slaves','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1076,3,'com_stop_slave','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1077,3,'connection_errors_accept','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1078,3,'connection_errors_internal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1079,3,'connection_errors_max_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1080,3,'connection_errors_peer_address','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1081,3,'connection_errors_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1082,3,'connection_errors_tcpwrap','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1083,3,'delete_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1084,3,'feature_delay_key_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1085,3,'handler_external_lock','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1086,3,'handler_read_retry','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1087,3,'innodb_available_undo_logs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1088,3,'innodb_buffer_pool_bytes_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1089,3,'innodb_buffer_pool_bytes_dirty','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1090,3,'innodb_buffer_pool_dump_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1091,3,'innodb_buffer_pool_load_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1092,3,'innodb_master_thread_active_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1093,3,'innodb_master_thread_idle_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1094,3,'innodb_pages0_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1095,3,'innodb_read_views_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1096,3,'innodb_system_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1097,3,'innodb_system_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1098,3,'innodb_system_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1099,3,'innodb_system_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1100,3,'innodb_page_compression_saved','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1101,3,'innodb_page_compression_trim_sect512','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1102,3,'innodb_page_compression_trim_sect1024','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1103,3,'innodb_page_compression_trim_sect2048','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1104,3,'innodb_page_compression_trim_sect4096','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1105,3,'innodb_page_compression_trim_sect8192','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1106,3,'innodb_page_compression_trim_sect16384','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1107,3,'innodb_page_compression_trim_sect32768','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1108,3,'innodb_num_index_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1109,3,'innodb_num_non_index_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1110,3,'innodb_num_pages_page_compressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1111,3,'innodb_num_page_compressed_trim_op','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1112,3,'innodb_num_page_compressed_trim_op_saved','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1113,3,'innodb_num_pages_page_decompressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1114,3,'innodb_num_pages_page_compression_error','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1115,3,'innodb_num_pages_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1116,3,'innodb_num_pages_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1117,3,'innodb_have_lz4','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1118,3,'innodb_have_lzo','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1119,3,'innodb_have_lzma','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1120,3,'innodb_have_bzip2','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1121,3,'innodb_have_snappy','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1122,3,'innodb_defragment_compression_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1123,3,'innodb_defragment_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1124,3,'innodb_defragment_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1125,3,'innodb_onlineddl_rowlog_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1126,3,'innodb_onlineddl_rowlog_pct_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1127,3,'innodb_onlineddl_pct_progress','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1128,3,'innodb_secondary_index_triggered_cluster_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1129,3,'innodb_secondary_index_triggered_cluster_reads_avoided','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1130,3,'innodb_encryption_rotation_pages_read_from_cache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1131,3,'innodb_encryption_rotation_pages_read_from_disk','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1132,3,'innodb_encryption_rotation_pages_modified','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1133,3,'innodb_encryption_rotation_pages_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1134,3,'innodb_encryption_rotation_estimated_iops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1135,3,'innodb_encryption_key_rotation_list_length','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1136,3,'innodb_scrub_background_page_reorganizations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1137,3,'innodb_scrub_background_page_splits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1138,3,'innodb_scrub_background_page_split_failures_underflow','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1139,3,'innodb_scrub_background_page_split_failures_out_of_filespace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1140,3,'innodb_scrub_background_page_split_failures_missing_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1141,3,'innodb_scrub_background_page_split_failures_unknown','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1142,3,'innodb_encryption_num_key_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1143,3,'master_gtid_wait_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1144,3,'master_gtid_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1145,3,'master_gtid_wait_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1146,3,'max_statement_time_exceeded','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1147,3,'memory_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1148,3,'mroonga_count_skip','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1149,3,'mroonga_fast_order_limit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1150,3,'opened_plugin_libraries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1151,3,'performance_schema_accounts_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1152,3,'performance_schema_digest_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1153,3,'performance_schema_hosts_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1154,3,'performance_schema_session_connect_attrs_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1155,3,'performance_schema_socket_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1156,3,'performance_schema_socket_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1157,3,'performance_schema_stage_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1158,3,'performance_schema_statement_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1159,3,'performance_schema_users_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1160,3,'slave_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1161,3,'slave_skipped_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1162,3,'slaves_connected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1163,3,'slaves_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1164,3,'sort_priority_queue_sorts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1165,3,'update_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1166,3,'wsrep_cluster_conf_id','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1167,3,'wsrep_cluster_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1168,3,'wsrep_cluster_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1169,3,'wsrep_connected','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1170,3,'wsrep_local_bf_aborts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1171,3,'wsrep_local_index','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1172,3,'wsrep_ready','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1173,3,'wsrep_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1174,3,'slave_sql_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1175,3,'using_gtid','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1176,3,'parallel_mode','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1177,3,'retried_transactions','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1178,3,'max_relay_log_size','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1179,3,'executed_log_entries','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1180,3,'slave_received_heartbeats','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1181,3,'slave_heartbeat_period','DOUBLE','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1182,3,'gtid_slave_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1183,3,'gtid_io_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1184,4,'aria_recover_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1185,4,'check_constraint_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1186,4,'innodb_adaptive_hash_index_parts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1187,4,'innodb_buffer_pool_chunk_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1188,4,'innodb_compression_default','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1189,4,'innodb_deadlock_detect','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1190,4,'innodb_default_row_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1191,4,'innodb_fill_factor','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1192,4,'innodb_flush_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1193,4,'innodb_log_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1194,4,'innodb_log_write_ahead_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1195,4,'innodb_max_undo_log_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1196,4,'innodb_numa_interleave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1197,4,'innodb_page_cleaners','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1198,4,'innodb_purge_rseg_truncate_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1199,4,'innodb_temp_data_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1200,4,'innodb_track_redo_log_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1201,4,'innodb_undo_log_truncate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1202,4,'log_bin_compress','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1203,4,'log_bin_compress_min_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1204,4,'log_slow_verbosity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1205,4,'max_recursive_iterations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1206,4,'read_binlog_speed_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1207,4,'session_track_schema','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1208,4,'session_track_state_change','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1209,4,'session_track_transaction_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1210,4,'slave_parallel_workers','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1211,4,'standard_compliant_cte','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1212,4,'table_open_cache_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1213,4,'thread_pool_prio_kickup_timer','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1214,4,'thread_pool_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1215,4,'tmp_disk_table_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1216,4,'tmp_memory_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1217,4,'wsrep_cluster_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1218,4,'wsrep_node_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1219,4,'wsrep_sst_auth','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1220,3,'com_alter_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1221,3,'com_execute_immediate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1222,3,'com_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1223,3,'com_show_create_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1224,3,'feature_check_constraint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1225,3,'feature_window_functions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1226,3,'innodb_num_open_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1227,3,'innodb_have_punch_hole','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1228,3,'innodb_encryption_n_merge_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1229,3,'innodb_encryption_n_merge_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1230,3,'innodb_encryption_n_rowlog_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1231,3,'innodb_encryption_n_rowlog_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1232,3,'innodb_scrub_log','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1233,3,'sql_delay','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1234,3,'sql_remaining_delay','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1235,3,'slave_sql_running_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1236,4,'error_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1237,4,'have_community_features','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1238,4,'identity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1239,4,'insert_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1240,4,'language','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1241,4,'last_insert_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1242,4,'log_bin_trust_routine_creators','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1243,4,'new','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1244,4,'pseudo_thread_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1245,4,'sql_log_update','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1246,4,'table_lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1247,4,'table_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1248,4,'timestamp','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1249,4,'warning_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1250,3,'com_backup_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1251,3,'com_load_master_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1252,3,'com_load_master_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1253,3,'com_restore_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1254,3,'com_show_column_types','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1255,3,'com_show_new_master','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1256,3,'innodb_descriptors_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1257,4,'server_audit_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1258,4,'server_audit_file_rotate_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1259,4,'server_audit_file_rotate_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1260,4,'server_audit_file_rotations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1261,4,'server_audit_logging','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1262,4,'server_audit_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1263,4,'server_audit_output_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1264,4,'server_audit_syslog_facility','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1265,4,'server_audit_syslog_ident','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1266,4,'server_audit_syslog_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1267,3,'server_audit_active','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1268,3,'server_audit_writes_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1269,4,'innodb_file_io_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1270,4,'innodb_use_legacy_cardinality_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1271,3,'innodb_buffer_pool_read_ahead_seq','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1272,4,'connect_json_null','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1273,4,'secure_file_priv','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1274,4,'log_result_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1275,4,'partition_skip_pk_sort_for_non_clustered_pk_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1276,4,'slave_transaction_retry_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1277,4,'sp_general_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1278,4,'sp_slow_query_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1279,4,'spider_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1280,4,'spider_conn_recycle_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1281,4,'spider_conn_recycle_strict','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1282,4,'spider_conn_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1283,4,'spider_connect_error_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1284,4,'spider_connect_mutex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1285,4,'spider_connect_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1286,4,'spider_connect_retry_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1287,4,'spider_dry_access','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1288,4,'spider_force_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1289,4,'spider_general_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1290,4,'spider_index_hint_pushdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1291,4,'spider_internal_sql_log_off','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1292,4,'spider_internal_unlock','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1293,4,'spider_internal_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1294,4,'spider_internal_xa_id_type','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1295,4,'spider_internal_xa_snapshot','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1296,4,'spider_local_lock_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1297,4,'spider_lock_exchange','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1298,4,'spider_log_result_error_with_sql','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1299,4,'spider_log_result_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1300,4,'spider_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1301,4,'spider_ping_interval_at_trx_start','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1302,4,'spider_same_server_link','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1303,4,'spider_semi_table_lock','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1304,4,'spider_semi_trx','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1305,4,'spider_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1306,4,'spider_sync_autocommit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1307,4,'spider_sync_time_zone','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1308,4,'spider_sync_trx_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1309,4,'spider_table_crd_thread_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1310,4,'spider_table_init_error_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1311,4,'spider_table_sts_thread_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1312,4,'spider_udf_table_lock_mutex_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1313,4,'spider_udf_table_mon_mutex_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1314,4,'spider_use_all_conns_snapshot','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1315,4,'spider_use_consistent_snapshot','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1316,4,'spider_use_default_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1317,4,'spider_use_flash_logs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1318,4,'spider_use_snapshot_with_flush_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1319,4,'spider_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1320,4,'spider_xa_register_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1321,4,'tokudb_alter_print_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1322,4,'tokudb_analyze_delete_fraction','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1323,4,'tokudb_analyze_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1324,4,'tokudb_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1325,4,'tokudb_bulk_fetch','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1326,4,'tokudb_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1327,4,'tokudb_cachetable_pool_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1328,4,'tokudb_check_jemalloc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1329,4,'tokudb_checkpoint_lock','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1330,4,'tokudb_checkpoint_on_flush_logs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1331,4,'tokudb_checkpoint_pool_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1332,4,'tokudb_checkpointing_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1333,4,'tokudb_cleaner_iterations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1334,4,'tokudb_cleaner_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1335,4,'tokudb_client_pool_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1336,4,'tokudb_commit_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1337,4,'tokudb_compress_buffers_before_eviction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1338,4,'tokudb_create_index_online','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1339,4,'tokudb_debug','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1340,4,'tokudb_directio','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1341,4,'tokudb_disable_hot_alter','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1342,4,'tokudb_disable_prefetching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1343,4,'tokudb_disable_slow_alter','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1344,4,'tokudb_empty_scan','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1345,4,'tokudb_enable_partial_eviction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1346,4,'tokudb_fanout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1347,4,'tokudb_fs_reserve_percent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1348,4,'tokudb_fsync_log_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1349,4,'tokudb_hide_default_row_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1350,4,'tokudb_killed_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1351,4,'tokudb_load_save_space','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1352,4,'tokudb_loader_memory_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1353,4,'tokudb_lock_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1354,4,'tokudb_lock_timeout_debug','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1355,4,'tokudb_max_lock_memory','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1356,4,'tokudb_optimize_index_fraction','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1357,4,'tokudb_optimize_throttle','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1358,4,'tokudb_pk_insert_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1359,4,'tokudb_prelock_empty','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1360,4,'tokudb_read_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1361,4,'tokudb_read_buf_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1362,4,'tokudb_read_status_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1363,4,'tokudb_row_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1364,4,'tokudb_rpl_check_readonly','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1365,4,'tokudb_rpl_lookup_rows','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1366,4,'tokudb_rpl_lookup_rows_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1367,4,'tokudb_rpl_unique_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1368,4,'tokudb_rpl_unique_checks_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1369,4,'tokudb_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1370,4,'tokudb_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1371,4,'tokudb_write_status_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1372,4,'vp_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1373,4,'vp_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1374,3,'com_hs_open','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1375,3,'com_hs_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1376,3,'com_hs_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1377,3,'com_hs_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1378,3,'com_hs_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1379,3,'com_hs_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1380,3,'spider_direct_aggregate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1381,3,'spider_direct_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1382,3,'spider_direct_order_limit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1383,3,'spider_direct_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1384,3,'spider_mon_table_cache_version','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1385,3,'spider_mon_table_cache_version_req','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1386,3,'spider_parallel_search','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1387,3,'tokudb_db_opens','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1388,3,'tokudb_db_closes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1389,3,'tokudb_db_open_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1390,3,'tokudb_db_open_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1391,3,'tokudb_leaf_entry_max_committed_xr','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1392,3,'tokudb_leaf_entry_max_provisional_xr','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1393,3,'tokudb_leaf_entry_expanded','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1394,3,'tokudb_leaf_entry_max_memsize','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1395,3,'tokudb_leaf_entry_apply_gc_bytes_in','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1396,3,'tokudb_leaf_entry_apply_gc_bytes_out','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1397,3,'tokudb_leaf_entry_normal_gc_bytes_in','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1398,3,'tokudb_leaf_entry_normal_gc_bytes_out','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1399,3,'tokudb_checkpoint_period','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1400,3,'tokudb_checkpoint_footprint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1401,3,'tokudb_checkpoint_last_began','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1402,3,'tokudb_checkpoint_last_complete_began','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1403,3,'tokudb_checkpoint_last_complete_ended','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1404,3,'tokudb_checkpoint_duration','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1405,3,'tokudb_checkpoint_duration_last','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1406,3,'tokudb_checkpoint_last_lsn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1407,3,'tokudb_checkpoint_taken','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1408,3,'tokudb_checkpoint_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1409,3,'tokudb_checkpoint_waiters_now','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1410,3,'tokudb_checkpoint_waiters_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1411,3,'tokudb_checkpoint_client_wait_on_mo','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1412,3,'tokudb_checkpoint_client_wait_on_cs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1413,3,'tokudb_checkpoint_begin_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1414,3,'tokudb_checkpoint_long_begin_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1415,3,'tokudb_checkpoint_long_begin_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1416,3,'tokudb_checkpoint_end_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1417,3,'tokudb_checkpoint_long_end_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1418,3,'tokudb_checkpoint_long_end_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1419,3,'tokudb_cachetable_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1420,3,'tokudb_cachetable_miss_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1421,3,'tokudb_cachetable_prefetches','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1422,3,'tokudb_cachetable_size_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1423,3,'tokudb_cachetable_size_limit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1424,3,'tokudb_cachetable_size_writing','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1425,3,'tokudb_cachetable_size_nonleaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1426,3,'tokudb_cachetable_size_leaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1427,3,'tokudb_cachetable_size_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1428,3,'tokudb_cachetable_size_cachepressure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1429,3,'tokudb_cachetable_size_cloned','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1430,3,'tokudb_cachetable_evictions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1431,3,'tokudb_cachetable_cleaner_executions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1432,3,'tokudb_cachetable_cleaner_period','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1433,3,'tokudb_cachetable_cleaner_iterations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1434,3,'tokudb_cachetable_wait_pressure_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1435,3,'tokudb_cachetable_wait_pressure_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1436,3,'tokudb_cachetable_long_wait_pressure_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1437,3,'tokudb_cachetable_long_wait_pressure_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1438,3,'tokudb_cachetable_pool_client_num_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1439,3,'tokudb_cachetable_pool_client_num_threads_active','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1440,3,'tokudb_cachetable_pool_client_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1441,3,'tokudb_cachetable_pool_client_max_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1442,3,'tokudb_cachetable_pool_client_total_items_processed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1443,3,'tokudb_cachetable_pool_client_total_execution_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1444,3,'tokudb_cachetable_pool_cachetable_num_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1445,3,'tokudb_cachetable_pool_cachetable_num_threads_active','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1446,3,'tokudb_cachetable_pool_cachetable_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1447,3,'tokudb_cachetable_pool_cachetable_max_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1448,3,'tokudb_cachetable_pool_cachetable_total_items_processed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1449,3,'tokudb_cachetable_pool_cachetable_total_execution_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1450,3,'tokudb_cachetable_pool_checkpoint_num_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1451,3,'tokudb_cachetable_pool_checkpoint_num_threads_active','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1452,3,'tokudb_cachetable_pool_checkpoint_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1453,3,'tokudb_cachetable_pool_checkpoint_max_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1454,3,'tokudb_cachetable_pool_checkpoint_total_items_processed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1455,3,'tokudb_cachetable_pool_checkpoint_total_execution_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1456,3,'tokudb_locktree_memory_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1457,3,'tokudb_locktree_memory_size_limit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1458,3,'tokudb_locktree_escalation_num','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1459,3,'tokudb_locktree_escalation_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1460,3,'tokudb_locktree_latest_post_escalation_memory_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1461,3,'tokudb_locktree_open_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1462,3,'tokudb_locktree_pending_lock_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1463,3,'tokudb_locktree_sto_eligible_num','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1464,3,'tokudb_locktree_sto_ended_num','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1465,3,'tokudb_locktree_sto_ended_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1466,3,'tokudb_locktree_wait_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1467,3,'tokudb_locktree_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1468,3,'tokudb_locktree_long_wait_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1469,3,'tokudb_locktree_long_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1470,3,'tokudb_locktree_timeout_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1471,3,'tokudb_locktree_wait_escalation_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1472,3,'tokudb_locktree_wait_escalation_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1473,3,'tokudb_locktree_long_wait_escalation_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1474,3,'tokudb_locktree_long_wait_escalation_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1475,3,'tokudb_dictionary_updates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1476,3,'tokudb_dictionary_broadcast_updates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1477,3,'tokudb_descriptor_set','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1478,3,'tokudb_messages_ignored_by_leaf_due_to_msn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1479,3,'tokudb_total_search_retries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1480,3,'tokudb_search_tries_gt_height','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1481,3,'tokudb_search_tries_gt_heightplus3','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1482,3,'tokudb_leaf_nodes_flushed_not_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1483,3,'tokudb_leaf_nodes_flushed_not_checkpoint_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1484,3,'tokudb_leaf_nodes_flushed_not_checkpoint_uncompressed_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1485,3,'tokudb_leaf_nodes_flushed_not_checkpoint_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1486,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1487,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1488,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_uncompresse','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1489,3,'tokudb_nonleaf_nodes_flushed_to_disk_not_checkpoint_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1490,3,'tokudb_leaf_nodes_flushed_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1491,3,'tokudb_leaf_nodes_flushed_checkpoint_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1492,3,'tokudb_leaf_nodes_flushed_checkpoint_uncompressed_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1493,3,'tokudb_leaf_nodes_flushed_checkpoint_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1494,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1495,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1496,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_uncompressed_by','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1497,3,'tokudb_nonleaf_nodes_flushed_to_disk_checkpoint_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1498,3,'tokudb_leaf_node_compression_ratio','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1499,3,'tokudb_nonleaf_node_compression_ratio','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1500,3,'tokudb_overall_node_compression_ratio','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1501,3,'tokudb_nonleaf_node_partial_evictions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1502,3,'tokudb_nonleaf_node_partial_evictions_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1503,3,'tokudb_leaf_node_partial_evictions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1504,3,'tokudb_leaf_node_partial_evictions_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1505,3,'tokudb_leaf_node_full_evictions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1506,3,'tokudb_leaf_node_full_evictions_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1507,3,'tokudb_nonleaf_node_full_evictions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1508,3,'tokudb_nonleaf_node_full_evictions_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1509,3,'tokudb_leaf_nodes_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1510,3,'tokudb_nonleaf_nodes_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1511,3,'tokudb_leaf_nodes_destroyed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1512,3,'tokudb_nonleaf_nodes_destroyed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1513,3,'tokudb_messages_injected_at_root_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1514,3,'tokudb_messages_flushed_from_h1_to_leaves_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1515,3,'tokudb_messages_in_trees_estimate_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1516,3,'tokudb_messages_injected_at_root','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1517,3,'tokudb_broadcase_messages_injected_at_root','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1518,3,'tokudb_basements_decompressed_target_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1519,3,'tokudb_basements_decompressed_prelocked_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1520,3,'tokudb_basements_decompressed_prefetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1521,3,'tokudb_basements_decompressed_for_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1522,3,'tokudb_buffers_decompressed_target_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1523,3,'tokudb_buffers_decompressed_prelocked_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1524,3,'tokudb_buffers_decompressed_prefetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1525,3,'tokudb_buffers_decompressed_for_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1526,3,'tokudb_pivots_fetched_for_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1527,3,'tokudb_pivots_fetched_for_query_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1528,3,'tokudb_pivots_fetched_for_query_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1529,3,'tokudb_pivots_fetched_for_prefetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1530,3,'tokudb_pivots_fetched_for_prefetch_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1531,3,'tokudb_pivots_fetched_for_prefetch_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1532,3,'tokudb_pivots_fetched_for_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1533,3,'tokudb_pivots_fetched_for_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1534,3,'tokudb_pivots_fetched_for_write_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1535,3,'tokudb_basements_fetched_target_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1536,3,'tokudb_basements_fetched_target_query_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1537,3,'tokudb_basements_fetched_target_query_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1538,3,'tokudb_basements_fetched_prelocked_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1539,3,'tokudb_basements_fetched_prelocked_range_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1540,3,'tokudb_basements_fetched_prelocked_range_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1541,3,'tokudb_basements_fetched_prefetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1542,3,'tokudb_basements_fetched_prefetch_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1543,3,'tokudb_basements_fetched_prefetch_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1544,3,'tokudb_basements_fetched_for_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1545,3,'tokudb_basements_fetched_for_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1546,3,'tokudb_basements_fetched_for_write_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1547,3,'tokudb_buffers_fetched_target_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1548,3,'tokudb_buffers_fetched_target_query_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1549,3,'tokudb_buffers_fetched_target_query_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1550,3,'tokudb_buffers_fetched_prelocked_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1551,3,'tokudb_buffers_fetched_prelocked_range_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1552,3,'tokudb_buffers_fetched_prelocked_range_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1553,3,'tokudb_buffers_fetched_prefetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1554,3,'tokudb_buffers_fetched_prefetch_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1555,3,'tokudb_buffers_fetched_prefetch_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1556,3,'tokudb_buffers_fetched_for_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1557,3,'tokudb_buffers_fetched_for_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1558,3,'tokudb_buffers_fetched_for_write_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1559,3,'tokudb_leaf_compression_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1560,3,'tokudb_leaf_serialization_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1561,3,'tokudb_leaf_decompression_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1562,3,'tokudb_leaf_deserialization_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1563,3,'tokudb_nonleaf_compression_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1564,3,'tokudb_nonleaf_serialization_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1565,3,'tokudb_nonleaf_decompression_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1566,3,'tokudb_nonleaf_deserialization_to_memory_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1567,3,'tokudb_promotion_roots_split','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1568,3,'tokudb_promotion_leaf_roots_injected_into','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1569,3,'tokudb_promotion_h1_roots_injected_into','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1570,3,'tokudb_promotion_injections_at_depth_0','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1571,3,'tokudb_promotion_injections_at_depth_1','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1572,3,'tokudb_promotion_injections_at_depth_2','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1573,3,'tokudb_promotion_injections_at_depth_3','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1574,3,'tokudb_promotion_injections_lower_than_depth_3','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1575,3,'tokudb_promotion_stopped_nonempty_buffer','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1576,3,'tokudb_promotion_stopped_at_height_1','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1577,3,'tokudb_promotion_stopped_child_locked_or_not_in_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1578,3,'tokudb_promotion_stopped_child_not_fully_in_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1579,3,'tokudb_promotion_stopped_after_locking_child','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1580,3,'tokudb_basement_deserialization_fixed_key','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1581,3,'tokudb_basement_deserialization_variable_key','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1582,3,'tokudb_pro_rightmost_leaf_shortcut_success','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1583,3,'tokudb_pro_rightmost_leaf_shortcut_fail_pos','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1584,3,'tokudb_rightmost_leaf_shortcut_fail_reactive','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1585,3,'tokudb_cursor_skip_deleted_leaf_entry','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1586,3,'tokudb_flusher_cleaner_total_nodes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1587,3,'tokudb_flusher_cleaner_h1_nodes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1588,3,'tokudb_flusher_cleaner_hgt1_nodes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1589,3,'tokudb_flusher_cleaner_empty_nodes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1590,3,'tokudb_flusher_cleaner_nodes_dirtied','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1591,3,'tokudb_flusher_cleaner_max_buffer_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1592,3,'tokudb_flusher_cleaner_min_buffer_size','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1593,3,'tokudb_flusher_cleaner_total_buffer_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1594,3,'tokudb_flusher_cleaner_max_buffer_workdone','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1595,3,'tokudb_flusher_cleaner_min_buffer_workdone','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1596,3,'tokudb_flusher_cleaner_total_buffer_workdone','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1597,3,'tokudb_flusher_cleaner_num_leaf_merges_started','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1598,3,'tokudb_flusher_cleaner_num_leaf_merges_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1599,3,'tokudb_flusher_cleaner_num_leaf_merges_completed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1600,3,'tokudb_flusher_cleaner_num_dirtied_for_leaf_merge','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1601,3,'tokudb_flusher_flush_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1602,3,'tokudb_flusher_flush_in_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1603,3,'tokudb_flusher_flush_needed_io','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1604,3,'tokudb_flusher_flush_cascades','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1605,3,'tokudb_flusher_flush_cascades_1','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1606,3,'tokudb_flusher_flush_cascades_2','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1607,3,'tokudb_flusher_flush_cascades_3','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1608,3,'tokudb_flusher_flush_cascades_4','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1609,3,'tokudb_flusher_flush_cascades_5','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1610,3,'tokudb_flusher_flush_cascades_gt_5','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1611,3,'tokudb_flusher_split_leaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1612,3,'tokudb_flusher_split_nonleaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1613,3,'tokudb_flusher_merge_leaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1614,3,'tokudb_flusher_merge_nonleaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1615,3,'tokudb_flusher_balance_leaf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1616,3,'tokudb_hot_num_started','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1617,3,'tokudb_hot_num_completed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1618,3,'tokudb_hot_num_aborted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1619,3,'tokudb_hot_max_root_flush_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1620,3,'tokudb_txn_begin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1621,3,'tokudb_txn_begin_read_only','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1622,3,'tokudb_txn_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1623,3,'tokudb_txn_aborts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1624,3,'tokudb_logger_next_lsn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1625,3,'tokudb_logger_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1626,3,'tokudb_logger_writes_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1627,3,'tokudb_logger_writes_uncompressed_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1628,3,'tokudb_logger_writes_seconds','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1629,3,'tokudb_logger_wait_long','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1630,3,'tokudb_loader_num_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1631,3,'tokudb_loader_num_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1632,3,'tokudb_loader_num_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1633,3,'tokudb_memory_malloc_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1634,3,'tokudb_memory_free_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1635,3,'tokudb_memory_realloc_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1636,3,'tokudb_memory_malloc_fail','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1637,3,'tokudb_memory_realloc_fail','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1638,3,'tokudb_memory_requested','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1639,3,'tokudb_memory_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1640,3,'tokudb_memory_freed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1641,3,'tokudb_memory_max_requested_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1642,3,'tokudb_memory_last_failed_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1643,3,'tokudb_mem_estimated_maximum_memory_footprint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1644,3,'tokudb_memory_mallocator_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1645,3,'tokudb_memory_mmap_threshold','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1646,3,'tokudb_filesystem_threads_blocked_by_full_disk','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1647,3,'tokudb_filesystem_fsync_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1648,3,'tokudb_filesystem_fsync_num','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1649,3,'tokudb_filesystem_long_fsync_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1650,3,'tokudb_filesystem_long_fsync_num','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1651,3,'binlog_ignore_db','TEXT','master','general',1,1);
+INSERT INTO `ts_variable` VALUES (1652,4,'bind_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1653,4,'binlog_file_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1654,4,'column_compression_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1655,4,'column_compression_zlib_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1656,4,'column_compression_zlib_strategy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1657,4,'column_compression_zlib_wrap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1658,4,'idle_readonly_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1659,4,'idle_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1660,4,'idle_write_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1661,4,'ignore_db_dirs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1662,4,'log_disabled_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1663,4,'log_slow_disabled_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1664,4,'mroonga_enable_operations_recording','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1665,4,'mroonga_libgroonga_support_zstd','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1666,4,'rocksdb_access_hint_on_compaction_start','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1667,4,'rocksdb_advise_random_on_open','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1668,4,'rocksdb_allow_concurrent_memtable_write','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1669,4,'rocksdb_allow_mmap_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1670,4,'rocksdb_allow_mmap_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1671,4,'rocksdb_blind_delete_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1672,4,'rocksdb_block_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1673,4,'rocksdb_block_restart_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1674,4,'rocksdb_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1675,4,'rocksdb_block_size_deviation','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1676,4,'rocksdb_bulk_load','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1677,4,'rocksdb_bulk_load_allow_unsorted','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1678,4,'rocksdb_bulk_load_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1679,4,'rocksdb_bytes_per_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1680,4,'rocksdb_cache_index_and_filter_blocks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1681,4,'rocksdb_checksums_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1682,4,'rocksdb_collect_sst_properties','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1683,4,'rocksdb_commit_in_the_middle','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1684,4,'rocksdb_compaction_readahead_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1685,4,'rocksdb_compaction_sequential_deletes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1686,4,'rocksdb_compaction_sequential_deletes_count_sd','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1687,4,'rocksdb_compaction_sequential_deletes_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1688,4,'rocksdb_compaction_sequential_deletes_window','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1689,4,'rocksdb_concurrent_prepare','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1690,4,'rocksdb_create_if_missing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1691,4,'rocksdb_create_missing_column_families','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1692,4,'rocksdb_datadir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1693,4,'rocksdb_db_write_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1694,4,'rocksdb_deadlock_detect','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1695,4,'rocksdb_deadlock_detect_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1696,4,'rocksdb_debug_optimizer_no_zero_cardinality','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1697,4,'rocksdb_debug_ttl_ignore_pk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1698,4,'rocksdb_debug_ttl_read_filter_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1699,4,'rocksdb_debug_ttl_rec_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1700,4,'rocksdb_debug_ttl_snapshot_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1701,4,'rocksdb_delayed_write_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1702,4,'rocksdb_delete_obsolete_files_period_micros','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1703,4,'rocksdb_enable_2pc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1704,4,'rocksdb_enable_bulk_load_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1705,4,'rocksdb_enable_thread_tracking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1706,4,'rocksdb_enable_ttl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1707,4,'rocksdb_enable_ttl_read_filtering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1708,4,'rocksdb_enable_write_thread_adaptive_yield','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1709,4,'rocksdb_error_if_exists','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1710,4,'rocksdb_flush_log_at_trx_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1711,4,'rocksdb_flush_memtable_on_analyze','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1712,4,'rocksdb_force_compute_memtable_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1713,4,'rocksdb_force_compute_memtable_stats_cachetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1714,4,'rocksdb_force_flush_memtable_and_lzero_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1715,4,'rocksdb_force_flush_memtable_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1716,4,'rocksdb_force_index_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1717,4,'rocksdb_git_hash','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1718,4,'rocksdb_hash_index_allow_collision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1719,4,'rocksdb_index_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1720,4,'rocksdb_info_log_level','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1721,4,'rocksdb_io_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1722,4,'rocksdb_is_fd_close_on_exec','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1723,4,'rocksdb_keep_log_file_num','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1724,4,'rocksdb_large_prefix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1725,4,'rocksdb_lock_scanned_rows','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1726,4,'rocksdb_lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1727,4,'rocksdb_log_file_time_to_roll','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1728,4,'rocksdb_manifest_preallocation_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1729,4,'rocksdb_manual_wal_flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1730,4,'rocksdb_master_skip_tx_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1731,4,'rocksdb_max_background_jobs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1732,4,'rocksdb_max_latest_deadlocks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1733,4,'rocksdb_max_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1734,4,'rocksdb_max_manifest_file_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1735,4,'rocksdb_max_row_locks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1736,4,'rocksdb_max_subcompactions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1737,4,'rocksdb_max_total_wal_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1738,4,'rocksdb_merge_buf_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1739,4,'rocksdb_merge_combine_read_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1740,4,'rocksdb_merge_tmp_file_removal_delay_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1741,4,'rocksdb_new_table_reader_for_compaction_inputs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1742,4,'rocksdb_no_block_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1743,4,'rocksdb_paranoid_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1744,4,'rocksdb_pause_background_work','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1745,4,'rocksdb_perf_context_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1746,4,'rocksdb_persistent_cache_size_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1747,4,'rocksdb_pin_l0_filter_and_index_blocks_in_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1748,4,'rocksdb_print_snapshot_conflict_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1749,4,'rocksdb_rate_limiter_bytes_per_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1750,4,'rocksdb_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1751,4,'rocksdb_reset_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1752,4,'rocksdb_seconds_between_stat_computes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1753,4,'rocksdb_signal_drop_index_thread','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1754,4,'rocksdb_sim_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1755,4,'rocksdb_skip_bloom_filter_on_read','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1756,4,'rocksdb_skip_fill_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1757,4,'rocksdb_skip_unique_check_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1758,4,'rocksdb_sst_mgr_rate_bytes_per_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1759,4,'rocksdb_stats_dump_period_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1760,4,'rocksdb_store_row_debug_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1761,4,'rocksdb_strict_collation_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1762,4,'rocksdb_supported_compression_types','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1763,4,'rocksdb_table_cache_numshardbits','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1764,4,'rocksdb_table_stats_sampling_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1765,4,'rocksdb_trace_sst_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1766,4,'rocksdb_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1767,4,'rocksdb_use_adaptive_mutex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1768,4,'rocksdb_use_clock_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1769,4,'rocksdb_use_direct_io_for_flush_and_compaction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1770,4,'rocksdb_use_direct_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1771,4,'rocksdb_use_fsync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1772,4,'rocksdb_validate_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1773,4,'rocksdb_verify_row_debug_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1774,4,'rocksdb_wal_bytes_per_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1775,4,'rocksdb_wal_recovery_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1776,4,'rocksdb_wal_size_limit_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1777,4,'rocksdb_wal_ttl_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1778,4,'rocksdb_whole_key_filtering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1779,4,'rocksdb_write_batch_max_bytes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1780,4,'rocksdb_write_disable_wal','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1781,4,'rocksdb_write_ignore_missing_column_families','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1782,4,'rpl_semi_sync_master_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1783,4,'rpl_semi_sync_master_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1784,4,'rpl_semi_sync_master_trace_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1785,4,'rpl_semi_sync_master_wait_no_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1786,4,'rpl_semi_sync_master_wait_point','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1787,4,'rpl_semi_sync_slave_delay_master','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1788,4,'rpl_semi_sync_slave_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1789,4,'rpl_semi_sync_slave_kill_conn_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1790,4,'rpl_semi_sync_slave_trace_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1791,4,'session_track_system_variables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1792,4,'slave_transaction_retry_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1793,4,'system_versioning_alter_history','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1794,4,'system_versioning_asof','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1795,4,'system_versioning_innodb_algorithm_simple','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1796,4,'tcp_keepalive_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1797,4,'tcp_keepalive_probes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1798,4,'tcp_keepalive_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1799,4,'tokudb_analyze_in_background','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1800,4,'tokudb_analyze_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1801,4,'tokudb_analyze_throttle','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1802,4,'tokudb_auto_analyze','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1803,4,'tokudb_cardinality_scale_percent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1804,4,'tokudb_dir_per_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1805,4,'tokudb_strip_frm_data','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1806,4,'version_source_revision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1807,3,'column_compressions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1808,3,'column_decompressions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1809,3,'com_alter_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1810,3,'com_create_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1811,3,'com_drop_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1812,3,'feature_invisible_columns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1813,3,'handler_tmp_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1814,3,'innodb_instant_alter_column','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1815,3,'memory_used_initial','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1816,3,'rocksdb_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1817,3,'rocksdb_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1818,3,'rocksdb_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1819,3,'rocksdb_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1820,3,'rocksdb_rows_deleted_blind','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1821,3,'rocksdb_rows_expired','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1822,3,'rocksdb_system_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1823,3,'rocksdb_system_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1824,3,'rocksdb_system_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1825,3,'rocksdb_system_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1826,3,'rocksdb_memtable_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1827,3,'rocksdb_memtable_unflushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1828,3,'rocksdb_queries_point','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1829,3,'rocksdb_queries_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1830,3,'rocksdb_covered_secondary_key_lookups','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1831,3,'rocksdb_block_cache_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1832,3,'rocksdb_block_cache_data_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1833,3,'rocksdb_block_cache_data_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1834,3,'rocksdb_block_cache_filter_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1835,3,'rocksdb_block_cache_filter_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1836,3,'rocksdb_block_cache_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1837,3,'rocksdb_block_cache_index_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1838,3,'rocksdb_block_cache_index_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1839,3,'rocksdb_block_cache_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1840,3,'rocksdb_block_cachecompressed_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1841,3,'rocksdb_block_cachecompressed_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1842,3,'rocksdb_bloom_filter_prefix_checked','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1843,3,'rocksdb_bloom_filter_prefix_useful','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1844,3,'rocksdb_bloom_filter_useful','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1845,3,'rocksdb_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1846,3,'rocksdb_bytes_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1847,3,'rocksdb_compact_read_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1848,3,'rocksdb_compact_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1849,3,'rocksdb_compaction_key_drop_new','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1850,3,'rocksdb_compaction_key_drop_obsolete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1851,3,'rocksdb_compaction_key_drop_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1852,3,'rocksdb_flush_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1853,3,'rocksdb_getupdatessince_calls','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1854,3,'rocksdb_memtable_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1855,3,'rocksdb_memtable_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1856,3,'rocksdb_no_file_closes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1857,3,'rocksdb_no_file_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1858,3,'rocksdb_no_file_opens','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1859,3,'rocksdb_num_iterators','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1860,3,'rocksdb_number_block_not_compressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1861,3,'rocksdb_number_deletes_filtered','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1862,3,'rocksdb_number_keys_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1863,3,'rocksdb_number_keys_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1864,3,'rocksdb_number_keys_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1865,3,'rocksdb_number_merge_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1866,3,'rocksdb_number_multiget_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1867,3,'rocksdb_number_multiget_get','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1868,3,'rocksdb_number_multiget_keys_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1869,3,'rocksdb_number_reseeks_iteration','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1870,3,'rocksdb_number_sst_entry_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1871,3,'rocksdb_number_sst_entry_merge','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1872,3,'rocksdb_number_sst_entry_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1873,3,'rocksdb_number_sst_entry_put','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1874,3,'rocksdb_number_sst_entry_singledelete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1875,3,'rocksdb_number_stat_computes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1876,3,'rocksdb_number_superversion_acquires','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1877,3,'rocksdb_number_superversion_cleanups','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1878,3,'rocksdb_number_superversion_releases','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1879,3,'rocksdb_rate_limit_delay_millis','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1880,3,'rocksdb_snapshot_conflict_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1881,3,'rocksdb_stall_l0_file_count_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1882,3,'rocksdb_stall_locked_l0_file_count_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1883,3,'rocksdb_stall_l0_file_count_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1884,3,'rocksdb_stall_locked_l0_file_count_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1885,3,'rocksdb_stall_pending_compaction_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1886,3,'rocksdb_stall_pending_compaction_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1887,3,'rocksdb_stall_memtable_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1888,3,'rocksdb_stall_memtable_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1889,3,'rocksdb_stall_total_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1890,3,'rocksdb_stall_total_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1891,3,'rocksdb_stall_micros','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1892,3,'rocksdb_wal_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1893,3,'rocksdb_wal_group_syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1894,3,'rocksdb_wal_synced','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1895,3,'rocksdb_write_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1896,3,'rocksdb_write_self','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1897,3,'rocksdb_write_timedout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1898,3,'rocksdb_write_wal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1899,3,'rpl_semi_sync_master_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1900,3,'rpl_semi_sync_master_get_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1901,3,'rpl_semi_sync_master_net_avg_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1902,3,'rpl_semi_sync_master_net_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1903,3,'rpl_semi_sync_master_net_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1904,3,'rpl_semi_sync_master_no_times','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1905,3,'rpl_semi_sync_master_no_tx','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1906,3,'rpl_semi_sync_master_request_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1907,3,'rpl_semi_sync_master_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1908,3,'rpl_semi_sync_master_timefunc_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1909,3,'rpl_semi_sync_master_tx_avg_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1910,3,'rpl_semi_sync_master_tx_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1911,3,'rpl_semi_sync_master_tx_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1912,3,'rpl_semi_sync_master_wait_pos_backtraverse','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1913,3,'rpl_semi_sync_master_wait_sessions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1914,3,'rpl_semi_sync_master_yes_tx','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1915,3,'rpl_semi_sync_slave_send_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1916,3,'rpl_semi_sync_slave_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1917,3,'rpl_transactions_multi_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1918,3,'table_open_cache_active_instances','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1919,3,'table_open_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1920,3,'table_open_cache_misses','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1921,3,'table_open_cache_overflows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1922,3,'transactions_gtid_foreign_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1923,3,'transactions_multi_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1924,3,'last_io_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1925,4,'wsrep_provider_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1926,3,'replicate_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1927,3,'replicate_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1928,3,'replicate_wild_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1929,3,'replicate_wild_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1930,3,'last_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1931,3,'until_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1932,3,'master_ssl_ca_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1933,3,'master_ssl_ca_path','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1934,3,'master_ssl_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1935,3,'master_ssl_cipher','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1936,3,'master_ssl_key','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1937,3,'last_sql_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1938,3,'replicate_ignore_server_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1939,3,'connection_name','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1940,3,'master_ssl_crl','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1941,3,'master_ssl_crlpath','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1942,3,'replicate_do_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1943,3,'replicate_ignore_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1944,3,'wsrep_apply_oooe','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1945,3,'wsrep_apply_oool','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1946,3,'wsrep_apply_window','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1947,3,'wsrep_causal_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1948,3,'wsrep_cert_deps_distance','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1949,3,'wsrep_cert_index_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1950,3,'wsrep_cert_interval','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1951,3,'wsrep_cluster_state_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1952,3,'wsrep_commit_oooe','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1953,3,'wsrep_commit_oool','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1954,3,'wsrep_commit_window','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1955,3,'wsrep_desync_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1956,3,'wsrep_evs_repl_latency','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1957,3,'wsrep_evs_state','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1958,3,'wsrep_flow_control_paused','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1959,3,'wsrep_flow_control_paused_ns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1960,3,'wsrep_flow_control_recv','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1961,3,'wsrep_flow_control_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1962,3,'wsrep_gcomm_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1963,3,'wsrep_incoming_addresses','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1964,3,'wsrep_last_committed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1965,3,'wsrep_local_cached_downto','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1966,3,'wsrep_local_cert_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1967,3,'wsrep_local_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1968,3,'wsrep_local_recv_queue','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1969,3,'wsrep_local_recv_queue_avg','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1970,3,'wsrep_local_recv_queue_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1971,3,'wsrep_local_recv_queue_min','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1972,3,'wsrep_local_replays','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1973,3,'wsrep_local_send_queue','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1974,3,'wsrep_local_send_queue_avg','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1975,3,'wsrep_local_send_queue_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1976,3,'wsrep_local_send_queue_min','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1977,3,'wsrep_local_state','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1978,3,'wsrep_local_state_comment','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1979,3,'wsrep_local_state_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1980,3,'wsrep_protocol_version','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1981,3,'wsrep_provider_name','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1982,3,'wsrep_provider_vendor','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1983,3,'wsrep_provider_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1984,3,'wsrep_received','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1985,3,'wsrep_received_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1986,3,'wsrep_repl_data_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1987,3,'wsrep_repl_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1988,3,'wsrep_repl_keys_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1989,3,'wsrep_repl_other_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1990,3,'wsrep_replicated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1991,3,'wsrep_replicated_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1992,3,'wsrep_evs_delayed','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1993,4,'wsrep_reject_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1994,4,'connect_cond_push','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1995,4,'connect_enable_mongo','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1996,4,'alter_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1997,4,'rocksdb_allow_to_start_after_corruption','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1998,4,'rocksdb_ignore_unknown_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1999,4,'rocksdb_max_open_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2000,4,'rocksdb_two_write_queues','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2001,4,'secure_timestamp','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2002,3,'acl_package_spec_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2003,3,'acl_package_body_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2004,3,'com_create_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2005,3,'com_create_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2006,3,'com_drop_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2007,3,'com_drop_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2008,3,'com_show_create_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2009,3,'com_show_create_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2010,3,'com_show_package_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2011,3,'com_show_package_body_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2012,3,'feature_custom_aggregate_functions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2013,3,'feature_json','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2014,3,'feature_system_versioning','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2015,3,'innodb_buffer_pool_load_incomplete','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2016,3,'rocksdb_rows_filtered','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2017,3,'rocksdb_block_cache_add_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2018,3,'rocksdb_block_cache_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2019,3,'rocksdb_block_cache_bytes_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2020,3,'rocksdb_block_cache_data_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2021,3,'rocksdb_block_cache_data_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2022,3,'rocksdb_block_cache_filter_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2023,3,'rocksdb_block_cache_filter_bytes_evict','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2024,3,'rocksdb_block_cache_filter_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2025,3,'rocksdb_block_cache_index_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2026,3,'rocksdb_block_cache_index_bytes_evict','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2027,3,'rocksdb_block_cache_index_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2028,3,'rocksdb_get_hit_l0','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2029,3,'rocksdb_get_hit_l1','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2030,3,'rocksdb_get_hit_l2_and_up','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2031,3,'rocksdb_iter_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2032,3,'rocksdb_number_db_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2033,3,'rocksdb_number_db_next_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2034,3,'rocksdb_number_db_prev','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2035,3,'rocksdb_number_db_prev_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2036,3,'rocksdb_number_db_seek','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2037,3,'rocksdb_number_db_seek_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2038,3,'rocksdb_row_lock_deadlocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2039,3,'rocksdb_row_lock_wait_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2040,3,'slave_ddl_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2041,3,'slave_non_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2042,3,'slave_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2043,4,'init_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2044,4,'rocksdb_remove_mariabackup_checkpoint','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2045,4,'core_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2046,4,'innodb_log_optimize_ddl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2047,4,'innodb_print_lock_wait_timeout_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2048,3,'innodb_buffered_aio_submitted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2049,4,'replicate_ignore_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2050,4,'slave_type_conversions','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2051,3,'eq_range_index_dive_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2052,3,'rocksdb_bulk_load_allow_sk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2053,3,'rocksdb_commit_time_batch_for_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2054,3,'rocksdb_debug_manual_compaction_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2055,3,'rocksdb_error_on_suboptimal_collation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2056,3,'rocksdb_manual_compaction_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2057,3,'rocksdb_max_manual_compactions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2058,3,'rocksdb_stats_recalc_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2059,3,'rocksdb_write_policy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2060,3,'innodb_undo_truncations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2061,3,'rocksdb_bloom_filter_full_positive','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2062,3,'rocksdb_bloom_filter_full_true_positive','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2063,3,'rocksdb_manual_compactions_processed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2064,3,'rocksdb_manual_compactions_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2065,3,'proxy_protocol_networks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2066,4,'innodb_safe_truncate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2067,3,'wsrep_cluster_weight','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2068,3,'wsrep_open_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2069,3,'wsrep_open_transactions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2070,3,'com_alter_instance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2071,3,'com_change_repl_filter','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2072,3,'com_explain_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2073,3,'com_show_function_code','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2074,3,'com_show_procedure_code','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2075,3,'com_group_replication_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2076,3,'com_group_replication_stop','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2077,3,'locked_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2078,3,'max_execution_time_exceeded','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2079,3,'max_execution_time_set','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2080,3,'max_execution_time_set_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2081,3,'max_used_connections_time','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2082,3,'ongoing_anonymous_transaction_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2083,3,'performance_schema_index_stat_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2084,3,'performance_schema_memory_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2085,3,'performance_schema_metadata_lock_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2086,3,'performance_schema_nested_statement_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2087,3,'performance_schema_prepared_statements_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2088,3,'performance_schema_program_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2089,3,'performance_schema_table_lock_stat_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2090,3,'ssl_server_not_after','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2091,3,'ssl_server_not_before','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2092,3,'validate_password_dictionary_file_last_parsed','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2093,3,'validate_password_dictionary_file_words_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2094,4,'avoid_temporal_upgrade','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2095,4,'binlog_error_action','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2096,4,'binlog_group_commit_sync_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2097,4,'binlog_group_commit_sync_no_delay_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2098,4,'binlog_gtid_simple_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2099,4,'binlog_max_flush_queue_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2100,4,'binlog_order_commits','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2101,4,'binlog_rows_query_log_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2102,4,'binlog_transaction_dependency_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2103,4,'binlog_transaction_dependency_tracking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2104,4,'block_encryption_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2105,4,'check_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2106,4,'default_authentication_plugin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2107,4,'default_password_lifetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2108,4,'default_tmp_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2109,4,'disconnect_on_expired_password','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2110,4,'end_markers_in_json','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2111,4,'enforce_gtid_consistency','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2112,4,'gtid_executed_compression_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2113,4,'gtid_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2114,4,'have_statement_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2115,4,'internal_tmp_disk_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2116,4,'keyring_operations','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2117,4,'log_bin_use_v1_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2118,4,'log_builtin_as_identified_by_password','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2119,4,'log_error_verbosity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2120,4,'log_statements_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2121,4,'log_syslog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2122,4,'log_syslog_facility','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2123,4,'log_syslog_include_pid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2124,4,'log_throttle_queries_not_using_indexes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2125,4,'log_timestamps','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2126,4,'master_info_repository','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2127,4,'max_execution_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2128,4,'max_points_in_geometry','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2129,4,'mysql_native_password_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2130,4,'ngram_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2131,4,'offline_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2132,4,'optimizer_trace','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2133,4,'optimizer_trace_features','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2134,4,'optimizer_trace_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2135,4,'optimizer_trace_max_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2136,4,'parser_max_mem_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2137,4,'performance_schema_events_transactions_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2138,4,'performance_schema_events_transactions_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2139,4,'performance_schema_max_memory_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2140,4,'performance_schema_max_sql_text_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2141,4,'performance_schema_max_statement_stack','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2142,4,'range_optimizer_max_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2143,4,'rbr_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2144,4,'relay_log_info_repository','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2145,4,'require_secure_transport','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2146,4,'rpl_stop_slave_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2147,4,'server_id_bits','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2148,4,'server_uuid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2149,4,'session_track_gtids','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2150,4,'sha256_password_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2151,4,'show_compatibility_56','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2152,4,'show_create_table_verbosity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2153,4,'show_old_temporals','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2154,4,'slave_allow_batching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2155,4,'slave_checkpoint_group','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2156,4,'slave_checkpoint_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2157,4,'slave_parallel_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2158,4,'slave_pending_jobs_size_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2159,4,'slave_preserve_commit_order','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2160,4,'slave_rows_search_algorithms','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2161,4,'ssl_ca','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2162,4,'ssl_cert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2163,4,'ssl_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2164,4,'super_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2165,4,'tls_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2166,4,'transaction_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2167,4,'transaction_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2168,4,'transaction_write_set_extraction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2169,4,'validate_password_check_user_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2170,4,'validate_password_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2171,4,'validate_password_mixed_case_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2172,4,'validate_password_number_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2173,4,'validate_password_policy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2174,4,'validate_password_special_char_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2175,4,'wsrep_certification_rules','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2176,4,'wsrep_preordered','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2177,4,'spider_use_cond_other_than_pk_for_update','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2178,3,'file_first','TEXT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2179,3,'file_last','TEXT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2180,3,'files','TEXT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2181,3,'sizes','TEXT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2182,3,'total_size','INT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2183,3,'nb_files','INT','binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2184,3,'com_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2185,3,'com_backup_lock','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2186,3,'feature_application_time_periods','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2187,3,'wsrep','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2188,4,'analyze_sample_percentage','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2189,4,'gtid_cleanup_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2190,4,'max_password_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2191,4,'max_rowid_filter_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2192,4,'tcp_nodelay','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2193,4,'wsrep_sr_store','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2194,4,'wsrep_ignore_apply_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2195,4,'wsrep_trx_fragment_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2196,4,'wsrep_trx_fragment_unit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2197,4,'spider_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2198,3,'aborted_connects_preauth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2199,4,'wsrep_notify_cmd','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2200,4,'sql_error_log_filename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2201,4,'sql_error_log_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2202,4,'sql_error_log_rotate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2203,4,'sql_error_log_rotations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2204,4,'sql_error_log_size_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2205,3,'server_audit_current_log','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2206,3,'innodb_encryption_n_temp_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2207,3,'innodb_encryption_n_temp_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2208,3,'wsrep_applier_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2209,3,'wsrep_rollbacker_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2210,4,'in_predicate_conversion_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2211,4,'innodb_encrypt_temporary_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2212,4,'rocksdb_cache_dump','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2213,4,'rocksdb_cache_high_pri_pool_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2214,4,'rocksdb_cache_index_and_filter_with_high_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2215,4,'rocksdb_enable_insert_with_update_caching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2216,4,'rocksdb_rollback_on_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2217,4,'rocksdb_stats_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2218,4,'spider_sync_sql_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2219,3,'binlog_do_db','TEXT','master','general',1,1);
+INSERT INTO `ts_variable` VALUES (2220,2,'load_average_5_sec','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2221,2,'load_average_5_min','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2222,2,'load_average_15_min','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2223,2,'user_connected','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2224,2,'uptime','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2225,2,'memory_total','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2226,2,'memory_used','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2227,2,'memory_free','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2228,2,'memory_shared','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2229,2,'memory_buff/cache','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2230,2,'memory_available','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2231,2,'swap_total','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2232,2,'swap_used','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2233,2,'swap_free','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2234,2,'swap_shared','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2235,2,'disks','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2236,2,'ips','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2237,2,'cpu_usage','DOUBLE','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2238,2,'cpu_detail','TEXT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2239,2,'mysqld_mem_physical','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2240,2,'mysqld_mem_virtual','INT','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2241,2,'ping','DOUBLE','stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (2242,2,'cpu_thread_count','INT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2243,2,'memory','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2244,2,'cpu_frequency','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2245,2,'distributor','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2246,2,'os','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2247,2,'codename','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2248,2,'product_name','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2249,2,'arch','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2250,2,'kernel','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2251,2,'hostname','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2252,2,'swapiness','TEXT','hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (2253,4,'replicate_wild_ignore_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2254,4,'gssapi_keytab_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2255,4,'gssapi_principal_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2256,4,'pam_use_cleartext_plugin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2257,4,'query_response_time_flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2258,4,'query_response_time_range_base','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2259,4,'query_response_time_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2260,4,'server_audit_query_log_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2261,3,'com_create_compression_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2262,3,'com_drop_compression_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2263,3,'com_lock_tables_for_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2264,3,'com_lock_binlog_for_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2265,3,'com_show_thread_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2266,3,'com_unlock_binlog','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2267,3,'innodb_scan_pages_contiguous','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2268,3,'innodb_scan_pages_disjointed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2269,3,'innodb_scan_pages_total_seek_distance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2270,3,'innodb_scan_data_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2271,3,'innodb_scan_deleted_recs_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2272,3,'innodb_encryption_redo_key_version','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2273,3,'rsa_public_key','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2274,3,'master_uuid','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2275,3,'master_info_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2276,3,'master_retry_count','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2277,3,'master_bind','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2278,3,'last_io_error_timestamp','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2279,3,'last_sql_error_timestamp','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2280,3,'retrieved_gtid_set','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2281,3,'executed_gtid_set','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2282,3,'auto_position','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2283,3,'replicate_rewrite_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2284,3,'channel_name','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2285,3,'master_tls_version','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2286,4,'auto_generate_certs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2287,4,'binlog_skip_flush_commands','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2288,4,'binlog_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2289,4,'expand_fast_index_creation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2290,4,'ft_query_extra_word_chars','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2291,4,'have_backup_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2292,4,'have_backup_safe_binlog_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2293,4,'have_snapshot_cloning','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2294,4,'innodb_compressed_columns_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2295,4,'innodb_compressed_columns_zip_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2296,4,'innodb_encrypt_online_alter_logs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2297,4,'innodb_force_index_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2298,4,'innodb_ft_ignore_stopwords','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2299,4,'innodb_parallel_dblwr_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2300,4,'innodb_parallel_doublewrite_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2301,4,'innodb_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2302,4,'innodb_redo_log_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2303,4,'innodb_sys_tablespace_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2304,4,'innodb_temp_tablespace_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2305,4,'innodb_undo_log_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2306,4,'kill_idle_transaction','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2307,4,'log_slow_rate_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2308,4,'log_slow_sp_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2309,4,'max_binlog_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2310,4,'max_slowlog_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2311,4,'max_slowlog_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2312,4,'sha256_password_auto_generate_rsa_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2313,4,'sha256_password_private_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2314,4,'sha256_password_public_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2315,4,'slow_query_log_always_write_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2316,4,'thread_pool_high_prio_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2317,4,'thread_pool_high_prio_tickets','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2318,4,'thread_statistics','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2319,4,'version_suffix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2320,5,'databases','TEXT','databases','general',1,1);
+INSERT INTO `ts_variable` VALUES (2321,3,'innodb_buffer_pool_resize_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2322,4,'performance_schema_max_index_stat','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2323,4,'performance_schema_max_metadata_locks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2324,4,'performance_schema_max_prepared_statements_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2325,4,'performance_schema_max_program_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2326,4,'performance_schema_max_table_lock_stat','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2327,4,'pam_winbind_workaround','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2328,4,'innodb_instant_alter_column_allowed','TEXT','variables','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -561,7 +3114,10 @@ CREATE TABLE `version` (
 
 LOCK TABLES `version` WRITE;
 /*!40000 ALTER TABLE `version` DISABLE KEYS */;
-INSERT INTO `version` VALUES (1,'2015-04-13 14:49:09','0.5','Initial version'),(2,'2015-04-27 17:00:00','0.6','upgrade cleaner_main, to add pid in database'),(3,'2016-06-10 16:35:31','0.8','First RC'),(4,'2017-01-14 11:31:14','0.9','release candidate');
+INSERT INTO `version` VALUES (1,'2015-04-13 14:49:09','0.5','Initial version');
+INSERT INTO `version` VALUES (2,'2015-04-27 17:00:00','0.6','upgrade cleaner_main, to add pid in database');
+INSERT INTO `version` VALUES (3,'2016-06-10 16:35:31','0.8','First RC');
+INSERT INTO `version` VALUES (4,'2017-01-14 11:31:14','0.9','release candidate');
 /*!40000 ALTER TABLE `version` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -575,11 +3131,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.17  Distrib 10.4.12-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.4.12-MariaDB-1:10.4.12+maria~bionic-log
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -591,6 +3147,32 @@ UNLOCK TABLES;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `activity_events`
+--
+
+DROP TABLE IF EXISTS `activity_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `activity_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `logged_as_user_id` int(11) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8_unicode_ci DEFAULT NULL,
+  `data` longtext COLLATE utf8_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
+  `created_at` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`,`created_at`),
+  KEY `IDX_1F1B74AA76ED395` (`user_id`),
+  KEY `IDX_1F1B74A3A572148` (`logged_as_user_id`),
+  KEY `IDX_1F1B74A166D1F9C` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+ PARTITION BY RANGE (`created_at`)
+(PARTITION `p1599170400` VALUES LESS THAN (1599170400) ENGINE = InnoDB,
+ PARTITION `p1599256800` VALUES LESS THAN (1599256800) ENGINE = InnoDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `alias_dns`
@@ -1090,6 +3672,7 @@ CREATE TABLE `client` (
   `libelle` varchar(100) NOT NULL,
   `logo` varchar(250) NOT NULL DEFAULT '',
   `date` datetime NOT NULL DEFAULT current_timestamp(),
+  `is_monitored` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -1808,6 +4391,7 @@ CREATE TABLE `mysql_server` (
   UNIQUE KEY `ip` (`ip`,`port`),
   KEY `id_client` (`id_client`),
   KEY `id_environment` (`id_environment`),
+  KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -1827,6 +4411,23 @@ CREATE TABLE `mysql_status` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mysql_variable`
+--
+
+DROP TABLE IF EXISTS `mysql_variable`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mysql_variable` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `variable` varchar(128) NOT NULL,
+  `value` text NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`variable`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

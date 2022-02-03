@@ -161,7 +161,7 @@ echo '# crontab for pmacontrol' > mycron
 pmacontrol_path=`pwd`
 
 echo "* * * * * cd $pmacontrol_path && ./glial agent check_daemon" >> mycron
-echo "05 23 * * * cd $pmacontrol_path && ./glial control service" >> mycron
+echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
 #install new cron file
 crontab -u www-data mycron
 rm mycron
