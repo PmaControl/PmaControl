@@ -4,29 +4,31 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+
 //use \Glial\Cli\Color;
 
 
-class Common extends Controller {
+class Common extends Controller
+{
 
     use \App\Library\Filter;
-
     //list des tag pour eviter de faire la requete a chaque fois
     static $tags = array();
 
     //dba_source
 
-    public function index() {
-        $db = Sgbd::sql(DB_DEFAULT);
+    public function index()
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_database";
     }
-
     /*
       @author: Aurélien LEQUOY
       Obtenir la liste dans un select des server MySQL operationels
      */
 
-    public function displayClientEnvironment($param) {
+    public function displayClientEnvironment($param)
+    {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
@@ -46,14 +48,14 @@ class Common extends Controller {
 
                     if (!empty($_POST['client']['libelle'])) {
                         $_SESSION['client']['libelle'] = json_encode($_POST['client']['libelle']);
-                        $ret .= "/client:libelle:" . json_encode($_POST['client']['libelle']);
+                        $ret                           .= "/client:libelle:".json_encode($_POST['client']['libelle']);
                     } else {
                         unset($_SESSION['client']['libelle']);
                     }
 
                     if (!empty($_POST['environment']['libelle'])) {
                         $_SESSION['environment']['libelle'] = json_encode($_POST['environment']['libelle']);
-                        $ret .= "/environment:libelle:" . json_encode($_POST['environment']['libelle']);
+                        $ret                                .= "/environment:libelle:".json_encode($_POST['environment']['libelle']);
                     } else {
                         unset($_SESSION['environment']['libelle']);
                     }
@@ -62,7 +64,7 @@ class Common extends Controller {
                     unset($_SESSION['environment']['libelle']);
                 }
 
-                header("location: " . LINK . "" . $this->remove(array("client:libelle", "environment:libelle")) . $ret);
+                header("location: ".LINK."".$this->remove(array("client:libelle", "environment:libelle")).$ret);
             }
         }
 
@@ -89,8 +91,8 @@ class Common extends Controller {
          */
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['client'][] = $tmp;
@@ -111,8 +113,8 @@ class Common extends Controller {
 
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             $tmp['libelle'] = $ob->libelle;
 
             $data['environment'][] = $tmp;
@@ -121,7 +123,8 @@ class Common extends Controller {
         $this->set('data', $data);
     }
 
-    public function remove($array) {
+    public function remove($array)
+    {
 
         $params = explode("/", $_GET['url']);
         foreach ($params as $key => $param) {
@@ -138,14 +141,14 @@ class Common extends Controller {
 
         return $ret;
     }
-
     /*
      * @test : http://localhost/pmacontrol/en/common/getDatabaseByServer/35/ajax>true/
      *
      *
      */
 
-    function getDatabaseByServer($param) {
+    function getDatabaseByServer($param)
+    {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
 
@@ -153,12 +156,12 @@ class Common extends Controller {
         $data['ajax'] = false;
         if (IS_AJAX) {
             $this->layout_name = false;
-            $data['ajax'] = true;
+            $data['ajax']      = true;
         }
 
         if (!empty($param[2]) && !empty($param[1]) && !empty($param[0])) {
-            $data['table'] = $param[0];
-            $data['field'] = $param[1];
+            $data['table']   = $param[0];
+            $data['field']   = $param[1];
             $id_mysql_server = $param[2];
         } else {
             $id_mysql_server = $param[0];
@@ -187,14 +190,14 @@ class Common extends Controller {
         if (!empty($id_mysql_server)) {
             $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
 
-            $sql = "SHOW DATABASES";
+            $sql  = "SHOW DATABASES";
             $res2 = $db_to_get_db->sql_query($sql);
 
             $data['databases'] = [];
-            while ($ob = $db_to_get_db->sql_fetch_object($res2)) {
-                $tmp = [];
-                $tmp['id'] = $ob->Database;
-                $tmp['libelle'] = $ob->Database;
+            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
+                $tmp                 = [];
+                $tmp['id']           = $ob->Database;
+                $tmp['libelle']      = $ob->Database;
                 $data['databases'][] = $tmp;
             }
         } else {
@@ -207,13 +210,14 @@ class Common extends Controller {
         return $data;
     }
 
-    private function getDbLinkFromId($id_db) {
+    private function getDbLinkFromId($id_db)
+    {
         if (IS_AJAX) {
             $this->layout_name = false;
         }
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_db) . "';";
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -221,23 +225,24 @@ class Common extends Controller {
         }
 
         if (empty($db_link)) {
-            throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "' . $id_db . '".', 478);
+            throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "'.$id_db.'".', 478);
         }
 
         return $db_link;
     }
 
-    function getTableByServerAndDatabase($param) {
+    function getTableByServerAndDatabase($param)
+    {
         if (IS_AJAX) {
             $this->layout_name = false;
         }
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
+        $database        = $param[1];
 
         $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
 
-        $sql = "use " . $database . ";";
+        $sql = "use ".$database.";";
         $db_to_get_db->sql_query($sql);
 
         $tables = $db_to_get_db->getListTable();
@@ -245,16 +250,15 @@ class Common extends Controller {
 
         $data['tables'] = [];
         foreach ($tables['table'] as $table) {
-            $tmp = [];
-            $tmp['id'] = $table;
-            $tmp['libelle'] = $table;
+            $tmp              = [];
+            $tmp['id']        = $table;
+            $tmp['libelle']   = $table;
             $data['tables'][] = $tmp;
         }
 
         $this->set("data", $data);
         return $data;
     }
-
     /*
      *
      *
@@ -264,10 +268,8 @@ class Common extends Controller {
      * 3 => array (options for select)
      */
 
-    public function getSelectServerAvailable($param = array()) {
-
-
-
+    public function getSelectServerAvailable($param = array())
+    {
         if (!empty($param[0])) {
             $data['table'] = $param[0];
         } else {
@@ -291,6 +293,8 @@ class Common extends Controller {
         //$data['width'] = $param[2] ?? "auto";
         //pour restreindre la liste des serveurs a ceux spécifier
 
+        //debug($param);
+        
         $mysql_server_specify = array();
         foreach ($data['options'] as $key => $val) {
             if ($key === "mysql_server_specify") {
@@ -300,7 +304,18 @@ class Common extends Controller {
             }
         }
 
+        $servers_not_available_disabled = true;
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "all_server") {
+                 $val =(bool) $val;
+                 $servers_not_available_disabled = !$val;
 
+                unset($data['options'][$key]);
+            }
+        }
+
+        
+        
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
@@ -309,32 +324,31 @@ class Common extends Controller {
         $sql = "SELECT case error WHEN nullif(a.`error`,'') THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip , b.letter, b.class, b.libelle, a.is_available
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
-            WHERE 1 " . self::getFilter($mysql_server_specify) . " ORDER by b.libelle,a.name";
+            WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
 
-        //debug($sql);
-
-
+        //debug($_GET);
 
         $res = $db->sql_query($sql);
 
         $data['list_servers'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
+        while ($ob                   = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->id;
             //$tmp['error']   = $ob->error;
-            $tmp['libelle'] = $ob->display_name . " (" . $ob->ip . ")";
+            $tmp['libelle'] = $ob->display_name." (".$ob->ip.")";
 
-            $tmp['extra'] = array("data-content" => "<span title='" . $ob->libelle . "' class='label label-" . $ob->class . "'>" . $ob->letter . "</span> " . $ob->display_name . " <small class='text-muted'>" . $ob->ip . "</small>");
+            //$tmp['extra'] = array("data-content" => "<span title='" . $ob->libelle . "' class='label label-" . $ob->class . "'>" . $ob->letter . "</span> " . $ob->display_name . " <small class='text-muted'>" . $ob->ip . "</small>");
 
-            if (empty($ob->is_available)) {
+            $pretty_server = str_replace('"', "'", \App\Library\Display::srv($ob->id));
+            $remove_tag_a  = strip_tags($pretty_server, '<span><small>');
+            $tmp['extra']  = array("data-content" => $remove_tag_a);
+
+            if (empty($ob->is_available) && $servers_not_available_disabled === true) {
                 $tmp['extra']["disabled"] = "disabled";
             }
 
-
             $data['list_server'][] = $tmp;
         }
-
-
 
 
         $this->set('data', $data);
@@ -342,7 +356,8 @@ class Common extends Controller {
         return $data['list_server'];
     }
 
-    function getTsVariables($param = array()) {
+    function getTsVariables($param = array())
+    {
 
 
         if (!empty($param[0])) {
@@ -373,13 +388,13 @@ class Common extends Controller {
         $res = $db->sql_query($sql);
 
         $data['variable'] = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->from . '::' . $ob->name;
+        while ($ob               = $db->sql_fetch_object($res)) {
+            $tmp            = [];
+            $tmp['id']      = $ob->from.'::'.$ob->name;
             //$tmp['error']   = $ob->error;
-            $tmp['libelle'] = $ob->from . '::' . $ob->name . "";
+            $tmp['libelle'] = $ob->from.'::'.$ob->name."";
 
-            $tmp['extra'] = array("data-content" => "<small class='text-muted'>" . $ob->from . "</small> " . $ob->name);
+            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
 
             $data['variable'][] = $tmp;
         }
@@ -392,7 +407,8 @@ class Common extends Controller {
         $this->set('data', $data);
     }
 
-    function getTagByServer($param) {
+    function getTagByServer($param)
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -402,12 +418,12 @@ class Common extends Controller {
         $data['ajax'] = false;
         if (IS_AJAX) {
             $this->layout_name = false;
-            $data['ajax'] = true;
+            $data['ajax']      = true;
         }
 
         $data['table'] = $param[0];
         $data['field'] = $param[1];
-        $data['tags'] = $param[2];
+        $data['tags']  = $param[2];
 
 
         $options = array();
@@ -436,7 +452,8 @@ class Common extends Controller {
         return $data;
     }
 
-    static public function getTagArray($db) {
+    static public function getTagArray($db)
+    {
         if (empty(self::$tags)) {
             //$db = Sgbd::sql(DB_DEFAULT);
 
@@ -445,11 +462,11 @@ class Common extends Controller {
             $res = $db->sql_query($sql);
 
             $data['tag'] = array();
-            while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = array();
-                $tmp['id'] = $ob->id;
+            while ($ob          = $db->sql_fetch_object($res)) {
+                $tmp            = array();
+                $tmp['id']      = $ob->id;
                 $tmp['libelle'] = $ob->name;
-                $tmp['extra'] = array("data-content" => "<span title='" . $ob->name . "' class='label' style='color:" . $ob->color . "; background:" . $ob->background . "'>" . $ob->name . "</span>");
+                $tmp['extra']   = array("data-content" => "<span title='".$ob->name."' class='label' style='color:".$ob->color."; background:".$ob->background."'>".$ob->name."</span>");
 
                 $data['tag'][] = $tmp;
             }
@@ -459,5 +476,4 @@ class Common extends Controller {
 
         return self::$tags;
     }
-
 }

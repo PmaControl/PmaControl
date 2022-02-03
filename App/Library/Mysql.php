@@ -12,6 +12,7 @@ use App\Library\System;
 use App\Library\Tag;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Debug;
 
 class Mysql
 {
@@ -39,17 +40,18 @@ class Mysql
 
     static function exportUserByUser($db_link)
     {
-        $sql1 = "select user, host from mysql.user;";
+        $sql1 = "select User, Host from mysql.user;";
         $res1 = $db_link->sql_query($sql1);
 
         $users = array();
         while ($ob1   = $db_link->sql_fetch_object($res1)) {
-            $sql2 = "SHOW GRANTS FOR '".$ob1->user."'@'".$ob1->host."'";
+
+            $sql2 = "SHOW GRANTS FOR '".$ob1->User."'@'".$ob1->Host."'";
             $res2 = $db_link->sql_query($sql2);
 
             while ($ob2 = $db_link->sql_fetch_array($res2, MYSQLI_NUM)) {
 
-                $users[$ob1->user][$ob1->host][] = $ob2[0];
+                $users[$ob1->User][$ob1->Host][] = $ob2[0];
             }
         }
 
@@ -114,7 +116,6 @@ class Mysql
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $sql1 = "select * from ts_file;";
         $res1 = $db->sql_query($sql1);
 
@@ -129,8 +130,6 @@ class Mysql
 
             $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
                 ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server";
-
-
 
             if (!empty($id_mysql_server)) {
                 $sql5 .= " WHERE id=".$id_mysql_server."";
@@ -147,8 +146,6 @@ class Mysql
 
         $db      = Sgbd::sql(DB_DEFAULT);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port", "slave::connection_name"), array($id_mysql_server));
-
-
 
         //debug($masters);
 
@@ -203,7 +200,6 @@ class Mysql
 
         $ip = System::getIp($data['fqdn']);
 
-
         if (empty($data['password'])) {
             $data['password'] = $data['passwd'];
         }
@@ -220,7 +216,6 @@ class Mysql
 
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
-
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
                 array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']), 0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
@@ -233,7 +228,6 @@ class Mysql
         $server['mysql_server']['is_password_crypted'] = "1";
         $server['mysql_server']['port']                = $port;
 
-
         $server['mysql_server']['is_monitored']    = $data['is_monitored'] ?? "1";
         $server['mysql_server']['is_acknowledged'] = $data['is_acknowledged'] ?? 0;
         $server['mysql_server']['ssh_port']        = $data['ssh_port'] ?? 22;
@@ -241,12 +235,8 @@ class Mysql
         $server['mysql_server']['is_proxy']        = $data['is_proxy'] ?? 0;
         $server['mysql_server']['ssh_available']   = 0;
 
-
         $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
         $res = $db->sql_query($sql);
-
-
-
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -256,7 +246,6 @@ class Mysql
         }
 
         Debug::debug($server, "new MySQL");
-
 
         if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
 
@@ -273,14 +262,9 @@ class Mysql
             } else {
                 self::$return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
 
-
                 if (!empty($data['tag'])) {
 
                     Debug::debug($data['tag'], "Tags");
-
-
-
-
 
                     Tag::insertTag($id_mysql_server, $data['tag']);
                 }
@@ -297,7 +281,6 @@ class Mysql
             $msg = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : "
                 .json_encode(array($db->sql_error(), $server));
 
-
             Debug::debug($msg, "FAIL INSERT");
 
             self::$return['mysql']['failed'][] = $msg;
@@ -309,19 +292,16 @@ class Mysql
     /*
      * to export in Glial::MySQL ?
      *
+     * if ID not found we insert this line and get back, the line
      */
 
     static function getId($value, $table_name, $field, $list = array())
     {
-
         $list_key = '';
         $list_val = '';
 
-
         if (count($list) > 0) {
             $keys = array_keys($list);
-
-
 
             if (in_array($field, $keys)) {
                 throw new \Exception('PMACTRL-912 : This field cannot be specified twice : "'.$field.'"');
@@ -392,11 +372,7 @@ END IF;";
             return $id_return;
         }
 
-
         throw new \Exception('PMACTRL-071 : no id returned (problem INSERT/UPDATE) [table: '.$table_name.', field: '.$field.']');
-
-
-
 
 //debug($row['id']);
 //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
@@ -404,10 +380,7 @@ END IF;";
 
     static public function isPmaControl($ip, $port)
     {
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-
+        $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server where name='".DB_DEFAULT."'";
         $res = $db->sql_query($sql);
 
@@ -493,7 +466,6 @@ END IF;";
 
         Debug::sql($sql2);
 
-
         $res = $db->sql_query($sql2);
         if (!$res) {
             throw new \Exception("PMACTRL-518 : ".$db->sql_error());
@@ -526,12 +498,9 @@ END IF;";
 
     static public function execMulti($queries, $db_link)
     {
-
-
         if (!is_array($queries)) {
             throw new \Exception("PMACTRL-652 : first parameter should be an array !");
         }
-
 
         $query = implode("", $queries);
         $ret   = [];
@@ -567,8 +536,6 @@ END IF;";
         $query['VIEW']['query']      = "select TABLE_NAME from `information_schema`.`tables` where `TABLE_SCHEMA` = '{DB}' AND `TABLE_TYPE`='VIEW' order by TABLE_NAME;";
         $query['EVENT']['query']     = "SHOW EVENTS FROM `{DB}`;";
 
-
-
         $query['TRIGGER']['field']   = "trigger_name";
         $query['FUNCTION']['field']  = "Name";
         $query['PROCEDURE']['field'] = "Name";
@@ -583,18 +550,15 @@ END IF;";
             throw new \Exception("PMACTRL-095 : this type of object is not supported : '".$type_object."'", 80);
         }
 
-
         //to prevent if a DB don't have a type of object
         $data = array();
 
         $sql = str_replace('{DB}', $database, $query[$type_object]['query']);
         $res = $db_link->sql_query($sql);
 
-
         while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data[] = $row[$query[$type_object]['field']];
         }
-
 
         ksort($data);
         return $data;
@@ -644,7 +608,6 @@ END IF;";
             $queries[$elem] = $tmp;
         }
 
-
         $ret = self::execMulti($queries, $db_link);
 
         $resultat = array();
@@ -664,21 +627,20 @@ END IF;";
 
         return $resultat;
     }
-
-    
     /*
      * Récupère le id_mysql_server depuis un slave avec mater_host // master_port
      * Si besoin on lie la table mysql_server avec alias_dns, dans les cas ou la réplication se fait par un VIP, DNS ou fqdn
      * 
      * 
      */
+
     static public function getIdFromDns($dns_port)
     {
         if (empty(self::$master[$dns_port])) {
-            
+
             $db = Sgbd::sql(DB_DEFAULT);
-            
-            $sql = "SELECT ip, port, id as id_mysql_server FROM mysql_server a 
+
+            $sql = "SELECT ip, port, id as id_mysql_server FROM mysql_server a
                  UNION select dns as ip, port, id_mysql_server from alias_dns b;";
 
             $res = $db->sql_query($sql);
@@ -694,5 +656,46 @@ END IF;";
         }
 
         return false;
+    }
+
+    static function testMySQL($param)
+    {
+        Debug::parseDebug($param);
+
+        $hostname = $param[0];
+        $port     = $param[1];
+        $user     = $param[2];
+        $password = $param[3];
+
+        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+
+        if ($link) {
+            Debug::debug("Connection sucessfull");
+
+            mysqli_close($link);
+            return true;
+        } else {
+            $error = 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+            Debug::debug($error, "[ERROR]");
+            return $error;
+        }
+    }
+
+    static function getMysqlById($param)
+    {
+        //need to save in case of multiple ask
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+
+        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $name = $ob->name;
+        }
+
+        $db = Sgbd::sql($name);
+
+        return $db;
     }
 }

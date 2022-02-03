@@ -39,8 +39,8 @@ foreach ($data['keys'] as $key) {
 
     echo '<br /><span class="badge">'.$key['bit'].' bit</span></div>';
 
-    echo '<div class="col-md-2"><b>Name :</b> '.$key['name'].'</div>';
-    echo '<div class="col-md-1"><b>User :</b> '.$key['user'].'</div>';
+    echo '<div class="col-md-2"><b>Name :</b> '.htmlentities($key['name']).'</div>';
+    echo '<div class="col-md-1"><b>User :</b> '.htmlentities($key['user']).'</div>';
     echo '<div class="col-md-1"><b>Type :</b> '.$key['type'].'<br />';
 
     if (in_array($key['type'], $data['ssh_supported'])) {

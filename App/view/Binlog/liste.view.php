@@ -53,8 +53,14 @@ use App\Library\Format;
 
         echo '</td>';
         echo '<td>'.__('Tags').'</td>';
-        
+
         if (!empty($server['binlog']['file_first'])) {
+
+
+            if (empty($server['binlog']['expire_logs_days']))
+            {
+                debug($server['binlog']);
+            }
             echo '<td>'.$server['binlog']['file_first'].'</td>';
             echo '<td>'.$server['binlog']['file_last'].'</td>';
             echo '<td>'.$server['binlog']['expire_logs_days'].'</td>';

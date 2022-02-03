@@ -17,13 +17,14 @@ class Format
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
-    static public function mysqlVersion($version, $comment)
+    static public function mysqlVersion($version, $comment, $is_proxysql=0)
     {
         if (strpos($version, "-")) {
             $number = explode("-", $version)[0];
             $fork   = explode("-", $version)[1];
         } else {
             $number = $version;
+            $fork = 'mysql';
         }
 
 
@@ -32,18 +33,44 @@ class Format
             $fork = "percona";
         }
 
+
+	$name = '';
+	$logo = true;
+	
+	if ($is_proxysql === "1")
+	{
+		$logo = false;
+		$name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+	}
+
+	
+
         switch (strtolower($fork)) {
             case 'mariadb':
-                $name = '<span class="geek">&#xF130;</span> MariaDB';
+                if ($logo)
+		{
+			$name .= '<span class="geek">&#xF130;</span>';
+		}
+		$name .=  ' MariaDB';
                 break;
 
             case 'percona':
-                $name = '<span class="geek">&#xF137;</span> Percona Server';
+
+                //$name = 'percona.svg'
+		if ($logo)
+		{
+                	$name .= '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
+                }
+		$name .= ' Percona Server';
                 //$name = 'percona';
                 break;
 
             default:
-                $name = '<span class="geek">&#xF137;</span> MySQL';
+                if ($logo)
+		{
+			$name .= '<span class="geek">&#xF137;</span>';
+		}
+		$name .= ' MySQL';
         }
 
         return $name." ".$number;

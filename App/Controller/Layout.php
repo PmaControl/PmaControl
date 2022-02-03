@@ -4,59 +4,55 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Ariane;
+use \App\Library\Display;
 use \Glial\Sgbd\Sgbd;
 
+class Layout extends Controller
+{
 
-class Layout extends Controller {
-
-    function header($title) {
+    function header($title)
+    {
         $this->set('GLIALE_TITLE', $title);
     }
 
-    function footer() {
+    function footer()
+    {
         
     }
 
-    function headerPma($param) {
-
-
-        $title = $param[0];
-
+    function headerPma($param)
+    {
+        $title        = $param[0];
         $data['auth'] = $this->di['auth']->getAccess();
-
         $this->set('data', $data);
-
-
-
         $this->set('GLIALE_TITLE', $title);
     }
 
-    function footerPma() {
-
-
+    function footerPma()
+    {
         $data['auth'] = $this->di['auth']->getAccess();
 
         if ($data['auth'] !== 1) {
-            $user = $this->di['auth']->getuser();
-            $data['name'] = $user->firstname . " " . $user->name . " (" . $user->email . ")";
+            $user         = $this->di['auth']->getuser();
+            $data['name'] = $user->firstname." ".$user->name." (".$user->email.")";
         }
         $this->set('data', $data);
     }
 
-    public function ariane($param) {
+    public function ariane($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $ariane = new Ariane($db);
-        $body = $ariane->buildAriane($this->getMethod());
+        $body   = $ariane->buildAriane($this->getMethod());
 
-
+        $body = Display::icon($body);
         $data = $body;
-
-
         return $data;
     }
 
-    private function getMethod() {
+    private function getMethod()
+    {
         $elems = explode("/", $_GET['glial_path']);
 
         $class = '';
@@ -68,41 +64,31 @@ class Layout extends Controller {
             $method = $elems[2];
         }
 
-        return $class . "::" . $method;
+        return $class."::".$method;
     }
 
-    private function replaceIndex($method) {
-
-        $elems = explode("::", $method);
-
+    private function replaceIndex($method)
+    {
+        $elems    = explode("::", $method);
         $elems[1] = "index";
 
         return implode("::", $elems);
     }
 
-    public function title($params) {
+    public function title($params)
+    {
 
-        $param = \Glial\Synapse\FactoryController::getRootNode();
-
+        $param      = \Glial\Synapse\FactoryController::getRootNode();
         $controller = $param[0];
-        $method = $param[1];
-
+        $method     = $param[1];
         $this->view = false;
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT * FROM menu where `class`='" . $controller . "' AND `method` = '" . $method . "' ORDER BY group_id ASC LIMIT 1";
-
-
-        $res = $db->sql_query($sql);
+        $db         = Sgbd::sql(DB_DEFAULT);
+        $sql        = "SELECT * FROM menu where `class`='".$controller."' AND `method` = '".$method."' ORDER BY group_id ASC LIMIT 1";
+        $res        = $db->sql_query($sql);
 
         while ($data['title'] = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-
-
-            return $data['title']['icon'] . " " . $data['title']['title'];
+            return $data['title']['icon']." ".$data['title']['title'];
         }
-
-        echo $data['title']['icon'] . " " . $data['title']['title'];
+        echo $data['title']['icon']." ".$data['title']['title'];
     }
-
 }

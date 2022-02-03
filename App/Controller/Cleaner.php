@@ -78,8 +78,6 @@ class Cleaner extends Controller
 
     public function statistics($param)
     {
-
-
         $this->title = '<i class="fa fa-area-chart" aria-hidden="true"></i> '.__("Statistics");
 
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2734,10 +2732,7 @@ var myChart = new Chart(ctx, {
     public function getPrimaryKey($table, $database)
     {
         $db = Sgbd::sql($this->link_to_purge);
-
-
-
-
+        
         if (empty($this->primary_key[$database][$table])) {
 
             $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` ='PRIMARY';";

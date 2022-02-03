@@ -58,6 +58,7 @@ use Glial\Html\Form\Form;
                 <th><?= __('bg') ?></th>
                 <th><?= __('bd') ?></th>
                 <th><?= __('icon') ?></th>
+                <th><?= __('icon') ?></th>
                 <th><?= __('title') ?></th>
                 <th><?= __('url') ?></th>
                 <th><?= __('class') ?></th>
@@ -86,6 +87,7 @@ use Glial\Html\Form\Form;
                     <td><?= $line['bg'] ?></td>
                     <td><?= $line['bd'] ?></td>
                     <td><?php \Glial\Synapse\FactoryController::addNode("tree", "getCountFather", array($data['id_menu'], $line['id'])); ?><?= $line['icon'] ?></td>
+                    <td class="line-edit" data-name="icon" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter icon"><?= htmlentities($line['icon']) ?></td>
                     <td class="line-edit" data-name="title" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Title"><?= $line['title'] ?></td>
                     <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter URL"> <?= $line['url'] ?></td>
                     <td class="line-edit" data-name="class" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Class"> <?= $line['class'] ?></td>

@@ -2,8 +2,22 @@
 <?php
 cli_set_process_title("glial-cmd");
 $argv = $_SERVER["argv"];
+
+$controller=$argv[1];
+$method=$argv[2];
+
 unset($argv[0]);
-$arg_string = implode(' ',$argv);
-$cmd = "php App/Webroot/index.php " . $arg_string;
+unset($argv[1]);
+unset($argv[2]);
+
+$string = '';
+
+foreach($argv as $arg)
+{
+	$string .= '"'.$arg.'" ';
+}
+
+//$arg_string = implode(' ',$argv);
+$cmd = "php App/Webroot/index.php ".$controller." ".$method." " . $string."";
 passthru($cmd, $code_retour);
 exit($code_retour);

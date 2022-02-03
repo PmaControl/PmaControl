@@ -1,6 +1,7 @@
 <?php
 
 use App\Library\Display;
+use App\Library\Database;
 
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
@@ -28,6 +29,7 @@ function format($bytes, $decimals = 2)
             <th><?= __("Size (data)") ?></th>
             <th><?= __("Size (index)") ?></th>
             <th><?= __("Size (free)") ?></th>
+            <th><?= __("Tag") ?></th>
             <th><?= __("Tables") ?></th>
             <th><?= __("Rows") ?></th>
             <th><?= __("Collations") ?></th>
@@ -57,6 +59,7 @@ function format($bytes, $decimals = 2)
                             echo '<td style="text-align:right;">'.format($details['size_data']).'</td>';
                             echo '<td>'.format($details['size_index']).'</td>';
                             echo '<td>'.format($details['size_free']).'</td>';
+                            echo '<td>'.Database::getTagSize($details['size_index'] + $details['size_data']).'</td>';
                             echo '<td style="text-align:right;">'.$details['tables'].'</td>';
                             echo '<td style="text-align:right;">'.$details['rows'].'</td>';
                             echo '<td>'.$details['table_collation'].'</td>';
@@ -83,8 +86,9 @@ function format($bytes, $decimals = 2)
             <th><?= format(array_sum($total_data)) ?></th>
             <th><?= format(array_sum($total_index)) ?></th>
             <th><?= format(array_sum($total_free)) ?></th>
-            <th><?= array_sum($total_table) ?></th>
-            <th><?= array_sum($total_row) ?></th>
+            <th><?= Database::getTagSize(array_sum($total_data) + array_sum($total_index)) ?></th>
+            <th style="text-align:right;"><?= array_sum($total_table) ?></th>
+            <th style="text-align:right;"><?= array_sum($total_row) ?></th>
             <th><?= __("Collations") ?></th>
         </tr>
     </table>

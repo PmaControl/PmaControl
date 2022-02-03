@@ -9,11 +9,11 @@ use Glial\Html\Form\Form;
 
 ?>
 
-<form action="" method="POST">
+<form action="<?= LINK ?>database/analyze" method="POST">
     <?= Form::input("database", "analyze", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><?= __('Automatic updating indexes statistics') ?></h3>
+            <h3 class="panel-title"><?= __('Automatic updating indexes statistics') ?> (ANALYZE TABLE `XXXX`)</h3>
         </div>
 
         <div class="well">
@@ -30,14 +30,11 @@ use Glial\Html\Form\Form;
                     echo '</div><div class="col-md-3">';
                     
                     
-                    debug($_POST);
+                    //debug($_POST);
                     ?>
                 </div>
             </div>
-
-
             <br />
-
             <button type="submit" class="btn btn-primary">Go</button>
         </div>
     </div>

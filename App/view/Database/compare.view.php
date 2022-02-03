@@ -44,12 +44,12 @@ $rendererOptions = [
 ?>
 
 
-<form action="" method="post">
+<form action="<?= LINK ?>database/compare" method="post">
 
     <div class="panel panel-primary">
         <div class="panel-heading">
 
-            <h3 class="panel-title"><?= __('Refresh database from an other server') ?></h3>
+            <h3 class="panel-title"><?= __('Compare database') ?></h3>
         </div>
         <div class="well">
             <div class="row">
@@ -107,7 +107,6 @@ if (!empty($data['resultat'])) {
                 <?php
                 $i = 0;
 
-
                 foreach ($data['resultat'] as $typeobject => $elems) {
                     $i++;
                     $active = '';
@@ -142,7 +141,6 @@ if (!empty($data['resultat'])) {
 
             <h3 class="panel-title">'.$elem.'</h3>
         </div>';
-
 
                         echo '</div>';
                     }

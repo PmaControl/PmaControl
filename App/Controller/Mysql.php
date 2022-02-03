@@ -411,7 +411,7 @@ class Mysql extends Controller
 //$grants[] = str_replace('`', '\`', $table[0]);
                         $grants[] = $table[0];
                     }
-                    $export = implode(";", $grants);
+                    $export = implode(";\n", $grants);
 
                     if (strpos($db->host, ":")) {
                         $param = explode(":", $db->host);
@@ -1207,7 +1207,7 @@ class Mysql extends Controller
                 $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
-                $table['mysql_server']['id_environment']      = "1";
+                $table['mysql_server']['id_environment']      = $table['mysql_server']['id_environement'] ?? 1;
 
                 /*
                   debug($table);
