@@ -5,12 +5,13 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Mysql;
+use \App\Library\Debug;
 
 class Query extends Controller
 {
     var $queries = array();
 
-    public function getFielsWithoutDefault($id_mysql_server)
+    public function getFielsWithoutDefault($id_mysql_server, $databases = "")
     {
 
         $db  = Mysql::getDbLink($id_mysql_server);
@@ -33,9 +34,18 @@ class Query extends Controller
                 AND c.TABLE_SCHEMA NOT IN ('information_schema', 'sys', 'performance_schema','mysql')
                 AND c.COLUMN_DEFAULT IS NULL
                 AND c.IS_NULLABLE = "NO"
-                AND c.EXTRA <> 'auto_increment';
+                AND c.EXTRA <> 'auto_increment'
 SQL;
 
+        if (!empty($databases) && $databases != "ALL") {
+
+            $dbs = explode(",", $databases);
+            $sql .= " AND c.TABLE_SCHEMA IN ('".implode("','", $dbs)."') ";
+        }
+
+        $sql .= ";";
+
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -73,16 +83,15 @@ SQL;
             case 'char':
                 return '';
             case 'enum':
-
+                Debug::debug($type,"type");
+                Debug::debug($typeExtra,"typeExtra");
                 if (!preg_match('/^enum\((.*)\)$/', $typeExtra, $matches)) {
-                    throw new RuntimeException(sprintf(
-                                'Could not retrieve enum list from: "%s"', (string) $typeExtra
-                    ));
+
+
+                    throw new \Exception(sprintf('Could not retrieve enum list from: "%s"', (string) $typeExtra   ));
                 }
                 if (false === ($enum = preg_split('/,\s?/', $matches[1]))) {
-                    throw new RuntimeException(sprintf(
-                                'Could not retrieve enum items from: "%s"', $matches[1]
-                    ));
+                    throw new \Exception(sprintf('Could not retrieve enum items from: "%s"', $matches[1]   ));
                 }
                 return $enum[0];
             case 'set':
@@ -126,15 +135,20 @@ SQL;
 
     public function setDefault($param)
     {
+        Debug::parseDebug($param);
+
+
         $id_mysql_server = $param[0];
-        $fields          = $this->getFielsWithoutDefault($id_mysql_server);
+        $list_databases  = $param[1]; // separated by coma
+        //$databases = array();
+        //$databases = explode(',', $list_databases);
+        $fields          = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
 
         foreach ($fields as $field) {
 
-            if ($field->data_type === "enum") {
-                continue;
-            }
-            $default_value = $this->getDefaultValueByType($field->data_type);
+            Debug::debug($field, "field");
+
+            $default_value = $this->getDefaultValueByType($field->data_type, $field->data_type2);
             $ret           = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
 
             //print_r($field);
