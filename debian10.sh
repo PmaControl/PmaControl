@@ -13,6 +13,7 @@ apt install -y gnupg
 apt-get install -y wget gnupg2 lsb-release
 apt install -y git 
 apt install -y tig
+apt install -y curl
 apt-get install -y net-tools
 
 cd /tmp
@@ -22,8 +23,10 @@ cd Toolkit
 chmod +x install-mariadb.sh
 
 
+curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.6"
 
-./install-mariadb.sh -v 10.6 -p $password -d /srv/mysql
+
+./install-mariadb.sh -v 10.6 -p $password -d /srv/mysql -r
 
 
 apt-get -y install php7.3 apache2 graphviz php7.3-mysql php7.3-ldap php7.3-json php7.3-curl php7.3-cli php7.3-mbstring php7.3-intl php7.3-fpm libapache2-mod-php7.3 php7.3-gd php7.3-xml
