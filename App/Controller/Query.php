@@ -3,22 +3,21 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use \Glial\Sgbd\Sgbd;
 use \App\Library\Mysql;
 use \App\Library\Debug;
 
-class Query extends Controller
-{
-    var $queries = array();
+class Query extends Controller {
 
-    public function getFielsWithoutDefault($id_mysql_server, $databases = "")
-    {
+    var $queries = array();
+    var $is_enum = false;
+
+    public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
          * If a field is NULLABLE we will not get it there.
          * 
          */
-        
-        $db  = Mysql::getDbLink($id_mysql_server);
+
+        $db = Mysql::getDbLink($id_mysql_server);
         $sql = <<<SQL
             SELECT
                 c.TABLE_SCHEMA as db_name,
@@ -44,7 +43,7 @@ SQL;
         if (!empty($databases) && $databases != "ALL") {
 
             $dbs = explode(",", $databases);
-            $sql .= " AND c.TABLE_SCHEMA IN ('".implode("','", $dbs)."') ";
+            $sql .= " AND c.TABLE_SCHEMA IN ('" . implode("','", $dbs) . "') ";
         }
 
         $sql .= ";";
@@ -57,10 +56,12 @@ SQL;
         }
     }
 
-    private function getDefaultValueByType($type, $typeExtra = '')
-    {
+    private function getDefaultValueByType($type, $typeExtra = '') {
         // All default values below have been tested in current engine (DEV environment)
         // They are default values forced by the current engine (DEV environment)
+
+        $this->is_enum = false;
+
         switch ($type) {
             case 'year':
                 return '0000';
@@ -87,16 +88,18 @@ SQL;
             case 'char':
                 return '';
             case 'enum':
-                Debug::debug($type,"type");
-                Debug::debug($typeExtra,"typeExtra");
+                Debug::debug($type, "type");
+                Debug::debug($typeExtra, "typeExtra");
                 if (!preg_match('/^enum\((.*)\)$/', $typeExtra, $matches)) {
 
-
-                    throw new \Exception(sprintf('Could not retrieve enum list from: "%s"', (string) $typeExtra   ));
+                    throw new \Exception(sprintf('Could not retrieve enum list from: "%s"', (string) $typeExtra));
                 }
                 if (false === ($enum = preg_split('/,\s?/', $matches[1]))) {
-                    throw new \Exception(sprintf('Could not retrieve enum items from: "%s"', $matches[1]   ));
+                    throw new \Exception(sprintf('Could not retrieve enum items from: "%s"', $matches[1]));
                 }
+                $this->is_enum = true;
+
+
                 return trim($enum[0], "'");
             case 'set':
                 return ''; // This is the behavior in current engine even when '' is not part of list
@@ -107,7 +110,7 @@ SQL;
                 return '';
             default:
                 throw new RuntimeException(sprintf(
-                            'Encountered a type which is not referenced: "%s"', (string) $type
+                                'Encountered a type which is not referenced: "%s"', (string) $type
                 ));
         }
     }
@@ -121,17 +124,18 @@ SQL;
      * @param string $defaultValue
      * @return string
      */
-    private function getQuery($dbName, $tableName, $columnName, $defaultValue)
-    {
+    private function getQuery($dbName, $tableName, $columnName, $defaultValue, $is_enum) {
         if (!isset($this->queries[$dbName][$tableName][$columnName])) {
 
-            $quote = "'";
-            if ($defaultValue == "0") {
-                $quote = "";
+            if ($this->is_enum === false) {
+                $quote = "'";
+                if ($defaultValue == "0") {
+                    $quote = "";
+                }
             }
 
             $this->queries[$dbName][$tableName][$columnName] = sprintf(
-                "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT ".$quote."%s".$quote.";", $dbName, $tableName, $columnName, $defaultValue
+                    "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT " . $quote . "%s" . $quote . ";", $dbName, $tableName, $columnName, $defaultValue
             );
         }
         return $this->queries[$dbName][$tableName][$columnName];
@@ -145,24 +149,25 @@ SQL;
      * test1 => database (coma separated), if all databases remove this paramters or set it to ALL
      * 
      */
-    public function setDefault($param)
-    {
+
+    public function setDefault($param) {
         Debug::parseDebug($param);
 
-        
+
         $id_mysql_server = $param[0];
-        $list_databases  = $param[1] ?? "ALL"; // separated by coma
-        $fields          = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
+        $list_databases = $param[1] ?? "ALL"; // separated by coma
+        $fields = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
 
         foreach ($fields as $field) {
 
             Debug::debug($field, "field");
 
             $default_value = $this->getDefaultValueByType($field->data_type, $field->data_type2);
-            $ret           = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
+            $ret = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
 
             //print_r($field);
-            echo $ret."\n";
+            echo $ret . "\n";
         }
     }
+
 }
