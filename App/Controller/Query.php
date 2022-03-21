@@ -9,7 +9,6 @@ use \App\Library\Debug;
 class Query extends Controller {
 
     var $queries = array();
-    var $is_digit = false;
 
     public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
@@ -60,8 +59,6 @@ SQL;
         // All default values below have been tested in current engine (DEV environment)
         // They are default values forced by the current engine (DEV environment)
 
-        $this->digit = false;
-
         switch ($type) {
             case 'year':
                 return '0000';
@@ -79,7 +76,6 @@ SQL;
             case 'mediumint':
             case 'bigint':
             case 'decimal':
-                $this->is_digit = true;
                 return 0;
             case 'varchar':
             case 'longtext':
@@ -126,13 +122,9 @@ SQL;
     private function getQuery($dbName, $tableName, $columnName, $defaultValue) {
         if (!isset($this->queries[$dbName][$tableName][$columnName])) {
 
-            $quote = "'";
-            if ($this->is_digit === true) {
-                $quote = "";
-            }
 
             $this->queries[$dbName][$tableName][$columnName] = sprintf(
-                    "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT " . $quote . "%s" . $quote . ";", $dbName, $tableName, $columnName, $defaultValue
+                    "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT '%s';", $dbName, $tableName, $columnName, $defaultValue
             );
         }
         return $this->queries[$dbName][$tableName][$columnName];
