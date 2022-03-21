@@ -133,15 +133,20 @@ SQL;
         return $this->queries[$dbName][$tableName][$columnName];
     }
 
+    /*
+     * 
+     * ./glial Query setDefault 1 test1,test2
+     * 
+     * 1 => id of the server
+     * test1 => database (coma separated), if all databases remove this paramters or set it to ALL
+     * 
+     */
     public function setDefault($param)
     {
         Debug::parseDebug($param);
 
-
         $id_mysql_server = $param[0];
         $list_databases  = $param[1]; // separated by coma
-        //$databases = array();
-        //$databases = explode(',', $list_databases);
         $fields          = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
 
         foreach ($fields as $field) {

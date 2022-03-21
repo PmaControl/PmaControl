@@ -116,8 +116,16 @@ class ProxySQL extends Controller
             $sql2 = "select * from runtime_proxysql_servers;";
             $res2 = $proxy_admin->sql_query($sql2);
 
-            while ($arr = $proxy_admin->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-                
+            while ($arr2 = $proxy_admin->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                //on execute sur les autre proxSQLAdmin qu'on a trouvé
+
+                if ($arr2['hostname'] === $config[$proxysql_admin]['hostname'])
+                {
+                    continue; 
+                    //need be carefull if 2 IP and we access by an other one can generate and other one
+                }
+
+                $this->addProxyAdmin(array($arr2['hostname'],$arr2['port'], $config[$proxysql_admin]['user'], $config[$proxysql_admin]['password'] ));
             }
 
             $server_mysql = array();
@@ -167,14 +175,15 @@ class ProxySQL extends Controller
                 $server_mysql[$ob3->hostname.":".$ob3->port] = $tmp;
             }
 
-
             print_r($server_mysql);
-
 
             foreach($server_mysql as $server)
             {
 
                 Mysql::testMySQL($server['hostname'] );
+
+
+                // Add server mysql to mysql_server and config file
                 
             }
 
