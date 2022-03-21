@@ -9,7 +9,7 @@ use \App\Library\Debug;
 class Query extends Controller {
 
     var $queries = array();
-    var $is_enum = false;
+    var $is_digit = false;
 
     public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
@@ -60,7 +60,7 @@ SQL;
         // All default values below have been tested in current engine (DEV environment)
         // They are default values forced by the current engine (DEV environment)
 
-        $this->is_enum = false;
+        $this->digit = false;
 
         switch ($type) {
             case 'year':
@@ -79,6 +79,7 @@ SQL;
             case 'mediumint':
             case 'bigint':
             case 'decimal':
+                $this->is_digit = true;
                 return 0;
             case 'varchar':
             case 'longtext':
@@ -97,8 +98,6 @@ SQL;
                 if (false === ($enum = preg_split('/,\s?/', $matches[1]))) {
                     throw new \Exception(sprintf('Could not retrieve enum items from: "%s"', $matches[1]));
                 }
-                $this->is_enum = true;
-
 
                 return trim($enum[0], "'");
             case 'set':
@@ -127,11 +126,9 @@ SQL;
     private function getQuery($dbName, $tableName, $columnName, $defaultValue) {
         if (!isset($this->queries[$dbName][$tableName][$columnName])) {
 
-            if ($this->is_enum === false) {
-                $quote = "'";
-                if ($defaultValue == "0") {
-                    $quote = "";
-                }
+            $quote = "'";
+            if ($this->is_digit === true) {
+                $quote = "";
             }
 
             $this->queries[$dbName][$tableName][$columnName] = sprintf(
@@ -152,7 +149,6 @@ SQL;
 
     public function setDefault($param) {
         Debug::parseDebug($param);
-
 
         $id_mysql_server = $param[0];
         $list_databases = $param[1] ?? "ALL"; // separated by coma
