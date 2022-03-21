@@ -124,7 +124,7 @@ SQL;
      * @param string $defaultValue
      * @return string
      */
-    private function getQuery($dbName, $tableName, $columnName, $defaultValue, $is_enum) {
+    private function getQuery($dbName, $tableName, $columnName, $defaultValue) {
         if (!isset($this->queries[$dbName][$tableName][$columnName])) {
 
             if ($this->is_enum === false) {
