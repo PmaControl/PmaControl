@@ -97,7 +97,7 @@ SQL;
                 if (false === ($enum = preg_split('/,\s?/', $matches[1]))) {
                     throw new \Exception(sprintf('Could not retrieve enum items from: "%s"', $matches[1]   ));
                 }
-                return $enum[0];
+                return trim($enum[0], "'");
             case 'set':
                 return ''; // This is the behavior in current engine even when '' is not part of list
             case 'blob':
@@ -149,8 +149,9 @@ SQL;
     {
         Debug::parseDebug($param);
 
+        
         $id_mysql_server = $param[0];
-        $list_databases  = $param[1]; // separated by coma
+        $list_databases  = $param[1] ?? "ALL"; // separated by coma
         $fields          = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
 
         foreach ($fields as $field) {
