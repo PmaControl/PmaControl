@@ -13,7 +13,11 @@ class Query extends Controller
 
     public function getFielsWithoutDefault($id_mysql_server, $databases = "")
     {
-
+        /*
+         * If a field is NULLABLE we will not get it there.
+         * 
+         */
+        
         $db  = Mysql::getDbLink($id_mysql_server);
         $sql = <<<SQL
             SELECT
