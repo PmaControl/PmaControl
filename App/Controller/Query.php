@@ -152,7 +152,7 @@ SQL;
             Debug::debug($field, "field");
 
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
-            if (in_array($field->data_type, array('text'))) {
+            if (in_array($field->data_type, array('text','blob'))) {
                 if (version_compare($db->getVersion(), 10.2, '<')) {
                     continue;
                 }
