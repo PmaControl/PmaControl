@@ -122,7 +122,6 @@ SQL;
     private function getQuery($dbName, $tableName, $columnName, $defaultValue) {
         if (!isset($this->queries[$dbName][$tableName][$columnName])) {
 
-
             $this->queries[$dbName][$tableName][$columnName] = sprintf(
                     "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT '%s';", $dbName, $tableName, $columnName, $defaultValue
             );
@@ -146,14 +145,22 @@ SQL;
         $list_databases = $param[1] ?? "ALL"; // separated by coma
         $fields = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
 
+        $db = Mysql::getDbLink($id_mysql_server);
+
         foreach ($fields as $field) {
 
             Debug::debug($field, "field");
 
+            // remove default value for blob and text : https://mariadb.com/kb/en/blob/
+            if (in_array($field->data_type, array('text'))) {
+                if (version_compare($db->getVersion(), 10.2, '<')) {
+                    continue;
+                }
+            }
+
             $default_value = $this->getDefaultValueByType($field->data_type, $field->data_type2);
             $ret = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
 
-            //print_r($field);
             echo $ret . "\n";
         }
     }
