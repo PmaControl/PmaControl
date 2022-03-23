@@ -134,7 +134,7 @@ SQL;
         foreach ($fields as $field) {
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
-            if (in_array($field->data_type, array('text', 'blob'))) {
+            if (in_array($field->data_type, array('text', 'blob','longtext'))) {
                 if (version_compare($db->getVersion(), 10.2, '<')) {
                     continue;
                 }
@@ -147,6 +147,7 @@ SQL;
             } else {
                 $quote = "'";
             }
+            echo "--".$field->data_type."\n";
             echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` SET DEFAULT " . $quote . $default_value . $quote . ";\n";
         }
     }
