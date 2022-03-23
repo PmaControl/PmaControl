@@ -134,7 +134,7 @@ SQL;
         foreach ($fields as $field) {
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
-            if (in_array($field->data_type, array('text', 'blob','longtext'))) {
+            if (in_array($field->data_type, array('tinytext','text','mediumtext', 'longtext','tinyblob','blob','mediumblob', 'longblob'))) {
                 if (version_compare($db->getVersion(), 10.2, '<')) {
                     continue;
                 }
