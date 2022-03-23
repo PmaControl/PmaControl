@@ -8,8 +8,6 @@ use \App\Library\Debug;
 
 class Query extends Controller {
 
-    var $queries = array();
-
     public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
          * If a field is NULLABLE we will not get it there.
@@ -87,6 +85,7 @@ SQL;
             case 'enum':
                 Debug::debug($type, "type");
                 Debug::debug($typeExtra, "typeExtra");
+                $matches = "";
                 if (!preg_match('/^enum\((.*)\)$/', $typeExtra, $matches)) {
 
                     throw new \Exception(sprintf('Could not retrieve enum list from: "%s"', (string) $typeExtra));
@@ -111,33 +110,18 @@ SQL;
     }
 
     /**
-     * Get query
+     * setDefault
      *
-     * @param string $dbName
-     * @param string $tableName
-     * @param string $columnName
-     * @param string $defaultValue
-     * @return string
-     */
-    private function getQuery($dbName, $tableName, $columnName, $defaultValue) {
-        if (!isset($this->queries[$dbName][$tableName][$columnName])) {
-
-            $this->queries[$dbName][$tableName][$columnName] = sprintf(
-                    "ALTER TABLE `%s`.`%s` ALTER COLUMN `%s` SET DEFAULT '%s';", $dbName, $tableName, $columnName, $defaultValue
-            );
-        }
-        return $this->queries[$dbName][$tableName][$columnName];
-    }
-
-    /*
+     * @param string $id_mysql_server
+     * @param string $list_databases (coma separated or ALL for all databases, if omited same as ALL)
+     * @return void
      * 
-     * ./glial Query setDefault 1 test1,test2
+     * @example ./glial Query setDefault 1 test1,test2
      * 
      * 1 => id of the server
      * test1 => database (coma separated), if all databases remove this paramters or set it to ALL
      * 
      */
-
     public function setDefault($param) {
         Debug::parseDebug($param);
 
@@ -148,20 +132,22 @@ SQL;
         $db = Mysql::getDbLink($id_mysql_server);
 
         foreach ($fields as $field) {
-
             Debug::debug($field, "field");
-
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
-            if (in_array($field->data_type, array('text','blob'))) {
+            if (in_array($field->data_type, array('text', 'blob'))) {
                 if (version_compare($db->getVersion(), 10.2, '<')) {
                     continue;
                 }
             }
-
+            
             $default_value = $this->getDefaultValueByType($field->data_type, $field->data_type2);
-            $ret = $this->getQuery($field->db_name, $field->table_name, $field->column_name, $default_value);
 
-            echo $ret . "\n";
+            if (in_array($field->data_type, array("int", "double", "float", "smallint", "tinyint", "mediumint", "bigint", "decimal"))) {
+                $quote = "";
+            } else {
+                $quote = "'";
+            }
+            echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` SET DEFAULT " . $quote . $default_value . $quote . ";\n";
         }
     }
 
