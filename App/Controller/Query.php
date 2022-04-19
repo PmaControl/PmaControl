@@ -134,12 +134,12 @@ SQL;
         foreach ($fields as $field) {
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
-            if (in_array($field->data_type, array('tinytext','text','mediumtext', 'longtext','tinyblob','blob','mediumblob', 'longblob'))) {
+            if (in_array($field->data_type, array('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob'))) {
                 if (version_compare($db->getVersion(), 10.2, '<')) {
                     continue;
                 }
             }
-            
+
             $default_value = $this->getDefaultValueByType($field->data_type, $field->data_type2);
 
             if (in_array($field->data_type, array("int", "double", "float", "smallint", "tinyint", "mediumint", "bigint", "decimal"))) {
@@ -147,8 +147,30 @@ SQL;
             } else {
                 $quote = "'";
             }
-            echo "--".$field->data_type."\n";
+            echo "--" . $field->data_type . "\n";
             echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` SET DEFAULT " . $quote . $default_value . $quote . ";\n";
+        }
+    }
+
+    public function dropDefault($param) {
+
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+        $list_databases = $param[1] ?? "ALL"; // separated by coma
+        $fields = $this->getFielsWithoutDefault($id_mysql_server, $list_databases);
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        foreach ($fields as $field) {
+            Debug::debug($field, "field");
+            // remove default value for blob and text : https://mariadb.com/kb/en/blob/
+            if (in_array($field->data_type, array('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob'))) {
+                if (version_compare($db->getVersion(), 10.2, '<')) {
+                    continue;
+                }
+            }
+            
+            echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` DROP DEFAULT;\n";
         }
     }
 
