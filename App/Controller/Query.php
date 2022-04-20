@@ -219,7 +219,7 @@ SQL;
                 Debug::debug($num_rows, 'num_rows');
 
                 while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->sec > 3) {
+                    if ($ob->sec > 10) {
                         $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id;
                         $db->sql_query($sql2);
 
