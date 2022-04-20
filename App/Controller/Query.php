@@ -197,8 +197,8 @@ SQL;
         foreach ($defaults as $default) {
 
             //begin if MariaDB > 10.1.2
-            $query = "SET STATEMENT max_statement_time=1 FOR " . $default;
-            echo Date("Y-m-d H:i:s") . " " . $query . "\n";
+            //$query = "SET STATEMENT max_statement_time=1 FOR " . $default;
+            //echo Date("Y-m-d H:i:s") . " " . $query . "\n";
             //end if MariaDB > 10.1.2
 
             $db = Mysql::getDbLink($id_mysql_server);
@@ -209,29 +209,29 @@ SQL;
             $pid = intval(trim(shell_exec($cmd)));
 
             do {
+
+                usleep(1000000);
+
                 $sql = "SELECT thread_id, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0";
                 $res = $db->sql_query($sql);
 
                 $num_rows = intval($db->sql_num_rows($res));
+                Debug::debug($num_rows, 'num_rows');
 
                 while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->sec > 1) {
+                    if ($ob->sec > 3) {
                         $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id;
                         $db->sql_query($sql2);
 
                         //kill mysql process
                         $sql3 = "KILL " . $ob->thread_id . ";";
                         $db->sql_query($sql3);
-                        
+
                         //kill php process
-                        shell_exec("kill -9 ".$pid);
+                        //shell_exec("kill -9 " . $pid);
 
                         $num_rows = 0;
                     }
-                }
-
-                if ($num_rows !== 0) {
-                    usleep(100000);
                 }
             } while ($num_rows !== 0);
         }
