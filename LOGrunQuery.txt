@@ -1,0 +1,15 @@
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+false
+{current_field:null,field_count:null,lengths:null,num_rows:null,type:null}
