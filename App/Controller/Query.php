@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \App\Library\Debug;
+use \Glial\Cli\SetTimeLimit;
 
 class Query extends Controller {
 
@@ -131,6 +132,8 @@ SQL;
 
         $db = Mysql::getDbLink($id_mysql_server);
 
+        $default = array();
+
         foreach ($fields as $field) {
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
@@ -147,9 +150,14 @@ SQL;
             } else {
                 $quote = "'";
             }
-            echo "--" . $field->data_type . "\n";
-            echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` SET DEFAULT " . $quote . $default_value . $quote . ";\n";
+            //echo "--" . $field->data_type . "\n";
+            $alter = "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` SET DEFAULT " . $quote . $default_value . $quote . ";";
+            $default[] = $alter;
+            echo $alter . "\n";
         }
+        echo "Total : " . count($default) . "\n";
+
+        return $default;
     }
 
     public function dropDefault($param) {
@@ -169,8 +177,62 @@ SQL;
                     continue;
                 }
             }
-            
+
             echo "ALTER TABLE `" . $field->db_name . "`.`" . $field->table_name . "` ALTER COLUMN `" . $field->column_name . "` DROP DEFAULT;\n";
+        }
+    }
+
+    public function runSetDefault($param) {
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+
+        $defaults = $this->setDefault($param);
+
+        foreach ($defaults as $default) {
+
+            echo Date("Y-m-d H:i:s") . " " . $default . "\n";
+            $ret = setTimeLimit::run("Query", "runQuery", array($id_mysql_server, base64_encode($default)), 1);
+
+            sleep(1);
+        }
+    }
+
+    public function runQuery($param) {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $query = base64_decode($param[1]);
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $filename = TMP . "/log/runQuery.txt";
+
+        if (is_writable($filename)) {
+
+            // In our example we're opening $filename in append mode.
+            // The file pointer is at the bottom of the file hence
+            // that's where $somecontent will go when we fwrite() it.
+            if (!$fp = fopen($filename, 'a')) {
+                echo "Cannot open file ($filename)";
+                exit;
+            }
+
+            
+            $ret = $db->sql_query($query);
+
+            if ($ret === false) {
+                //shell_exec("echo '" . $query . "' >> " . TMP . "/log/runQuery.txt");
+            }
+
+            // Write $somecontent to our opened file.
+            if (fwrite($fp, $query) === FALSE) {
+                echo "Cannot write to file ($filename)";
+                exit;
+            }
+
+            fclose($fp);
+        } else {
+            echo "The file $filename is not writable";
         }
     }
 
