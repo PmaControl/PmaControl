@@ -1,5 +1,7 @@
 <?php
 
+declare(ticks=1);
+
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
@@ -190,51 +192,76 @@ SQL;
 
         Debug::parseDebug($param);
         $id_mysql_server = $param[0];
-        $defaults = $this->setDefault($param);
 
-        $this->createWorkTable($param);
 
-        foreach ($defaults as $default) {
 
-            //begin if MariaDB > 10.1.2
-            //$query = "SET STATEMENT max_statement_time=1 FOR " . $default;
-            //echo Date("Y-m-d H:i:s") . " " . $query . "\n";
-            //end if MariaDB > 10.1.2
+        do {
+            $defaults = $this->setDefault($param);
 
-            $db = Mysql::getDbLink($id_mysql_server);
+            pcntl_signal(SIGTERM, array($this, 'sigHandler')); //
+            pcntl_signal(SIGHUP, array($this, 'sigHandler'));
+            pcntl_signal(SIGUSR1, array($this, 'sigHandler')); // active / desactive debug
+            pcntl_signal(SIGUSR2, array($this, 'sigHandler')); // rechargement de la configuration ?
 
-            $php = explode(" ", shell_exec("whereis php"))[1];
+            $run_number = $this->getMaxRun($param);
+            Debug::debug($run_number, "run_number");
 
-            $cmd = $php . " " . GLIAL_INDEX . " " . substr(__CLASS__, strrpos(__CLASS__, '\\') + 1) . " runQuery " . $id_mysql_server . " " . base64_encode($default) . " --debug >> " . self::LOG_FILE . " & echo $!";
-            $pid = intval(trim(shell_exec($cmd)));
+            foreach ($defaults as $default) {
 
-            do {
+                //begin if MariaDB > 10.1.2
+                //$query = "SET STATEMENT max_statement_time=1 FOR " . $default;
+                //echo Date("Y-m-d H:i:s") . " " . $query . "\n";
+                //end if MariaDB > 10.1.2
 
-                usleep(1000000);
+                $db = Mysql::getDbLink($id_mysql_server);
 
-                $sql = "SELECT thread_id, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0";
-                $res = $db->sql_query($sql);
+                $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $num_rows = intval($db->sql_num_rows($res));
-                Debug::debug($num_rows, 'num_rows');
+                Debug::sql($default);
+                
+                $cmd = $php . " " . GLIAL_INDEX . " " . substr(__CLASS__, strrpos(__CLASS__, '\\') + 1) . " runQuery " . $id_mysql_server . " " . base64_encode($default) . " " . $run_number . " --debug >> " . self::LOG_FILE . " & echo $!";
+                $pid = intval(trim(shell_exec($cmd)));
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->sec > 10) {
-                        $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id;
-                        $db->sql_query($sql2);
+                do {
 
-                        //kill mysql process
-                        $sql3 = "KILL " . $ob->thread_id . ";";
-                        $db->sql_query($sql3);
+                    usleep(1000000);
 
-                        //kill php process
-                        //shell_exec("kill -9 " . $pid);
+                    $sql = "SELECT thread_id, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0 and id_mysql_server=" . $id_mysql_server;
+                    $res = $db->sql_query($sql);
 
-                        $num_rows = 0;
+                    $num_rows = intval($db->sql_num_rows($res));
+                    echo $num_rows." ";
+                    //Debug::debug($num_rows, 'num_rows');
+
+                    while ($ob = $db->sql_fetch_object($res)) {
+                        if ($ob->sec > 10) {
+                            $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id . " and id_mysql_server=" . $id_mysql_server;
+                            $db->sql_query($sql2);
+
+
+                            //kill php process
+                            shell_exec("kill -9 " . $pid);
+
+                            //kill mysql process
+                            $sql3 = "KILL " . $ob->thread_id . ";";
+                            $db->sql_query($sql3);
+
+                            $num_rows = 0;
+                        }
                     }
-                }
-            } while ($num_rows !== 0);
-        }
+                } while ($num_rows !== 0);
+                
+                echo "\n";
+            }
+
+            $sql4 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE `state`=2 and run_number=" . $run_number . " and `id_mysql_server`=" . $id_mysql_server;
+            Debug::sql($sql4);
+
+            $res4 = $db->sql_query($sql4);
+            while ($ob4 = $db->sql_fetch_object($res4)) {
+                $cpt = $ob4->cpt;
+            }
+        } while ($cpt > 0);
     }
 
     public function runQuery($param) {
@@ -242,11 +269,12 @@ SQL;
 
         $id_mysql_server = $param[0];
         $query = base64_decode($param[1]);
+        $run_number = intval($param[2]);
 
         $db = Mysql::getDbLink($id_mysql_server);
 
         // to be sure no other process working
-        $sql3 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0";
+        $sql3 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0 AND id_mysql_server=" . $id_mysql_server;
         $res3 = $db->sql_query($sql3);
         while ($ob3 = $db->sql_fetch_object($res3)) {
             if ($ob3->cpt > 0) {
@@ -255,8 +283,8 @@ SQL;
         }
 
         $thread_id = $db->sql_thread_id();
-        $sql = "INSERT INTO `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` (`date`,`query`,`thread_id`,`state`) "
-                . "VALUES ('" . date("Y-m-d H:i:s") . "','" . $db->sql_real_escape_string($query) . "'," . $thread_id . ", 0)";
+        $sql = "INSERT INTO `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` (`id_mysql_server`,`run_number`,`date`,`query`,`thread_id`,`state`) "
+                . "VALUES (" . $id_mysql_server . "," . $run_number . ", '" . date("Y-m-d H:i:s") . "','" . $db->sql_real_escape_string($query) . "'," . $thread_id . ", 0)";
         $db->sql_query($sql);
 
         Debug::debug($thread_id, "THREAD_ID");
@@ -276,29 +304,45 @@ SQL;
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "CREATE DATABASE IF NOT EXISTS `" . self::TABLE_SCHEMA . "`;";
-        $db->sql_query($sql);
+        $sql4 = "SELECT count(1) as cpt FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" . self::TABLE_SCHEMA . "'";
+        Debug::sql($sql4);
+        $res4 = $db->sql_query($sql4);
+
+        $db_exist = false;
+        while ($ob4 = $db->sql_fetch_object($res4)) {
+            $db_exist = $ob4->cpt;
+        }
+
+        if ($db_exist === "0") {
+
+            $sql = "CREATE DATABASE IF NOT EXISTS `" . self::TABLE_SCHEMA . "`;";
+            Debug::sql($sql);
+            $db->sql_query($sql);
+        }
 
         $sql2 = "select count(1) as cpt FROM information_schema.tables where table_name = '" . self::TABLE_NAME . "' and table_schema='" . self::TABLE_SCHEMA . "';";
+        Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
 
         while ($ob2 = $db->sql_fetch_object($res2)) {
-
             if ($ob2->cpt > 0) {
-                throw new \Exception("One treatement already working, wait it's finish or delete table with ./glial " . substr(__CLASS__, strrpos(__CLASS__, '\\') + 1) . " deleteWorkTable " . $id_mysql_server);
+                return true;
+                //throw new \Exception("One treatement already working, wait it's finish or delete table with ./glial " . substr(__CLASS__, strrpos(__CLASS__, '\\') + 1) . " deleteWorkTable " . $id_mysql_server);
             }
         }
 
         $sql3 = '
         CREATE TABLE `' . self::TABLE_SCHEMA . '`.`' . self::TABLE_NAME . '` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `run_number` int(11) NOT NULL DEFAULT 0,
   `date` datetime NOT NULL,
   `query` text NOT NULL,
   `thread_id` int(11) NOT NULL,
   `state` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
-
+        Debug::debug($sql3);
         $db->sql_query($sql3);
     }
 
@@ -310,17 +354,66 @@ SQL;
 
         $db = Mysql::getDbLink($id_mysql_server);
         $sql = "select count(1) as cpt FROM information_schema.tables where table_name = '" . self::TABLE_NAME . "' and table_schema='" . self::TABLE_SCHEMA . "';";
+        Debug::debug($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             if ($ob->cpt === "1") {
                 $sql = "DROP TABLE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`";
+                Debug::sql($sql);
                 $db->sql_query($sql);
             } else {
                 throw new \Exception("We cannot found the table to drop '`" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`'");
             }
         }
+    }
+
+// gestionnaire de signaux système
+    private function sigHandler($signo) {
+        switch ($signo) {
+            case SIGTERM:
+                echo "Reçu le signe SIGTERM...\n";
+                exit;
+                break;
+
+            case SIGUSR1:
+                break;
+
+            case SIGUSR2:
+                break;
+
+            case SIGHUP:
+
+                // gestion du redémarrage
+                //ne marche pas au second run pourquoi ?
+                echo "Reçu le signe SIGHUP...\n";
+                $this->sighup();
+
+                break;
+
+            default:
+
+                echo "RECU LE SIGNAL : " . $signo;
+// gestion des autres signaux
+        }
+    }
+
+    public function getMaxRun($param) {
+
+        $id_mysql_server = $param[0];
+        $db = Mysql::getDbLink($id_mysql_server);
+        $this->createWorkTable($param);
+
+        $sql = "SELECT max(run_number) as netxtrun FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE id_mysql_server=" . $id_mysql_server;
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $current_run = $ob->netxtrun + 1;
+        }
+
+        Debug::debug($current_run, "current_run");
+        return $current_run;
     }
 
 }
