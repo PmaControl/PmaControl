@@ -238,13 +238,15 @@ SQL;
                             $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id . " and id_mysql_server=" . $id_mysql_server;
                             $db->sql_query($sql2);
 
+                            
+                            //kill mysql process
+                            $sql3 = "KILL " . $ob->thread_id . ";";
+                            $db->sql_query($sql3);
 
                             //kill php process
                             shell_exec("kill -9 " . $pid);
 
-                            //kill mysql process
-                            $sql3 = "KILL " . $ob->thread_id . ";";
-                            $db->sql_query($sql3);
+
 
                             $num_rows = 0;
                         }
@@ -253,10 +255,15 @@ SQL;
                 
                 echo "\n";
             }
+            
+            
+            $db = Mysql::getDbLink($id_mysql_server);
+            
 
             $sql4 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE `state`=2 and run_number=" . $run_number . " and `id_mysql_server`=" . $id_mysql_server;
             Debug::sql($sql4);
 
+            $cpt = 0;
             $res4 = $db->sql_query($sql4);
             while ($ob4 = $db->sql_fetch_object($res4)) {
                 $cpt = $ob4->cpt;
