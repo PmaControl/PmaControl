@@ -45,14 +45,12 @@ fi
 
 #Check distribution GNU / Linux
 
-dist=`grep DISTRIB_ID /etc/*-release | awk -F '=' '{print $2}'`
+dist=`egrep '^ID=' /etc/os-release | awk -F '=' '{print $2}'i | sed 's/"//g'`
 
 DIOK="OK"
 case "$dist" in
-  Ubuntu*) DISTRIB="Ubuntu" ;;
-  Debian*) DISTRIB="Debian" ;;
-  Redhat*) DISTRIB="RedHat" ;;
-  Centos*) DISTRIB="Centos" ;;
+  Ubuntu* | Debian*) DISTRIB="Debian" ;;
+  redhat* | centos*) DISTRIB="RedHat" ;;
   *)       
         DISTRIB=$dist
         DIOK="KO"
@@ -66,10 +64,8 @@ then
     DIOK="OK"
 
     case "$dist" in
-      Ubuntu*) DISTRIB="Ubuntu" ;;
-      Debian*) DISTRIB="Debian" ;;
-      Redhat*) DISTRIB="RedHat" ;;
-      Centos*) DISTRIB="Centos" ;;
+      Ubuntu* | Debian*) DISTRIB="Debian" ;;
+      Redhat* | CentOS*) DISTRIB="RedHat" ;;
       *)       
             DISTRIB=$dist
             DIOK="KO"
@@ -127,30 +123,25 @@ if (! defined('WWW_ROOT'))
 }
 EOF
 
-chmod 777 -R tmp/
-
-chmod 777 -R data/
-
 #echo 'vm.swappiness = 1' >> /etc/sysctl.conf
 #sysctl -p
 #cat /proc/sys/vm/swappiness
 # add pmacontrol user and crontab
 
-
-
 case "$dist" in
-      Ubuntu*) user="www-data" ;;
       Debian*) user="www-data" ;;
       Redhat*) user="apache" ;;
-      Centos*) user="apache" ;;
-      *)       
-            user="www-data"
-        ;;
-     
-    esac
+      *)       user="www-data" ;;
+esac
 
+# Define correct right on tmp and data
+chown -R $user: tmp/
+chown -R $user: data/
 
-
+find tmp/ -type d -exec chmod 0755 {} \;
+find tmp/ -type f -exec chmod 0644 {} \;
+find data/ -type d -exec chmod 0755 {} \;
+find data/ -type f -exec chmod 0644 {} \;
 
 # install crontab for user apache
 
@@ -163,7 +154,7 @@ pmacontrol_path=`pwd`
 echo "* * * * * cd $pmacontrol_path && ./glial agent check_daemon" >> mycron
 echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
 #install new cron file
-crontab -u www-data mycron
+crontab -u $user mycron
 rm mycron
 
 
@@ -260,7 +251,7 @@ if [ $? != 0 ]; then
 fi
 
 mkdir -p vendor/esysteme/mysql-sys/gen
-chown www-data. -R vendor/esysteme/mysql-sys/gen
+chown $user. -R vendor/esysteme/mysql-sys/gen
 
 chown $user:$user -R .
 
