@@ -108,9 +108,10 @@ SQL;
             case 'mediumblob':
             case 'bit':
             case 'varbinary':
+            case 'binary':
                 return '';
             default:
-                throw new RuntimeException(sprintf(
+                throw new \Exception(sprintf(
                                 'Encountered a type which is not referenced: "%s"', (string) $type
                 ));
         }
