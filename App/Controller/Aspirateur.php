@@ -1421,7 +1421,6 @@ class Aspirateur extends Controller
 
         return $stats;
     }
-    
     /*
      * Récuperation des tables : (dans le cadre d'un serveur Galera 4
      * - wsrep_cluster
@@ -1489,5 +1488,42 @@ class Aspirateur extends Controller
         return $data;
 
         //$sql2 = "SELECT * FROM wsrep_cluster_members;";
+    }
+
+    public function getLockingQueries($param = array())
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "select count(1) as cpt FROM PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->cpt === "1") {
+                $sql2 = "select concat('KILL ',C.ID,';') as `kill` , C.INFO as `query_locking`, GROUP_CONCAT(P.INFO) as `query_locked`, GROUP_CONCAT(P.ID ) as `id_locked`
+FROM INFORMATION_SCHEMA.PROCESSLIST P, INFORMATION_SCHEMA.METADATA_LOCK_INFO M
+INNER JOIN INFORMATION_SCHEMA.PROCESSLIST C ON M.THREAD_ID = C.ID
+WHERE LOCATE(lcase(M.LOCK_TYPE), lcase(P.STATE))>0 and M.THREAD_ID != P.ID
+GROUP BY C.ID, C.INFO;";
+
+                $res2 = $db->sql_query($sql2);
+                $tmp  = array();
+
+                $tmp['query_locking_count'] = $db->sql_num_rows($res2);
+
+                while ($arr2 = $db->sql_fetch_array($res2, MYSQL_ASSOC)) {
+
+                    $tmp['query_locking_detail'][] = json_encode($arr2, JSON_PRETTY_PRINT);
+                }
+
+                Debug::debug($tmp);
+
+                return $tmp;
+            }
+        }
     }
 }
