@@ -86,8 +86,8 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_server   = $param[1];
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $db->sql_close();
+        $db = Sgbd::sql(DB_DEFAULT); // ?????
+        $db->sql_close(); // ?????????????
 
         Debug::checkPoint('avant query');
 
@@ -115,6 +115,9 @@ class Aspirateur extends Controller
         $service['mysql_server']['available'] = empty($error_msg) ? 1 : 0;
         $service['mysql_server']['ping']      = $data['server']['ping'];
         $service['mysql_server']['error']     = $error_msg;
+
+        Debug::debug($service);
+
 
         $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_server] = $service;
@@ -250,6 +253,9 @@ class Aspirateur extends Controller
 
             //test if first run, if yes remove grabbing of databases because getting to much time
             // test if last all 5 ts_dates before made it to grab data more faster
+
+            
+
             $get_databases = true;
         }
 
@@ -1037,15 +1043,17 @@ class Aspirateur extends Controller
         }
     }
 
-    private function binaryLog($mysql_tested)
+    public function binaryLog($param)
     {
+        Debug::parseDebug($param);
 
-        //$grants = $this->getGrants();
+        $id_mysql_server = $param[0];
+
+        $mysql_tested = Mysql::getDbLink($id_mysql_server);
 
         if ($mysql_tested->testAccess()) {
 
             $sql = "SHOW BINARY LOGS;";
-
             $res = $mysql_tested->sql_query($sql);
             if ($res) {
 
@@ -1055,7 +1063,6 @@ class Aspirateur extends Controller
                     $sizes = array();
 
                     while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_NUM)) {
-
 
                         $files[] = $arr[0];
                         $sizes[] = $arr[1];
@@ -1068,27 +1075,12 @@ class Aspirateur extends Controller
                     $data['total_size'] = array_sum($sizes);
                     $data['nb_files']   = count($files);
 
+                    Debug::debug($data);
                     return $data;
                 }
             }
         }
         return false;
-    }
-
-    public function testBinaryLog($param)
-    {
-        Debug::parseDebug($param);
-
-        $id_mysql_server = $param[0];
-
-        $db     = Sgbd::sql(DB_DEFAULT);
-        $remote = Mysql::getDbLink($db, $id_mysql_server);
-
-        $db_remote = Sgbd::sql($remote);
-
-        $ret = $this->binaryLog($db_remote);
-
-        Debug::debug($ret, "Resultat");
     }
 
     public function getArbitrator()
@@ -1499,7 +1491,7 @@ class Aspirateur extends Controller
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "select count(1) as cpt FROM PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
+        $sql = "select count(1) as cpt FROM INFORMATION_SCHEMA.PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -1515,7 +1507,7 @@ GROUP BY C.ID, C.INFO;";
 
                 $tmp['query_locking_count'] = $db->sql_num_rows($res2);
 
-                while ($arr2 = $db->sql_fetch_array($res2, MYSQL_ASSOC)) {
+                while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
 
                     $tmp['query_locking_detail'][] = json_encode($arr2, JSON_PRETTY_PRINT);
                 }
@@ -1523,6 +1515,10 @@ GROUP BY C.ID, C.INFO;";
                 Debug::debug($tmp);
 
                 return $tmp;
+            }
+            else
+            {
+                Debug::debug("METADATA_LOCK_INFO is not installed");
             }
         }
     }

@@ -10,7 +10,6 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \Glial\I18n\I18n;
-use \App\Library\Util;
 use \Glial\Sgbd\Sgbd;
 
 class Daemon extends Controller
@@ -114,7 +113,6 @@ class Daemon extends Controller
 
         Debug::parseDebug($param);
 
-
         if (Debug::$debug === true) {
             $debug = " --debug";
         } else {
@@ -136,11 +134,9 @@ class Daemon extends Controller
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
-
         if (!IS_CLI) {
             $msg   = I18n::getTranslation(__("All lock/pid/md5 has been deleted and partions has been updated"));
             $title = I18n::getTranslation(__("Success"));
-
 
             set_flash("success", $title, $msg);
             header("location: ".LINK.$this->getClass()."/index");
@@ -173,5 +169,57 @@ class Daemon extends Controller
                 }
             }
         }
+    }
+
+    public function getStatitics($param = array())
+    {
+
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "select * from ts_file order by id;";
+        $res = $db->sql_query($sql);
+
+        $file = array();
+        while ($ob   = $db->sql_fetch_object($res)) {
+            $file[$ob->id] = $ob->file_name;
+        }
+
+        $path = TMP."tmp_file/*";
+
+        $all_files = glob($path);
+
+        $total = array();
+        foreach ($all_files as $fullpath) {
+
+
+            $filename = pathinfo($fullpath)['filename'];
+
+            $prefix = explode('_', $filename)[0];
+
+            if (empty($total[$prefix])) {
+                $total[$prefix] = 1;
+            } else {
+                $total[$prefix]++;
+            }
+        }
+
+
+        foreach ($total as $key => $nb_file) {
+            if ($nb_file > 10) {
+
+                if (!in_array($key, $file)) {
+                    $sql = "INSERT INTO ts_file (file_name) VALUES ('".$key."');";
+                    $db->sql_query($sql);
+                }
+            }
+        }
+
+
+        $data['registered']   = $file;
+        $data['to_integrate'] = $total;
+
+        Debug::debug($data);
     }
 }

@@ -111,33 +111,47 @@ class Mysql
             exit;
         }
     }
+    /*
+     * first param : id_mysql_server (coma separated)
+     *
+     *
+     */
 
-    static public function addMaxDate($id_mysql_server = '')
+    static public function addMaxDate($param = array())
     {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = empty($param[0]) ? 0 : $param[0];
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql1 = "select * from ts_file;";
+        $sql1 = "SELECT 7, b.id as id_mysql_server, a.id as id_ts_file FROM ts_file a, mysql_server b ";
+        if (!empty($id_mysql_server)) {
+            $sql1 .= "WHERE b.id IN (".$id_mysql_server.") ";
+        }
+        $sql1 .= "order by b.id, a.id;";
+
+        Debug::sql($sql1);
+
         $res1 = $db->sql_query($sql1);
 
         while ($ob1 = $db->sql_fetch_object($res1)) {
 
+            $sql2 = "SELECT count(1) as `cpt` FROM `ts_max_date` WHERE `id_mysql_server`=".$ob1->id_mysql_server." AND `id_ts_file`=".$ob1->id_ts_file.";";
 
-            //a optimiser !!
-            //$sql = "SELECT count(1) from `ts_max_date` WHERE id"
+            Debug::sql($sql2);
+            $res2 = $db->sql_query($sql2);
 
+            while ($ob2 = $db->sql_fetch_object($res2)) {
+                if ($ob2->cpt === "0") {
 
+                    $sql3 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
+                        ."SELECT 7,".$ob1->id_mysql_server.", now(), now(),now(),now(),now(), ".$ob1->id_ts_file." from mysql_server";
 
-
-            $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server";
-
-            if (!empty($id_mysql_server)) {
-                $sql5 .= " WHERE id=".$id_mysql_server."";
+                    Debug::sql($sql3);
+                    $db->sql_query($sql3);
+                }
             }
-
-            $sql5 .= ";";
-
-            $db->sql_query($sql5);
         }
     }
 
