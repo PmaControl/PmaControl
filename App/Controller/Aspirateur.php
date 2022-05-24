@@ -140,7 +140,6 @@ class Aspirateur extends Controller
             return false;
         }
 
-
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
@@ -176,17 +175,23 @@ class Aspirateur extends Controller
 
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
+
+        
+
         Debug::debug("apres status");
         $data['master'] = $mysql_tested->isMaster();
+        Debug::debug($data['master'], "STATUS");
         Debug::debug("apres master");
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
+
+        $data['locking'] = $this->getLockingQueries(array($id_server));
 
         //SHOW SLAVE HOSTS; => add in glial
         //$data['processlist'] = $mysql_tested->getProcesslist(1);
 
         if ($var['variables']['log_bin'] === "ON") {
-            $data['binlog'] = $this->binaryLog($mysql_tested);
+            $data['binlog'] = $this->binaryLog(array($id_server));
         }
 
         Debug::debug("apres la récupération de la liste des binlogs");
@@ -254,8 +259,6 @@ class Aspirateur extends Controller
             //test if first run, if yes remove grabbing of databases because getting to much time
             // test if last all 5 ts_dates before made it to grab data more faster
 
-            
-
             $get_databases = true;
         }
 
@@ -299,19 +302,13 @@ class Aspirateur extends Controller
     public function allocate_shared_storage($name = 'answer')
     {
 //storage shared
+
+        Debug::debug($name, 'create file');
+
         $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
-    /*
-      public function after()
-      {
 
-      foreach($this->shared as $name => $array)
-      {
-
-
-      }
-      } */
 
     public function trySshConnection($param)
     {
@@ -995,18 +992,6 @@ class Aspirateur extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        /*
-          $sql = "SELECT * FROM `daemon_main` WHERE `id`=".$id_daemon_main.";";
-          Debug::sql($sql);
-          $res = $db->sql_query($sql);
-
-          while ($ob = $db->sql_fetch_object($res)) {
-          $worker_name = $ob->worker_name;
-          }
-
-          Debug::debug($worker_name, 'worker_name');
-         */
-
         $sql = "SELECT a.*,b.worker_name  FROM `daemon_worker` a
             INNER JOIN `daemon_main` b ON a.`id_daemon_main` = b.id
             ";
@@ -1269,8 +1254,6 @@ class Aspirateur extends Controller
 
     public function workerSsh()
     {
-
-
         $pid = getmypid();
 
         //get mypid
