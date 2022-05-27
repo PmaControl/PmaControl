@@ -86,8 +86,8 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_server   = $param[1];
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $db->sql_close();
+        $db = Sgbd::sql(DB_DEFAULT); // ?????
+        $db->sql_close(); // ?????????????
 
         Debug::checkPoint('avant query');
 
@@ -116,6 +116,9 @@ class Aspirateur extends Controller
         $service['mysql_server']['ping']      = $data['server']['ping'];
         $service['mysql_server']['error']     = $error_msg;
 
+        Debug::debug($service);
+
+
         $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_server] = $service;
 
@@ -136,7 +139,6 @@ class Aspirateur extends Controller
 
             return false;
         }
-
 
         //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
         // SHOW /*!50000 ENGINE*/ INNODB STATUS
@@ -173,17 +175,23 @@ class Aspirateur extends Controller
 
         Debug::debug("apres Variables");
         $data['status'] = $mysql_tested->getStatus();
+
+        
+
         Debug::debug("apres status");
         $data['master'] = $mysql_tested->isMaster();
+        Debug::debug($data['master'], "STATUS");
         Debug::debug("apres master");
         $data['slave']  = $mysql_tested->isSlave();
         Debug::debug("apres slave");
+
+        $data['locking'] = $this->getLockingQueries(array($id_server));
 
         //SHOW SLAVE HOSTS; => add in glial
         //$data['processlist'] = $mysql_tested->getProcesslist(1);
 
         if ($var['variables']['log_bin'] === "ON") {
-            $data['binlog'] = $this->binaryLog($mysql_tested);
+            $data['binlog'] = $this->binaryLog(array($id_server));
         }
 
         Debug::debug("apres la récupération de la liste des binlogs");
@@ -250,6 +258,7 @@ class Aspirateur extends Controller
 
             //test if first run, if yes remove grabbing of databases because getting to much time
             // test if last all 5 ts_dates before made it to grab data more faster
+
             $get_databases = true;
         }
 
@@ -293,19 +302,13 @@ class Aspirateur extends Controller
     public function allocate_shared_storage($name = 'answer')
     {
 //storage shared
+
+        Debug::debug($name, 'create file');
+
         $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
-    /*
-      public function after()
-      {
 
-      foreach($this->shared as $name => $array)
-      {
-
-
-      }
-      } */
 
     public function trySshConnection($param)
     {
@@ -989,18 +992,6 @@ class Aspirateur extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        /*
-          $sql = "SELECT * FROM `daemon_main` WHERE `id`=".$id_daemon_main.";";
-          Debug::sql($sql);
-          $res = $db->sql_query($sql);
-
-          while ($ob = $db->sql_fetch_object($res)) {
-          $worker_name = $ob->worker_name;
-          }
-
-          Debug::debug($worker_name, 'worker_name');
-         */
-
         $sql = "SELECT a.*,b.worker_name  FROM `daemon_worker` a
             INNER JOIN `daemon_main` b ON a.`id_daemon_main` = b.id
             ";
@@ -1037,15 +1028,17 @@ class Aspirateur extends Controller
         }
     }
 
-    private function binaryLog($mysql_tested)
+    public function binaryLog($param)
     {
+        Debug::parseDebug($param);
 
-        //$grants = $this->getGrants();
+        $id_mysql_server = $param[0];
+
+        $mysql_tested = Mysql::getDbLink($id_mysql_server);
 
         if ($mysql_tested->testAccess()) {
 
             $sql = "SHOW BINARY LOGS;";
-
             $res = $mysql_tested->sql_query($sql);
             if ($res) {
 
@@ -1055,7 +1048,6 @@ class Aspirateur extends Controller
                     $sizes = array();
 
                     while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_NUM)) {
-
 
                         $files[] = $arr[0];
                         $sizes[] = $arr[1];
@@ -1068,27 +1060,12 @@ class Aspirateur extends Controller
                     $data['total_size'] = array_sum($sizes);
                     $data['nb_files']   = count($files);
 
+                    Debug::debug($data);
                     return $data;
                 }
             }
         }
         return false;
-    }
-
-    public function testBinaryLog($param)
-    {
-        Debug::parseDebug($param);
-
-        $id_mysql_server = $param[0];
-
-        $db     = Sgbd::sql(DB_DEFAULT);
-        $remote = Mysql::getDbLink($db, $id_mysql_server);
-
-        $db_remote = Sgbd::sql($remote);
-
-        $ret = $this->binaryLog($db_remote);
-
-        Debug::debug($ret, "Resultat");
     }
 
     public function getArbitrator()
@@ -1277,8 +1254,6 @@ class Aspirateur extends Controller
 
     public function workerSsh()
     {
-
-
         $pid = getmypid();
 
         //get mypid
@@ -1421,7 +1396,6 @@ class Aspirateur extends Controller
 
         return $stats;
     }
-    
     /*
      * Récuperation des tables : (dans le cadre d'un serveur Galera 4
      * - wsrep_cluster
@@ -1489,5 +1463,46 @@ class Aspirateur extends Controller
         return $data;
 
         //$sql2 = "SELECT * FROM wsrep_cluster_members;";
+    }
+
+    public function getLockingQueries($param = array())
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "select count(1) as cpt FROM INFORMATION_SCHEMA.PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            if ($ob->cpt === "1") {
+                $sql2 = "select concat('KILL ',C.ID,';') as `kill` , C.INFO as `query_locking`, GROUP_CONCAT(P.INFO) as `query_locked`, GROUP_CONCAT(P.ID ) as `id_locked`
+FROM INFORMATION_SCHEMA.PROCESSLIST P, INFORMATION_SCHEMA.METADATA_LOCK_INFO M
+INNER JOIN INFORMATION_SCHEMA.PROCESSLIST C ON M.THREAD_ID = C.ID
+WHERE LOCATE(lcase(M.LOCK_TYPE), lcase(P.STATE))>0 and M.THREAD_ID != P.ID
+GROUP BY C.ID, C.INFO;";
+
+                $res2 = $db->sql_query($sql2);
+                $tmp  = array();
+
+                $tmp['query_locking_count'] = $db->sql_num_rows($res2);
+
+                while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+
+                    $tmp['query_locking_detail'][] = json_encode($arr2, JSON_PRETTY_PRINT);
+                }
+
+                Debug::debug($tmp);
+
+                return $tmp;
+            }
+            else
+            {
+                Debug::debug("METADATA_LOCK_INFO is not installed");
+            }
+        }
     }
 }

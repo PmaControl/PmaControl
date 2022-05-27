@@ -1525,8 +1525,8 @@ class Mysql extends Controller
         Mysql2::generateMySQLConfig(Sgbd::sql(DB_DEFAULT));
     }
 
-    public function addDate()
+    public function addDate($param =array())
     {
-        Mysql2::addMaxDate();
+        Mysql2::addMaxDate($param);
     }
 }
