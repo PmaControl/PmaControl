@@ -120,14 +120,12 @@ class Mysql
         $res1 = $db->sql_query($sql1);
 
         while ($ob1 = $db->sql_fetch_object($res1)) {
-
-
             //a optimiser !!
             //$sql = "SELECT count(1) from `ts_max_date` WHERE id"
 
-
-
-
+            //$sql = "SELECT count(1) as cpt FROM `ts_max_date` WHERE id_ts_file=".$ob1->id." AND id_mysql_server=".$id_mysql_server." and ;";
+            
+            
             $sql5 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
                 ."SELECT 7,id, now(), now(),now(),now(),now(), ".$ob1->id." from mysql_server";
 
