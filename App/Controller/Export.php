@@ -226,8 +226,9 @@ $("#export_all-all2").click(function(){
 
         $json = Chiffrement::decrypt($crypted, $password);
 
-        Debug::debug($json, "json");
-
+        Debug::debug(json_encode(json_decode($json), JSON_PRETTY_PRINT), "json");
+        
+        
         $data = $this->import(array($json));
 
         if (!empty($data['mysql']['updated'])) {
@@ -293,8 +294,6 @@ $("#export_all-all2").click(function(){
     {
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
 
         debug($arr);
 
@@ -518,7 +517,8 @@ $("#export_all-all2").click(function(){
 
         $backup = $this->_export();
 
-        debug(json_encode($backup));
+        Debug::debug(json_encode($backup, JSON_PRETTY_PRINT));
+        
     }
 
     public function getExportOption()

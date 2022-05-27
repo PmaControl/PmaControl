@@ -161,7 +161,7 @@ SQL;
             $default[] = $alter;
             echo $alter . "\n";
         }
-        echo "Total : " . count($default) . "\n";
+        echo "--Total : " . count($default) . "\n";
 
         return $default;
     }
@@ -224,7 +224,7 @@ SQL;
 
                 do {
 
-                    usleep(1000000);
+                    usleep(100000);
 
                     $sql = "SELECT thread_id, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0 and id_mysql_server=" . $id_mysql_server;
                     $res = $db->sql_query($sql);
@@ -381,6 +381,7 @@ SQL;
         switch ($signo) {
             case SIGTERM:
                 echo "Reçu le signe SIGTERM...\n";
+                
                 exit;
                 break;
 

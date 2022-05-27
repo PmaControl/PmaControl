@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -24,21 +24,21 @@ DROP TABLE IF EXISTS `geolocalisation_city`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `geolocalisation_city` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_geolocalisation_country` int(11) NOT NULL DEFAULT 0,
+  `id_geolocalisation_country` int(11) NOT NULL,
   `id_country` varchar(10) NOT NULL DEFAULT '0',
-  `libelle` varchar(250) NOT NULL DEFAULT '',
+  `libelle` varchar(250) NOT NULL,
   `capital` enum('0','1') NOT NULL DEFAULT '0',
   `population` int(10) unsigned NOT NULL DEFAULT 0,
   `latitude` float NOT NULL DEFAULT 0,
   `longitude` float NOT NULL DEFAULT 0,
-  `code_zip` varchar(100) NOT NULL DEFAULT '',
-  `code_insee` varchar(100) NOT NULL DEFAULT '',
-  `distance` float NOT NULL DEFAULT 0,
+  `code_zip` varchar(100) NOT NULL,
+  `code_insee` varchar(100) NOT NULL,
+  `distance` float NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_geolocalisation_country` (`id_geolocalisation_country`),
   KEY `libelle` (`libelle`),
   CONSTRAINT `geolocalisation_city_ibfk_1` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,10 +69,10 @@ DROP TABLE IF EXISTS `geolocalisation_continent`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `geolocalisation_continent` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `iso` char(2) NOT NULL DEFAULT '',
-  `name` varchar(20) NOT NULL DEFAULT '',
+  `iso` char(2) NOT NULL,
+  `name` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -94,25 +94,25 @@ DROP TABLE IF EXISTS `geolocalisation_country`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `geolocalisation_country` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_geolocalisation_continent` int(11) NOT NULL DEFAULT 0,
-  `name_fr` varchar(250) NOT NULL DEFAULT '',
-  `name_eng` varchar(200) NOT NULL DEFAULT '',
-  `libelle` varchar(200) NOT NULL DEFAULT '',
-  `alias` varchar(200) NOT NULL DEFAULT '',
-  `name_webtitle` varchar(255) NOT NULL DEFAULT '',
-  `adj` varchar(200) NOT NULL DEFAULT '',
-  `iso` char(2) NOT NULL DEFAULT '',
+  `id_geolocalisation_continent` int(11) NOT NULL,
+  `name_fr` varchar(250) NOT NULL,
+  `name_eng` varchar(200) NOT NULL,
+  `libelle` varchar(200) NOT NULL,
+  `alias` varchar(200) NOT NULL,
+  `name_webtitle` varchar(255) NOT NULL,
+  `adj` varchar(200) NOT NULL,
+  `iso` char(2) NOT NULL,
   `iso3` varchar(3) DEFAULT NULL,
   `population` int(10) unsigned NOT NULL DEFAULT 0,
   `latitude` float NOT NULL DEFAULT 0,
   `longitude` float NOT NULL DEFAULT 0,
-  `description` text NOT NULL DEFAULT '',
+  `description` text NOT NULL,
   `num_code` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `iso` (`iso`),
   KEY `id_geolocalisation_continent` (`id_geolocalisation_continent`),
   CONSTRAINT `geolocalisation_country_ibfk_1` FOREIGN KEY (`id_geolocalisation_continent`) REFERENCES `geolocalisation_continent` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -134,19 +134,19 @@ DROP TABLE IF EXISTS `translation_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `translation_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_history_etat` int(11) NOT NULL DEFAULT 0,
-  `key` char(40) NOT NULL DEFAULT '',
-  `source` char(5) NOT NULL DEFAULT '',
-  `destination` char(5) NOT NULL DEFAULT '',
-  `text` text NOT NULL DEFAULT '',
-  `date_inserted` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_updated` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `translate_auto` int(11) NOT NULL DEFAULT 0,
-  `file_found` varchar(255) NOT NULL DEFAULT '',
-  `line_found` int(11) NOT NULL DEFAULT 0,
+  `id_history_etat` int(11) NOT NULL,
+  `key` char(40) NOT NULL,
+  `source` char(5) NOT NULL,
+  `destination` char(5) NOT NULL,
+  `text` text NOT NULL,
+  `date_inserted` datetime NOT NULL,
+  `date_updated` datetime NOT NULL,
+  `translate_auto` int(11) NOT NULL,
+  `file_found` varchar(255) NOT NULL,
+  `line_found` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`destination`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,11 +168,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -194,13 +194,13 @@ DROP TABLE IF EXISTS `architecture_legend`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `architecture_legend` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `const` varchar(30) NOT NULL DEFAULT '',
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `color` varchar(20) NOT NULL DEFAULT '',
-  `style` varchar(20) NOT NULL DEFAULT '',
-  `order` int(11) NOT NULL DEFAULT 0,
-  `type` varchar(20) NOT NULL DEFAULT '',
-  `condition` text NOT NULL DEFAULT '',
+  `const` varchar(30) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `color` varchar(20) NOT NULL,
+  `style` varchar(20) NOT NULL,
+  `order` int(11) NOT NULL,
+  `type` varchar(20) NOT NULL,
+  `condition` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -252,10 +252,10 @@ DROP TABLE IF EXISTS `backup_type`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_type` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(50) NOT NULL DEFAULT '',
+  `libelle` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -280,24 +280,24 @@ DROP TABLE IF EXISTS `daemon_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `daemon_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `pid` int(11) NOT NULL DEFAULT 0,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `log_file` varchar(255) NOT NULL DEFAULT '',
-  `refresh_time` int(11) NOT NULL DEFAULT 0,
-  `thread_concurency` int(11) NOT NULL DEFAULT 0,
-  `max_delay` int(11) NOT NULL DEFAULT 0,
-  `class` varchar(64) NOT NULL DEFAULT '',
-  `method` varchar(64) NOT NULL DEFAULT '',
-  `params` varchar(255) NOT NULL DEFAULT '',
-  `debug` int(11) NOT NULL DEFAULT 0,
-  `queue_number` int(11) NOT NULL DEFAULT 0,
-  `tube` varchar(32) NOT NULL DEFAULT '',
-  `queue_key` int(11) NOT NULL DEFAULT 0,
-  `worker_command` varchar(255) NOT NULL DEFAULT '',
-  `worker_param` varchar(255) NOT NULL DEFAULT '' COMMENT 'coma separated in array',
-  `worker_name` varchar(32) NOT NULL DEFAULT '',
+  `name` varchar(64) NOT NULL,
+  `date` datetime NOT NULL,
+  `pid` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `log_file` varchar(255) NOT NULL,
+  `refresh_time` int(11) NOT NULL,
+  `thread_concurency` int(11) NOT NULL,
+  `max_delay` int(11) NOT NULL,
+  `class` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `params` varchar(255) NOT NULL,
+  `debug` int(11) NOT NULL,
+  `queue_number` int(11) NOT NULL,
+  `tube` varchar(32) NOT NULL,
+  `queue_key` int(11) NOT NULL,
+  `worker_command` varchar(255) NOT NULL,
+  `worker_param` varchar(255) NOT NULL COMMENT 'coma separated in array',
+  `worker_name` varchar(32) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -311,11 +311,11 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',0,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',0,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',0,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',0,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',0,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',18310,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',18235,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',18253,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',18271,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',18290,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -328,13 +328,13 @@ DROP TABLE IF EXISTS `database_size`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `database_size` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `label` char(3) NOT NULL DEFAULT '',
-  `min` bigint(20) NOT NULL DEFAULT 0,
-  `max` bigint(20) NOT NULL DEFAULT 0,
-  `color` varchar(20) NOT NULL DEFAULT '',
-  `background` varchar(20) NOT NULL DEFAULT '',
+  `label` char(3) NOT NULL,
+  `min` bigint(20) NOT NULL,
+  `max` bigint(20) NOT NULL,
+  `color` varchar(20) NOT NULL,
+  `background` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -361,10 +361,10 @@ DROP TABLE IF EXISTS `environment`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `environment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(20) NOT NULL DEFAULT '',
-  `key` char(13) NOT NULL DEFAULT '',
-  `class` varchar(50) NOT NULL DEFAULT '',
-  `letter` char(1) NOT NULL DEFAULT '',
+  `libelle` varchar(20) NOT NULL,
+  `key` char(13) NOT NULL,
+  `class` varchar(50) NOT NULL,
+  `letter` char(1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -400,14 +400,14 @@ DROP TABLE IF EXISTS `export_option`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `export_option` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(64) NOT NULL DEFAULT '',
-  `key` varchar(32) NOT NULL DEFAULT '',
-  `active` int(11) NOT NULL DEFAULT 0,
-  `table_name` varchar(64) NOT NULL DEFAULT '',
-  `config_file` varchar(64) NOT NULL DEFAULT '',
-  `crypted_fields` varchar(250) NOT NULL DEFAULT '' COMMENT 'coma separated',
-  `splited_fields` varchar(255) NOT NULL DEFAULT '',
-  `sql` text NOT NULL DEFAULT '',
+  `libelle` varchar(64) NOT NULL,
+  `key` varchar(32) NOT NULL,
+  `active` int(11) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `config_file` varchar(64) NOT NULL,
+  `crypted_fields` varchar(250) NOT NULL COMMENT 'coma separated',
+  `splited_fields` varchar(255) NOT NULL,
+  `sql` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -443,11 +443,11 @@ DROP TABLE IF EXISTS `group`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_parent` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(50) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `description` text COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `id_parent` int(11) NOT NULL,
+  `name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -475,9 +475,9 @@ DROP TABLE IF EXISTS `history_etat`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_etat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(50) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
+  `libelle` varchar(50) CHARACTER SET utf8mb4 NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -501,13 +501,13 @@ DROP TABLE IF EXISTS `home_box`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `home_box` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) NOT NULL DEFAULT '',
-  `icon` varchar(100) NOT NULL DEFAULT '',
-  `class` varchar(50) NOT NULL DEFAULT '',
-  `method` varchar(50) NOT NULL DEFAULT '',
-  `order` int(11) NOT NULL DEFAULT 0,
-  `button_msg` varchar(255) NOT NULL DEFAULT '',
-  `button_url` varchar(250) NOT NULL DEFAULT '',
+  `title` varchar(50) NOT NULL,
+  `icon` varchar(100) NOT NULL,
+  `class` varchar(50) NOT NULL,
+  `method` varchar(50) NOT NULL,
+  `order` int(11) NOT NULL,
+  `button_msg` varchar(255) NOT NULL,
+  `button_url` varchar(250) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `class` (`class`,`method`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -536,10 +536,10 @@ DROP TABLE IF EXISTS `menu`;
 CREATE TABLE `menu` (
   `id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
   `parent_id` tinyint(3) unsigned DEFAULT NULL,
-  `bg` int(11) NOT NULL DEFAULT 0,
-  `bd` int(11) NOT NULL DEFAULT 0,
+  `bg` int(11) NOT NULL,
+  `bd` int(11) NOT NULL,
   `active` int(11) NOT NULL DEFAULT 1,
-  `icon` text NOT NULL DEFAULT '',
+  `icon` text NOT NULL,
   `title` varchar(255) NOT NULL DEFAULT '',
   `url` varchar(255) NOT NULL DEFAULT '',
   `class` varchar(255) NOT NULL DEFAULT '',
@@ -558,10 +558,10 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,215,216,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,217,218,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,219,220,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,182,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,199,200,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,201,202,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,203,204,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,166,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
 INSERT INTO `menu` VALUES (95,92,4,21,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
@@ -570,88 +570,80 @@ INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-flop
 INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
 INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
 INSERT INTO `menu` VALUES (102,92,22,31,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
-INSERT INTO `menu` VALUES (103,92,32,85,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,32,69,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
 INSERT INTO `menu` VALUES (104,103,33,34,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
 INSERT INTO `menu` VALUES (105,103,35,50,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
-INSERT INTO `menu` VALUES (108,92,88,111,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
-INSERT INTO `menu` VALUES (109,92,112,117,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
-INSERT INTO `menu` VALUES (110,109,113,114,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
-INSERT INTO `menu` VALUES (111,109,115,116,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,72,95,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,96,101,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,97,98,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,99,100,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
 INSERT INTO `menu` VALUES (112,103,51,52,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,118,161,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
-INSERT INTO `menu` VALUES (114,108,89,98,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
-INSERT INTO `menu` VALUES (115,108,99,106,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,162,171,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,163,164,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,165,166,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,167,168,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,169,170,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
-INSERT INTO `menu` VALUES (121,113,119,120,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
-INSERT INTO `menu` VALUES (122,113,121,122,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
-INSERT INTO `menu` VALUES (123,113,123,126,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
-INSERT INTO `menu` VALUES (124,113,127,130,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
-INSERT INTO `menu` VALUES (125,113,131,132,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
-INSERT INTO `menu` VALUES (126,113,133,138,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (113,92,102,145,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,73,82,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,83,90,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,146,155,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,147,148,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,149,150,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,151,152,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,153,154,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,103,104,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,105,106,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,107,110,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,111,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,115,116,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,117,122,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
 INSERT INTO `menu` VALUES (127,103,53,54,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
 INSERT INTO `menu` VALUES (128,103,55,56,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
 INSERT INTO `menu` VALUES (129,92,2,3,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (131,113,139,140,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
-INSERT INTO `menu` VALUES (132,113,141,142,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
-INSERT INTO `menu` VALUES (133,113,143,148,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (131,113,123,124,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,125,126,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,127,132,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
 INSERT INTO `menu` VALUES (136,103,57,58,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,172,173,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
-INSERT INTO `menu` VALUES (138,113,149,154,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,156,157,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,133,138,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
 INSERT INTO `menu` VALUES (139,103,59,60,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
-INSERT INTO `menu` VALUES (140,108,107,110,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
-INSERT INTO `menu` VALUES (141,113,155,156,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,174,181,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,175,176,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,177,180,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
-INSERT INTO `menu` VALUES (145,113,157,160,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,91,94,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,139,140,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,158,165,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,159,160,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,161,164,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,141,144,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
 INSERT INTO `menu` VALUES (146,103,61,62,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
 INSERT INTO `menu` VALUES (147,102,23,24,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
 INSERT INTO `menu` VALUES (148,102,25,28,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
 INSERT INTO `menu` VALUES (149,102,29,30,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
 INSERT INTO `menu` VALUES (150,103,63,66,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,178,179,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (153,144,162,163,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
 INSERT INTO `menu` VALUES (155,105,36,39,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
-INSERT INTO `menu` VALUES (156,114,90,91,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
-INSERT INTO `menu` VALUES (157,114,92,93,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
-INSERT INTO `menu` VALUES (158,115,100,101,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
-INSERT INTO `menu` VALUES (159,115,102,103,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (156,114,74,75,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,76,77,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,84,85,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,86,87,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
 INSERT INTO `menu` VALUES (160,150,64,65,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
-INSERT INTO `menu` VALUES (161,126,134,135,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
-INSERT INTO `menu` VALUES (162,126,136,137,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
-INSERT INTO `menu` VALUES (163,123,124,125,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
-INSERT INTO `menu` VALUES (164,138,150,151,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
-INSERT INTO `menu` VALUES (165,138,152,153,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,86,87,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (161,126,118,119,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,120,121,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,108,109,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,134,135,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,136,137,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,70,71,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
 INSERT INTO `menu` VALUES (167,148,26,27,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
-INSERT INTO `menu` VALUES (168,145,158,159,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
-INSERT INTO `menu` VALUES (169,124,128,129,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
-INSERT INTO `menu` VALUES (170,133,144,145,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
-INSERT INTO `menu` VALUES (171,133,146,147,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (168,145,142,143,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,112,113,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,128,129,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,130,131,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
 INSERT INTO `menu` VALUES (172,105,40,41,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
 INSERT INTO `menu` VALUES (173,105,42,43,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
 INSERT INTO `menu` VALUES (174,155,37,38,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
 INSERT INTO `menu` VALUES (175,105,44,45,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
 INSERT INTO `menu` VALUES (176,105,46,47,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
-INSERT INTO `menu` VALUES (177,114,94,95,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (177,114,78,79,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
 INSERT INTO `menu` VALUES (178,105,48,49,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
 INSERT INTO `menu` VALUES (179,103,67,68,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
-INSERT INTO `menu` VALUES (180,115,104,105,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
-INSERT INTO `menu` VALUES (181,140,108,109,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
-INSERT INTO `menu` VALUES (182,114,96,97,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (180,115,88,89,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,80,81,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
 INSERT INTO `menu` VALUES (183,95,19,20,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
-INSERT INTO `menu` VALUES (184,103,69,80,1,'<i class=\"glyphicon glyphicon-random\"></i>','Proxy','','','',0,1,'');
-INSERT INTO `menu` VALUES (185,184,70,73,1,'<i class=\"glyphicon glyphicon-random\"></i>','ProxySQL','{LINK}ProxySQL/main','ProxySQL','main',0,1,'');
-INSERT INTO `menu` VALUES (186,184,74,75,1,'<i class=\"glyphicon glyphicon-random\"></i>','HA Proxy','{LINK}Haproxy/main','Haproxy','main',0,1,'');
-INSERT INTO `menu` VALUES (187,184,76,77,1,'<i class=\"glyphicon glyphicon-random\"></i>','Maxscale','{LINK}Maxscale/main','Maxscale','main',0,1,'');
-INSERT INTO `menu` VALUES (188,184,78,79,1,'<i class=\"glyphicon glyphicon-random\"></i>','MySQL Proxy','{LINK}MysqlProxy/main','MysqlProxy','main',0,1,'');
-INSERT INTO `menu` VALUES (189,185,71,72,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a ProxySQL (Admin)','{LINK}ProxySQL/add','ProxySQL','add',0,1,'');
-INSERT INTO `menu` VALUES (190,103,81,84,1,'<img title=\"Server\" alt=\"Server\" height=\"16\" width=\"16\" src=\"{IMG}/icon/server2.svg\"/>','Server','{LINK}detail/index/','detail','index',0,1,'');
-INSERT INTO `menu` VALUES (191,190,82,83,1,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Graph','{LINK}graph/index/','graph','index',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -664,7 +656,7 @@ DROP TABLE IF EXISTS `menu_group`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `menu_group` (
   `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL DEFAULT '',
+  `title` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -691,13 +683,13 @@ DROP TABLE IF EXISTS `sharding`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sharding` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL DEFAULT '',
-  `prefix` varchar(20) NOT NULL DEFAULT '',
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `table_link` varchar(64) NOT NULL DEFAULT '',
+  `name` varchar(250) NOT NULL,
+  `prefix` varchar(20) NOT NULL,
+  `date` datetime NOT NULL,
+  `table_link` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `prefix` (`prefix`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -722,7 +714,7 @@ DROP TABLE IF EXISTS `ts_file`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ts_file` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `file_name` varchar(50) NOT NULL DEFAULT '',
+  `file_name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `file_name` (`file_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -737,7 +729,6 @@ LOCK TABLES `ts_file` WRITE;
 INSERT INTO `ts_file` VALUES (3,'answer');
 INSERT INTO `ts_file` VALUES (5,'database');
 INSERT INTO `ts_file` VALUES (2,'hardware');
-INSERT INTO `ts_file` VALUES (6,'service');
 INSERT INTO `ts_file` VALUES (1,'ssh_stats');
 INSERT INTO `ts_file` VALUES (4,'variable');
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
@@ -753,10 +744,10 @@ DROP TABLE IF EXISTS `ts_variable`;
 CREATE TABLE `ts_variable` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_ts_file` int(11) NOT NULL DEFAULT 3,
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `type` enum('INT','DOUBLE','TEXT','') NOT NULL DEFAULT 'INT' COMMENT '1 => int, 2 => double, 3 => text',
-  `from` varchar(64) NOT NULL DEFAULT '',
-  `radical` char(10) NOT NULL DEFAULT '',
+  `name` varchar(64) NOT NULL,
+  `type` enum('INT','DOUBLE','TEXT','') NOT NULL COMMENT '1 => int, 2 => double, 3 => text',
+  `from` varchar(64) NOT NULL,
+  `radical` char(10) NOT NULL,
   `is_derived` int(11) DEFAULT 1,
   `is_dynamic` int(11) DEFAULT 1 COMMENT 'only for global variables',
   PRIMARY KEY (`id`),
@@ -3098,28 +3089,6 @@ INSERT INTO `ts_variable` VALUES (2325,4,'performance_schema_max_program_instanc
 INSERT INTO `ts_variable` VALUES (2326,4,'performance_schema_max_table_lock_stat','INT','variables','general',1,1);
 INSERT INTO `ts_variable` VALUES (2327,4,'pam_winbind_workaround','TEXT','variables','general',1,1);
 INSERT INTO `ts_variable` VALUES (2328,4,'innodb_instant_alter_column_allowed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2329,4,'binlog_expire_logs_seconds','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2330,4,'binlog_row_metadata','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2331,4,'innodb_deadlock_report','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2332,4,'innodb_lru_flush_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2333,4,'innodb_max_purge_lag_wait','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2334,4,'innodb_read_only_compressed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2335,4,'old_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2336,4,'optimizer_max_sel_arg_weight','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2337,4,'sql_if_exists','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2338,4,'thread_pool_dedicated_listener','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2339,4,'thread_pool_exact_stats','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2340,4,'wsrep_strict_ddl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2341,4,'is_proxysql','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2342,3,'com_show_binlog_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2343,3,'feature_insert_returning','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2344,3,'innodb_buffer_pool_pages_lru_freed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2345,3,'resultset_metadata_skipped','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2346,3,'wsrep_flow_control_active','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2347,3,'wsrep_flow_control_requested','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2348,3,'wsrep_apply_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2349,3,'wsrep_gmcast_segment','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2350,3,'wsrep_provider_capabilities','TEXT','status','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3132,11 +3101,11 @@ DROP TABLE IF EXISTS `version`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `version` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `version` varchar(20) NOT NULL DEFAULT '',
-  `comment` text NOT NULL DEFAULT '',
+  `date` datetime NOT NULL,
+  `version` varchar(20) NOT NULL,
+  `comment` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3162,11 +3131,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.4.14-MariaDB-1:10.4.14+maria~bionic-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -3191,15 +3160,15 @@ CREATE TABLE `activity_events` (
   `user_id` int(11) DEFAULT NULL,
   `logged_as_user_id` int(11) DEFAULT NULL,
   `project_id` int(11) DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `data` longtext COLLATE utf8mb3_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
-  `created_at` bigint(20) NOT NULL DEFAULT 0,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8_unicode_ci DEFAULT NULL,
+  `data` longtext COLLATE utf8_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
+  `created_at` bigint(20) NOT NULL,
   PRIMARY KEY (`id`,`created_at`),
   KEY `IDX_1F1B74AA76ED395` (`user_id`),
   KEY `IDX_1F1B74A3A572148` (`logged_as_user_id`),
   KEY `IDX_1F1B74A166D1F9C` (`project_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
  PARTITION BY RANGE (`created_at`)
 (PARTITION `p1599170400` VALUES LESS THAN (1599170400) ENGINE = InnoDB,
  PARTITION `p1599256800` VALUES LESS THAN (1599256800) ENGINE = InnoDB);
@@ -3233,11 +3202,11 @@ DROP TABLE IF EXISTS `architecture`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `architecture` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `data` mediumblob NOT NULL DEFAULT '',
-  `display` mediumblob NOT NULL DEFAULT '',
-  `height` int(11) NOT NULL DEFAULT 0,
-  `width` int(11) NOT NULL DEFAULT 0,
+  `date` datetime NOT NULL,
+  `data` mediumblob NOT NULL,
+  `display` mediumblob NOT NULL,
+  `height` int(11) NOT NULL,
+  `width` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3251,22 +3220,22 @@ DROP TABLE IF EXISTS `archive`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `archive` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `id_backup_storage_area` int(11) NOT NULL DEFAULT 0,
-  `is_crypted` int(11) NOT NULL DEFAULT 0,
-  `md5_sql` char(32) NOT NULL DEFAULT '',
-  `size_sql` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `md5_compressed` char(32) NOT NULL DEFAULT '',
-  `size_compressed` int(11) NOT NULL DEFAULT 0,
-  `md5_crypted` char(32) NOT NULL DEFAULT '',
-  `md5_remote` char(32) NOT NULL DEFAULT '',
-  `size_remote` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `size_crypted` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `time_to_compress` int(11) NOT NULL DEFAULT 0,
-  `time_to_crypt` int(11) NOT NULL DEFAULT 0,
-  `time_to_transfert` int(11) NOT NULL DEFAULT 0,
-  `pathfile` text NOT NULL DEFAULT '',
+  `id_cleaner_main` int(11) NOT NULL,
+  `id_backup_storage_area` int(11) NOT NULL,
+  `is_crypted` int(11) NOT NULL,
+  `md5_sql` char(32) NOT NULL,
+  `size_sql` bigint(20) unsigned NOT NULL,
+  `md5_compressed` char(32) NOT NULL,
+  `size_compressed` int(11) NOT NULL,
+  `md5_crypted` char(32) NOT NULL,
+  `md5_remote` char(32) NOT NULL,
+  `size_remote` bigint(20) unsigned NOT NULL,
+  `size_crypted` bigint(20) unsigned NOT NULL,
+  `date` datetime NOT NULL,
+  `time_to_compress` int(11) NOT NULL,
+  `time_to_crypt` int(11) NOT NULL,
+  `time_to_transfert` int(11) NOT NULL,
+  `pathfile` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_backup_storage_area` (`id_backup_storage_area`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
@@ -3284,16 +3253,16 @@ DROP TABLE IF EXISTS `archive_load`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `archive_load` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `database` varchar(64) NOT NULL DEFAULT '',
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `id_cleaner_main` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `database` varchar(64) NOT NULL,
+  `date_start` datetime NOT NULL,
   `date_end` datetime DEFAULT NULL,
-  `progression` tinyint(4) NOT NULL DEFAULT 0,
-  `duration` int(11) NOT NULL DEFAULT 0,
-  `pid` int(11) NOT NULL DEFAULT 0,
-  `status` varchar(20) NOT NULL DEFAULT '',
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
+  `progression` tinyint(4) NOT NULL,
+  `duration` int(11) NOT NULL,
+  `pid` int(11) NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3307,9 +3276,9 @@ DROP TABLE IF EXISTS `archive_load_detail`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `archive_load_detail` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_archive` int(11) NOT NULL DEFAULT 0,
-  `id_archive_load` int(11) NOT NULL DEFAULT 0,
-  `status` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
+  `id_archive` int(11) NOT NULL,
+  `id_archive_load` int(11) NOT NULL,
+  `status` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `md5_sql` char(32) NOT NULL DEFAULT '',
   `md5_compressed` char(32) NOT NULL DEFAULT '',
   `md5_crypted` char(32) NOT NULL DEFAULT '',
@@ -3342,29 +3311,29 @@ DROP TABLE IF EXISTS `backup_database`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_database` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_backup_dump` int(11) NOT NULL DEFAULT 0,
-  `database_name` int(11) NOT NULL DEFAULT 0,
-  `file_name` varchar(250) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `is_active` int(11) NOT NULL DEFAULT 0,
-  `is_completed` int(11) NOT NULL DEFAULT 0,
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `master_data` text NOT NULL DEFAULT '',
-  `slave_data` text NOT NULL DEFAULT '',
-  `time_backup` int(11) NOT NULL DEFAULT 0,
-  `time_compress` int(11) NOT NULL DEFAULT 0,
-  `time_transfer` int(11) NOT NULL DEFAULT 0,
-  `size_file` int(11) NOT NULL DEFAULT 0,
-  `size_compress` int(11) NOT NULL DEFAULT 0,
-  `size_transfer` int(11) NOT NULL DEFAULT 0,
-  `md5_file` int(11) NOT NULL DEFAULT 0,
-  `md5_compress` int(11) NOT NULL DEFAULT 0,
-  `md5_transfer` int(11) NOT NULL DEFAULT 0,
+  `id_backup_dump` int(11) NOT NULL,
+  `database_name` int(11) NOT NULL,
+  `file_name` varchar(250) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `is_active` int(11) NOT NULL,
+  `is_completed` int(11) NOT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `master_data` text NOT NULL,
+  `slave_data` text NOT NULL,
+  `time_backup` int(11) NOT NULL,
+  `time_compress` int(11) NOT NULL,
+  `time_transfer` int(11) NOT NULL,
+  `size_file` int(11) NOT NULL,
+  `size_compress` int(11) NOT NULL,
+  `size_transfer` int(11) NOT NULL,
+  `md5_file` int(11) NOT NULL,
+  `md5_compress` int(11) NOT NULL,
+  `md5_transfer` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_database` (`database_name`),
   KEY `id_backup_dump` (`id_backup_dump`),
   CONSTRAINT `backup_database_ibfk_1` FOREIGN KEY (`id_backup_dump`) REFERENCES `backup_dump` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3376,10 +3345,10 @@ DROP TABLE IF EXISTS `backup_dump`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_dump` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_backup_main` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_job` int(11) NOT NULL DEFAULT 0,
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `id_backup_main` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_job` int(11) NOT NULL,
+  `date_start` datetime NOT NULL,
   `date_end` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `id_backup_database` (`id_mysql_server`),
@@ -3400,14 +3369,14 @@ DROP TABLE IF EXISTS `backup_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_backup_storage_area` int(11) NOT NULL DEFAULT 0,
-  `id_backup_type` int(11) NOT NULL DEFAULT 0,
-  `id_crontab` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(64) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
-  `database` text NOT NULL DEFAULT '' COMMENT 'if = 0 we backup all, else database coma separated',
-  `date_inserted` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `is_active` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_backup_storage_area` int(11) NOT NULL,
+  `id_backup_type` int(11) NOT NULL,
+  `id_crontab` int(11) NOT NULL,
+  `name` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+  `database` text NOT NULL COMMENT 'if = 0 we backup all, else database coma separated',
+  `date_inserted` datetime NOT NULL,
+  `is_active` int(11) NOT NULL,
   `is_hide` int(11) NOT NULL DEFAULT 0,
   `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
@@ -3431,18 +3400,18 @@ DROP TABLE IF EXISTS `backup_storage_area`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_storage_area` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_ssh_key` int(11) NOT NULL DEFAULT 0,
-  `id_geolocalisation_city` int(11) NOT NULL DEFAULT 0,
-  `id_geolocalisation_country` int(11) NOT NULL DEFAULT 0,
-  `ip` varchar(15) NOT NULL DEFAULT '',
-  `port` int(11) NOT NULL DEFAULT 0,
-  `path` text NOT NULL DEFAULT '',
-  `libelle` varchar(64) NOT NULL DEFAULT '',
+  `id_ssh_key` int(11) NOT NULL,
+  `id_geolocalisation_city` int(11) NOT NULL,
+  `id_geolocalisation_country` int(11) NOT NULL,
+  `ip` varchar(15) NOT NULL,
+  `port` int(11) NOT NULL,
+  `path` text NOT NULL,
+  `libelle` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_geolocalisation_city` (`id_geolocalisation_city`,`id_geolocalisation_country`),
   KEY `id_ssh_key` (`id_ssh_key`),
   CONSTRAINT `backup_storage_area_ibfk_1` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3454,17 +3423,17 @@ DROP TABLE IF EXISTS `backup_storage_space`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `backup_storage_space` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_backup_storage_area` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `size` bigint(20) NOT NULL DEFAULT 0,
-  `used` bigint(20) NOT NULL DEFAULT 0,
-  `available` bigint(20) NOT NULL DEFAULT 0,
-  `percent` int(11) NOT NULL DEFAULT 0,
-  `backup` bigint(20) NOT NULL DEFAULT 0,
+  `id_backup_storage_area` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `size` bigint(20) NOT NULL,
+  `used` bigint(20) NOT NULL,
+  `available` bigint(20) NOT NULL,
+  `percent` int(11) NOT NULL,
+  `backup` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_backup_storage_area` (`id_backup_storage_area`),
   CONSTRAINT `backup_storage_space_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3476,16 +3445,16 @@ DROP TABLE IF EXISTS `benchmark_config`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `benchmark_config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `threads` text NOT NULL DEFAULT '',
-  `lua_script` varchar(255) NOT NULL DEFAULT '',
-  `tables_count` int(11) NOT NULL DEFAULT 0,
-  `table_size` int(11) NOT NULL DEFAULT 0,
-  `max_time` int(11) NOT NULL DEFAULT 0,
-  `mode` varchar(64) NOT NULL DEFAULT '',
-  `read_only` char(3) NOT NULL DEFAULT '',
-  `pid` int(11) NOT NULL DEFAULT 0,
+  `threads` text NOT NULL,
+  `lua_script` varchar(255) NOT NULL,
+  `tables_count` int(11) NOT NULL,
+  `table_size` int(11) NOT NULL,
+  `max_time` int(11) NOT NULL,
+  `mode` varchar(64) NOT NULL,
+  `read_only` char(3) NOT NULL,
+  `pid` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3497,24 +3466,24 @@ DROP TABLE IF EXISTS `benchmark_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `benchmark_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `sysbench_version` varchar(64) NOT NULL DEFAULT '',
-  `threads` text NOT NULL DEFAULT '',
-  `tables_count` int(11) NOT NULL DEFAULT 0,
-  `table_size` int(11) NOT NULL DEFAULT 0,
-  `max_time` int(11) NOT NULL DEFAULT 0,
-  `mode` varchar(10) NOT NULL DEFAULT '',
-  `read_only` char(3) NOT NULL DEFAULT '',
-  `status` varchar(20) NOT NULL DEFAULT '',
-  `progression` float NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `sysbench_version` varchar(64) NOT NULL,
+  `threads` text NOT NULL,
+  `tables_count` int(11) NOT NULL,
+  `table_size` int(11) NOT NULL,
+  `max_time` int(11) NOT NULL,
+  `mode` varchar(10) NOT NULL,
+  `read_only` char(3) NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `progression` float NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `benchmark_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3526,24 +3495,24 @@ DROP TABLE IF EXISTS `benchmark_run`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `benchmark_run` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_benchmark_main` int(11) NOT NULL DEFAULT 0,
-  `date` date NOT NULL DEFAULT '0000-00-00',
-  `threads` int(11) NOT NULL DEFAULT 0,
-  `read` int(11) NOT NULL DEFAULT 0,
-  `write` int(11) NOT NULL DEFAULT 0,
-  `other` int(11) NOT NULL DEFAULT 0,
-  `total` int(11) NOT NULL DEFAULT 0,
-  `transaction` int(11) NOT NULL DEFAULT 0,
-  `error` int(11) NOT NULL DEFAULT 0,
-  `time` double NOT NULL DEFAULT 0,
-  `reponse_min` double NOT NULL DEFAULT 0,
-  `reponse_max` double NOT NULL DEFAULT 0,
-  `reponse_avg` double NOT NULL DEFAULT 0,
-  `reponse_percentile95` double NOT NULL DEFAULT 0,
+  `id_benchmark_main` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `threads` int(11) NOT NULL,
+  `read` int(11) NOT NULL,
+  `write` int(11) NOT NULL,
+  `other` int(11) NOT NULL,
+  `total` int(11) NOT NULL,
+  `transaction` int(11) NOT NULL,
+  `error` int(11) NOT NULL,
+  `time` double NOT NULL,
+  `reponse_min` double NOT NULL,
+  `reponse_max` double NOT NULL,
+  `reponse_avg` double NOT NULL,
+  `reponse_percentile95` double NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_benchmark_main` (`id_benchmark_main`),
   CONSTRAINT `benchmark_run_ibfk_1` FOREIGN KEY (`id_benchmark_main`) REFERENCES `benchmark_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3555,15 +3524,15 @@ DROP TABLE IF EXISTS `binlog_backup`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `binlog_backup` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `logfile_name` varchar(64) NOT NULL DEFAULT '',
-  `logfile_size` bigint(20) NOT NULL DEFAULT 0,
-  `md5` char(32) NOT NULL DEFAULT '',
-  `date_backup` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `id_mysql_server` int(11) NOT NULL,
+  `logfile_name` varchar(64) NOT NULL,
+  `logfile_size` bigint(20) NOT NULL,
+  `md5` char(32) NOT NULL,
+  `date_backup` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`logfile_name`),
   CONSTRAINT `binlog_backup_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3575,13 +3544,13 @@ DROP TABLE IF EXISTS `binlog_history`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `binlog_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_binlog_max` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `file` varchar(64) NOT NULL DEFAULT '',
+  `id_binlog_max` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `file` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_binlog_max` (`id_binlog_max`),
   CONSTRAINT `binlog_history_ibfk_1` FOREIGN KEY (`id_binlog_max`) REFERENCES `binlog_max` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3593,12 +3562,12 @@ DROP TABLE IF EXISTS `binlog_max`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `binlog_max` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `size_max` bigint(20) NOT NULL DEFAULT 0,
-  `number_file_max` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `size_max` bigint(20) NOT NULL,
+  `number_file_max` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3610,15 +3579,15 @@ DROP TABLE IF EXISTS `cleaner_alert`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cleaner_alert` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `level` int(11) NOT NULL DEFAULT 0,
+  `id_cleaner_main` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `level` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `cleaner_alert_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`),
   CONSTRAINT `cleaner_alert_ibfk_2` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3630,17 +3599,17 @@ DROP TABLE IF EXISTS `cleaner_foreign_key`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cleaner_foreign_key` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
-  `constraint_table` varchar(64) NOT NULL DEFAULT '',
-  `constraint_column` varchar(64) NOT NULL DEFAULT '',
-  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
-  `referenced_table` varchar(64) NOT NULL DEFAULT '',
-  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `id_cleaner_main` int(11) NOT NULL,
+  `constraint_schema` varchar(64) NOT NULL,
+  `constraint_table` varchar(64) NOT NULL,
+  `constraint_column` varchar(64) NOT NULL,
+  `referenced_schema` varchar(64) NOT NULL,
+  `referenced_table` varchar(64) NOT NULL,
+  `referenced_column` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_foreign_key_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3652,18 +3621,18 @@ DROP TABLE IF EXISTS `cleaner_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cleaner_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
   `id_backup_storage_area` int(11) DEFAULT 0,
-  `is_crypted` int(11) NOT NULL DEFAULT 0,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `database` varchar(64) NOT NULL DEFAULT '',
-  `libelle` varchar(50) NOT NULL DEFAULT '',
-  `main_table` varchar(64) NOT NULL DEFAULT '',
-  `query` text NOT NULL DEFAULT '',
-  `wait_time_in_sec` int(11) NOT NULL DEFAULT 0,
+  `is_crypted` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `database` varchar(64) NOT NULL,
+  `libelle` varchar(50) NOT NULL,
+  `main_table` varchar(64) NOT NULL,
+  `query` text NOT NULL,
+  `wait_time_in_sec` int(11) NOT NULL,
   `log_file` varchar(250) NOT NULL DEFAULT '',
-  `cleaner_db` varchar(50) NOT NULL DEFAULT '',
-  `prefix` varchar(50) NOT NULL DEFAULT '',
+  `cleaner_db` varchar(50) NOT NULL,
+  `prefix` varchar(50) NOT NULL,
   `pid` int(11) NOT NULL DEFAULT 0,
   `limit` int(11) NOT NULL DEFAULT 1000,
   PRIMARY KEY (`id`),
@@ -3671,7 +3640,7 @@ CREATE TABLE `cleaner_main` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_mysql_database` (`database`),
   CONSTRAINT `cleaner_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3682,13 +3651,13 @@ DROP TABLE IF EXISTS `cleaner_table`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cleaner_table` (
-  `id` int(11) NOT NULL DEFAULT 0,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `table_name` varchar(50) NOT NULL DEFAULT '',
+  `id` int(11) NOT NULL,
+  `id_cleaner_main` int(11) NOT NULL,
+  `table_name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_table_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3700,7 +3669,7 @@ DROP TABLE IF EXISTS `client`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `client` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(100) NOT NULL DEFAULT '',
+  `libelle` varchar(100) NOT NULL,
   `logo` varchar(250) NOT NULL DEFAULT '',
   `date` datetime NOT NULL DEFAULT current_timestamp(),
   `is_monitored` int(11) NOT NULL DEFAULT 1,
@@ -3718,16 +3687,16 @@ DROP TABLE IF EXISTS `crontab`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `crontab` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `minute` char(10) NOT NULL DEFAULT '',
-  `hour` char(10) NOT NULL DEFAULT '',
-  `day_of_month` char(10) NOT NULL DEFAULT '',
-  `month` char(10) NOT NULL DEFAULT '',
-  `day_of_week` char(10) NOT NULL DEFAULT '',
-  `command` text NOT NULL DEFAULT '',
-  `comment` text NOT NULL DEFAULT '',
+  `minute` char(10) NOT NULL,
+  `hour` char(10) NOT NULL,
+  `day_of_month` char(10) NOT NULL,
+  `month` char(10) NOT NULL,
+  `day_of_week` char(10) NOT NULL,
+  `command` text NOT NULL,
+  `comment` text NOT NULL,
   `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3739,14 +3708,14 @@ DROP TABLE IF EXISTS `crontab_history`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `crontab_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_crontab` int(11) NOT NULL DEFAULT 0,
-  `date_started` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `code_retour` int(11) NOT NULL DEFAULT 0,
+  `id_crontab` int(11) NOT NULL,
+  `date_started` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `code_retour` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_crontab` (`id_crontab`),
   CONSTRAINT `crontab_history_ibfk_1` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3758,8 +3727,8 @@ DROP TABLE IF EXISTS `daemon_worker`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `daemon_worker` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_daemon_main` int(11) NOT NULL DEFAULT 0,
-  `pid` int(11) NOT NULL DEFAULT 0,
+  `id_daemon_main` int(11) NOT NULL,
+  `pid` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_daemon_main` (`id_daemon_main`),
   CONSTRAINT `daemon_worker_ibfk_1` FOREIGN KEY (`id_daemon_main`) REFERENCES `daemon_main` (`id`)
@@ -3775,9 +3744,9 @@ DROP TABLE IF EXISTS `dictionary_port`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dictionary_port` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_dictionary_serveur` int(11) NOT NULL DEFAULT 0,
-  `id_dictionary_service` int(11) NOT NULL DEFAULT 0,
-  `port` int(11) NOT NULL DEFAULT 0,
+  `id_dictionary_serveur` int(11) NOT NULL,
+  `id_dictionary_service` int(11) NOT NULL,
+  `port` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3791,9 +3760,9 @@ DROP TABLE IF EXISTS `dictionary_serveur`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dictionary_serveur` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ip` char(15) NOT NULL DEFAULT '',
-  `dns` varchar(200) NOT NULL DEFAULT '',
-  `comment` text NOT NULL DEFAULT '',
+  `ip` char(15) NOT NULL,
+  `dns` varchar(200) NOT NULL,
+  `comment` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3807,9 +3776,9 @@ DROP TABLE IF EXISTS `dictionary_service`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dictionary_service` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_dictionary_serveur` int(11) NOT NULL DEFAULT 0,
-  `port_default` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(100) NOT NULL DEFAULT '',
+  `id_dictionary_serveur` int(11) NOT NULL,
+  `port_default` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3823,23 +3792,23 @@ DROP TABLE IF EXISTS `ha_proxy_stats`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ha_proxy_stats` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_haproxy_main` int(11) NOT NULL DEFAULT 0,
-  `id_haprox_input` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `server_status` char(10) NOT NULL DEFAULT '',
-  `server_role` int(11) NOT NULL DEFAULT 0,
-  `queue_cur` int(11) NOT NULL DEFAULT 0,
-  `queue_max` int(11) NOT NULL DEFAULT 0,
-  `queue_limit` int(11) NOT NULL DEFAULT 0,
-  `session_rate_cur` int(11) NOT NULL DEFAULT 0,
-  `session_rate_max` int(11) NOT NULL DEFAULT 0,
-  `session_rate_limit` int(11) NOT NULL DEFAULT 0,
-  `session_cur` int(11) NOT NULL DEFAULT 0,
-  `session_max` int(11) NOT NULL DEFAULT 0,
-  `session_limit` int(11) NOT NULL DEFAULT 0,
-  `bytes_in` int(11) NOT NULL DEFAULT 0,
-  `bytes_out` int(11) NOT NULL DEFAULT 0,
-  `enabled` int(11) NOT NULL DEFAULT 0,
+  `id_haproxy_main` int(11) NOT NULL,
+  `id_haprox_input` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `server_status` char(10) NOT NULL,
+  `server_role` int(11) NOT NULL,
+  `queue_cur` int(11) NOT NULL,
+  `queue_max` int(11) NOT NULL,
+  `queue_limit` int(11) NOT NULL,
+  `session_rate_cur` int(11) NOT NULL,
+  `session_rate_max` int(11) NOT NULL,
+  `session_rate_limit` int(11) NOT NULL,
+  `session_cur` int(11) NOT NULL,
+  `session_max` int(11) NOT NULL,
+  `session_limit` int(11) NOT NULL,
+  `bytes_in` int(11) NOT NULL,
+  `bytes_out` int(11) NOT NULL,
+  `enabled` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_haproxy_main` (`id_haproxy_main`),
   KEY `id_haprox_input` (`id_haprox_input`),
@@ -3857,17 +3826,17 @@ DROP TABLE IF EXISTS `haproxy_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `haproxy_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `hostname` varchar(100) NOT NULL DEFAULT '',
-  `ip` char(15) NOT NULL DEFAULT '',
-  `vip` char(15) NOT NULL DEFAULT '',
-  `csv` varchar(250) NOT NULL DEFAULT '',
-  `stats_login` varchar(50) NOT NULL DEFAULT '',
-  `stats_password` varchar(50) NOT NULL DEFAULT '',
-  `private_key` varchar(250) NOT NULL DEFAULT '',
-  `user_private_key` varchar(25) NOT NULL DEFAULT '',
-  `path_conf` varchar(200) NOT NULL DEFAULT '',
-  `date_refresh` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `config` text NOT NULL DEFAULT '',
+  `hostname` varchar(100) NOT NULL,
+  `ip` char(15) NOT NULL,
+  `vip` char(15) NOT NULL,
+  `csv` varchar(250) NOT NULL,
+  `stats_login` varchar(50) NOT NULL,
+  `stats_password` varchar(50) NOT NULL,
+  `private_key` varchar(250) NOT NULL,
+  `user_private_key` varchar(25) NOT NULL,
+  `path_conf` varchar(200) NOT NULL,
+  `date_refresh` datetime NOT NULL,
+  `config` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3881,11 +3850,11 @@ DROP TABLE IF EXISTS `haproxy_main_input`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `haproxy_main_input` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_haproxy_main` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `mask` varchar(15) NOT NULL DEFAULT '',
-  `port` int(11) NOT NULL DEFAULT 0,
-  `mode` varchar(30) NOT NULL DEFAULT '',
+  `id_haproxy_main` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `mask` varchar(15) NOT NULL,
+  `port` int(11) NOT NULL,
+  `mode` varchar(30) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_haproxy_main` (`id_haproxy_main`),
   CONSTRAINT `haproxy_main_input_ibfk_1` FOREIGN KEY (`id_haproxy_main`) REFERENCES `haproxy_main` (`id`)
@@ -3901,12 +3870,12 @@ DROP TABLE IF EXISTS `haproxy_main_output`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `haproxy_main_output` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_haproxy_input` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `ip` varchar(15) NOT NULL DEFAULT '',
-  `port` int(11) NOT NULL DEFAULT 0,
-  `check_port` int(11) NOT NULL DEFAULT 0,
-  `extra` varchar(200) NOT NULL DEFAULT '',
+  `id_haproxy_input` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `ip` varchar(15) NOT NULL,
+  `port` int(11) NOT NULL,
+  `check_port` int(11) NOT NULL,
+  `extra` varchar(200) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_haproxy_input` (`id_haproxy_input`),
   CONSTRAINT `haproxy_main_output_ibfk_1` FOREIGN KEY (`id_haproxy_input`) REFERENCES `haproxy_main_input` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -3922,11 +3891,11 @@ DROP TABLE IF EXISTS `history_action`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_action` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) NOT NULL DEFAULT '',
-  `action` varchar(80) NOT NULL DEFAULT '',
-  `point` int(11) NOT NULL DEFAULT 0,
+  `title` varchar(50) NOT NULL,
+  `action` varchar(80) NOT NULL,
+  `point` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3938,14 +3907,14 @@ DROP TABLE IF EXISTS `history_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_history_table` int(11) NOT NULL DEFAULT 0,
-  `line` int(11) NOT NULL DEFAULT 0,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `id_history_action` int(11) NOT NULL DEFAULT 0,
-  `param` text NOT NULL DEFAULT '',
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `id_history_etat` int(11) NOT NULL DEFAULT 0,
-  `type` char(10) NOT NULL DEFAULT '',
+  `id_history_table` int(11) NOT NULL,
+  `line` int(11) NOT NULL,
+  `id_user_main` int(11) NOT NULL,
+  `id_history_action` int(11) NOT NULL,
+  `param` text NOT NULL,
+  `date` datetime NOT NULL,
+  `id_history_etat` int(11) NOT NULL,
+  `type` char(10) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_history_etat` (`id_history_etat`),
   KEY `id_history_table` (`id_history_table`),
@@ -3956,7 +3925,7 @@ CREATE TABLE `history_main` (
   CONSTRAINT `history_main_ibfk_3` FOREIGN KEY (`id_history_action`) REFERENCES `history_action` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_4` FOREIGN KEY (`id_history_table`) REFERENCES `history_table` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_5` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3968,11 +3937,11 @@ DROP TABLE IF EXISTS `history_table`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_table` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `date_insterted` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `date_insterted` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `Name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3984,18 +3953,18 @@ DROP TABLE IF EXISTS `job`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `job` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) NOT NULL DEFAULT '',
-  `class` varchar(64) NOT NULL DEFAULT '',
-  `method` varchar(64) NOT NULL DEFAULT '',
-  `param` text NOT NULL DEFAULT '',
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `uuid` char(36) NOT NULL,
+  `class` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `param` text NOT NULL,
+  `date_start` datetime NOT NULL,
   `date_end` datetime DEFAULT NULL,
-  `pid` int(11) NOT NULL DEFAULT 0,
-  `log` varchar(255) NOT NULL DEFAULT '',
-  `error` varchar(255) NOT NULL DEFAULT '',
+  `pid` int(11) NOT NULL,
+  `log` varchar(255) NOT NULL,
+  `error` varchar(255) NOT NULL,
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4007,8 +3976,8 @@ DROP TABLE IF EXISTS `ldap_group`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ldap_group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_group` int(11) NOT NULL DEFAULT 0,
-  `cn` text NOT NULL DEFAULT '',
+  `id_group` int(11) NOT NULL,
+  `cn` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_group` (`id_group`),
   CONSTRAINT `ldap_group_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`)
@@ -4024,8 +3993,8 @@ DROP TABLE IF EXISTS `link__architecture__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__architecture__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_architecture` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_architecture` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_architecture`),
   KEY `id_architecture` (`id_architecture`),
@@ -4043,8 +4012,8 @@ DROP TABLE IF EXISTS `link__haproxy_main_output__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__haproxy_main_output__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_haproxy_output` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `id_haproxy_output` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_haproxy_output` (`id_haproxy_output`),
   KEY `id_mysql_server` (`id_mysql_server`),
@@ -4062,9 +4031,9 @@ DROP TABLE IF EXISTS `link__master__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__master__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_master_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
+  `id_master_name` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4078,16 +4047,16 @@ DROP TABLE IF EXISTS `link__mysql_database__mysql_replication_thread`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__mysql_database__mysql_replication_thread` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_database` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_replication_thread` int(11) NOT NULL DEFAULT 0,
-  `replicate_do_db` int(11) NOT NULL DEFAULT 0,
-  `replicate_ignore_db` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_database` int(11) NOT NULL,
+  `id_mysql_replication_thread` int(11) NOT NULL,
+  `replicate_do_db` int(11) NOT NULL,
+  `replicate_ignore_db` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_database` (`id_mysql_database`,`id_mysql_replication_thread`),
   KEY `id_mysql_replication_thread` (`id_mysql_replication_thread`),
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_database`) REFERENCES `mysql_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_2` FOREIGN KEY (`id_mysql_replication_thread`) REFERENCES `mysql_replication_thread` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4099,10 +4068,10 @@ DROP TABLE IF EXISTS `link__mysql_server__ssh_key`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__mysql_server__ssh_key` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_ssh_key` int(11) NOT NULL DEFAULT 0,
-  `added_on` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `active` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ssh_key` int(11) NOT NULL,
+  `added_on` datetime NOT NULL,
+  `active` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_ssh_key` (`id_ssh_key`),
@@ -4120,8 +4089,8 @@ DROP TABLE IF EXISTS `link__mysql_server__tag`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__mysql_server__tag` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_tag` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_tag` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_tag`),
   KEY `id_tag` (`id_tag`),
@@ -4139,9 +4108,9 @@ DROP TABLE IF EXISTS `link__slave__mysql_replication_thread`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__slave__mysql_replication_thread` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_slave_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_replication_thread` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
+  `id_slave_name` int(11) NOT NULL,
+  `id_mysql_replication_thread` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4155,9 +4124,9 @@ DROP TABLE IF EXISTS `link__slave__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__slave__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_slave_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
+  `id_slave_name` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4171,9 +4140,9 @@ DROP TABLE IF EXISTS `link__status__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__status__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_status_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
+  `id_status_name` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4187,8 +4156,8 @@ DROP TABLE IF EXISTS `link__ts_variable__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__ts_variable__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_ts_variable` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_gg` (`id_mysql_server`,`id_ts_variable`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -4203,9 +4172,9 @@ DROP TABLE IF EXISTS `link__variables__mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `link__variables__mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_variables_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
+  `id_variables_name` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4219,22 +4188,22 @@ DROP TABLE IF EXISTS `mysql_database`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_database` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `tables` int(11) NOT NULL DEFAULT 0,
-  `rows` bigint(20) NOT NULL DEFAULT 0,
-  `data_length` bigint(20) NOT NULL DEFAULT 0,
-  `data_free` bigint(20) NOT NULL DEFAULT 0,
-  `index_length` bigint(20) NOT NULL DEFAULT 0,
-  `collation_name` varchar(64) NOT NULL DEFAULT '',
-  `character_set_name` varchar(32) NOT NULL DEFAULT '',
-  `binlog_do_db` int(11) NOT NULL DEFAULT 0,
-  `binlog_ignore_db` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `tables` int(11) NOT NULL,
+  `rows` bigint(20) NOT NULL,
+  `data_length` bigint(20) NOT NULL,
+  `data_free` bigint(20) NOT NULL,
+  `index_length` bigint(20) NOT NULL,
+  `collation_name` varchar(64) NOT NULL,
+  `character_set_name` varchar(32) NOT NULL,
+  `binlog_do_db` int(11) NOT NULL,
+  `binlog_ignore_db` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4246,20 +4215,20 @@ DROP TABLE IF EXISTS `mysql_dump`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_dump` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_backup_database` int(11) NOT NULL DEFAULT 0,
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `time` int(11) NOT NULL DEFAULT 0,
-  `database` varchar(30) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `file_name` varchar(191) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `size` bigint(11) NOT NULL DEFAULT 0,
-  `md5` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `id_mysql_server` int(11) NOT NULL,
+  `id_backup_database` int(11) NOT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `time` int(11) NOT NULL,
+  `database` varchar(30) CHARACTER SET utf8 NOT NULL,
+  `file_name` varchar(191) CHARACTER SET utf8 NOT NULL,
+  `size` bigint(11) NOT NULL,
+  `md5` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `is_gziped` int(11) NOT NULL DEFAULT 0,
   `is_available` int(11) NOT NULL DEFAULT 1,
-  `is_completed` int(11) NOT NULL DEFAULT 0,
-  `master_data` text CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `slave_data` text CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `is_completed` int(11) NOT NULL,
+  `master_data` text CHARACTER SET utf8 NOT NULL,
+  `slave_data` text CHARACTER SET utf8 NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_serveur` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
@@ -4277,18 +4246,18 @@ DROP TABLE IF EXISTS `mysql_event`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_event` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_status` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `message` varchar(250) NOT NULL DEFAULT '',
-  `serialized` text NOT NULL DEFAULT '',
+  `id_mysql_server` int(11) NOT NULL,
+  `id_mysql_status` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `message` varchar(250) NOT NULL,
+  `serialized` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_mysql_server_2` (`id_mysql_server`),
   KEY `id_mysql_status` (`id_mysql_status`),
   CONSTRAINT `mysql_event_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `mysql_event_ibfk_2` FOREIGN KEY (`id_mysql_status`) REFERENCES `mysql_status` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4300,16 +4269,16 @@ DROP TABLE IF EXISTS `mysql_node`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_node` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_galera` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `size` int(11) NOT NULL DEFAULT 0,
-  `ready` int(11) NOT NULL DEFAULT 0,
-  `status` int(11) NOT NULL DEFAULT 0,
-  `nodes` varchar(200) NOT NULL DEFAULT '',
+  `id_mysql_galera` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `size` int(11) NOT NULL,
+  `ready` int(11) NOT NULL,
+  `status` int(11) NOT NULL,
+  `nodes` varchar(200) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_galera` (`id_mysql_galera`),
   KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4321,10 +4290,10 @@ DROP TABLE IF EXISTS `mysql_privilege`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_privilege` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type` varchar(25) NOT NULL DEFAULT '',
-  `privilege` varchar(25) NOT NULL DEFAULT '',
+  `type` varchar(25) NOT NULL,
+  `privilege` varchar(25) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4336,24 +4305,24 @@ DROP TABLE IF EXISTS `mysql_replication_stats`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_replication_stats` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `version` varchar(20) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `is_available` int(11) NOT NULL DEFAULT 0,
-  `is_master` int(11) NOT NULL DEFAULT 0,
-  `is_slave` int(11) NOT NULL DEFAULT 0,
-  `ping` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_server` int(11) NOT NULL,
+  `version` varchar(20) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `date` datetime NOT NULL,
+  `is_available` int(11) NOT NULL,
+  `is_master` int(11) NOT NULL,
+  `is_slave` int(11) NOT NULL,
+  `ping` int(11) NOT NULL,
   `file` varchar(200) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `position` int(11) NOT NULL DEFAULT 0,
   `databases` varchar(200) NOT NULL DEFAULT '',
   `uptime` int(11) NOT NULL DEFAULT 0,
-  `time_zone` varchar(50) NOT NULL DEFAULT '',
-  `binlog_format` varchar(20) NOT NULL DEFAULT '',
+  `time_zone` varchar(50) NOT NULL,
+  `binlog_format` varchar(20) NOT NULL,
   `ssh_ok` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_replication_stats_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='1.9.6';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='1.9.6';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4365,19 +4334,19 @@ DROP TABLE IF EXISTS `mysql_replication_thread`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_replication_thread` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_replication_stats` int(11) NOT NULL DEFAULT 0,
-  `relay_master_log_file` varchar(200) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `exec_master_log_pos` int(11) NOT NULL DEFAULT 0,
-  `thread_io` varchar(65) NOT NULL DEFAULT '',
-  `thread_sql` varchar(65) NOT NULL DEFAULT '',
-  `thread_name` varchar(100) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `time_behind` varchar(11) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
-  `master_host` char(15) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `master_port` int(11) NOT NULL DEFAULT 0,
-  `last_io_error` text NOT NULL DEFAULT '',
-  `last_sql_error` text NOT NULL DEFAULT '',
-  `last_sql_errno` int(11) NOT NULL DEFAULT 0,
-  `last_io_errno` int(11) NOT NULL DEFAULT 0,
+  `id_mysql_replication_stats` int(11) NOT NULL,
+  `relay_master_log_file` varchar(200) CHARACTER SET utf8 NOT NULL,
+  `exec_master_log_pos` int(11) NOT NULL,
+  `thread_io` varchar(65) NOT NULL,
+  `thread_sql` varchar(65) NOT NULL,
+  `thread_name` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `time_behind` varchar(11) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `master_host` char(15) CHARACTER SET utf8 NOT NULL,
+  `master_port` int(11) NOT NULL,
+  `last_io_error` text NOT NULL,
+  `last_sql_error` text NOT NULL,
+  `last_sql_errno` int(11) NOT NULL,
+  `last_io_errno` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_replication_stats` (`id_mysql_replication_stats`,`thread_name`),
   CONSTRAINT `mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_replication_stats`) REFERENCES `mysql_replication_stats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -4393,19 +4362,17 @@ DROP TABLE IF EXISTS `mysql_server`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_client` int(11) NOT NULL DEFAULT 0,
-  `id_environment` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_type` int(11) NOT NULL DEFAULT 1,
-  `name` varchar(100) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `display_name` varchar(100) NOT NULL DEFAULT '',
-  `display` int(11) NOT NULL DEFAULT 0,
-  `ip` char(15) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `id_client` int(11) NOT NULL,
+  `id_environment` int(11) NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `display_name` varchar(100) NOT NULL,
+  `ip` char(15) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `hostname` varchar(200) NOT NULL DEFAULT '',
-  `login` varchar(32) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `passwd` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `database` varchar(64) NOT NULL DEFAULT '',
-  `is_password_crypted` int(11) NOT NULL DEFAULT 0,
-  `port` int(11) NOT NULL DEFAULT 0,
+  `login` varchar(32) CHARACTER SET utf8 NOT NULL,
+  `passwd` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `database` varchar(64) NOT NULL,
+  `is_password_crypted` int(11) NOT NULL,
+  `port` int(11) NOT NULL,
   `ssh_port` int(11) NOT NULL DEFAULT 22,
   `ssh_login` text CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '\'\'',
   `is_sudo` int(11) NOT NULL DEFAULT 0,
@@ -4425,10 +4392,8 @@ CREATE TABLE `mysql_server` (
   KEY `id_client` (`id_client`),
   KEY `id_environment` (`id_environment`),
   KEY `is_monitored` (`is_monitored`,`id_client`),
-  KEY `id_mysql_type` (`id_mysql_type`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
-  CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`),
-  CONSTRAINT `mysql_server_ibfk_3` FOREIGN KEY (`id_mysql_type`) REFERENCES `mysql_type` (`id`)
+  CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4441,28 +4406,11 @@ DROP TABLE IF EXISTS `mysql_status`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mysql_status` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(50) NOT NULL DEFAULT '',
-  `color` int(11) NOT NULL DEFAULT 0,
+  `libelle` varchar(50) NOT NULL,
+  `color` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `mysql_type`
---
-
-DROP TABLE IF EXISTS `mysql_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mysql_type` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type` varchar(64) NOT NULL DEFAULT '',
-  `is_proxy` tinyint(4) NOT NULL DEFAULT 0,
-  `is_admin` tinyint(4) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `type` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4479,7 +4427,7 @@ CREATE TABLE `mysql_variable` (
   `value` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`variable`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4491,11 +4439,11 @@ DROP TABLE IF EXISTS `myxplain`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `myxplain` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `command` text NOT NULL DEFAULT '',
-  `explain` text NOT NULL DEFAULT '',
-  `duration` double NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `name` varchar(64) NOT NULL,
+  `command` text NOT NULL,
+  `explain` text NOT NULL,
+  `duration` double NOT NULL,
+  `date` datetime NOT NULL,
   `json` text NOT NULL DEFAULT '' COMMENT 'used in future for explain format=json',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -4510,11 +4458,11 @@ DROP TABLE IF EXISTS `objet`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `objet` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `table_name` varchar(64) NOT NULL DEFAULT '',
-  `reference_id` int(11) NOT NULL DEFAULT 0,
-  `ip` char(15) NOT NULL DEFAULT '',
+  `table_name` varchar(64) NOT NULL,
+  `reference_id` int(11) NOT NULL,
+  `ip` char(15) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4526,9 +4474,9 @@ DROP TABLE IF EXISTS `plugin_file`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `plugin_file` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_plugin_main` int(11) NOT NULL DEFAULT 0,
-  `file` varchar(255) NOT NULL DEFAULT '',
-  `md5` varchar(32) NOT NULL DEFAULT '',
+  `id_plugin_main` int(11) NOT NULL,
+  `file` varchar(255) NOT NULL,
+  `md5` varchar(32) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_plugin_main` (`id_plugin_main`),
   CONSTRAINT `plugin_file_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
@@ -4544,16 +4492,16 @@ DROP TABLE IF EXISTS `plugin_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `plugin_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nom` varchar(32) NOT NULL DEFAULT '',
-  `description` text NOT NULL DEFAULT '',
-  `auteur` varchar(100) NOT NULL DEFAULT '',
-  `image` varchar(255) NOT NULL DEFAULT '' COMMENT 'le lien de l''image',
-  `fichier` varchar(255) NOT NULL DEFAULT '',
-  `date_installation` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `md5_zip` varchar(32) NOT NULL DEFAULT '',
-  `version` char(10) NOT NULL DEFAULT '',
+  `nom` varchar(32) NOT NULL,
+  `description` text NOT NULL,
+  `auteur` varchar(100) NOT NULL,
+  `image` varchar(255) NOT NULL COMMENT 'le lien de l''image',
+  `fichier` varchar(255) NOT NULL,
+  `date_installation` datetime NOT NULL,
+  `md5_zip` varchar(32) NOT NULL,
+  `version` char(10) NOT NULL,
   `est_actif` int(11) NOT NULL DEFAULT 0,
-  `type_licence` varchar(50) NOT NULL DEFAULT '',
+  `type_licence` varchar(50) NOT NULL,
   `numero_licence` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nom` (`nom`,`version`)
@@ -4569,8 +4517,8 @@ DROP TABLE IF EXISTS `plugin_menu`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `plugin_menu` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_plugin_main` int(11) NOT NULL DEFAULT 0,
-  `url` varchar(255) NOT NULL DEFAULT '',
+  `id_plugin_main` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_plugin_main` (`id_plugin_main`),
   CONSTRAINT `plugin_menu_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
@@ -4586,13 +4534,13 @@ DROP TABLE IF EXISTS `pmacli_drain_item`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pmacli_drain_item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_pmacli_drain_process` int(11) NOT NULL DEFAULT 0,
-  `row` int(11) NOT NULL DEFAULT 0,
-  `table` varchar(64) NOT NULL DEFAULT '',
+  `id_pmacli_drain_process` int(11) NOT NULL,
+  `row` int(11) NOT NULL,
+  `table` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_pmacli_drain_process` (`id_pmacli_drain_process`,`table`),
   CONSTRAINT `pmacli_drain_item_ibfk_1` FOREIGN KEY (`id_pmacli_drain_process`) REFERENCES `pmacli_drain_process` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4604,41 +4552,19 @@ DROP TABLE IF EXISTS `pmacli_drain_process`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pmacli_drain_process` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_cleaner_main` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(32) NOT NULL DEFAULT '',
-  `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `time` float NOT NULL DEFAULT 0,
-  `item_deleted` int(11) NOT NULL DEFAULT 0,
+  `id_cleaner_main` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `time` float NOT NULL,
+  `item_deleted` int(11) NOT NULL,
   `time_by_item` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
   CONSTRAINT `pmacli_drain_process_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `proysql_main`
---
-
-DROP TABLE IF EXISTS `proysql_main`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `proysql_main` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server__admin` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server__proxy` int(11) NOT NULL DEFAULT 0,
-  `id_client` int(11) NOT NULL DEFAULT 0,
-  `hostname` varchar(250) NOT NULL DEFAULT '',
-  `port` int(11) NOT NULL DEFAULT 0,
-  `login` varchar(64) NOT NULL DEFAULT '',
-  `password` varchar(250) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server__admin` (`id_mysql_server__admin`),
-  UNIQUE KEY `id_mysql_server__proxy` (`id_mysql_server__proxy`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4650,13 +4576,13 @@ DROP TABLE IF EXISTS `scan`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `scan` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ip` char(15) NOT NULL DEFAULT '',
-  `ms` float NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `data` text NOT NULL DEFAULT '',
+  `ip` char(15) NOT NULL,
+  `ms` float NOT NULL,
+  `date` datetime NOT NULL,
+  `data` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ip` (`ip`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4668,14 +4594,14 @@ DROP TABLE IF EXISTS `ssh_key`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ssh_key` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `added_on` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `fingerprint` char(100) NOT NULL DEFAULT '',
-  `user` varchar(64) NOT NULL DEFAULT '',
-  `public_key` text NOT NULL DEFAULT '',
-  `private_key` text NOT NULL DEFAULT '',
+  `name` varchar(64) NOT NULL,
+  `added_on` datetime NOT NULL,
+  `fingerprint` char(100) NOT NULL,
+  `user` varchar(64) NOT NULL,
+  `public_key` text NOT NULL,
+  `private_key` text NOT NULL,
   `type` varchar(20) DEFAULT NULL,
-  `bit` int(11) NOT NULL DEFAULT 0,
+  `bit` int(11) NOT NULL,
   `comment` varchar(255) NOT NULL DEFAULT 'no comment',
   PRIMARY KEY (`id`),
   UNIQUE KEY `fingerprint` (`fingerprint`,`user`)
@@ -4691,9 +4617,9 @@ DROP TABLE IF EXISTS `tag`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tag` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `color` varchar(20) NOT NULL DEFAULT '',
-  `background` varchar(20) NOT NULL DEFAULT '',
+  `name` varchar(50) NOT NULL,
+  `color` varchar(20) NOT NULL,
+  `background` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -4708,7 +4634,7 @@ DROP TABLE IF EXISTS `test_warning`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `test_warning` (
   `a` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4720,14 +4646,14 @@ DROP TABLE IF EXISTS `ts_max_date`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ts_max_date` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_daemon_main` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_p1` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_p2` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_p3` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_p4` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `id_ts_file` int(11) NOT NULL DEFAULT 0,
+  `id_daemon_main` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `date_p1` datetime NOT NULL,
+  `date_p2` datetime NOT NULL,
+  `date_p3` datetime NOT NULL,
+  `date_p4` datetime NOT NULL,
+  `id_ts_file` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`id_ts_file`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`),
@@ -4747,20 +4673,20 @@ DROP TABLE IF EXISTS `user_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `is_valid` int(11) NOT NULL DEFAULT 0,
+  `is_valid` int(11) NOT NULL,
   `is_ldap` int(11) NOT NULL DEFAULT 0,
-  `login` varchar(50) NOT NULL DEFAULT '',
-  `email` varchar(50) NOT NULL DEFAULT '',
-  `password` varchar(255) NOT NULL DEFAULT '',
-  `name` varchar(40) NOT NULL DEFAULT '',
-  `firstname` varchar(40) NOT NULL DEFAULT '',
-  `ip` varchar(15) NOT NULL DEFAULT '',
-  `id_geolocalisation_country` int(11) NOT NULL DEFAULT 0,
-  `id_geolocalisation_city` int(11) NOT NULL DEFAULT 0,
-  `date_last_login` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_last_connected` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `date_created` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `key_auth` char(40) NOT NULL DEFAULT '',
+  `login` varchar(50) NOT NULL,
+  `email` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `name` varchar(40) NOT NULL,
+  `firstname` varchar(40) NOT NULL,
+  `ip` varchar(15) NOT NULL,
+  `id_geolocalisation_country` int(11) NOT NULL,
+  `id_geolocalisation_city` int(11) NOT NULL,
+  `date_last_login` datetime NOT NULL,
+  `date_last_connected` datetime NOT NULL,
+  `date_created` datetime NOT NULL,
+  `key_auth` char(40) NOT NULL,
   `id_group` int(11) NOT NULL DEFAULT 1,
   `avatar` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
@@ -4772,7 +4698,7 @@ CREATE TABLE `user_main` (
   CONSTRAINT `user_main_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`),
   CONSTRAINT `user_main_ibfk_2` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`),
   CONSTRAINT `user_main_ibfk_3` FOREIGN KEY (`id_geolocalisation_city`) REFERENCES `geolocalisation_city` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4784,15 +4710,15 @@ DROP TABLE IF EXISTS `user_main_login`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_main_login` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `ip` char(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `user_agent` varchar(500) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `is_logged` int(11) NOT NULL DEFAULT 0,
+  `id_user_main` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `ip` char(15) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `user_agent` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `is_logged` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4804,13 +4730,13 @@ DROP TABLE IF EXISTS `virtual_ip`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `virtual_ip` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `ip` char(15) NOT NULL DEFAULT '',
+  `id_mysql_server` int(11) NOT NULL,
+  `ip` char(15) NOT NULL,
   `hostname` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `virtual_ip_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4822,12 +4748,12 @@ DROP TABLE IF EXISTS `webservice_history_main`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `webservice_history_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_user_main` int(11) NOT NULL DEFAULT 0,
-  `user` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
-  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `logon` int(11) NOT NULL DEFAULT 0,
-  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
+  `id_user_main` int(11) NOT NULL,
+  `user` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `date` datetime NOT NULL,
+  `logon` int(11) NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `webservice_history_main_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
@@ -4844,9 +4770,9 @@ DROP TABLE IF EXISTS `webservice_user`;
 CREATE TABLE `webservice_user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_client` int(11) NOT NULL DEFAULT 1,
-  `user` varchar(64) NOT NULL DEFAULT '',
-  `host` varchar(255) NOT NULL DEFAULT '',
-  `password` varchar(255) NOT NULL DEFAULT '',
+  `user` varchar(64) NOT NULL,
+  `host` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `is_enabled` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user` (`user`,`host`)
