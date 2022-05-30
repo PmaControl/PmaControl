@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.19  Distrib 10.3.34-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.3.34-MariaDB-0+deb10u1-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -38,7 +38,7 @@ CREATE TABLE `geolocalisation_city` (
   KEY `id_geolocalisation_country` (`id_geolocalisation_country`),
   KEY `libelle` (`libelle`),
   CONSTRAINT `geolocalisation_city_ibfk_1` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +72,7 @@ CREATE TABLE `geolocalisation_continent` (
   `iso` char(2) NOT NULL DEFAULT '',
   `name` varchar(20) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -112,7 +112,7 @@ CREATE TABLE `geolocalisation_country` (
   UNIQUE KEY `iso` (`iso`),
   KEY `id_geolocalisation_continent` (`id_geolocalisation_continent`),
   CONSTRAINT `geolocalisation_country_ibfk_1` FOREIGN KEY (`id_geolocalisation_continent`) REFERENCES `geolocalisation_continent` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -146,7 +146,7 @@ CREATE TABLE `translation_main` (
   `line_found` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`destination`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,11 +168,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.19  Distrib 10.3.34-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.3.34-MariaDB-0+deb10u1-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -255,7 +255,7 @@ CREATE TABLE `backup_type` (
   `libelle` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -334,7 +334,7 @@ CREATE TABLE `database_size` (
   `color` varchar(20) NOT NULL DEFAULT '',
   `background` varchar(20) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -444,10 +444,10 @@ DROP TABLE IF EXISTS `group`;
 CREATE TABLE `group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_parent` int(11) NOT NULL DEFAULT 0,
-  `name` varchar(50) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `description` text COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -477,7 +477,7 @@ CREATE TABLE `history_etat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `libelle` varchar(50) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -683,6 +683,33 @@ INSERT INTO `menu_group` VALUES (4,'Admin Menu');
 UNLOCK TABLES;
 
 --
+-- Table structure for table `mysql_type`
+--
+
+DROP TABLE IF EXISTS `mysql_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mysql_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(64) NOT NULL DEFAULT '',
+  `is_proxy` tinyint(4) NOT NULL DEFAULT 0,
+  `is_admin` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mysql_type`
+--
+
+LOCK TABLES `mysql_type` WRITE;
+/*!40000 ALTER TABLE `mysql_type` DISABLE KEYS */;
+INSERT INTO `mysql_type` VALUES (1,'MySQL',0,0);
+/*!40000 ALTER TABLE `mysql_type` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sharding`
 --
 
@@ -697,7 +724,7 @@ CREATE TABLE `sharding` (
   `table_link` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `prefix` (`prefix`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3136,7 +3163,7 @@ CREATE TABLE `version` (
   `version` varchar(20) NOT NULL DEFAULT '',
   `comment` text NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3162,11 +3189,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.19  Distrib 10.3.34-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.6.5-MariaDB-1:10.6.5+maria~buster-log
+-- Server version	10.3.34-MariaDB-0+deb10u1-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -3191,15 +3218,15 @@ CREATE TABLE `activity_events` (
   `user_id` int(11) DEFAULT NULL,
   `logged_as_user_id` int(11) DEFAULT NULL,
   `project_id` int(11) DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `data` longtext COLLATE utf8mb3_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8_unicode_ci DEFAULT NULL,
+  `data` longtext COLLATE utf8_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
   `created_at` bigint(20) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`,`created_at`),
   KEY `IDX_1F1B74AA76ED395` (`user_id`),
   KEY `IDX_1F1B74A3A572148` (`logged_as_user_id`),
   KEY `IDX_1F1B74A166D1F9C` (`project_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
  PARTITION BY RANGE (`created_at`)
 (PARTITION `p1599170400` VALUES LESS THAN (1599170400) ENGINE = InnoDB,
  PARTITION `p1599256800` VALUES LESS THAN (1599256800) ENGINE = InnoDB);
@@ -3364,7 +3391,7 @@ CREATE TABLE `backup_database` (
   KEY `id_mysql_database` (`database_name`),
   KEY `id_backup_dump` (`id_backup_dump`),
   CONSTRAINT `backup_database_ibfk_1` FOREIGN KEY (`id_backup_dump`) REFERENCES `backup_dump` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3442,7 +3469,7 @@ CREATE TABLE `backup_storage_area` (
   KEY `id_geolocalisation_city` (`id_geolocalisation_city`,`id_geolocalisation_country`),
   KEY `id_ssh_key` (`id_ssh_key`),
   CONSTRAINT `backup_storage_area_ibfk_1` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3464,7 +3491,7 @@ CREATE TABLE `backup_storage_space` (
   PRIMARY KEY (`id`),
   KEY `id_backup_storage_area` (`id_backup_storage_area`),
   CONSTRAINT `backup_storage_space_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3485,7 +3512,7 @@ CREATE TABLE `benchmark_config` (
   `read_only` char(3) NOT NULL DEFAULT '',
   `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3514,7 +3541,7 @@ CREATE TABLE `benchmark_main` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `benchmark_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3543,7 +3570,7 @@ CREATE TABLE `benchmark_run` (
   PRIMARY KEY (`id`),
   KEY `id_benchmark_main` (`id_benchmark_main`),
   CONSTRAINT `benchmark_run_ibfk_1` FOREIGN KEY (`id_benchmark_main`) REFERENCES `benchmark_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3563,7 +3590,7 @@ CREATE TABLE `binlog_backup` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`logfile_name`),
   CONSTRAINT `binlog_backup_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3581,7 +3608,7 @@ CREATE TABLE `binlog_history` (
   PRIMARY KEY (`id`),
   KEY `id_binlog_max` (`id_binlog_max`),
   CONSTRAINT `binlog_history_ibfk_1` FOREIGN KEY (`id_binlog_max`) REFERENCES `binlog_max` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3598,7 +3625,7 @@ CREATE TABLE `binlog_max` (
   `number_file_max` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3618,7 +3645,7 @@ CREATE TABLE `cleaner_alert` (
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `cleaner_alert_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`),
   CONSTRAINT `cleaner_alert_ibfk_2` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3640,7 +3667,7 @@ CREATE TABLE `cleaner_foreign_key` (
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_foreign_key_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3671,7 +3698,7 @@ CREATE TABLE `cleaner_main` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_mysql_database` (`database`),
   CONSTRAINT `cleaner_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3688,7 +3715,7 @@ CREATE TABLE `cleaner_table` (
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_table_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3727,7 +3754,7 @@ CREATE TABLE `crontab` (
   `comment` text NOT NULL DEFAULT '',
   `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3746,7 +3773,7 @@ CREATE TABLE `crontab_history` (
   PRIMARY KEY (`id`),
   KEY `id_crontab` (`id_crontab`),
   CONSTRAINT `crontab_history_ibfk_1` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3926,7 +3953,7 @@ CREATE TABLE `history_action` (
   `action` varchar(80) NOT NULL DEFAULT '',
   `point` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3956,7 +3983,7 @@ CREATE TABLE `history_main` (
   CONSTRAINT `history_main_ibfk_3` FOREIGN KEY (`id_history_action`) REFERENCES `history_action` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_4` FOREIGN KEY (`id_history_table`) REFERENCES `history_table` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_5` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3968,11 +3995,11 @@ DROP TABLE IF EXISTS `history_table`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_table` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
+  `name` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `date_insterted` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
   UNIQUE KEY `Name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3995,7 +4022,7 @@ CREATE TABLE `job` (
   `error` varchar(255) NOT NULL DEFAULT '',
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4087,7 +4114,7 @@ CREATE TABLE `link__mysql_database__mysql_replication_thread` (
   KEY `id_mysql_replication_thread` (`id_mysql_replication_thread`),
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_database`) REFERENCES `mysql_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_2` FOREIGN KEY (`id_mysql_replication_thread`) REFERENCES `mysql_replication_thread` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4234,7 +4261,7 @@ CREATE TABLE `mysql_database` (
   UNIQUE KEY `name` (`name`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4251,15 +4278,15 @@ CREATE TABLE `mysql_dump` (
   `date_start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `date_end` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `time` int(11) NOT NULL DEFAULT 0,
-  `database` varchar(30) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `file_name` varchar(191) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `database` varchar(30) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `file_name` varchar(191) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `size` bigint(11) NOT NULL DEFAULT 0,
   `md5` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `is_gziped` int(11) NOT NULL DEFAULT 0,
   `is_available` int(11) NOT NULL DEFAULT 1,
   `is_completed` int(11) NOT NULL DEFAULT 0,
-  `master_data` text CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
-  `slave_data` text CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `master_data` text CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `slave_data` text CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `id_mysql_serveur` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
@@ -4288,7 +4315,7 @@ CREATE TABLE `mysql_event` (
   KEY `id_mysql_status` (`id_mysql_status`),
   CONSTRAINT `mysql_event_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `mysql_event_ibfk_2` FOREIGN KEY (`id_mysql_status`) REFERENCES `mysql_status` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4309,7 +4336,7 @@ CREATE TABLE `mysql_node` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_galera` (`id_mysql_galera`),
   KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4324,7 +4351,7 @@ CREATE TABLE `mysql_privilege` (
   `type` varchar(25) NOT NULL DEFAULT '',
   `privilege` varchar(25) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4353,7 +4380,7 @@ CREATE TABLE `mysql_replication_stats` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_replication_stats_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='1.9.6';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='1.9.6';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4366,13 +4393,13 @@ DROP TABLE IF EXISTS `mysql_replication_thread`;
 CREATE TABLE `mysql_replication_thread` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_replication_stats` int(11) NOT NULL DEFAULT 0,
-  `relay_master_log_file` varchar(200) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `relay_master_log_file` varchar(200) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `exec_master_log_pos` int(11) NOT NULL DEFAULT 0,
   `thread_io` varchar(65) NOT NULL DEFAULT '',
   `thread_sql` varchar(65) NOT NULL DEFAULT '',
-  `thread_name` varchar(100) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `thread_name` varchar(100) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `time_behind` varchar(11) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
-  `master_host` char(15) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `master_host` char(15) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `master_port` int(11) NOT NULL DEFAULT 0,
   `last_io_error` text NOT NULL DEFAULT '',
   `last_sql_error` text NOT NULL DEFAULT '',
@@ -4396,12 +4423,12 @@ CREATE TABLE `mysql_server` (
   `id_client` int(11) NOT NULL DEFAULT 0,
   `id_environment` int(11) NOT NULL DEFAULT 0,
   `id_mysql_type` int(11) NOT NULL DEFAULT 1,
-  `name` varchar(100) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `name` varchar(100) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `display_name` varchar(100) NOT NULL DEFAULT '',
   `display` int(11) NOT NULL DEFAULT 0,
   `ip` char(15) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `hostname` varchar(200) NOT NULL DEFAULT '',
-  `login` varchar(32) CHARACTER SET utf8mb3 NOT NULL DEFAULT '',
+  `login` varchar(32) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `passwd` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `database` varchar(64) NOT NULL DEFAULT '',
   `is_password_crypted` int(11) NOT NULL DEFAULT 0,
@@ -4445,24 +4472,7 @@ CREATE TABLE `mysql_status` (
   `color` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `mysql_type`
---
-
-DROP TABLE IF EXISTS `mysql_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mysql_type` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type` varchar(64) NOT NULL DEFAULT '',
-  `is_proxy` tinyint(4) NOT NULL DEFAULT 0,
-  `is_admin` tinyint(4) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `type` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4479,7 +4489,7 @@ CREATE TABLE `mysql_variable` (
   `value` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`variable`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4514,7 +4524,7 @@ CREATE TABLE `objet` (
   `reference_id` int(11) NOT NULL DEFAULT 0,
   `ip` char(15) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4592,7 +4602,7 @@ CREATE TABLE `pmacli_drain_item` (
   PRIMARY KEY (`id`),
   KEY `id_pmacli_drain_process` (`id_pmacli_drain_process`,`table`),
   CONSTRAINT `pmacli_drain_item_ibfk_1` FOREIGN KEY (`id_pmacli_drain_process`) REFERENCES `pmacli_drain_process` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4616,7 +4626,7 @@ CREATE TABLE `pmacli_drain_process` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
   CONSTRAINT `pmacli_drain_process_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4638,7 +4648,7 @@ CREATE TABLE `proysql_main` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server__admin` (`id_mysql_server__admin`),
   UNIQUE KEY `id_mysql_server__proxy` (`id_mysql_server__proxy`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4656,7 +4666,7 @@ CREATE TABLE `scan` (
   `data` text NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `ip` (`ip`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4708,7 +4718,7 @@ DROP TABLE IF EXISTS `test_warning`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `test_warning` (
   `a` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4772,7 +4782,7 @@ CREATE TABLE `user_main` (
   CONSTRAINT `user_main_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`),
   CONSTRAINT `user_main_ibfk_2` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`),
   CONSTRAINT `user_main_ibfk_3` FOREIGN KEY (`id_geolocalisation_city`) REFERENCES `geolocalisation_city` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4786,13 +4796,13 @@ CREATE TABLE `user_main_login` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_user_main` int(11) NOT NULL DEFAULT 0,
   `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `ip` char(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
-  `user_agent` varchar(500) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT '',
+  `ip` char(15) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `user_agent` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `is_logged` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4810,7 +4820,7 @@ CREATE TABLE `virtual_ip` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `virtual_ip_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
