@@ -323,6 +323,10 @@ class Agent extends Controller {
                 $data['mysql_server']['id_client'] = 1;
                 $data['mysql_server']['id_environment'] = 1;
             }
+            
+            
+            //to do check if proxysql / maxscale
+            $data['mysql_server']['id_mysql_type'] = 1; 
 
             $data['mysql_server']['name'] = $server;
             $data['mysql_server']['display_name'] = $server;
