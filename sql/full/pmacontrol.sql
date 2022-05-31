@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS `geolocalisation_city`;
 CREATE TABLE `geolocalisation_city` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_geolocalisation_country` int(11) NOT NULL DEFAULT 0,
-  `id_country` varchar(10) NOT NULL DEFAULT '0',
+  `iso` char(2) NOT NULL,
   `libelle` varchar(250) NOT NULL DEFAULT '',
   `capital` enum('0','1') NOT NULL DEFAULT '0',
   `population` int(10) unsigned NOT NULL DEFAULT 0,
@@ -311,11 +311,11 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',0,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',0,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',0,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',0,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',0,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',27516,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',27451,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',27464,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',27478,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',27492,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3147,6 +3147,10 @@ INSERT INTO `ts_variable` VALUES (2347,3,'wsrep_flow_control_requested','TEXT','
 INSERT INTO `ts_variable` VALUES (2348,3,'wsrep_apply_waits','INT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (2349,3,'wsrep_gmcast_segment','INT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (2350,3,'wsrep_provider_capabilities','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2351,6,'available','INT','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2352,6,'ping','DOUBLE','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2353,4,'rocksdb_ignore_datadic_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2354,6,'error','TEXT','mysql_server','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -4174,38 +4178,6 @@ CREATE TABLE `link__slave__mysql_replication_thread` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `link__slave__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__slave__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__slave__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_slave_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `link__status__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__status__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__status__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_status_name` int(11) NOT NULL DEFAULT 0,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `type` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `link__ts_variable__mysql_server`
 --
 
@@ -4803,6 +4775,29 @@ CREATE TABLE `user_main_login` (
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `virtual_foreign_key`
+--
+
+DROP TABLE IF EXISTS `virtual_foreign_key`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `virtual_foreign_key` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
+  `constraint_table` varchar(64) NOT NULL DEFAULT '',
+  `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
+  `referenced_table` varchar(64) NOT NULL DEFAULT '',
+  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
+  KEY `id_mysql_server` (`id_mysql_server`),
+  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

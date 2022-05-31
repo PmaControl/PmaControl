@@ -61,6 +61,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
             while ($ob = $db->sql_fetch_object($res2)) {
 
+                $virtual_foreign_key = array();
                 $virtual_foreign_key['virtual_foreign_key']['id_mysql_server'] = $id_mysql_server;
                 $virtual_foreign_key['virtual_foreign_key']['constraint_schema'] = $arr['TABLE_SCHEMA'];
                 $virtual_foreign_key['virtual_foreign_key']['constraint_table'] = $arr['TABLE_NAME'];
@@ -94,6 +95,8 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
       KEY `id_mysql_server` (`id_mysql_server`),
       CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+     * 
+     * 
      * 
      */
 }
