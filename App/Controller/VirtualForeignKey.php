@@ -22,7 +22,7 @@ class VirtualForeignKey extends Controller {
     public function autoDetect($param) {
         Debug::parseDebug($param);
 
-        //$id_mysql_server = $param[0];
+//$id_mysql_server = $param[0];
 
         $this->cleanUp($param);
         $this->autoId($param);
@@ -44,6 +44,10 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
         $res = $db->sql_query($sql);
 
+        $nb_key = $db->sql_num_rows($res);
+
+        Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $schema_ref = $arr['TABLE_SCHEMA'];
@@ -60,18 +64,17 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                     if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref . "x"))) {
                         
                     } else {
-                        Debug::debug($table_ref, "Impossible de trouver la table");
+                        Debug::debug($arr, "Impossible de trouver la table");
                         continue;
                     }
                 }
             }
+
             
-            Debug::debug($arr2, "ARR2");
-            
-            
+
             $schema_ref = $arr2['TABLE_SCHEMA'];
             $table_ref = $arr2['TABLE_NAME'];
-            
+
 
             $sql2 = "SELECT count(1) as cpt
             from information_schema.COLUMNS     
@@ -102,10 +105,24 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                 }
             }
         }
+
+        $sql3 = "SELECT count(1) as cpt FROM virtual_foreign_key";
+        $res3 = $default->sql_query($sql3);
+        
+        while($ob = $default->sql_fetch_object($res3))
+        {
+            $nb_fk_found = $ob->cpt;
+            Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
+            Debug::debug($ob->cpt, "Nombre de clefs étrangère trouvé");
+            
+            $percent = round($nb_fk_found/$nb_key*100,2);
+            Debug::debug($percent."%", "Nombre de clefs étrangère trouvé");
+            
+        }
     }
 
     /*
-     CREATE TABLE `virtual_foreign_key` (
+      CREATE TABLE `virtual_foreign_key` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `id_mysql_server` int(11) NOT NULL DEFAULT 0,
       `constraint_schema` varchar(64) NOT NULL DEFAULT '',
@@ -133,7 +150,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         $db = Mysql::getDbLink($id_mysql_server);
 
         $sql = "SELECT TABLE_SCHEMA, TABLE_NAME from `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '" . $database_name . "' AND  LOWER(`TABLE_NAME`) = LOWER('" . $table_name . "');";
-        Debug::sql($sql);
+        //Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $nb_tables = $db->sql_num_rows($res);
@@ -142,10 +159,10 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         }
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            Debug::debug($arr, "Table trouvé");
+            //Debug::debug($arr, "Table trouvé");
             return $arr;
         }
-
+        
         return false;
     }
 
@@ -154,7 +171,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "TRUNCATE TABLE `virtual_foreign_key`";
+        $sql = "TRUNCATE TABLE `virtual_foreign_key`;";
         $db->sql_query($sql);
 
         Debug::sql($sql);
@@ -175,7 +192,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema') 
         AND TABLE_SCHEMA = '" . $database_name . "'
         AND TABLE_NAME = '" . $table_name . "'
-        AND COLUMN_NAME = '" . $field_name . "'";
+        AND COLUMN_NAME = '" . $field_name . "';";
     }
 
 }
