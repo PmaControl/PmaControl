@@ -66,6 +66,9 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                 }
             }
             
+            Debug::debug($arr2, "ARR2");
+            
+            
             $schema_ref = $arr2['TABLE_SCHEMA'];
             $table_ref = $arr2['TABLE_NAME'];
             
@@ -140,7 +143,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             Debug::debug($arr, "Table trouvé");
-            return true;
+            return $arr;
         }
 
         return false;
