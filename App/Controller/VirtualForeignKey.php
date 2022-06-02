@@ -24,7 +24,7 @@ class VirtualForeignKey extends Controller {
 
 //$id_mysql_server = $param[0];
 
-        $this->cleanUp($param);
+        
         $this->autoId($param);
     }
 
@@ -64,7 +64,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                     if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref . "x"))) {
                         
                     } else {
-                        Debug::debug($arr, "Impossible de trouver la table");
+                        //Debug::debug($arr, "Impossible de trouver la table");
                         continue;
                     }
                 }
@@ -193,6 +193,24 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         AND TABLE_SCHEMA = '" . $database_name . "'
         AND TABLE_NAME = '" . $table_name . "'
         AND COLUMN_NAME = '" . $field_name . "';";
+    }
+    
+    
+    public function getAll($param)
+    {
+        
+        $this->cleanUp($param);
+        Debug::parseDebug($param);
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "select id from mysql_server where id_environment=1 and id != 1;";
+        $res = $db->sql_query($sql);
+        
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $this->autoDetect(array($ob->id));
+        }
+        
     }
 
 }
