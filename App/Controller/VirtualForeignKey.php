@@ -24,7 +24,7 @@ class VirtualForeignKey extends Controller {
 
 //$id_mysql_server = $param[0];
 
-        
+
         $this->autoId($param);
     }
 
@@ -48,6 +48,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
         Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
 
+        $nb_fk_found = 0;
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $schema_ref = $arr['TABLE_SCHEMA'];
@@ -70,7 +71,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                 }
             }
 
-            
+
 
             $schema_ref = $arr2['TABLE_SCHEMA'];
             $table_ref = $arr2['TABLE_NAME'];
@@ -97,6 +98,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
                 $virtual_foreign_key['virtual_foreign_key']['referenced_column'] = $table_id;
 
                 if ($ob->cpt === "1") {
+                    $nb_fk_found++;
                     $default->sql_save($virtual_foreign_key);
                 } else {
 
@@ -106,19 +108,11 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
             }
         }
 
-        $sql3 = "SELECT count(1) as cpt FROM virtual_foreign_key";
-        $res3 = $default->sql_query($sql3);
-        
-        while($ob = $default->sql_fetch_object($res3))
-        {
-            $nb_fk_found = $ob->cpt;
-            Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
-            Debug::debug($ob->cpt, "Nombre de clefs étrangère trouvé");
-            
-            $percent = round($nb_fk_found/$nb_key*100,2);
-            Debug::debug($percent."%", "Nombre de clefs étrangère trouvé");
-            
-        }
+        Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
+        Debug::debug($nb_fk_found, "Nombre de clefs étrangère trouvé");
+
+        $percent = round($nb_fk_found / $nb_key * 100, 2);
+        Debug::debug($percent . "%", "Nombre de clefs étrangère trouvé");
     }
 
     /*
@@ -162,7 +156,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
             //Debug::debug($arr, "Table trouvé");
             return $arr;
         }
-        
+
         return false;
     }
 
@@ -194,23 +188,19 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         AND TABLE_NAME = '" . $table_name . "'
         AND COLUMN_NAME = '" . $field_name . "';";
     }
-    
-    
-    public function getAll($param)
-    {
-        
+
+    public function getAll($param) {
+
         $this->cleanUp($param);
         Debug::parseDebug($param);
-        
+
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "select id from mysql_server where id_environment=1 and id != 1;";
         $res = $db->sql_query($sql);
-        
-        while($ob = $db->sql_fetch_object($res))
-        {
+
+        while ($ob = $db->sql_fetch_object($res)) {
             $this->autoDetect(array($ob->id));
         }
-        
     }
 
 }
