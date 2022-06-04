@@ -592,34 +592,11 @@ class Mysql extends Controller
 
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE='BASE TABLE'";
 
+        
+        
+        $liste_table_connected = $this->tableListLinked($param);
+        
 
-
-        $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
-                          UNION  
-                          SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
-
-
-        $res2 = $db->sql_query($sql2);
-
-
-        $liste_table_connected = array();
-        while ($ob2                   = $db->sql_fetch_object($res2)) {
-            $liste_table_connected[] = $ob2->table_name;
-        }
-
-        /*
-          $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
-          'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
-          /* */
-
-        //$filter = array();
-        // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
 
 
         $tables = $db->sql_fetch_yield($sql);
@@ -1528,5 +1505,70 @@ class Mysql extends Controller
     public function addDate($param =array())
     {
         Mysql2::addMaxDate($param);
+    }
+    
+    
+    
+    public function tableListLinked($param)
+    {
+        Debug::parseDebug($param);
+        
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+        
+        $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
+                          UNION  
+                          SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
+
+        $res2 = $db->sql_query($sql2);
+
+
+        $liste_table_1 = array();
+        while ($ob2                   = $db->sql_fetch_object($res2)) {
+            $liste_table_1[] = $ob2->table_name;
+        }
+        
+        Debug::debug(count($liste_table_1), "Natural Foreign keys");
+        
+        
+        $sql1 = "SELECT distinct a.`constraint_table` as table_name
+         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '".$param[1]."' AND a.id_mysql_server = ".$param[0]."
+         UNION SELECT distinct b.`referenced_table` as table_name
+         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '".$param[1]."' AND b.id_mysql_server = ".$param[0].";
+        ";
+        Debug::sql($sql1);
+        
+        $res1 = $db->sql_query($sql1);
+        
+        $liste_table_2 = array();
+        while ($ob1                   = $db->sql_fetch_object($res1)) {
+            $liste_table_2[] = $ob1->table_name;
+        }
+        Debug::debug(count($liste_table_2), "Virtual Foreign keys");
+        
+        $liste_table =array_merge($liste_table_1, $liste_table_2);
+        
+        $liste_table_connected = array_unique($liste_table);
+        
+        
+        Debug::debug(count($liste_table_connected), "Merge");
+        
+        
+        Debug::debug($liste_table_connected);
+        /*
+          $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
+          'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
+          /* */
+
+        //$filter = array();
+        // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
+
+        return $liste_table_connected;
     }
 }
