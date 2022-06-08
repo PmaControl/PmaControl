@@ -541,11 +541,12 @@ class Mysql extends Controller {
         $this->ariane = " > " . __("MySQL") . " > " . $this->title;
 
 
-        $sql = "SELECT name FROM mysql_server WHERE id=" . intval($id_mysql_server);
+        $sql = "SELECT name,display_name FROM mysql_server WHERE id=" . intval($id_mysql_server);
         $res = $default->sql_query($sql);
 
         while ($ob = $default->sql_fetch_object($res)) {
             $name_connect = $ob->name;
+            $data['display_name'] = $ob->display_name;
         }
 
         $table_to_purge = array();
@@ -559,10 +560,10 @@ class Mysql extends Controller {
           }
          */
 
-
-
         $file_name = TMP . $id_mysql_server . "_" . $database . ".svg";
         $data['file'] = $file_name;
+        $data['database'] = $database;
+        $data['id_mysql_server'] = $database;
 
         $path_parts = pathinfo($file_name);
 
