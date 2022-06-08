@@ -12,7 +12,7 @@ if (!empty($data['NO_FK']))
 }
 
 
-
+echo $data['display_name']. " - (". $data['database'].")";
 $filename = $data['file'];
 echo '<div id="svg">';
 
@@ -31,7 +31,7 @@ if ($handle) {
         echo $buffer;
     }
     if (!feof($handle)) {
-        echo "Erreur: fgets() a échoué\n";
+        echo "Erreur: fgets() a Ã©chouÃ©\n";
     }
     fclose($handle);
 }
