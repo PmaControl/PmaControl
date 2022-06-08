@@ -551,16 +551,16 @@ class Mysql extends Controller {
         $table_to_purge = array();
         $db = Sgbd::sql($name_connect);
 
-/*
-        if (!empty($param[2])) {
-            $table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
+        /*
+          if (!empty($param[2])) {
+          $table_to_purge = FactoryController::addNode("Cleaner", "getTableImpacted", array($param[2]));
 
-            Debug::debug($table_to_purge);
-        }
-*/
-        
-        
-        
+          Debug::debug($table_to_purge);
+          }
+         */
+
+
+
         $file_name = TMP . $id_mysql_server . "_" . $database . ".svg";
         $data['file'] = $file_name;
 
@@ -649,7 +649,7 @@ class Mysql extends Controller {
                 //$columns = $this->getColumns(array($id_mysql_server, $database));
 
                 $contraints = $this->getForeignKey($param);
-                
+
                 foreach ($contraints as $contraint) {
 
 
@@ -698,7 +698,7 @@ class Mysql extends Controller {
                      */
 
                     fwrite($fp,
-                            "\"" . $contraint['TABLE_NAME'] . "\" -> \"" . $contraint['REFERENCED_TABLE_NAME']. "\""
+                            "\"" . $contraint['TABLE_NAME'] . "\" -> \"" . $contraint['REFERENCED_TABLE_NAME'] . "\""
                             . '[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="' . $color . '" 
                           tooltip="' . $contraint['TABLE_NAME'] . '.' . $contraint['COLUMN_NAME'] . ' => ' . $contraint['REFERENCED_TABLE_NAME'] . '.' . $contraint['REFERENCED_COLUMN_NAME'] . '" edgeURL=""];' . PHP_EOL);
                 }
@@ -1523,7 +1523,7 @@ class Mysql extends Controller {
             from virtual_foreign_key
             WHERE id_mysql_server = " . $id_mysql_server . "
             AND constraint_schema = '" . $database . "';";
-        
+
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -1531,7 +1531,7 @@ class Mysql extends Controller {
         $foreign_key = array();
 
 
-        
+
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $md5 = md5($ob['CONSTRAINT_SCHEMA'] . $ob['TABLE_NAME'] . $ob['COLUMN_NAME'] . $ob['REFERENCED_TABLE_SCHEMA'] . $ob['REFERENCED_TABLE_NAME'] . $ob['REFERENCED_COLUMN_NAME']);
 
@@ -1540,7 +1540,7 @@ class Mysql extends Controller {
 
         //Debug::debug($foreign_key);
         Debug::debug(count($foreign_key));
-        
+
         return $foreign_key;
     }
 
@@ -1567,7 +1567,7 @@ class Mysql extends Controller {
         $foreign_key = array();
 
 
-        
+
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $md5 = md5($ob['CONSTRAINT_SCHEMA'] . $ob['TABLE_NAME'] . $ob['COLUMN_NAME'] . $ob['REFERENCED_TABLE_SCHEMA'] . $ob['REFERENCED_TABLE_NAME'] . $ob['REFERENCED_COLUMN_NAME']);
 
@@ -1585,16 +1585,48 @@ class Mysql extends Controller {
 
 
         $fk1 = $this->getRealForeignKey($param);
-        $fk2 = $this->getVirtualForeignKey($param); 
-        
-        
+        $fk2 = $this->getVirtualForeignKey($param);
+
+
         $fks = array_merge($fk1, $fk2);
 
 
         //Debug::debug($fks);
         Debug::debug(count($fks));
-        
+
         return $fks;
+    }
+
+    public function audit($param) {
+
+        Debug::parseDebug($param);
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+        
+
+      
+        $sql = "select id_mysql_server, constraint_schema, count(1) 
+        from virtual_foreign_key 
+        WHERE id_mysql_server in (SELECT id from mysql_server WHERE id_environment = 1 and id != 1)
+        group by id_mysql_server,constraint_schema having count(1) > 1 
+        order by constraint_schema,3 asc;";
+        
+        $res = $db->sql_query($sql);
+        
+        $id_mysql_servers = array();
+        while( $ob = $db->sql_fetch_object($res))
+        {
+            $id_mysql_servers[$ob->constraint_schema] = $ob->id_mysql_server;
+        }
+        
+        Debug::debug($id_mysql_servers, "mysql_server / database");
+        
+        
+        $data['list'] = $id_mysql_servers;
+        $this->set('data', $data);
+        
+        return $id_mysql_servers;
+        
     }
 
 }
