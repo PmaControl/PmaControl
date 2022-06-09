@@ -12,9 +12,22 @@ if (!empty($data['NO_FK']))
 }
 
 
-echo $data['display_name']. " - (". $data['database'].")";
+
 $filename = $data['file'];
+
+$path_parts = pathinfo($filename)['basename'];
+
+
+
+
+//$file = LINK."mysql/png/".$data['id_mysql_server']."/".$data['database']."/";
+
+
+//echo '<img src="'.$file.'" />';
+
 echo '<div id="svg">';
+
+$filename = str_replace("png","svg", $filename);
 
 $handle = fopen($filename, "r");
 $remove = true;

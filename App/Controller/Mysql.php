@@ -560,10 +560,10 @@ class Mysql extends Controller {
           }
          */
 
-        $file_name = TMP . $id_mysql_server . "_" . $database . ".svg";
+        $file_name = TMP . $id_mysql_server . "_" . $database . ".png";
         $data['file'] = $file_name;
         $data['database'] = $database;
-        $data['id_mysql_server'] = $database;
+        $data['id_mysql_server'] = $id_mysql_server;
 
         $path_parts = pathinfo($file_name);
 
@@ -582,7 +582,11 @@ class Mysql extends Controller {
 
         if ($fp) {
 
-            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho  " . PHP_EOL); //splines=ortho;
+            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho fontname=\"arial\" " . PHP_EOL); //splines=ortho;
+            fwrite($fp, "labelloc=\"t\"; " . PHP_EOL); //splines=ortho;
+
+            
+            fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  " . PHP_EOL); //splines=ortho;
 
 
             foreach ($tables as $table) {
@@ -618,9 +622,9 @@ class Mysql extends Controller {
 
 // shape=Mrecord
                 fwrite($fp,
-                        '  "' . $table['TABLE_NAME'] . '" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td bgcolor="black" color="white" align="center"><font color="white">' . $table['TABLE_NAME'] . '</font></td></tr>');
-                fwrite($fp, '<tr><td bgcolor="grey" align="left">' . $table['ENGINE'] . ' (' . $table['ROW_FORMAT'] . ')</td></tr>' . PHP_EOL);
-                fwrite($fp, '<tr><td bgcolor="grey" align="left">total of ' . $table['TABLE_ROWS'] . '</td></tr>');
+                        '  "' . $table['TABLE_NAME'] . '" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">' . $table['TABLE_NAME'] . '</font></td></tr>');
+                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">' . $table['ENGINE'] . ' (' . $table['ROW_FORMAT'] . ')</td></tr>' . PHP_EOL);
+                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of ' . $table['TABLE_ROWS'] . '</td></tr>');
 
 
 
@@ -630,7 +634,10 @@ class Mysql extends Controller {
 
                 $columns = $db->sql_fetch_yield($sql);
                 foreach ($columns as $column) {
-                    fwrite($fp, '<tr><td bgcolor="#dddddd" align="left" title="' . $column['COLUMN_NAME'] . '">' . $column['COLUMN_NAME'] . '</td></tr>' . PHP_EOL);
+                    fwrite($fp, '<tr>'
+                        . '<td bgcolor="#dddddd" align="left" title="' . $column['COLUMN_NAME'] . '">' . $column['COLUMN_NAME'] . '</td>'
+                        . '<td bgcolor="#dddddd" align="left">' . $column['COLUMN_TYPE'] . '</td>'
+                        . '</tr>' . PHP_EOL);
                 }
                 /*                 * *** */
 
@@ -1627,6 +1634,30 @@ class Mysql extends Controller {
         $this->set('data', $data);
         
         return $id_mysql_servers;
+        
+    }
+
+
+    public function png($param)
+    {
+
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $this->view = false;
+        $this->layout = false;
+        //$this->layout_name = false;
+
+        header ('Content-type: image/png');
+
+        $file = TMP.$id_mysql_server."_".$database."png";
+
+        $data = file_get_contents($file);
+
+
+        echo $data;
+
+
         
     }
 
