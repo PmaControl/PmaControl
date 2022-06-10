@@ -311,11 +311,11 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',27516,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',27451,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',27464,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',27478,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',27492,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',924,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',931,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',942,64,'log/daemon_9.log',30,5,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',953,64,'log/daemon_11.log',30,30,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',963,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -4798,6 +4798,28 @@ CREATE TABLE `virtual_foreign_key` (
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `virtual_foreignkey_coverage`
+--
+
+DROP TABLE IF EXISTS `virtual_foreignkey_coverage`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `virtual_foreignkey_coverage` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `schema_name` varchar(64) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `column_name` varchar(64) NOT NULL,
+  `matched` tinyint(4) NOT NULL,
+  `status` tinyint(11) NOT NULL COMMENT '(1:auto, 2: semi auto, 3: manual)',
+  `date_inserted` datetime NOT NULL,
+  `date_updated` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`schema_name`,`table_name`,`column_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
