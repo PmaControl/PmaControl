@@ -537,10 +537,6 @@ class Mysql extends Controller {
 
         $default = Sgbd::sql(DB_DEFAULT);
 
-        $this->title = __("The Physical Schemata Panel");
-        $this->ariane = " > " . __("MySQL") . " > " . $this->title;
-
-
         $sql = "SELECT name,display_name FROM mysql_server WHERE id=" . intval($id_mysql_server);
         $res = $default->sql_query($sql);
 
@@ -560,7 +556,7 @@ class Mysql extends Controller {
           }
          */
 
-        $file_name = TMP . $id_mysql_server . "_" . $database . ".png";
+        $file_name = TMP . $id_mysql_server . "_" . $database . ".svg";
         $data['file'] = $file_name;
         $data['database'] = $database;
         $data['id_mysql_server'] = $id_mysql_server;
