@@ -1,6 +1,8 @@
 <?php
 
 
+
+
 if (!empty($data['NO_FK']))
 {
 	?>
@@ -16,7 +18,6 @@ if (!empty($data['NO_FK']))
 $filename = $data['file'];
 
 $path_parts = pathinfo($filename)['basename'];
-
 
 
 
@@ -50,3 +51,7 @@ if ($handle) {
 }
 
 echo '</div>';
+
+
+//\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
+\Glial\Synapse\FactoryController::addNode("virtualForeignKey", "fill", array());

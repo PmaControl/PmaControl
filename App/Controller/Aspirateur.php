@@ -1329,6 +1329,18 @@ class Aspirateur extends Controller
     {
         //$grants = $this->getGrants();
 
+        $sql2 = 'select * from information_schema.SCHEMATA;';
+        $res2 = $mysql_tested->sql_query($sql2);
+
+        $db_number = $mysql_tested->sql_num_rows($res2);
+        
+        if ($db_number > 500)
+        {
+            Debug::sql("Too much DBs");
+            return false;
+        }
+        
+        
         $sql = 'SELECT table_schema as `database`,
         engine,
         ROW_FORMAT as "row_format", 

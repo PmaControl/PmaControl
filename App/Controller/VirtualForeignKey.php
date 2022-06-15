@@ -21,9 +21,7 @@ class VirtualForeignKey extends Controller {
 
     public function autoDetect($param) {
         Debug::parseDebug($param);
-
-//$id_mysql_server = $param[0];
-
+        //$id_mysql_server = $param[0];
 
         $this->autoId($param);
     }
@@ -32,10 +30,8 @@ class VirtualForeignKey extends Controller {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-
         $db = Mysql::getDbLink($id_mysql_server);
         $default = Sgbd::sql(DB_DEFAULT);
-
 
         $sql = "select TABLE_SCHEMA,TABLE_NAME, COLUMN_NAME 
 from information_schema.COLUMNS 
@@ -171,7 +167,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         Debug::sql($sql);
     }
 
-    public function FindField($param) {
+    public function findField($param) {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
@@ -201,6 +197,23 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         while ($ob = $db->sql_fetch_object($res)) {
             $this->autoDetect(array($ob->id));
         }
+    }
+
+    public function fill($param) {
+        
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM virtual_foreign_key";
+        $res = $db->sql_query($sql);
+
+        $data['fks'] = array();
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            $data['fks'][] = $ob;
+        }
+
+        $this->set('data', $data);
     }
 
 }

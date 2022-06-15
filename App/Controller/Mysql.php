@@ -531,6 +531,7 @@ class Mysql extends Controller {
 
     public function mpd($param) {
 
+        Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
         $database = $param[1];
@@ -568,7 +569,9 @@ class Mysql extends Controller {
         $file = $path_parts['filename'];
 
 
-        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='" . $param[1] . "' AND TABLE_TYPE='BASE TABLE'";
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='" . $param[1] . "' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+        Debug::sql($sql);
+        
         $liste_table_connected = $this->tableListLinked($param);
 
         $tables = $db->sql_fetch_yield($sql);
@@ -580,16 +583,11 @@ class Mysql extends Controller {
 
             fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho fontname=\"arial\" " . PHP_EOL); //splines=ortho;
             fwrite($fp, "labelloc=\"t\"; " . PHP_EOL); //splines=ortho;
-
-            
             fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  " . PHP_EOL); //splines=ortho;
 
-
             foreach ($tables as $table) {
-
-
+                
                 //pour retirer les tables en attente d'être éffacer
-
 
                 if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
                     continue;
@@ -599,9 +597,8 @@ class Mysql extends Controller {
                 // On affiche pas les tables qui ne sont pas lié à une autre (on retire les tables singleton)
 
                 if (!in_array($table['TABLE_NAME'], $liste_table_connected)) {
-                    continue;
+                   continue;
                 }
-
 
                 if (count($table_to_purge) > 0) {
                     if (in_array($table['TABLE_NAME'], $table_to_purge)) {
@@ -624,9 +621,9 @@ class Mysql extends Controller {
 
 
 
-                $sql = "SELECT * FROM information_schema.`COLUMNS`
-                  WHERE TABLE_SCHEMA = '" . $param[1] . "' AND TABLE_NAME ='" . $table['TABLE_NAME'] . "' ORDER BY ORDINAL_POSITION";
+                $sql = "SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '" . $param[1] . "' AND TABLE_NAME ='" . $table['TABLE_NAME'] . "' ORDER BY ORDINAL_POSITION;";
 
+                //Debug::sql($sql);
 
                 $columns = $db->sql_fetch_yield($sql);
                 foreach ($columns as $column) {
@@ -642,7 +639,7 @@ class Mysql extends Controller {
             }
 
 
-            $sql = "SELECT count(1) as cpt FROM information_schema.`tables` where table_name = 'REFERENTIAL_CONSTRAINTS' and table_schema = 'information_schema'";
+            $sql = "SELECT count(1) as cpt FROM information_schema.`tables` where table_name = 'REFERENTIAL_CONSTRAINTS' and table_schema = 'information_schema';";
             $res = $db->sql_query($sql);
             $ob = $db->sql_fetch_object($res);
 
@@ -712,7 +709,10 @@ class Mysql extends Controller {
 
             fwrite($fp, '}');
             fclose($fp);
-            exec('dot -T' . $type . ' ' . $path . '/' . $file . '.dot -o ' . $path . '/' . $file . '.' . $type . '');
+            
+            $dot = 'dot -T' . $type . ' ' . $path . '/' . $file . '.dot -o ' . $path . '/' . $file . '.' . $type . '';
+            Debug::debug($dot, 'DOT');
+            exec($dot);
         }
 
         $this->set('data', $data);
