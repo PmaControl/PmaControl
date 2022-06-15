@@ -10,6 +10,7 @@
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 echo '<tr>';
+echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("Schema").'</th>';
 echo '<th>'.__("Table").'</th>';
 echo '<th>'.__("Field").'</th>';
@@ -22,7 +23,9 @@ echo '</tr>';
 
 foreach($data['fks'] as $fk)
 {
+    $i++;
     echo '<tr>';
+    echo '<td>'.$i.'</td>';
     echo '<td>'.$fk['constraint_schema'].'</td>';
     echo '<td>'.$fk['constraint_table'].'</td>';
     echo '<td>'.$fk['constraint_column'].'</td>';
