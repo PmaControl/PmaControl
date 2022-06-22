@@ -1564,7 +1564,7 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $data['empty'][$ob->display_name] = Mysql::getEmptyDatabase($ob->id);
+            $data['empty'][$ob->display_name] = Mysql::getEmptyDatabase(array($ob->id));
         }
 
         $this->set('data', $data);
