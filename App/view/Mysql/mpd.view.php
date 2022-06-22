@@ -54,4 +54,4 @@ echo '</div>';
 
 
 //\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
-\Glial\Synapse\FactoryController::addNode("virtualForeignKey", "fill", array());
+\Glial\Synapse\FactoryController::addNode("virtualForeignKey", "fill", array($data['id_mysql_server'],$data['database']));

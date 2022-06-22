@@ -93,3 +93,8 @@ function format($bytes, $decimals = 2)
         </tr>
     </table>
 </div>
+
+
+<?php
+
+\Glial\Synapse\FactoryController::addNode("database", "empty", array());
