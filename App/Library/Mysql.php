@@ -757,7 +757,7 @@ END IF;";
         $db = Mysql::getDbLink($id_mysql_server);
         
 
-        $sql = "SELECT S.* FROM INFORMATION_SCHEMA.SCHEMATA S
+        $sql = "SELECT S.SCHEMA_NAME as schema_name FROM INFORMATION_SCHEMA.SCHEMATA S
             LEFT OUTER JOIN INFORMATION_SCHEMA.TABLES T ON S.SCHEMA_NAME = T.TABLE_SCHEMA
             WHERE T.TABLE_SCHEMA IS NULL;";
 
