@@ -122,7 +122,7 @@ class Mysql
         Debug::parseDebug($param);
 
         $id_mysql_server = empty($param[0]) ? 0 : $param[0];
-            
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql1 = "SELECT 7, b.id as id_mysql_server, a.id as id_ts_file FROM ts_file a, mysql_server b ";
@@ -695,7 +695,7 @@ END IF;";
         }
     }
 
-    static function getMysqlById($param)
+    static public function getMysqlById($param)
     {
         //need to save in case of multiple ask
         Debug::parseDebug($param);
@@ -711,5 +711,65 @@ END IF;";
         $db = Sgbd::sql($name);
 
         return $db;
+    }
+
+    static public function getRealForeignKey($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
+            ." REFERENCED_TABLE_SCHEMA as referenced_schema, REFERENCED_TABLE_NAME as referenced_table,REFERENCED_COLUMN_NAME as referenced_column"
+            ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        $foreign_key = array();
+
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $md5 = md5($ob['constraint_schema'].$ob['constraint_table'].$ob['constraint_column']);
+
+            $foreign_key[$md5] = $ob;
+        }
+
+        //Debug::debug($foreign_key);
+        Debug::debug(count($foreign_key));
+
+        return $foreign_key;
+    }
+
+    static public function getEmptyDatabase($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+        
+
+        $sql = "SELECT S.* FROM INFORMATION_SCHEMA.SCHEMATA S
+            LEFT OUTER JOIN INFORMATION_SCHEMA.TABLES T ON S.SCHEMA_NAME = T.TABLE_SCHEMA
+            WHERE T.TABLE_SCHEMA IS NULL;";
+
+        $res = $db->sql_query($sql);
+
+        $emptydb = array();
+        while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $emptydb[] = $ob;
+        }
+
+
+        return $emptydb;
     }
 }
