@@ -769,7 +769,7 @@ END IF;";
             $emptydb[] = $ob;
         }
 
-
+        $db->sql_close();
         return $emptydb;
     }
 }
