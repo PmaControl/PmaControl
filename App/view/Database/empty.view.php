@@ -20,7 +20,7 @@ foreach ($data['empty'] as $server_name => $dbs) {
     echo '</tr>';
     foreach ($dbs as $db) {
         echo '<tr>';
-        echo '<td>'.$db['SCHEMA_NAME'].'</td>';
+        echo '<td>'.$db['schema_name'].'</td>';
         echo '</tr>';
     }
     echo '</table>';
