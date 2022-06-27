@@ -97,4 +97,4 @@ function format($bytes, $decimals = 2)
 
 <?php
 
-\Glial\Synapse\FactoryController::addNode("database", "empty", array());
+//\Glial\Synapse\FactoryController::addNode("database", "empty", array());
