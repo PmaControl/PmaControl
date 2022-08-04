@@ -109,7 +109,7 @@ class Dot2 extends Controller
 
 
                 //remove ProxySQL
-                if (!empty($slave['is_proxysql']) && $slave['is_proxysql'] === "1") {
+                if (!empty($rosae['']['is_proxysql']) && $rosae['']['is_proxysql'] === "1") {
                     
                     continue;
                 }
