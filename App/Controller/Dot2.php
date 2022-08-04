@@ -107,11 +107,29 @@ class Dot2 extends Controller
 
             foreach ($rosae as $connection => $slave) {
 
+
+                //remove ProxySQL
+                if (!empty($slave['is_proxysql']) && $slave['is_proxysql'] === "1") {
+                    
+                    continue;
+                }
+
+                //remove if not a slave
+                if (empty($slave['master_host']))
+                {
+                    continue;
+                }
+
+
+                Debug::debug($rosae);
+
                 $id_master = Mysql::getIdFromDns($slave['master_host'].":".$slave['master_port']);
 
                 if ($id_master === false) {
                     continue;
                 }
+
+                
 
 
                 $tmp_group[$id_group][] = $id_master;
