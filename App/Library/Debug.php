@@ -182,8 +182,6 @@ class Debug
                     echo "<b>".trim(str_replace("\n", "<br>", $string))."</b><br>";
                 }
             }
-
-            echo 'sfgdg';
         }
     }
 
