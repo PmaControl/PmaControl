@@ -1,4 +1,5 @@
 <?php
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -18,16 +19,15 @@ namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
 
-class Extraction
-{
+class Extraction2 {
 
     use \App\Library\Filter;
-    static $variable   = array();
-    static $server     = array();
+
+    static $variable = array();
+    static $server = array();
     static $groupbyday = false;
 
-    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
-    {
+    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false) {
 
         /*
           debug($var);
@@ -43,7 +43,7 @@ class Extraction
         }
 
         $extra_where = "";
-        $INNER       = "";
+        $INNER = "";
         if (empty($date)) {
 
             $INNER = " INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
@@ -52,18 +52,17 @@ class Extraction
             //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
         } else {
 
-
             if (is_array($date)) {
                 if ($range) {
                     $date_min = $date[0];
                     $date_max = $date[1];
 
-                    $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
+                    $extra_where = " AND a.`date` BETWEEN '" . $date_min . "' AND '" . $date_max . "' ";
                 } else {
 
                     //still used ?
-                    $all_date    = implode('","', $date);
-                    $extra_where = " AND a.`date` IN ('".$all_date."') ";
+                    $all_date = implode('","', $date);
+                    $extra_where = " AND a.`date` IN ('" . $all_date . "') ";
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
@@ -79,20 +78,24 @@ class Extraction
             $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
         }
 
+        Debug::debug($var, "VAR");
+
         $variable = self::getIdVariable($var);
-        $sql2     = array();
-        $WINDOW   = "";
+        $sql2 = array();
+        $WINDOW = "";
+
+
+        Debug::debug($variable);
 
         foreach ($variable as $radical => $data_type) {
             foreach ($data_type as $type => $tab_ids) {
 
-
-                //debug($radical);
+                Debug::debug($radical);
 
                 if ($radical == "slave") {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date`";
 
                     if ($graph === true) {
                         //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
@@ -110,18 +113,14 @@ class Extraction
                     // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
                 }
 
-
                 foreach ($tab_ids as $id_ts_variable) {
 
-
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
-                    $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
-                        .$INNER."
+                    $sql4 = "(SELECT " . $fields . " FROM `ts_value_" . $radical . "_" . $type . "` a "
+                            . $INNER . "
 
-                WHERE id_ts_variable = ".$id_ts_variable."
-                   AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
-
-
+                WHERE id_ts_variable = " . $id_ts_variable . "
+                   AND a.id_mysql_server IN (" . implode(",", $server) . ")  $extra_where " . $WINDOW . ") ";
 
                     $sql2[] = $sql4;
                 }
@@ -139,10 +138,7 @@ class Extraction
         } else {
             //$sql3 .= "ORDER by date";
         }
-
-
         //echo \SqlFormatter::format($sql3) . "\n";
-
 
         if ($graph === true) {
 
@@ -163,7 +159,6 @@ class Extraction
                 round(avg(t.`value`),2) as `avg`,
                 round(std(t.`value`),2) as `std`
             FROM t GROUP BY id_mysql_server, id_ts_variable ";
-
 
             //$sql3 .= ", date(t.`date`), hour(t.`date`), minute(t.`date`)";
 
@@ -193,8 +188,7 @@ class Extraction
         return $res2;
     }
 
-    static private function getServerList()
-    {
+    static private function getServerList() {
 
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -202,12 +196,12 @@ class Extraction
 
 
         if (empty(self::$server)) {
-            $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
+            $sql = "SELECT id FROM mysql_server a WHERE 1=1 " . self::getFilter();
 
             $res = $db->sql_query($sql);
 
             $server = array();
-            while ($ob     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $server[] = $ob['id'];
                 //self::$server[] = $ob;
             }
@@ -222,8 +216,7 @@ class Extraction
         return self::$server;
     }
 
-    static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
-    {
+    static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false) {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
@@ -245,14 +238,30 @@ class Extraction
 
             //debug(self::$variable[$ob->id_ts_variable]);
 
+            Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
+
             if ($range) {
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                if ($ob->connection_name === "N/A") {
+                    $table[$ob->id_mysql_server][$ob->date]['id_mysql_server'] = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server][$ob->date]['date'] = $ob->date;
+                    $table[$ob->id_mysql_server][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                } else {
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['id_mysql_server'] = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['date'] = $ob->date;
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                }
             } else {
-                $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                if ($ob->connection_name === "N/A") {
+
+                    $table[$ob->id_mysql_server]['id_mysql_server'] = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server]['date'] = $ob->date;
+                    $table[$ob->id_mysql_server][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                } else {
+
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['id_mysql_server'] = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['date'] = $ob->date;
+                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                }
             }
         }
 
@@ -260,8 +269,7 @@ class Extraction
         return $table;
     }
 
-    static public function getIdVariable($var)
-    {
+    static public function getIdVariable($var) {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
@@ -275,15 +283,15 @@ class Extraction
                 $from = $split[0];
 
                 if (empty($name)) {
-                    $sqls[] = "(SELECT * FROM ts_variable where `from` = '".strtolower($from)."')";
+                    $sqls[] = "(SELECT * FROM ts_variable where `from` = '" . strtolower($from) . "')";
                 } else {
 
-                    $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' AND `from` = '".strtolower($from)."' LIMIT 1)";
+                    $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "' AND `from` = '" . strtolower($from) . "' LIMIT 1)";
                 }
             } else {
 
-                $name   = $split[0];
-                $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' LIMIT 1)";
+                $name = $split[0];
+                $sqls[] = "(SELECT * FROM ts_variable where `name` = '" . strtolower($name) . "' LIMIT 1)";
             }
         }
 
@@ -292,10 +300,10 @@ class Extraction
         $res = $db->sql_query($sql);
 
         //echo \SqlFormatter::format($sql) . "\n";
-        $from     = array();
+        $from = array();
         $variable = array();
-        while ($ob       = $db->sql_fetch_object($res)) {
-            self::$variable[$ob->id]['name']                 = $ob->name;
+        while ($ob = $db->sql_fetch_object($res)) {
+            self::$variable[$ob->id]['name'] = $ob->name;
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
             //$radical                              = $ob->radical;
         }
@@ -303,8 +311,7 @@ class Extraction
         return $variable;
     }
 
-    static function count_recursive($array)
-    {
+    static function count_recursive($array) {
         if (!is_array($array)) {
             return 1;
         }
@@ -317,28 +324,26 @@ class Extraction
         return $count;
     }
 
-    static public function graph($var, $server, $range)
-    {
-        $res   = self::extract($var, $server, $date  = "", $range, true);
+    static public function graph($var, $server, $range) {
+        $res = self::extract($var, $server, $date = "", $range, true);
         $graph = array();
-        while ($ar    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $graph[$ar['id_mysql_server']] = $ar;
         }
 
         return $graph;
     }
 
-    static public function setOption($var, $val)
-    {
+    static public function setOption($var, $val) {
         self::$$var = $val;
     }
+
     /*
      * Cette fonction prend comme paramètres la sortie de la fonction 
      * Extraction::display(array("databases::databases"));  
      */
 
-    static public function getSizeByEngine($data)
-    {
+    static public function getSizeByEngine($data) {
         $res = array();
 
         $engines = array();
@@ -358,13 +363,13 @@ class Extraction
                     foreach ($db_attr['engine'] as $engine => $row_formats) {
                         foreach ($row_formats as $details) {
 
-                            $res['server'][$id_mysql_server][$engine]['size_data']  = $res['server'][$id_mysql_server][$engine]['size_data'] ?? 0;
+                            $res['server'][$id_mysql_server][$engine]['size_data'] = $res['server'][$id_mysql_server][$engine]['size_data'] ?? 0;
                             $res['server'][$id_mysql_server][$engine]['size_index'] = $res['server'][$id_mysql_server][$engine]['size_index'] ?? 0;
-                            $res['server'][$id_mysql_server][$engine]['size_free']  = $res['server'][$id_mysql_server][$engine]['size_free'] ?? 0;
+                            $res['server'][$id_mysql_server][$engine]['size_free'] = $res['server'][$id_mysql_server][$engine]['size_free'] ?? 0;
 
-                            $res['server'][$id_mysql_server][$engine]['size_data']  += $details['size_data'];
+                            $res['server'][$id_mysql_server][$engine]['size_data'] += $details['size_data'];
                             $res['server'][$id_mysql_server][$engine]['size_index'] += $details['size_index'];
-                            $res['server'][$id_mysql_server][$engine]['size_free']  += $details['size_free'];
+                            $res['server'][$id_mysql_server][$engine]['size_free'] += $details['size_free'];
 
                             $engines[] = $engine;
                         }
@@ -378,4 +383,5 @@ class Extraction
 
         return $res;
     }
+
 }
