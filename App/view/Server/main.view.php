@@ -194,7 +194,34 @@ if (!empty($data['servers'])) {
 
 
         echo '<td style="'.$style.'">';
-        echo $data['extra'][$server['id']]['']['performance_schema'];
+        //echo $data['extra'][$server['id']]['']['performance_schema'];
+
+        if (!empty($data['extra'][$server['id']]['']['performance_schema'])) {
+
+            $checked = array();
+
+            if ($data['extra'][$server['id']]['']['performance_schema'] === "ON") {
+                $checked = array("checked" => "checked");
+            }
+            ?>
+            <div class="form-group" style="margin: 0">
+                <div class="checkbox checbox-switch switch-success" style="margin: 0">
+                    <label>
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control performance_schema", "disabled"=> "true", "type" => "checkbox", "title" => "Monitored"), $checked);
+            echo Form::input("check", "all", $computed);
+            ?>
+                        <span></span>
+                    </label>
+                </div>
+            </div>
+
+            <?php
+
+        }
+
+
+
         echo '</td>';
         echo '<td style="'.$style.'">';
 
