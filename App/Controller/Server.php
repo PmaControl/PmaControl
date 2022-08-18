@@ -226,7 +226,7 @@ class Server extends Controller
 //debug($servers);
 
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res               = $db->sql_query($sql);

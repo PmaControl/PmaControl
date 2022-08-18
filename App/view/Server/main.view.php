@@ -129,7 +129,16 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="'.$style.'">'.$server['ip'].'</td>';
+        echo '<td style="'.$style.'">'.$server['ip'];
+        
+
+
+        if ($data['extra'][$server['id']]['']['read_only'] === "ON")
+        {
+            echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
+        }
+        
+        echo '</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
         echo '<td style="'.$style.'" title="">';
