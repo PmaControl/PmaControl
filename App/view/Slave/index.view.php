@@ -64,6 +64,11 @@ $i = 0;
 foreach ($data['slave'] as $slaves) {
     foreach ($slaves as $connect_name => $slave) {
 
+        if (!empty($data['info_server'][$slave['id_mysql_server']]['']['is_proxysql']) && $data['info_server'][$slave['id_mysql_server']]['']['is_proxysql'] ==="1")
+        {
+            continue;
+        }
+
         $i++;
 
         echo '<tr>';
@@ -116,7 +121,7 @@ foreach ($data['slave'] as $slaves) {
         //echo $data['server']['slave'][]['display_name'];
 
         //        echo $slave['id_mysql_server'];
-        echo '<a href="">'.$data['hostname'][$slave['id_mysql_server']]['']['hostname'].'</a>';
+        echo '<a href="">'.$data['info_server'][$slave['id_mysql_server']]['']['hostname'].'</a>';
         echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
         echo '</td>';
 
