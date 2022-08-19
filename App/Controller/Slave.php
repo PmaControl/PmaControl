@@ -85,6 +85,7 @@ class Slave extends Controller
             foreach ($slaves as $slave) {
                 //debug($slave);
                 $data['graph'][$slave['id_mysql_server']] = $slave;
+                $data['server']['idgraph'][$slave['id_mysql_server']] = $slave['id_mysql_server'].crc32($slave['connection_name']);
             }
         }
 

@@ -134,6 +134,8 @@ foreach ($data['slave'] as $slaves) {
         }
 
         echo '<a href="'.LINK.'slave/show/'.$slave['id_mysql_server'].'/'.$connect_name.'/">'.$disp.'</a>';
+        
+        echo " ".$data['server']['idgraph'][$slave['id_mysql_server']];
         echo '</td>';
         //echo '<td>'.$slave['seconds_behind_master'].'</td>';
 
