@@ -4,8 +4,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Chiffrement;
-use \phpseclib\Crypt\RSA;
-use \phpseclib\Net\SSH2;
+use \phpseclib3\Crypt\RSA;
+use \phpseclib3\Net\SSH2;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -14,6 +14,7 @@ use \App\Library\Ssh as SshLib;
 use App\Library\Post;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use \phpseclib3\Crypt\PublicKeyLoader;
 
 class Ssh extends Controller
 {
@@ -537,28 +538,33 @@ AND b.is_available = 1;";
 
 
         $ssh = new SSH2($server['ip'], $server['ssh_port']);
-        $rsa = new RSA();
+        //$rsa = new RSA();
 
 
-        Debug::debug($ssh->host, "IP");
-        Debug::debug($ssh->port, "Port");
+        //Debug::debug($ssh->host, "IP");
+        //Debug::debug($ssh->port, "Port");
 
         $login_successfull = true;
 
 
-        $key['private_key'] = Chiffrement::decrypt($key['private_key']);
+        Debug::debug(Chiffrement::decrypt($key['private_key']), "PRIVATE KEY");
 
+        $rsa = PublicKeyLoader::load(Chiffrement::decrypt($key['private_key']));
 
-        if ($rsa->loadKey($key['private_key']) === false) {
+        Debug::debug($rsa);
+        /*
+        if (RSA::loadFormat('OpenSSH', file_get_contents($key['private_key'])) === false) {
+        //if ($rsa->loadKey($key['private_key']) === false) {
             $login_successfull = false;
             Debug::debug($ip_port, "private key loading failed!");
 
             return false;
-        }
+        }*/
 
         Debug::debug($key['user'], "User");
 
         if (!$ssh->login($key['user'], $rsa)) {
+
             Debug::debug($key['user'], "Login Failed");
             $login_successfull = false;
 
@@ -801,4 +807,21 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         echo $ssh->exec('pwd');
         echo $ssh->exec('ls -la');
     }
+
+    public function test4($param)
+    {
+
+        $key = PublicKeyLoader::load(file_get_contents('/root/.ssh/id_rsa'));
+
+        $ssh = new SSH2('localhost:22');
+        if (!$ssh->login('root', $key)) {
+            throw new \Exception('Login failed');
+        }
+        else
+        {
+            echo "OK";
+        }
+    }
+
+
 }

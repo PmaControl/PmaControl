@@ -88,7 +88,6 @@ foreach ($data['slave'] as $slaves) {
 
         //if (Mysql::getMaster($id_mysql_server))
         
-        
         $uniq = $slave['master_host'].':'.$slave['master_port'];
         $id_mysql_server = Mysql::getIdFromDns($uniq); 
         
