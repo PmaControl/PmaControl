@@ -48,7 +48,7 @@ class Slave extends Controller
           usort($data['slave'], 'invenDescSort');
          */
 
-        $data['hostname'] = Extraction::display(array("variables::hostname"));
+        $data['info_server'] = Extraction::display(array("variables::hostname","variables::is_proxysql"));
 
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
