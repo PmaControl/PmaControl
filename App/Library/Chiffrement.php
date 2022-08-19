@@ -7,8 +7,8 @@
 
 namespace App\Library;
 
-use phpseclib\Crypt\AES;
-use phpseclib\Crypt\Random;
+use phpseclib3\Crypt\AES;
+use phpseclib3\Crypt\Random;
 use \Glial\Security\Crypt\Crypt;
 
 

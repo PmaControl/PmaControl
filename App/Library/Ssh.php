@@ -7,9 +7,9 @@
 
 namespace App\Library;
 
-use phpseclib\Crypt\RSA;
-use phpseclib\Net\SSH2;
-use phpseclib\Net\SFTP;
+use phpseclib3\Crypt\RSA;
+use phpseclib3\Net\SSH2;
+use phpseclib3\Net\SFTP;
 use \App\Library\Debug;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
@@ -92,7 +92,7 @@ class Ssh
     static function isValid($pubkeyssh)
     {
         // check public key
-        Debug::$debug = true;
+        //Debug::$debug = true;
 
         Debug::debug(str_repeat("#", 80));
         //Debug::debug($pubkeyssh);
@@ -110,7 +110,6 @@ class Ssh
 
         $path_puplic_key = TMP."trash/key".uniqid();
         file_put_contents($path_puplic_key, $pubkeyssh."\n");
-
 
         //sleep(10);
         Debug::debug($path_puplic_key, "PATH of key");
@@ -198,8 +197,6 @@ class Ssh
         $sftp = new SFTP($server,$port);
         $ssh  = new SSH2($server,$port);
      
-
-
         // priorité a la clef privé si les 2 sont remplie
         if (!empty($private_key)) {
             $key = new RSA();
@@ -286,8 +283,6 @@ class Ssh
 
             while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 self::$server[$ob['id']] = $ob;
-
-                
             }
         }
 
