@@ -15,6 +15,8 @@ class Integrate extends Controller
 {
     use \App\Library\Filter;
     const MAX_FILE_AT_ONCE = 20;
+
+    /* not used ? have to remove */
     const VARIABLES        = "variable";
     const ANSWER           = "answer";   //merge of SHOW GLOBAL STATUS / SHOW MASTER STATUS / SHOW SLAVE HOSTS / SHOW SLAVE STATUS
     const SYSTEM           = "ssh_stats";
@@ -487,9 +489,8 @@ class Integrate extends Controller
             while ($ob = $db->sql_fetch_object($res)) {
                 $this->files[$ob->file_name] = $ob->id;
             }
+            Debug::debug($this->files);
         }
-
-        Debug::debug($this->files);
 
         if (empty($this->files[$memory_file])) {
             throw new \Exception('PMACTRL-098 : Impossible to find this file name : "'.$memory_file.'"');
@@ -515,6 +516,9 @@ class Integrate extends Controller
         }
     }
 
+    /*
+     * to delete
+     */
     static function cmp($a, $b)
     {
         if ($a !== $b) {

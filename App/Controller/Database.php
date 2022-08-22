@@ -1437,8 +1437,7 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
 
         foreach ($table1['primary_key'] as $pk) {
             if (!empty($key_pos[$pk])) {
-            
-                
+
             } else {
                 echo "Impossible to find PK";
                 exit;
@@ -1525,10 +1524,8 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         return $ret;
     }
 
-    public function getPrimaryKey(
-        $param)
+    public function getPrimaryKey($param)
     {
-
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
@@ -1553,5 +1550,23 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         }
 
         return $primary_key;
+    }
+
+    public function empty($param)
+    {
+        Debug::parseDebug($param);
+        $data = array();
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT id,display_name FROM mysql_server";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $data['empty'][$ob->display_name] = Mysql::getEmptyDatabase(array($ob->id));
+        }
+
+        $this->set('data', $data);
     }
 }

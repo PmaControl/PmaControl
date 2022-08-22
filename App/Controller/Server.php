@@ -213,7 +213,7 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18');";
+                 ORDER by a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, a.`is_available`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
 
         $res = $db->sql_query($sql);
 
@@ -226,7 +226,7 @@ class Server extends Controller
 //debug($servers);
 
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "server::ping", "general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res               = $db->sql_query($sql);

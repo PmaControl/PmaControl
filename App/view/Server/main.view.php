@@ -129,7 +129,16 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="'.$style.'">'.$server['ip'].'</td>';
+        echo '<td style="'.$style.'">'.$server['ip'];
+        
+
+
+        if ($data['extra'][$server['id']]['']['read_only'] === "ON")
+        {
+            echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
+        }
+        
+        echo '</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
         echo '<td style="'.$style.'" title="">';
@@ -185,7 +194,34 @@ if (!empty($data['servers'])) {
 
 
         echo '<td style="'.$style.'">';
-        echo $data['extra'][$server['id']]['']['performance_schema'];
+        //echo $data['extra'][$server['id']]['']['performance_schema'];
+
+        if (!empty($data['extra'][$server['id']]['']['performance_schema'])) {
+
+            $checked = array();
+
+            if ($data['extra'][$server['id']]['']['performance_schema'] === "ON") {
+                $checked = array("checked" => "checked");
+            }
+            ?>
+            <div class="form-group" style="margin: 0">
+                <div class="checkbox checbox-switch switch-success" style="margin: 0">
+                    <label>
+            <?php
+            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control performance_schema", "disabled"=> "true", "type" => "checkbox", "title" => "Monitored"), $checked);
+            echo Form::input("check", "all", $computed);
+            ?>
+                        <span></span>
+                    </label>
+                </div>
+            </div>
+
+            <?php
+
+        }
+
+
+
         echo '</td>';
         echo '<td style="'.$style.'">';
 
