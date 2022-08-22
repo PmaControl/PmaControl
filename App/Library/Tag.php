@@ -30,21 +30,25 @@ class Tag {
         }
 
         if (!empty($all_tags)) {
-            
-            
-
             foreach ($all_tags as $tag) {
 
                 $id_tag = Mysql::selectOrInsert($tag, "tag", "name", array("background" => "#" . Color::setBackgroundColor($tag), "color" => "#FFFFFF"));
-
                 //Debug::debug($id_tag,"TAG");
 
+                $sql2 = "SELECT count(1) as cpt from link__mysql_server__tag WHERE `id_mysql_server`=" . $id_mysql_server . " AND `id_tag`=" . $id_tag . "";
+                $res2 = $db->sql_query($sql2);
 
-                $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (" . $id_mysql_server . ", " . $id_tag . ");";
-                $res = $db->sql_query($sql);
+                while ($ob2 = $db->sql_fetch_object($res2)) {
+                    $cpt = $ob2->cpt;
+                }
 
-                if (!$res) {
-                    throw new \Exception("PMACTRL-845 : Impossible to link tags");
+                if ($cpt === "0") {
+                    $sql = "INSERT IGNORE link__mysql_server__tag (`id_mysql_server`,`id_tag`) VALUES (" . $id_mysql_server . ", " . $id_tag . ");";
+                    $res = $db->sql_query($sql);
+
+                    if (!$res) {
+                        throw new \Exception("PMACTRL-845 : Impossible to link tags");
+                    }
                 }
             }
         }

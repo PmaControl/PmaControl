@@ -1,6 +1,8 @@
 <?php
 
 
+
+
 if (!empty($data['NO_FK']))
 {
 	?>
@@ -14,7 +16,19 @@ if (!empty($data['NO_FK']))
 
 
 $filename = $data['file'];
+
+$path_parts = pathinfo($filename)['basename'];
+
+
+
+//$file = LINK."mysql/png/".$data['id_mysql_server']."/".$data['database']."/";
+
+
+//echo '<img src="'.$file.'" />';
+
 echo '<div id="svg">';
+
+$filename = str_replace("png","svg", $filename);
 
 $handle = fopen($filename, "r");
 $remove = true;
@@ -31,9 +45,13 @@ if ($handle) {
         echo $buffer;
     }
     if (!feof($handle)) {
-        echo "Erreur: fgets() a échoué\n";
+        echo "Erreur: fgets() a Ã©chouÃ©\n";
     }
     fclose($handle);
 }
 
 echo '</div>';
+
+
+//\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
+\Glial\Synapse\FactoryController::addNode("virtualForeignKey", "fill", array($data['id_mysql_server'],$data['database']));

@@ -199,11 +199,13 @@ class Debug
                 }
             }
 
-            if (mb_strlen($sql) > 5000) {
+            if (mb_strlen($sql) > 10000) {
                 $suspention = Color::getColoredString("[...]", "grey", "blue");
-                $sql        = mb_substr($sql, 0, 2500)."\n".$suspention."\n".mb_substr($sql, -2500);
+                $sql        = mb_substr($sql, 0, 5000)."\n".$suspention."\n".mb_substr($sql, -5000);
                 echo $sql."\n";
             } else {
+                $sql = str_replace("\n\n", "", $sql);
+                $sql = preg_replace("/ {2,}/", " ", $sql);
                 $sql = \SqlFormatter::highlight($sql);
                 echo trim($sql)."\n";
             }

@@ -183,6 +183,7 @@ class Extraction
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
+        Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {

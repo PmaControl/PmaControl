@@ -7,9 +7,9 @@
 
 namespace App\Library;
 
-use phpseclib\Crypt\RSA;
-use phpseclib\Net\SSH2;
-use phpseclib\Net\SFTP;
+//use phpseclib\Crypt\RSA;
+use phpseclib3\Net\SSH2;
+use phpseclib3\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
 

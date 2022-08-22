@@ -162,3 +162,10 @@ echo "# Account SuperAdmin on PmaControl
 echo "Login : admin"
 echo "Password : ${pwd_admin}"
 echo "#########################################################"
+
+
+
+PWD=$(pwd)
+cp -a glial pmacontrol
+sed "s#php App/Webroot/index.php#php ${PWD}/App/Webroot/index.php#g" -i pmacontrol
+mv pmacontrol /usr/local/bin/pmacontrol
