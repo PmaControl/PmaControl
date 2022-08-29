@@ -1165,7 +1165,7 @@ END;";
 
         Debug::parseDebug($param);
 
-        $data['database'] = Extraction::display(array("databases::databases"));
+        $data['database'] = Extraction::display(array("databases::databases", "variables::is_proxysql"));
 
         $this->set("data", $data);
     }
