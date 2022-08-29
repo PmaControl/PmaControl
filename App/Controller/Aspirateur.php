@@ -361,6 +361,7 @@ class Aspirateur extends Controller
 
                 Debug::debug($date);
             } else {
+                Debug::debug("Can't connect to ssh");
                 //error connection ssh
             }
         }
