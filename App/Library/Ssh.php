@@ -7,7 +7,7 @@
 
 namespace App\Library;
 
-use phpseclib3\Crypt\RSA;
+use \phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use \App\Library\Debug;
@@ -53,22 +53,24 @@ class Ssh
         Debug::Debug($password, "password / private key");
 
         $ssh = new SSH2($ip, $port, 30);
-        $rsa = new RSA();
+        //$rsa = new RSA();
 
         $login_successfull = true;
 
         // debug(Chiffrement::decrypt($key['private_key']));
 
-        $private_key = self::formatPrivateKey($password);
+        $rsa = PublicKeyLoader::load($password);
+        //$private_key = self::formatPrivateKey($password);
 
         //$private_key = $password;
 
         Debug::debug($private_key, "Formated private key");
 
+        /*
         if ($rsa->loadKey($private_key) === false) {
             $login_successfull = false;
             Debug::debug("private key loading failed!");
-        }
+        }*/
 
         if (!$ssh->login($user, $rsa)) {
             Debug::debug("Login Failed");
@@ -199,7 +201,7 @@ class Ssh
      
         // priorité a la clef privé si les 2 sont remplie
         if (!empty($private_key)) {
-            $key = new RSA();
+            //$key = new RSA();
             $key->loadKey($private_key);
         }
 

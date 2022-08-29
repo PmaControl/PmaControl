@@ -8,9 +8,9 @@
 
 namespace App\Library;
 
-//use phpseclib3\Crypt\RSA;
-use phpseclib3\Net\SSH2;
-use phpseclib3\Net\SFTP;
+use \phpseclib3\Crypt\PublicKeyLoader;
+use \phpseclib3\Net\SSH2;
+use \phpseclib3\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
@@ -26,8 +26,6 @@ trait Scp {
                 WHERE a.id = " . $id_backup_storage_area;
         $res = $db->sql_query($sql);
 
-
-
         while ($ob = $db->sql_fetch_object($res)) {
 
             $start = microtime(true);
@@ -40,7 +38,6 @@ trait Scp {
             $dst = $ob->path . "/" . $dst;
 
             
-            
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key);
             }
@@ -50,8 +47,7 @@ trait Scp {
 
             // priorité a la clef privé si les 2 sont remplie
             if (!empty($pv_key)) {
-                $key = new RSA();
-                $key->loadKey($pv_key);
+                $key = PublicKeyLoader::load($pv_key);
             }
 
             if (!$sftp->login($ob->user, $key)) {
@@ -63,7 +59,6 @@ trait Scp {
                 echo 'SSH Login Failed';
                 return false;
             }
-
 
             $file_name = pathinfo($dst)['basename'];
             $dst_dir = pathinfo($dst)['dirname'];
@@ -79,7 +74,6 @@ trait Scp {
             $db->sql_close();
             $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
             $data['execution_time'] = round(microtime(true) - $start, 0);
-
 
             $data['size'] = $sftp->size($dst);
 
@@ -116,7 +110,6 @@ trait Scp {
         $res = $db->sql_query($sql);
 
         
-
         while ($ob = $db->sql_fetch_object($res)) {
 
             $start = microtime(true);
@@ -126,7 +119,6 @@ trait Scp {
                 exit;
             }
 
-            
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key, CRYPT_KEY);
             }
@@ -136,8 +128,7 @@ trait Scp {
 
             // priorité a la clef privé si les 2 sont remplie
             if (!empty($pv_key)) {
-                $key = new RSA();
-                $key->loadKey($pv_key);
+                $key = PublicKeyLoader::load($pv_key);
             }
 
             if (!$sftp->login($ob->user, $key)) {
@@ -150,10 +141,8 @@ trait Scp {
                 return false;
             }
             
-
             $sftp->get($src, $dst);
             $data['execution_time'] = round(microtime(true) - $start, 0);
-
 
             $data['size'] = $sftp->size($src);
 
