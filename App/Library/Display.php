@@ -37,8 +37,16 @@ class Display
             }
         }
 
+        $url1 = '';
+        $url2 = '';
+
+        if (!empty($url)) {
+            $url1 = '<a href="'.$url.'">';
+            $url2 = '</a>';
+        }
+
         $ret = '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
-            .' <a href="'.$url.'">'.self::$server[$id_mysql_server]['display_name'].'</a> ';
+            ." ".$url1.self::$server[$id_mysql_server]['display_name'].$url2.' ';
 
         if ($withip) {
             $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small> ';
