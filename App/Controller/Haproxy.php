@@ -54,7 +54,7 @@ class Haproxy extends Controller {
                 foreach ($lines as $line) {
                     $line = trim($line);
 
-                    if (empty($line) || $line{0} === "#") {
+                    if (empty($line) || substr($line,0,1) === "#") {
                         continue;
                     }
 
