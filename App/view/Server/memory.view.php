@@ -91,13 +91,9 @@ echo '<th>'.'join_buffer'.'</th>';
 echo '<th rowspan="2">'.'thread_stack'.'</th>';
 echo '<th>'.'binlog_cache'.'</th>';
 echo '<th rowspan="2">'.__('Total').'</th>';
-
-
 echo '<th rowspan="2">'.'used memory'.'</th>';
 echo '<th rowspan="2">'.'Max used connections'.'</th>';
 echo '<th rowspan="2">'.__('Physical memory').'</th>';
-
-
 echo '</tr>';
 
 echo '<tr>';

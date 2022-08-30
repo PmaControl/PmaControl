@@ -38,7 +38,7 @@ class Display
         }
 
         $ret = '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
-            .' <a href="">'.self::$server[$id_mysql_server]['display_name'].'</a> ';
+            .' <a href="'.$url.'">'.self::$server[$id_mysql_server]['display_name'].'</a> ';
 
         if ($withip) {
             $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small> ';
