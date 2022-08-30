@@ -323,7 +323,10 @@ class Exctractor extends Controller {
             if (!empty($version)) {
                 $distributor = trim("Debian");
 
-                switch ($version{0}) {
+		
+		$ver = explode('.', $version);
+
+                switch ($ver[0]) {
                     case "4": $codename = "Etch";
                         break;
                     case "5": $codename = "Lenny";
@@ -336,6 +339,13 @@ class Exctractor extends Controller {
                         break;
                     case "9": $codename = "Stretch";
                         break;
+                    case "10": $codename = "Buster";
+                        break;
+                    case "11": $codename = "Bullseye";
+                        break;
+                    case "12": $codename = "Bookworm";
+                        break;
+
                 }
 
                 $os = trim("Debian GNU/Linux " . $version . " (" . $codename . ")");
