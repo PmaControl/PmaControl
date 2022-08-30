@@ -12,9 +12,9 @@ function setColor($type)
 function hexToRgb($colorName)
 {
     list($r, $g, $b) = array_map(
-        function($c) {
-        return hexdec(str_pad($c, 2, $c));
-    }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
+        function ($c) {
+            return hexdec(str_pad($c, 2, $c));
+        }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
     );
 
     return array($r, $g, $b);
@@ -25,7 +25,21 @@ function getrgba($label, $alpha)
     list($r, $g, $b) = setColor($label);
     return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
 }
+if (!empty($_GET['id_mysql_server'])) {
 
+    if (empty($_GET['variable'])) {
+        $_GET['variable'] = '';
+    }
+
+    echo '<a href="'.LINK.'variable/index/id_mysql_server:/variable:'.$_GET['variable'].'" class="btn btn-warning active">Filter: '.Display::srv($_GET['id_mysql_server'], true).'</a>';
+}
+echo ' ';
+
+if (! empty($_GET['variable'])) {
+    echo '<a href="'.LINK.'variable/index/variable:" class="btn btn-warning active">Filter: '.$_GET['variable'].'</a>';
+}
+
+echo '<br><br>';
 
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
