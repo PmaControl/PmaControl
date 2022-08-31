@@ -299,6 +299,8 @@ class Aspirateur extends Controller
             }
         }
 
+        Debug::debug($date, "answer");
+
         //push data in memory
         $this->allocate_shared_storage('answer');
         $this->shared['answer']->{$id_server} = $date;
