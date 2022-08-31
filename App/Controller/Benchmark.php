@@ -640,7 +640,7 @@ Threads fairness:
                     SET id_mysql_server = '" . $id_mysql_server . "',
                     id_user_main = '" . $this->di['auth']->getuser()->id . "',    
                     date = '" . date("Y-m-d H:i:s") . "',
-                    sysbench_version = '" . shell_exec("sysbench --version") . "',
+                    sysbench_version = '" . trim(shell_exec("sysbench --version")) . "',
                     threads = '" . implode(',', $_POST['benchmark_main']['threads']) . "',
                     tables_count = '" . $_POST['benchmark_main']['tables_count'] . "',
                     table_size = '" . $_POST['benchmark_main']['tables_count'] . "',
