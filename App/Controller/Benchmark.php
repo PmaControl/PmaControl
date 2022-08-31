@@ -92,6 +92,7 @@ class Benchmark extends Controller
 --table-size=100000 \
 /usr/share/sysbench/oltp_read_write.lua prepare';
 
+                //
             }
 
             Debug::debug($prepare, "PREPARE");
@@ -132,18 +133,21 @@ class Benchmark extends Controller
                             .' --max-time='.$ob->max_time.' run';
                     } else if (version_compare($data['sysbench'], '1', ">=")) {
 
-                        $cmd = 'sysbench '
-                            .' --mysql-host='.$ob->ip
-                            .' --mysql-port='.$ob->port
-                            .' --mysql-user='.$ob->login
-                            .' --mysql-password='.$password
-                            .' --mysql-db=sbtest'
-                            .' --mysql-table-engine=InnoDB'
-                            .' --oltp-test-mode='.$ob->mode
-                            .' --oltp-read-only='.strtolower($ob->read_only)
-                            .' --oltp-tables-count='.$ob->tables_count
-                            .' --num-threads='.$thread
-                            .' --time='.$ob->max_time.'';
+
+                        $cmd = 'sysbench \
+--db-driver=mysql \
+--mysql-user='.$ob->login.' \
+--mysql_password='.$password.' \
+--mysql-db=sbtest \
+--mysql-host='.$ob->ip.' \
+--mysql-port='.$ob->port.' \
+--tables='.$ob->tables_count.' \
+--table-size=100000 \
+--threads='.$thread.' \
+--time=0 \
+--events=0 \
+--time='.$ob->max_time.' \
+/usr/share/sysbench/oltp_read_write.lua run';
                     } else {
 
                         Debug::debug($data['sysbench'], "Version of sysbench not supported");
@@ -307,19 +311,24 @@ class Benchmark extends Controller
 
     public function getReponseTime95percent($input_lines)
     {
-        preg_match_all("/95\spercentile:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
+        $output_array = array();
+        preg_match_all("/95th\spercentile:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
+        Debug::debug($output_array, "output 95percent");
 
         if (!empty($output_array[1][0])) {
-            str_replace("ms", "", $output_array[1][0]);
+            return str_replace("ms", "", $output_array[1][0]);
         } else {
             return false;
         }
     }
 
-    public function testMoc()
+    public function testMoc($param)
     {
+        Debug::parseDebug($param);
+
+        
         $this->view = false;
-        $data       = $this->moc();
+        $data       = $this->moc2();
 
         echo "Nombre de read : ".$this->getQueriesPerformedRead($data)."\n";
         echo "Nombre de write : ".$this->getQueriesPerformedWrite($data)."\n";
@@ -363,6 +372,47 @@ General statistics:
 Threads fairness:
     events (avg/stddev):           156.2500/2.89
     execution time (avg/stddev):   29.0808/0.04";
+    }
+
+    public function moc2()
+    {
+        return "WARNING: --max-time is deprecated, use --time instead
+sysbench 1.0.18 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Initializing worker threads...
+
+Threads started!
+
+SQL statistics:
+    queries performed:
+        read:                            26068
+        write:                           7448
+        other:                           3724
+        total:                           37240
+    transactions:                        1862   (62.04 per sec.)
+    queries:                             37240  (1240.84 per sec.)
+    ignored errors:                      0      (0.00 per sec.)
+    reconnects:                          0      (0.00 per sec.)
+
+General statistics:
+    total time:                          30.0062s
+    total number of events:              1862
+
+Latency (ms):
+         min:                                   11.51
+         avg:                                   16.11
+         max:                                   30.56
+         95th percentile:                       19.29
+         sum:                                29995.47
+
+Threads fairness:
+    events (avg/stddev):           1862.0000/0.00
+    execution time (avg/stddev):   29.9955/0.00";
     }
 
     public function index($param)
