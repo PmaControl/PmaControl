@@ -52,18 +52,9 @@ class Ssh
         Debug::Debug($user, "user");
         Debug::Debug($password, "password / private key");
 
-        $ssh = new SSH2($ip, $port, 30);
-
+        $ssh               = new SSH2($ip, $port, 30);
         $login_successfull = true;
-
-        // debug(Chiffrement::decrypt($key['private_key']));
-
-        $rsa = PublicKeyLoader::load($password);
-        //$private_key = self::formatPrivateKey($password);
-
-        //$private_key = $password;
-
-        Debug::debug($private_key, "Formated private key");
+        $rsa               = PublicKeyLoader::load($password);
 
         if (PublicKeyLoader::load($password) === false) {
             $login_successfull = false;
@@ -81,7 +72,6 @@ class Ssh
         } else {
             return false;
         }
-        //Debug::debug($ssh->exec("ls -l"), "ls -l");
     }
 
     static function close()
@@ -91,9 +81,6 @@ class Ssh
 
     static function isValid($pubkeyssh)
     {
-        // check public key
-        //Debug::$debug = true;
-
         Debug::debug(str_repeat("#", 80));
         //Debug::debug($pubkeyssh);
 
@@ -111,11 +98,8 @@ class Ssh
         $path_puplic_key = TMP."trash/key".uniqid();
         file_put_contents($path_puplic_key, $pubkeyssh."\n");
 
-        //sleep(10);
         Debug::debug($path_puplic_key, "PATH of key");
         shell_exec("chmod 600 ".$path_puplic_key);
-
-        //echo "\n".file_get_contents($path_puplic_key)."\n\n";
 
         $file_error = TMP."trash/generate_key.error";
 
@@ -136,8 +120,6 @@ class Ssh
 
             if (!empty($error)) {
                 Debug::debug($error, "[ERROR]");
-
-                //throw new \Exception("PMACTRL-145 : ".$error);
             }
             unlink($file_error);
         }
@@ -185,7 +167,6 @@ class Ssh
         unlink($key);
         unlink($key.".pub");
 
-
         return $data;
     }
 
@@ -194,9 +175,9 @@ class Ssh
 
         $start = microtime(true);
 
-        $sftp = new SFTP($server,$port);
-        $ssh  = new SSH2($server,$port);
-     
+        $sftp = new SFTP($server, $port);
+        $ssh  = new SSH2($server, $port);
+
         // priorité a la clef privé si les 2 sont remplie
         if (!empty($private_key)) {
             $rsa = PublicKeyLoader::load($private_key);
@@ -252,8 +233,6 @@ class Ssh
         }
 
         $ssh = self::connect($server['ip'], $server['port'], $server['user'], Crypt::decrypt($server['private_key'], CRYPT_KEY));
-
-        
 
         if ($ssh) {
 
