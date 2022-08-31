@@ -183,6 +183,8 @@ class Aspirateur extends Controller
             $var_temp['variables']['is_proxysql'] = $var['variables']['is_proxysql'];
             $var_temp['variables']['hostname'] = $var['variables']['hostname'];
             $var_temp['variables']['port'] = $var['variables']['port'];
+            $var_temp['variables']['version'] = $var['variables']['version'];
+            $var_temp['variables']['version_comment'] = $var['variables']['version_comment'];
 
             unset($var);
 
