@@ -23,9 +23,11 @@ if (version_compare(  $data['sysbench'],'0.5' ,">=") ) {
     echo ' <div class="form-group" role="group" aria-label="Default button group">';
 
     echo __("Server : ");
+
+    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-live-search" => "true", "class" => "selectpicker", "multiple" => "multiple", "style" => "z-index:1000", "data-width" => "auto")));
     echo ' ';
-    echo Form::select("mysql_server", "id", $data['servers'], "",
-        array("data-live-search" => "true", "class" => "selectpicker", "multiple" => "multiple", "style" => "z-index:1000", "data-width" => "auto"));
+    //echo Form::select("mysql_server", "id", $data['servers'], "",
+    //    array("data-live-search" => "true", "class" => "selectpicker", "multiple" => "multiple", "style" => "z-index:1000", "data-width" => "auto"));
 
     echo '<br>';
 

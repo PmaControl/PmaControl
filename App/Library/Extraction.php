@@ -105,21 +105,21 @@ class Extraction
                         $fields .= ", a.`value` as value ";
                     }
 
-
                     //a.`value`";
                     // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
                 }
 
-
                 foreach ($tab_ids as $id_ts_variable) {
-
 
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                     $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
-                        .$INNER."
+                        .$INNER." WHERE id_ts_variable = ".$id_ts_variable."";
 
-                WHERE id_ts_variable = ".$id_ts_variable."
-                   AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
+                    if ($server !== "ALL")
+                    {
+                        $sql4 .=  " AND a.id_mysql_server IN (".implode(",", $server).")";
+                    }
+                    $sql4 .=  $extra_where." ".$WINDOW.") ";
 
 
 

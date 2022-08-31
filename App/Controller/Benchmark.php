@@ -59,8 +59,7 @@ class Benchmark extends Controller
             Debug::sql($sql2);
 
             $password = Crypt::decrypt($ob->passwd, CRYPT_KEY);
-
-            $server = Sgbd::sql($ob->name);
+            $server   = Sgbd::sql($ob->name);
 
             $sql = "DROP DATABASE IF EXISTS sbtest;";
             $server->sql_query($sql);
@@ -71,6 +70,9 @@ class Benchmark extends Controller
             $data['sysbench'] = $this->getSysbenchVersion();
             Debug::debug($data['sysbench'], "Version sysbench");
 
+            $script['oltp_read_only'] = "/usr/share/sysbench/oltp_read_only.lua";
+            $script['oltp_read_write'] = "/usr/share/sysbench/oltp_read_write.lua";
+
             if (version_compare($data['sysbench'], '0.5', "=")) {
 
                 $prepare = 'sysbench --test=/usr/local/sysbench/tests/db/oltp.lua --mysql-host='.$ob->ip.' --mysql-port='.$ob->port;
@@ -78,7 +80,6 @@ class Benchmark extends Controller
                     .'--mysql-db=sbtest --mysql-table-engine=InnoDB '
                     .'--oltp-tables-count='.$ob->tables_count.' --max-time='.$ob->max_time.' prepare';
             } else if (version_compare($data['sysbench'], '1', ">=")) {
-
 
                 $prepare = '
                 sysbench \
@@ -91,8 +92,6 @@ class Benchmark extends Controller
 --tables='.$ob->tables_count.' \
 --table-size=100000 \
 /usr/share/sysbench/oltp_read_write.lua prepare';
-
-                //
             }
 
             Debug::debug($prepare, "PREPARE");
@@ -107,14 +106,10 @@ class Benchmark extends Controller
                 $max_connections = $ob2->max;
             }
 
-
             $threads = explode(',', $ob->threads);
             foreach ($threads as $thread) {
 
                 if ($max_connections > $thread + 1) {
-
-
-
 
                     if (version_compare($data['sysbench'], '0.5', "=")) {
 
@@ -152,8 +147,6 @@ class Benchmark extends Controller
 
                         Debug::debug($data['sysbench'], "Version of sysbench not supported");
                     }
-
-
 
                     Debug::debug(Color::getColoredString($cmd, "yellow"));
 
@@ -326,7 +319,6 @@ class Benchmark extends Controller
     {
         Debug::parseDebug($param);
 
-        
         $this->view = false;
         $data       = $this->moc2();
 
@@ -509,7 +501,7 @@ Threads fairness:
     {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $this->di['js']->addJavascript(array("Chart.min.js"));
+        $this->di['js']->addJavascript(array("chart.min.js"));
 
         $data = array();
 
@@ -638,7 +630,7 @@ Threads fairness:
                     datasets: [';
 
                 $j   = 0;
-                $tmp = '';
+                $tmp = array();
                 foreach ($result as $server => $res_by_server) {
 
                     $j = $j % count($this->colors);
