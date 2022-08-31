@@ -192,15 +192,13 @@ class Mysql extends Controller {
 
         $def = Sgbd::sql(DB_DEFAULT);
 
+        // remove server with warning, of in process
         $sql = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
-
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
 
             $db = Sgbd::sql($ob2->name);
-
-            $server_config = $db->getParams();
 
             $port = empty($server_config['port']) ? 3306 : $server_config['port'];
 
@@ -214,7 +212,7 @@ class Mysql extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $password[] = $ob->Password;
-                $table->addLine(array($i, $ob2->name, $server_config['hostname'] . ":" . $port,
+                $table->addLine(array($i, $ob2->display_name, $ob2->ip . ":" . $port,
                     $ob->User, $ob->Host, $ob->Password));
                 $i++;
             }

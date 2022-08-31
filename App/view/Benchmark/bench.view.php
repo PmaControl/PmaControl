@@ -7,6 +7,10 @@
 
 use Glial\Html\Form\Form;
 
+
+//Debug::debug($data);
+
+
 if (version_compare(  $data['sysbench'],'0.5' ,">=") ) {
     ?>
     <div class="well">
