@@ -100,12 +100,7 @@ class Benchmark extends Controller {
                 $max_connections = $ob2->max;
             }
 
-
-
-
-
-
-
+            
             $threads = explode(',', $ob->threads);
             foreach ($threads as $thread) {
 
@@ -354,6 +349,9 @@ Threads fairness:
     }
 
     public function index($param) {
+
+
+        Debug::parseDebug($param);
 
         $this->title = '<i class="fa fa-tachometer"></i> ' . __("Benchmark");
         $this->ariane = '> <a href="' . LINK . 'plugins"><i class="fa fa-puzzle-piece"></i> ' . __("Plugins") . '</a> > ' . $this->title;
@@ -919,9 +917,6 @@ Threads fairness:
             Debug::debug("No bench to do !");
         }
 
-
-
-
         $sql = "UPDATE `benchmark_config` SET pid = '0' WHERE id = 1";
         $db->sql_query($sql);
     }
@@ -941,7 +936,10 @@ Threads fairness:
         }
     }
 
-    public function getSysbenchVersion() {
+    public function getSysbenchVersion($param = array()) {
+
+        Debug::parseDebug($param);
+
         $data['sysbench'] = "N/A";
         $version = shell_exec("sysbench --version 2> /dev/null");
 
@@ -949,6 +947,8 @@ Threads fairness:
             $elems = explode(" ", $version);
             $data['sysbench'] = trim($elems[1]);
         }
+
+        Debug::debug($data['sysbench'], "Version sysbench");
 
         return $data['sysbench'];
     }
