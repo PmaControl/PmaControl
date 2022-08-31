@@ -49,7 +49,7 @@ foreach ($data['current'] as $line) {
     echo '<td '.$class.'>'.$i.'</td>';
     echo '<td '.$class.'>'.$line['id_benchmark_main'].'</td>';
     echo '<td '.$class.'>'.$line['date'].'</td>';
-    echo '<td '.$class.'>'.$line['name'].'</td>';
+    echo '<td '.$class.'>'.$line['display_name'].'</td>';
     echo '<td '.$class.'>'.$line['date_start'].'</td>';
     echo '<td '.$class.'>'.$line['date_end'].'</td>';
     echo '<td '.$class.'>'.$line['threads'].'</td>';
