@@ -117,7 +117,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                                 echo '<td>';
                             }
 
-                            if ($var == "dddquery") {
+                            if ($var == "query") {
 
                                 echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample' . $i . '">'
                                 . '<i class="fa fa-plus"></i></button>';

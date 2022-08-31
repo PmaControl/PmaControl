@@ -4,10 +4,9 @@
 
 echo '<div class="well">';
 
-
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 
-echo '<br />';
+echo '<br /><br />';
 echo ' <div class="btn-group" role="group" aria-label="Default button group">';
 
 
