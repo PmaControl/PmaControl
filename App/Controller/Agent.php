@@ -175,7 +175,7 @@ class Agent extends Controller {
             $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
             $db->sql_query($sql);
 
-            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid, "grey");
+            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid);
         } else {
 
             if (!empty($pid)) {

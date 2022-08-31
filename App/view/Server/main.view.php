@@ -133,7 +133,7 @@ if (!empty($data['servers'])) {
         
 
 
-        if ($data['extra'][$server['id']]['']['read_only'] === "ON")
+        if ( !empty($data['extra'][$server['id']]['']['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON")
         {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }

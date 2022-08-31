@@ -51,13 +51,13 @@ class Benchmark extends Controller {
         WHERE a.id = " . $id_benchmark_main;
         $res = $db->sql_query($sql);
 
-        Debug::debug(trim(SqlFormatter::highlight($sql)));
+        Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $sql2 = "UPDATE benchmark_main SET status = 'RUNNING',date_start = '" . date('Y-m-d H:i:s') . "' WHERE id ='" . $id_benchmark_main . "'";
             $db->sql_query($sql2);
-            Debug::debug(trim(SqlFormatter::highlight($sql2)));
+            Debug::sql($sql2);
 
             $password = Crypt::decrypt($ob->passwd, CRYPT_KEY);
 
@@ -657,9 +657,7 @@ Threads fairness:
                     }
 
                     $sql = "SELECT * FROM benchmark_config where id=1";
-
                     $res = $db->sql_query($sql);
-
 
                     // system de queue
                     while ($ob = $db->sql_fetch_object($res)) {
@@ -685,7 +683,6 @@ Threads fairness:
                             $sql = "UPDATE `benchmark_config` SET pid = '" . $pid . "' WHERE id = 1";
                             $db->sql_query($sql);
 
-
                             set_flash("success", "Daemon", "Benchmark started in background, check onglet current");
                         } else {
                             set_flash("caution", "Daemon", "Daemon already started, benchmark added in queue, check onglet current");
@@ -699,7 +696,6 @@ Threads fairness:
                 }
             }
         }
-
 
         // version de sysbench
         $data['sysbench'] = $this->getSysbenchVersion();
