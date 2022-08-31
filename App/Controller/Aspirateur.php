@@ -118,7 +118,6 @@ class Aspirateur extends Controller
 
         Debug::debug($service);
 
-
         $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_server] = $service;
 
@@ -152,7 +151,6 @@ class Aspirateur extends Controller
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
         //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
 
-
         if (!empty($var['variables']['gtid_binlog_pos'])) {
             unset($var['variables']['gtid_binlog_pos']);
         }
@@ -173,30 +171,48 @@ class Aspirateur extends Controller
             unset($var['variables']['timestamp']);
         }
 
-        Debug::debug("apres Variables");
-        $data['status'] = $mysql_tested->getStatus();
 
-        
+        if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
+            $db  = Sgbd::sql(DB_DEFAULT);
+            $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_server.";";
+            Debug::sql($sql);
+            $db->sql_query($sql);
+            $db->sql_close();
 
-        Debug::debug("apres status");
-        $data['master'] = $mysql_tested->isMaster();
-        Debug::debug($data['master'], "STATUS");
-        Debug::debug("apres master");
-        $data['slave']  = $mysql_tested->isSlave();
-        Debug::debug("apres slave");
 
-        $data['locking'] = $this->getLockingQueries(array($id_server));
+            $var_temp['variables']['is_proxysql'] = $var['variables']['is_proxysql'];
+            $var_temp['variables']['hostname'] = $var['variables']['hostname'];
+            $var_temp['variables']['port'] = $var['variables']['port'];
 
-        //SHOW SLAVE HOSTS; => add in glial
-        //$data['processlist'] = $mysql_tested->getProcesslist(1);
+            unset($var);
 
-        if ($var['variables']['log_bin'] === "ON") {
-            $data['binlog'] = $this->binaryLog(array($id_server));
+            $var = $var_temp;
+
+
+        } else {
+
+            Debug::debug("apres Variables");
+            $data['status'] = $mysql_tested->getStatus();
+
+            Debug::debug("apres status");
+            $data['master'] = $mysql_tested->isMaster();
+            Debug::debug($data['master'], "STATUS");
+            Debug::debug("apres master");
+            $data['slave']  = $mysql_tested->isSlave();
+            Debug::debug("apres slave");
+
+            $data['locking'] = $this->getLockingQueries(array($id_server));
+
+            //SHOW SLAVE HOSTS; => add in glial
+            //$data['processlist'] = $mysql_tested->getProcesslist(1);
+
+            if ($var['variables']['log_bin'] === "ON") {
+                $data['binlog'] = $this->binaryLog(array($id_server));
+            }
+
+            Debug::debug("apres la récupération de la liste des binlogs");
+            Debug::checkPoint('apres query');
         }
-
-        Debug::debug("apres la récupération de la liste des binlogs");
-        Debug::checkPoint('apres query');
-
         /* mysql > 5.6
           $sql = "SELECT `NAME`,`COUNT`,`TYPE` FROM `INFORMATION_SCHEMA`.`INNODB_METRICS` WHERE `STATUS` = 'enabled';";
           $res = $mysql_tested->sql_query($sql);
@@ -205,6 +221,7 @@ class Aspirateur extends Controller
           $data['innodb'][$ob->NAME] = $ob->COUNT;
           }
          */
+
 
         $date[date('Y-m-d H:i:s')][$id_server] = $data;
 
@@ -288,6 +305,9 @@ class Aspirateur extends Controller
 
         if ($export_variables) {
             $this->allocate_shared_storage('variable');
+
+            Debug::debug($var, "SHOW GLOBAL VARIABLE;");
+
             $variables                                  = array();
             $variables[date('Y-m-d H:i:s')][$id_server] = $var;
             $this->shared['variable']->{$id_server}     = $variables;
@@ -308,7 +328,6 @@ class Aspirateur extends Controller
         $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
     }
-
 
     public function trySshConnection($param)
     {
@@ -1334,14 +1353,13 @@ class Aspirateur extends Controller
         $res2 = $mysql_tested->sql_query($sql2);
 
         $db_number = $mysql_tested->sql_num_rows($res2);
-        
-        if ($db_number > 500)
-        {
+
+        if ($db_number > 500) {
             Debug::sql("Too much DBs");
             return false;
         }
-        
-        
+
+
         $sql = 'SELECT table_schema as `database`,
         engine,
         ROW_FORMAT as "row_format", 
@@ -1511,9 +1529,7 @@ GROUP BY C.ID, C.INFO;";
                 Debug::debug($tmp);
 
                 return $tmp;
-            }
-            else
-            {
+            } else {
                 Debug::debug("METADATA_LOCK_INFO is not installed");
             }
         }
