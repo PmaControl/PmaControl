@@ -1,7 +1,5 @@
 <?php
 
-
-
 echo '<div class="well">';
 
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
