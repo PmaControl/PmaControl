@@ -571,6 +571,7 @@ Threads fairness:
                 exit;
             }
         }
+        
 
         if (!empty($_GET['benchmark_main']['id'])) {
             $id_to_take = implode(",", json_decode($_GET['benchmark_main']['id']));
