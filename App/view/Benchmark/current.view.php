@@ -20,7 +20,6 @@ echo '<th>'.__("Threads").'</th>';
 echo '<th>'.__("Tables_count").'</th>';
 echo '<th>'.__("Max time").'</th>';
 echo '<th>'.__("Mode").'</th>';
-echo '<th>'.__("Read only").'</th>';
 echo '<th>'.__("Status").'</th>';
 
 
@@ -56,7 +55,6 @@ foreach ($data['current'] as $line) {
     echo '<td '.$class.'>'.$line['tables_count'].'</td>';
     echo '<td '.$class.'>'.$line['max_time'].'</td>';
     echo '<td '.$class.'>'.$line['mode'].'</td>';
-    echo '<td '.$class.'>'.$line['read_only'].'</td>';
     echo '<td '.$class.'>';
 
     if ($line['status'] === "RUNNING") {
