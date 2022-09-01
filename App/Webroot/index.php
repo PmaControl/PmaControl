@@ -103,8 +103,14 @@ try {
     }
 } catch (Exception $e) {
 
-
-    echo "[".date("Y-m-d H:i:s")."][ERROR] ".$e->getMessage(), "\n";
+    if (IS_CLI)
+    {
+        echo \Glial\Cli\Color::getColoredString("[".date("Y-m-d H:i:s")."][ERROR] ".$e->getMessage()." ", "black", "red")."\n";
+    }
+    else
+    {
+        echo "[".date("Y-m-d H:i:s")."][ERROR] ".$e->getMessage()."\n";
+    }
 
     $error_code = $e->getCode();
     if ($error_code >= 80) {
