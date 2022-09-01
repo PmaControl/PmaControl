@@ -547,7 +547,6 @@ Threads fairness:
 
     public function graph()
     {
-
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array("chart.min.js"));
 
@@ -588,7 +587,6 @@ Threads fairness:
             $this->set("data", $data);
             return;
         }
-
 
         $sql = "select a.*,b.display_name from `benchmark_main` a
          INNER JOIN mysql_server b ON a.id_mysql_server = b.id
