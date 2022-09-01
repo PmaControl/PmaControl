@@ -207,8 +207,7 @@ echo '</div>';
 
 
 
-
-
+/*
 echo '<table class="table table-condensed table-bordered table-striped">';
 
 
@@ -247,10 +246,7 @@ foreach ($data['variables'] as $server => $var) {
     $variable['innodb_buffer_pool_size']         = $variable['innodb_buffer_pool_size'] ?? 0;
     $variable['innodb_additional_mem_pool_size'] = $variable['innodb_additional_mem_pool_size'] ?? 0;
     $variable['innodb_log_buffer_size']          = $variable['innodb_log_buffer_size'] ?? 0;
-    /*
-     * Si memoire utilisable par mysql > RAM => rouge
-     * Si memoire utilisé (avec max user) > RAM => Noir
-     */
+
 
 
     echo '<tr>';
@@ -428,9 +424,6 @@ foreach ($data['variables'] as $server => $var) {
 
     //debug($data['status'][$server]);
 
-
-
-
     echo '<td style="'.$style4.'">'.$mem_kb.'</td>';
 
     echo '</tr>';
@@ -438,3 +431,5 @@ foreach ($data['variables'] as $server => $var) {
 }
 
 echo '</table>';
+ * 
+ */

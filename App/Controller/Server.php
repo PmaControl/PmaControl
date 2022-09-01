@@ -255,7 +255,6 @@ class Server extends Controller
 
     public function database()
     {
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
@@ -287,7 +286,7 @@ class Server extends Controller
 
         $data['servers'] = Extraction::display(array("status::com_select", "status::com_update", "status::com_insert", "status::com_delete",
                 "status::threads_connected", "status::uptime", "status::com_commit", "status::com_rollback", "status::com_begin", "status::com_replace",
-                "variables::hostname"));
+                "variables::hostname","variables::is_proxysql"));
 
         $data['mysql'] = $this->getServer();
 
