@@ -445,11 +445,13 @@ class Database extends Controller
             while ($ob6      = $db2->sql_fetch_array($res6, MYSQLI_ASSOC)) {
 
                 $sql21 = "SHOW CREATE TRIGGER `".$OLD_DB."`.`".$ob6['Trigger']."`";
+                Debug::sql($sql21);
                 $res21 = $db2->sql_query($sql21);
 
                 while ($ob21 = $db2->sql_fetch_array($res21, MYSQLI_ASSOC)) {
 
-                    $triggers[$ob6['Trigger']] = str_replace('@'.$OLD_DB.'.', '@'.$NEW_DB.'.', $ob21['SQL Original Statement']).";";
+                    $triggers[$ob6['Trigger']] = str_replace('@'.$OLD_DB.'.', '@'.$NEW_DB.'.', $ob21['SQL Original Statement']);
+                    $triggers[$ob6['Trigger']] = str_replace('`'.$OLD_DB.'`.', '`'.$NEW_DB.'`.', $triggers[$ob6['Trigger']]).";";
                 }
 
                 $sql8 = "DROP TRIGGER `".$ob6['Trigger']."`;";
@@ -653,20 +655,20 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             foreach ($views as $view) {
                 $sql12 = $view;
-                //Debug::sql($sql12);
+                Debug::sql($sql12);
                 $db2->sql_query($sql12);
             }
 
             foreach ($procedures as $procedure) {
                 $sql19 = $procedure;
-                //Debug::sql($sql19);
+                Debug::sql($sql19);
                 $db2->sql_multi_query($sql19);
             }
 
 
             foreach ($triggers as $trigger) {
                 $sql7 = $trigger;
-                //Debug::sql($sql7);
+                Debug::sql($sql7);
                 $db2->sql_multi_query($sql7);
             }
 
@@ -750,10 +752,12 @@ END;";
         $users = Mysql::exportAllUser($db_link);
         foreach ($users as $user) {
 
-            Debug::debug($user);
-            $pos = strpos($user, $OLD_DB);
+            //Debug::debug($user);
+            $pos = strpos($user, "`".$OLD_DB."`.");
 
             if ($pos !== false) {
+
+                //add test if found (compare after and before)
                 $revoke[] = str_replace(array(" TO ", "GRANT"), array(" FROM ", "REVOKE"), $user).";";
 
                 $grants[] = str_replace("`".$OLD_DB."`", "`".$NEW_DB."`", $user).";";
