@@ -487,12 +487,16 @@ Threads fairness:
         $data['menu']['config']['icone'] = '<i class="fa fa-wrench" aria-hidden="true"></i>';
         $data['menu']['config']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/config';
 
+        $data['menu']['script']['name']  = __('Scripts');
+        $data['menu']['script']['icone'] = '<i class="fa fa-gears" aria-hidden="true"></i>';
+        $data['menu']['script']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/script';
+
         $data['menu']['graph']['name']  = __('Graphs');
         $data['menu']['graph']['icone'] = '<i class="fa fa-area-chart" aria-hidden="true"></i>';
         $data['menu']['graph']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/graph';
 
         if (!empty($param[0])) {
-            if (in_array($param[0], array('bench', 'current', 'config', 'graph'))) {
+            if (in_array($param[0], array_keys($data['menu']))) {
                 $_GET['path'] = LINK.$this->getClass().'/'.__FUNCTION__.'/'.$param[0];
             }
         }
@@ -850,7 +854,7 @@ Threads fairness:
             $data['tables_count'][] = $tmp;
         }
 
-        $modes = $this->getScriptLua(array($this->getDirectoryLua($this->getSysbenchVersion())));
+        $modes = $this->getLua();
 
         $data['test_mode'] = array();
         foreach ($modes as $mode) {
@@ -1102,5 +1106,25 @@ Threads fairness:
         Debug::debug($ret, "directory lua");
 
         return $ret;
+    }
+
+    public function script($param)
+    {
+        Debug::parseDebug($param);
+
+        $data['test_mode'] = array();
+        foreach ($modes as $mode) {
+            $tmp                 = array();
+            $tmp['id']           = $mode;
+            $tmp['libelle']      = $mode;
+            $data['test_mode'][] = $tmp;
+        }
+
+        $this->set('data', $data);
+    }
+
+    public function getLua()
+    {
+        return $this->getScriptLua(array($this->getDirectoryLua($this->getSysbenchVersion())));
     }
 }
