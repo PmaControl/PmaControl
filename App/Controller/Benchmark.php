@@ -584,9 +584,6 @@ Threads fairness:
             }
         }
 
-
-
-
         if (empty($id_to_take)) {
             $this->set("data", $data);
             return;
