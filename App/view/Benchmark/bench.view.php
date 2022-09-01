@@ -46,13 +46,13 @@ if (version_compare(  $data['sysbench'],'0.5' ,">=") ) {
 
     echo " ";
     echo __('Test mode :').' '.Form::select("benchmark_main", "mode", $data['test_mode'], "",
-        array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
+        array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto", "multiple" => "multiple"));
 
-
+/*
     echo " ";
     echo __('Read only :').' '.Form::select("benchmark_main", "read_only", $data['read_only'], "",
         array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));
-
+*/
     echo " ";
     echo __('Max time only :').' '.Form::select("benchmark_main", "max_time", $data['max_time'], "",
         array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "auto"));

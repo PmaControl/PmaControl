@@ -10,12 +10,14 @@ use \Glial\Sgbd\Sgbd;
 
 class Benchmark extends Controller
 {
-    const COLOR_GREEN  = "75,215,134";
-    const COLOR_BLUE   = "142,199,255";
-    const COLOR_YELLOW = "252,215,95";
-    const COLOR_RED    = "255,168,168";
-    const COLOR_GREY   = "130,130,130";
-    const SHADOW       = "0.2";
+    const COLOR_GREEN               = "75,215,134";
+    const COLOR_BLUE                = "142,199,255";
+    const COLOR_YELLOW              = "252,215,95";
+    const COLOR_RED                 = "255,168,168";
+    const COLOR_GREY                = "130,130,130";
+    const SHADOW                    = "0.2";
+    const DIRECTORY_LUA_SYSBENCH_05 = "/usr/local/sysbench/tests/db/";
+    const DIRECTORY_LUA_SYSBENCH_1  = "/usr/share/sysbench/";
 
     var $debug = false;
     var $count = 1;
@@ -52,6 +54,8 @@ class Benchmark extends Controller
 
         Debug::sql($sql);
 
+        $directory_lua = $this->getDirectoryLua($this->getSysbenchVersion());
+
         while ($ob = $db->sql_fetch_object($res)) {
 
             $sql2 = "UPDATE benchmark_main SET status = 'RUNNING',date_start = '".date('Y-m-d H:i:s')."' WHERE id ='".$id_benchmark_main."'";
@@ -70,16 +74,15 @@ class Benchmark extends Controller
             $data['sysbench'] = $this->getSysbenchVersion();
             Debug::debug($data['sysbench'], "Version sysbench");
 
-            $script['oltp_read_only'] = "/usr/share/sysbench/oltp_read_only.lua";
-            $script['oltp_read_write'] = "/usr/share/sysbench/oltp_read_write.lua";
-
             if (version_compare($data['sysbench'], '0.5', "=")) {
 
-                $prepare = 'sysbench --test=/usr/local/sysbench/tests/db/oltp.lua --mysql-host='.$ob->ip.' --mysql-port='.$ob->port;
+                $prepare = 'sysbench --test='.$directory_lua.$ob->mode.' --mysql-host='.$ob->ip.' --mysql-port='.$ob->port;
                 $prepare .= ' --mysql-user='.$ob->login.' --mysql-password='.$password.' '
                     .'--mysql-db=sbtest --mysql-table-engine=InnoDB '
                     .'--oltp-tables-count='.$ob->tables_count.' --max-time='.$ob->max_time.' prepare';
             } else if (version_compare($data['sysbench'], '1', ">=")) {
+
+
 
                 $prepare = '
                 sysbench \
@@ -90,8 +93,8 @@ class Benchmark extends Controller
 --mysql-host='.$ob->ip.' \
 --mysql-port='.$ob->port.' \
 --tables='.$ob->tables_count.' \
---table-size=100000 \
-/usr/share/sysbench/oltp_read_write.lua prepare';
+--table-size=10000 \
+'.$directory_lua.$ob->mode.' prepare';
             }
 
             Debug::debug($prepare, "PREPARE");
@@ -106,6 +109,8 @@ class Benchmark extends Controller
                 $max_connections = $ob2->max;
             }
 
+
+
             $threads = explode(',', $ob->threads);
             foreach ($threads as $thread) {
 
@@ -114,7 +119,7 @@ class Benchmark extends Controller
                     if (version_compare($data['sysbench'], '0.5', "=")) {
 
                         $cmd = 'sysbench '
-                            .' --test=/usr/local/sysbench/tests/db/oltp.lua'
+                            .' --test='.$directory_lua.$ob->mode
                             .' --mysql-host='.$ob->ip
                             .' --mysql-port='.$ob->port
                             .' --mysql-user='.$ob->login
@@ -122,7 +127,6 @@ class Benchmark extends Controller
                             .' --mysql-db=sbtest'
                             .' --mysql-table-engine=InnoDB'
                             .' --oltp-test-mode='.$ob->mode
-                            .' --oltp-read-only='.strtolower($ob->read_only)
                             .' --oltp-tables-count='.$ob->tables_count
                             .' --num-threads='.$thread
                             .' --max-time='.$ob->max_time.' run';
@@ -137,12 +141,12 @@ class Benchmark extends Controller
 --mysql-host='.$ob->ip.' \
 --mysql-port='.$ob->port.' \
 --tables='.$ob->tables_count.' \
---table-size=100000 \
+--table-size=10000 \
 --threads='.$thread.' \
 --time=0 \
 --events=0 \
 --time='.$ob->max_time.' \
-/usr/share/sysbench/oltp_read_write.lua run';
+'.$directory_lua.$ob->mode.' run';
                     } else {
 
                         Debug::debug($data['sysbench'], "Version of sysbench not supported");
@@ -151,15 +155,15 @@ class Benchmark extends Controller
                     Debug::debug(Color::getColoredString($cmd, "yellow"));
 
                     $input_lines = shell_exec($cmd);
-                    sleep(5);
+                    sleep(20);
 
                     Debug::debug(Color::getColoredString($input_lines, "blue"));
 
                     $sql = "INSERT INTO benchmark_run
-                      SET id_benchmark_main = '".$id_benchmark_main."',
+                      SET `id_benchmark_main` = '".$id_benchmark_main."',
                       `date` = '".date("Y-m-d H:i:s")."',
                       `threads`  = '".$thread."',
-
+                      `mode`  = '".$mode."',
                       `read` = '".$this->getQueriesPerformedRead($input_lines)."',
                       `write` = '".$this->getQueriesPerformedWrite($input_lines)."',
                       `other` = '".$this->getQueriesPerformedOther($input_lines)."',
@@ -170,13 +174,13 @@ class Benchmark extends Controller
                       `reponse_min` = '".$this->getReponseTimeMin($input_lines)."',
                       `reponse_max` = '".$this->getReponseTimeMax($input_lines)."',
                       `reponse_avg` = '".$this->getReponseTimeAvg($input_lines)."',
-                      `reponse_percentile95` = '".$this->getReponseTime95percent($input_lines)."'
-                      ";
+                      `reponse_percentile95` = '".$this->getReponseTime95percent($input_lines)."';";
+
+                    Debug::sql($sql);
 
                     //better to get PANIC and FATAL error and send to log
-                    if (!empty($this->getQueriesPerformedRead($input_lines))) {
-                        $db->sql_query($sql);
-                    }
+
+                    $db->sql_query($sql);
                 } else {
                     Debug::debug(Color::getColoredString("Thread canceled : ".$thread." (max_connections : ".$max_connections.")", "yellow"));
                 }
@@ -195,7 +199,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return $output_array[1][0];
         } else {
             return false;
@@ -206,7 +210,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return $output_array[1][0];
         } else {
             return false;
@@ -217,7 +221,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return $output_array[1][0];
         } else {
             return false;
@@ -228,7 +232,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+[\d]+[\s]+total:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return $output_array[1][0];
         } else {
             return false;
@@ -239,7 +243,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/transactions:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return $output_array[1][0];
         } else {
             return false;
@@ -261,7 +265,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/total\stime:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return str_replace("s", "", $output_array[1][0]);
         } else {
             return false;
@@ -272,7 +276,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/min:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return str_replace("ms", "", $output_array[1][0]);
         } else {
             return false;
@@ -283,7 +287,7 @@ class Benchmark extends Controller
     {
         preg_match_all("/max:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
 
-        if (!empty($output_array[1][0])) {
+        if (isset($output_array[1][0])) {
             return str_replace("ms", "", $output_array[1][0]);
         } else {
             return false;
@@ -306,7 +310,7 @@ class Benchmark extends Controller
     {
         $output_array = array();
         preg_match_all("/95th\spercentile:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
-        Debug::debug($output_array, "output 95percent");
+        //Debug::debug($output_array, "output 95percent");
 
         if (!empty($output_array[1][0])) {
             return str_replace("ms", "", $output_array[1][0]);
@@ -320,7 +324,7 @@ class Benchmark extends Controller
         Debug::parseDebug($param);
 
         $this->view = false;
-        $data       = $this->moc2();
+        $data       = $this->moc3();
 
         echo "Nombre de read : ".$this->getQueriesPerformedRead($data)."\n";
         echo "Nombre de write : ".$this->getQueriesPerformedWrite($data)."\n";
@@ -407,6 +411,47 @@ Threads fairness:
     execution time (avg/stddev):   29.9955/0.00";
     }
 
+    public function moc3()
+    {
+        return "sysbench 1.0.18 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 13
+Initializing random number generator from current time
+
+
+Initializing worker threads...
+
+Threads started!
+
+SQL statistics:
+    queries performed:
+        read:                            0
+        write:                           508442
+        other:                           0
+        total:                           508442
+    transactions:                        508442 (50831.13 per sec.)
+    queries:                             508442 (50831.13 per sec.)
+    ignored errors:                      0      (0.00 per sec.)
+    reconnects:                          0      (0.00 per sec.)
+
+General statistics:
+    total time:                          10.0013s
+    total number of events:              508442
+
+Latency (ms):
+         min:                                    0.10
+         avg:                                    0.26
+         max:                                  160.70
+         95th percentile:                        0.41
+         sum:                               129757.40
+
+Threads fairness:
+    events (avg/stddev):           39110.9231/124.82
+    execution time (avg/stddev):   9.9813/0.00
+";
+    }
+
     public function index($param)
     {
 
@@ -424,7 +469,6 @@ Threads fairness:
         while ($ob = $db->sql_fetch_object($res)) {
             $cpt = $ob->cpt;
         }
-
 
         $badge = "";
         if (!empty($cpt)) {
@@ -694,27 +738,27 @@ Threads fairness:
                 if (!empty($_POST['mysql_server']['id'])) {
 
                     //boucler sur tous les cas à prévoir
+                    foreach ($_POST['benchmark_main']['mode'] as $mode) {
+                        foreach ($_POST['mysql_server']['id'] as $id_mysql_server) {
 
-                    foreach ($_POST['mysql_server']['id'] as $id_mysql_server) {
+                            $sql = "INSERT INTO benchmark_main
+                            SET id_mysql_server = '".$id_mysql_server."',
+                            id_user_main = '".$this->di['auth']->getuser()->id."',
+                            date = '".date("Y-m-d H:i:s")."',
+                            sysbench_version = '".$this->getSysbenchVersion()."',
+                            threads = '".implode(',', $_POST['benchmark_main']['threads'])."',
+                            tables_count = '".$_POST['benchmark_main']['tables_count']."',
+                            table_size = '".$_POST['benchmark_main']['tables_count']."',
+                            mode = '".$mode."',
+                            max_time = '".$_POST['benchmark_main']['max_time']."',
+                            status = 'NOT STARTED',
+                            date_start='0000-00-00 00:00:00',
+                            date_end='0000-00-00 00:00:00',
+                            progression=0
+                            ";
 
-                        $sql = "INSERT INTO benchmark_main
-                    SET id_mysql_server = '".$id_mysql_server."',
-                    id_user_main = '".$this->di['auth']->getuser()->id."',    
-                    date = '".date("Y-m-d H:i:s")."',
-                    sysbench_version = '".trim(shell_exec("sysbench --version"))."',
-                    threads = '".implode(',', $_POST['benchmark_main']['threads'])."',
-                    tables_count = '".$_POST['benchmark_main']['tables_count']."',
-                    table_size = '".$_POST['benchmark_main']['tables_count']."',
-                    mode = '".$_POST['benchmark_main']['mode']."',
-                    read_only = '".$_POST['benchmark_main']['read_only']."',
-                    max_time = '".$_POST['benchmark_main']['max_time']."',
-                    status = 'NOT STARTED',
-                    date_start='0000-00-00 00:00:00',
-                    date_end='0000-00-00 00:00:00',
-                    progression=0
-                    ";
-
-                        $db->sql_query($sql);
+                            $db->sql_query($sql);
+                        }
                     }
 
                     $sql = "SELECT * FROM benchmark_config where id=1";
@@ -771,7 +815,7 @@ Threads fairness:
             $_GET['benchmark_main']['table_size ']  = $ob->table_size;
             $_GET['benchmark_main']['max_time']     = $ob->max_time;
             $_GET['benchmark_main']['mode']         = $ob->mode;
-            $_GET['benchmark_main']['read_only']    = $ob->read_only;
+            //$_GET['benchmark_main']['read_only']    = $ob->read_only;
         }
 
 //debug($_GET['benchmark_main']);
@@ -806,7 +850,7 @@ Threads fairness:
             $data['tables_count'][] = $tmp;
         }
 
-        $modes = array("simple", "complex", "nontrx");
+        $modes = $this->getScriptLua(array($this->getDirectoryLua($this->getSysbenchVersion())));
 
         $data['test_mode'] = array();
         foreach ($modes as $mode) {
@@ -816,15 +860,17 @@ Threads fairness:
             $data['test_mode'][] = $tmp;
         }
 
-        $read_o = array("ON", "OFF");
 
-        $data['read_only'] = array();
-        foreach ($read_o as $mode) {
-            $tmp                 = array();
-            $tmp['id']           = $mode;
-            $tmp['libelle']      = $mode;
-            $data['read_only'][] = $tmp;
-        }
+        /*
+          $read_o = array("ON", "OFF");
+
+          $data['read_only'] = array();
+          foreach ($read_o as $mode) {
+          $tmp                 = array();
+          $tmp['id']           = $mode;
+          $tmp['libelle']      = $mode;
+          $data['read_only'][] = $tmp;
+          } */
 
         $data['max_time'] = array();
 
@@ -929,7 +975,7 @@ Threads fairness:
 
         $sql = "SELECT * FROM `benchmark_main` WHERE `status` = 'NOT STARTED' limit 1;";
         $res = $db->sql_query($sql);
-        Debug::debug(trim(SqlFormatter::highlight($sql)));
+        Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_benchmark_main = $ob->id;
@@ -964,7 +1010,7 @@ Threads fairness:
                     $sql2 = "UPDATE benchmark_main SET status = 'LAUNCHED' WHERE id ='".$id_benchmark_main."';";
                     $db->sql_query($sql2);
 
-                    Debug::debug(trim(SqlFormatter::highlight($sql2)));
+                    Debug::sql($sql2);
                 }
             } while ($db->sql_num_rows($res) > 0);
         } else {
@@ -1007,5 +1053,54 @@ Threads fairness:
         Debug::debug($data['sysbench'], "Version sysbench");
 
         return $data['sysbench'];
+    }
+
+    public function getScriptLua($param)
+    {
+        Debug::parseDebug($param);
+
+        if (!is_array($param)) {
+            throw new \Exception('getScriptLua : Should be an array', 5491);
+        }
+
+        $direstory_script = $param[0];
+
+        $cmd = "ls ".$direstory_script." | grep -v oltp_common.lua";
+        Debug::debug($cmd, 'cmd');
+
+        $lua = shell_exec($cmd);
+
+        Debug::debug($lua, "lua");
+
+        $lua = explode("\n", trim($lua));
+
+        Debug::debug($lua, "lua");
+
+        //echo file_get_contents($direstory_script."oltp_point_select.lua");
+
+
+        return $lua;
+    }
+
+    public function getDirectoryLua($param)
+    {
+        Debug::parseDebug($param);
+        $version = $param[0];
+
+        if (version_compare($version, '0.5', "=")) {
+            $ret = self::DIRECTORY_LUA_SYSBENCH_05;
+        } else if (version_compare($version, '1', ">=")) {
+            $ret = self::DIRECTORY_LUA_SYSBENCH_1;
+        } else {
+            Throw new \Exception("This verion of sysbench is not supported yet");
+        }
+
+        if (!is_dir($ret)) {
+            Throw new \Exception("The directory does not exist : $ret", 1548);
+        }
+
+        Debug::debug($ret, "directory lua");
+
+        return $ret;
     }
 }
