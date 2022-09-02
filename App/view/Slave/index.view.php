@@ -8,8 +8,6 @@
 use App\Library\Mysql;
 use App\Library\Display;
 
-
-
 function display_db($dbs)
 {
     if (empty($dbs)) {
@@ -38,7 +36,6 @@ echo '<div class="well">';
 
 echo '</div>';
 
-
 echo '<table class="table table-condensed table-bordered table-striped" >';
 
 echo '<tr>';
@@ -57,15 +54,18 @@ echo '<th>'."Replicate ignore db".'</th>';
 echo '<th>'.__("Date").'</th>';
 echo '</tr>';
 
-
 //debug($data['hostname']);
 
 $i = 0;
+
+debug($data['graph']);
+
 foreach ($data['slave'] as $slaves) {
+
+
     foreach ($slaves as $connect_name => $slave) {
 
-        if (!empty($data['info_server'][$slave['id_mysql_server']]['']['is_proxysql']) && $data['info_server'][$slave['id_mysql_server']]['']['is_proxysql'] ==="1")
-        {
+        if (!empty($data['info_server'][$slave['id_mysql_server']]['']['is_proxysql']) && $data['info_server'][$slave['id_mysql_server']]['']['is_proxysql'] === "1") {
             continue;
         }
 
@@ -87,14 +87,13 @@ foreach ($data['slave'] as $slaves) {
         echo '<td class="'.$class.'">';
 
         //if (Mysql::getMaster($id_mysql_server))
-        
-        $uniq = $slave['master_host'].':'.$slave['master_port'];
-        $id_mysql_server = Mysql::getIdFromDns($uniq); 
-        
+
+        $uniq            = $slave['master_host'].':'.$slave['master_port'];
+        $id_mysql_server = Mysql::getIdFromDns($uniq);
+
         if ($id_mysql_server) {
 
             echo Display::srv($id_mysql_server);
-           
         } else {
 
             //updateAlias
@@ -103,12 +102,10 @@ foreach ($data['slave'] as $slaves) {
 
         echo '</td>';
 
-
         $class = "";
         if (empty($data['server']['master'][$slave['id_mysql_server']]['is_available'])) {
 
             $class = "pma pma-danger";
-
         }
 
         echo '<td class="'.$class.'">';
@@ -118,7 +115,6 @@ foreach ($data['slave'] as $slaves) {
         echo '<span data-toggle="tooltip" data-placement="right" title="'.$s_env.'" class="label label-'.$data['server']['slave'][$slave['id_mysql_server']]['class'].'">'
         .substr($s_env, 0, 1).'</span> ';
         //echo $data['server']['slave'][]['display_name'];
-
         //        echo $slave['id_mysql_server'];
         echo '<a href="">'.$data['info_server'][$slave['id_mysql_server']]['']['hostname'].'</a>';
         echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
@@ -133,8 +129,8 @@ foreach ($data['slave'] as $slaves) {
         }
 
         echo '<a href="'.LINK.'slave/show/'.$slave['id_mysql_server'].'/'.$connect_name.'/">'.$disp.'</a>';
-        
-        echo " ".$data['server']['idgraph'][$slave['id_mysql_server']];
+
+        echo " ".$data['server']['idgraph'][$slave['id_mysql_server']][$connect_name];
         echo '</td>';
         //echo '<td>'.$slave['seconds_behind_master'].'</td>';
 
@@ -145,6 +141,10 @@ foreach ($data['slave'] as $slaves) {
         }
 
         echo '<td class="'.$class.'">';
+        if ($slave['seconds_behind_master'] === "") {
+            $slave['seconds_behind_master'] = "N/A";
+        }
+
         echo $slave['seconds_behind_master']."";
 
         if (!isset($data['graph'][$slave['id_mysql_server']]['max'])) {
