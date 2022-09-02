@@ -13,6 +13,7 @@ use App\Library\Debug;
 use App\Library\Extraction;
 use App\Library\System;
 use App\Library\Mysql;
+use App\Library\Color;
 
 class Alias extends Controller
 {
@@ -56,7 +57,7 @@ class Alias extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $host = $this->getExtraction(array("master_host", "master_port"));
+        $host = $this->getExtraction(array("slave::master_host", "slave::master_port"));
 
         $alias_to_add = array();
 
@@ -84,7 +85,11 @@ class Alias extends Controller
                 $alias_dns['alias_dns']['id_mysql_server'] = $id_mysql_server;
                 $alias_dns['alias_dns']['dns']             = $server['_HOST'];
                 $alias_dns['alias_dns']['port']            = $server['_PORT'];
-                $db->sql_save($alias_dns);
+                $ret                                       = $db->sql_save($alias_dns);
+
+                if (!$ret) {
+                    Debug::debug($db->sql_error());
+                }
             }
         }
 
@@ -95,11 +100,13 @@ class Alias extends Controller
 
     public function getExtraction($param)
     {
+        $var_host = $param[0];
+        $var_port = $param[1];
 
-        $host = $param[0];
-        $port = $param[1];
+        $list = Extraction::display(array($var_host, $var_port));
 
-        $list = Extraction::display(array($host, $port));
+        $host = explode('::', $var_host)[1];
+        $port = explode('::', $var_port)[1];
 
         $list_host = array();
         foreach ($list as $masters) {
@@ -172,7 +179,7 @@ class Alias extends Controller
         $port = $param[1];
 
         if (count(self::$hostname) === 0) {
-            self::$hostname = $this->getExtraction(array("hostname", "port"));
+            self::$hostname = $this->getExtraction(array("variables::hostname", "variables::port"));
             Debug::debug(self::$hostname, "hostname and port from SHOW SLAVE STATUS");
         }
 
