@@ -4,12 +4,12 @@ namespace App\Library;
 
 class ParseCnf
 {
-    static $var_to_merge = array("replicate_annotate_row_events", "replicate_ignore_db", "replicate_rewrite_db", "replicate_do_db", "replicate_do_table", "replicate_events_marked_for_skip",
+    static $var_to_merge = array("replicate_annotate_row_events", "replicate_ignore_db",
+        "replicate_rewrite_db", "replicate_do_db", "replicate_do_table", "replicate_events_marked_for_skip",
         "replicate_ignore_table", "replicate_wild_do_table", "replicate_wild_ignore_table");
 
     static function parseCnf($path, $parsed = array())
     {
-
         $path_parts = pathinfo($path);
 
         if ($path_parts['extension'] === "cnf") {
@@ -18,18 +18,14 @@ class ParseCnf
             $new_path = rtrim($path, "/")."/*.cnf";
         }
 
-
         $files = glob($new_path);
-
 
         foreach ($files as $file) {
             echo $file."\n";
             $myfile = file($file);
 
-
             $cnf         = array();
             $include_dir = array();
-
 
             foreach ($myfile as $line) {
                 $comment_removed   = explode('#', $line)[0];
@@ -52,7 +48,6 @@ class ParseCnf
             $sections = explode('###', $for_split);
 
             unset($sections[0]);
-
 
             foreach ($sections as $section) {
                 $lines        = explode("\n", trim($section));
@@ -87,7 +82,6 @@ class ParseCnf
                         }
                     }
 
-
                     unset($options[0]);
 
                     $val = trim(implode('=', $options)); // in case of '=' in password
@@ -96,7 +90,6 @@ class ParseCnf
                     }
 
                     $val = trim(trim($val, '"'), "'");  // remove quote and double quotes
-
 
                     if ($sub === true) {
                         $parsed[$section_name][$var][$connection_name][] = $val;
@@ -117,8 +110,7 @@ class ParseCnf
     {
 
         $parsed = self::parseCnf($mycnf);
-
-        $ret = array();
+        $ret    = array();
 
         foreach ($parsed as $section => $tab_var) {
 

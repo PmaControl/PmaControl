@@ -6,33 +6,30 @@ use Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
-class Translation extends Controller {
-
+class Translation extends Controller
+{
     public $module_group = "Other";
 
-    function index() {
-        $this->title = __("Translations");
-        $this->ariane = "> <a href=\"\">" . __("Administration") . "</a> > " . $this->title;
+    function index()
+    {
+        $this->title  = __("Translations");
+        $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
     }
 
-    function admin_translation() {
-
-
+    function admin_translation()
+    {
 
         if (\Glial\Synapse\Basic::from() == "administration.controller.php") {
-            $module['picture'] = "administration/Earth.png";
-            $module['name'] = __("Translations");
+            $module['picture']     = "administration/Earth.png";
+            $module['name']        = __("Translations");
             $module['description'] = __("Translate website in all language");
             return $module;
         }
 
-        include_once APP_DIR . DS . "controller" . DS . "History.controller.php";
+        include_once APP_DIR.DS."controller".DS."History.controller.php";
 
-
-        $this->title = __("Translations");
-        $this->ariane = "> <a href=\"\">" . __("Administration") . "</a> > " . $this->title;
-
-
+        $this->title  = __("Translations");
+        $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['field-to-update'])) {
@@ -44,9 +41,9 @@ class Translation extends Controller {
 
                     $key_extrated = explode("-", $key);
 
-                    $data['translation_' . $_POST['none']['id_to']]['id'] = $key_extrated[1];
-                    $data['translation_' . $_POST['none']['id_to']]['text'] = $_POST[$key];
-                    $data['translation_' . $_POST['none']['id_to']]['translate_auto'] = 0;
+                    $data['translation_'.$_POST['none']['id_to']]['id']             = $key_extrated[1];
+                    $data['translation_'.$_POST['none']['id_to']]['text']           = $_POST[$key];
+                    $data['translation_'.$_POST['none']['id_to']]['translate_auto'] = 0;
 
                     $db->set_history_type(5);
                     $db->sql_save($data);
@@ -59,7 +56,6 @@ class Translation extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $tables = $db->getListTable("table");
-
 
         $lg_available = explode(",", LANGUAGE_AVAILABLE);
 
@@ -80,16 +76,15 @@ class Translation extends Controller {
                   //echo $data['count'][0]['cpt']." - ";
                   $count += $data['count'][0]['cpt'];
                  */
-                $var = explode("_", $table);
+                $var                      = explode("_", $table);
                 $data['country'][$var[1]] = 0;
 
-                $sql = "SELECT count(1) as cpt FROM `" . $table . "` WHERE text !='' AND translate_auto = 1";
-                $res3 = $db->sql_query($sql);
-                $data['count_auto'] = $db->sql_to_array($res3);
+                $sql                             = "SELECT count(1) as cpt FROM `".$table."` WHERE text !='' AND translate_auto = 1";
+                $res3                            = $db->sql_query($sql);
+                $data['count_auto']              = $db->sql_to_array($res3);
                 $data['translate_auto'][$var[1]] = $data['count_auto'][0]['cpt'];
             }
         }
-
 
         if (\Glial\Synapse\Basic::from() !== "administration.controller.php") {
             if (empty($_GET['alpha'])) {
@@ -111,9 +106,9 @@ class Translation extends Controller {
             }
 
             empty($_GET['from']) ? $data['from'] = 'en' : $data['from'] = $_GET['from'];
-            empty($_GET['to']) ? $data['to'] = I18n::Get() : $data['to'] = $_GET['to'];
+            empty($_GET['to']) ? $data['to']   = I18n::Get() : $data['to']   = $_GET['to'];
 
-            $this->javascript = array("jquery-1.4.2.min.js");
+            $this->javascript                  = array("jquery-1.4.2.min.js");
             $this->di['js']->code_javascript[] = '
 	function trim11 (str) {
 		str = str.replace(/^\s+/, "");
@@ -145,12 +140,12 @@ class Translation extends Controller {
 	});
 
 	$("#none-id_from").change(function() {
-		  document.location="' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:"+$(this).val()+"/to:' . $data['to'] . ' "
+		  document.location="'.LINK.$this->getClass().'/'.__FUNCTION__.'/type:'.$data['type'].'/alpha:'.$data['alpha'].'/from:"+$(this).val()+"/to:'.$data['to'].' "
 		  // display based on the value
 	});
 
 	$("#none-id_to").change(function() {
-		  document.location="' . LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:"+$(this).val()
+		  document.location="'.LINK.$this->getClass().'/'.__FUNCTION__.'/type:'.$data['type'].'/alpha:'.$data['alpha'].'/from:'.$data['from'].'/to:"+$(this).val()
 		  // display based on the value
 	});
 
@@ -158,9 +153,7 @@ class Translation extends Controller {
         $("#none-field-to-update").val($(this).attr("name")+";"+$("#none-field-to-update").val());
 	});';
 
-
             $i = 0;
-
             foreach ($data['country'] as $key => $value) {
 
                 /*
@@ -172,55 +165,57 @@ class Translation extends Controller {
                   } */
 
                 $data['geolocalisation_country'][$i]['libelle'] = ucfirst(I18n::$languages[$key]);
-                $data['geolocalisation_country'][$i]['id'] = $key;
+                $data['geolocalisation_country'][$i]['id']      = $key;
                 $i++;
             }
 
             $sql1 = "SELECT a.id as aid, b.id as bid, a.key,a.file_found,a.line_found, a.source, a.text as atext, b.text as btext, a.translate_auto as auto1, b.translate_auto as auto2 ";
             $sql2 = "SELECT count(1) as cpt ";
 
-            $sql = " FROM  `translation_" . $data['from'] . "` a
-			INNER JOIN `translation_" . $data['to'] . "` b ON a.key = b.key
-			WHERE a.source != '" . $data['to'] . "'";
+            $sql = " FROM  `translation_".$data['from']."` a
+			INNER JOIN `translation_".$data['to']."` b ON a.key = b.key
+			WHERE a.source != '".$data['to']."'";
 
-            if ($data['alpha'] != "1")
-                $sql .= " AND a.text LIKE '" . $data['alpha'] . "%' ";
-            if ($data['type'] == "4")
+            if ($data['alpha'] != "1") {
+                $sql .= " AND a.text LIKE '".$data['alpha']."%' ";
+            }
+            if ($data['type'] == "4") {
                 $sql .= " AND b.text ='' ";
-            if ($data['type'] == "2")
+            }
+            if ($data['type'] == "2") {
                 $sql .= " AND b.translate_auto=1 ";
-            if ($data['type'] == "3")
+            }
+            if ($data['type'] == "3") {
                 $sql .= " AND b.translate_auto=0 ";
-
+            }
             $sql .= " order by a.text asc";
 
-            $res = $db->sql_query($sql2 . $sql);
+            $res           = $db->sql_query($sql2.$sql);
             $data['count'] = $db->sql_to_array($res);
             //*****************************pagination
 
             if ($data['count'][0]['cpt'] != 0) {
-                include_once(LIB . "pagination.lib.php");
+                include_once(LIB."pagination.lib.php");
 
                 //url, curent page, nb item max , nombre de lignes, nombres de pages
-                $pagination = new pagination(LINK .$this->getClass(). '/' . __FUNCTION__ . '/type:' . $data['type'] . '/alpha:' . $data['alpha'] . '/from:' . $data['from'] . '/to:' . $data['to'],
-                        $data['page'], $data['count'][0]['cpt'], TRANSLATION_ELEM_PER_PAGE, TRANSLATION_NB_PAGE_TO_DISPLAY_MAX);
+                $pagination = new pagination(LINK.$this->getClass().'/'.__FUNCTION__.'/type:'.$data['type'].'/alpha:'.$data['alpha'].'/from:'.$data['from'].'/to:'.$data['to'],
+                    $data['page'], $data['count'][0]['cpt'], TRANSLATION_ELEM_PER_PAGE, TRANSLATION_NB_PAGE_TO_DISPLAY_MAX);
 
-                $tab = $pagination->get_sql_limit();
                 $pagination->set_alignment("left");
                 $pagination->set_invalid_page_number_text(__("Please input a valid page number!"));
                 $pagination->set_pages_number_text(__("pages of"));
                 $pagination->set_go_button_text(__("Go"));
-                $pagination->set_first_page_text("« " . __("First"));
-                $pagination->set_last_page_text(__("Last") . " »");
+                $pagination->set_first_page_text("« ".__("First"));
+                $pagination->set_last_page_text(__("Last")." »");
                 $pagination->set_next_page_text("»");
                 $pagination->set_prev_page_text("«");
+                $tab                = $pagination->get_sql_limit();
                 $data['pagination'] = $pagination->print_pagination();
-
-                $limit = " LIMIT " . $tab[0] . "," . $tab[1] . " ";
-                $data['i'] = $tab[0] + 1;
+                $limit              = " LIMIT ".$tab[0].",".$tab[1]." ";
+                $data['i']          = $tab[0] + 1;
                 //*****************************pagination end
 
-                $res = $db->sql_query($sql1 . $sql . $limit);
+                $res          = $db->sql_query($sql1.$sql.$limit);
                 $data['text'] = $db->sql_to_array($res);
             }
 
@@ -228,32 +223,34 @@ class Translation extends Controller {
         }
     }
 
-    function delete_tmp_files() {
-        $cmd = "cd " . TMP . "translations; rm *.csv";
+    function delete_tmp_files()
+    {
+        $cmd = "cd ".TMP."translations; rm *.csv";
         shell_exec($cmd);
 
-        $cmd = "cd " . TMP . "translations; ls | grep csv | wc -l";
+        $cmd = "cd ".TMP."translations; ls | grep csv | wc -l";
         $res = shell_exec($cmd);
 
         if ($res == 0) {
 
             $title = I18n::getTranslation(__("Confirmation"));
-            $msg = I18n::getTranslation(__("The CSV files have been deleted"));
+            $msg   = I18n::getTranslation(__("The CSV files have been deleted"));
 
             set_flash("success", $title, $msg);
         } else {
 
             $title = I18n::getTranslation(__("Error"));
-            $msg = I18n::getTranslation(__("The CSV file haven't been deleted.") . "<br />" . __("Look") . " chmod !");
+            $msg   = I18n::getTranslation(__("The CSV file haven't been deleted.")."<br />".__("Look")." chmod !");
 
             set_flash("success", $title, $msg);
         }
 
-        header("location: " . LINK .$this->getClass(). "/admin_translation/");
+        header("location: ".LINK.$this->getClass()."/admin_translation/");
         exit;
     }
 
-    function delete_table_cach() {
+    function delete_table_cach()
+    {
         $sql = "SHOW TABLES";
         $res = $db->sql_query($sql);
 
@@ -266,25 +263,23 @@ class Translation extends Controller {
                 $val = explode("_", $table[0]);
 
                 $sql = "REPLACE INTO translation_main (`key`, `source`,`destination` ,`text`,`date_inserted`, `date_updated`, `translate_auto`, `file_found`, `line_found`)
-				SELECT `key`, `source`,'" . $val[1] . "',`text`,`date_inserted`, `date_updated`, `translate_auto`, `file_found`, `line_found` FROM `" . $table[0] . "`
-				WHERE `text` != '' and `source` != '" . $val[1] . "'";
+				SELECT `key`, `source`,'".$val[1]."',`text`,`date_inserted`, `date_updated`, `translate_auto`, `file_found`, `line_found` FROM `".$table[0]."`
+				WHERE `text` != '' and `source` != '".$val[1]."'";
 
                 $db->sql_query($sql);
                 //echo $sql . "<br />";
 
-                $sql = "TRUNCATE TABLE `" . $table[0] . "`";
+                $sql = "TRUNCATE TABLE `".$table[0]."`";
                 $db->sql_query($sql);
             }
         }
 
-
         $title = I18n::getTranslation(__("Confirmation"));
-        $msg = I18n::getTranslation(__("The tables cach have been truncated"));
+        $msg   = I18n::getTranslation(__("The tables cach have been truncated"));
 
         set_flash("success", $title, $msg);
 
-        header("location: " . LINK .$this->getClass(). "/admin_translation/");
+        header("location: ".LINK.$this->getClass()."/admin_translation/");
         exit;
     }
-
 }

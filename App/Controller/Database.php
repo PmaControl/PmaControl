@@ -17,6 +17,7 @@ use Ramsey\Uuid\Uuid;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
+use \App\Library\Param;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 
@@ -174,7 +175,8 @@ class Database extends Controller
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             if (!empty($_POST['database'][__FUNCTION__])) {
-                if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list']) && !empty($_POST['database']['path'])) {
+                if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list'])
+                    && !empty($_POST['database']['path'])) {
 
                     $id_mysql_server__source      = $_POST['database']['id_mysql_server__from'];
                     $id_mysql_server__destination = $_POST['database']['id_mysql_server__target'];
@@ -382,9 +384,24 @@ class Database extends Controller
         }
     }
 
+    /**
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param string name of connection
+     * @return true or false
+     * @description rename database and rename all dependencies
+     * @access public
+     * @example
+     * @package PmaControl
+     * @since 2.0.20 add option '--force' force migration of obeject if the target database exist
+     * @version 1.3
+     */
     public function move($param)
     {
         Debug::parseDebug($param);
+
+        $FORCE_TARGET = Param::option($param, "--force");
 
         if (count($param) < 3) {
             echo "Number of param invalid\n";
@@ -412,14 +429,21 @@ class Database extends Controller
 
             $db2 = Sgbd::sql($ob->name);
 
-            $sql101 = "SELECT count(1) as cpt FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$NEW_DB."';";
-            $res101 = $db2->sql_query($sql101);
+            $sql101       = "SELECT count(1) as cpt FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$NEW_DB."';";
+            $res101       = $db2->sql_query($sql101);
+            $TARGET_EXIST = false;
 
             while ($ob101 = $db2->sql_fetch_object($res101)) {
+
                 if ($ob101->cpt > 0) {
-                    throw new \Exception("The target database exist already : '".$NEW_DB."'", 2518);
+                    if ($FORCE_TARGET === false) {
+
+                        throw new \Exception("The target database exist already : '".$NEW_DB."'", 2518);
+                    }
+                    $TARGET_EXIST = true;
                 }
             }
+
 
             $sql3 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$OLD_DB."';";
             $res3 = $db2->sql_query($sql3);
@@ -430,13 +454,16 @@ class Database extends Controller
             }
 
             while ($ob3 = $db2->sql_fetch_object($res3)) {
-
-                $db2->sql_query("CREATE DATABASE `".$NEW_DB."` DEFAULT CHARACTER SET ".$ob3->DEFAULT_CHARACTER_SET_NAME);
+                if ($TARGET_EXIST === false) {
+                    $db2->sql_query("CREATE DATABASE  `".$NEW_DB."` DEFAULT CHARACTER SET ".$ob3->DEFAULT_CHARACTER_SET_NAME);
+                }
             }
 
 // backup trigger view
 
             $db2->sql_select_db($OLD_DB);
+
+            $OLD = $this->getObject(array($id_mysql_server, $OLD_DB));
 
             $sql6 = "SHOW TRIGGERS FROM `".$OLD_DB."`";
             $res6 = $db2->sql_query($sql6);
@@ -549,11 +576,17 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             Debug::debug($level, "LEVEL");
 
-            $sql9 = "select `table_name` FROM `information_schema`.`tables` where `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='VIEW';";
+            $orderby = "";
+            foreach ($level as $name) {
+                $orderby .= implode("','", $name);
+            }
+
+            $sql9 = "select `table_name` FROM `information_schema`.`tables` where `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='VIEW' ORDER BY FIELD(`table_name`, '".$orderby."') DESC, `table_name`;";
             Debug::sql($sql9);
 
             $res9  = $db2->sql_query($sql9);
             $views = array();
+            $sql11 = array();
             while ($ob9   = $db2->sql_fetch_array($res9, MYSQLI_ASSOC)) {
 
                 $sql10 = "SHOW CREATE VIEW `".$OLD_DB."`.`".$ob9['table_name']."`";
@@ -564,10 +597,15 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                     $views[$ob9['table_name']] = str_replace('`'.$OLD_DB.'`', '`'.$NEW_DB.'`', $ob10['Create View']);
                 }
 
+                $sql11[] = "DROP VIEW `".$OLD_DB."`.`".$ob9['table_name']."`;";
+                //Debug::debug($sql11);
+                //$db2->sql_query($sql11);
+            }
 
-                $sql11 = "DROP VIEW `".$OLD_DB."`.`".$ob9['table_name']."`;";
-                Debug::debug($sql11);
-                $db2->sql_query($sql11);
+            // c'est dégeux il faudrait d'abord crée tous les objets dans la nouvelle base, faire le diff et après faire le ménage
+            foreach ($sql11 as $sql111) {
+                Debug::debug($sql111);
+                $db2->sql_query($sql111);
             }
 
 // backup functions
@@ -626,8 +664,6 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             $nb_renamed = 0;
             while ($ob2        = $db2->sql_fetch_object($res2)) {
-//SET FOREIGN_KEY_CHECKS=0;
-
                 $sql3 = " RENAME TABLE `".$OLD_DB."`.`".$ob2->table_name."` TO `".$NEW_DB."`.`".$ob2->table_name."`;";
 
                 Debug::debug($sql3);
@@ -684,6 +720,28 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
                 }
             }
 
+            $NEW = $this->getObject(array($id_mysql_server, $NEW_DB));
+
+            $exit  = false;
+            $table = new Table(0);
+            $table->addHeader(array("Object", $OLD_DB, $NEW_DB));
+
+            foreach ($NEW['result'] as $key => $nb) {
+                $table->addLine(array($key, $OLD['result'][$key], $nb));
+
+                if ($OLD['result'][$key] != $nb) {
+                    $exit = true;
+                }
+            }
+
+            // if no more object in source we allow to drop table in case of --force
+
+
+            echo $table->Display();
+
+            if ($exit === true) {
+                Throw new \Exception('We forgot to migrate objects ! (we did not drop old DB)', 5174);
+            }
 
 // DROP DATABASE IF NO OBJECT
             $sql4 = "select count(1) as cpt from information_schema.tables where table_schema='".$OLD_DB."';";
@@ -720,7 +778,7 @@ END;";
 
     public function dropEmptyDb($link, $dbname)
     {
-        
+
     }
 
     public function testu($param)
@@ -1585,5 +1643,63 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         }
 
         $this->set('data', $data);
+    }
+
+    public function getObject($param)
+    {
+
+        Debug::parseDebug($param);
+
+        if (count($param) < 2) {
+            echo "Number of param invalid\n";
+            echo "usage : \n";
+            echo "pmacontrol database getObject id_mysql_server database\n";
+            exit;
+        }
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+        $db = Sgbd::sql(DB_DEFAULT, "dhgsrht");
+
+        $sql = "SELECT * FROM `mysql_server` where `id`='".$id_mysql_server."'"
+            ." UNION ALL "
+            ."SELECT * FROM `mysql_server` where `display_name`='".$id_mysql_server."'";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $db2 = Sgbd::sql($ob->name);
+        }
+
+        $sql2 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$database."';";
+        $res2 = $db2->sql_query($sql2);
+
+        if ($db2->sql_num_rows($res2) != 1) {
+            Debug::sql($sql2);
+            throw new \Exception("Impossible to find the database '".$database."' to rename", 4576);
+        }
+
+        $query['TRIGGER']   = "select trigger_name from information_schema.triggers where trigger_schema ='{DB}'";
+        $query['FUNCTION']  = "show function status WHERE Db ='{DB}';";
+        $query['PROCEDURE'] = "show procedure status WHERE Db ='{DB}'";
+        $query['TABLE']     = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
+        $query['VIEW']      = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
+        $query['EVENT']     = "SHOW EVENTS FROM `{DB}`";
+
+        $data['result'] = array();
+
+        foreach ($query as $key => $to_execute) {
+            $sql3 = str_replace('{DB}', $database, $to_execute);
+            $res3 = $db2->sql_query($sql3);
+
+            $data['result'][$key] = $db2->sql_num_rows($res3);
+        }
+
+
+        Debug::debug($data);
+
+        return $data;
     }
 }
