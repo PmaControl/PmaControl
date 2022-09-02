@@ -18,7 +18,6 @@ echo '<tr>';
 echo '<th>#</th>';
 echo '<th>DNS</th>';
 echo '<th>Port</th>';
-echo '<th>Destination</th>';
 echo '<th>'.__('Linked to').'</th>';
 echo '<th>'.__('Since').'</th>';
 echo '</tr>';
@@ -32,7 +31,6 @@ foreach ($data['alia_dns'] as $alias) {
     echo '<td>'.$i.'</td>';
     echo '<td>'.$alias['dns'].'</td>';
     echo '<td>'.$alias['port'].'</td>';
-    echo '<td>'.$alias['destination'].'</td>';
     echo '<td>'.Display::srv($alias['id_mysql_server']);
 
     $date_start = explode(".", $alias['ROW_START'])[0];

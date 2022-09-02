@@ -18,7 +18,7 @@ class System
      * @since pmacontrol 1.5.7 updated with /proc/pid
      * @description test if daemon is launched or not according with pid saved in table daemon_main
      * @access public
-     * 
+     *
      */
 
     static public function isRunningPid($param)
@@ -90,11 +90,14 @@ class System
 
     static public function getIp($hostname)
     {
+
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
-            return trim($hostname);
+            //return trim($hostname);
+            return false;
         }
 
         $ip = shell_exec("dig +short ".$hostname);
+        Debug::debug($ip, "getIp");
 
         return trim($ip);
     }

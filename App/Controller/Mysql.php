@@ -14,14 +14,15 @@ use \App\Library\Graphviz;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
 
-class Mysql extends Controller {
-
+class Mysql extends Controller
+{
     const DEBUG = true;
 
     public $foreign_key = array();
-    public $columns = array();
+    public $columns     = array();
 
-    private function generate_passswd($length) {
+    private function generate_passswd($length)
+    {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $randstring = '';
         for ($i = 0; $i < $length; $i++) {
@@ -31,9 +32,10 @@ class Mysql extends Controller {
     }
 
 //depracated !!
-    private function get_server() {
+    private function get_server()
+    {
         $server = array();
-        $handle = fopen(CONFIG . "serveur.csv", "r");
+        $handle = fopen(CONFIG."serveur.csv", "r");
 
         if ($handle) {
             while (($buffer = fgets($handle, 4096)) !== false) {
@@ -43,7 +45,7 @@ class Mysql extends Controller {
                 if (filter_var($buffer, FILTER_VALIDATE_IP)) {
                     $server[] = $buffer;
                 } else {
-                    Throw new Exception("PTB-002 : this ip is not valid : " . $buffer);
+                    Throw new Exception("PTB-002 : this ip is not valid : ".$buffer);
                 }
             }
             if (!feof($handle)) {
@@ -55,7 +57,8 @@ class Mysql extends Controller {
         return $server;
     }
 
-    public function user_add($param) {
+    public function user_add($param)
+    {
 
         $this->view = false;
 
@@ -63,18 +66,18 @@ class Mysql extends Controller {
 
         debug($param);
 
-        $user = $param[0];
+        $user   = $param[0];
         $passwd = $this->generate_passswd(10);
 
         if (empty($user)) {
             Throw new Exception("PTB-004 : user is requested !");
         }
 
-        echo "Password generated : " . $passwd . "\n";
+        echo "Password generated : ".$passwd."\n";
 
         $i = 1;
         foreach ($servers as $server) {
-            echo "\n[" . $i . "] Server : " . $server . "\n";
+            echo "\n[".$i."] Server : ".$server."\n";
 
             echo str_repeat("#", 80);
 //$this->create_grant_account_mysql($server, $user, $passwd, "10.%");
@@ -83,7 +86,8 @@ class Mysql extends Controller {
         }
     }
 
-    private function ssh($host, $port, $user, $passwd) {
+    private function ssh($host, $port, $user, $passwd)
+    {
         $connection = ssh2_connect($host, $port);
 
         if (ssh2_auth_password($connection, $user, $passwd)) {
@@ -109,7 +113,8 @@ class Mysql extends Controller {
         }
     }
 
-    private function exec($connection, $cmd) {
+    private function exec($connection, $cmd)
+    {
 
         $stream = ssh2_exec($connection, $cmd);
 
@@ -118,17 +123,18 @@ class Mysql extends Controller {
         stream_set_blocking($errorStream, true);
         stream_set_blocking($stream, true);
 
-        echo stream_get_contents($stream) . "\n";
+        echo stream_get_contents($stream)."\n";
 
         $error = stream_get_contents($errorStream);
 
         if (!empty($error)) {
-            echo "[ERROR] : " . $error . "\n";
+            echo "[ERROR] : ".$error."\n";
         }
     }
 
-    private function shell_cmd($stdio, $cmd) {
-        fwrite($stdio, $cmd . "\n");
+    private function shell_cmd($stdio, $cmd)
+    {
+        fwrite($stdio, $cmd."\n");
         sleep(1);
         while ($line = fgets($stdio)) {
             flush();
@@ -136,9 +142,9 @@ class Mysql extends Controller {
         }
     }
 
-    public function after_edit_db() {
+    public function after_edit_db()
+    {
         $this->view = false;
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -148,30 +154,29 @@ class Mysql extends Controller {
 
             $info_server = Sgbd::getParam($server);
 
-            $data['mysql_server']['name'] = $server;
-            $data['mysql_server']['ip'] = $info_server['hostname'];
-            $data['mysql_server']['login'] = $info_server['user'];
+            $data['mysql_server']['name']   = $server;
+            $data['mysql_server']['ip']     = $info_server['hostname'];
+            $data['mysql_server']['login']  = $info_server['user'];
             $data['mysql_server']['passwd'] = Crypt::encrypt($info_server['password']);
-            $data['mysql_server']['port'] = empty($info_server['port']) ? 3306 : $info_server['port'];
+            $data['mysql_server']['port']   = empty($info_server['port']) ? 3306 : $info_server['port'];
 
             if (!$db->sql_save($data)) {
                 debug($data);
                 debug($db->sql_error());
                 exit;
             } else {
-                echo $data['mysql_server']['name'] . PHP_EOL;
+                echo $data['mysql_server']['name'].PHP_EOL;
             }
         }
     }
 
-    public function user($params) {
+    public function user($params)
+    {
         $this->view = false;
 
-        $users = array();
+        $users          = array();
         $user_to_update = array();
-        $list_user = array();
-
-
+        $list_user      = array();
 
         $nbuser = 0;
         if (is_array($params)) {
@@ -180,20 +185,20 @@ class Mysql extends Controller {
 
             $nbuser = count($params);
             if ($nbuser > 0) {
-                $users = "'" . implode("','", $params) . "'";
+                $users = "'".implode("','", $params)."'";
             }
         }
 
         $table = new Table(0);
         $table->addHeader(array("Top", "Server", "IP", "User", "Host", "Password"));
 
-        $i = 1;
+        $i        = 1;
         $password = array();
 
         $def = Sgbd::sql(DB_DEFAULT);
 
         // remove server with warning, of in process
-        $sql = "SELECT * FROM mysql_server WHERE error = ''";
+        $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
@@ -205,14 +210,14 @@ class Mysql extends Controller {
             $sql = "select * FROM mysql.user";
 
             if ($nbuser > 0) {
-                $sql .= " WHERE `User` IN (" . $users . ")";
+                $sql .= " WHERE `User` IN (".$users.")";
             }
 
             $res = $db->sql_query($sql);
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob  = $db->sql_fetch_object($res)) {
 
                 $password[] = $ob->Password;
-                $table->addLine(array($i, $ob2->display_name, $ob2->ip . ":" . $port,
+                $table->addLine(array($i, $ob2->display_name, $ob2->ip.":".$port,
                     $ob->User, $ob->Host, $ob->Password));
                 $i++;
             }
@@ -224,7 +229,7 @@ class Mysql extends Controller {
         $table2->addHeader(array("Top", "Password", "Count"));
 
         $tab_passwd = array_count_values($password);
-        $i = 1;
+        $i          = 1;
         foreach ($tab_passwd as $password => $count) {
             $table2->addLine(array($i, $password, $count));
             $i++;
@@ -232,19 +237,20 @@ class Mysql extends Controller {
         echo $table2->Display();
     }
 
-    public function passwd($params) {
-        $this->view = false;
+    public function passwd($params)
+    {
+        $this->view        = false;
         $this->layout_name = false;
 
-        $users = array();
+        $users          = array();
         $user_to_update = array();
-        $list_user = array();
+        $list_user      = array();
 
         array_map("stripslashes", $params);
 
         $nbuser = count($params);
         if ($nbuser > 0) {
-            $users = "'" . implode("','", $params) . "'";
+            $users = "'".implode("','", $params)."'";
         }
 
         $table = new Table(0);
@@ -264,14 +270,14 @@ class Mysql extends Controller {
             $sql = "select * FROM mysql.user";
 
             if ($nbuser > 0) {
-                $sql .= " WHERE `Password` IN (" . $users . ")";
+                $sql .= " WHERE `Password` IN (".$users.")";
             }
 
             $res = $db->sql_query($sql);
-            while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob  = $db->sql_fetch_object($res)) {
 
                 $password[] = $ob->Password;
-                $table->addLine(array($i, $db_name, $server_config['hostname'] . ":" . $port,
+                $table->addLine(array($i, $db_name, $server_config['hostname'].":".$port,
                     $ob->User, $ob->Host, $ob->Password));
                 $i++;
 
@@ -289,7 +295,7 @@ class Mysql extends Controller {
         $table2->addHeader(array("Top", "Password", "Count"));
 
         $tab_passwd = array_count_values($password);
-        $i = 1;
+        $i          = 1;
         foreach ($tab_passwd as $password => $count) {
             $table2->addLine(array($i, $password, $count));
             $i++;
@@ -297,7 +303,8 @@ class Mysql extends Controller {
         echo $table2->Display();
     }
 
-    private function extract_query($Last_Error) {
+    private function extract_query($Last_Error)
+    {
         $sep = "Default database: 'PRODUCTION'. Query: '";
 
         $pos = strpos($Last_Error, $sep);
@@ -305,7 +312,7 @@ class Mysql extends Controller {
 // Note our use of ===.  Simply == would not work as expected
 // because the position of 'a' was the 0th (first) character.
         if ($pos === false) {
-            echo "impossible to find : " . $sep . "\n";
+            echo "impossible to find : ".$sep."\n";
             exit;
         } else {
             $query = substr($Last_Error, $pos + strlen($sep), -1);
@@ -314,28 +321,28 @@ class Mysql extends Controller {
         return $query;
     }
 
-    public function del($param) {
+    public function del($param)
+    {
 
         $this->layout_name = false;
-        $this->view = false;
-        $users = $param;
+        $this->view        = false;
+        $users             = $param;
 
         foreach ($users as $user) {
             if (!preg_match("/[\w]+/", $user)) {
-                throw new \Exception("GLI-013 : User '" . $user . "' invalid");
+                throw new \Exception("GLI-013 : User '".$user."' invalid");
             }
         }
 
-        $def = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM mysql_server WHERE error = ''";
+        $def  = Sgbd::sql(DB_DEFAULT);
+        $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
-
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
             $db = Sgbd::sql($ob2->name);
             foreach ($users as $user) {
 
-                $sql = "select * from mysql.user where user = '" . $user . "'";
+                $sql = "select * from mysql.user where user = '".$user."'";
                 $res = $db->sql_query($sql);
 
                 while ($ob = $db->sql_fetch_object($res)) {
@@ -343,31 +350,32 @@ class Mysql extends Controller {
                     $sql = "set sql_log_bin = 0;";
                     $db->sql_query($sql);
 
-                    $sql = "DROP USER '" . $user . "'@'" . $ob->Host . "';";
+                    $sql = "DROP USER '".$user."'@'".$ob->Host."';";
                     $db->sql_query($sql);
 
-                    echo $ob2->name . " : " . $sql . "\n";
+                    echo $ob2->name." : ".$sql."\n";
                 }
             }
         }
     }
 
-    public function exportUser($param) {
+    public function exportUser($param)
+    {
 
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
         $users = $param;
 
         foreach ($users as $user) {
             if (!preg_match("/[\w]+/", $user)) {
-                throw new \Exception("GLI-013 : User '" . $user . "' invalid");
+                throw new \Exception("GLI-013 : User '".$user."' invalid");
             }
         }
 
         $def = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server WHERE error = ''";
+        $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
 
         while ($ob2 = $def->sql_fetch_object($res2)) {
@@ -375,22 +383,22 @@ class Mysql extends Controller {
             $db = Sgbd::sql($ob2->name);
             foreach ($users as $user) {
 
-                $sql = "select * from mysql.user where user = '" . $user . "'";
+                $sql = "select * from mysql.user where user = '".$user."'";
                 $res = $db->sql_query($sql);
 
-                $i = 1;
+                $i  = 1;
                 while ($ob = $db->sql_fetch_object($res)) {
 
                     if ($i === 1) {
-                        echo "--On server '" . $db->host . "' :\n";
+                        echo "--On server '".$db->host."' :\n";
                         $i++;
                     }
 
-                    $sql = " SHOW GRANTS FOR '" . $user . "'@'" . $ob->Host . "';";
+                    $sql  = " SHOW GRANTS FOR '".$user."'@'".$ob->Host."';";
                     $res2 = $db->sql_query($sql);
 
                     $grants = array();
-                    while ($table = $db->sql_fetch_array($res2, MYSQLI_NUM)) {
+                    while ($table  = $db->sql_fetch_array($res2, MYSQLI_NUM)) {
 
 //$grants[] = str_replace('`', '\`', $table[0]);
                         $grants[] = $table[0];
@@ -400,26 +408,26 @@ class Mysql extends Controller {
                     if (strpos($db->host, ":")) {
                         $param = explode(":", $db->host);
 
-                        $ip = $param[0];
+                        $ip   = $param[0];
                         $port = $param[1];
                     } else {
-                        $ip = $db->host;
+                        $ip   = $db->host;
                         $port = "3306";
                     }
 
-                    echo $export . ";\n";
+                    echo $export.";\n";
                 }
             }
         }
     }
 
-    function uncrypt() {
+    function uncrypt()
+    {
         $this->view = false;
         Crypt::$key = CRYPT_KEY;
 
-
         $sql = "SELECT * from mysql_server";
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db  = Sgbd::sql(DB_DEFAULT);
 
         $res = $db->sql_query($sql);
 
@@ -427,7 +435,6 @@ class Mysql extends Controller {
             debug(Crypt::decrypt($ob->passwd));
         }
     }
-
     /*
       SELECT SUBSTRING_INDEX(host, ':', 1) AS host_short,
       GROUP_CONCAT(DISTINCT USER)   AS users,
@@ -438,22 +445,22 @@ class Mysql extends Controller {
       host_short;
      */
 
-    function event($param) {
+    function event($param)
+    {
         $default = Sgbd::sql(DB_DEFAULT);
-
 
         $where = "";
         if (!empty($param[0])) {
-            $where = " WHERE name='" . str_replace('-', '_', $default->sql_real_escape_string($param[0])) . "' ";
+            $where = " WHERE name='".str_replace('-', '_', $default->sql_real_escape_string($param[0]))."' ";
         }
 
 
 
         $default = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_event` a
+        $sql     = "SELECT * FROM `mysql_event` a
            INNER JOIN mysql_server b ON a.id_mysql_server = b.id
            INNER JOIN mysql_status c ON c.id = a.id_mysql_status
-           " . $where . "
+           ".$where."
            order by a.id desc
            LIMIT 1000";
 
@@ -469,14 +476,11 @@ class Mysql extends Controller {
 
         $data['count'] = $default->sql_fetch_yield($sql);
 
-
-
-
-
         $this->set('data', $data);
     }
 
-    function clusterDisplay() {
+    function clusterDisplay()
+    {
 
 
         $default = Sgbd::sql(DB_DEFAULT);
@@ -488,8 +492,7 @@ class Mysql extends Controller {
 
         $res = $default->sql_query($sql);
 
-
-        $data['WSREP'] = array();
+        $data['WSREP']   = array();
         $data['servers'] = array();
 
         while ($ob = $default->sql_fetch_object($res)) {
@@ -512,7 +515,8 @@ class Mysql extends Controller {
         $this->set('data', $data);
     }
 
-    public function playskool() {
+    public function playskool()
+    {
         $data['dbs'] = Sgbd::getAll();
 
         sort($data['dbs']);
@@ -521,31 +525,32 @@ class Mysql extends Controller {
             $data['ret'] = '';
 
             foreach ($_POST['db'] as $db => $on) {
-                $data['ret'] .= "mysql -h $db -u " . $_POST['login'] . " -p" . $_POST['password'] . " -e '" . str_replace("'", "\'", $_POST['sql']) . "' > $db.log<br />";
+                $data['ret'] .= "mysql -h $db -u ".$_POST['login']." -p".$_POST['password']." -e '".str_replace("'", "\'", $_POST['sql'])."' > $db.log<br />";
             }
         }
         $this->set('data', $data);
     }
 
-    public function mpd($param) {
+    public function mpd($param)
+    {
 
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
+        $database        = $param[1];
 
         $default = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT name,display_name FROM mysql_server WHERE id=" . intval($id_mysql_server);
+        $sql = "SELECT name,display_name FROM mysql_server WHERE id=".intval($id_mysql_server);
         $res = $default->sql_query($sql);
 
         while ($ob = $default->sql_fetch_object($res)) {
-            $name_connect = $ob->name;
+            $name_connect         = $ob->name;
             $data['display_name'] = $ob->display_name;
         }
 
         $table_to_purge = array();
-        $db = Sgbd::sql($name_connect);
+        $db             = Sgbd::sql($name_connect);
 
         /*
           if (!empty($param[2])) {
@@ -555,9 +560,9 @@ class Mysql extends Controller {
           }
          */
 
-        $file_name = TMP . $id_mysql_server . "_" . $database . ".svg";
-        $data['file'] = $file_name;
-        $data['database'] = $database;
+        $file_name               = TMP.$id_mysql_server."_".$database.".svg";
+        $data['file']            = $file_name;
+        $data['database']        = $database;
         $data['id_mysql_server'] = $id_mysql_server;
 
         $path_parts = pathinfo($file_name);
@@ -566,25 +571,23 @@ class Mysql extends Controller {
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-
-        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='" . $param[1] . "' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
         Debug::sql($sql);
-        
+
         $liste_table_connected = $this->tableListLinked($param);
 
         $tables = $db->sql_fetch_yield($sql);
 
-        $fp = fopen($path . '/' . $file . '.dot', "w");
-
+        $fp = fopen($path.'/'.$file.'.dot', "w");
 
         if ($fp) {
 
-            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho fontname=\"arial\" " . PHP_EOL); //splines=ortho;
-            fwrite($fp, "labelloc=\"t\"; " . PHP_EOL); //splines=ortho;
-            fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  " . PHP_EOL); //splines=ortho;
+            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho fontname=\"arial\" ".PHP_EOL); //splines=ortho;
+            fwrite($fp, "labelloc=\"t\"; ".PHP_EOL); //splines=ortho;
+            fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  ".PHP_EOL); //splines=ortho;
 
             foreach ($tables as $table) {
-                
+
                 //pour retirer les tables en attente d'être éffacer
 
                 if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
@@ -595,7 +598,7 @@ class Mysql extends Controller {
                 // On affiche pas les tables qui ne sont pas lié à une autre (on retire les tables singleton)
 
                 if (!in_array($table['TABLE_NAME'], $liste_table_connected)) {
-                   continue;
+                    continue;
                 }
 
                 if (count($table_to_purge) > 0) {
@@ -609,37 +612,36 @@ class Mysql extends Controller {
                 }
 
                 //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
-                fwrite($fp, "\t node [color=\"" . $color . "\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];" . PHP_EOL);
+                fwrite($fp, "\t node [color=\"".$color."\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
 
 // shape=Mrecord
                 fwrite($fp,
-                        '  "' . $table['TABLE_NAME'] . '" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">' . $table['TABLE_NAME'] . '</font></td></tr>');
-                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">' . $table['ENGINE'] . ' (' . $table['ROW_FORMAT'] . ')</td></tr>' . PHP_EOL);
-                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of ' . $table['TABLE_ROWS'] . '</td></tr>');
+                    '  "'.$table['TABLE_NAME'].'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
+                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
+                fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
-
-
-                $sql = "SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '" . $param[1] . "' AND TABLE_NAME ='" . $table['TABLE_NAME'] . "' ORDER BY ORDINAL_POSITION;";
+                $sql = "SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION;";
 
                 //Debug::sql($sql);
 
                 $columns = $db->sql_fetch_yield($sql);
                 foreach ($columns as $column) {
-                    fwrite($fp, '<tr>'
-                        . '<td bgcolor="#dddddd" align="left" title="' . $column['COLUMN_NAME'] . '">' . $column['COLUMN_NAME'] . '</td>'
-                        . '<td bgcolor="#dddddd" align="left">' . $column['COLUMN_TYPE'] . '</td>'
-                        . '</tr>' . PHP_EOL);
+                    fwrite($fp,
+                        '<tr>'
+                        .'<td bgcolor="#dddddd" align="left" title="'.$column['COLUMN_NAME'].'">'.$column['COLUMN_NAME'].'</td>'
+                        .'<td bgcolor="#dddddd" align="left">'.$column['COLUMN_TYPE'].'</td>'
+                        .'</tr>'.PHP_EOL);
                 }
                 /*                 * *** */
 
 
-                fwrite($fp, '</table>> ];' . PHP_EOL);
+                fwrite($fp, '</table>> ];'.PHP_EOL);
             }
 
 
             $sql = "SELECT count(1) as cpt FROM information_schema.`tables` where table_name = 'REFERENTIAL_CONSTRAINTS' and table_schema = 'information_schema';";
             $res = $db->sql_query($sql);
-            $ob = $db->sql_fetch_object($res);
+            $ob  = $db->sql_fetch_object($res);
 
             if ($ob->cpt === "1") {
 
@@ -697,9 +699,9 @@ class Mysql extends Controller {
                      */
 
                     fwrite($fp,
-                            "\"" . $contraint['TABLE_NAME'] . "\" -> \"" . $contraint['REFERENCED_TABLE_NAME'] . "\""
-                            . '[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="' . $color . '" 
-                          tooltip="' . $contraint['TABLE_NAME'] . '.' . $contraint['COLUMN_NAME'] . ' => ' . $contraint['REFERENCED_TABLE_NAME'] . '.' . $contraint['REFERENCED_COLUMN_NAME'] . '" edgeURL=""];' . PHP_EOL);
+                        "\"".$contraint['TABLE_NAME']."\" -> \"".$contraint['REFERENCED_TABLE_NAME']."\""
+                        .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'"
+                          tooltip="'.$contraint['TABLE_NAME'].'.'.$contraint['COLUMN_NAME'].' => '.$contraint['REFERENCED_TABLE_NAME'].'.'.$contraint['REFERENCED_COLUMN_NAME'].'" edgeURL=""];'.PHP_EOL);
                 }
             } else {
                 $data['NO_FK'] = 1;
@@ -707,8 +709,8 @@ class Mysql extends Controller {
 
             fwrite($fp, '}');
             fclose($fp);
-            
-            $dot = 'dot -T' . $type . ' ' . $path . '/' . $file . '.dot -o ' . $path . '/' . $file . '.' . $type . '';
+
+            $dot = 'dot -T'.$type.' '.$path.'/'.$file.'.dot -o '.$path.'/'.$file.'.'.$type.'';
             Debug::debug($dot, 'DOT');
             exec($dot);
         }
@@ -716,11 +718,11 @@ class Mysql extends Controller {
         $this->set('data', $data);
     }
 
-    public function addnagios() {
+    public function addnagios()
+    {
 //photoways
-        $this->view = false;
+        $this->view        = false;
         $this->layout_name = false;
-
 
         $i = 1;
 
@@ -737,7 +739,8 @@ class Mysql extends Controller {
         }
     }
 
-    public function thread($param) {
+    public function thread($param)
+    {
         $db = Sgbd::sql(str_replace('-', '_', $param[0]));
         $this->di['js']->addJavascript(array('jquery-latest.min.js', 'jQplot/jquery.jqplot.min.js',
             'jQplot/plugins/jqplot.dateAxisRenderer.min.js'));
@@ -763,37 +766,36 @@ class Mysql extends Controller {
 
         if ($data['pma_cli']) {
             $sql = "SELECT busy_pct,  one_min_avg,five_min_avg,fifteen_min_avg , tstamp
-		FROM pma_cli.slave_sql_load_average 
+		FROM pma_cli.slave_sql_load_average
 		order by id";
 
 //where tstamp >= DATE_SUB(NOW(),INTERVAL 1 HOUR)
 
             $avgs = $db->sql_fetch_yield($sql);
 
-
             foreach ($avgs as $line) {
-                $data['busy_pct'][] = $line['busy_pct'];
-                $data['one_min_avg'][] = $line['one_min_avg'];
-                $data['five_min_avg'][] = $line['five_min_avg'];
+                $data['busy_pct'][]        = $line['busy_pct'];
+                $data['one_min_avg'][]     = $line['one_min_avg'];
+                $data['five_min_avg'][]    = $line['five_min_avg'];
                 $data['fifteen_min_avg'][] = $line['fifteen_min_avg'];
-                $data['tstamp'][] = $line['tstamp'];
+                $data['tstamp'][]          = $line['tstamp'];
             }
 
 
             $this->di['js']->code_javascript("$(document).ready(function(){
-  var plot1 = $.jqplot ('chart1', [[" . implode(',', $data['one_min_avg']) . "],[" . implode(',', $data['five_min_avg']) . "],[" . implode(',', $data['fifteen_min_avg']) . "]]
-  , {title:'Avg 1 min / 5min / 15 min',  seriesDefaults: { 
+  var plot1 = $.jqplot ('chart1', [[".implode(',', $data['one_min_avg'])."],[".implode(',', $data['five_min_avg'])."],[".implode(',', $data['fifteen_min_avg'])."]]
+  , {title:'Avg 1 min / 5min / 15 min',  seriesDefaults: {
         showMarker:false
-        
+
       }} );
-  
-    var plot2 = $.jqplot ('chart2', [[" . implode(',', $data['busy_pct']) . "]]
-  , {title:'% busy' , seriesDefaults: { 
+
+    var plot2 = $.jqplot ('chart2', [[".implode(',', $data['busy_pct'])."]]
+  , {title:'% busy' , seriesDefaults: {
         showMarker:false
-        
-      }} 
+
+      }}
   );
-  
+
 });");
         }
 
@@ -817,22 +819,23 @@ class Mysql extends Controller {
         $this->set('data', $data);
     }
 
-    public function load_db($param) {
+    public function load_db($param)
+    {
         $this->layout_name = false;
-        $this->view = false;
+        $this->view        = false;
 
-        $ip = $param[0];
+        $ip     = $param[0];
         $server = $param[1];
 
         $db = Sgbd::sql(str_replace("-", "_", $server)); //generate alert if not exist
 
 
-        $path = '/data/backup/' . $ip;
+        $path = '/data/backup/'.$ip;
 
         $database = [];
 
         if (!is_dir($path)) {
-            throw new \Exception('PMACTRL-005 : this ip doesn\'t have backup "' . $ip . '"');
+            throw new \Exception('PMACTRL-005 : this ip doesn\'t have backup "'.$ip.'"');
         } else {
             if (is_dir($path)) {
                 if ($dh = opendir($path)) {
@@ -842,7 +845,7 @@ class Mysql extends Controller {
                         if ($file != "." && $file != "..") {
 
 
-                            if (is_dir($path . "/" . $file)) {
+                            if (is_dir($path."/".$file)) {
                                 $database[] = $file;
                             }
                         }
@@ -856,13 +859,11 @@ class Mysql extends Controller {
         echo "DATABASES FOUND : \n";
         debug($database);
 
-
         $db_order = [];
-
 
         $i = 0;
         foreach ($database as $base) {
-            $path_base = $path . '/' . $base;
+            $path_base = $path.'/'.$base;
 
             if (is_dir($path_base)) {
                 if ($dh = opendir($path_base)) {
@@ -872,30 +873,26 @@ class Mysql extends Controller {
 
 
                                 if (pathinfo($file)['extension'] == "gz") {
-                                    echo "gzip -d " . $path_base . '/' . $file . "\n";
+                                    echo "gzip -d ".$path_base.'/'.$file."\n";
 
-                                    shell_exec('cd ' . $path_base . '; gzip -d ' . $path_base . '/' . $file);
+                                    shell_exec('cd '.$path_base.'; gzip -d '.$path_base.'/'.$file);
 
                                     $file = substr($file, 0, -3);
                                 }
 
-                                if (file_exists($path_base . '/' . $file)) {
+                                if (file_exists($path_base.'/'.$file)) {
 
 
-                                    $out = $this->getLogAndPos($path_base . '/' . $file);
+                                    $out = $this->getLogAndPos($path_base.'/'.$file);
 
-                                    $file_position = $out['file'] . "-" . $out['position'] . "-" . $i;
+                                    $file_position = $out['file']."-".$out['position']."-".$i;
 
-
-
-                                    $db_order[$file_position]["filename"] = $path_base . '/' . $file;
-                                    $db_order[$file_position]["db"] = $base;
-                                    $db_order[$file_position]["file"] = $out['file'];
+                                    $db_order[$file_position]["filename"] = $path_base.'/'.$file;
+                                    $db_order[$file_position]["db"]       = $base;
+                                    $db_order[$file_position]["file"]     = $out['file'];
                                     $db_order[$file_position]["position"] = $out['position'];
 
-
-
-                                    echo "$file a été modifié le : " . date("F d Y H:i:s.", filemtime($path_base . '/' . $file)) . "\n";
+                                    echo "$file a été modifié le : ".date("F d Y H:i:s.", filemtime($path_base.'/'.$file))."\n";
                                 }
                             }
                         }
@@ -910,13 +907,11 @@ class Mysql extends Controller {
         ksort($db_order);
         debug($db_order);
 
-
-
         $change_master = [];
 
         $tmp = $db_order;
         foreach ($tmp as $timestamp => $arr) {
-            $out = $this->getLogAndPos($arr['filename']);
+            $out                  = $this->getLogAndPos($arr['filename']);
             $db_order[$timestamp] = array_merge($db_order[$timestamp], $out);
         }
 
@@ -925,7 +920,6 @@ class Mysql extends Controller {
         $i = 0;
 
         $replicate_do_db = [];
-
 
         foreach ($db_order as $timestamp => $arr) {
 
@@ -939,12 +933,8 @@ class Mysql extends Controller {
             $db->sql_query($sql);
             $this->log($sql);
 
-
-
-
-
             if ($i !== 0) {
-                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='" . $arr['file'] . "', MASTER_LOG_POS=" . $arr['position'] . ";";
+                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$arr['file']."', MASTER_LOG_POS=".$arr['position'].";";
                 $db->sql_query($sql);
                 $this->log($sql);
 
@@ -954,11 +944,11 @@ class Mysql extends Controller {
 
             if ($arr['db'] != "mysql") {
 
-                $sql = "DROP DATABASE IF EXISTS `" . $arr['db'] . "`;";
+                $sql = "DROP DATABASE IF EXISTS `".$arr['db']."`;";
                 $db->sql_query($sql);
                 $this->log($sql);
 
-                $sql = "CREATE DATABASE `" . $arr['db'] . "`;";
+                $sql = "CREATE DATABASE `".$arr['db']."`;";
                 $db->sql_query($sql);
                 $this->log($sql);
             } else {
@@ -969,24 +959,22 @@ class Mysql extends Controller {
 
             $db->_param['port'] = empty($db->_param['port']) ? 3306 : $db->_param['port'];
 
-
-            $cmd = "pv " . $arr['filename'] . " | mysql -h " . $db->_param['hostname'] . " -u " . $db->_param['user'] . " -P " . $db->_param['port'] . " -p" . $db->_param['password'] . " " . $arr['db'] . "";
-            echo $cmd . "\n";
+            $cmd = "pv ".$arr['filename']." | mysql -h ".$db->_param['hostname']." -u ".$db->_param['user']." -P ".$db->_param['port']." -p".$db->_param['password']." ".$arr['db']."";
+            echo $cmd."\n";
 
             $this->cmd($cmd);
 
             $db = Sgbd::sql(str_replace("-", "_", $server));
 
-
             if ($i === 0) {
-                $sql = "CHANGE MASTER TO MASTER_LOG_FILE='" . $arr['file'] . "', MASTER_LOG_POS=" . $arr['position'] . ";";
+                $sql = "CHANGE MASTER TO MASTER_LOG_FILE='".$arr['file']."', MASTER_LOG_POS=".$arr['position'].";";
                 $db->sql_query($sql);
                 $this->log($sql);
             }
 
             $replicate_do_db[] = $arr['db'];
 
-            $sql = "SET GLOBAL replicate_do_db = '" . implode(",", $replicate_do_db) . "';";
+            $sql = "SET GLOBAL replicate_do_db = '".implode(",", $replicate_do_db)."';";
             $db->sql_query($sql);
             $this->log($sql);
 
@@ -999,17 +987,18 @@ class Mysql extends Controller {
         $this->log($sql);
     }
 
-    private function getLogAndPos($filename) {
+    private function getLogAndPos($filename)
+    {
         $handle = fopen($filename, "r");
         if ($handle) {
 
-            $i = 0;
+            $i      = 0;
             while (($buffer = fgets($handle, 4096)) !== false) {
                 if (strpos($buffer, "CHANGE MASTER") !== false) {
 
                     $ret = [];
 
-                    $ret['file'] = explode("'", explode("MASTER_LOG_FILE='", $buffer)[1])[0];
+                    $ret['file']     = explode("'", explode("MASTER_LOG_FILE='", $buffer)[1])[0];
                     $ret['position'] = substr(trim(explode("=", $buffer)[2]), 0, -1);
 
                     return $ret;
@@ -1018,7 +1007,7 @@ class Mysql extends Controller {
                 $i++;
 
                 if ($i > 30) {
-                    throw new \Exception('PMACTRL-006 Impossible to find \'CHANGE MASTER\' in header of \'' . $filename . '\'');
+                    throw new \Exception('PMACTRL-006 Impossible to find \'CHANGE MASTER\' in header of \''.$filename.'\'');
                 }
             }
             if (!feof($handle)) {
@@ -1028,19 +1017,21 @@ class Mysql extends Controller {
         }
     }
 
-    public function cmd($cmd) {
+    public function cmd($cmd)
+    {
         $code_retour = 0;
 
         passthru($cmd, $code_retour);
 
         if ($code_retour !== 0) {
-            throw new \Exception('the following command failed : "' . $cmd . '"');
+            throw new \Exception('the following command failed : "'.$cmd.'"');
         } else {
             return true;
         }
     }
 
-    public function waitPosition($db, $file, $position) {
+    public function waitPosition($db, $file, $position)
+    {
         $MS = new MasterSlave();
         $MS->setInstance($db);
 
@@ -1049,12 +1040,11 @@ class Mysql extends Controller {
             foreach ($thread_slave as $thread) {
 
                 $Relay_Master_Log_File = $thread['Relay_Master_Log_File'];
-                $Exec_Master_Log_Pos = $thread['Exec_Master_Log_Pos'];
+                $Exec_Master_Log_Pos   = $thread['Exec_Master_Log_Pos'];
             }
 
             $sql = "SHOW SLAVE STATUS;";
             $this->log($sql);
-
 
             if (!empty($thread['Last_Errno'])) {
                 debug($thread);
@@ -1068,27 +1058,30 @@ class Mysql extends Controller {
             $tab->addLine(array($Relay_Master_Log_File, $Exec_Master_Log_Pos));
             echo $tab->display();
 
-
             sleep(1);
         } while ($file != $Relay_Master_Log_File || $position != $Exec_Master_Log_Pos);
     }
 
-    public function log($sql) {
+    public function log($sql)
+    {
         echo \SqlFormatter::highlight($sql);
     }
 
-    public function after($param) {
-        
+    public function after($param)
+    {
+
     }
 
-    public function generate_config() {
-        $db = Sgbd::sql(DB_DEFAULT);
+    public function generate_config()
+    {
+        $db               = Sgbd::sql(DB_DEFAULT);
         $this->db_default = $db;
-        $this->title = __("Configurator");
-        $this->ariane = "> " . '<a href="' . LINK . 'Plugins/index/">' . __('Tools box') . "</a> > " . $this->title;
+        $this->title      = __("Configurator");
+        $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
     }
 
-    public function add($param) {
+    public function add($param)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -1098,47 +1091,48 @@ class Mysql extends Controller {
 
                 if (!$this->scanPort($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'])) {
 
-                    $_SESSION['ERROR']['mysql_server']['ip'] = I18n::getTranslation(__("Maybe this address is not good"));
+                    $_SESSION['ERROR']['mysql_server']['ip']   = I18n::getTranslation(__("Maybe this address is not good"));
                     $_SESSION['ERROR']['mysql_server']['port'] = I18n::getTranslation(__("Maybe this port is not good"));
 
-                    $msg = I18n::getTranslation(__("Impossible to reach this MySQL server"));
+                    $msg   = I18n::getTranslation(__("Impossible to reach this MySQL server"));
                     $title = I18n::getTranslation(__("Connection error"));
                     set_flash("error", $title, $msg);
 
-                    header("location: " . LINK . "mysql/add/" . $this->getPost());
+                    header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 }
 
 
-                $ret = $this->testMySQL($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'], $_POST['mysql_server']['login'], $_POST['mysql_server']['password']);
+                $ret = $this->testMySQL($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'], $_POST['mysql_server']['login'],
+                    $_POST['mysql_server']['password']);
 
                 if ($ret !== true) {
                     //debug($_POST);
                     //debug($ret);
 
-                    $_SESSION['ERROR']['mysql_server']['login'] = I18n::getTranslation(__("Maybe this login is wrong"));
+                    $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
                     $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
 
-                    $msg = $ret;
+                    $msg   = $ret;
                     $title = I18n::getTranslation(__("MySQL's connection error"));
                     set_flash("error", $title, $msg);
 
-                    header("location: " . LINK . "mysql/add/" . $this->getPost());
+                    header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 }
 
                 $table['mysql_server'] = $_POST['mysql_server'];
 
-                $table['mysql_server']['port'] = $_POST['mysql_server']['port'] ?? 3306;
-                $table['mysql_server']['ip'] = $table['mysql_server']['ip'];
-                $table['mysql_server']['display_name'] = Mysql2::getHostname($table['mysql_server']['display_name'],
-                                array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
-                $table['mysql_server']['name'] = "server_" . uniqid();
-                $table['mysql_server']['hostname'] = $table['mysql_server']['display_name'];
-                $table['mysql_server']['passwd'] = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
-                $table['mysql_server']['database'] = $table['mysql_server']['database'] ?? "mysql";
+                $table['mysql_server']['port']                = $_POST['mysql_server']['port'] ?? 3306;
+                $table['mysql_server']['ip']                  = $table['mysql_server']['ip'];
+                $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
+                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
+                $table['mysql_server']['name']                = "server_".uniqid();
+                $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
+                $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
+                $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
-                $table['mysql_server']['id_environment'] = $table['mysql_server']['id_environement'] ?? 1;
+                $table['mysql_server']['id_environment']      = $table['mysql_server']['id_environement'] ?? 1;
 
                 /*
                   debug($table);
@@ -1148,39 +1142,36 @@ class Mysql extends Controller {
 
                 $ret = $db->sql_save($table);
 
-
                 if (!$ret) {
 
 
                     //debug($table);
 
-                    $msg = json_encode($db->sql_error());
+                    $msg   = json_encode($db->sql_error());
                     $title = I18n::getTranslation(__("Error"));
                     set_flash("error", $title, $msg);
 
-                    header("location: " . LINK . "mysql/add/" . $this->getPost());
+                    header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 } else {
 
                     Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
 
-
-                    $msg = I18n::getTranslation(__("Your MySQL server was successfully added !"));
+                    $msg   = I18n::getTranslation(__("Your MySQL server was successfully added !"));
                     $title = I18n::getTranslation(__("Success"));
                     set_flash("success", $title, $msg);
 
-
                     //echo "OK !!!";
-                    header("location: " . LINK . "mysql/add/");
+                    header("location: ".LINK."mysql/add/");
                     exit;
                 }
             } else {
 
-                $msg = I18n::getTranslation(__("IP, port, login and password are mandatory"));
+                $msg   = I18n::getTranslation(__("IP, port, login and password are mandatory"));
                 $title = I18n::getTranslation(__("User error"));
                 set_flash("error", $title, $msg);
 
-                header("location: " . LINK . "mysql/add/" . $this->getPost());
+                header("location: ".LINK."mysql/add/".$this->getPost());
                 exit;
             }
         }
@@ -1190,10 +1181,10 @@ class Mysql extends Controller {
         $res = $db->sql_query($sql);
 
         $data['client'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->libelle;
+        while ($ob             = $db->sql_fetch_object($res)) {
+            $tmp              = [];
+            $tmp['id']        = $ob->id;
+            $tmp['libelle']   = $ob->libelle;
             $data['client'][] = $tmp;
         }
 
@@ -1202,10 +1193,10 @@ class Mysql extends Controller {
         $res = $db->sql_query($sql);
 
         $data['environment'] = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $tmp = [];
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->libelle;
+        while ($ob                  = $db->sql_fetch_object($res)) {
+            $tmp                   = [];
+            $tmp['id']             = $ob->id;
+            $tmp['libelle']        = $ob->libelle;
             $data['environment'][] = $tmp;
         }
 
@@ -1221,18 +1212,20 @@ class Mysql extends Controller {
         $this->set('data', $data);
     }
 
-    private function testMySQL($hostname, $port, $user, $password) {
+    private function testMySQL($hostname, $port, $user, $password)
+    {
 
-        $this->link = mysqli_connect($hostname . ":" . $port, $user, trim($password), "mysql");
+        $this->link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
 
         if ($this->link) {
             return true;
         } else {
-            return 'Connect Error (' . mysqli_connect_errno() . ') ' . mysqli_connect_error();
+            return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
     }
 
-    private function scanPort($ip, $port, $timeOut = 1) {
+    private function scanPort($ip, $port, $timeOut = 1)
+    {
         $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);
 
         if (is_resource($connection)) {
@@ -1244,19 +1237,21 @@ class Mysql extends Controller {
         return false;
     }
 
-    private function getPost() {
+    private function getPost()
+    {
         $ret = [];
 
         foreach ($_POST as $main => $elems) {
             foreach ($elems as $key => $val) {
-                $ret[] = $main . ":" . $key . ":" . $val;
+                $ret[] = $main.":".$key.":".$val;
             }
         }
 
         return implode('/', $ret);
     }
 
-    public function reverseConfig($param) {
+    public function reverseConfig($param)
+    {
         $this->view = false;
 
         Debug::parseDebug($param);
@@ -1267,36 +1262,35 @@ class Mysql extends Controller {
         $res = $db->sql_query($sql);
 
         $config = "";
-        while ($ob = $db->sql_fetch_object($res)) {
-            $string = "[" . $ob->name . "]\n";
+        while ($ob     = $db->sql_fetch_object($res)) {
+            $string = "[".$ob->name."]\n";
             $string .= "driver=mysql\n";
-            $string .= "hostname=" . $ob->ip . "\n";
-            $string .= "port=" . $ob->port . "\n";
-            $string .= "user=" . $ob->login . "\n";
-            $string .= "password=" . $ob->passwd . "\n";
+            $string .= "hostname=".$ob->ip."\n";
+            $string .= "port=".$ob->port."\n";
+            $string .= "user=".$ob->login."\n";
+            $string .= "password=".$ob->passwd."\n";
             $string .= "crypted=1\n";
-            $string .= "database=" . $ob->database . "\n";
+            $string .= "database=".$ob->database."\n";
 
-            $config .= $string . "\n\n";
+            $config .= $string."\n\n";
 
             Debug::debug($string);
         }
 
-        file_put_contents(ROOT . "/configuration/db.config.ini.php", $config);
+        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
 
-    public function parsecnf() {
+    public function parsecnf()
+    {
 
         $myfile = file("/etc/mysql/my.cnf");
 
-
-        $cnf = array();
+        $cnf         = array();
         $include_dir = array();
-        $parsed = array();
-
+        $parsed      = array();
 
         foreach ($myfile as $line) {
-            $comment_removed = explode('#', $line)[0];
+            $comment_removed   = explode('#', $line)[0];
             $comment_removed_t = trim($comment_removed);
 
             if (!empty($comment_removed_t)) {
@@ -1316,9 +1310,8 @@ class Mysql extends Controller {
 
         unset($sections[0]);
 
-
         foreach ($sections as $section) {
-            $lines = explode("\n", $section);
+            $lines        = explode("\n", $section);
             $section_name = trim($lines[0], "[]");
 
             unset($lines[0]);
@@ -1326,8 +1319,8 @@ class Mysql extends Controller {
             foreach ($lines as $line) {
                 $options = explode("=", $line);
 
-                $var = trim($options[0]);
-                $val = trim($options[1]);
+                $var                           = trim($options[0]);
+                $val                           = trim($options[1]);
                 $parsed[$section_name][$var][] = $val;
             }
         }
@@ -1336,29 +1329,39 @@ class Mysql extends Controller {
         print_r($parsed);
     }
 
-    public function getAlias($db) {
-
+    /**
+     * Find matching server in mysql_server or in alias table if not found return false
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param array
+     * @return void
+     * @description construct the object and set the connection available
+     * @access public
+     * @example new Sgbd(array from \Glial\Synapse\Config);
+     * @package Sgbd
+     * @See Glial\Sgbd\Sgbd->sql()
+     * @since 3.0 First time this was introduced.
+     * @since 5.1.5 Switched to static, update __construc to setConfig
+     * @version 4.0
+     */
+    public function getAlias($db)
+    {
         $default = Sgbd::sql(DB_DEFAULT);
-
-        $slaves = $db->isSlave();
+        $slaves  = $db->isSlave();
 
         foreach ($slaves as $slave) {
-
-
             if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {
 
-
-                $list_ip_destinations = trim(shell_exec("getent hosts " . $slave['Master_Host'] . " | awk '{print $1}'"));
-
-                $ips = explode("\n", $list_ip_destinations);
+                $list_ip_destinations = trim(shell_exec("getent hosts ".$slave['Master_Host']." | awk '{print $1}'"));
+                $ips                  = explode("\n", $list_ip_destinations);
 
                 foreach ($ips as $ip_destination) {
 
-
                     if (!filter_var($ip_destination, FILTER_VALIDATE_IP)) {
 
-                        $data['alias_dns']['dns'] = $slave['Master_Host'];
-                        $data['alias_dns']['port'] = $slave['Master_Port'];
+                        $data['alias_dns']['dns']         = $slave['Master_Host'];
+                        $data['alias_dns']['port']        = $slave['Master_Port'];
                         $data['alias_dns']['destination'] = $ip_destination;
 
                         $default->sql_save($data);
@@ -1367,12 +1370,11 @@ class Mysql extends Controller {
             }
         }
     }
-
     /*
-     * 
-     * 
-     * 
-     * 
+     *
+     *
+     *
+     *
      */
 
     /*
@@ -1400,16 +1402,17 @@ class Mysql extends Controller {
       return $this->foreign_key[$id_mysql_server][$database];
       } */
 
-    public function getColumns($param) {
+    public function getColumns($param)
+    {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
+        $database        = $param[1];
 
         $name = Mysql2::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
-        $db = Sgbd::sql($name);
+        $db   = Sgbd::sql($name);
 
-        $sql = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE , DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from information_schema.COLUMNS WHERE TABLE_SCHEMA='" . $database . "';";
+        $sql = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE , DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from information_schema.COLUMNS WHERE TABLE_SCHEMA='".$database."';";
 
         $res = $db->sql_query($sql);
 
@@ -1420,7 +1423,8 @@ class Mysql extends Controller {
         return $this->columns[$id_mysql_server][$database];
     }
 
-    public function getColor($string) {
+    public function getColor($string)
+    {
 
 
 
@@ -1434,59 +1438,58 @@ class Mysql extends Controller {
         $h2 = substr(md5($string), 10, 2);
         $h3 = substr(md5($string), 0, 2);
 
+        $color = $h1.$h2.$h3;
 
-        $color = $h1 . $h2 . $h3;
-
-        return "#" . $color;
+        return "#".$color;
     }
 
-    public function bb() {
+    public function bb()
+    {
 
         Mysql2::generateMySQLConfig(Sgbd::sql(DB_DEFAULT));
     }
 
-    public function addDate($param = array()) {
+    public function addDate($param = array())
+    {
         Mysql2::addMaxDate($param);
     }
 
-    public function tableListLinked($param) {
+    public function tableListLinked($param)
+    {
         Debug::parseDebug($param);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-                . "WHERE `CONSTRAINT_SCHEMA` ='" . $param[1] . "' "
-                . "AND `REFERENCED_TABLE_SCHEMA`='" . $param[1] . "' "
-                . "AND `REFERENCED_TABLE_NAME` IS NOT NULL
-                          UNION  
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
+                          UNION
                           SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-                . "WHERE `CONSTRAINT_SCHEMA` ='" . $param[1] . "' "
-                . "AND `REFERENCED_TABLE_SCHEMA`='" . $param[1] . "' "
-                . "AND `REFERENCED_TABLE_NAME` IS NOT NULL";
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
 
         $res2 = $db->sql_query($sql2);
 
-
         $liste_table_1 = array();
-        while ($ob2 = $db->sql_fetch_object($res2)) {
+        while ($ob2           = $db->sql_fetch_object($res2)) {
             $liste_table_1[] = $ob2->table_name;
         }
 
         Debug::debug(count($liste_table_1), "Natural Foreign keys");
 
-
         $sql1 = "SELECT distinct a.`constraint_table` as table_name
-         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '" . $param[1] . "' AND a.id_mysql_server = " . $param[0] . "
+         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '".$param[1]."' AND a.id_mysql_server = ".$param[0]."
          UNION SELECT distinct b.`referenced_table` as table_name
-         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '" . $param[1] . "' AND b.id_mysql_server = " . $param[0] . ";
+         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '".$param[1]."' AND b.id_mysql_server = ".$param[0].";
         ";
         Debug::sql($sql1);
 
         $res1 = $db->sql_query($sql1);
 
         $liste_table_2 = array();
-        while ($ob1 = $db->sql_fetch_object($res1)) {
+        while ($ob1           = $db->sql_fetch_object($res1)) {
             $liste_table_2[] = $ob1->table_name;
         }
         Debug::debug(count($liste_table_2), "Virtual Foreign keys");
@@ -1495,9 +1498,7 @@ class Mysql extends Controller {
 
         $liste_table_connected = array_unique($liste_table);
 
-
         Debug::debug(count($liste_table_connected), "Merge");
-
 
         //Debug::debug($liste_table_connected);
         /*
@@ -1511,20 +1512,20 @@ class Mysql extends Controller {
         return $liste_table_connected;
     }
 
-    public function getVirtualForeignKey($param) {
+    public function getVirtualForeignKey($param)
+    {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
-
+        $database        = $param[1];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "select constraint_schema as CONSTRAINT_SCHEMA,constraint_table as TABLE_NAME,constraint_column as COLUMN_NAME, 
+        $sql = "select constraint_schema as CONSTRAINT_SCHEMA,constraint_table as TABLE_NAME,constraint_column as COLUMN_NAME,
             referenced_schema as REFERENCED_TABLE_SCHEMA, referenced_table as REFERENCED_TABLE_NAME, referenced_column as REFERENCED_COLUMN_NAME
             from virtual_foreign_key
-            WHERE id_mysql_server = " . $id_mysql_server . "
-            AND constraint_schema = '" . $database . "';";
+            WHERE id_mysql_server = ".$id_mysql_server."
+            AND constraint_schema = '".$database."';";
 
         Debug::sql($sql);
 
@@ -1532,10 +1533,8 @@ class Mysql extends Controller {
 
         $foreign_key = array();
 
-
-
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $md5 = md5($ob['CONSTRAINT_SCHEMA'] . $ob['TABLE_NAME'] . $ob['COLUMN_NAME'] . $ob['REFERENCED_TABLE_SCHEMA'] . $ob['REFERENCED_TABLE_NAME'] . $ob['REFERENCED_COLUMN_NAME']);
+            $md5 = md5($ob['CONSTRAINT_SCHEMA'].$ob['TABLE_NAME'].$ob['COLUMN_NAME'].$ob['REFERENCED_TABLE_SCHEMA'].$ob['REFERENCED_TABLE_NAME'].$ob['REFERENCED_COLUMN_NAME']);
 
             $foreign_key[$md5] = $ob;
         }
@@ -1546,21 +1545,21 @@ class Mysql extends Controller {
         return $foreign_key;
     }
 
-    public function getRealForeignKey($param) {
+    public function getRealForeignKey($param)
+    {
 
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
+        $database        = $param[1];
 
         $db = Mysql2::getDbLink($id_mysql_server);
 
-
         $sql = "SELECT CONSTRAINT_SCHEMA,TABLE_NAME,COLUMN_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME"
-                . " FROM `information_schema`.`KEY_COLUMN_USAGE` "
-                . "WHERE `CONSTRAINT_SCHEMA` ='" . $database . "' "
-                . "AND `REFERENCED_TABLE_SCHEMA`='" . $database . "' "
-                . "AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
+            ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
 
         Debug::sql($sql);
 
@@ -1568,10 +1567,8 @@ class Mysql extends Controller {
 
         $foreign_key = array();
 
-
-
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $md5 = md5($ob['CONSTRAINT_SCHEMA'] . $ob['TABLE_NAME'] . $ob['COLUMN_NAME'] . $ob['REFERENCED_TABLE_SCHEMA'] . $ob['REFERENCED_TABLE_NAME'] . $ob['REFERENCED_COLUMN_NAME']);
+            $md5 = md5($ob['CONSTRAINT_SCHEMA'].$ob['TABLE_NAME'].$ob['COLUMN_NAME'].$ob['REFERENCED_TABLE_SCHEMA'].$ob['REFERENCED_TABLE_NAME'].$ob['REFERENCED_COLUMN_NAME']);
 
             $foreign_key[$md5] = $ob;
         }
@@ -1582,16 +1579,14 @@ class Mysql extends Controller {
         return $foreign_key;
     }
 
-    public function getForeignKey($param) {
+    public function getForeignKey($param)
+    {
         Debug::parseDebug($param);
-
 
         $fk1 = $this->getRealForeignKey($param);
         $fk2 = $this->getVirtualForeignKey($param);
 
-
         $fks = array_merge($fk1, $fk2);
-
 
         //Debug::debug($fks);
         Debug::debug(count($fks));
@@ -1599,60 +1594,50 @@ class Mysql extends Controller {
         return $fks;
     }
 
-    public function audit($param) {
+    public function audit($param)
+    {
 
         Debug::parseDebug($param);
-        
-        $db = Sgbd::sql(DB_DEFAULT);
-        
 
-      
-        $sql = "select id_mysql_server, constraint_schema, count(1) 
-        from virtual_foreign_key 
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "select id_mysql_server, constraint_schema, count(1)
+        from virtual_foreign_key
         WHERE id_mysql_server in (SELECT id from mysql_server WHERE id_environment = 1 and id != 1)
-        group by id_mysql_server,constraint_schema having count(1) > 1 
+        group by id_mysql_server,constraint_schema having count(1) > 1
         order by constraint_schema,3 asc;";
-        
+
         $res = $db->sql_query($sql);
-        
+
         $id_mysql_servers = array();
-        while( $ob = $db->sql_fetch_object($res))
-        {
+        while ($ob               = $db->sql_fetch_object($res)) {
             $id_mysql_servers[$ob->constraint_schema] = $ob->id_mysql_server;
         }
-        
+
         Debug::debug($id_mysql_servers, "mysql_server / database");
-        
-        
+
         $data['list'] = $id_mysql_servers;
         $this->set('data', $data);
-        
-        return $id_mysql_servers;
-        
-    }
 
+        return $id_mysql_servers;
+    }
 
     public function png($param)
     {
 
         $id_mysql_server = $param[0];
-        $database = $param[1];
+        $database        = $param[1];
 
-        $this->view = false;
+        $this->view   = false;
         $this->layout = false;
         //$this->layout_name = false;
 
-        header ('Content-type: image/png');
+        header('Content-type: image/png');
 
         $file = TMP.$id_mysql_server."_".$database."png";
 
         $data = file_get_contents($file);
 
-
         echo $data;
-
-
-        
     }
-
 }
