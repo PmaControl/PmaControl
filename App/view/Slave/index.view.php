@@ -58,8 +58,6 @@ echo '</tr>';
 
 $i = 0;
 
-debug($data['graph']);
-
 foreach ($data['slave'] as $slaves) {
 
 
@@ -147,11 +145,15 @@ foreach ($data['slave'] as $slaves) {
 
         echo $slave['seconds_behind_master']."";
 
-        if (!isset($data['graph'][$slave['id_mysql_server']]['max'])) {
-            $data['graph'][$slave['id_mysql_server']]['max'] = "n/a";
+        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['max'])) {
+            $data['graph'][$slave['id_mysql_server']][$connect_name]['max'] = "n/a";
         }
 
-        echo ' (max : '.$data['graph'][$slave['id_mysql_server']]['max'].')';
+        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['avg'])) {
+            $data['graph'][$slave['id_mysql_server']][$connect_name]['avg'] = "n/a";
+        }
+
+        echo ' (max : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['max'].' / avg : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['avg'].' / std : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['std'].')';
         echo '</td>';
 
         echo '<td class="'.$class.'">';

@@ -78,13 +78,11 @@ class Slave extends Controller
 
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
-                debug($slave);
                 $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]             = $slave;
                 $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]['id_graph'] = $slave['id_mysql_server'].crc32($slave['connection_name']);
                 $data['server']['idgraph'][$slave['id_mysql_server']][$slave['connection_name']] = $slave['id_mysql_server'].crc32($slave['connection_name']);
             }
         }
-
 
         $this->set('data', $data);
     }
