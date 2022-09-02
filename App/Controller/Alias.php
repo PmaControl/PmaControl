@@ -64,7 +64,7 @@ class Alias extends Controller
         foreach ($host as $key => $elem) {
 
             if (!Mysql::getIdFromDns($key)) {
-                Debug::debug($key, "TO find");
+                Debug::debug($key, "Server to match");
 
                 $alias_to_add[] = $this->getIdfromDns(array($elem['_HOST'], $elem['_PORT']));
                 $alias_to_add[] = $this->getIdfromHostname(array($elem['_HOST'], $elem['_PORT']));
@@ -102,8 +102,11 @@ class Alias extends Controller
     {
         $var_host = $param[0];
         $var_port = $param[1];
+        //variables::is_proxysql
 
-        $list = Extraction::display(array($var_host, $var_port));
+        $list = Extraction::display($param);
+
+        Debug::debug($list);
 
         $host = explode('::', $var_host)[1];
         $port = explode('::', $var_port)[1];
@@ -111,6 +114,11 @@ class Alias extends Controller
         $list_host = array();
         foreach ($list as $masters) {
             foreach ($masters as $master) {
+
+                if (!empty($master['is_proxysql']) && $master['is_proxysql'] === "1") {
+                    continue;
+                }
+
                 $list_host[$master[$host].':'.$master[$port]]          = $master;
                 $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
                 $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
@@ -150,6 +158,7 @@ class Alias extends Controller
                 $alias_found               = array();
                 $alias_found[$id]['_HOST'] = $host;
                 $alias_found[$id]['_PORT'] = $host;
+                $alias_found[$id]['_FROM'] = __FUNCTION__;
 
                 return $alias_found;
             }
@@ -179,9 +188,10 @@ class Alias extends Controller
         $port = $param[1];
 
         if (count(self::$hostname) === 0) {
-            self::$hostname = $this->getExtraction(array("variables::hostname", "variables::port"));
+            self::$hostname = $this->getExtraction(array("variables::hostname", "variables::port", "variables::is_proxysql"));
             Debug::debug(self::$hostname, "hostname and port from SHOW SLAVE STATUS");
         }
+
 
         if (!empty(self::$hostname[$host.":".$port])) {
 
@@ -190,6 +200,7 @@ class Alias extends Controller
             $tmp                                   = array();
             $tmp[$var['id_mysql_server']]['_HOST'] = $var['_HOST'];
             $tmp[$var['id_mysql_server']]['_PORT'] = $var['_PORT'];
+            $tmp[$var['id_mysql_server']]['_FROM'] = __FUNCTION__;
 
             return $tmp;
         }

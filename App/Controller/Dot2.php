@@ -110,13 +110,12 @@ class Dot2 extends Controller
 
                 //remove ProxySQL
                 if (!empty($rosae['']['is_proxysql']) && $rosae['']['is_proxysql'] === "1") {
-                    
+
                     continue;
                 }
 
                 //remove if not a slave
-                if (empty($slave['master_host']))
-                {
+                if (empty($slave['master_host'])) {
                     continue;
                 }
 
@@ -129,7 +128,7 @@ class Dot2 extends Controller
                     continue;
                 }
 
-                
+
 
 
                 $tmp_group[$id_group][] = $id_master;
@@ -349,10 +348,11 @@ class Dot2 extends Controller
 //binlog-do-db binlog-ignore-db <= to extract from my.cnf ?
 
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql","variables::wsrep_cluster_address",
+                "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment",
-            "status::wsrep_incoming_addresses", "variables::wsrep_patch_version",
+                "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "variables::server_id", "variables::auto_increment_increment",
+                "variables::auto_increment_offset",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid"), "ALL");
 
         //Debug::debug($temp);
@@ -862,7 +862,8 @@ class Dot2 extends Controller
 
         $lines[] = "Binlog : ".$server['binlog_format'];
         $lines[] = $this->formatVersion($server['version']);
-
+        $lines[] = "Server-id : ".$server['server_id'];
+        $lines[] = "Auto_inc : (".$server['auto_increment_increment']." / ".$server['auto_increment_offset'].")";
         if (!empty($server['wsrep_local_state_comment'])) {
 
             if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
@@ -877,47 +878,45 @@ class Dot2 extends Controller
             $node .= $this->nodeLine($line);
         }
 
-        /*
-          if (!empty($databases)) {
-          $node .= '<tr><td bgcolor="lightgrey"><table border="0" cellborder="0" cellspacing="0" cellpadding="2">';
+
+        if (!empty($databases)) {
+            $node .= '<tr><td bgcolor="lightgrey"><table border="0" cellborder="0" cellspacing="0" cellpadding="2">';
+
+            $node .= '<tr>'
+                .'<td bgcolor="darkgrey" color="white" align="left">M</td>'
+                .'<td bgcolor="darkgrey" color="white" align="left">S</td>'
+                .'<td bgcolor="darkgrey" color="white" align="left">'.__("Databases").'</td>'
+                .'<td bgcolor="darkgrey" color="white" align="right">'.__("Tables").'</td>'
+                .'<td bgcolor="darkgrey" color="white" align="right">'.__("Row").'</td>'
+                .'</tr>';
+
+            foreach ($databases as $database) {
+                $node .= '<tr>'
+                    .'<td bgcolor="darkgrey" color="white" align="left">';
+
+                if ($database['binlog_do_db'] === "1") {
+                    $node .= "&#10004;";
+                }
+
+                $node .= '</td>';
+                $node .= '<td bgcolor="darkgrey" color="white" align="left">&#10006;</td>'
+                    .'<td bgcolor="darkgrey" color="white" align="left">'.$database['name'].'</td>'
+                    .'<td bgcolor="darkgrey" color="white" align="right">'.$database['tables'].'</td>'
+                    .'<td bgcolor="darkgrey" color="white" align="right">'.$database['rows'].'</td>'
+                    .'</tr>';
+            }
+            $node .= '</table></td></tr>';
+        }
 
 
-          $node .= '<tr>'
-          .'<td bgcolor="darkgrey" color="white" align="left">M</td>'
-          .'<td bgcolor="darkgrey" color="white" align="left">S</td>'
-          .'<td bgcolor="darkgrey" color="white" align="left">'.__("Databases").'</td>'
-          .'<td bgcolor="darkgrey" color="white" align="right">'.__("Tables").'</td>'
-          .'<td bgcolor="darkgrey" color="white" align="right">'.__("Row").'</td>'
-          .'</tr>';
-
-
-          foreach ($databases as $database) {
-          $node .= '<tr>'
-          .'<td bgcolor="darkgrey" color="white" align="left">';
-
-          if ($database['binlog_do_db'] === "1") {
-          $node .= "&#10004;";
-          }
-
-          $node .= '</td>';
-          $node .= '<td bgcolor="darkgrey" color="white" align="left">&#10006;</td>'
-          .'<td bgcolor="darkgrey" color="white" align="left">'.$database['name'].'</td>'
-          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['tables'].'</td>'
-          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['rows'].'</td>'
-          .'</tr>';
-          }
-          $node .= '</table></td></tr>';
-          }
-
-         */
 
         $node .= "</table>> ];\n";
 
         return $node;
     }
     /*
-     * 
-     * 
+     *
+     *
      * to move in library
      */
 
@@ -1518,9 +1517,9 @@ class Dot2 extends Controller
         return $nodes;
     }
     /*
-     * 
+     *
      * TODO : ni fait ni a faire
-     * 
+     *
      */
 
     public function getServerBackuped($id_mysql_server)
