@@ -12,10 +12,11 @@ use \Glial\Sgbd\Sgbd;
 use App\Library\Debug;
 use App\Library\Extraction;
 use App\Library\System;
-
+use App\Library\Mysql;
 
 class Alias extends Controller
 {
+    static $hostname = array();
 
     public function index()
     {
@@ -26,7 +27,6 @@ class Alias extends Controller
 
         $res = $db->sql_query($sql);
 
-
         $data['alia_dns'] = array();
 
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -36,72 +36,54 @@ class Alias extends Controller
         $this->set('data', $data);
     }
 
-    /*
-     * met en relation un slave avec son master
-     * 
+    /**
+     * need to add some other way like display_name in mysql_server
+     * need to add ipv6 match
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param void
+     * @return void
+     * @description try to find different way to match master_host and master_port that we cannot find in table mysql_server
+     * @access public
+     * @example pmacontrol alias updateAlias
+     * @package Pmacontrol
+     * @since 2.0.25
+     * @version 1.0
      */
     public function updateAlias($param)
     {
         Debug::parseDebug($param);
-        $db   = Sgbd::sql(DB_DEFAULT);
-        $list = Extraction::display(array("slave::master_host", "slave::master_port"));
+        $db = Sgbd::sql(DB_DEFAULT);
 
-        $list_host = array();
-        foreach ($list as $masters) {
-            foreach ($masters as $master) {
+        $host = $this->getExtraction(array("master_host", "master_port"));
 
-                $key = $master['master_host'].':'.$master['master_port'];
+        $alias_to_add = array();
 
-                $host[$key]  = $master;
-                $list_host[] = $master['master_host'];
+        foreach ($host as $key => $elem) {
+
+            if (!Mysql::getIdFromDns($key)) {
+                Debug::debug($key, "TO find");
+
+                $alias_to_add[] = $this->getIdfromDns(array($elem['_HOST'], $elem['_PORT']));
+                $alias_to_add[] = $this->getIdfromHostname(array($elem['_HOST'], $elem['_PORT']));
             }
         }
-        
-        //Debug::debug($host);
-        Debug::debug($list_host);
 
-        $sql = "SELECT dns, port, id_mysql_server FROM `alias_dns`;";
-        $res = $db->sql_query($sql);
+        Debug::debug($alias_to_add, "Alias found");
 
-        $all_dns = array();
-        while ($ob      = $db->sql_fetch_object($res)) {
-
-            $uniq           = $ob->dns.':'.$ob->port;
-            $all_dns[$uniq] = $ob->id_mysql_server;
-        }
-
-        Debug::debug($all_dns);
-
-        $sql = "SELECT id, ip, port FROM mysql_server";
-        $res = $db->sql_query($sql);
-
-        $mysql_server = array();
-        while ($ob           = $db->sql_fetch_object($res)) {
-            $uniq                = $ob->ip.':'.$ob->port;
-            $mysql_server[$uniq] = $ob->id;
-        }
-
-        foreach ($host as $dns) {
-            $uniq = $dns['master_host'].':'.$dns['master_port'];
-
-            if (!empty($mysql_server[$uniq])) {
+        foreach ($alias_to_add as $tab) {
+            if (!is_array($tab)) {
                 continue;
             }
 
-            if (!empty($all_dns[$uniq])) {
-                continue;
-            }
+            foreach ($tab as $id_mysql_server => $server) {
 
-            $ip   = System::getIp($dns['master_host']);
-            $uniq = $ip.':'.$dns['master_port'];
-
-            if (!empty($mysql_server[$uniq])) {
-
+                //debug($server);
                 $alias_dns                                 = array();
-                $alias_dns['alias_dns']['id_mysql_server'] = $mysql_server[$uniq];
-                $alias_dns['alias_dns']['dns']             = $dns['master_host'];
-                $alias_dns['alias_dns']['port']            = $dns['master_port'];
-                $alias_dns['alias_dns']['destination']     = $ip;
+                $alias_dns['alias_dns']['id_mysql_server'] = $id_mysql_server;
+                $alias_dns['alias_dns']['dns']             = $server['_HOST'];
+                $alias_dns['alias_dns']['port']            = $server['_PORT'];
                 $db->sql_save($alias_dns);
             }
         }
@@ -110,5 +92,100 @@ class Alias extends Controller
             header("location: ".LINK."alias/index");
         }
     }
-    
+
+    public function getExtraction($param)
+    {
+
+        $host = $param[0];
+        $port = $param[1];
+
+        $list = Extraction::display(array($host, $port));
+
+        $list_host = array();
+        foreach ($list as $masters) {
+            foreach ($masters as $master) {
+                $list_host[$master[$host].':'.$master[$port]]          = $master;
+                $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
+                $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
+            }
+        }
+
+        return $list_host;
+    }
+
+    /**
+     * need improvement we need loop on all server not only the one we looking for
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param array
+     * @return array or false if not found
+     * @description match hostname and port from SHOW VARIABLES STATUS.
+     * @access public
+     * @example $this->getIdfromDns(array($HOST, $PORT));
+     * @package Pmacontrol
+     * @See Alias\updateAlias
+     * @since 2.0.25
+     * @version 1.0
+     */
+    public function getIdfromDns($param)
+    {
+
+        $host = $param[0];
+        $port = $param[1];
+
+//get IP from DNS
+        $ip = System::getIp($host);
+        if ($ip !== false) {
+            $id = Mysql::getIdFromDns($ip.":".$port);
+            if ($id != false) {
+
+                $alias_found               = array();
+                $alias_found[$id]['_HOST'] = $host;
+                $alias_found[$id]['_PORT'] = $host;
+
+                return $alias_found;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param array
+     * @return array or false if not found
+     * @description match hostname and port from SHOW VARIABLES STATUS.
+     * @access public
+     * @example $this->getIdfromHostname(array(array($HOST, $PORT)));
+     * @package Pmacontrol
+     * @See Alias\updateAlias
+     * @since 2.0.25
+     * @version 1.0
+     */
+    public function getIdfromHostname($param)
+    {
+
+        $host = $param[0];
+        $port = $param[1];
+
+        if (count(self::$hostname) === 0) {
+            self::$hostname = $this->getExtraction(array("hostname", "port"));
+        }
+
+        if (!empty(self::$hostname[$host.":".$port])) {
+
+            $var = self::$hostname[$host.":".$port];
+
+            $tmp                                   = array();
+            $tmp[$var['id_mysql_server']]['_HOST'] = $var['_HOST'];
+            $tmp[$var['id_mysql_server']]['_PORT'] = $var['_PORT'];
+
+            return $tmp;
+        }
+
+        return false;
+    }
 }

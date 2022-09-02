@@ -229,13 +229,10 @@ class Mysql
             $server['mysql_server']['id'] = $ob->id;
         }
 
-        $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization']
-                    ?? "none", "client", "libelle");
+        $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
-        $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'],
-                "environment", "libelle",
-                array("key" => strtolower(str_replace(' ', '',
-                            $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']),
+        $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
+                array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']),
                         0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'],
@@ -243,8 +240,7 @@ class Mysql
         $server['mysql_server']['ip']                  = $ip;
         $server['mysql_server']['hostname']            = $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
-        $server['mysql_server']['passwd']              = Crypt::encrypt($data['password'],
-                CRYPT_KEY);
+        $server['mysql_server']['passwd']              = Crypt::encrypt($data['password'], CRYPT_KEY);
         $server['mysql_server']['database']            = $data['database'] ?? "mysql";
         $server['mysql_server']['is_password_crypted'] = "1";
         $server['mysql_server']['port']                = $port;
@@ -268,8 +264,7 @@ class Mysql
 
         Debug::debug($server, "new MySQL");
 
-        if (self::isPmaControl($server['mysql_server']['ip'],
-                $server['mysql_server']['port']) === true) {
+        if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
 
 
             self::$return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
@@ -390,8 +385,7 @@ END IF;";
             }
 
 
-            Debug::debug($id_return,
-                "ID de retour de la table : ".$table_name." !");
+            Debug::debug($id_return, "ID de retour de la table : ".$table_name." !");
             return $id_return;
         }
 
@@ -429,8 +423,7 @@ END IF;";
                 die('mysqli_init failed');
             }
 
-            if ($db->real_connect($data['0'], $data['1'], $data['2'], "mysql",
-                    $data['3'])) {
+            if ($db->real_connect($data['0'], $data['1'], $data['2'], "mysql", $data['3'])) {
                 $res = $db->query('SELECT @@hostname as hostname;');
 
                 while ($ob = $res->fetch_object()) {
@@ -571,8 +564,7 @@ END IF;";
          */
 
         if (!in_array($type_object, array_keys($query))) {
-            throw new \Exception("PMACTRL-095 : this type of object is not supported : '".$type_object."'",
-                    80);
+            throw new \Exception("PMACTRL-095 : this type of object is not supported : '".$type_object."'", 80);
         }
 
         //to prevent if a DB don't have a type of object
@@ -629,8 +621,7 @@ END IF;";
         $queries = array();
         foreach ($data as $elem) {
 
-            $tmp            = str_replace(array('{DB}', '{OBJECT}'),
-                array($database, $elem), $query[$object]['query']);
+            $tmp            = str_replace(array('{DB}', '{OBJECT}'), array($database, $elem), $query[$object]['query']);
             $queries[$elem] = $tmp;
         }
 
@@ -653,13 +644,22 @@ END IF;";
 
         return $resultat;
     }
-    /*
+
+    /**
      * Récupère le id_mysql_server depuis un slave avec mater_host // master_port
      * Si besoin on lie la table mysql_server avec alias_dns, dans les cas ou la réplication se fait par un VIP, DNS ou fqdn
-     *
-     *
+     * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
+     * @license GNU/GPL
+     * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
+     * @param array
+     * @return void
+     * @description construct the object and set the connection available
+     * @access public
+     * @example new Sgbd(array from \Glial\Synapse\Config);
+     * @package Sgbd
+     * @See Glial\Sgbd\Sgbd->sql()
+     * @version 1.0
      */
-
     static public function getIdFromDns($dns_port)
     {
         if (empty(self::$master[$dns_port])) {
@@ -672,8 +672,7 @@ END IF;";
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $uniq                = $ob->ip.':'.$ob->port;
-                self::$master[$uniq] = $ob->id_mysql_server;
+                self::$master[$ob->ip.':'.$ob->port] = $ob->id_mysql_server;
             }
         }
 
@@ -693,8 +692,7 @@ END IF;";
         $user     = $param[2];
         $password = $param[3];
 
-        $link = mysqli_connect($hostname.":".$port, $user, trim($password),
-            "mysql");
+        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
 
         if ($link) {
             Debug::debug("Connection sucessfull");
