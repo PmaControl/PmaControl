@@ -173,6 +173,7 @@ class Alias extends Controller
 
         if (count(self::$hostname) === 0) {
             self::$hostname = $this->getExtraction(array("hostname", "port"));
+            Debug::debug(self::$hostname, "hostname and port from SHOW SLAVE STATUS");
         }
 
         if (!empty(self::$hostname[$host.":".$port])) {
