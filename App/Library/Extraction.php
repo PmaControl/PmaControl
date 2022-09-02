@@ -124,9 +124,21 @@ class Extraction
             }
         }
 
+        //debug($sql2);
+
         $sql3 = implode(" UNION ALL ", $sql2);
 
+        if ($graph === true) {
+
+            // quel est l'interet pour l'order by ?
+            //$sql3 .= " ORDER BY id_mysql_server, id_ts_variable, date";
+        } else {
+            //$sql3 .= "ORDER by date";
+        }
+
+
         //echo \SqlFormatter::format($sql3) . "\n";
+
 
         if ($graph === true) {
 
@@ -137,6 +149,7 @@ class Extraction
             if (self::$groupbyday) {
                 $sql3 .= " date(t.`date`) as day, ";
             }
+
 
             $sql3 .= "
                 connection_name,
@@ -156,13 +169,16 @@ class Extraction
             }
         }
 
+
         if (empty($sql3)) {
             return false;
         }
 
+        //echo \SqlFormatter::format($sql3)."\n";
+
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
-        //Debug::sql($sql3);
+        Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
