@@ -37,7 +37,6 @@ class Extraction
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         if (empty($server)) {
             $server = self::getServerList();
         }
@@ -115,13 +114,10 @@ class Extraction
                     $sql4 = "(SELECT ".$fields."   FROM `ts_value_".$radical."_".$type."` a "
                         .$INNER." WHERE id_ts_variable = ".$id_ts_variable."";
 
-                    if ($server !== "ALL")
-                    {
-                        $sql4 .=  " AND a.id_mysql_server IN (".implode(",", $server).")";
+                    if ($server !== "ALL") {
+                        $sql4 .= " AND a.id_mysql_server IN (".implode(",", $server).")";
                     }
-                    $sql4 .=  $extra_where." ".$WINDOW.") ";
-
-
+                    $sql4 .= $extra_where." ".$WINDOW.") ";
 
                     $sql2[] = $sql4;
                 }
@@ -162,8 +158,7 @@ class Extraction
                 round(max(t.`value`),2) as `max`,
                 round(avg(t.`value`),2) as `avg`,
                 round(std(t.`value`),2) as `std`
-            FROM t GROUP BY id_mysql_server, id_ts_variable ";
-
+            FROM t GROUP BY id_mysql_server, connection_name, id_ts_variable ";
 
             //$sql3 .= ", date(t.`date`), hour(t.`date`), minute(t.`date`)";
 
@@ -199,8 +194,6 @@ class Extraction
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
         if (empty(self::$server)) {
             $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
 
@@ -226,16 +219,12 @@ class Extraction
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         //return(array());
 
 
         $res = self::extract($var, $server, $date, $range, $graph);
 
-
-
         $table = array();
-
 
         if ($res === false) {
             return $table;
@@ -263,7 +252,6 @@ class Extraction
     static public function getIdVariable($var)
     {
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $sqls = array();
         foreach ($var as $val) {
@@ -333,8 +321,8 @@ class Extraction
         self::$$var = $val;
     }
     /*
-     * Cette fonction prend comme paramètres la sortie de la fonction 
-     * Extraction::display(array("databases::databases"));  
+     * Cette fonction prend comme paramètres la sortie de la fonction
+     * Extraction::display(array("databases::databases"));
      */
 
     static public function getSizeByEngine($data)

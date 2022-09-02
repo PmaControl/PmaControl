@@ -22,19 +22,15 @@ class Slave extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $this->di['js']->code_javascript('
         $(function () {
   $(\'a[data-toggle="tooltip"]\').tooltip();  /* tooltip("show") */
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
 
-
         $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
-
-
 
         /* besoin de testé avec les thread (trouver autre chose)
           //order by master host
@@ -48,8 +44,7 @@ class Slave extends Controller
           usort($data['slave'], 'invenDescSort');
          */
 
-        $data['info_server'] = Extraction::display(array("variables::hostname","variables::is_proxysql"));
-
+        $data['info_server'] = Extraction::display(array("variables::hostname", "variables::is_proxysql"));
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
@@ -69,14 +64,14 @@ class Slave extends Controller
         }
 
         /*
-        $res2 = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
-        $slaves = array();
-        while($slave = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
-        {
-            $slaves[] = $slave;
-        }
-        $this->generateGraph($slaves);
-        */
+          $res2 = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
+          $slaves = array();
+          while($slave = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+          {
+          $slaves[] = $slave;
+          }
+          $this->generateGraph($slaves);
+         */
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
         $this->generateGraph($slaves);
@@ -84,7 +79,7 @@ class Slave extends Controller
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
                 //debug($slave);
-                $data['graph'][$slave['id_mysql_server']] = $slave;
+                $data['graph'][$slave['id_mysql_server']]             = $slave;
                 $data['server']['idgraph'][$slave['id_mysql_server']] = $slave['id_mysql_server'].crc32($slave['connection_name']);
             }
         }
@@ -230,7 +225,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $data['replication_name'] = $replication_name;
         Extraction::setOption('groupbyday', true);
 
-
         $date        = date('Y-m-d H:i:s');
         $date_format = 'Y-m-d';
 
@@ -241,13 +235,9 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
 
-
-
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date, $date), true, true);
 
-
         $this->generateGraphSlave($slaves);
-
 
         foreach ($slaves as $slave) {
             $data['graph'][$slave['day']] = $slave;
@@ -274,11 +264,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $data['id_slave']              = array($id_mysql_server);
         $_GET['mysql_slave']['server'] = $id_mysql_server;
-
-
-
-
-
 
 //le cas ou on arrive pas a trouver le master
         if (!empty($_GET['mysql_server']['id'])) {
