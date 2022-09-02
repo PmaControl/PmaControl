@@ -863,7 +863,7 @@ class Dot2 extends Controller
         $lines[] = "Binlog : ".$server['binlog_format'];
         $lines[] = $this->formatVersion($server['version']);
         $lines[] = "Server-id : ".$server['server_id'];
-        $lines[] = "Auto_inc : (".$server['auto_increment_increment']." / ".$server['auto_increment_offset'].")";
+        $lines[] = "Auto_inc : (".$server['auto_increment_offset']." / ".$server['auto_increment_increment'].")";
         if (!empty($server['wsrep_local_state_comment'])) {
 
             if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
