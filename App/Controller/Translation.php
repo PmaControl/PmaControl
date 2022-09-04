@@ -5,6 +5,7 @@ namespace App\Controller;
 use Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Debug;
 
 class Translation extends Controller
 {
@@ -26,7 +27,7 @@ class Translation extends Controller
             return $module;
         }
 
-        include_once APP_DIR.DS."controller".DS."History.controller.php";
+        //include_once APP_DIR.DS."controller".DS."History.controller.php";
 
         $this->title  = __("Translations");
         $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
@@ -281,5 +282,79 @@ class Translation extends Controller
 
         header("location: ".LINK.$this->getClass()."/admin_translation/");
         exit;
+    }
+
+    function translateUknow($param)
+    {
+
+        $languages = explode(',', LANGUAGE_AVAILABLE);
+
+        Debug::parseDebug($param);
+
+        Debug::debug($languages, "LANGUAGE_AVAILABLE");
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.`key`, a.`text`, a.`language` from translation_glial a
+LEFT JOIN translation_google b ON a.`key` = b.`key`
+WHERE b.`key` IS NULL
+GROUP by a.`text`, a.`language`;";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            foreach ($languages as $target_language) {
+
+                if ($ob->language != $target_language) {
+
+                    Debug::debug($target_language, 'target_language');
+                    Debug::debug($ob->language, 'source_language');
+
+                    $text_translated = $this->askApiGoogle(array($ob->language, $target_language, $ob->text));
+
+                    // insert
+                    $sql2 = "INSERT INTO `translation_google` (`key`, `source_language`,`source_text` , `target_language`,`target_text` )"
+                        ."VALUES ('".$ob->key."', '".$ob->language."', '".$db->sql_real_escape_string($ob->text)."','".$target_language."','".$db->sql_real_escape_string($text_translated)."');";
+
+                    Debug::sql($sql2);
+
+                    $db->sql_query($sql2);
+
+                    Debug::debug($text_translated, "text_translated");
+                }
+            }
+        }
+    }
+
+    function askApiGoogle($param)
+    {
+        $from   = $param[0];
+        $source = $param[1];
+        $string = $param[2];
+
+        $url = "https://www.googleapis.com/language/translate/v2/"
+            ."?key=".GOOGLE_API_KEY
+            ."&source=".$from
+            ."&target=".$source
+            ."&q=".urlencode($string);
+
+        Debug::debug($url);
+
+        $handle   = curl_init($url);
+        curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);     //We want the result to be saved into variable, not printed out
+        $response = curl_exec($handle);
+        curl_close($handle);
+
+        Debug::debug(json_decode($response, true));
+        $data = json_decode($response, true);
+
+        if (!empty($data['data']['translations'][0]['translatedText'])) {
+            return trim($data['data']['translations'][0]['translatedText']);
+        } else {
+            return false;
+        }
     }
 }

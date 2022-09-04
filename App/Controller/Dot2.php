@@ -847,7 +847,63 @@ class Dot2 extends Controller
           }
          */
 
+        $data['database'] = Extraction::display(array("databases::databases", "variables::is_proxysql", "master::binlog_do_db", "master::binlog_ignore_db", "replicate_do_db",
+                "replicate_ignore_db"), array($id_mysql_server));
 
+        Debug::debug($data);
+
+        foreach ($data['database'] as $id_mysql_server => $elems) {
+            foreach ($elems as $database) {
+
+                debug($database);
+
+                $binlog_do_db     = explode(",", $database['binlog_do_db']);
+                $binlog_ignore_db = explode(",", $database['binlog_ignore_db']);
+
+                $dbs = json_decode($database['databases'], true);
+
+                //Debug::debug($dbs);
+
+                foreach ($dbs as $schema => $db_attr) {
+
+                    $databases[$schema]['name'] = $schema;
+
+                    $databases[$schema]['binlog_do_db']     = 0;
+                    $databases[$schema]['binlog_ignore_db'] = 0;
+
+                    $DB[$id_mysql_server][$schema]['M'] = '-';
+                    if (in_array($schema, $binlog_do_db)) {
+
+                        $databases[$schema]['binlog_do_db'] = 1;
+                        $DB[$id_mysql_server][$schema]['M'] = 'V';
+                    }
+
+                    if (in_array($schema, $binlog_ignore_db)) {
+
+                        $databases[$schema]['binlog_ignore_db'] = 1;
+                        $DB[$id_mysql_server][$schema]['M']     = 'X';
+                    }
+
+
+                    /*
+                      foreach ($db_attr['engine'] as $engine => $row_formats) {
+                      foreach ($row_formats as $row_format => $details) {
+
+
+
+
+                      $total_data[]  = $details['size_data'];
+                      $total_index[] = $details['size_index'];
+                      $total_free[]  = $details['size_free'];
+                      $total_table[] = $details['tables'];
+                      $total_row[]   = $details['rows'];
+                      }
+                      } */
+                }
+            }
+        }
+
+        Debug::debug($databases, "database");
 
         $node .= 'node [color = "'.$this->graph_node[$id_mysql_server]['color'].'" style="'.$this->graph_node[$id_mysql_server]['style'].'"];'."\n";
         $node .= '  '.$id_mysql_server.' [penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
@@ -886,23 +942,38 @@ class Dot2 extends Controller
                 .'<td bgcolor="darkgrey" color="white" align="left">M</td>'
                 .'<td bgcolor="darkgrey" color="white" align="left">S</td>'
                 .'<td bgcolor="darkgrey" color="white" align="left">'.__("Databases").'</td>'
-                .'<td bgcolor="darkgrey" color="white" align="right">'.__("Tables").'</td>'
-                .'<td bgcolor="darkgrey" color="white" align="right">'.__("Row").'</td>'
+                //     .'<td bgcolor="darkgrey" color="white" align="right">'.__("Tables").'</td>'
+                //     .'<td bgcolor="darkgrey" color="white" align="right">'.__("Row").'</td>'
                 .'</tr>';
 
             foreach ($databases as $database) {
+
+
+                Debug::debug($database, '##########');
                 $node .= '<tr>'
                     .'<td bgcolor="darkgrey" color="white" align="left">';
 
-                if ($database['binlog_do_db'] === "1") {
+                if ($database['binlog_do_db'] == "1") {
+
+                    Debug::debug($database['binlog_do_db'], "###########################################");
+                    $node .= "&#10006;";
+                } else if ($database['binlog_ignore_db'] == "1") {
                     $node .= "&#10004;";
+                } else {
+                    $node .= "-";
                 }
 
                 $node .= '</td>';
-                $node .= '<td bgcolor="darkgrey" color="white" align="left">&#10006;</td>'
+                $node .= '<td bgcolor="darkgrey" color="white" align="left">';
+
+                if ($database['binlog_do_db'] == "1") {
+                    //$node .= "&#10006;";
+                }
+
+                $node .= '</td>'
                     .'<td bgcolor="darkgrey" color="white" align="left">'.$database['name'].'</td>'
-                    .'<td bgcolor="darkgrey" color="white" align="right">'.$database['tables'].'</td>'
-                    .'<td bgcolor="darkgrey" color="white" align="right">'.$database['rows'].'</td>'
+                    //          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['tables'].'</td>'
+                    //          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['rows'].'</td>'
                     .'</tr>';
             }
             $node .= '</table></td></tr>';

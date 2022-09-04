@@ -15,16 +15,13 @@ use \App\Library\Mysql;
 use \App\Library\Json;
 use \Glial\Sgbd\Sgbd;
 
-
 class Export extends Controller
 {
     var $table_with_data = array("translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country");
-        
     var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
-        "home_box", "backup_type", "export_option","database_size","mysql_type");
-
+        "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial");
     var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
     function generateDump($param)
@@ -36,11 +33,10 @@ class Export extends Controller
 
         $tables = $db->getListTable()['table'];
 
-        $table_with_data    = array();
+        $table_with_data        = array();
         $table_with_data_expand = array();
-        $table_without_data = array();
-        
-        
+        $table_without_data     = array();
+
         foreach ($tables as $key => $table) {
             if (in_array($table, $this->table_with_data)) {
                 $table_with_data[] = $table;
@@ -74,7 +70,6 @@ class Export extends Controller
         Debug::debug($table_without_data);
 
         $connect = $db->getParams();
-
 
         if (empty($connect['port'])) {
             $connect['port'] = 3306;
@@ -112,8 +107,6 @@ class Export extends Controller
         $this->title = '<span class="glyphicon glyphicon-import"></span> '.__("Import / Export");
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-
 
         $this->di['js']->code_javascript('
 $("#export_all-all").click(function(){
@@ -154,9 +147,7 @@ $("#export_all-all2").click(function(){
 
             Debug::debug($json, "JSON");
 
-
             $crypted = Chiffrement::encrypt($json, $_POST['export']['password']);
-
 
             //$file_name = $_POST['export']['name_file'];
             $file_name = "export_".date('Y-m-d').".pmactrl";
@@ -227,8 +218,7 @@ $("#export_all-all2").click(function(){
         $json = Chiffrement::decrypt($crypted, $password);
 
         Debug::debug(json_encode(json_decode($json), JSON_PRETTY_PRINT), "json");
-        
-        
+
         $data = $this->import(array($json));
 
         if (!empty($data['mysql']['updated'])) {
@@ -273,7 +263,7 @@ $("#export_all-all2").click(function(){
         Crypt::$key = CRYPT_KEY;
         $db         = Sgbd::sql(DB_DEFAULT);
         Debug::parseDebug($param);
-        $json = $param[0];
+        $json       = $param[0];
         //debug(json_decode($json,JSON_PRETTY_PRINT));
 
         $data = Json::isJson($json);
@@ -305,7 +295,6 @@ $("#export_all-all2").click(function(){
 
             $mysql['error'] = '';
 
-
             $data                                   = array();
             $data['mysql_server']                   = $mysql;
             $data['mysql_server']['id_client']      = 1;
@@ -320,18 +309,14 @@ $("#export_all-all2").click(function(){
             unset($data['mysql_server']['key_private_path']);
             unset($data['mysql_server']['key_private_user']);
 
-
-
             $uniques = $this->getUniqueKey('mysql_server');
 
             Debug::debug($uniques);
-
 
             $sql2 = array();
             foreach ($uniques as $unique) {
 
                 $keys = explode(",", $unique);
-
 
                 $sql = array();
                 foreach ($keys as $key) {
@@ -344,7 +329,6 @@ $("#export_all-all2").click(function(){
 
             if (!empty($sql2)) {
                 $sql_good = '( '.implode(") UNION (", $sql2).' )';
-
 
                 Debug::debug($sql_good);
 
@@ -432,10 +416,8 @@ $("#export_all-all2").click(function(){
             $crypted = explode(",", $ob->crypted_fields);
             $splited = explode(",", $ob->splited_fields);
 
-
             Debug::debug("--------------");
             Debug::debug($ob->config_file, "config file");
-
 
             if (!empty($tables)) {
                 foreach ($tables as $table) {
@@ -518,7 +500,6 @@ $("#export_all-all2").click(function(){
         $backup = $this->_export();
 
         Debug::debug(json_encode($backup, JSON_PRETTY_PRINT));
-        
     }
 
     public function getExportOption()
@@ -649,8 +630,6 @@ $("#export_all-all2").click(function(){
         if (!empty($file) && !empty($password)) {
             $crypted    = file_get_contents($file);
             $compressed = Chiffrement::decrypt($crypted, $password);
-
-
 
             if ($this->is_gzipped($compressed) === true) {
 
