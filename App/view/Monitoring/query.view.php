@@ -19,7 +19,6 @@ echo '<div class="form-group">';
 if (!$data['error']) {
     echo ' ';
 
-
     echo Form::select('database', 'id', $data['databases'], "", array('style' => 'margin-bottom:0px', 'class' => 'form-control'));
     echo ' ';
     echo Form::input('database', 'filter', array('style' => 'margin-bottom:0px', 'placeholder' => __("Filter"), 'class' => 'form-control'));
@@ -31,7 +30,6 @@ if (!$data['error']) {
 }
 echo ' <button type="submit" class="btn btn-primary">Submit</button>';
 
-
 echo '</div>';
 echo '</form>';
 
@@ -41,10 +39,6 @@ if (!empty($data['pagination'])) {
     echo $data['pagination'];
 }
 echo '</div>';
-
-
-
-
 
 if (!$data['error']) {
 
@@ -133,4 +127,3 @@ if (!empty($data['pagination'])) {
     echo $data['pagination'];
     echo '</div>';
 }
-    

@@ -1702,4 +1702,59 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
 
         return $data;
     }
+
+    public function dot($param)
+    {
+        Debug::parseDebug($param);
+
+        $data['database'] = Extraction::display(array("databases::databases", "variables::is_proxysql", "master::binlog_do_db", "master::binlog_ignore_db"));
+
+        Debug::debug($data);
+
+        foreach ($data['database'] as $id_mysql_server => $elems) {
+            foreach ($elems as $databases) {
+                if ($databases['is_proxysql'] === "1") {
+                    continue;
+                }
+
+
+                $binlog_do_db     = explode(",", $databases['binlog_do_db']);
+                $binlog_ignore_db = explode(",", $databases['binlog_ignore_db']);
+
+                $dbs = json_decode($databases['databases'], true);
+
+                //Debug::debug($dbs);
+
+                foreach ($dbs as $schema => $db_attr) {
+
+                    $DB[$id_mysql_server][$schema]['M'] = '-';
+                    if (in_array($schema, $binlog_do_db)) {
+                        $DB[$id_mysql_server][$schema]['M'] = 'V';
+                    }
+
+                    if (in_array($schema, $binlog_ignore_db)) {
+                        $DB[$id_mysql_server][$schema]['M'] = 'X';
+                    }
+
+
+                    /*
+                      foreach ($db_attr['engine'] as $engine => $row_formats) {
+                      foreach ($row_formats as $row_format => $details) {
+
+
+
+
+                      $total_data[]  = $details['size_data'];
+                      $total_index[] = $details['size_index'];
+                      $total_free[]  = $details['size_free'];
+                      $total_table[] = $details['tables'];
+                      $total_row[]   = $details['rows'];
+                      }
+                      } */
+                }
+            }
+        }
+
+        Debug::debug($DB, 'DB');
+    }
 }
