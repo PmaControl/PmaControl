@@ -14,46 +14,53 @@
         <div class="row">
             <div class="col-md-2">
                 <?= __("Server"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+                    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
             <div class="col-md-1">
                 <?= __("Database"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
 
             <div class="col-md-2">
-                <?= __("Value to search"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?= __("Value to search"); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
             <div class="col-md-2">
-                <?= __("From binlog file"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?= __("From binlog file"); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
             <div class="col-md-1">
                 <br />
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+                    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
             <div class="col-md-2">
-                <?= __("To binlog file"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?= __("To binlog file"); ?>
+                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+                    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
 
             <div class="col-md-1">
                 <br />
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
 
 
 
             <div class="col-md-1">
                 <br />
-                <button type="submit" class="btn btn-primary">By position</button>
+                <button type="submit" class="btn btn-primary"><?= __('By position') ?></button>
             </div>
         </div>
         <div class="row">&nbsp;
@@ -65,16 +72,18 @@
 
             </div>
             <div class="col-md-3">
-                <?= __("From"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?= __("From"); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
             <div class="col-md-3">
-                <?= __("To"); ?>
-                <?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "100%"))); ?>
+<?= __("To"); ?>
+<?php \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable",
+    array("mysql_server", "id", array("data-width" => "100%"))); ?>
             </div>
             <div class="col-md-1">
                 <br />
-                <button type="submit" class="btn btn-primary">By date</button>
+                <button type="submit" class="btn btn-primary"><?= __('By date') ?></button>
             </div>
 
         </div>

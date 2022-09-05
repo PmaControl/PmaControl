@@ -17,7 +17,7 @@ class Layout extends Controller
 
     function footer()
     {
-        
+
     }
 
     function headerPma($param)
@@ -67,6 +67,11 @@ class Layout extends Controller
         return $class."::".$method;
     }
 
+    /**
+     *
+     * @deprecated
+     * @since 2.0.30
+     */
     private function replaceIndex($method)
     {
         $elems    = explode("::", $method);
@@ -75,8 +80,14 @@ class Layout extends Controller
         return implode("::", $elems);
     }
 
+    /**
+     *
+     * @deprecated
+     * @since 2.0.30
+     */
     public function title($params)
     {
+        Debug::debug($params);
 
         $param      = \Glial\Synapse\FactoryController::getRootNode();
         $controller = $param[0];
@@ -87,8 +98,8 @@ class Layout extends Controller
         $res        = $db->sql_query($sql);
 
         while ($data['title'] = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            return $data['title']['icon']." ".$data['title']['title'];
+            return $data['title']['icon']." ".__($data['title']['title']);
         }
-        echo $data['title']['icon']." ".$data['title']['title'];
+        echo $data['title']['icon']." ".__($data['title']['title']);
     }
 }

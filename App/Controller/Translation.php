@@ -357,4 +357,25 @@ GROUP by a.`text`, a.`language`;";
             return false;
         }
     }
+
+    function settings($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $languages = explode(',', LANGUAGE_AVAILABLE);
+
+        $data['language'] = array();
+        foreach ($languages as $lang) {
+
+            $tmp                = array();
+            $tmp['id']          = $lang;
+            $tmp['libelle']     = I18n::$languagesUTF8[$lang]." - ".__(ucwords(I18n::$languages[$lang]));
+            $data['language'][] = $tmp;
+
+            Debug::debug($tmp);
+        }
+
+        Debug::debug($data);
+    }
 }

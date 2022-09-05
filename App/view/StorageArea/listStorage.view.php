@@ -1,7 +1,5 @@
 <?php
-
 \Glial\Synapse\FactoryController::addNode("StorageArea", "menu");
-
 
 function format($bytes, $decimals = 2)
 {
@@ -9,16 +7,15 @@ function format($bytes, $decimals = 2)
     $factor = floor((strlen($bytes) - 1) / 3);
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
 }
-
 ?>
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><?= __("Remote storage") ?></h3>
-        </div>
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title"><?= __("Remote storage") ?></h3>
+    </div>
 
-        <div>
-            
- <?php      
+    <div>
+
+<?php
 echo '<table class="table table-bordered table-striped">';
 
 echo '<tr>';
@@ -40,30 +37,28 @@ foreach ($data['storage'] as $storage) {
     echo '<tr>';
     echo '<td>'.$storage['id_backup_storage_area'].'</td>';
     ?>
-    <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
-    <?php
+            <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
+            <?php
+            echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
+            echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
+            echo '<td>'.$storage['path'].'</td>';
 
-    echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
-    echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
-    echo '<td>'.$storage['path'].'</td>';
+            if (empty($data['space']) || empty($data['space'][$storage['id_backup_storage_area']])) {
+                echo '<td style="background:#FCF8E3" colspan="5">'.__("N/A").' ('.__("The daemon didn't checked this storage area or the daemon is stoped").')</td>';
+            } else {
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['size']).'</td>';
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['used']).'</td>';
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['available']).'</td>';
 
+                echo '<td>'.$data['space'][$storage['id_backup_storage_area']]['percent']."%".'</td>';
 
-    if (empty($data['space']) || empty($data['space'][$storage['id_backup_storage_area']])) {
-        echo '<td style="background:#FCF8E3" colspan="5">'.__("N/A").' ('.__("The daemon didn't checked this storage area or the daemon is stoped").')</td>';
-    } else {
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['size']).'</td>';
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['used']).'</td>';
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['available']).'</td>';
+                $percent        = $data['space'][$storage['id_backup_storage_area']]['percent'];
+                $percent_backup = floor($data['space'][$storage['id_backup_storage_area']]['backup'] / $data['space'][$storage['id_backup_storage_area']]['size']
+                    * 100);
+                $percent_other  = $percent - $percent_backup;
 
-        echo '<td>'.$data['space'][$storage['id_backup_storage_area']]['percent']."%".'</td>';
-
-        $percent = $data['space'][$storage['id_backup_storage_area']]['percent'];
-        $percent_backup = floor($data['space'][$storage['id_backup_storage_area']]['backup'] / $data['space'][$storage['id_backup_storage_area']]['size'] * 100);
-        $percent_other  = $percent - $percent_backup;
-
-
-        echo '<td>';
-        echo '<div class="progress" style="margin-bottom:0">
+                echo '<td>';
+                echo '<div class="progress" style="margin-bottom:0">
 
   <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="'.$data['space'][$storage['id_backup_storage_area']]['percent'].'" aria-valuemin="0" aria-valuemax="100" style="width: '.$percent_other.'%">
     <span class="sr-only">'.$data['space'][$storage['id_backup_storage_area']]['percent'].'% Complete (success)</span>
@@ -73,36 +68,35 @@ foreach ($data['storage'] as $storage) {
   </div>
 </div>';
 
-        echo '</td>';
-        
-    }
-    echo '<td>';
+                echo '</td>';
+            }
+            echo '<td>';
 
-    /*
-     * TODO : finish edit
-     */
-    //echo '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>';
-      echo      "&nbsp;&nbsp;&nbsp;"
-    . '<a href="'.LINK.'StorageArea/delete/'.$storage['id_backup_storage_area'].'" class="btn btn-danger delete-line"><span class="glyphicon glyphicon-trash" style="font-size:12px"></span> '.__("Delete").'</a>'
-            . ''
-            . '</td>';
-    echo '</tr>';
-}
+            /*
+             * TODO : finish edit
+             */
+            //echo '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>';
+            echo "&nbsp;&nbsp;&nbsp;"
+            .'<a href="'.LINK.'StorageArea/delete/'.$storage['id_backup_storage_area'].'" class="btn btn-danger delete-line"><span class="glyphicon glyphicon-trash" style="font-size:12px"></span> '.__("Delete").'</a>'
+            .''
+            .'</td>';
+            echo '</tr>';
+        }
 
 
-echo "</table>";
-?>
-    
+        echo "</table>";
+        ?>
+
     </div></div>
 
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><?= __("Local storage") ?></h3>
-        </div>
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title"><?= __("Local storage") ?></h3>
+    </div>
 
-        <div>
-            
- <?php      
+    <div>
+
+<?php
 echo '<table class="table table-bordered table-striped">';
 
 echo '<tr>';
@@ -120,36 +114,32 @@ echo '<th>'.__("Tools").'</th>';
 
 echo '</tr>';
 
-
-
 foreach ($data['storage2'] as $storage) {
     echo '<tr>';
     echo '<td>'.$storage['id_backup_storage_area'].'</td>';
     ?>
-    <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
-    <?php
+            <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
+            <?php
+            echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
+            echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
+            echo '<td>'.$storage['path'].'</td>';
 
-    echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
-    echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
-    echo '<td>'.$storage['path'].'</td>';
+            if (empty($data['space']) || empty($data['space'][$storage['id_backup_storage_area']])) {
+                echo '<td style="background:#FCF8E3" colspan="5">'.__("N/A").' ('.__("The daemon didn't checked this storage area or the daemon is stoped").')</td>';
+            } else {
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['size']).'</td>';
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['used']).'</td>';
+                echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['available']).'</td>';
 
+                echo '<td>'.$data['space'][$storage['id_backup_storage_area']]['percent']."%".'</td>';
 
-    if (empty($data['space']) || empty($data['space'][$storage['id_backup_storage_area']])) {
-        echo '<td style="background:#FCF8E3" colspan="5">'.__("N/A").' ('.__("The daemon didn't checked this storage area or the daemon is stoped").')</td>';
-    } else {
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['size']).'</td>';
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['used']).'</td>';
-        echo '<td>'.format($data['space'][$storage['id_backup_storage_area']]['available']).'</td>';
+                $percent        = $data['space'][$storage['id_backup_storage_area']]['percent'];
+                $percent_backup = floor($data['space'][$storage['id_backup_storage_area']]['backup'] / $data['space'][$storage['id_backup_storage_area']]['size']
+                    * 100);
+                $percent_other  = $percent - $percent_backup;
 
-        echo '<td>'.$data['space'][$storage['id_backup_storage_area']]['percent']."%".'</td>';
-
-        $percent = $data['space'][$storage['id_backup_storage_area']]['percent'];
-        $percent_backup = floor($data['space'][$storage['id_backup_storage_area']]['backup'] / $data['space'][$storage['id_backup_storage_area']]['size'] * 100);
-        $percent_other  = $percent - $percent_backup;
-
-
-        echo '<td>';
-        echo '<div class="progress" style="margin-bottom:0">
+                echo '<td>';
+                echo '<div class="progress" style="margin-bottom:0">
 
   <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="'.$data['space'][$storage['id_backup_storage_area']]['percent'].'" aria-valuemin="0" aria-valuemax="100" style="width: '.$percent_other.'%">
     <span class="sr-only">'.$data['space'][$storage['id_backup_storage_area']]['percent'].'% Complete (success)</span>
@@ -159,36 +149,31 @@ foreach ($data['storage2'] as $storage) {
   </div>
 </div>';
 
-        echo '</td>';
-        
-    }
-    echo '<td>';
+                echo '</td>';
+            }
+            echo '<td>';
 
-    /*
-     * TODO : finish edit
-     */
-    //echo '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>';
-      echo      "&nbsp;&nbsp;&nbsp;"
-    . '<a href="'.LINK.'StorageArea/delete/'.$storage['id_backup_storage_area'].'" class="btn btn-danger delete-line"><span class="glyphicon glyphicon-trash" style="font-size:12px"></span> '.__("Delete").'</a>'
-            . ''
-            . '</td>';
-    echo '</tr>';
-}
-
+            /*
+             * TODO : finish edit
+             */
+            //echo '<a href="'.LINK.'StorageArea/edit/'.$storage['id_backup_storage_area'].'" class="btn btn-warning"><span class="glyphicon glyphicon-pencil" style="font-size:12px"></span> '.__("Edit").'</a>';
+            echo "&nbsp;&nbsp;&nbsp;"
+            .'<a href="'.LINK.'StorageArea/delete/'.$storage['id_backup_storage_area'].'" class="btn btn-danger delete-line"><span class="glyphicon glyphicon-trash" style="font-size:12px"></span> '.__("Delete").'</a>'
+            .''
+            .'</td>';
+            echo '</tr>';
+        }
 
 
 
-echo "</table>";
 
-    
-echo "</div></div>";
-    
+        echo "</table>";
 
-    
+        echo "</div></div>";
 
-$percent_backup = "66";
+        $percent_backup = "66";
 
-echo 'This part correspond to the part used by the backups on the partition : <div class="progress" style="margin-bottom:0; width:200px">
+        echo __('This part correspond to the part used by the backups on the partition :').'<div class="progress" style="margin-bottom:0; width:200px">
   <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: '.$percent_backup.'%">
     <span class="sr-only">20% Complete (warning)</span>
   </div>

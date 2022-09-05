@@ -39,19 +39,17 @@ class Ariane
 
         while ($ob = $this->db->sql_fetch_object($res)) {
 
-
             if (!empty($ob->url)) {
-                $ariane[] = '<a href="'.str_replace("{LINK}", LINK, $ob->url).'">'.$ob->icon.' '.$ob->title.'</a>';
+                $ariane[] = '<a href="'.str_replace("{LINK}", LINK, $ob->url).'">'.$ob->icon.' '.__($ob->title).'</a>';
             } else {
-                $ariane[] = $ob->icon.' '.$ob->title;
+                $ariane[] = $ob->icon.' '.__($ob->title);
             }
-            $ariane2[] = $ob->icon.' '.$ob->title;
-            $title     = $ob->icon.' '.$ob->title;
+            $ariane2[] = $ob->icon.' '.__($ob->title);
+            $title     = $ob->icon.' '.__($ob->title);
             $count++;
         }
 
-        if ($method != 'error_web::error404')
-        {
+        if ($method != 'error_web::error404') {
             if ($count == 0) {
                 //TODO add to log
                 //set_flash("error", "Error 501", "Menu error : No menu entry for ".$method.". ");

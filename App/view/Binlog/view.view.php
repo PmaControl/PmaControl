@@ -16,13 +16,11 @@ use App\Library\Format;
 
 
 
-    
+
 
     <?php
-
     \Glial\Synapse\FactoryController::addNode("Binlog", "add", array());
 
-    
     echo '<table class="table table-bordered table-striped" id="table">';
     echo '<tr>';
     echo '<th>'.__('Top').'</th>';
@@ -37,12 +35,10 @@ use App\Library\Format;
     echo '<th>'.__('Size binlog used').'</th>';
     echo '<th>'.__('Percent').'</th>';
 
-
     echo '</tr>';
 
     $i     = 0;
     $style = '';
-
 
     foreach ($data['max_bin_log'] as $server) {
 
@@ -63,7 +59,6 @@ use App\Library\Format;
 
         echo '<td>'.Format::bytes($total_size_used).'</td>';
 
-
         $percent = round($total_size_used / $server['size_max'] * 100, 2);
 
         echo '<td>';
@@ -72,19 +67,18 @@ use App\Library\Format;
         <div class="progress" style="margin-bottom:0">
             <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?= $percent ?>%">
                 <span style="color:#000000;"><?= $percent."&nbsp;%" ?></span>
-                <span class="sr-only"><?= $percent ?>% Complete</span>
+                <span class="sr-only"><?= $percent ?>% <?= __('Complete') ?></span>
             </div>
         </div>
 
-        <?php
-        echo '</td>';
+    <?php
+    echo '</td>';
+
+    echo '</tr>'."\n";
+}
 
 
-        echo '</tr>'."\n";
-    }
-
-
-    echo '</table>';
-    ?>
+echo '</table>';
+?>
 
 </div>

@@ -57,8 +57,7 @@ use App\Library\Format;
         if (!empty($server['binlog']['file_first'])) {
 
 
-            if (empty($server['binlog']['expire_logs_days']))
-            {
+            if (empty($server['binlog']['expire_logs_days'])) {
                 debug($server['binlog']);
             }
             echo '<td>'.$server['binlog']['file_first'].'</td>';
@@ -79,11 +78,11 @@ use App\Library\Format;
                     <span class="sr-only"><?= $percent ?>% Complete</span>
                 </div>
             </div>
-            
+
             <?php
             echo '</td>';
         } else {
-            echo '<td colspan="6" style="background:#e0e0e0; text-align:center;" >You are not using binary logging</td>';
+            echo '<td colspan="6" style="background:#e0e0e0; text-align:center;" >'.__("You are not using binary logging").'</td>';
         }
 
         echo '</tr>'."\n";
