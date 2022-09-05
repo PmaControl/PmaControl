@@ -1,6 +1,6 @@
 <?php
 /*
- * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK 
+ * j'ai ajouté un mail automatique en cas d'erreur ou de manque sur une PK
  */
 
 namespace App\Controller;
@@ -68,7 +68,7 @@ class Archives extends Controller
         }
 
         $this->di['js']->code_javascript("
-            
+
 function FileConvertSize(aSize){
 	aSize = Math.abs(parseInt(aSize, 10));
         if (aSize == 0)
@@ -82,7 +82,7 @@ function FileConvertSize(aSize){
 	}
 }
 
-var ctx = document.getElementById('myChart').getContext('2d');            
+var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -110,14 +110,14 @@ var myChart = new Chart(ctx, {
         }]
     },
     options: {
-    
-        
+
+
         legend: { display: false },
       title: {
         display: true,
         text: '".__("Size on storage area")."'
       },
-      
+
         tooltips: {
             callbacks: {
                 label: function(tooltipItem, data) {
@@ -135,9 +135,9 @@ var myChart = new Chart(ctx, {
                                 return FileConvertSize(tick.toString() );
                         }
                         return '';
-	            	
+
 	        }
-                    
+
                 },
                 scaleLabel: {
                         display: true,
@@ -168,7 +168,6 @@ var myChart = new Chart(ctx, {
             INNER JOIN backup_storage_area b ON a.id_backup_storage_area =b.id
             WHERE `id_cleaner_main`= ".$id_cleaner." ORDER BY `date` DESC;";
 
-
         $res = $db->sql_query($sql);
 
         $data['archive'] = array();
@@ -181,7 +180,7 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
     /*
-     * 
+     *
      * @example : /usr/bin/php7.0 /data/www/pmacontrol/App/webroot/index.php Archives load 6 1 CLEAN
      */
 
@@ -200,7 +199,6 @@ var myChart = new Chart(ctx, {
 
             Debug::debug($id_archive_load, "archive_load");
 
-
             $db = Sgbd::sql(DB_DEFAULT);
 
 // to delete
@@ -208,8 +206,6 @@ var myChart = new Chart(ctx, {
             $db->sql_query("delete from archive_load_detail where id_archive_load=".$id_archive_load.";");
 
             $this->id_archive_load = $id_archive_load;
-
-
 
 //problem d'invertion si on lance un reload au même moment
             $sql = "SELECT a.*,b.name as mysqlserver,sum(size_sql) as total_size
@@ -221,9 +217,7 @@ var myChart = new Chart(ctx, {
 
             $res = $db->sql_query($sql);
 
-
             Debug::debug($sql);
-
 
             $main_error = false;
 
@@ -236,7 +230,6 @@ var myChart = new Chart(ctx, {
                 $mysqlservertoload  = $ob2->mysqlserver;
                 $total_size         = $ob2->total_size;
                 $this->id_user_main = $ob2->id_user_main;
-
 
                 Debug::debug("The load of archive is started");
                 $this->log("info", "START", "The load of archive is started");
@@ -269,10 +262,7 @@ var myChart = new Chart(ctx, {
             Crypt::$key = CRYPT_KEY;
             $size       = 0;
 
-
-
             $archive_load_detail = array();
-
 
             while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
 
@@ -307,7 +297,6 @@ var myChart = new Chart(ctx, {
 
                 $file = TMP."trash/".$id_cleaner_main."_".$file_name;
 
-
                 Debug::debug("####################################");
                 Debug::debug($file, "Début de traitement du fichier");
 
@@ -319,13 +308,7 @@ var myChart = new Chart(ctx, {
                 $save['archive_load_detail']['date_start']      = date('Y-m-d H:i:s');
                 $db->sql_save($save);
 
-
-
-
-
-
                 $remote = $this->getFile($archive['id_backup_storage_area'], $archive['pathfile'], $file);
-
 
                 Debug::debug($remote, "Info remote file");
 
@@ -376,9 +359,6 @@ var myChart = new Chart(ctx, {
                     $save['archive_load_detail']['duration']  = round(microtime(true) - $time_begin, 0);
                     $db->sql_save($save);
 
-
-
-
                     continue;
                 } else {
                     Debug::success("The file has been fully download and have the same md5");
@@ -395,7 +375,6 @@ var myChart = new Chart(ctx, {
 
                     Debug::error($msg);
 
-
                     $save                                     = array();
                     $save['archive_load_detail']['id']        = $archive['id_archive_load_detail'];
                     $save['archive_load_detail']['error_msg'] = $msg;
@@ -409,7 +388,6 @@ var myChart = new Chart(ctx, {
                 }
 
                 $data['execution_time'] = round(microtime(true) - $start, 0);
-
 
                 $conf = Sgbd::getParam($mysqlservertoload);
 
@@ -428,14 +406,12 @@ var myChart = new Chart(ctx, {
                 //to prevent old stuff we archived, like enum with empty choice or duble choice
                 shell_exec("sed -i '1iSET sql_mode=\"ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\";' ".$stats['file_path']);
 
-
                 $log_mysql = "/tmp/".uniqid();
 
                 $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database." 2> ".$log_mysql;
 
                 Debug::debug($cmd);
                 $cmd = str_replace("{password}", $conf['password'], $cmd);
-
 
                 $db->sql_close(); // to prevent lost of connextion for inactivity
                 passthru($cmd, $exit);
@@ -475,7 +451,6 @@ var myChart = new Chart(ctx, {
                     $save['archive_load_detail']['duration'] = round(microtime(true) - $time_begin, 0);
                     $db->sql_save($save);
 
-
                     Debug::success($msg);
 
                     $size += $archive['size_sql'];
@@ -483,19 +458,13 @@ var myChart = new Chart(ctx, {
 
                 unlink($stats['file_path']);
 
-
                 $percent = floor($size / $total_size * 100);
-
-
 
                 $sql4 = "UPDATE archive_load SET status = 'RUNNING', progression = ".$percent." WHERE id = ".$id_archive_load."";
                 $db->sql_query($sql4);
 
-
-
                 $sql6 = "SELECT * FROM `archive_load_detail` WHERE id= ".$id_archive_load_detail.";";
                 $res6 = $db->sql_query($sql6);
-
 
                 $error_msg = '';
                 while ($ob6       = $db->sql_fetch_object($res6)) {
@@ -518,7 +487,6 @@ var myChart = new Chart(ctx, {
             $msg = "The load of archive is completed";
             Debug::success($msg);
             $this->log("info", "COMPLETED", $msg);
-
 
             if ($main_error === true) {
                 $main_status = "ERROR";
@@ -545,9 +513,7 @@ var myChart = new Chart(ctx, {
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-puzzle-piece"></i> '
             .__("Plugins").'</a> > '.$this->title;
 
-
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $this->testPid(); // put in error all previous script started with no running pid anymore
 
@@ -562,16 +528,14 @@ INNER JOIN user_main d ON d.id = a.id_user_main
 INNER JOIN geolocalisation_country f on f.id = d.id_geolocalisation_country
 ORDER BY a.id DESC";
 
-
         $res = $db->sql_query($sql);
-
 
         $data['history'] = array();
         while ($ob              = $db->sql_fetch_object($res)) {
             $data['history'][] = $ob;
         }
 
-        \App\Library\Display::setDb($db);
+        //\App\Library\Display::setDb($db);
 
         $this->set('data', $data);
     }
@@ -604,7 +568,6 @@ ORDER BY a.id DESC";
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $sql = "SELECT max(`id`) as `last` from `archive_load`;";
         $res = $db->sql_query($sql);
 
@@ -625,7 +588,6 @@ ORDER BY a.id DESC";
         $data['menu']['detail']['name']  = __('Restoration detail');
         $data['menu']['detail']['icone'] = '<i class="fa fa-tasks" aria-hidden="true"></i>';
         $data['menu']['detail']['path']  = LINK.$this->getClass().'/detail/'.$id_archive_load;
-
 
         $this->set('data', $data);
     }
@@ -701,12 +663,9 @@ ORDER BY a.id DESC";
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
         $_GET['path'] = "detail";
 
         $id_archive_load = $param[0];
-
 
         if (empty($id_archive_load)) {
             header("location: ".LINK."archives/index");
@@ -739,10 +698,7 @@ ORDER BY a.id DESC";
         $cmd   = "cat ".LOG_FILE." | grep -F 'archive.' | grep -F '[id:".$id_archive_load."]' | tail -n 500";
         $lines = shell_exec($cmd);
 
-
-
         $data['logs'] = $this->format($lines, $id_archive_load);
-
 
         $this->set('data', $data);
     }
@@ -750,8 +706,6 @@ ORDER BY a.id DESC";
     public function load_archive($param)
     {
         Debug::parseDebug($param);
-
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -778,12 +732,10 @@ ORDER BY a.id DESC";
 
         $id_archive_load = $db->sql_save($archive_load);
 
-
         if ($id_archive_load) {
 
 
             $sql = "SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
-
 
             if (IS_CLI) {
 
@@ -804,11 +756,9 @@ ORDER BY a.id DESC";
             $archive_load['archive_load']['pid'] = (int) $pid;
             $archive_load['archive_load']['id']  = $id_archive_load;
 
-
             Debug::debug($archive_load);
 
             $db->sql_save($archive_load);
-
 
             $msg   = I18n::getTranslation(__("The loading on database is currently in progress ..."));
             $title = I18n::getTranslation(__("Loading"));
@@ -853,14 +803,12 @@ ORDER BY a.id DESC";
 
             preg_match("/\[pid:(\d+)\](.*)/", $input_line, $output_array);
 
-
             $tmp['pid'] = $output_array[1];
             $tmp['msg'] = $output_array[2];
 
             $tmp['msg'] = ($tmp['type'] === "ALTER") ? SqlFormatter::highlight($tmp['msg']) : $tmp['msg'];
 
             $tmp['background'] = $this->setColor($tmp['pid']);
-
 
             preg_match("/by\s([\sa-zA-Z]+)\s+\(id:(\d+)\)/", $tmp['msg'], $output_array);
 
@@ -888,9 +836,9 @@ ORDER BY a.id DESC";
     private function hexToRgb($colorName)
     {
         list($r, $g, $b) = array_map(
-            function($c) {
-            return hexdec(str_pad($c, 2, $c));
-        }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
+            function ($c) {
+                return hexdec(str_pad($c, 2, $c));
+            }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
         );
 
         return array($r, $g, $b);

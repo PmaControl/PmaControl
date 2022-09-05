@@ -230,7 +230,8 @@ class Benchmark extends Controller
 
     public function getQueriesPerformedTotal($input_lines)
     {
-        preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+[\d]+[\s]+total:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
+        preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+[\d]+[\s]+total:[\s]+([\d]+)[\s]+/Ux", $input_lines,
+            $output_array);
 
         if (isset($output_array[1][0])) {
             return $output_array[1][0];
@@ -537,12 +538,12 @@ Threads fairness:
 
     public function install()
     {
-        
+
     }
 
     public function uninstall()
     {
-        
+
     }
 
     public function graph()
@@ -570,7 +571,7 @@ Threads fairness:
                 exit;
             }
         }
-        
+
         if (!empty($_GET['benchmark_main']['id'])) {
             $id_to_take = implode(",", json_decode($_GET['benchmark_main']['id']));
         } else {
@@ -693,7 +694,7 @@ Threads fairness:
                 options: {
                     title: {
                         display: true,
-                        text: "'.$title.'",
+                        text: "'.__($title).'",
                         position: "top",
                         padding: "10"
                     },

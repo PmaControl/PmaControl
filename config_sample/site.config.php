@@ -8,10 +8,10 @@ if (!defined('SITE_NAME')) {
 }
 
 if (!defined('SITE_VERSION')) {
-    define("SITE_VERSION", "beta-v2.0.30");
+    define("SITE_VERSION", "beta-v2.0.31");
 }
 if (!defined('SITE_LAST_UPDATE')) {
-    define("SITE_LAST_UPDATE", "2022-09-03");
+    define("SITE_LAST_UPDATE", "2022-09-04");
 }
 
 

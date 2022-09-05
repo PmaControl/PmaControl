@@ -8,15 +8,13 @@
 use \Glial\Html\Form\Form;
 use App\Library\Display;
 
-
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
-
 if (empty($data['storage_area'])) {
 
-    echo "Before to schedule a backup, you must add an array of stockage : ";
+    echo __("Before to schedule a backup, you must add an array of stockage :")." ";
     echo '<a href="'.LINK.'StorageArea/index/" type="button" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px" aria-hidden="true"></span> Add an storage area</a>';
 } else {
 
@@ -36,7 +34,6 @@ if (empty($data['storage_area'])) {
 
     echo '<tr>';
 
-
 //echo '<th>' . __("Size") . '</th>';
 
     echo '<th>'.__("Minutes").'</th>';
@@ -47,7 +44,6 @@ if (empty($data['storage_area'])) {
     echo '</tr>';
 
     Form::setIndice(true);
-
 
     $i = 0;
     foreach ($data['backup_list'] as $backup_list) {
