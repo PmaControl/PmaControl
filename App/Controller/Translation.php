@@ -370,7 +370,7 @@ GROUP by a.`text`, a.`language`;";
 
             $tmp                = array();
             $tmp['id']          = $lang;
-            $tmp['libelle']     = I18n::$languagesUTF8[$lang]." - ".__(ucwords(I18n::$languages[$lang]));
+            $tmp['libelle']     = '<img src="" width="18px" height="12px"> '.' '.I18n::$languagesUTF8[$lang]." - ".__(ucwords(I18n::$languages[$lang]));
             $data['language'][] = $tmp;
 
             Debug::debug($tmp);
