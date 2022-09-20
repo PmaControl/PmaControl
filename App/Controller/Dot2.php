@@ -857,6 +857,19 @@ class Dot2 extends Controller
 
                 debug($database);
 
+
+
+		if (empty($database['binlog_do_db']))
+		{
+			$database['binlog_do_db']= array();
+		}
+
+
+		if (empty($database['binlog_ignore_db']))
+		{
+			$database['binlog_ignore_db']= array();
+		}
+
                 $binlog_do_db     = explode(",", $database['binlog_do_db']);
                 $binlog_ignore_db = explode(",", $database['binlog_ignore_db']);
 
@@ -939,11 +952,11 @@ class Dot2 extends Controller
             $node .= '<tr><td bgcolor="lightgrey"><table border="0" cellborder="0" cellspacing="0" cellpadding="2">';
 
             $node .= '<tr>'
-                .'<td bgcolor="darkgrey" color="white" align="left">M</td>'
-                .'<td bgcolor="darkgrey" color="white" align="left">S</td>'
-                .'<td bgcolor="darkgrey" color="white" align="left">'.__("Databases").'</td>'
-                //     .'<td bgcolor="darkgrey" color="white" align="right">'.__("Tables").'</td>'
-                //     .'<td bgcolor="darkgrey" color="white" align="right">'.__("Row").'</td>'
+                .'<td bgcolor="darkgray" color="white" align="left">M</td>'
+                .'<td bgcolor="darkgray" color="white" align="left">S</td>'
+                .'<td bgcolor="darkgray" color="white" align="left">'.__("Databases").'</td>'
+                //     .'<td bgcolor="darkgray" color="white" align="right">'.__("Tables").'</td>'
+                //     .'<td bgcolor="darkgray" color="white" align="right">'.__("Row").'</td>'
                 .'</tr>';
 
             foreach ($databases as $database) {
@@ -951,29 +964,29 @@ class Dot2 extends Controller
 
                 Debug::debug($database, '##########');
                 $node .= '<tr>'
-                    .'<td bgcolor="darkgrey" color="white" align="left">';
+                    .'<td bgcolor="darkgray" color="white" align="left">';
 
                 if ($database['binlog_do_db'] == "1") {
 
                     Debug::debug($database['binlog_do_db'], "###########################################");
                     $node .= "&#10006;";
-                } else if ($database['binlog_ignore_db'] == "1") {
+                } else if (!empty($database['binlog_ignore_db']) && $database['binlog_ignore_db'] == "1") {
                     $node .= "&#10004;";
                 } else {
                     $node .= "-";
                 }
 
                 $node .= '</td>';
-                $node .= '<td bgcolor="darkgrey" color="white" align="left">';
+                $node .= '<td bgcolor="darkgray" color="white" align="left">';
 
                 if ($database['binlog_do_db'] == "1") {
                     //$node .= "&#10006;";
                 }
 
                 $node .= '</td>'
-                    .'<td bgcolor="darkgrey" color="white" align="left">'.$database['name'].'</td>'
-                    //          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['tables'].'</td>'
-                    //          .'<td bgcolor="darkgrey" color="white" align="right">'.$database['rows'].'</td>'
+                    .'<td bgcolor="darkgray" color="white" align="left">'.$database['name'].'</td>'
+                    //          .'<td bgcolor="darkgray" color="white" align="right">'.$database['tables'].'</td>'
+                    //          .'<td bgcolor="darkgray" color="white" align="right">'.$database['rows'].'</td>'
                     .'</tr>';
             }
             $node .= '</table></td></tr>';
