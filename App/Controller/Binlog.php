@@ -1,5 +1,4 @@
 <?php
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -16,23 +15,24 @@ use Glial\Security\Crypt\Crypt;
 use App\Library\Display;
 use \Glial\Sgbd\Sgbd;
 
-
-class Binlog extends Controller {
+class Binlog extends Controller
+{
 
     use \App\Library\Filter;
-
     CONST DELAIS_DE_RETENTION = 172800; //48 heures en secondes
-    CONST DIRECTORY_BACKUP = '/data/backup/binlog';
+    CONST DIRECTORY_BACKUP    = '/data/backup/binlog';
 
-    public function index() {
+    public function index()
+    {
 
-        
+
 
         $data = array();
         $this->set('data', $data);
     }
 
-    public function add() {
+    public function add()
+    {
         $this->di['js']->addJavascript(array('Binlog/index.js'));
 
         //debug($_POST);
@@ -62,28 +62,25 @@ class Binlog extends Controller {
 
                 $max_file_to_keep = ceil($number / $_POST['variables']['file_binlog_size']);
 
-
-                $db = Sgbd::sql(DB_DEFAULT);
-                $sql = "REPLACE INTO binlog_max (`id_mysql_server`, `size_max`, `number_file_max`) VALUES ('" . $_POST['mysql_server']['id'] . "', '" . $number . "', '" . $max_file_to_keep . "')";
+                $db  = Sgbd::sql(DB_DEFAULT);
+                $sql = "REPLACE INTO binlog_max (`id_mysql_server`, `size_max`, `number_file_max`) VALUES ('".$_POST['mysql_server']['id']."', '".$number."', '".$max_file_to_keep."')";
 
                 $db->sql_query($sql);
 
-
-                header('location: ' . LINK .$this->getClass(). '/index');
+                header('location: '.LINK.$this->getClass().'/index');
             }
         }
     }
 
-    public function max() {
+    public function max()
+    {
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         $sql = "SELECT * FROM binlog_max a
             INNER JOIN mysql_server b ON b.id = a.id_mysql_server";
 
         $res = $db->sql_query($sql);
-
 
         $data = array();
 
@@ -92,22 +89,21 @@ class Binlog extends Controller {
         }
     }
 
-    public function getMaxBinlogSize($param) {
+    public function getMaxBinlogSize($param)
+    {
 
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db              = Sgbd::sql(DB_DEFAULT);
 
         $this->layout_name = false;
-        $this->view = false;
-
-
+        $this->view        = false;
 
         $res = Extraction::extract(array("variables::max_binlog_size"), array($id_mysql_server));
 
         $data = array();
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ob   = $db->sql_fetch_object($res)) {
             $data['max_binlog_size'] = $ob->value;
         }
 
@@ -119,14 +115,15 @@ class Binlog extends Controller {
         }
     }
 
-    public function view($param) {
+    public function view($param)
+    {
 
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.*, b.libelle as organization,c.*, a.id as id_mysql_server, d.*
-            FROM mysql_server a            
+            FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
             INNER JOIN binlog_max d on a.id = d.id_mysql_server";
@@ -135,25 +132,18 @@ class Binlog extends Controller {
 
         $res = $db->sql_query($sql);
 
-
         $data['extra'] = array();
-        $mysql_server = array();
-
+        $mysql_server  = array();
 
         $data['max_bin_log'] = array();
 
-
         $all_id_mysql_server = array();
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+        while ($arr                 = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
 
             $all_id_mysql_server[] = $arr['id_mysql_server'];
 
-            
-
-            
             $db_remote = Mysql::getDbLink($arr['id_mysql_server']);
-
 
             $res2 = $db_remote->sql_query("show binary logs;");
 
@@ -177,14 +167,12 @@ class Binlog extends Controller {
 
         $res = Extraction::extract(array("binlog::max_binlog_size"), $all_id_mysql_server);
 
-
         /* */
 
 
 
-        
-        $res = Extraction::extract(array("variables::max_binlog_size"), $mysql_server);
 
+        $res = Extraction::extract(array("variables::max_binlog_size"), $mysql_server);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -198,19 +186,23 @@ class Binlog extends Controller {
         $this->set('data', $data);
     }
 
-    public function search($param) {
-        
+    public function search($param)
+    {
+
     }
 
-    public function backupAll($param) {
-        
+    public function backupAll($param)
+    {
+
     }
 
-    public function backup($param) {
-        
+    public function backup($param)
+    {
+
     }
 
-    public function backupServer($param) {
+    public function backupServer($param)
+    {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -220,23 +212,23 @@ class Binlog extends Controller {
 
         $sql = "SELECT d.*
             FROM mysql_server a
-            INNER JOIN binlog_backup d on a.id = d.id_mysql_server WHERE a.id = " . $id_mysql_server;
+            INNER JOIN binlog_backup d on a.id = d.id_mysql_server WHERE a.id = ".$id_mysql_server;
 
         $res = $db->sql_query($sql);
 
         //get available binlogs
 
         $last_binlog_file = array();
-        $bin_backup = array();
+        $bin_backup       = array();
 
         $last_file = '';
-        $last_id = '';
+        $last_id   = '';
 
         while ($ob = $db->sql_fetch_object($res)) {
 
             $bin_backup[$ob->logfile_name] = $ob->logfile_size;
-            $last_file = $ob->logfile_name;
-            $last_id = $ob->id;
+            $last_file                     = $ob->logfile_name;
+            $last_id                       = $ob->id;
         }
 
 
@@ -247,31 +239,28 @@ class Binlog extends Controller {
         array_pop($bin_backup);
         Debug::debug($last_binlog_file, "last element");
 
-
-        $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"), array($id_mysql_server));
-
+        $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"),
+                array($id_mysql_server));
 
         $binarylogs = $result[$id_mysql_server][''];
-        $bin_logs = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
+        $bin_logs   = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
 
         Debug::debug($bin_backup, "Binlog Backuped");
         Debug::debug($bin_logs, "Binlog available");
-
 
         $bin_to_backup = array_diff_key($bin_logs, $bin_backup);
 
         Debug::debug($bin_to_backup, "Binlog to backup");
 
-
         if (count($bin_to_backup) > 0) {
 
-            $sql = "SELECT * FROM mysql_server where id=" . $id_mysql_server;
+            $sql = "SELECT * FROM mysql_server where id=".$id_mysql_server;
             $res = $db->sql_query($sql);
 
-            $directory = self::DIRECTORY_BACKUP . "/" . $id_mysql_server . "/";
+            $directory = self::DIRECTORY_BACKUP."/".$id_mysql_server."/";
 
             if (!file_exists($directory)) {
-                $cmd = "mkdir -p " . $directory;
+                $cmd = "mkdir -p ".$directory;
 
                 shell_exec($cmd);
             }
@@ -281,7 +270,7 @@ class Binlog extends Controller {
 
                     $password = Crypt::decrypt($server->passwd, CRYPT_KEY);
 
-                    $cmd = "cd " . $directory . " && mysqlbinlog -R --raw --host=" . $server->ip . " -u " . $server->login . " -p" . $password . " " . $file;
+                    $cmd = "cd ".$directory." && mysqlbinlog -R --raw --host=".$server->ip." -u ".$server->login." -p".$password." ".$file;
                     Debug::debug($cmd);
 
                     $db->sql_close();
@@ -290,9 +279,8 @@ class Binlog extends Controller {
 
                     if (empty($gg)) {
 
-                        $db = Sgbd::sql(DB_DEFAULT);
+                        $db  = Sgbd::sql(DB_DEFAULT);
                         $bck = array();
-
 
                         if (!empty($last_binlog_file[$file])) {
 
@@ -300,10 +288,10 @@ class Binlog extends Controller {
                         }
 
                         $bck['binlog_backup']['id_mysql_server'] = $id_mysql_server;
-                        $bck['binlog_backup']['logfile_name'] = $file;
-                        $bck['binlog_backup']['logfile_size'] = $size;
-                        $bck['binlog_backup']['md5'] = md5_file($directory . $file);
-                        $bck['binlog_backup']['date_backup'] = date('Y-m-d H:i:s');
+                        $bck['binlog_backup']['logfile_name']    = $file;
+                        $bck['binlog_backup']['logfile_size']    = $size;
+                        $bck['binlog_backup']['md5']             = md5_file($directory.$file);
+                        $bck['binlog_backup']['date_backup']     = date('Y-m-d H:i:s');
 
                         $err = $db->sql_save($bck);
 
@@ -323,9 +311,9 @@ class Binlog extends Controller {
         }
     }
 
-    public function purgeAll($param) {
+    public function purgeAll($param)
+    {
         Debug::parseDebug($param);
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -340,7 +328,8 @@ class Binlog extends Controller {
         }
     }
 
-    public function purgeServer($param) {
+    public function purgeServer($param)
+    {
         Debug::parseDebug($param);
 
         $id_mysql_server = intval($param[0]);
@@ -349,7 +338,7 @@ class Binlog extends Controller {
 
         $sql = "SELECT *
             FROM mysql_server a
-            INNER JOIN binlog_max d on a.id = d.id_mysql_server WHERE a.id = " . $id_mysql_server;
+            INNER JOIN binlog_max d on a.id = d.id_mysql_server WHERE a.id = ".$id_mysql_server;
 
         $res = $db->sql_query($sql);
 
@@ -357,10 +346,11 @@ class Binlog extends Controller {
         while ($ob = $db->sql_fetch_object($res)) {
 
 
-            $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"), array($id_mysql_server));
+            $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"),
+                    array($id_mysql_server));
 
             $binarylogs = $result[$id_mysql_server][''];
-            $bin_logs = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
+            $bin_logs   = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
 
             Debug::debug($binarylogs);
 
@@ -383,7 +373,7 @@ class Binlog extends Controller {
                 if ($total_size > $ob->size_max) {
                     $name_link = Mysql::getDbLink($db, $id_mysql_server);
                     $db_remote = Sgbd::sql($name_link);
-                    $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
+                    $sql       = "PURGE BINARY LOGS TO '".$file_previous."';";
                     Debug::sql($sql);
                     $db_remote->sql_query($sql);
                     break;
@@ -394,31 +384,28 @@ class Binlog extends Controller {
         }
     }
 
-    public function liste($param) {
+    public function liste($param)
+    {
 
         Debug::parseDebug($param);
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files", "variables::expire_logs_days"));
+        $db     = Sgbd::sql(DB_DEFAULT);
+        $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files",
+                "variables::expire_logs_days"));
 
-
-        
         $sql = "SELECT a.*, b.libelle as organization,c.*, d.*, a.id as id_mysql_server
             FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
             LEFT JOIN binlog_max d on a.id = d.id_mysql_server
-            WHERE 1 " . self::getFilter()."
+            WHERE 1 ".self::getFilter()."
             ORDER BY display_name";
 
         $res = $db->sql_query($sql);
 
-        $data['server'] = array();
+        $data['server']   = array();
         $data['max_size'] = 0;
 
-        
-        
-        
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             if (!empty($result[$arr['id_mysql_server']][''])) {
@@ -440,6 +427,16 @@ class Binlog extends Controller {
         //Debug::debug($data);
 
         $this->set('data', $data);
+    }
+
+    public function getBinlog($param)
+    {
+
+    }
+
+    public function binlog2sql($param)
+    {
+
     }
 }
 //glyphicon glyphicon-list
