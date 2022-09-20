@@ -1,14 +1,6 @@
 <?php
 
-
-/*
- *path where will be stored the backup
- */
-
-
-if (! defined('BACKUP_PATH'))
-{
-    define('BACKUP_PATH', "/data/backup");
+if (!defined('DIRECTORY_BACKUP')) {
+    define("DIRECTORY_BACKUP", '/srv/backup');
 }
-
 
