@@ -8,6 +8,7 @@
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 echo '<tr>';
+echo '<th>'.__('Top').'</th>';
 echo '<th>'.__('Environment').'</th>';
 echo '<th>'.__('Server').'</th>';
 echo '<th>'.__('Database').'</th>';
@@ -20,11 +21,12 @@ echo '<th>'.__('Free size').'</th>';
 echo '<th>'.__('Creation date').'</th>';
 echo '<th>'.__('Since').'</th>';
 echo '</tr>';
-
+$i = 0;
 foreach ($data['ptosc'] as $table) {
 
-
+    $i++;
     echo '<tr>';
+    echo '<td>'.$i.'</td>';
     echo '<td>';
     echo '<big><span class="label label-'.$table['class'].'">'.$table['libelle'].'</span></big>';
     echo '</td>';
