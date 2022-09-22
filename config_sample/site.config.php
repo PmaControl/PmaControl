@@ -8,13 +8,13 @@ if (!defined('SITE_NAME')) {
 }
 
 if (!defined('SITE_VERSION')) {
-    define("SITE_VERSION", "beta-v2.0.40");
+    define("SITE_VERSION", "beta-v2.0.41");
 }
 if (!defined('SITE_LAST_UPDATE')) {
-    define("SITE_LAST_UPDATE", "2022-09-21");
+    define("SITE_LAST_UPDATE", "2022-09-22");
 }
 if (!defined('SITE_BUILD')) {
-    define("SITE_BUILD", "be4b24f900ddde526595e71dfcc10500ea706729");
+    define("SITE_BUILD", "ccc6a25a0dc67aceb70ca53db4e0a7ca14b1cd3e");
 }
 if (!defined('SITE_LOGO')) {
         define('SITE_LOGO',"  _____                  _____            _             _
