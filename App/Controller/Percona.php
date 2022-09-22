@@ -58,7 +58,7 @@ class Percona extends Controller
 
 
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "SELECT id FROM `mysql_server` WHERE is_monitored=1 AND error='' AND is_available=1";
+            $sql = "SELECT id FROM `mysql_server` WHERE is_monitored=1 AND error='' AND is_available=1 AND is_proxy=0";
 //AND TIMESTAMPDIFF(SECOND, date_refresh,now) > 10
 // see why date_refresh is no more refreshed
 
@@ -138,7 +138,9 @@ class Percona extends Controller
         $sql = "SELECT *, DATEDIFF(now(), b.create_time) as days
             FROM mysql_server a
             INNER JOIN percona_osc_table b ON a.id = b.id_mysql_server
-            INNER JOIN environment c ON a.id_environment = c.id ORDER BY  b.create_time,c.id, a.id,b.table_schema, b.table_schema";
+            INNER JOIN environment c ON a.id_environment = c.id
+            AND a.is_proxy=0
+            ORDER BY  b.create_time,c.id, a.id,b.table_schema, b.table_schema";
 
         $res = $db->sql_query($sql);
 
