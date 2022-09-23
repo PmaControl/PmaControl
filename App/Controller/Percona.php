@@ -13,6 +13,8 @@ class Percona extends Controller
 {
     var $mysql_server = array();
 
+    const MAX_SIZE_TABLE = 10737418240; //10G
+
     public function execQuery($param)
     {
         Debug::parseDebug($param);
@@ -54,8 +56,6 @@ class Percona extends Controller
         Debug::parseDebug($param);
 
         if (count($this->mysql_server) === 0) {
-
-
 
             $db  = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT id FROM `mysql_server` WHERE is_monitored=1 AND error='' AND is_available=1 AND is_proxy=0";
@@ -103,8 +103,6 @@ class Percona extends Controller
 
             //$sql2= "DELETE FROM "
 
-
-
             $to_save                      = array();
             $to_save['percona_osc_table'] = $table;
 
@@ -122,11 +120,31 @@ class Percona extends Controller
         }
     }
 
-    function delOscTable($param)
+    function delOldOscTable($param)
     {
         Debug::parseDebug($param);
 
         $id_percona_osc_table = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM `percona_osc_table` WHERE `id`=".$id_percona_osc_table.";";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            Debug::debug($ob, "out");
+
+            $link = Mysql::getDbLink($ob->id_mysql_server);
+
+            $sql3 = "SET sql_log_bin=0;";
+            $link->sql_query($sql3);
+            Debug::debug($sql3);
+
+            $sql2 = "DROP TABLE `".$ob->table_schema."`.`".$ob->table_name."`; ";
+            Debug::debug($sql2);
+            //$link->sql_query($sql2);
+        }
     }
 
     function displayOsc($param)
@@ -164,8 +182,30 @@ class Percona extends Controller
             $data['ptosc_new'][] = $arr;
         }
 
-
-
         $this->set('data', $data);
+    }
+
+    function delAllOldOscTable($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.id FROM percona_osc_table a"
+            ." INNER JOIN mysql_server b ON a.id_mysql_server = b.id"
+            ." INNER JOIN environment c ON c.id = b.id_environment"
+            ." WHERE a.table_name LIKE '__old%' "
+            ."AND c.libelle != 'Production'"
+            ." AND (a.data_length+a.index_length + a.data_free) < ".self::MAX_SIZE_TABLE.";";
+
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            Debug::debug($ob, "out");
+
+            $this->delOldOscTable(array($ob->id));
+        }
     }
 }
