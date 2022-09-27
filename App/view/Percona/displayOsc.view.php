@@ -31,6 +31,7 @@
     echo '<th>'.__('Free size').'</th>';
     echo '<th>'.__('Creation date').'</th>';
     echo '<th>'.__('Since').'</th>';
+    echo '<th>'.__('Action').'</th>';
     echo '</tr>';
     $i = 0;
     foreach ($data['ptosc_old'] as $table) {
@@ -50,6 +51,7 @@
         echo '<td>'.$table['data_free'].'</td>';
         echo '<td>'.$table['create_time'].'</td>';
         echo '<td><span class="label label-warning">'.$table['days'].' '.__('days').'</span></td>';
+        echo '<td><a href="'.LINK.'percona/delOldOscTable/'.$table['id'].'" class="label label-danger">'.__('Drop table').'</a></td>';
         echo '</tr>';
     }
 
@@ -82,6 +84,7 @@
     echo '<th>'.__('Free size').'</th>';
     echo '<th>'.__('Creation date').'</th>';
     echo '<th>'.__('Since').'</th>';
+    echo '<th>'.__('Action').'</th>';
     echo '</tr>';
     $i = 0;
     foreach ($data['ptosc_new'] as $table) {
@@ -101,6 +104,7 @@
         echo '<td>'.$table['data_free'].'</td>';
         echo '<td>'.$table['create_time'].'</td>';
         echo '<td><span class="label label-warning">'.$table['days'].' '.__('days').'</span></td>';
+        echo '<td><a class="label label-danger">'.__('Drop table').'</a></td>';
         echo '</tr>';
     }
 

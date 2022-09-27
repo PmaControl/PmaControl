@@ -6,7 +6,7 @@
  */
 
 
-
+debug($data);
 echo '<table>';
 
 echo '<tr>';
