@@ -4,6 +4,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
+use \App\Library\Format;
 ?>
 
 
@@ -34,6 +36,11 @@
     echo '<th>'.__('Action').'</th>';
     echo '</tr>';
     $i = 0;
+
+    $total_data  = 0;
+    $total_index = 0;
+    $total_free  = 0;
+
     foreach ($data['ptosc_old'] as $table) {
 
         $i++;
@@ -46,12 +53,28 @@
         echo '<td>'.$table['table_schema'].'</td>';
         echo '<td>'.$table['table_name'].'</td>';
         echo '<td>'.$table['table_rows'].'</td>';
-        echo '<td>'.$table['data_length'].'</td>';
-        echo '<td>'.$table['index_length'].'</td>';
-        echo '<td>'.$table['data_free'].'</td>';
+        echo '<td>'.Format::bytes($table['data_length']).'</td>';
+        echo '<td>'.Format::bytes($table['index_length']).'</td>';
+        echo '<td>'.Format::bytes($table['data_free']).'</td>';
         echo '<td>'.$table['create_time'].'</td>';
         echo '<td><span class="label label-warning">'.$table['days'].' '.__('days').'</span></td>';
         echo '<td><a href="'.LINK.'percona/delOldOscTable/'.$table['id'].'" class="label label-danger">'.__('Drop table').'</a></td>';
+        echo '</tr>';
+        $total_data  += $table['data_length'];
+        $total_index += $table['index_length'];
+        $total_free  += $table['data_free'];
+    }
+
+
+    if ($i > 0) {
+        echo '<tr>';
+        echo '<th colspan=5>'.__('Total').'</th>';
+
+        echo '<th>'.Format::bytes($total_data).'</th>';
+        echo '<th>'.Format::bytes($total_index).'</th>';
+        echo '<th>'.Format::bytes($total_free).'</th>';
+        echo '<th colspan="3"></th>';
+
         echo '</tr>';
     }
 
