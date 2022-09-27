@@ -122,6 +122,8 @@ class Percona extends Controller
 
     function delOldOscTable($param)
     {
+        $this->view = false;
+
         Debug::parseDebug($param);
 
         $id_percona_osc_table = $param[0];
@@ -160,11 +162,11 @@ class Percona extends Controller
     {
         Debug::parseDebug($param);
 
-        $this->view = false;
+        //$this->view = false;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT *, DATEDIFF(now(), b.create_time) as days
+        $sql = "SELECT b.*, a.id as id_mysql_server, a.display_name, c.libelle, c.class, DATEDIFF(now(), b.create_time) as days
             FROM mysql_server a
             INNER JOIN percona_osc_table b ON a.id = b.id_mysql_server
             INNER JOIN environment c ON a.id_environment = c.id
@@ -179,7 +181,7 @@ class Percona extends Controller
         }
 
 
-        $sql = "SELECT *, DATEDIFF(now(), b.create_time) as days
+        $sql = "SELECT b.*, a.id as id_mysql_server, a.display_name, c.libelle, c.class, DATEDIFF(now(), b.create_time) as days
             FROM mysql_server a
             INNER JOIN percona_osc_table b ON a.id = b.id_mysql_server
             INNER JOIN environment c ON a.id_environment = c.id
@@ -192,6 +194,8 @@ class Percona extends Controller
         while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['ptosc_new'][] = $arr;
         }
+
+
 
         $this->set('data', $data);
     }
