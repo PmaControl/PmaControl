@@ -149,7 +149,7 @@ class Percona extends Controller
 
             $sql4 = "DELETE FROM `percona_osc_table` WHERE `id`=".$id_percona_osc_table.";";
             Debug::debug($sql4);
-            $link->sql_query($sql4);
+            $db->sql_query($sql4);
         }
 
 
