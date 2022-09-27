@@ -60,6 +60,7 @@ use \App\Library\Format;
         echo '<td><span class="label label-warning">'.$table['days'].' '.__('days').'</span></td>';
         echo '<td><a href="'.LINK.'percona/delOldOscTable/'.$table['id'].'" class="label label-danger">'.__('Drop table').'</a></td>';
         echo '</tr>';
+        $total_row   += $table['table_rows'];
         $total_data  += $table['data_length'];
         $total_index += $table['index_length'];
         $total_free  += $table['data_free'];
@@ -68,8 +69,9 @@ use \App\Library\Format;
 
     if ($i > 0) {
         echo '<tr>';
-        echo '<th colspan=5>'.__('Total').'</th>';
+        echo '<th colspan="5">'.__('Total').'</th>';
 
+        echo '<th>'.$total_row.'</th>';
         echo '<th>'.Format::bytes($total_data).'</th>';
         echo '<th>'.Format::bytes($total_index).'</th>';
         echo '<th>'.Format::bytes($total_free).'</th>';
