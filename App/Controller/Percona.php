@@ -143,13 +143,24 @@ class Percona extends Controller
 
             $sql2 = "DROP TABLE `".$ob->table_schema."`.`".$ob->table_name."`; ";
             Debug::debug($sql2);
-            //$link->sql_query($sql2);
+            $link->sql_query($sql2);
+
+            $sql4 = "DELETE FROM `percona_osc_table` WHERE `id`=".$id_percona_osc_table.";";
+            Debug::debug($sql4);
+            $link->sql_query($sql4);
+        }
+
+
+        if (!IS_CLI) {
+            header('location: '.LINK.'percona/displayOsc');
         }
     }
 
     function displayOsc($param)
     {
         Debug::parseDebug($param);
+
+        $this->view = false;
 
         $db = Sgbd::sql(DB_DEFAULT);
 

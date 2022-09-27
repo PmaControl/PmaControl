@@ -857,18 +857,14 @@ class Dot2 extends Controller
 
                 debug($database);
 
+                if (empty($database['binlog_do_db'])) {
+                    $database['binlog_do_db'] = '';
+                }
 
 
-		if (empty($database['binlog_do_db']))
-		{
-			$database['binlog_do_db']= array();
-		}
-
-
-		if (empty($database['binlog_ignore_db']))
-		{
-			$database['binlog_ignore_db']= array();
-		}
+                if (empty($database['binlog_ignore_db'])) {
+                    $database['binlog_ignore_db'] = '';
+                }
 
                 $binlog_do_db     = explode(",", $database['binlog_do_db']);
                 $binlog_ignore_db = explode(",", $database['binlog_ignore_db']);
