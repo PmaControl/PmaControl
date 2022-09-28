@@ -37,6 +37,7 @@ use \App\Library\Format;
     echo '</tr>';
     $i = 0;
 
+    $total_row   = 0;
     $total_data  = 0;
     $total_index = 0;
     $total_free  = 0;
