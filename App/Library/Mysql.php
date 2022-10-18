@@ -16,8 +16,9 @@ use \App\Library\Debug;
 
 class Mysql
 {
-    static $master = array();
+    static $master       = array();
     static $return;
+    static $mysql_server = array();
 
     static function exportAllUser($db_link)
     {
@@ -780,5 +781,51 @@ END IF;";
 
         $db->sql_close();
         return $emptydb;
+    }
+    /*
+     * Retourne les informations en fonction d'un id_mysql_server
+     *
+     */
+
+    static public function getInfoServer($param)
+    {
+
+        $id_mysql_server = $param[0];
+
+        if (empty(static::$mysql_server[$id_mysql_server])) {
+
+            $db  = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT * FROM mysql_server";
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                static::$mysql_server[$arr['id']] = $arr;
+            }
+        }
+
+        return static::$mysql_server[$id_mysql_server];
+    }
+
+    static public function createSelectAccount($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $user            = $param[1];
+
+        $bytes = openssl_random_pseudo_bytes(20);
+        $pass  = bin2hex($bytes);
+
+        $account['user']     = $user;
+        $account['password'] = $pass;
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "GRANT SELECT ON *.* TO '".$account['user']."'@'%' IDENTIFIED BY '".$account['password']."';";
+        $db->sql_query($sql);
+
+        Debug::debug($account);
+
+        return $account;
     }
 }

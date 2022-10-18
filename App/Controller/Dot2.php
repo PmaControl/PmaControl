@@ -869,8 +869,11 @@ class Dot2 extends Controller
                 $binlog_do_db     = explode(",", $database['binlog_do_db']);
                 $binlog_ignore_db = explode(",", $database['binlog_ignore_db']);
 
-                $dbs = json_decode($database['databases'], true);
-
+                if (!empty($database['databases'])) {
+                    $dbs = json_decode($database['databases'], true);
+                } else {
+                    $dbs = array();
+                }
                 //Debug::debug($dbs);
 
                 foreach ($dbs as $schema => $db_attr) {
