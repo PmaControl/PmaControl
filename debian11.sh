@@ -29,7 +29,7 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 ./install-mariadb.sh -v 10.6 -p $password -d /srv/mysql -r
 
 
-apt-get -y install php7.3 apache2 graphviz php7.3-mysql php7.3-ldap php7.3-json php7.3-curl php7.3-cli php7.3-mbstring php7.3-intl php7.3-fpm libapache2-mod-php7.3 php7.3-gd php7.3-xml
+apt-get -y install php7.4 apache2 graphviz php7.4-mysql php7.4-ldap php7.4-json php7.4-curl php7.4-cli php7.4-mbstring php7.4-intl php7.4-fpm libapache2-mod-php7.4 php7.4-gd php7.4-xml
 
 apt-get -y install mariadb-plugin-rocksdb 
 
@@ -43,7 +43,7 @@ mysql -e  "INSTALL SONAME 'ha_rocksdb'"
 
 
 a2enmod proxy_fcgi setenvif
-a2enconf php7.3-fpm
+a2enconf php7.4-fpm
 
 a2enmod rewrite
 
