@@ -8,7 +8,6 @@ echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
-
 $converter = new AnsiToHtmlConverter();
 
 echo '<form action="" method="POST">';
@@ -46,7 +45,6 @@ echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>';
-
 
 echo __('Tags');
 
@@ -111,7 +109,6 @@ if (!empty($data['servers'])) {
         echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : ($server['is_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
         echo '</td>';
 
-
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
@@ -130,14 +127,11 @@ if (!empty($data['servers'])) {
         echo '</td>';
 
         echo '<td style="'.$style.'">'.$server['ip'];
-        
 
-
-        if ( !empty($data['extra'][$server['id']]['']['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON")
-        {
+        if (!empty($data['extra'][$server['id']]['']['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON") {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }
-        
+
         echo '</td>';
         echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
@@ -148,7 +142,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-	$is_proxysql = (empty($data['extra'][$server['id']]['']['is_proxysql']))?0:$data['extra'][$server['id']]['']['is_proxysql']; 
+        $is_proxysql = (empty($data['extra'][$server['id']]['']['is_proxysql'])) ? 0 : $data['extra'][$server['id']]['']['is_proxysql'];
 
         if (!empty($data['extra'][$server['id']]['']['version'])) {
             echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment'], $is_proxysql);
@@ -174,13 +168,12 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-            <?php
-            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"), $checked);
+                        <?php
+                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"),
+                            $checked);
 
-
-
-            echo Form::input("check", "all", $computed);
-            ?>
+                        echo Form::input("check", "all", $computed);
+                        ?>
                         <span></span>
                     </label>
                 </div>
@@ -190,8 +183,6 @@ if (!empty($data['servers'])) {
         }
 
         echo '</td>';
-
-
 
         echo '<td style="'.$style.'">';
         //echo $data['extra'][$server['id']]['']['performance_schema'];
@@ -207,17 +198,17 @@ if (!empty($data['servers'])) {
             <div class="form-group" style="margin: 0">
                 <div class="checkbox checbox-switch switch-success" style="margin: 0">
                     <label>
-            <?php
-            $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control performance_schema", "disabled"=> "true", "type" => "checkbox", "title" => "Monitored"), $checked);
-            echo Form::input("check", "all", $computed);
-            ?>
+                        <?php
+                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control performance_schema", "disabled" => "true", "type" => "checkbox",
+                            "title" => "Monitored"), $checked);
+                        echo Form::input("check", "all", $computed);
+                        ?>
                         <span></span>
                     </label>
                 </div>
             </div>
 
             <?php
-
         }
 
 
@@ -234,7 +225,6 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['ping'])) {
@@ -243,8 +233,6 @@ if (!empty($data['servers'])) {
 
 
         echo '</td>';
-
-
 
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
@@ -274,10 +262,6 @@ if (!empty($data['servers'])) {
             //echo $server['error'];
         } else {
             echo str_replace("\n", '<br>', trim($server['error']));
-
-
-
-
 
             if (!empty(trim($server['error']))) {
                 if (!empty($data['last_date'][$server['id']]['date'])) {
@@ -322,7 +306,7 @@ if (!empty($data['servers'])) {
 
         if ($server['is_available'] == -1) {
             echo '&nbsp;'.$server['warning'];
-            echo '&nbsp;<span class="label label-warning" style="cursor:pointer;" title="'.__('Kill').'">'        .__('Kill').'</span>';
+            echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
         }
 
         echo '</td>';

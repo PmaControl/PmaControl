@@ -7,13 +7,15 @@ use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 
-class MysqlUser extends Controller {
+class MysqlUser extends Controller
+{
 
-    public function index($param) {
+    public function index($param)
+    {
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             if (!empty($_POST['mysql_server']['id'])) {
-                header('location: ' . LINK . $this->getClass() . '/' . __FUNCTION__ . "/mysql_server:id:[" . implode(',', $_POST['mysql_server']['id']) . "]");
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__."/mysql_server:id:[".implode(',', $_POST['mysql_server']['id'])."]");
             }
         }
 
@@ -22,10 +24,10 @@ class MysqlUser extends Controller {
         //debug($_GET);
 
         if (!empty($_GET['mysql_server']['id'])) {
-            $db = Sgbd::sql(DB_DEFAULT);
+            $db  = Sgbd::sql(DB_DEFAULT);
             $ids = substr($_GET['mysql_server']['id'], 1, -1);
 
-            $sql = "SELECT * FROM mysql_server where id in (" . $ids . ")";
+            $sql = "SELECT * FROM mysql_server where id in (".$ids.")";
 
             $res1 = $db->sql_query($sql);
 
@@ -38,7 +40,7 @@ class MysqlUser extends Controller {
                 $res152 = $db_link->sql_query($sql152);
 
                 $all_databases = array();
-                while ($ob = $db_link->sql_fetch_object($res152)) {
+                while ($ob            = $db_link->sql_fetch_object($res152)) {
                     $all_databases[] = $ob->Database;
                 }
 
@@ -74,7 +76,7 @@ class MysqlUser extends Controller {
 
 
                             // liste des droits
-                            $output_array = array();
+                            $output_array                                          = array();
                             preg_match('/GRANT\s(.*)\sON/', $grant, $out_grant);
                             $data['all_user'][$user][$host][$ob1->name]['grant'][] = explode(", ", $out_grant[1]);
 
@@ -100,13 +102,13 @@ class MysqlUser extends Controller {
         }
 
 
-        $options = array('SELECT', 'USAGE', 'SHOW VIEW');
+        $options         = array('SELECT', 'USAGE', 'SHOW VIEW');
         $black_list_user = array('root', 'debian-sys-maint', 'dba', 'pmacontrol', 'grafana_check', 'replicant', 'replicantssl', 'NagiosCheck', 'replication', 'sst');
 
-        $data['revokes'] = array();
-        $data['grant'] = array();
+        $data['revokes']      = array();
+        $data['grant']        = array();
         $data['switch_to_ro'] = array();
-        $data['revoke_all'] = array();
+        $data['revoke_all']   = array();
 
         if (!empty($data['all_user'])) {
 
@@ -119,7 +121,7 @@ class MysqlUser extends Controller {
                 foreach ($hosts as $host => $servers) {
 
 
-                    $data['revoke_all'][] = "DROP USER '" . $user . "'@'" . $host . "';";
+                    $data['revoke_all'][] = "DROP USER '".$user."'@'".$host."';";
 
                     foreach ($servers as $server_name => $server) {
 
@@ -155,19 +157,19 @@ class MysqlUser extends Controller {
 
                             $extra = "";
                             if ($i === 0) {
-                                $extra = " IDENTIFIED BY PASSWORD '" . $server['password'] . "'";
+                                $extra = " IDENTIFIED BY PASSWORD '".$server['password']."'";
                             }
 
                             $revoke = false;
                             if (!empty($server['match'][$i])) {
                                 if (!in_array($server['match'][$i], $all_databases)) {
-                                    $data['revokes'][$server_name][] = "REVOKE " . implode(",", $all_right) . " ON " . $db . " FROM '" . $user . "'@'" . $host . "';";
-                                    $revoke = true;
+                                    $data['revokes'][$server_name][] = "REVOKE ".implode(",", $all_right)." ON ".$db." FROM '".$user."'@'".$host."';";
+                                    $revoke                          = true;
                                 }
                             }
 
                             if (!$revoke) {
-                                $data['grants'][] = "GRANT " . implode(",", $server['grant'][$i]) . " ON " . $db . " TO '" . $user . "'@'" . $host . "'" . $extra . ";";
+                                $data['grants'][] = "GRANT ".implode(",", $server['grant'][$i])." ON ".$db." TO '".$user."'@'".$host."'".$extra.";";
                             }
 
                             $i++;
@@ -186,20 +188,22 @@ class MysqlUser extends Controller {
         $this->set('data', $data);
     }
 
-    public function backup() {
-        
+    public function backup()
+    {
+
     }
 
-    public function cmpHost($param) {
+    public function cmpHost($param)
+    {
         Debug::parseDebug($param);
         Debug::debug($param);
 
         $id_mysql_server = $param[0];
-        $host1 = $param[1];
-        $host2 = $param[2];
-        $remote = Mysql::getDbLink($id_mysql_server);
+        $host1           = $param[1];
+        $host2           = $param[2];
+        $remote          = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "select distinct user from mysql.user where host in('" . $host1 . "', '" . $host2 . "');";
+        $sql = "select distinct user from mysql.user where host in('".$host1."', '".$host2."');";
         //$sql ="SELECT @@hostname as user;";
         Debug::sql($sql);
 
@@ -217,7 +221,12 @@ class MysqlUser extends Controller {
             //Debug::debug($hosts);
 
             foreach ($hosts as $host) {
-                $sql4 = "SHOW GRANTS FOR '" . $ob1->user . "'@'" . $host . "';";
+
+                if (empty($host)) {
+                    continue;
+                }
+
+                $sql4 = "SHOW GRANTS FOR '".$ob1->user."'@'".$host."';";
                 //Debug::sql($sql4);
                 $res4 = $remote->sql_query($sql4);
 
@@ -225,7 +234,7 @@ class MysqlUser extends Controller {
 
                     $data[$host][$ob1->user][md5($ob4[0])] = $ob4[0];
 
-                    echo $ob4[0] . "\n";
+                    echo $ob4[0]."\n";
                 }
             }
         }
@@ -233,7 +242,8 @@ class MysqlUser extends Controller {
         print_r($data);
     }
 
-    public function security($param) {
+    public function security($param)
+    {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -242,15 +252,15 @@ class MysqlUser extends Controller {
         $res = $db->sql_query($sql);
 
         $data = array();
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ob   = $db->sql_fetch_object($res)) {
             $link = Mysql::getDbLink($ob->id);
 
             $sql2 = "SELECT user as User, host as Host, password as Password,Super_priv,plugin as Plugin  from mysql.user ORDER BY user, host, password";
             $res2 = $link->sql_query($sql2);
 
             $data[$ob->id]['display_name'] = $ob->display_name;
-            $data[$ob->id]['ip'] = $ob->ip;
-            $data[$ob->id]['port'] = $ob->port;
+            $data[$ob->id]['ip']           = $ob->ip;
+            $data[$ob->id]['port']         = $ob->port;
 
             $data[$ob->id]['account'] = array();
 
@@ -267,14 +277,14 @@ class MysqlUser extends Controller {
           /* */
         $this->set('data', $data);
     }
-
     /*
      * Get user never connected since start of the server
      * The goal is to effectuate a purge to remove all unused user
-     * 
+     *
      */
 
-    public function getUserNeverConnected($param) {
+    public function getUserNeverConnected($param)
+    {
 
         Debug::parseDebug($param);
 
@@ -282,36 +292,34 @@ class MysqlUser extends Controller {
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-
         Debug::debug($id_mysql_server, 'id_mysql_server');
 
         $sql2 = "SELECT count(1) as cpt from performance_schema.users;";
 
         $res2 = $db->sql_query($sql2);
-        while ($ob = $db->sql_fetch_object($res2)) {
+        while ($ob   = $db->sql_fetch_object($res2)) {
             $count = intval($ob->cpt);
         }
 
         $data['id_mysql_server'] = $id_mysql_server;
-        $data['accounts'] = array();
-        
-        
-        Debug::debug($count,'performance_schema.users');
+        $data['accounts']        = array();
+
+        Debug::debug($count, 'performance_schema.users');
 
         if ($count > 0) {
 
             $sql = <<<SQL
-            SELECT 
+            SELECT
               DISTINCT mu.user as user, mu.host as host
-            FROM 
-              mysql.user mu 
-              LEFT JOIN performance_schema.users psu ON mu.user = psu.user 
-            WHERE 
-              psu.user IS NULL 
+            FROM
+              mysql.user mu
+              LEFT JOIN performance_schema.users psu ON mu.user = psu.user
+            WHERE
+              psu.user IS NULL
               AND mu.user NOT IN (
                 'mysql.infoschema', 'mysql.session', 'mysql.sys', 'mariadb.sys'
-              ) 
-            ORDER BY 
+              )
+            ORDER BY
               mu.user, mu.host;
 SQL;
 
@@ -320,14 +328,13 @@ SQL;
             while ($ob = $db->sql_fetch_object($res)) {
                 $data['accounts'][] = $ob;
                 if (IS_CLI) {
-                    
-                    
-                    echo "'" . $ob->user . "'@'" . $ob->host . "';\t-- no connection since opening of server the \n";
+
+
+                    echo "'".$ob->user."'@'".$ob->host."';\t-- no connection since opening of server the \n";
                 }
             }
         }
 
         $this->set('data', $data);
     }
-
 }
