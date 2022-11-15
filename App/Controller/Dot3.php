@@ -45,7 +45,7 @@ class Dot3 extends Controller {
         $res = $db->sql_query($sql);
 
         $server_mysql = array();
-        $mapping_master = array();
+        //$mapping_master = array();
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server_mysql[$arr['id_mysql_server']] = $arr;
