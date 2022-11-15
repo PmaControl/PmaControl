@@ -16,9 +16,10 @@ use \App\Library\Debug;
 
 class Mysql
 {
-    static $master       = array();
+    static $master               = array();
     static $return;
-    static $mysql_server = array();
+    static $mysql_server         = array();
+    static $mysql_server_by_host = array();
 
     static function exportAllUser($db_link)
     {
@@ -827,5 +828,35 @@ END IF;";
         Debug::debug($account);
 
         return $account;
+    }
+    /*
+     * Get id_mysql_server if exist
+     *
+     *
+     */
+
+    static public function getIdMySqlServer($param)
+    {
+        Debug::parseDebug($param);
+
+        $hostname = $param[0];
+        $port     = $param[1];
+
+        if (empty($mysql_server_by_host[$hostname.':'.$port])) {
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            $sql = "SELECT * FROM mysql_server;";
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $mysql_server_by_host[$arr['ip'].':'.$arr['port']] = $arr;
+            }
+        }
+
+        if (!empty($mysql_server_by_host[$hostname.':'.$port])) {
+            return $mysql_server_by_host[$hostname.':'.$port];
+        } else {
+            return false;
+        }
     }
 }
