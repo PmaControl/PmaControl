@@ -27,7 +27,7 @@ use Pheanstalk\Pheanstalk;
   | (ProxySQL)        |
   +-------------------+
   1 row in set (0.000 sec)
-
+  SELECT /*!40001 SQL_NO_CACHE * / * FROM
  *
  */
 
@@ -128,7 +128,7 @@ class Aspirateur extends Controller
             echo $name_server." : ".$error_msg."\n";
 
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "UPDATE `mysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."', 
+            $sql = "UPDATE `mysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."',
                 `date_refresh` = '".date("Y-m-d H:i:s")."',
                     `is_available` = 0 WHERE id =".$id_server;
             Debug::sql($sql);
@@ -179,18 +179,15 @@ class Aspirateur extends Controller
             $db->sql_query($sql);
             $db->sql_close();
 
-
-            $var_temp['variables']['is_proxysql'] = $var['variables']['is_proxysql'];
-            $var_temp['variables']['hostname'] = $var['variables']['hostname'];
-            $var_temp['variables']['port'] = $var['variables']['port'];
-            $var_temp['variables']['version'] = $var['variables']['version'];
+            $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
+            $var_temp['variables']['hostname']        = $var['variables']['hostname'];
+            $var_temp['variables']['port']            = $var['variables']['port'];
+            $var_temp['variables']['version']         = $var['variables']['version'];
             $var_temp['variables']['version_comment'] = $var['variables']['version_comment'];
 
             unset($var);
 
             $var = $var_temp;
-
-
         } else {
 
             Debug::debug("apres Variables");
@@ -343,7 +340,7 @@ class Aspirateur extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` a
-        INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server 
+        INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server
         INNER JOIN `ssh_key` c on c.id = b.id_ssh_key
         where a.id=".$id_mysql_server." AND b.`active` = 1 LIMIT 1;";
 
@@ -591,7 +588,7 @@ class Aspirateur extends Controller
      * @example : ./glial aspirateur addToQueue 11 --debug
      *
      * Ajoute les serveurs monitoré dans la queue qui va etre ensuite traité par les workers
-     * 
+     *
      */
     public function addToQueueMySQL($param)
     {
@@ -641,7 +638,7 @@ class Aspirateur extends Controller
 
         $mysql_servers = array();
 
-        //mémoire partagé 
+        //mémoire partagé
 
         $lock_directory = TMP."lock/worker/*.lock";
 
@@ -1147,7 +1144,7 @@ class Aspirateur extends Controller
 
         $mysql_servers = array();
 
-        //mémoire partagé 
+        //mémoire partagé
 
         $lock_directory = TMP."lock/".$worker_type."/*.lock";
 
@@ -1366,7 +1363,7 @@ class Aspirateur extends Controller
 
         $sql = 'SELECT table_schema as `database`,
         engine,
-        ROW_FORMAT as "row_format", 
+        ROW_FORMAT as "row_format",
         sum(`data_length`) as "size_data",
         sum( `index_length` ) as "size_index",
         sum( `data_free` ) as "size_free",
@@ -1378,8 +1375,7 @@ class Aspirateur extends Controller
         FROM information_schema.TABLES a
         INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
         WHERE table_schema NOT IN ("information_schema", "performance_schema", "mysql") AND a.TABLE_TYPE = "BASE TABLE"
-        GROUP BY table_schema, engine, ROW_FORMAT;
-            ';
+        GROUP BY table_schema, engine, ROW_FORMAT, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME;';
 
         Debug::sql($sql);
 
@@ -1436,7 +1432,7 @@ class Aspirateur extends Controller
      * - wsrep_cluster
      * - wsrep_cluster_members
      * - wsrep_streaming_log
-     * 
+     *
      */
 
     public function getWsrep($param = array())

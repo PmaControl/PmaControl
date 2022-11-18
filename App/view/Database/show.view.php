@@ -44,11 +44,15 @@ function format($bytes, $decimals = 2)
 
         foreach ($data['database'] as $id_mysql_server => $elems) {
             foreach ($elems as $databases) {
-                if ($databases['is_proxysql'] === "1")
-                {
+                if (!empty($databases['is_proxysql']) && $databases['is_proxysql'] === "1") {
                     continue;
                 }
 
+
+                //add for bug with mysql 5.7
+                if (empty($databases['databases'])) {
+                    continue;
+                }
                 $dbs = json_decode($databases['databases'], true);
 
                 foreach ($dbs as $schema => $db_attr) {
