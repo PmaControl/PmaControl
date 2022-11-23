@@ -5,8 +5,9 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
-use \phpseclib\Crypt\RSA;
-use \phpseclib\Net\SSH2;
+use \phpseclib3\Crypt\RSA;
+use \phpseclib3\Net\SSH2;
+use \phpseclib3\Crypt\PublicKeyLoader;
 use \App\Library\Debug;
 use \App\Library\Post;
 use \Glial\Sgbd\Sgbd;
@@ -75,8 +76,7 @@ class StorageArea extends Controller {
 
             // clef ssh ou password ?
             if (!empty($ssh_private_key)) {
-                $key = new RSA();
-                $key->loadKey($ssh_private_key);
+                $key = PublicKeyLoader::load($ssh_private_key);
             }
 
             //deploy public key by SCP
@@ -222,12 +222,9 @@ class StorageArea extends Controller {
 
             $login = $storage['user'];
             $key_ssh = Crypt::decrypt($storage['private_key'], CRYPT_KEY);
-
-            $rsa = new RSA();
-
-            $rsa->loadKey($key_ssh);
+            
+            $rsa = PublicKeyLoader::load($key_ssh);
             $password = $rsa;
-
 
             $ssh = new SSH2($storage['ip']);
 
