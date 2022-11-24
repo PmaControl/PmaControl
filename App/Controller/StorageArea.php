@@ -264,7 +264,6 @@ class StorageArea extends Controller {
 
                 if (!$db->sql_save($data)) {
 
-
                     debug($cmd . "\n");
                     debug($resultats);
                     debug($results);
