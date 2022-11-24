@@ -859,4 +859,80 @@ END IF;";
             return false;
         }
     }
+
+
+
+    static public function getRoles($param) {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        //$sql = "SELECT `ROLE_NAME` as role_name from `information_schema`.`APPLICABLE_ROLES`;";
+        $sql = "SELECT `user` as role_name from `mysql`.`user` where is_role='Y';";
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        $data = array();
+        while ($ob = $db->sql_fetch_object($res)) {
+
+
+            Debug::debug($ob);
+            $data[] = $ob->role_name;
+        }
+
+        return $data;
+    }
+
+    static public function getCreateRoles($param) {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $roles = self::getRoles(array($id_mysql_server));
+
+        $export = array();
+
+        Debug::debug($roles, "ROLE");
+
+        foreach ($roles as $role) {
+
+
+		$export[] = "DROP ROLE IF EXISTS '".$role."';";
+		$export[] = "CREATE OR REPLACE ROLE '".$role."';";
+
+            $sql = "SHOW GRANTS FOR `" . $role . "`;";
+	    Debug::sql($sql);
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+
+                $output_array = array();
+                preg_match_all('/\((.*)\)/', $arr[0], $output_array);
+
+
+		Debug::debug($output_array);
+
+                if (!empty($output_array[1][0])) {
+                    Debug::debug($output_array[1][0]);
+
+                    $out = '(`' . str_replace(', ', '`, `', $output_array[1][0]) . '`)';
+
+			Debug::debug($out, 'out');
+
+                    $escape = str_replace($output_array[0][0], $out, $arr[0]);
+                } else {
+                    $escape = $arr[0];
+                }
+
+                $export[] = $escape.";";
+            }
+        }
+	//die();
+        return $export;
+    }
+
 }

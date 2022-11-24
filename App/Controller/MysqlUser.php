@@ -337,4 +337,20 @@ SQL;
 
         $this->set('data', $data);
     }
+
+    public function role($param) {
+
+        Debug::parseDebug($param);
+    
+        $id_mysql_server = $param[0];
+    
+        $roles = Mysql::getCreateRoles(array($id_mysql_server));
+    
+        Debug::debug($roles);
+    
+        foreach($roles as $role)
+        {
+            echo $role."\n";
+        }
+    }
 }
