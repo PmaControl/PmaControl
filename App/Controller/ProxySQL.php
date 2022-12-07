@@ -170,9 +170,7 @@ class ProxySQL extends Controller
                 $server_mysql[$arr2['hostname']] = $tmp;
 
                 /*                 * *************************************** */
-                //
             }
-
 
             Debug::debug($server_mysql, "ALLLLLLLLLLLLLLLLLLLLLLLLLLLL");
 
@@ -221,9 +219,6 @@ class ProxySQL extends Controller
 
             //$ret = $db->sql_save($table);
 
-
-
-
             foreach ($proxysql_to_add as $key => $proxysql) {
                 //if (!empty($server_mysql[$proxysql['proxysql_main']['hostname'].":".$proxysql['proxysql_main']['port']])) {
                 Debug::debug($proxysql);
@@ -231,7 +226,6 @@ class ProxySQL extends Controller
 
                 $proxysql_to_add[$key]['proxysql_main']['id_mysql_server'] = $server['id'];
                 //}
-
 
                 $ret = $db->sql_save($proxysql_to_add[$key]);
 
@@ -244,5 +238,15 @@ class ProxySQL extends Controller
 
             Debug::debug($proxysql_to_add, "PROXYSQL");
         }
+    }
+
+    public function index()
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM ProxySQL;";
+
+        $res = $db->sql_query($sql);
     }
 }

@@ -14,6 +14,7 @@ class Slave extends Controller
 {
 
     use \App\Library\Filter;
+    const BACKUP_TEMP = "/backup/";
 
     public function index()
     {
@@ -446,5 +447,18 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             $db = Mysql::getDbLink();
         }
+    }
+
+    public function setSlave($param)
+    {
+        $id_mysql_server__source = $param[0];
+        $id_mysql_server__target = $param[1];
+        $databases               = $param[1];
+
+        $database = explode(',', $databases);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        //mydumper
     }
 }

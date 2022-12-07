@@ -951,11 +951,11 @@ class Dot2 extends Controller
             $node .= '<tr><td bgcolor="lightgrey"><table border="0" cellborder="0" cellspacing="0" cellpadding="2">';
 
             $node .= '<tr>'
-                .'<td bgcolor="darkgray" color="white" align="left">M</td>'
-                .'<td bgcolor="darkgray" color="white" align="left">S</td>'
-                .'<td bgcolor="darkgray" color="white" align="left">'.__("Databases").'</td>'
-                //     .'<td bgcolor="darkgray" color="white" align="right">'.__("Tables").'</td>'
-                //     .'<td bgcolor="darkgray" color="white" align="right">'.__("Row").'</td>'
+                .'<td bgcolor="#A9A9A9" color="white" align="left">M</td>'
+                .'<td bgcolor="#A9A9A9" color="white" align="left">S</td>'
+                .'<td bgcolor="#A9A9A9" color="white" align="left">'.__("Databases").'</td>'
+                //     .'<td bgcolor="#A9A9A9" color="white" align="right">'.__("Tables").'</td>'
+                //     .'<td bgcolor="#A9A9A9" color="white" align="right">'.__("Row").'</td>'
                 .'</tr>';
 
             foreach ($databases as $database) {
@@ -963,7 +963,7 @@ class Dot2 extends Controller
 
                 Debug::debug($database, '##########');
                 $node .= '<tr>'
-                    .'<td bgcolor="darkgray" color="white" align="left">';
+                    .'<td bgcolor="#A9A9A9" color="white" align="left">';
 
                 if ($database['binlog_do_db'] == "1") {
 
@@ -976,16 +976,16 @@ class Dot2 extends Controller
                 }
 
                 $node .= '</td>';
-                $node .= '<td bgcolor="darkgray" color="white" align="left">';
+                $node .= '<td bgcolor="#A9A9A9" color="white" align="left">';
 
                 if ($database['binlog_do_db'] == "1") {
                     //$node .= "&#10006;";
                 }
 
                 $node .= '</td>'
-                    .'<td bgcolor="darkgray" color="white" align="left">'.$database['name'].'</td>'
-                    //          .'<td bgcolor="darkgray" color="white" align="right">'.$database['tables'].'</td>'
-                    //          .'<td bgcolor="darkgray" color="white" align="right">'.$database['rows'].'</td>'
+                    .'<td bgcolor="#A9A9A9" color="white" align="left">'.$database['name'].'</td>'
+                    //          .'<td bgcolor="#A9A9A9" color="white" align="right">'.$database['tables'].'</td>'
+                    //          .'<td bgcolor="#A9A9A9" color="white" align="right">'.$database['rows'].'</td>'
                     .'</tr>';
             }
             $node .= '</table></td></tr>';
