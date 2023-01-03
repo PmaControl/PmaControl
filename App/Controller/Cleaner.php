@@ -93,7 +93,6 @@ class Cleaner extends Controller
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js", "hammer.min.js", "chartjs-plugin-zoom.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         // si qqn a qq chose de mieux je suis preneur
 
         $sql = "select `table`  as t,sum(b.`row`),avg(b.`row`),min(b.`row`),max(b.`row`)  from pmacli_drain_process a
@@ -102,7 +101,6 @@ class Cleaner extends Controller
            GROUP BY `table`";
 
         $res = $db->sql_query($sql);
-
 
         $labels = array();
         while ($ob     = $db->sql_fetch_object($res)) {
@@ -115,7 +113,6 @@ class Cleaner extends Controller
             INNER JOIN pmacli_drain_item b ON b.id_pmacli_drain_process = a.id
             WHERE a.id_cleaner_main=".$data['id_cleaner']."  "
             ."AND a.date_start >= date_add(now(),INTERVAL-1 HOUR);";
-
 
         /*
          *         $sql2 = "SELECT a.date_start, a.time, b.`table` ,b.`row` as `row` FROM pmacli_drain_process a
@@ -223,7 +220,7 @@ var myChart = new Chart(ctx, {
                   display: true,
                   labelString: "Date",
                 },
-                
+
                 time: {
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
@@ -234,7 +231,7 @@ var myChart = new Chart(ctx, {
         yAxes: [{
 
 
-      stacked: true, 
+      stacked: true,
       scaleLabel: {
         display: true,
         labelString: "rows deleted",
@@ -254,7 +251,6 @@ var myChart = new Chart(ctx, {
 
 
         $this->set('data', $data);
-
 
         return $this->title;
     }
@@ -325,7 +321,6 @@ var myChart = new Chart(ctx, {
         $this->di['js']->addJavascript(array('jquery-latest.min.js',
             'cleaner/index.cleaner.js'
         ));
-
 
         $this->set('data', $data);
     }
@@ -513,7 +508,7 @@ var myChart = new Chart(ctx, {
         return $data;
     }
     /*
-     * 
+     *
      * deprecated !!
      */
 
@@ -530,7 +525,6 @@ var myChart = new Chart(ctx, {
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($_GET['id_mysql_server'])."';";
         $res = $db->sql_query($sql);
-
 
         while ($ob = $db->sql_fetch_object($res)) {
             $id_server = $ob->id;
@@ -591,13 +585,11 @@ var myChart = new Chart(ctx, {
         $this->view        = false;
         $this->layout_name = false;
 
-
         $id_cleaner = $param[0];
         $db         = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM cleaner_main WHERE id ='".$id_cleaner."'";
         $res = $db->sql_query($sql);
-
 
         if ($db->sql_num_rows($res) !== 1) {
             $msg   = I18n::getTranslation(__("The cleaner with the id :")." '".$id_cleaner."' ".__("doesn't exist"));
@@ -656,7 +648,6 @@ var myChart = new Chart(ctx, {
         $sql     = "SELECT * FROM mysql_server order by `name`;";
         $servers = $db->sql_fetch_yield($sql);
 
-
         $data['server'] = [];
         foreach ($servers as $server) {
             $tmp = [];
@@ -693,7 +684,6 @@ var myChart = new Chart(ctx, {
         $this->view        = false;
         $this->layout_name = false;
         $this->schema_main = $default->getDb();
-
 
         //$this->debug = true;
 
@@ -799,13 +789,11 @@ var myChart = new Chart(ctx, {
 
             $i++;
 
-
             Debug::checkPoint("End loop");
 
             Debug::debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
 
             Debug::debugShowTime();
-
 
             //to prevent mysql gone away (if stay long time connected)
             $default->sql_close();
@@ -825,10 +813,8 @@ var myChart = new Chart(ctx, {
         $this->view        = false;
         $this->layout_name = false;
 
-
         $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
         $res = $db->sql_query($sql);
-
 
         if ($db->sql_num_rows($res) !== 1) {
             $msg   = I18n::getTranslation(__("Impossible to find the cleaner with the id : ")."'".$id_cleaner."'");
@@ -850,7 +836,6 @@ var myChart = new Chart(ctx, {
 
             $cmd = $php." ".GLIAL_INDEX." Cleaner launch ".$id_cleaner." >> ".$log_file." & echo $!";
             $pid = intval(trim(shell_exec($cmd)));
-
 
             if (IS_CLI) {
                 $this->logger->info('[id:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' [SYSTEM]');
@@ -903,7 +888,6 @@ var myChart = new Chart(ctx, {
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
-
             $cmd = "kill ".$ob->pid;
             shell_exec($cmd);
             shell_exec("echo '[".date("Y-m-d H:i:s")."] CLEANER STOPED !' >> ".$ob->log_file);
@@ -912,7 +896,6 @@ var myChart = new Chart(ctx, {
         } else {
 
             $this->log('info', 'ACKNOWLEDGE', $ob->libelle." was acknowledge");
-
 
             if (!IS_CLI) {
 
@@ -923,7 +906,6 @@ var myChart = new Chart(ctx, {
         }
 
         $this->purge_clean_db(array());
-
 
         sleep(1);
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1003,12 +985,7 @@ var myChart = new Chart(ctx, {
     public function getTableImpacted($param)
     {
         Debug::parseDebug($param);
-
-
         Debug::debug($param);
-
-
-
 
         $id_cleaner = $param[0];
         $this->view = false; // required cannot be call directly from navigator
@@ -1030,8 +1007,6 @@ var myChart = new Chart(ctx, {
             $this->main_table      = $ob->main_table;
         }
 
-
-
         return $this->getImpactedTable();
     }
 
@@ -1046,7 +1021,6 @@ var myChart = new Chart(ctx, {
         }
 
         Debug::debug($files, "Files to push");
-
         return $files;
     }
 
@@ -1065,8 +1039,6 @@ var myChart = new Chart(ctx, {
 //chiffrement
 
         if ($is_cryted === true) {
-
-
 
             $time_start2                        = microtime(true);
             $file_crypted                       = $this->cryptFile($file_compressed);
@@ -1160,8 +1132,6 @@ var myChart = new Chart(ctx, {
 
         Debug::debug("On drop les tables de purge ...");
 
-
-
         while ($ob = $db->sql_fetch_object($res)) {
 
             $db_to_clean = Sgbd::sql($ob->nameserver);
@@ -1206,7 +1176,6 @@ var myChart = new Chart(ctx, {
                 //$this->purge_clean_db(array());
                 // gestion de l'extinction
                 exit;
-
 
                 break;
 
@@ -1282,7 +1251,6 @@ var myChart = new Chart(ctx, {
 
         $this->rows_to_delete = array();
 
-
         // a mettre ailleurs =)
         $this->compareComStatus();
         $this->compareDdl();
@@ -1291,8 +1259,6 @@ var myChart = new Chart(ctx, {
 
 
         Debug::debug($this->fk_circulaire);
-
-
 
         $pri          = $this->getPrimaryKey($this->main_table, $this->schema_to_purge);
         $primary_key  = "a.`".implode('`, a.`', $pri)."`";
@@ -1313,7 +1279,6 @@ var myChart = new Chart(ctx, {
         Debug::sql($sql2);
 
         $res2 = $db->sql_query($sql2);
-
 
         $nbline = $db->sql_num_rows($res2);
 
@@ -1343,8 +1308,6 @@ var myChart = new Chart(ctx, {
 
         $loop = 1;
 
-
-
         $nb_loop = 1;
         do {
 
@@ -1359,7 +1322,7 @@ var myChart = new Chart(ctx, {
             if ($nb_loop > 1 && $recursive === true) {
 
                 // si la table principale a une pk sur 2 champs ca va peter :( a corriger
-                $sql3 = "SELECT ".$primary_key." FROM `".$this->main_table."` a 
+                $sql3 = "SELECT ".$primary_key." FROM `".$this->main_table."` a
                 inner join      `".$this->main_table."` c ON c.`".$field_to."` = a.`".$field_from."`
                 INNER JOIN  `".$this->schema_delete."`.`".$this->prefix.$this->main_table."` b ON c.$primary_key2 = b.$primary_key2
                 and b.`".self::FIELD_LOOP."` = ".($nb_loop - 1)."";
@@ -1371,7 +1334,6 @@ var myChart = new Chart(ctx, {
             $res3 = $db->sql_query($sql3);
 
             $have_data = false;
-
 
             $sql = "REPLACE INTO `".$this->schema_delete."`.`".$this->prefix.$this->main_table."` (".$primary_key2."".$circular_field.") VALUES ";
             while ($arr = $db->sql_fetch_array($res3, MYSQLI_ASSOC)) {
@@ -1392,9 +1354,9 @@ var myChart = new Chart(ctx, {
                 $db->sql_query($sql);
                 $this->setAffectedRows($this->main_table);
 
-                  if ($recursive === false) {
-                      break;
-                  }
+                if ($recursive === false) {
+                    break;
+                }
 
 
 
@@ -1413,12 +1375,7 @@ var myChart = new Chart(ctx, {
             $nb_loop++;
         } while ($have_data === true);
 
-
-
-
-
         $this->exportToFile($this->main_table);
-
 
 //feed table in the right order to delete later
 
@@ -1438,10 +1395,9 @@ var myChart = new Chart(ctx, {
 
         Debug::debug($this->rows_to_delete);
 
-
         if (!empty($this->rows_to_delete[$this->main_table])) {
-            
-           
+
+
             $this->delete_rows();
         }
 
@@ -1494,13 +1450,11 @@ var myChart = new Chart(ctx, {
         $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table));
 
         Debug::debug($list_tables);
 
         $tables_impacted = $this->getAffectedTables();
-
 
         Debug::debug($tables_impacted, '$tables_impacted');
 
@@ -1526,10 +1480,8 @@ var myChart = new Chart(ctx, {
 
                 Debug::sql($sql);
 
-
                 $res = $db->sql_query($sql);
                 $fks = $db->sql_to_array($res);
-
 
                 $fk_circular = array();
 
@@ -1559,9 +1511,6 @@ var myChart = new Chart(ctx, {
 
 
                 $fks = array_merge($fks, $fk_circular);
-
-
-
 
                 foreach ($fks as $fk) {
 
@@ -1610,9 +1559,7 @@ var myChart = new Chart(ctx, {
 
                         $count = 0;
 
-
                         $step_sql = "";
-
 
                         $value_sql = $sql;
                         foreach ($data as $line) {
@@ -1631,7 +1578,6 @@ var myChart = new Chart(ctx, {
                                 $this->setAffectedRows($table_name);
 
                                 Debug::debug($count, "Nombre de lignes");
-
 
                                 $value_sql = $sql;
                             }
@@ -1656,7 +1602,6 @@ var myChart = new Chart(ctx, {
 
                         $loop++;
                     } while ($circular && $count !== 0);
-
 
                     // archivation en fichier plat
                     //export to file
@@ -1703,7 +1648,6 @@ var myChart = new Chart(ctx, {
             ."AND `REFERENCED_TABLE_SCHEMA`='".$this->schema_to_purge."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL ";
 
-
         if (!empty($this->prefix)) {
             $sql .= "AND TABLE_NAME not like '".$this->prefix."%';";
         }
@@ -1739,7 +1683,8 @@ var myChart = new Chart(ctx, {
         $fk = array();
         foreach ($foreign_keys as $line) {
 
-            if (empty($line['constraint_schema']) || empty($line['constraint_table']) || empty($line['constraint_column']) || empty($line['referenced_schema']) || empty($line['referenced_table']) || empty($line['referenced_column'])) {
+            if (empty($line['constraint_schema']) || empty($line['constraint_table']) || empty($line['constraint_column']) || empty($line['referenced_schema']) || empty($line['referenced_table'])
+                || empty($line['referenced_column'])) {
                 throw new \Exception("PMACTRL-334 : Value empty in virtual FK");
             }
 
@@ -1782,13 +1727,9 @@ var myChart = new Chart(ctx, {
         $main_table   = $param[1];
         $order        = $param[2] ?? 'ASC';
 
-
-
-
         $this->setCacheFile();
 
         Debug::debug($foreign_keys, 'json');
-
 
         if (!file_exists($this->path_to_orderby_tmp)) {
 
@@ -1809,18 +1750,11 @@ var myChart = new Chart(ctx, {
 
             $all_childs = $this->addChild($foreign_keys, $main_table, array($main_table));
 
-
             Debug::debug($all_childs);
-
 
             $foreign_keys = $this->filterFkWithChildren($all_childs, $foreign_keys);
 
-
-
-
             $array = $foreign_keys;
-
-
 
             // test des tables qui boucle sur elle même
             $tmp2 = $array;
@@ -1899,7 +1833,6 @@ var myChart = new Chart(ctx, {
                         Debug::debug($tab2);
                         Debug::debug($level);
                         Debug::debug($array);
-
 
                         $tables = array();
                         foreach ($array as $key => $tab) {
@@ -1991,11 +1924,6 @@ var myChart = new Chart(ctx, {
 
                 $field = implode(" ", $join);
 
-
-
-
-
-
                 if ($table === "local") {
                     $db->sql_query("SET FOREIGN_KEY_CHECKS=0;");
                     Debug::debug("SET FOREIGN_KEY_CHECKS=0;");
@@ -2004,7 +1932,6 @@ var myChart = new Chart(ctx, {
 
 
                 $circular = false;
-
 
                 $loop = 0;
                 if (in_array($table, $this->fk_circulaire)) {
@@ -2035,7 +1962,6 @@ var myChart = new Chart(ctx, {
                         $sql .= " WHERE `".self::FIELD_LOOP."`=".$loop;
                     }
                     $sql .= ";";
-
 
                     Debug::sql($sql);
                     $db->sql_query($sql);
@@ -2126,7 +2052,8 @@ var myChart = new Chart(ctx, {
                 }
                 if (!$found) {
 
-                    Debug::debug(Color::getColoredString("We removed this table (Not a child of : `".$this->schema_to_purge."`.`".$this->main_table."`) : ".$table, 'yellow'));
+                    Debug::debug(Color::getColoredString("We removed this table (Not a child of : `".$this->schema_to_purge."`.`".$this->main_table."`) : ".$table,
+                            'yellow'));
                     unset($tmp2[$table]);
                     $nbfound++;
                 }
@@ -2142,8 +2069,6 @@ var myChart = new Chart(ctx, {
 
             $db = Sgbd::sql($this->link_to_purge);
 
-
-
             $primary_keys = $this->getPrimaryKey($table, $this->schema_to_purge);
 
             $max      = 0;
@@ -2155,7 +2080,6 @@ var myChart = new Chart(ctx, {
 // moyen d'enregistrer le nombre en cash au lieu de refaire une requette
                 $sql = "SELECT MAX(`".self::FIELD_LOOP."`) as max FROM `".$this->schema_delete."`.".$this->prefix.$table."";
                 $res = $db->sql_query($sql);
-
 
                 while ($ob = $db->sql_fetch_object($res)) {
                     $max = $ob->max;
@@ -2187,7 +2111,6 @@ var myChart = new Chart(ctx, {
                 }
 
                 $fields_list = implode(",", $fields);
-
 
                 //TODO : generer par batch de 50 000
                 $query = "INSERT IGNORE INTO ".$table." (".$fields_list.") VALUES ".$this->get_rows($res).";\n";
@@ -2254,7 +2177,6 @@ var myChart = new Chart(ctx, {
 // Get field information
         $fields_meta = $db->getFieldsMeta($result);
 
-
         $field_flags = array();
         for ($j = 0; $j < $fields_cnt; $j++) {
             $field_flags[$j] = $db->fieldFlags($result, $j);
@@ -2262,7 +2184,6 @@ var myChart = new Chart(ctx, {
 
         while ($row = $db->sql_fetch_array($result, MYSQLI_NUM)) {
             $values = array();
-
 
             $insert_elem = array();
 
@@ -2373,7 +2294,6 @@ var myChart = new Chart(ctx, {
         $logger->pushHandler($handler);
         $this->logger = $logger;
 
-
         Debug::parseDebug($param);
 
         /*
@@ -2385,7 +2305,7 @@ var myChart = new Chart(ctx, {
           $this->db = Sgbd::sql($name);
 
           $this->schema_to_purge = 'mydb';
-         * 
+         *
          */
     }
 
@@ -2405,13 +2325,11 @@ var myChart = new Chart(ctx, {
 
             $this->backup_dir = DATA."cleaner/".$this->id_cleaner;
 
-
             Debug::debug($this->backup_dir, "Backup directory");
 
             $files = $this->checkFileToPush($this->backup_dir);
 
             Debug::debug($files, "Files to push");
-
 
             foreach ($files as $file) {
 
@@ -2437,7 +2355,6 @@ var myChart = new Chart(ctx, {
                 $archive['archive']['size_sql']               = $stats['normal']['size'];
                 $archive['archive']['md5_compressed']         = $stats['compressed']['md5'];
                 $archive['archive']['size_compressed']        = $stats['compressed']['size'];
-
 
                 if ($storage_area->is_crypted === "1") {
                     $archive['archive']['md5_crypted']   = $stats['crypted']['md5'];
@@ -2500,7 +2417,6 @@ var myChart = new Chart(ctx, {
         $db = Sgbd::sql($this->link_to_purge);
         $db->sql_select_db($this->schema_to_purge);
 
-
         $this->skipReplication($db);
 
         $sql = "CREATE DATABASE IF NOT EXISTS `".$this->schema_delete."`;";
@@ -2508,9 +2424,7 @@ var myChart = new Chart(ctx, {
 
         Debug::checkPoint("Create database `".$this->schema_delete."`");
 
-
         $this->purge_clean_db();
-
 
         $this->setCacheFile();
 
@@ -2603,7 +2517,6 @@ var myChart = new Chart(ctx, {
                 exit;
             }
             fclose($handle);
-
 
             $user = trim(shell_exec("ps -ef | egrep '(httpd|apache2|apache)' | grep -v `whoami` | grep -v root | head -n1 | awk '{print $1}'"));
 
@@ -2732,7 +2645,7 @@ var myChart = new Chart(ctx, {
     public function getPrimaryKey($table, $database)
     {
         $db = Sgbd::sql($this->link_to_purge);
-        
+
         if (empty($this->primary_key[$database][$table])) {
 
             $sql = "SHOW INDEX FROM `".$database."`.`".$table."` WHERE `Key_name` ='PRIMARY';";
@@ -2756,7 +2669,6 @@ var myChart = new Chart(ctx, {
     public function end_loop()
     {
         $db = Sgbd::sql($this->link_to_purge);
-
 
         //Debug::showQueries();
         Debug::checkPoint("[DEBUG] Time to generate showQueries");
@@ -2853,7 +2765,6 @@ var myChart = new Chart(ctx, {
 
         $this->title = '<span class="glyphicon glyphicon-edit"></span> '.__('Edit');
 
-
         if (Basic::from(__FILE__)) {
             return $this->title;
         }
@@ -2878,7 +2789,6 @@ var myChart = new Chart(ctx, {
             $_GET['cleaner_main']['limit']                  = $ob->limit;
             $_GET['cleaner_main']['is_crypted']             = $ob->is_crypted;
 
-
             $_GET['id_mysql_server'] = $ob->id_mysql_server;
 
             $data = $this->getDatabaseByServer(array($ob->id_mysql_server));
@@ -2895,23 +2805,19 @@ var myChart = new Chart(ctx, {
 
     public function install()
     {
-        
+
     }
 
     public function uninstall()
     {
-        
+
     }
 
     public function view($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
 
-
-
-
         $this->title = '<span class="glyphicon glyphicon-eye-open"></span> '.__('View');
-
 
         if (Basic::from(__FILE__)) {
 
@@ -2920,15 +2826,10 @@ var myChart = new Chart(ctx, {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
         $sql = "SELECT *,a.database, b.name as nameserver,b.ip, b.display_name,a.id as id_cleaner_main
             FROM cleaner_main a
                 INNER JOIN mysql_server b ON a.id_mysql_server = b.id
                 WHERE a.id = '".$id_cleaner."';";
-
-
-
 
         $res = $db->sql_query($sql);
 
@@ -2958,13 +2859,11 @@ var myChart = new Chart(ctx, {
 
         $db2 = Sgbd::sql($this->link_to_purge);
 
-
         $db_origin = $db->db;
         $db2->sql_select_db($data['database']);
 
         $sql2 = "explain ".$sql;
         $res  = $db2->sql_query($sql2);
-
 
         while ($arr = $db2->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $tmp = array();
@@ -3000,7 +2899,6 @@ var myChart = new Chart(ctx, {
         $data['id_cleaner'] = $id_cleaner;
 
         $data['estimation'] = floor($data['nb_line_to_purge'] / $data['limit']) * (5 + $data['wait_time_in_sec']);
-
 
         // in case cleaner on Pmacontrol to switch back to DB of PmaControl
         $db->sql_select_db($db_origin);
@@ -3048,7 +2946,6 @@ var myChart = new Chart(ctx, {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
         $res = $db->sql_query($sql);
 
@@ -3057,11 +2954,9 @@ var myChart = new Chart(ctx, {
         $data['log']      = shell_exec("tail -n2000 ".$ob->log_file);
         $data['log_file'] = $ob->log_file;
 
-
         $this->di['js']->code_javascript("var objDiv = document.getElementById('data_log');
 objDiv.scrollTop = objDiv.scrollHeight;
 ");
-
 
         $this->set('data', $data);
     }
@@ -3099,7 +2994,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             preg_match("/\[id:\d+\]\[(\w+)\]/", $line, $output_array);
 
-
             if (!empty($output_array[1])) {
 
                 $tmp['type'] = $output_array[1];
@@ -3116,14 +3010,12 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             preg_match("/\[pid:(\d+)\](.*)/", $input_line, $output_array);
 
-
             $tmp['pid'] = $output_array[1];
             $tmp['msg'] = $output_array[2];
 
             $tmp['msg'] = ($tmp['type'] === "ALTER") ? SqlFormatter::highlight($tmp['msg']) : $tmp['msg'];
 
             $tmp['background'] = $this->setColor($tmp['pid']);
-
 
             preg_match("/by\s([\sa-zA-Z]+)\s+\(id:(\d+)\)/", $tmp['msg'], $output_array);
 
@@ -3158,9 +3050,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
     private function hexToRgb($colorName)
     {
         list($r, $g, $b) = array_map(
-            function($c) {
-            return hexdec(str_pad($c, 2, $c));
-        }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
+            function ($c) {
+                return hexdec(str_pad($c, 2, $c));
+            }, str_split(ltrim($colorName, '#'), strlen($colorName) > 4 ? 2 : 1)
         );
 
         return array($r, $g, $b);
@@ -3237,7 +3129,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".ser";
     }
     /*
-     * 
+     *
      * table comportant les FKs  fils => père
      * $this->table_filter   => hitorique des tables deja parcouru (pour eviter les boucles circulaires)
      * $childs  => lite de tous les enfants qui découle de la première table
@@ -3298,11 +3190,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
         ksort($fks);
         $to_drop = $this->detectCircularDefinition(array());
 
-
         //Debug::debug($fks);
         Debug::debug($to_drop);
-
-
 
         foreach ($to_drop as $table => $arr) {
 
@@ -3312,7 +3201,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                 if (in_array($table, $fks[$table_ref])) {
                     $fliped = array_flip($fks[$table_ref]);
-
 
                     unset($fks[$table_ref][$fliped[$table]]);
                     echo "DELETE $table -> $table_ref \n";
@@ -3334,7 +3222,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $id_mysql_server = $param[0];
         $database        = $param[1];
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -3375,7 +3262,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             return true;
         } else {
-            Debug::debug(Color::getColoredString("SET @@skip_replication = ON; in not spupported ! be carrfull if you want an history server as Slave !", "yellow"));
+            Debug::debug(Color::getColoredString("SET @@skip_replication = ON; in not spupported ! be carrfull if you want an history server as Slave !",
+                    "yellow"));
             return false;
         }
     }
@@ -3398,16 +3286,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $main_table   = $param[1];
         $order        = $param[2] ?? 'ASC';
 
-
-
-
         $this->setCacheFile();
 
-
         Debug::debug(count($foreign_keys), 'origin');
-
-
-
 
         if (!file_exists($this->path_to_orderby_tmp)) {
 
@@ -3420,37 +3301,24 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             $tmp = $foreign_keys;
 
-
             //remove all tables with no father from $this->main_table
             $foreign_keys = $this->removeTableNotImpacted($foreign_keys);
-
 
             ksort($foreign_keys);
             Debug::debug($foreign_keys);
 
             Debug::debug(count($foreign_keys), 'after removeTableNotImpacted');
 
-
-
-
-
-
             $level   = array();
             $level[] = $this->table_to_purge;
-
-
 
             // le but est de récupérer tous les enfants de la table principale
             $all_childs = $this->addChild($foreign_keys, $main_table, array($main_table));
 
             sort($all_childs);
 
-
-
             Debug::debug($all_childs, "ALL CHILDS");
             $foreign_keys = $this->filterFkWithChildren($all_childs, $foreign_keys);
-
-
 
             Debug::debug(count($foreign_keys), 'after filterFkWithChildren');
             /*             * ** */
@@ -3458,7 +3326,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             //exit;
             $array = $foreign_keys;
-
 
             // test des tables qui boucle sur elle même
             $tmp2 = $array;
@@ -3538,7 +3405,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
                         Debug::debug($level);
                         Debug::debug($array);
 
-
                         $tables = array();
                         foreach ($array as $key => $tab) {
                             $tables[] = $key;
@@ -3554,7 +3420,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                         Debug::debug($level, "LEVEL");
                         Debug::debug($tables);
-
 
                         //$this->getCircular();
                         //echo implode("','", $tables);
@@ -3611,15 +3476,13 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
     public function dropFk($child, $parent)
     {
-        
+
     }
 
     public function detectCircularDefinition($param)
     {
 
         Debug::parseDebug($param);
-
-
 
         /*
           $id_mysql_server = $param[0] ?? ;
@@ -3629,31 +3492,26 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $db = Sgbd::sql($this->link_to_purge);
 
-
-        $sql = "SELECT a.table_name, a.referenced_table_name,a.column_name, a.referenced_column_name 
-                FROM `information_schema`.`KEY_COLUMN_USAGE` a 
-                INNER JOIN `information_schema`.`KEY_COLUMN_USAGE` b ON a.table_name = b.referenced_table_name AND a.REFERENCED_TABLE_NAME = b.TABLE_NAME 
-                WHERE a.REFERENCED_TABLE_SCHEMA = '".$this->schema_to_purge."' and a.table_name != a.referenced_table_name 
+        $sql = "SELECT a.table_name, a.referenced_table_name,a.column_name, a.referenced_column_name
+                FROM `information_schema`.`KEY_COLUMN_USAGE` a
+                INNER JOIN `information_schema`.`KEY_COLUMN_USAGE` b ON a.table_name = b.referenced_table_name AND a.REFERENCED_TABLE_NAME = b.TABLE_NAME
+                WHERE a.REFERENCED_TABLE_SCHEMA = '".$this->schema_to_purge."' and a.table_name != a.referenced_table_name
                 GROUP BY a.table_name, a.referenced_table_name;";
 
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
-
-
         $fks = array();
         $all = array();
 
         $order = array();
-
 
         $i  = 0;
         while ($ob = $db->sql_fetch_object($res)) {
 
             $sql2 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NULL";
             $sql3 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NOT NULL";
-
 
             $res2 = $db->sql_query($sql2);
             $res3 = $db->sql_query($sql3);
@@ -3664,7 +3522,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                 $is_null     = $ob2->cpt;
                 $is_not_null = $ob3->cpt;
-
 
                 //echo $ob->table_name." => ".$ob->referenced_table_name." (".$is_not_null." / ".($is_null + $is_not_null).") ".round($is_not_null / ($is_null + $is_not_null) * 100, 2)."%\n";
 
@@ -3681,7 +3538,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
                 $percent        = round($is_not_null / ($is_null + $is_not_null) * 100, 2);
                 $fks['percent'] = $percent;
 
-
                 $all[$fks['TABLE_NAME']][$fks['REFERENCED_TABLE_NAME']] = $fks;
             }
         }
@@ -3691,12 +3547,11 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $table->addHeader(array('TABLE_NAME.COLUMN_NAME => REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME', 'Feed', 'Taux d\'utilisation', 'Vs', 'Orphans', 'Choice'));
 
-
         $to_drop = array();
 
         foreach ($all as $table_name => $keys) {
             foreach ($keys as $referenced_table => $val) {
-                $drop_fk = "";
+                $drop_fk          = "";
                 $referenced_table = $referenced_table;
                 if ($val['percent'] < $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent']) {
                     $drop_fk = "DROP FK";
@@ -3704,8 +3559,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
                     $to_drop[$table_name][] = $val['REFERENCED_TABLE_NAME'];
                 }
 
-                $table->addLine(array($table_name . '.' . $val['column_name'] . ' => ' . $val['REFERENCED_TABLE_NAME'] . '.' . $val['REFERENCED_COLUMN_NAME'],
-                    $val['percent'] . '%', "(" . $val['is_not_null'] . "/" . $val['total'] . ")", $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent'] . "%", $val['is_null'], $drop_fk));
+                $table->addLine(array($table_name.'.'.$val['column_name'].' => '.$val['REFERENCED_TABLE_NAME'].'.'.$val['REFERENCED_COLUMN_NAME'],
+                    $val['percent'].'%', "(".$val['is_not_null']."/".$val['total'].")", $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent']."%", $val['is_null'],
+                    $drop_fk));
             }
         }
 
@@ -3740,19 +3596,16 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $id_mysql_server = 108;
         $database        = 'test';
 
-
         $dblink = Sgbd::sql(DB_DEFAULT);
         $name   = Mysql::getDbLink($dblink, $id_mysql_server);
 
         $db = Sgbd::sql($name);
         $db->sql_select_db('test');
 
-
         $tables = array('batiment', 'equipement', 'escalier', 'etage', 'local', 'site');
 
         $tables2  = $tables;
         $doublons = array();
-
 
         $k = 0;
         foreach ($tables as $table) {
@@ -3768,7 +3621,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                 $way1 = $this->getPath($table, $table2, $db);
                 $way2 = $this->getPath($table2, $table, $db);
-
 
                 if (count($way1) > 0 && count($way2) > 0) {
 
@@ -3797,7 +3649,6 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
                     echo ' '."\n";
 
-
                     $this->testOneToOne($way1);
                     $this->testOneToOne($way2);
                 }
@@ -3819,25 +3670,24 @@ objDiv.scrollTop = objDiv.scrollHeight;
     }
     /*
      * CTE permetant de tester tous les chemin possible entre 2 tables
-     * 
-     * 
+     *
+     *
      */
 
     public function getPath($table, $table2, $db)
     {
         $sql = "WITH RECURSIVE paths (cur_from, cur_path, cur_dest) AS (
- SELECT '".$table."',`table`, `table` FROM `path` WHERE `table`='".$table."' 
+ SELECT '".$table."',`table`, `table` FROM `path` WHERE `table`='".$table."'
 UNION
- SELECT '".$table."', CONCAT(paths.cur_path, ',', `path`.ref_table), `path`.ref_table 
-  FROM paths, `path` 
-  WHERE paths.cur_dest = `path`.`table` AND 
+ SELECT '".$table."', CONCAT(paths.cur_path, ',', `path`.ref_table), `path`.ref_table
+  FROM paths, `path`
+  WHERE paths.cur_dest = `path`.`table` AND
   NOT FIND_IN_SET(`path`.ref_table, paths.cur_path)
-) 
+)
 SELECT * FROM paths where cur_dest = '".$table2."';";
 
         //Debug::sql($sql);
         $res = $db->sql_query($sql);
-
 
         $rows = array();
         while ($ob   = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -3868,7 +3718,7 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
     public function testFk($table_a, $table_b)
     {
 
-        $sql = "SELECT table_name, column_name, referenced_table_name, referenced_column_name  FROM `information_schema`.`KEY_COLUMN_USAGE` 
+        $sql = "SELECT table_name, column_name, referenced_table_name, referenced_column_name  FROM `information_schema`.`KEY_COLUMN_USAGE`
             WHERE TABLE_NAME ='".$table_a."'
             AND REFERENCED_TABLE_NAME = '".$table_b."' AND TABLE_SCHEMA='".$this->schema_to_purge."' AND REFERENCED_TABLE_SCHEMA='".$this->schema_to_purge."' ";
 
@@ -3881,10 +3731,8 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         while ($ob = $db->sql_fetch_object($res)) {
             $i++;
 
-
             $sql2 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NULL";
             $sql3 = "SELECT count(1) as cpt FROM `".$this->schema_to_purge."`.`".$ob->table_name."` WHERE  `".$ob->column_name."` IS NOT NULL";
-
 
             $res2 = $db->sql_query($sql2);
             $res3 = $db->sql_query($sql3);
@@ -3896,11 +3744,8 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
                 $is_null     = $ob2->cpt;
                 $is_not_null = $ob3->cpt;
 
-
-                $this->testfk[] = $ob->table_name.".".$ob->column_name."\t=>\t".$ob->referenced_table_name.".".$ob->referenced_column_name."\t(".$is_not_null."\t/\t".($is_null + $is_not_null).") ".round($is_not_null
-                        / ($is_null + $is_not_null) * 100, 2)."%\t(orphans ".($is_null).")\n";
-
-
+                $this->testfk[] = $ob->table_name.".".$ob->column_name."\t=>\t".$ob->referenced_table_name.".".$ob->referenced_column_name."\t(".$is_not_null."\t/\t".($is_null
+                    + $is_not_null).") ".round($is_not_null / ($is_null + $is_not_null) * 100, 2)."%\t(orphans ".($is_null).")\n";
 
                 /*
                   $fks['TABLE_NAME']             = $ob->table_name;
@@ -3916,7 +3761,7 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
 
 
                   $all[$fks['TABLE_NAME']][$fks['REFERENCED_TABLE_NAME']] = $fks;
-                 * 
+                 *
                  */
             }
         }
@@ -3928,8 +3773,6 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
 
         $table = new Table(2);
 
-
-
         $table->addHeader(array('Table', 'Count'));
 
         $db = Sgbd::sql($this->link_to_purge);
@@ -3937,8 +3780,6 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         $sql = "select table_name, table_rows from information_schema.tables where table_schema ='".$this->schema_delete."'  order by table_name;";
 
         $res = $db->sql_query($sql);
-
-
 
         $tables = array();
         while ($ob     = $db->sql_fetch_object($res)) {
@@ -3962,6 +3803,6 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
 
     public function feedCircularFk($table)
     {
-        
+
     }
 }

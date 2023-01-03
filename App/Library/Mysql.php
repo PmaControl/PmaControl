@@ -100,10 +100,11 @@ class Mysql
             $string .= "database=".$ob->database."\n";
 
             $config .= $string."\n\n";
-
-//Debug::debug($string);
         }
 
+        $proxysql = self::generateProxySQLConfig();
+
+        $config .= $proxysql;
 
         if ($config != $delta) {
 
@@ -860,13 +861,12 @@ END IF;";
         }
     }
 
-
-
-    static public function getRoles($param) {
+    static public function getRoles($param)
+    {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $db = Mysql::getDbLink($id_mysql_server);
+        $db              = Mysql::getDbLink($id_mysql_server);
 
         //$sql = "SELECT `ROLE_NAME` as role_name from `information_schema`.`APPLICABLE_ROLES`;";
         $sql = "SELECT `user` as role_name from `mysql`.`user` where is_role='Y';";
@@ -875,7 +875,7 @@ END IF;";
         $res = $db->sql_query($sql);
 
         $data = array();
-        while ($ob = $db->sql_fetch_object($res)) {
+        while ($ob   = $db->sql_fetch_object($res)) {
 
 
             Debug::debug($ob);
@@ -885,12 +885,13 @@ END IF;";
         return $data;
     }
 
-    static public function getCreateRoles($param) {
+    static public function getCreateRoles($param)
+    {
 
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
-        $db = Mysql::getDbLink($id_mysql_server);
+        $db              = Mysql::getDbLink($id_mysql_server);
 
         $roles = self::getRoles(array($id_mysql_server));
 
@@ -901,11 +902,11 @@ END IF;";
         foreach ($roles as $role) {
 
 
-		$export[] = "DROP ROLE IF EXISTS '".$role."';";
-		$export[] = "CREATE OR REPLACE ROLE '".$role."';";
+            $export[] = "DROP ROLE IF EXISTS '".$role."';";
+            $export[] = "CREATE OR REPLACE ROLE '".$role."';";
 
-            $sql = "SHOW GRANTS FOR `" . $role . "`;";
-	    Debug::sql($sql);
+            $sql = "SHOW GRANTS FOR `".$role."`;";
+            Debug::sql($sql);
             $res = $db->sql_query($sql);
 
             while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
@@ -913,15 +914,14 @@ END IF;";
                 $output_array = array();
                 preg_match_all('/\((.*)\)/', $arr[0], $output_array);
 
-
-		Debug::debug($output_array);
+                Debug::debug($output_array);
 
                 if (!empty($output_array[1][0])) {
                     Debug::debug($output_array[1][0]);
 
-                    $out = '(`' . str_replace(', ', '`, `', $output_array[1][0]) . '`)';
+                    $out = '(`'.str_replace(', ', '`, `', $output_array[1][0]).'`)';
 
-			Debug::debug($out, 'out');
+                    Debug::debug($out, 'out');
 
                     $escape = str_replace($output_array[0][0], $out, $arr[0]);
                 } else {
@@ -931,8 +931,73 @@ END IF;";
                 $export[] = $escape.";";
             }
         }
-	//die();
+        //die();
         return $export;
     }
 
+    static public function getSlave($param)
+    {
+        $id_mysql_server = $param[0];
+
+        $db = self::getDbLink($id_mysql_server);
+
+        $sql = "SHOW SLAVE HOSTS";
+        $res = $db->sql_query($sql);
+
+        $server_id_ref = array();
+        while ($ob            = $db->sql_fetch_object($res)) {
+
+            $server_id_ref[] = $ob->Server_id;
+        }
+
+        $data              = array();
+        $data['server_id'] = $server_id_ref;
+
+        $all_id = Extraction::display(array("variables::server_id"));
+
+        foreach ($all_id as $servers) {
+            foreach ($servers as $slave) {
+                $server_id_to_compare[$slave['server_id']] = $slave['id_mysql_server'];
+
+                if (in_array($slave['server_id'], $server_id_ref)) {
+                    $data['slave'][] = $slave['id_mysql_server'];
+                }
+            }
+        }
+
+        $data['candidate'] = $server_id_to_compare;
+
+        Debug::debug($data);
+
+        if (count($data['slave']) !== count($data['server_id'])) {
+            throw new  \Exception('PMACTRL-249 impossible to match server_id with id_mysql_server');
+        }
+
+        return $data;
+    }
+
+    static public function generateProxySQLConfig()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM proxysql_server a ORDER BY id";
+        $res = $db->sql_query($sql);
+
+        $config = "";
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $string = "[proxysql_".$ob->id."]\n";
+            $string .= "driver=mysql\n";
+            $string .= "hostname=".$ob->hostname."\n";
+            $string .= "port=".$ob->port."\n";
+            $string .= "user=".$ob->login."\n";
+            $string .= "password='".Crypt::encrypt($ob->password, CRYPT_KEY)."'\n";
+            $string .= "crypted=1\n";
+            $string .= "database=main\n";
+
+            $config .= $string."\n\n";
+        }
+
+        return $config;
+    }
 }
