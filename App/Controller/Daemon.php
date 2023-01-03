@@ -14,7 +14,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Daemon extends Controller
 {
-    private $daemon = array(7, 9, 11, 12, 5);
+    private $daemon = array(7, 9, 11, 12, 5, 13);
 
     public function index()
     {
@@ -33,6 +33,39 @@ class Daemon extends Controller
                 $arr['nb_msg'] = "N/A";
             }
             $data['daemon'][] = $arr;
+        }
+
+        $data['worker'] = array();
+
+        $sql2 = "SELECT b.*,a.name,a.worker_path  FROM daemon_main a
+            INNER JOIN daemon_worker b ON a.id = b.id_daemon_main
+            ORDER BY a.id, b.pid";
+        $res2 = $db->sql_query($sql2);
+        while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+
+
+            $pid_file        = TMP."lock/".$arr['worker_path']."/".$arr['pid'].".pid";
+            $arr['pid_file'] = $pid_file;
+
+            if (file_exists($pid_file)) {
+
+
+                $arr['id_proxysql'] = file_get_contents($pid_file);
+            } else {
+                $arr['id_proxysql'] = "...";
+            }
+
+
+
+            $log_file = TMP."log/worker_".$arr['id_daemon_main']."_".$arr['id_daemon_main'].".log";
+            if (file_exists($log_file)) {
+                $arr['log']      = $log_file;
+                $arr['filesize'] = filesize($log_file);
+            } else {
+                $arr['log']      = '';
+                $arr['filesize'] = 0;
+            }
+            $data['worker'][] = $arr;
         }
 
         $this->set('data', $data);
@@ -148,7 +181,7 @@ class Daemon extends Controller
     {
         Debug::parseDebug($param);
 
-        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh");
+        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh", TMP.'lock/worker_proxysql');
 
         Debug::debug($directories);
 

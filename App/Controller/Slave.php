@@ -8,7 +8,9 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
+use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Chiffrement;
 
 class Slave extends Controller
 {
@@ -289,9 +291,9 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             }
         }
 
-        //gtid
-        // https://mariadb.com/fr/node/493
-        // https://mariadb.com/kb/en/library/gtid/
+//gtid
+// https://mariadb.com/fr/node/493
+// https://mariadb.com/kb/en/library/gtid/
 
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
@@ -451,14 +453,201 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function setSlave($param)
     {
+
+        //add param force
+        Debug::parseDebug($param);
+
+        Debug::debug($param);
+
         $id_mysql_server__source = $param[0];
         $id_mysql_server__target = $param[1];
-        $databases               = $param[1];
+        $databases               = $param[2];
 
-        $database = explode(',', $databases);
+        $databases = explode(',', $databases);
 
+        Debug::debug($databases, "database");
+
+        //db source add account for replication
+        $cmd2 = "openssl rand -base64 32";
+        Debug::debug($cmd2);
+
+        $slave_password = trim(shell_exec($cmd2));
+        $slave_user     = "replication";
+
+        $db_source = Mysql::getDbLink($id_mysql_server__source);
+        $db_source->sql_query("GRANT REPLICATION SLAVE, BINLOG MONITOR ON *.* TO `".$slave_user."`@`%` IDENTIFIED BY '".$slave_password."'");
+        $db_source->sql_close();
+        //end create user replication
+
+
+        $db        = Sgbd::sql(DB_DEFAULT);
+        $source    = $this->getInfoServer($id_mysql_server__source);
+        $db_passwd = Chiffrement::decrypt($source->passwd);
+        $db->sql_close();
+
+        foreach ($databases as $database) {
+
+            $dir = self::BACKUP_TEMP.$source->display_name."/".$database;
+            shell_exec("mkdir -p ".$dir);
+            $cmd = "mydumper -c -ERG --trx-consistency-only -h ".$source->ip." -u ".$source->login." -p ".$db_passwd." -B ".$database." -o '".$dir."'";
+            Debug::debug($cmd, "Mydumper");
+
+            sleep(1);
+            shell_exec($cmd);
+
+            //$pid_array[] = $this->runInBackground($cmd, );
+        }
+
+        sleep(1);
+
+        $slaves = Mysql::getSlave(array($id_mysql_server__target));
+
+        $servers = array_merge($slaves['slave'], array($id_mysql_server__target));
+
+        $pid_array = array();
+        foreach ($servers as $server) {
+
+            $target = $this->getInfoServer($server);
+
+            $db_passwd = Chiffrement::decrypt($target->passwd);
+
+            foreach ($databases as $database) {
+
+
+                $dir = self::BACKUP_TEMP.$source->display_name."/".$database;
+
+                $cmd = "myloader -h ".$target->ip." -u ".$target->login." -p ".$db_passwd." -o -d '".$dir."'";
+                Debug::debug($cmd);
+
+                $pid_array[] = $this->runInBackground($cmd, "/tmp/".$target->ip."-".$database.'.log');
+            }
+
+            Debug::debug("------");
+        }
+
+
+        Debug::debug($pid_array, 'pid');
+
+        do {
+
+            sleep(1);
+
+            $finished = true;
+            foreach ($pid_array as $pid) {
+                if ($this->isProcessRunning($pid)) {
+                    $finished = false;
+                    Debug($pid, "finished");
+                }
+            }
+        } while ($finished);
+
+        Debug::debug("All myloader finished");
+
+        $db_target = Mysql::getDbLink($id_mysql_server__target);
+
+        $sql = "STOP SLAVE;";
+        Debug::sql($sql);
+        $db_target->sql_query($sql);
+        $sql = "RESET SLAVE ALL;";
+        Debug::sql($sql);
+        $db_target->sql_query($sql);
+
+        $i = 0;
+        foreach ($servers as $server) {
+
+            $i++;
+            // $dir_backup = self::BACKUP_TEMP.$source->display_name." / ".$database.";
+            $dir = self::BACKUP_TEMP.$source->display_name."/".$database;
+            Debug::debug($dir_backup, "backup_dir");
+
+            $master_info = $this->getMasterInfo(array($dir.'/metadata'));
+
+            if ($i === 1) {
+
+                $sql = "CHANGE MASTER TO MASTER_HOST='".$source->ip."',MASTER_USER='".$slave_user."', MASTER_PASSWORD='".$slave_password."', MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+            } else {
+                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+            }
+
+            Debug::sql($sql);
+            $db_target->sql_query($sql);
+        }
+
+        $sql = "STOP SLAVE;";
+        $db_target->sql_query($sql);
+
+        $sql = "START SLAVE;";
+        $db_target->sql_query($sql);
+
+        // set up replication
+    }
+
+    private function getInfoServer($id_mysql_server)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        //mydumper
+        $sql = "SELECT * FROM mysql_server where id=".$id_mysql_server."";
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        $data = false;
+        while ($ob   = $db->sql_fetch_object($res)) {
+            $data = $ob;
+        }
+
+        return $data;
+    }
+
+    function runInBackground($command, $log, $priority = 0)
+    {
+        if ($priority) {
+            $PID = trim(shell_exec("nohup nice -n $priority $command > $log 2>&1 & echo $!"));
+        } else {
+            $PID = trim(shell_exec("nohup $command > $log 2>&1 & echo $!"));
+        }
+
+
+        return($PID);
+    }
+
+    function isProcessRunning($PID)
+    {
+
+        if ($PID == 0) {
+            return false;
+        }
+        if ($PID == "") {
+            return false;
+        } exec("ps -p $PID 2>&1 ", $state);
+
+        return ( count($state) >= 2);
+    }
+
+    // /srv/backup/export-20220927-162928
+    function getMasterInfo($param)
+    {
+        Debug::parseDebug($param);
+
+        $file_metadata = $param[0];
+
+        $metadata = file_get_contents($file_metadata);
+
+        $output_array = array();
+        preg_match_all('/SHOW MASTER STATUS\:\s+Log:\s(\S+)\s+Pos:\s(\S+)/', $metadata, $output_array);
+
+        $data = array();
+
+        if (!empty($output_array[1][0])) {
+            $data['master_log_file'] = $output_array[1][0];
+        }
+
+        if (!empty($output_array[2][0])) {
+            $data['master_log_pos'] = $output_array[2][0];
+        }
+
+        Debug::debug($data, "MASTER STATUS");
+
+        return $data;
     }
 }

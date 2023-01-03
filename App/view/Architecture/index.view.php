@@ -1,5 +1,4 @@
 <?php
-
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -22,12 +21,11 @@ foreach ($data['graphs'] as $graph) {
 
 echo '<div style="clear:both"></div>';
 
-
 if (!empty($data['graphs'])
 ) {
 
     if (!empty($date['date'])) {
         sort($date['date']);
-        echo "Date de rafraichissement : " . $date['date'][0];
+        echo __("Date de rafraichissement :", "fr")." ".$date['date'][0];
     }
 }

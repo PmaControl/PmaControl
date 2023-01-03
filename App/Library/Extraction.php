@@ -366,4 +366,14 @@ class Extraction
 
         return $res;
     }
+
+    static public function display2($var = array(), $server = array(), $date = "", $range = false, $graph = false)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        //return(array());
+
+
+        $res = self::extract($var, $server, $date, $range, $graph);
+    }
 }

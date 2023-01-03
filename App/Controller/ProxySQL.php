@@ -245,8 +245,16 @@ class ProxySQL extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM ProxySQL;";
+        $sql = "SELECT * FROM proxysql_server;";
 
         $res = $db->sql_query($sql);
+
+        $data = array();
+        while ($arr  = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['proxysql'][] = $arr;
+        }
+
+
+        $this->set('data', $data);
     }
 }
