@@ -534,7 +534,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
             $finished = true;
             foreach ($pid_array as $pid) {
-                if ($this->isProcessRunning($pid)) {
+                if ($this->isProcessRunning($pid) === false) {
                     $finished = false;
                     Debug($pid, "finished");
                 }
@@ -574,9 +574,11 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
         $sql = "STOP SLAVE;";
+        Debug::sql($sql);
         $db_target->sql_query($sql);
 
         $sql = "START SLAVE;";
+        Debug::sql($sql);
         $db_target->sql_query($sql);
 
         // set up replication
@@ -586,7 +588,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server where id=".$id_mysql_server."";
+        $sql = "SELECT * FROM mysql_server where id=".$id_mysql_server.";";
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -619,12 +621,24 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
         if ($PID == "") {
             return false;
-        } exec("ps -p $PID 2>&1 ", $state);
+        }
 
+        $cmd = "ps -p $PID 2>&1 ";
+        Debug::debug($cmd);
+        exec($cmd, $state);
+
+        Debug::debug($state, "STATE");
+        Debug::debug(count($state), "STATE");
+        var_dump(count($state) >= 2);
         return ( count($state) >= 2);
     }
 
     // /srv/backup/export-20220927-162928
+    /*
+     * lis les paramètre du fichier metadata (master info)
+     *
+     *
+     */
     function getMasterInfo($param)
     {
         Debug::parseDebug($param);

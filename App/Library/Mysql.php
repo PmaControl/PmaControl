@@ -955,6 +955,8 @@ END IF;";
 
         $all_id = Extraction::display(array("variables::server_id"));
 
+        $data['slave'] = array();
+
         foreach ($all_id as $servers) {
             foreach ($servers as $slave) {
                 $server_id_to_compare[$slave['server_id']] = $slave['id_mysql_server'];
