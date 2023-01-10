@@ -257,4 +257,19 @@ class ProxySQL extends Controller
 
         $this->set('data', $data);
     }
+
+    public function createTable($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_proxysql_server = $param[0];
+
+        $sql = "SHOW TABLES like 'main%';";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+        }
+    }
 }
