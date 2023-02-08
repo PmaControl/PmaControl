@@ -855,7 +855,7 @@ class Dot2 extends Controller
         foreach ($data['database'] as $id_mysql_server => $elems) {
             foreach ($elems as $database) {
 
-                debug($database);
+                Debug::debug($database);
 
                 if (empty($database['binlog_do_db'])) {
                     $database['binlog_do_db'] = '';
