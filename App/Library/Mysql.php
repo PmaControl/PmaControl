@@ -950,8 +950,9 @@ END IF;";
             $server_id_ref[] = $ob->Server_id;
         }
 
-        $data              = array();
-        $data['server_id'] = $server_id_ref;
+        $data                    = array();
+        $data['server_id']       = $server_id_ref;
+        $data['id_mysql_server'] = array();
 
         $all_id = Extraction::display(array("variables::server_id"));
 
@@ -960,6 +961,7 @@ END IF;";
         foreach ($all_id as $servers) {
             foreach ($servers as $slave) {
                 $server_id_to_compare[$slave['server_id']] = $slave['id_mysql_server'];
+                $data['id_mysql_server'][]                 = $slave['id_mysql_server'];
 
                 if (in_array($slave['server_id'], $server_id_ref)) {
                     $data['slave'][] = $slave['id_mysql_server'];

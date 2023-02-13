@@ -3309,6 +3309,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             Debug::debug(count($foreign_keys), 'after removeTableNotImpacted');
 
+            Debug::debug($this->table_to_purge);
+
             $level   = array();
             $level[] = $this->table_to_purge;
 

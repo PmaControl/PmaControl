@@ -664,4 +664,52 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         return $data;
     }
+
+    function switchOver($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server__old_master = $param[0];
+        $id_mysql_server__new_master = $param[1];
+
+        $slaves_old_master = Mysql::getSlave(array($id_mysql_server__old_master));
+        $slaves_new_master = Mysql::getSlave(array($id_mysql_server__new_master));
+
+        if (!in_array($id_mysql_server__new_master, $slaves_old_master['id_mysql_server'])) {
+            throw new \Exception("Cannot find the new master in salve of old one");
+        }
+
+        $old_master = getDbLink($id_mysql_server__old_master);
+        $new_master = getDbLink($id_mysql_server__new_master);
+
+        $sql = "SHOW MASTER STATUS";
+        Debug::debug($sql);
+
+        $res = $new_master->sql_query($sql);
+
+        while ($arr = $new_master->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $master_log_file = $arr['File'];
+            $master_log_pos  = $arr['Position'];
+        }
+
+        $name = "gcp-prod-oos-sql-001-mariadb-g04-003.gcp.dlns.io";
+
+        $output_array = array();
+        preg_match('/(.*)-g([0-9]{2})\-([0-9]{3})/', $name, $output_array);
+
+        if (empty($output_array[1])) {
+            throw new \Exception("Impossible to find name");
+        }
+
+        if (empty($output_array[2])) {
+            throw new \Exception("number of clsuter");
+        }
+        $connection_name = $output_array[1].'g'.$output_array[2];
+
+        $sql2 = "CHANGE MASTER '' TO MASTER_HOST='', MASTER_USER='', MASTER_PASSWORD=''";
+
+        $sql3 = "CHANGE MASTER '' TO MASTER_LOG_FILE='".$master_log_file."', MASTER_LOG_POS='.$master_log_pos.'";
+
+        //test if old_master is on proxysql
+    }
 }
