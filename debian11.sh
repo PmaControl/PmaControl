@@ -15,6 +15,7 @@ apt install -y git
 apt install -y tig
 apt install -y curl
 apt-get install -y net-tools
+apt install -y dnsutils
 
 cd /tmp
 git clone https://github.com/PmaControl/Toolkit.git
