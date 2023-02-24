@@ -18,6 +18,9 @@ class ProxySQL extends Controller
     use \App\Library\Filter;
     var $clip = 0;
 
+    //var $database = array('main', )
+    //var $exclude_table = array('reset');
+
     public function main()
     {
 
