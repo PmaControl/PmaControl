@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.7.5-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.7.5-MariaDB-1:10.7.5+maria~ubu2004-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -38,7 +38,7 @@ CREATE TABLE `geolocalisation_city` (
   KEY `id_geolocalisation_country` (`id_geolocalisation_country`),
   KEY `libelle` (`libelle`),
   CONSTRAINT `geolocalisation_city_ibfk_1` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162508,7 +162508,7 @@ CREATE TABLE `geolocalisation_continent` (
   `iso` char(2) NOT NULL,
   `name` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162555,7 +162555,7 @@ CREATE TABLE `geolocalisation_country` (
   UNIQUE KEY `iso` (`iso`),
   KEY `id_geolocalisation_continent` (`id_geolocalisation_continent`),
   CONSTRAINT `geolocalisation_country_ibfk_1` FOREIGN KEY (`id_geolocalisation_continent`) REFERENCES `geolocalisation_continent` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162835,7 +162835,7 @@ CREATE TABLE `translation_main` (
   `line_found` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`destination`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162857,11 +162857,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.7.5-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.7.5-MariaDB-1:10.7.5+maria~ubu2004-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162891,7 +162891,7 @@ CREATE TABLE `architecture_legend` (
   `type` varchar(20) NOT NULL,
   `condition` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162944,7 +162944,7 @@ CREATE TABLE `backup_type` (
   `libelle` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162981,16 +162981,15 @@ CREATE TABLE `daemon_main` (
   `method` varchar(64) NOT NULL,
   `params` varchar(255) NOT NULL,
   `debug` int(11) NOT NULL,
-  `queue_number` int(11) NOT NULL DEFAULT 0,
-  `tube` varchar(32) NOT NULL DEFAULT '',
+  `queue_number` int(11) NOT NULL,
+  `tube` varchar(32) NOT NULL,
   `queue_key` int(11) NOT NULL,
-  `worker_command` varchar(255) NOT NULL DEFAULT '',
-  `worker_param` varchar(255) NOT NULL DEFAULT '' COMMENT 'coma separated in array',
+  `worker_command` varchar(255) NOT NULL,
+  `worker_param` varchar(255) NOT NULL COMMENT 'coma separated in array',
   `worker_name` varchar(32) NOT NULL,
-  `worker_path` varchar(30) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162999,14 +162998,13 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',3873,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',3880,64,'log/daemon_7.log',5,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',3892,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',3904,64,'log/daemon_11.log',30,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',3917,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',3925,1,'log/daemon_13.log',10,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',186496,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',186437,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',0,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',186462,64,'log/daemon_11.log',5,2,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',186476,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163025,7 +163023,7 @@ CREATE TABLE `database_size` (
   `color` varchar(20) NOT NULL,
   `background` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163058,7 +163056,7 @@ CREATE TABLE `environment` (
   `letter` char(1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163100,7 +163098,7 @@ CREATE TABLE `export_option` (
   `splited_fields` varchar(255) NOT NULL,
   `sql` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163135,8 +163133,8 @@ DROP TABLE IF EXISTS `group`;
 CREATE TABLE `group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_parent` int(11) NOT NULL,
-  `name` varchar(50) DEFAULT NULL,
-  `description` text DEFAULT NULL,
+  `name` varchar(50) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -163166,9 +163164,9 @@ DROP TABLE IF EXISTS `history_etat`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_etat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `libelle` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `libelle` varchar(50) CHARACTER SET utf8mb4 NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163201,7 +163199,7 @@ CREATE TABLE `home_box` (
   `button_url` varchar(250) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `class` (`class`,`method`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163240,7 +163238,7 @@ CREATE TABLE `menu` (
   `level` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `class` (`class`,`method`,`bg`,`bd`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163249,96 +163247,94 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,219,220,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,221,222,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,223,224,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,174,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (95,92,4,25,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,213,214,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,215,216,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,217,218,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,170,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (95,92,4,23,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
 INSERT INTO `menu` VALUES (98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
 INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
 INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
 INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
-INSERT INTO `menu` VALUES (102,92,26,37,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
-INSERT INTO `menu` VALUES (103,92,38,77,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
-INSERT INTO `menu` VALUES (104,103,39,40,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
-INSERT INTO `menu` VALUES (105,103,41,56,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
-INSERT INTO `menu` VALUES (108,92,80,103,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
-INSERT INTO `menu` VALUES (109,92,104,109,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
-INSERT INTO `menu` VALUES (110,109,105,106,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
-INSERT INTO `menu` VALUES (111,109,107,108,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
-INSERT INTO `menu` VALUES (112,103,57,58,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,110,153,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
-INSERT INTO `menu` VALUES (114,108,81,90,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
-INSERT INTO `menu` VALUES (115,108,91,98,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,154,163,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,155,156,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,157,158,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,159,160,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,161,162,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
-INSERT INTO `menu` VALUES (121,113,111,112,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
-INSERT INTO `menu` VALUES (122,113,113,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
-INSERT INTO `menu` VALUES (123,113,115,118,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
-INSERT INTO `menu` VALUES (124,113,119,122,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
-INSERT INTO `menu` VALUES (125,113,123,124,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
-INSERT INTO `menu` VALUES (126,113,125,130,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
-INSERT INTO `menu` VALUES (127,103,59,60,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
-INSERT INTO `menu` VALUES (128,103,61,62,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
+INSERT INTO `menu` VALUES (102,92,24,33,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,34,73,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (104,103,35,36,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
+INSERT INTO `menu` VALUES (105,103,37,52,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,76,99,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,100,105,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,101,102,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,103,104,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (112,103,53,54,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
+INSERT INTO `menu` VALUES (113,92,106,149,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,77,86,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,87,94,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,150,159,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,151,152,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,153,154,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,155,156,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,157,158,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,107,108,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,109,110,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,111,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,115,118,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,119,120,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,121,126,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (127,103,55,56,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
+INSERT INTO `menu` VALUES (128,103,57,58,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
 INSERT INTO `menu` VALUES (129,92,2,3,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (131,113,131,132,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
-INSERT INTO `menu` VALUES (132,113,133,134,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
-INSERT INTO `menu` VALUES (133,113,135,140,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
-INSERT INTO `menu` VALUES (136,103,63,64,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,164,165,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
-INSERT INTO `menu` VALUES (138,113,141,146,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
-INSERT INTO `menu` VALUES (139,103,65,66,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
-INSERT INTO `menu` VALUES (140,108,99,102,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
-INSERT INTO `menu` VALUES (141,113,147,148,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,166,173,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,167,168,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,169,172,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
-INSERT INTO `menu` VALUES (145,113,149,152,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
-INSERT INTO `menu` VALUES (146,103,67,68,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
-INSERT INTO `menu` VALUES (147,102,27,28,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
-INSERT INTO `menu` VALUES (148,102,29,32,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
-INSERT INTO `menu` VALUES (149,102,33,34,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
-INSERT INTO `menu` VALUES (150,103,69,72,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,170,171,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (131,113,127,128,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,129,130,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,131,136,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (136,103,59,60,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,160,161,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,137,142,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (139,103,61,62,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,95,98,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,143,144,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,162,169,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,163,164,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,165,168,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,145,148,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (146,103,63,64,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
+INSERT INTO `menu` VALUES (147,102,25,26,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
+INSERT INTO `menu` VALUES (148,102,27,30,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
+INSERT INTO `menu` VALUES (149,102,31,32,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
+INSERT INTO `menu` VALUES (150,103,65,68,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (153,144,166,167,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
-INSERT INTO `menu` VALUES (155,105,42,45,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
-INSERT INTO `menu` VALUES (156,114,82,83,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
-INSERT INTO `menu` VALUES (157,114,84,85,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
-INSERT INTO `menu` VALUES (158,115,92,93,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
-INSERT INTO `menu` VALUES (159,115,94,95,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
-INSERT INTO `menu` VALUES (160,150,70,71,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
-INSERT INTO `menu` VALUES (161,126,126,127,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
-INSERT INTO `menu` VALUES (162,126,128,129,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
-INSERT INTO `menu` VALUES (163,123,116,117,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
-INSERT INTO `menu` VALUES (164,138,142,143,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
-INSERT INTO `menu` VALUES (165,138,144,145,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,78,79,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
-INSERT INTO `menu` VALUES (167,148,30,31,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
-INSERT INTO `menu` VALUES (168,145,150,151,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
-INSERT INTO `menu` VALUES (169,124,120,121,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
-INSERT INTO `menu` VALUES (170,133,136,137,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
-INSERT INTO `menu` VALUES (171,133,138,139,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
-INSERT INTO `menu` VALUES (172,105,46,47,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
-INSERT INTO `menu` VALUES (173,105,48,49,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
-INSERT INTO `menu` VALUES (174,155,43,44,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
-INSERT INTO `menu` VALUES (175,105,50,51,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
-INSERT INTO `menu` VALUES (176,105,52,53,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
-INSERT INTO `menu` VALUES (177,114,86,87,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
-INSERT INTO `menu` VALUES (178,105,54,55,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
-INSERT INTO `menu` VALUES (179,103,73,74,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
-INSERT INTO `menu` VALUES (180,115,96,97,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
-INSERT INTO `menu` VALUES (181,140,100,101,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
-INSERT INTO `menu` VALUES (182,114,88,89,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (155,105,38,41,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
+INSERT INTO `menu` VALUES (156,114,78,79,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,80,81,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,88,89,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,90,91,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (160,150,66,67,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
+INSERT INTO `menu` VALUES (161,126,122,123,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,124,125,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,112,113,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,138,139,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,140,141,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,74,75,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (167,148,28,29,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
+INSERT INTO `menu` VALUES (168,145,146,147,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,116,117,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,132,133,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,134,135,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (172,105,42,43,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
+INSERT INTO `menu` VALUES (173,105,44,45,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
+INSERT INTO `menu` VALUES (174,155,39,40,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
+INSERT INTO `menu` VALUES (175,105,46,47,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
+INSERT INTO `menu` VALUES (176,105,48,49,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
+INSERT INTO `menu` VALUES (177,114,82,83,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (178,105,50,51,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
+INSERT INTO `menu` VALUES (179,103,69,70,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
+INSERT INTO `menu` VALUES (180,115,92,93,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,96,97,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,84,85,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
 INSERT INTO `menu` VALUES (183,95,19,20,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
 INSERT INTO `menu` VALUES (184,95,21,22,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Security','{LINK}mysqlUser/security','mysqlUser','security',0,1,'');
-INSERT INTO `menu` VALUES (185,103,75,76,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
-INSERT INTO `menu` VALUES (191,95,23,24,1,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
-INSERT INTO `menu` VALUES (193,102,35,36,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
+INSERT INTO `menu` VALUES (185,103,71,72,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163353,7 +163349,7 @@ CREATE TABLE `menu_group` (
   `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163384,7 +163380,7 @@ CREATE TABLE `sharding` (
   `table_link` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `prefix` (`prefix`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163417,7 +163413,7 @@ CREATE TABLE `translation_glial` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`language`,`file_found`,`line_found`),
   KEY `key_2` (`key`,`language`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163962,129 +163958,6 @@ INSERT INTO `translation_glial` VALUES (533,'d1d684969d0e09e550d393c529292058434
 INSERT INTO `translation_glial` VALUES (534,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','Maybe this port is not good','en','App/Controller/Mysql.php',1095);
 INSERT INTO `translation_glial` VALUES (535,'81e9df9ef9b590195330857b60634bbc32e1dcc0','Impossible to reach this MySQL server','en','App/Controller/Mysql.php',1097);
 INSERT INTO `translation_glial` VALUES (536,'0057ab77d96f3f7379f9a3e6524089914614200d','Connection error','en','App/Controller/Mysql.php',1098);
-INSERT INTO `translation_glial` VALUES (537,'ba47cbada5436052a4dda8063a08d60daead5439','The daemon (id=9) with pid : \'3362486\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (538,'c33965f45beb4225c6e90d7596f09a2ffec285fb','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (539,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (540,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (541,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (542,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',17);
-INSERT INTO `translation_glial` VALUES (543,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',18);
-INSERT INTO `translation_glial` VALUES (544,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (545,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (546,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (547,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (548,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (549,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (550,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (551,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',21);
-INSERT INTO `translation_glial` VALUES (552,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',22);
-INSERT INTO `translation_glial` VALUES (553,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',41);
-INSERT INTO `translation_glial` VALUES (554,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',39);
-INSERT INTO `translation_glial` VALUES (555,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',18);
-INSERT INTO `translation_glial` VALUES (556,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (557,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (558,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',21);
-INSERT INTO `translation_glial` VALUES (559,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',30);
-INSERT INTO `translation_glial` VALUES (560,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',31);
-INSERT INTO `translation_glial` VALUES (561,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',32);
-INSERT INTO `translation_glial` VALUES (562,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',33);
-INSERT INTO `translation_glial` VALUES (563,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',53);
-INSERT INTO `translation_glial` VALUES (564,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','old','en','App/view/Percona/displayOsc.view.php',14);
-INSERT INTO `translation_glial` VALUES (565,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',29);
-INSERT INTO `translation_glial` VALUES (566,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',30);
-INSERT INTO `translation_glial` VALUES (567,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',31);
-INSERT INTO `translation_glial` VALUES (568,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',32);
-INSERT INTO `translation_glial` VALUES (569,'88291d86be4fca0eb93bf72c5f690d5335c19911','currently running','en','App/view/Percona/displayOsc.view.php',65);
-INSERT INTO `translation_glial` VALUES (570,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',80);
-INSERT INTO `translation_glial` VALUES (571,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',81);
-INSERT INTO `translation_glial` VALUES (572,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',82);
-INSERT INTO `translation_glial` VALUES (573,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',83);
-INSERT INTO `translation_glial` VALUES (574,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',52);
-INSERT INTO `translation_glial` VALUES (575,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',85);
-INSERT INTO `translation_glial` VALUES (576,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',34);
-INSERT INTO `translation_glial` VALUES (577,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','Drop table','en','App/view/Percona/displayOsc.view.php',54);
-INSERT INTO `translation_glial` VALUES (578,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',87);
-INSERT INTO `translation_glial` VALUES (579,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (580,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (581,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','Minutes','en','App/view/Server/main.view.php',318);
-INSERT INTO `translation_glial` VALUES (582,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','The daemon (id=9) with pid : \'4063\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (583,'a315816d1b9118a0988a816904ae0046ae4ef4c8','Your MySQL server was successfully added !','en','App/Controller/Mysql.php',1160);
-INSERT INTO `translation_glial` VALUES (584,'6fa95dbba22dbf9285c9456a0cec268b944469de','The daemon (id=9) with pid : \'693874\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (585,'6ef3d67449741f6c6b84fb452f8e492601580774','The daemon (id=7) with pid : \'693862\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (586,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','LDAP General','en','App/view/Ldap/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (587,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','Check Bind DN and/or Bind password','en','App/view/Ldap/index.view.php',104);
-INSERT INTO `translation_glial` VALUES (588,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','Search for a group','en','App/view/Ldap/getGroupFromUser.view.php',9);
-INSERT INTO `translation_glial` VALUES (589,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','Kill','en','App/view/Server/main.view.php',325);
-INSERT INTO `translation_glial` VALUES (590,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','Kill','en','App/view/Server/main.view.php',309);
-INSERT INTO `translation_glial` VALUES (591,'20ec6f0917dc343de03b27e9747641a4849139c0','The daemon (id=7) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (592,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (593,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','Admin credentials','en','App/view/ProxySQL/add.view.php',17);
-INSERT INTO `translation_glial` VALUES (594,'10f44cb4caea5e972d7428be73058033ef580d8f','Schema','en','App/view/VirtualForeignKey/fill.view.php',15);
-INSERT INTO `translation_glial` VALUES (595,'47394aff553372bba0f8bccc8284d56e4756d023','Field','en','App/view/VirtualForeignKey/fill.view.php',17);
-INSERT INTO `translation_glial` VALUES (596,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','ref_schema','en','App/view/VirtualForeignKey/fill.view.php',18);
-INSERT INTO `translation_glial` VALUES (597,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','ref_table','en','App/view/VirtualForeignKey/fill.view.php',19);
-INSERT INTO `translation_glial` VALUES (598,'1d31ae299df857ca84dc076756f6432c2b765f6f','ref_field','en','App/view/VirtualForeignKey/fill.view.php',20);
-INSERT INTO `translation_glial` VALUES (599,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','Operation','en','App/view/VirtualForeignKey/fill.view.php',21);
-INSERT INTO `translation_glial` VALUES (600,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','Add a new client','en','App/Controller/Client.php',34);
-INSERT INTO `translation_glial` VALUES (601,'420675e3f670b9e2d45d3e57911b2401708fcc06','Name of the client','en','App/view/Client/add.view.php',14);
-INSERT INTO `translation_glial` VALUES (602,'420675e3f670b9e2d45d3e57911b2401708fcc06','Name of the client','en','App/view/Client/add.view.php',15);
-INSERT INTO `translation_glial` VALUES (603,'0ab89e190a1708c1cc8be75da05267d306fee98d','Reporting','en','App/view/Mysqlsys/index.view.php',63);
-INSERT INTO `translation_glial` VALUES (604,'62fca64391ab34bcb36449184628607ba4f0559d','Créer une base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (605,'aeef72bdd63a200a901b4dde0f16f1af3433112a','Renommer la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (606,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','Actualiser la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (607,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','Comparer la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (608,'63e82a90b25dd27a27c0192625f78fbfae1b995d','Analyser les tableaux','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (609,'49be5aaf527e3497a394e5163fff0442571e2c66','Tableau de comparaison','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (610,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','The statistics has been reseted','en','App/Controller/Mysqlsys.php',206);
-INSERT INTO `translation_glial` VALUES (611,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','Diff','en','App/view/CheckConfig/index.view.php',113);
-INSERT INTO `translation_glial` VALUES (612,'9c35011459b7cf246b5e180fd73195abbc23b492','Variable_name','en','App/view/CheckConfig/index.view.php',115);
-INSERT INTO `translation_glial` VALUES (613,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','ProxySQL','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (614,'8be350328d443ef2e0130e483dc740b9fe81428c','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (615,'74b6db1405aa9cc6490d83fc4fae39809219ad18','Date de rafraichissement :','fr','App/view/Architecture/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (616,'708ccb3e2db313a49136e9baf3c5089ce33f7497','New ProxySQL Server','en','App/view/ProxySQL/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (617,'a9985d0471fbd19d696ae71846ed0dc102ef540b','The daemon (id=13) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (618,'0fe707b3a79eead84e53bd63575374f326992cfd','The daemon (id=13) with pid : \'2843607\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (619,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','The daemon (id=12) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (620,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','The daemon (id=11) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (621,'f246c534f967f145600f54e45d6c8c153d5ff221','The daemon (id=9) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (622,'fb5db38b7134c32b25055f7b6faaf6451052e04d','The daemon (id=5) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (623,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','The daemon (id=11) with pid : \'3035213\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (624,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','The daemon (id=9) with pid : \'3035594\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (625,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','The daemon (id=7) with pid : \'3035572\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (626,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','The daemon (id=13) with pid : \'3034289\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (627,'b11d10998cbf4cdd7255728dac72708fdde27d1a','The daemon (id=13) with pid : \'62296\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (628,'06bce48eb781262eee36c9b382dce2892becaecc','All the daemon was successfully started','en','App/Controller/Daemon.php',78);
-INSERT INTO `translation_glial` VALUES (629,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','The daemon (id=13) with pid : \'2576689\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (630,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',86);
-INSERT INTO `translation_glial` VALUES (631,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',87);
-INSERT INTO `translation_glial` VALUES (632,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',96);
-INSERT INTO `translation_glial` VALUES (633,'b789eafe106519942bacd941807cf584b908c9ee','Log','en','App/view/Daemon/index.view.php',87);
-INSERT INTO `translation_glial` VALUES (634,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',88);
-INSERT INTO `translation_glial` VALUES (635,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',102);
-INSERT INTO `translation_glial` VALUES (636,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','Working on','en','App/view/Daemon/index.view.php',88);
-INSERT INTO `translation_glial` VALUES (637,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Controller/Cleaner.php',365);
-INSERT INTO `translation_glial` VALUES (638,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','General\'s infos','en','App/view/Cleaner/add.view.php',11);
-INSERT INTO `translation_glial` VALUES (639,'8bca5aad0ab7e764fba067952a1110491aa99b0a','Cleaner\'s name','en','App/view/Cleaner/add.view.php',18);
-INSERT INTO `translation_glial` VALUES (640,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','Query','en','App/view/Cleaner/add.view.php',56);
-INSERT INTO `translation_glial` VALUES (641,'2c05c0a22288a20f540a7ca7125738000567ea08','Number of line deleted in one time','en','App/view/Cleaner/add.view.php',64);
-INSERT INTO `translation_glial` VALUES (642,'aca2399e84e1706ed2fb7a9977cda021670213dd','Wait time between run','en','App/view/Cleaner/add.view.php',73);
-INSERT INTO `translation_glial` VALUES (643,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','Database use for cleaning','en','App/view/Cleaner/add.view.php',79);
-INSERT INTO `translation_glial` VALUES (644,'71161180013a089d6ab8596d5a96b5ca8052b0eb','Prefix for tables used for clean','en','App/view/Cleaner/add.view.php',86);
-INSERT INTO `translation_glial` VALUES (645,'9432e3a2065c359cfbc26eda83f2fc57283977fb','Archiving','en','App/view/Cleaner/add.view.php',100);
-INSERT INTO `translation_glial` VALUES (646,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','Informations','en','App/view/Cleaner/add.view.php',104);
-INSERT INTO `translation_glial` VALUES (647,'48f5561a032871fc206d0cc2ff8004884bfac59f','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','en','App/view/Cleaner/add.view.php',106);
-INSERT INTO `translation_glial` VALUES (648,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','If there is no storage area, please add one there :','en','App/view/Cleaner/add.view.php',107);
-INSERT INTO `translation_glial` VALUES (649,'3629ab537d9203bf809329f0b545f556f76853de','Storage Area','en','App/view/Cleaner/add.view.php',114);
-INSERT INTO `translation_glial` VALUES (650,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','Crypted files','en','App/view/Cleaner/add.view.php',120);
-INSERT INTO `translation_glial` VALUES (651,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','If selelected the archives files will be crypted on storage area','en','App/view/Cleaner/add.view.php',137);
-INSERT INTO `translation_glial` VALUES (652,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (653,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (654,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (655,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','One storage engine is missing on this MySQL server','en','App/Controller/Cleaner.php',426);
-INSERT INTO `translation_glial` VALUES (656,'1121fb85e3f32507c69c7388b24a0332afb74ddf','Impossible to find the daemon (id=5) with the pid :','en','App/Controller/Agent.php',185);
-INSERT INTO `translation_glial` VALUES (657,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','Daemon (id=5) was already stopped or in error','en','App/Controller/Agent.php',186);
-INSERT INTO `translation_glial` VALUES (658,'6351665355d18349b18a24f28142e8837e7c908e','Impossible to launch the daemon','en','App/Controller/Agent.php',121);
-INSERT INTO `translation_glial` VALUES (659,'71173421a61a24713a262ecd56de0b0999f3c412','Already running !','en','App/Controller/Agent.php',121);
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164104,7 +163977,7 @@ CREATE TABLE `translation_google` (
   `target_text` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`target_language`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -165319,204 +165192,6 @@ INSERT INTO `translation_google` VALUES (1203,'1716e191124ed35d6c8f6128d846d3a7a
 INSERT INTO `translation_google` VALUES (1204,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','fr','Tapez un nom pour la connexion, si vous laissez vide nous prendrons &#39;select @@hostname&#39;');
 INSERT INTO `translation_google` VALUES (1205,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','ru','Введите имя для соединения, если вы оставите его пустым, мы возьмем «выбрать @@hostname».');
 INSERT INTO `translation_google` VALUES (1206,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','uk','Введіть ім’я для з’єднання, якщо залишити порожнім, ми візьмемо «виберіть @@hostname»');
-INSERT INTO `translation_google` VALUES (1207,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','fr','Date de création');
-INSERT INTO `translation_google` VALUES (1208,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','ru','Дата создания');
-INSERT INTO `translation_google` VALUES (1209,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','uk','Дата створення');
-INSERT INTO `translation_google` VALUES (1210,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','fr','Taille des données');
-INSERT INTO `translation_google` VALUES (1211,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','ru','Размер данных');
-INSERT INTO `translation_google` VALUES (1212,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','uk','Розмір даних');
-INSERT INTO `translation_google` VALUES (1213,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','fr','Taille libre');
-INSERT INTO `translation_google` VALUES (1214,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','ru','Свободный размер');
-INSERT INTO `translation_google` VALUES (1215,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','uk','Вільний розмір');
-INSERT INTO `translation_google` VALUES (1216,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','fr','Taille de l&#39;index');
-INSERT INTO `translation_google` VALUES (1217,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','ru','Размер индекса');
-INSERT INTO `translation_google` VALUES (1218,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','uk','Розмір індексу');
-INSERT INTO `translation_google` VALUES (1219,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','fr','Percône');
-INSERT INTO `translation_google` VALUES (1220,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','ru','Перкона');
-INSERT INTO `translation_google` VALUES (1221,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','uk','Перкона');
-INSERT INTO `translation_google` VALUES (1222,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/displayOsc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1223,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/displayOsc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1224,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/displayOsc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1225,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/display_osc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1226,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/display_osc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1227,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/display_osc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1228,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1229,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1230,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1231,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3362486&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1232,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','ru','Демон (id=9) с pid: &#39;3362486&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1233,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','uk','Демон (id=9) з pid: &#39;3362486&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1234,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','fr','en cours d&#39;exécution');
-INSERT INTO `translation_google` VALUES (1235,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','ru','в настоящее время работает');
-INSERT INTO `translation_google` VALUES (1236,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','uk','зараз працює');
-INSERT INTO `translation_google` VALUES (1237,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','fr','journées');
-INSERT INTO `translation_google` VALUES (1238,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','ru','дни');
-INSERT INTO `translation_google` VALUES (1239,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','uk','днів');
-INSERT INTO `translation_google` VALUES (1240,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','fr','Agé de');
-INSERT INTO `translation_google` VALUES (1241,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','ru','старый');
-INSERT INTO `translation_google` VALUES (1242,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','uk','старий');
-INSERT INTO `translation_google` VALUES (1243,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','fr','Action');
-INSERT INTO `translation_google` VALUES (1244,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','ru','Действие');
-INSERT INTO `translation_google` VALUES (1245,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','uk','Дія');
-INSERT INTO `translation_google` VALUES (1246,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','fr','Table de dépôt');
-INSERT INTO `translation_google` VALUES (1247,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','ru','Удалить таблицу');
-INSERT INTO `translation_google` VALUES (1248,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','uk','Відкидний стіл');
-INSERT INTO `translation_google` VALUES (1249,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','fr','Minutes');
-INSERT INTO `translation_google` VALUES (1250,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','ru','Минуты');
-INSERT INTO `translation_google` VALUES (1251,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','uk','хвилин');
-INSERT INTO `translation_google` VALUES (1252,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/delOldOscTable&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1253,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/delOldOscTable&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1254,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/delOldOscTable&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1255,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/del_old_osc_table&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1256,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/del_old_osc_table&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1257,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/del_old_osc_table&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1258,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;4063&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1259,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','ru','Демон (id=9) с pid: &#39;4063&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1260,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','uk','Демон (id=9) з pid: &#39;4063&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1261,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','fr','Actualiser la base de données');
-INSERT INTO `translation_google` VALUES (1262,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','ru','Actualiser la base de données');
-INSERT INTO `translation_google` VALUES (1263,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','uk','Actualiser la base de données');
-INSERT INTO `translation_google` VALUES (1264,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','fr','Ajouter un nouveau client');
-INSERT INTO `translation_google` VALUES (1265,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','ru','Добавить нового клиента');
-INSERT INTO `translation_google` VALUES (1266,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','uk','Додайте нового клієнта');
-INSERT INTO `translation_google` VALUES (1267,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','fr','Identifiants d&#39;administrateur');
-INSERT INTO `translation_google` VALUES (1268,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','ru','Учетные данные администратора');
-INSERT INTO `translation_google` VALUES (1269,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','uk','Облікові дані адміністратора');
-INSERT INTO `translation_google` VALUES (1270,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','fr','Analyser les tableaux');
-INSERT INTO `translation_google` VALUES (1271,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','ru','Анализатор картин');
-INSERT INTO `translation_google` VALUES (1272,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','uk','Аналізатор таблиць');
-INSERT INTO `translation_google` VALUES (1273,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','fr','Vérifiez le DN de liaison et/ou le mot de passe de liaison');
-INSERT INTO `translation_google` VALUES (1274,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','ru','Проверьте Bind DN и/или Bind пароль.');
-INSERT INTO `translation_google` VALUES (1275,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','uk','Перевірте Bind DN та/або Bind password');
-INSERT INTO `translation_google` VALUES (1276,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','fr','Comparer la base de données');
-INSERT INTO `translation_google` VALUES (1277,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','ru','Comparer la base de données');
-INSERT INTO `translation_google` VALUES (1278,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','uk','Comparer la base de données');
-INSERT INTO `translation_google` VALUES (1279,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','fr','Créer une base de données');
-INSERT INTO `translation_google` VALUES (1280,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','ru','Creer une base de données');
-INSERT INTO `translation_google` VALUES (1281,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','uk','Créer une base de données');
-INSERT INTO `translation_google` VALUES (1282,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','en','Refresh date:');
-INSERT INTO `translation_google` VALUES (1283,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','ru','Дата обновления:');
-INSERT INTO `translation_google` VALUES (1284,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','uk','Дата оновлення:');
-INSERT INTO `translation_google` VALUES (1285,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','fr','Différence');
-INSERT INTO `translation_google` VALUES (1286,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','ru','Диф');
-INSERT INTO `translation_google` VALUES (1287,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','uk','різниця');
-INSERT INTO `translation_google` VALUES (1288,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','fr','Champ');
-INSERT INTO `translation_google` VALUES (1289,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','ru','Поле');
-INSERT INTO `translation_google` VALUES (1290,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','uk','Поле');
-INSERT INTO `translation_google` VALUES (1291,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','fr','Tuer');
-INSERT INTO `translation_google` VALUES (1292,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','ru','Убийство');
-INSERT INTO `translation_google` VALUES (1293,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','uk','вбити');
-INSERT INTO `translation_google` VALUES (1294,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','fr','Général LDAP');
-INSERT INTO `translation_google` VALUES (1295,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','ru','Общие сведения о LDAP');
-INSERT INTO `translation_google` VALUES (1296,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','uk','LDAP Загальні');
-INSERT INTO `translation_google` VALUES (1297,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','fr','Nom du client');
-INSERT INTO `translation_google` VALUES (1298,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','ru','Имя клиента');
-INSERT INTO `translation_google` VALUES (1299,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','uk','Ім&#39;я клієнта');
-INSERT INTO `translation_google` VALUES (1300,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','fr','Opération');
-INSERT INTO `translation_google` VALUES (1301,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','ru','Операция');
-INSERT INTO `translation_google` VALUES (1302,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','uk','Операція');
-INSERT INTO `translation_google` VALUES (1303,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','fr','ProxySQL');
-INSERT INTO `translation_google` VALUES (1304,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','ru','ПроксиSQL');
-INSERT INTO `translation_google` VALUES (1305,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','uk','ProxySQL');
-INSERT INTO `translation_google` VALUES (1306,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','fr','Renommer la base de données');
-INSERT INTO `translation_google` VALUES (1307,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','ru','Renommer la base de données');
-INSERT INTO `translation_google` VALUES (1308,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','uk','Renommer la base de données');
-INSERT INTO `translation_google` VALUES (1309,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','fr','Rapports');
-INSERT INTO `translation_google` VALUES (1310,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','ru','Составление отчетов');
-INSERT INTO `translation_google` VALUES (1311,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','uk','Звітність');
-INSERT INTO `translation_google` VALUES (1312,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','fr','Schéma');
-INSERT INTO `translation_google` VALUES (1313,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','ru','Схема');
-INSERT INTO `translation_google` VALUES (1314,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','uk','Схема');
-INSERT INTO `translation_google` VALUES (1315,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','fr','Rechercher un groupe');
-INSERT INTO `translation_google` VALUES (1316,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','ru','Поиск группы');
-INSERT INTO `translation_google` VALUES (1317,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','uk','Пошук групи');
-INSERT INTO `translation_google` VALUES (1318,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;ProxySQL/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1319,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;ProxySQL/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1320,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;ProxySQL/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1321,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Proxysql/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
-INSERT INTO `translation_google` VALUES (1322,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Proxysql/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
-INSERT INTO `translation_google` VALUES (1323,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Proxysql/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
-INSERT INTO `translation_google` VALUES (1324,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','fr','Tableau de comparaison');
-INSERT INTO `translation_google` VALUES (1325,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','ru','Сравнительная таблица');
-INSERT INTO `translation_google` VALUES (1326,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','uk','Tableau de comparaison');
-INSERT INTO `translation_google` VALUES (1327,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','fr','Le démon (id=7) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1328,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','ru','Демон (id=7) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1329,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','uk','Демон (id=7) успішно запущений з');
-INSERT INTO `translation_google` VALUES (1330,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;693862&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1331,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','ru','Демон (id=7) с pid: &#39;693862&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1332,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','uk','Демон (id=7) з pid: &#39;693862&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1333,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;693874&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1334,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','ru','Демон (id=9) с pid: &#39;693874&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1335,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','uk','Демон (id=9) з pid: &#39;693874&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1336,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','fr','Les statistiques ont été réinitialisées');
-INSERT INTO `translation_google` VALUES (1337,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','ru','Статистика была сброшена');
-INSERT INTO `translation_google` VALUES (1338,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','uk','Статистику скинуто');
-INSERT INTO `translation_google` VALUES (1339,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','fr','Nom de variable');
-INSERT INTO `translation_google` VALUES (1340,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','ru','Имя_переменной');
-INSERT INTO `translation_google` VALUES (1341,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','uk','Ім&#39;я_змінної');
-INSERT INTO `translation_google` VALUES (1342,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','fr','Votre serveur MySQL a été ajouté avec succès !');
-INSERT INTO `translation_google` VALUES (1343,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','ru','Ваш сервер MySQL успешно добавлен!');
-INSERT INTO `translation_google` VALUES (1344,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','uk','Ваш сервер MySQL успішно додано!');
-INSERT INTO `translation_google` VALUES (1345,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','fr','ref_field');
-INSERT INTO `translation_google` VALUES (1346,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','ru','ref_field');
-INSERT INTO `translation_google` VALUES (1347,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','uk','ref_field');
-INSERT INTO `translation_google` VALUES (1348,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','fr','ref_schema');
-INSERT INTO `translation_google` VALUES (1349,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','ru','ref_schema');
-INSERT INTO `translation_google` VALUES (1350,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','uk','ref_schema');
-INSERT INTO `translation_google` VALUES (1351,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','fr','ref_table');
-INSERT INTO `translation_google` VALUES (1352,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','ru','ref_table');
-INSERT INTO `translation_google` VALUES (1353,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','uk','ref_table');
-INSERT INTO `translation_google` VALUES (1354,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','fr','Tous les démons ont été démarrés avec succès');
-INSERT INTO `translation_google` VALUES (1355,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','ru','Все демон был успешно запущен');
-INSERT INTO `translation_google` VALUES (1356,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','uk','Весь демон успішно запущено');
-INSERT INTO `translation_google` VALUES (1357,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','fr','Nouveau serveur ProxySQL');
-INSERT INTO `translation_google` VALUES (1358,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','ru','Новый ProxySQL-сервер');
-INSERT INTO `translation_google` VALUES (1359,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','uk','Новий сервер ProxySQL');
-INSERT INTO `translation_google` VALUES (1360,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','fr','Le démon (id=11) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1361,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','ru','Демон (id=11) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1362,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','uk','Демон (id=11) успішно запущений з');
-INSERT INTO `translation_google` VALUES (1363,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','fr','Le démon (id=11) avec le pid : &#39;3035213&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1364,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','ru','Демон (id=11) с pid: &#39;3035213&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1365,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','uk','Демон (id=11) з pid: &#39;3035213&#39; успішно зупинено');
-INSERT INTO `translation_google` VALUES (1366,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','fr','Le démon (id=12) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1367,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','ru','Демон (id=12) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1368,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','uk','Демон (id=12) успішно запущено з');
-INSERT INTO `translation_google` VALUES (1369,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','fr','Le démon (id=13) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1370,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','ru','Демон (id=13) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1371,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','uk','Демон (id=13) успішно запущено з');
-INSERT INTO `translation_google` VALUES (1372,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2843607&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1373,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','ru','Демон (id=13) с pid: &#39;2843607&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1374,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','uk','Демон (id=13) з pid: &#39;2843607&#39; успішно зупинено');
-INSERT INTO `translation_google` VALUES (1375,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;3034289&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1376,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','ru','Демон (id=13) с pid: &#39;3034289&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1377,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','uk','Демон (id=13) з pid: &#39;3034289&#39; успішно зупинено');
-INSERT INTO `translation_google` VALUES (1378,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;62296&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1379,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','ru','Демон (id=13) с pid: &#39;62296&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1380,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','uk','Демон (id=13) з pid: &#39;62296&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1381,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','fr','Le démon (id=5) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1382,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','ru','Демон (id=5) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1383,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','uk','Демон (id=5) успішно запущений з');
-INSERT INTO `translation_google` VALUES (1384,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;3035572&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1385,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','ru','Демон (id=7) с pid: &#39;3035572&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1386,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','uk','Демон (id=7) з pid: &#39;3035572&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1387,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','fr','Le démon (id=9) a démarré avec succès avec');
-INSERT INTO `translation_google` VALUES (1388,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','ru','Демон (id=9) успешно запущен с');
-INSERT INTO `translation_google` VALUES (1389,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','uk','Демон (id=9) успішно запущено з');
-INSERT INTO `translation_google` VALUES (1390,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3035594&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1391,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','ru','Демон (id=9) с pid: &#39;3035594&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1392,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','uk','Демон (id=9) з pid: &#39;3035594&#39; успішно зупинився');
-INSERT INTO `translation_google` VALUES (1393,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','fr','Enregistrer');
-INSERT INTO `translation_google` VALUES (1394,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','ru','Журнал');
-INSERT INTO `translation_google` VALUES (1395,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','uk','Журнал');
-INSERT INTO `translation_google` VALUES (1396,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2576689&#39; s&#39;est arrêté avec succès');
-INSERT INTO `translation_google` VALUES (1397,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','ru','Демон (id=13) с pid: &#39;2576689&#39; успешно остановлен');
-INSERT INTO `translation_google` VALUES (1398,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','uk','Демон (id=13) з pid: &#39;2576689&#39; успішно зупинено');
-INSERT INTO `translation_google` VALUES (1399,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','fr','Travail');
-INSERT INTO `translation_google` VALUES (1400,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','ru','За работой');
-INSERT INTO `translation_google` VALUES (1401,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','uk','Працює');
-INSERT INTO `translation_google` VALUES (1402,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','fr','Travaille sur');
-INSERT INTO `translation_google` VALUES (1403,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','ru','Работа над');
-INSERT INTO `translation_google` VALUES (1404,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','uk','Працює на');
 /*!40000 ALTER TABLE `translation_google` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -165532,7 +165207,7 @@ CREATE TABLE `ts_file` (
   `file_name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `file_name` (`file_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -165544,7 +165219,6 @@ LOCK TABLES `ts_file` WRITE;
 INSERT INTO `ts_file` VALUES (3,'answer');
 INSERT INTO `ts_file` VALUES (5,'database');
 INSERT INTO `ts_file` VALUES (2,'hardware');
-INSERT INTO `ts_file` VALUES (7,'proxysql');
 INSERT INTO `ts_file` VALUES (6,'service');
 INSERT INTO `ts_file` VALUES (1,'ssh_stats');
 INSERT INTO `ts_file` VALUES (4,'variable');
@@ -165561,7 +165235,7 @@ DROP TABLE IF EXISTS `ts_variable`;
 CREATE TABLE `ts_variable` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_ts_file` int(11) NOT NULL DEFAULT 3,
-  `name` varchar(100) NOT NULL,
+  `name` varchar(64) NOT NULL,
   `type` enum('INT','DOUBLE','TEXT','') NOT NULL COMMENT '1 => int, 2 => double, 3 => text',
   `from` varchar(64) NOT NULL,
   `radical` char(10) NOT NULL,
@@ -165569,7 +165243,7 @@ CREATE TABLE `ts_variable` (
   `is_dynamic` int(11) DEFAULT 1 COMMENT 'only for global variables',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`,`from`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -167929,249 +167603,6 @@ INSERT INTO `ts_variable` VALUES (2348,6,'ping','DOUBLE','mysql_server','general
 INSERT INTO `ts_variable` VALUES (2349,6,'error','TEXT','mysql_server','general',1,1);
 INSERT INTO `ts_variable` VALUES (2350,3,'query_locking_count','INT','locking','general',1,1);
 INSERT INTO `ts_variable` VALUES (2351,4,'server_audit_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2352,4,'spider_auto_increment_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2353,4,'spider_bgs_first_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2354,4,'spider_bgs_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2355,4,'spider_bgs_second_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2356,4,'spider_bka_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2357,4,'spider_bka_table_name_type','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2358,4,'spider_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2359,4,'spider_bulk_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2360,4,'spider_bulk_update_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2361,4,'spider_bulk_update_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2362,4,'spider_casual_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2363,4,'spider_connect_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2364,4,'spider_crd_bg_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2365,4,'spider_crd_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2366,4,'spider_crd_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2367,4,'spider_crd_sync','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2368,4,'spider_crd_type','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2369,4,'spider_crd_weight','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2370,4,'spider_delete_all_rows_type','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2371,4,'spider_direct_dup_insert','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2372,4,'spider_direct_order_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2373,4,'spider_error_read_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2374,4,'spider_error_write_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2375,4,'spider_first_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2376,4,'spider_init_sql_alloc_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2377,4,'spider_internal_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2378,4,'spider_internal_offset','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2379,4,'spider_internal_optimize','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2380,4,'spider_internal_optimize_local','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2381,4,'spider_load_crd_at_startup','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2382,4,'spider_load_sts_at_startup','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2383,4,'spider_low_mem_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2384,4,'spider_max_order','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2385,4,'spider_multi_split_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2386,4,'spider_net_read_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2387,4,'spider_net_write_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2388,4,'spider_quick_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2389,4,'spider_quick_page_byte','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2390,4,'spider_quick_page_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2391,4,'spider_read_only_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2392,4,'spider_reset_sql_alloc','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2393,4,'spider_second_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2394,4,'spider_select_column_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2395,4,'spider_selupd_lock_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2396,4,'spider_semi_split_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2397,4,'spider_semi_split_read_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2398,4,'spider_semi_table_lock_connection','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2399,4,'spider_skip_default_condition','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2400,4,'spider_skip_parallel_search','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2401,4,'spider_split_read','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2402,4,'spider_store_last_crd','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2403,4,'spider_store_last_sts','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2404,4,'spider_strict_group_by','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2405,4,'spider_sts_bg_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2406,4,'spider_sts_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2407,4,'spider_sts_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2408,4,'spider_sts_sync','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2409,4,'spider_use_handler','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2410,4,'spider_use_pushdown_udf','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2411,4,'spider_use_table_charset','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2412,4,'performance_schema_show_processlist','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2413,4,'replication_optimize_for_static_plugin_config','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2414,4,'replication_sender_observe_commit_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2595,7,'admin-admin_credentials','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2596,7,'admin-stats_credentials','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2597,7,'admin-stats_mysql_connections','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2598,7,'admin-stats_mysql_connection_pool','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2599,7,'admin-stats_mysql_query_cache','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2600,7,'admin-stats_mysql_query_digest_to_disk','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2601,7,'admin-stats_system_cpu','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2602,7,'admin-stats_system_memory','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2603,7,'admin-mysql_ifaces','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2604,7,'admin-telnet_admin_ifaces','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2605,7,'admin-telnet_stats_ifaces','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2606,7,'admin-refresh_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2607,7,'admin-read_only','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2608,7,'admin-hash_passwords','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2609,7,'admin-vacuum_stats','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2610,7,'admin-version','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2611,7,'admin-cluster_username','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2612,7,'admin-cluster_password','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2613,7,'admin-cluster_check_interval_ms','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2614,7,'admin-cluster_check_status_frequency','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2615,7,'admin-cluster_mysql_query_rules_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2616,7,'admin-cluster_mysql_servers_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2617,7,'admin-cluster_mysql_users_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2618,7,'admin-cluster_proxysql_servers_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2619,7,'admin-cluster_mysql_variables_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2620,7,'admin-cluster_admin_variables_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2621,7,'admin-cluster_ldap_variables_diffs_before_sync','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2622,7,'admin-cluster_mysql_query_rules_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2623,7,'admin-cluster_mysql_servers_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2624,7,'admin-cluster_mysql_users_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2625,7,'admin-cluster_proxysql_servers_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2626,7,'admin-cluster_mysql_variables_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2627,7,'admin-cluster_admin_variables_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2628,7,'admin-cluster_ldap_variables_save_to_disk','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2629,7,'admin-checksum_mysql_query_rules','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2630,7,'admin-checksum_mysql_servers','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2631,7,'admin-checksum_mysql_users','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2632,7,'admin-checksum_mysql_variables','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2633,7,'admin-checksum_admin_variables','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2634,7,'admin-checksum_ldap_variables','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2635,7,'admin-restapi_enabled','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2636,7,'admin-restapi_port','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2637,7,'admin-web_enabled','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2638,7,'admin-web_port','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2639,7,'admin-web_verbosity','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2640,7,'admin-prometheus_memory_metrics_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2641,7,'mysql-default_charset','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2642,7,'mysql-default_collation_connection','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2643,7,'mysql-shun_on_failures','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2644,7,'mysql-shun_recovery_time_sec','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2645,7,'mysql-query_retries_on_failure','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2646,7,'mysql-client_multi_statements','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2647,7,'mysql-client_host_cache_size','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2648,7,'mysql-client_host_error_counts','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2649,7,'mysql-connect_retries_on_failure','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2650,7,'mysql-connect_retries_delay','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2651,7,'mysql-connection_delay_multiplex_ms','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2652,7,'mysql-connection_max_age_ms','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2653,7,'mysql-connect_timeout_client','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2654,7,'mysql-connect_timeout_server','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2655,7,'mysql-connect_timeout_server_max','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2656,7,'mysql-enable_client_deprecate_eof','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2657,7,'mysql-enable_server_deprecate_eof','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2658,7,'mysql-enable_load_data_local_infile','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2659,7,'mysql-eventslog_filesize','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2660,7,'mysql-eventslog_default_log','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2661,7,'mysql-eventslog_format','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2662,7,'mysql-auditlog_filesize','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2663,7,'mysql-handle_unknown_charset','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2664,7,'mysql-free_connections_pct','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2665,7,'mysql-connection_warming','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2666,7,'mysql-session_idle_ms','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2667,7,'mysql-have_ssl','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2668,7,'mysql-have_compress','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2669,7,'mysql-client_found_rows','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2670,7,'mysql-interfaces','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2671,7,'mysql-log_mysql_warnings_enabled','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2672,7,'mysql-monitor_enabled','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2673,7,'mysql-monitor_history','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2674,7,'mysql-monitor_connect_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2675,7,'mysql-monitor_connect_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2676,7,'mysql-monitor_ping_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2677,7,'mysql-monitor_ping_max_failures','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2678,7,'mysql-monitor_ping_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2679,7,'mysql-monitor_read_only_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2680,7,'mysql-monitor_read_only_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2681,7,'mysql-monitor_read_only_max_timeout_count','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2682,7,'mysql-monitor_replication_lag_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2683,7,'mysql-monitor_replication_lag_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2684,7,'mysql-monitor_replication_lag_count','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2685,7,'mysql-monitor_groupreplication_healthcheck_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2686,7,'mysql-monitor_groupreplication_healthcheck_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2687,7,'mysql-monitor_groupreplication_healthcheck_max_timeout_count','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2688,7,'mysql-monitor_groupreplication_max_transactions_behind_count','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2689,7,'mysql-monitor_groupreplication_max_transactions_behind_for_read_only','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2690,7,'mysql-monitor_galera_healthcheck_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2691,7,'mysql-monitor_galera_healthcheck_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2692,7,'mysql-monitor_galera_healthcheck_max_timeout_count','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2693,7,'mysql-monitor_username','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2694,7,'mysql-monitor_password','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2695,7,'mysql-monitor_query_interval','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2696,7,'mysql-monitor_query_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2697,7,'mysql-monitor_slave_lag_when_null','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2698,7,'mysql-monitor_threads_min','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2699,7,'mysql-monitor_threads_max','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2700,7,'mysql-monitor_threads_queue_maxsize','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2701,7,'mysql-monitor_wait_timeout','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2702,7,'mysql-monitor_writer_is_also_reader','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2703,7,'mysql-max_allowed_packet','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2704,7,'mysql-tcp_keepalive_time','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2705,7,'mysql-use_tcp_keepalive','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2706,7,'mysql-automatic_detect_sqli','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2707,7,'mysql-firewall_whitelist_enabled','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2708,7,'mysql-firewall_whitelist_errormsg','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2709,7,'mysql-throttle_connections_per_sec_to_hostgroup','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2710,7,'mysql-max_transaction_idle_time','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2711,7,'mysql-max_transaction_time','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2712,7,'mysql-multiplexing','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2713,7,'mysql-log_unhealthy_connections','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2714,7,'mysql-enforce_autocommit_on_reads','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2715,7,'mysql-autocommit_false_not_reusable','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2716,7,'mysql-autocommit_false_is_transaction','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2717,7,'mysql-verbose_query_error','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2718,7,'mysql-hostgroup_manager_verbose','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2719,7,'mysql-binlog_reader_connect_retry_msec','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2720,7,'mysql-threshold_query_length','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2721,7,'mysql-threshold_resultset_size','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2722,7,'mysql-query_digests_max_digest_length','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2723,7,'mysql-query_digests_max_query_length','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2724,7,'mysql-query_digests_grouping_limit','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2725,7,'mysql-wait_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2726,7,'mysql-throttle_max_bytes_per_second_to_client','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2727,7,'mysql-throttle_ratio_server_to_client','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2728,7,'mysql-max_connections','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2729,7,'mysql-max_stmts_per_connection','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2730,7,'mysql-max_stmts_cache','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2731,7,'mysql-mirror_max_concurrency','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2732,7,'mysql-mirror_max_queue_length','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2733,7,'mysql-default_max_latency_ms','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2734,7,'mysql-default_query_delay','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2735,7,'mysql-default_query_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2736,7,'mysql-query_processor_iterations','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2737,7,'mysql-query_processor_regex','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2738,7,'mysql-set_query_lock_on_hostgroup','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2739,7,'mysql-reset_connection_algorithm','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2740,7,'mysql-auto_increment_delay_multiplex','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2741,7,'mysql-long_query_time','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2742,7,'mysql-query_cache_size_mb','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2743,7,'mysql-ping_interval_server_msec','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2744,7,'mysql-ping_timeout_server','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2745,7,'mysql-default_schema','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2746,7,'mysql-poll_timeout','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2747,7,'mysql-poll_timeout_on_failure','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2748,7,'mysql-server_capabilities','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2749,7,'mysql-server_version','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2750,7,'mysql-keep_multiplexing_variables','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2751,7,'mysql-kill_backend_connection_when_disconnect','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2752,7,'mysql-client_session_track_gtid','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2753,7,'mysql-sessions_sort','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2754,7,'mysql-session_idle_show_processlist','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2755,7,'mysql-show_processlist_extended','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2756,7,'mysql-commands_stats','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2757,7,'mysql-query_digests','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2758,7,'mysql-query_digests_lowercase','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2759,7,'mysql-query_digests_replace_null','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2760,7,'mysql-query_digests_no_digits','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2761,7,'mysql-query_digests_normalize_digest_text','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2762,7,'mysql-query_digests_track_hostname','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2763,7,'mysql-servers_stats','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2764,7,'mysql-default_reconnect','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2765,7,'mysql-stacksize','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2766,7,'mysql-threads','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2767,7,'mysql-default_tx_isolation','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2768,7,'mysql-default_session_track_gtids','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2769,7,'mysql-connpoll_reset_queue_length','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2770,7,'mysql-min_num_servers_lantency_awareness','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2771,7,'mysql-aurora_max_lag_ms_only_read_from_replicas','INT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2772,7,'mysql-stats_time_backend_query','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2773,7,'mysql-stats_time_query_processor','TEXT','proxysql_main_var','general',1,1);
-INSERT INTO `ts_variable` VALUES (2774,7,'mysql-query_cache_stores_empty_result','TEXT','proxysql_main_var','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168188,7 +167619,7 @@ CREATE TABLE `version` (
   `version` varchar(20) NOT NULL,
   `comment` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168214,11 +167645,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.7.5-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.7.5-MariaDB-1:10.7.5+maria~ubu2004-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -168243,9 +167674,9 @@ CREATE TABLE `activity_events` (
   `user_id` int(11) DEFAULT NULL,
   `logged_as_user_id` int(11) DEFAULT NULL,
   `project_id` int(11) DEFAULT NULL,
-  `name` varchar(255) NOT NULL,
-  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') DEFAULT NULL,
-  `data` longtext DEFAULT NULL COMMENT '(DC2Type:array)',
+  `name` varchar(255) COLLATE utf8mb3_unicode_ci NOT NULL,
+  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `data` longtext COLLATE utf8mb3_unicode_ci DEFAULT NULL COMMENT '(DC2Type:array)',
   `created_at` bigint(20) NOT NULL,
   PRIMARY KEY (`id`,`created_at`),
   KEY `IDX_1F1B74AA76ED395` (`user_id`),
@@ -168273,7 +167704,7 @@ CREATE TABLE `alias_dns` (
   UNIQUE KEY `dns` (`dns`,`port`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `alias_dns_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci ROW_FORMAT=COMPACT WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168291,7 +167722,7 @@ CREATE TABLE `architecture` (
   `height` int(11) NOT NULL,
   `width` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168324,7 +167755,7 @@ CREATE TABLE `archive` (
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `archive_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`),
   CONSTRAINT `archive_ibfk_2` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168347,7 +167778,7 @@ CREATE TABLE `archive_load` (
   `status` varchar(20) NOT NULL,
   `id_user_main` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168382,7 +167813,7 @@ CREATE TABLE `archive_load_detail` (
   KEY `id_archive_load` (`id_archive_load`),
   CONSTRAINT `archive_load_detail_ibfk_1` FOREIGN KEY (`id_archive`) REFERENCES `archive` (`id`),
   CONSTRAINT `archive_load_detail_ibfk_2` FOREIGN KEY (`id_archive_load`) REFERENCES `archive_load` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168416,7 +167847,7 @@ CREATE TABLE `backup_database` (
   KEY `id_mysql_database` (`database_name`),
   KEY `id_backup_dump` (`id_backup_dump`),
   CONSTRAINT `backup_database_ibfk_1` FOREIGN KEY (`id_backup_dump`) REFERENCES `backup_dump` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168440,7 +167871,7 @@ CREATE TABLE `backup_dump` (
   CONSTRAINT `backup_dump_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `backup_dump_ibfk_2` FOREIGN KEY (`id_job`) REFERENCES `job` (`id`),
   CONSTRAINT `backup_dump_ibfk_3` FOREIGN KEY (`id_backup_main`) REFERENCES `backup_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168456,7 +167887,7 @@ CREATE TABLE `backup_main` (
   `id_backup_storage_area` int(11) NOT NULL,
   `id_backup_type` int(11) NOT NULL,
   `id_crontab` int(11) NOT NULL,
-  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
   `database` text NOT NULL COMMENT 'if = 0 we backup all, else database coma separated',
   `date_inserted` datetime NOT NULL,
   `is_active` int(11) NOT NULL,
@@ -168471,7 +167902,7 @@ CREATE TABLE `backup_main` (
   CONSTRAINT `backup_main_ibfk_2` FOREIGN KEY (`id_backup_type`) REFERENCES `backup_type` (`id`),
   CONSTRAINT `backup_main_ibfk_3` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`),
   CONSTRAINT `backup_main_ibfk_4` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168494,7 +167925,7 @@ CREATE TABLE `backup_storage_area` (
   KEY `id_geolocalisation_city` (`id_geolocalisation_city`,`id_geolocalisation_country`),
   KEY `id_ssh_key` (`id_ssh_key`),
   CONSTRAINT `backup_storage_area_ibfk_1` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168516,7 +167947,7 @@ CREATE TABLE `backup_storage_space` (
   PRIMARY KEY (`id`),
   KEY `id_backup_storage_area` (`id_backup_storage_area`),
   CONSTRAINT `backup_storage_space_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168537,7 +167968,7 @@ CREATE TABLE `benchmark_config` (
   `script` varchar(250) NOT NULL,
   `pid` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168565,7 +167996,7 @@ CREATE TABLE `benchmark_main` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `benchmark_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168595,7 +168026,7 @@ CREATE TABLE `benchmark_run` (
   PRIMARY KEY (`id`),
   KEY `id_benchmark_main` (`id_benchmark_main`),
   CONSTRAINT `benchmark_run_ibfk_1` FOREIGN KEY (`id_benchmark_main`) REFERENCES `benchmark_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168615,7 +168046,7 @@ CREATE TABLE `binlog_backup` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`logfile_name`),
   CONSTRAINT `binlog_backup_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168633,7 +168064,7 @@ CREATE TABLE `binlog_history` (
   PRIMARY KEY (`id`),
   KEY `id_binlog_max` (`id_binlog_max`),
   CONSTRAINT `binlog_history_ibfk_1` FOREIGN KEY (`id_binlog_max`) REFERENCES `binlog_max` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168650,7 +168081,7 @@ CREATE TABLE `binlog_max` (
   `number_file_max` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168670,7 +168101,7 @@ CREATE TABLE `cleaner_alert` (
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `cleaner_alert_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`),
   CONSTRAINT `cleaner_alert_ibfk_2` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168692,7 +168123,7 @@ CREATE TABLE `cleaner_foreign_key` (
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_foreign_key_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168723,7 +168154,7 @@ CREATE TABLE `cleaner_main` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_mysql_database` (`database`),
   CONSTRAINT `cleaner_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168740,7 +168171,7 @@ CREATE TABLE `cleaner_table` (
   PRIMARY KEY (`id`),
   KEY `id_cleaner_main` (`id_cleaner_main`),
   CONSTRAINT `cleaner_table_ibfk_1` FOREIGN KEY (`id_cleaner_main`) REFERENCES `cleaner_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168758,7 +168189,7 @@ CREATE TABLE `client` (
   `is_monitored` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `libelle` (`libelle`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168779,7 +168210,7 @@ CREATE TABLE `crontab` (
   `comment` text NOT NULL,
   `pid` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168798,7 +168229,7 @@ CREATE TABLE `crontab_history` (
   PRIMARY KEY (`id`),
   KEY `id_crontab` (`id_crontab`),
   CONSTRAINT `crontab_history_ibfk_1` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168812,11 +168243,10 @@ CREATE TABLE `daemon_worker` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_daemon_main` int(11) NOT NULL,
   `pid` int(11) NOT NULL,
-  `date_created` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `id_daemon_main` (`id_daemon_main`),
   CONSTRAINT `daemon_worker_ibfk_1` FOREIGN KEY (`id_daemon_main`) REFERENCES `daemon_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168832,7 +168262,7 @@ CREATE TABLE `dictionary_port` (
   `id_dictionary_service` int(11) NOT NULL,
   `port` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168848,7 +168278,7 @@ CREATE TABLE `dictionary_serveur` (
   `dns` varchar(200) NOT NULL,
   `comment` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168864,7 +168294,7 @@ CREATE TABLE `dictionary_service` (
   `port_default` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168898,7 +168328,7 @@ CREATE TABLE `ha_proxy_stats` (
   KEY `id_haprox_input` (`id_haprox_input`),
   CONSTRAINT `ha_proxy_stats_ibfk_1` FOREIGN KEY (`id_haproxy_main`) REFERENCES `haproxy_main` (`id`),
   CONSTRAINT `ha_proxy_stats_ibfk_2` FOREIGN KEY (`id_haprox_input`) REFERENCES `haproxy_main_input` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168922,7 +168352,7 @@ CREATE TABLE `haproxy_main` (
   `date_refresh` datetime NOT NULL,
   `config` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168942,7 +168372,7 @@ CREATE TABLE `haproxy_main_input` (
   PRIMARY KEY (`id`),
   KEY `id_haproxy_main` (`id_haproxy_main`),
   CONSTRAINT `haproxy_main_input_ibfk_1` FOREIGN KEY (`id_haproxy_main`) REFERENCES `haproxy_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168963,7 +168393,7 @@ CREATE TABLE `haproxy_main_output` (
   PRIMARY KEY (`id`),
   KEY `id_haproxy_input` (`id_haproxy_input`),
   CONSTRAINT `haproxy_main_output_ibfk_1` FOREIGN KEY (`id_haproxy_input`) REFERENCES `haproxy_main_input` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168979,7 +168409,7 @@ CREATE TABLE `history_action` (
   `action` varchar(80) NOT NULL,
   `point` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169009,7 +168439,7 @@ CREATE TABLE `history_main` (
   CONSTRAINT `history_main_ibfk_3` FOREIGN KEY (`id_history_action`) REFERENCES `history_action` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_4` FOREIGN KEY (`id_history_table`) REFERENCES `history_table` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `history_main_ibfk_5` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169021,7 +168451,7 @@ DROP TABLE IF EXISTS `history_table`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history_table` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
+  `name` varchar(50) COLLATE utf8mb3_unicode_ci NOT NULL,
   `date_insterted` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `Name` (`name`)
@@ -169048,7 +168478,7 @@ CREATE TABLE `job` (
   `error` varchar(255) NOT NULL,
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169065,7 +168495,7 @@ CREATE TABLE `ldap_group` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_group` (`id_group`),
   CONSTRAINT `ldap_group_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169084,7 +168514,7 @@ CREATE TABLE `link__architecture__mysql_server` (
   KEY `id_architecture` (`id_architecture`),
   CONSTRAINT `link__architecture__mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__architecture__mysql_server_ibfk_2` FOREIGN KEY (`id_architecture`) REFERENCES `architecture` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169103,7 +168533,7 @@ CREATE TABLE `link__haproxy_main_output__mysql_server` (
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_1` FOREIGN KEY (`id_haproxy_output`) REFERENCES `haproxy_main_output` (`id`),
   CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169119,7 +168549,7 @@ CREATE TABLE `link__master__mysql_server` (
   `id_mysql_server` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169140,7 +168570,7 @@ CREATE TABLE `link__mysql_database__mysql_replication_thread` (
   KEY `id_mysql_replication_thread` (`id_mysql_replication_thread`),
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_database`) REFERENCES `mysql_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_2` FOREIGN KEY (`id_mysql_replication_thread`) REFERENCES `mysql_replication_thread` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169161,7 +168591,7 @@ CREATE TABLE `link__mysql_server__ssh_key` (
   KEY `id_ssh_key` (`id_ssh_key`),
   CONSTRAINT `link__mysql_server__ssh_key_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
   CONSTRAINT `link__mysql_server__ssh_key_ibfk_2` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169180,7 +168610,7 @@ CREATE TABLE `link__mysql_server__tag` (
   KEY `id_tag` (`id_tag`),
   CONSTRAINT `link__mysql_server__tag_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__mysql_server__tag_ibfk_2` FOREIGN KEY (`id_tag`) REFERENCES `tag` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169196,7 +168626,7 @@ CREATE TABLE `link__slave__mysql_replication_thread` (
   `id_mysql_replication_thread` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169212,7 +168642,7 @@ CREATE TABLE `link__slave__mysql_server` (
   `id_mysql_server` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169228,7 +168658,7 @@ CREATE TABLE `link__status__mysql_server` (
   `id_mysql_server` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169244,7 +168674,7 @@ CREATE TABLE `link__ts_variable__mysql_server` (
   `id_ts_variable` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_gg` (`id_mysql_server`,`id_ts_variable`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169260,7 +168690,7 @@ CREATE TABLE `link__variables__mysql_server` (
   `id_mysql_server` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169287,7 +168717,7 @@ CREATE TABLE `mysql_database` (
   UNIQUE KEY `name` (`name`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169304,21 +168734,21 @@ CREATE TABLE `mysql_dump` (
   `date_start` datetime NOT NULL,
   `date_end` datetime NOT NULL,
   `time` int(11) NOT NULL,
-  `database` varchar(30) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `file_name` varchar(191) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `database` varchar(30) CHARACTER SET utf8mb3 NOT NULL,
+  `file_name` varchar(191) CHARACTER SET utf8mb3 NOT NULL,
   `size` bigint(11) NOT NULL,
   `md5` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `is_gziped` int(11) NOT NULL DEFAULT 0,
   `is_available` int(11) NOT NULL DEFAULT 1,
   `is_completed` int(11) NOT NULL,
-  `master_data` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `slave_data` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `master_data` text CHARACTER SET utf8mb3 NOT NULL,
+  `slave_data` text CHARACTER SET utf8mb3 NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_serveur` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
   KEY `id_backup_database` (`id_backup_database`),
   CONSTRAINT `mysql_dump_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169339,7 +168769,7 @@ CREATE TABLE `mysql_node` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_galera` (`id_mysql_galera`),
   KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169354,7 +168784,7 @@ CREATE TABLE `mysql_privilege` (
   `type` varchar(25) NOT NULL,
   `privilege` varchar(25) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169383,7 +168813,7 @@ CREATE TABLE `mysql_replication_stats` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_replication_stats_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci COMMENT='1.9.6';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='1.9.6';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169396,13 +168826,13 @@ DROP TABLE IF EXISTS `mysql_replication_thread`;
 CREATE TABLE `mysql_replication_thread` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_replication_stats` int(11) NOT NULL,
-  `relay_master_log_file` varchar(200) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `relay_master_log_file` varchar(200) CHARACTER SET utf8mb3 NOT NULL,
   `exec_master_log_pos` int(11) NOT NULL,
   `thread_io` varchar(65) NOT NULL,
   `thread_sql` varchar(65) NOT NULL,
-  `thread_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `thread_name` varchar(100) CHARACTER SET utf8mb3 NOT NULL,
   `time_behind` varchar(11) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-  `master_host` char(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `master_host` char(15) CHARACTER SET utf8mb3 NOT NULL,
   `master_port` int(11) NOT NULL,
   `last_io_error` text NOT NULL,
   `last_sql_error` text NOT NULL,
@@ -169411,7 +168841,7 @@ CREATE TABLE `mysql_replication_thread` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_replication_stats` (`id_mysql_replication_stats`,`thread_name`),
   CONSTRAINT `mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_replication_stats`) REFERENCES `mysql_replication_stats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169425,11 +168855,11 @@ CREATE TABLE `mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_client` int(11) NOT NULL,
   `id_environment` int(11) NOT NULL,
-  `name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb3 NOT NULL,
   `display_name` varchar(100) NOT NULL,
   `ip` char(15) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `hostname` varchar(200) NOT NULL DEFAULT '',
-  `login` varchar(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `login` varchar(32) CHARACTER SET utf8mb3 NOT NULL,
   `passwd` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `database` varchar(64) NOT NULL,
   `is_password_crypted` int(11) NOT NULL,
@@ -169443,7 +168873,6 @@ CREATE TABLE `mysql_server` (
   `is_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
   `error` text NOT NULL DEFAULT '',
-  `warning` text NOT NULL DEFAULT '',
   `date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
   `ssh_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `ssh_date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
@@ -169456,7 +168885,7 @@ CREATE TABLE `mysql_server` (
   KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169473,7 +168902,7 @@ CREATE TABLE `mysql_variable` (
   `value` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`variable`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169492,7 +168921,7 @@ CREATE TABLE `myxplain` (
   `date` datetime NOT NULL,
   `json` text NOT NULL DEFAULT '' COMMENT 'used in future for explain format=json',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169508,29 +168937,7 @@ CREATE TABLE `objet` (
   `reference_id` int(11) NOT NULL,
   `ip` char(15) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `percona_osc_table`
---
-
-DROP TABLE IF EXISTS `percona_osc_table`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `percona_osc_table` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `table_schema` varchar(64) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-  `table_name` varchar(64) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-  `table_rows` bigint(20) NOT NULL,
-  `data_length` bigint(20) NOT NULL,
-  `index_length` bigint(20) NOT NULL,
-  `data_free` bigint(20) NOT NULL,
-  `create_time` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`table_schema`,`table_name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169548,7 +168955,7 @@ CREATE TABLE `plugin_file` (
   PRIMARY KEY (`id`),
   KEY `id_plugin_main` (`id_plugin_main`),
   CONSTRAINT `plugin_file_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169573,7 +168980,7 @@ CREATE TABLE `plugin_main` (
   `numero_licence` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nom` (`nom`,`version`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169590,7 +168997,7 @@ CREATE TABLE `plugin_menu` (
   PRIMARY KEY (`id`),
   KEY `id_plugin_main` (`id_plugin_main`),
   CONSTRAINT `plugin_menu_ibfk_1` FOREIGN KEY (`id_plugin_main`) REFERENCES `plugin_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169608,7 +169015,7 @@ CREATE TABLE `pmacli_drain_item` (
   PRIMARY KEY (`id`),
   KEY `id_pmacli_drain_process` (`id_pmacli_drain_process`,`table`),
   CONSTRAINT `pmacli_drain_item_ibfk_1` FOREIGN KEY (`id_pmacli_drain_process`) REFERENCES `pmacli_drain_process` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169632,31 +169039,7 @@ CREATE TABLE `pmacli_drain_process` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
   CONSTRAINT `pmacli_drain_process_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `proxysql_server`
---
-
-DROP TABLE IF EXISTS `proxysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `proxysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `hostname` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-  `port` int(11) NOT NULL,
-  `login` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `date_inserted` datetime NOT NULL,
-  `error` varchar(255) NOT NULL,
-  `is_available` int(11) NOT NULL DEFAULT 0,
-  `date_refresh` datetime NOT NULL,
-  `warning` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169674,7 +169057,7 @@ CREATE TABLE `scan` (
   `data` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ip` (`ip`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169697,7 +169080,7 @@ CREATE TABLE `ssh_key` (
   `comment` varchar(255) NOT NULL DEFAULT 'no comment',
   PRIMARY KEY (`id`),
   UNIQUE KEY `fingerprint` (`fingerprint`,`user`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169714,7 +169097,7 @@ CREATE TABLE `tag` (
   `background` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169726,7 +169109,7 @@ DROP TABLE IF EXISTS `test_warning`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `test_warning` (
   `a` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169753,7 +169136,7 @@ CREATE TABLE `ts_max_date` (
   KEY `id_ts_file` (`id_ts_file`),
   CONSTRAINT `ts_max_date_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ts_max_date_ibfk_3` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169790,7 +169173,7 @@ CREATE TABLE `user_main` (
   CONSTRAINT `user_main_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`),
   CONSTRAINT `user_main_ibfk_2` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`),
   CONSTRAINT `user_main_ibfk_3` FOREIGN KEY (`id_geolocalisation_city`) REFERENCES `geolocalisation_city` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169810,7 +169193,7 @@ CREATE TABLE `user_main_login` (
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169833,7 +169216,7 @@ CREATE TABLE `virtual_foreign_key` (
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169851,7 +169234,7 @@ CREATE TABLE `virtual_ip` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `virtual_ip_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169872,7 +169255,7 @@ CREATE TABLE `webservice_history_main` (
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `webservice_history_main_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169891,7 +169274,7 @@ CREATE TABLE `webservice_user` (
   `is_enabled` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user` (`user`,`host`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
