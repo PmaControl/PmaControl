@@ -19,20 +19,6 @@
 -- Table structure for table `translation_google`
 --
 
-DROP TABLE IF EXISTS `translation_google`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `translation_google` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `key` char(42) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `source_language` char(10) NOT NULL,
-  `source_text` text NOT NULL,
-  `target_language` char(10) NOT NULL,
-  `target_text` text NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`,`target_language`)
-) ENGINE=InnoDB AUTO_INCREMENT=1405 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Dumping data for table `translation_google`
@@ -40,7 +26,7 @@ CREATE TABLE `translation_google` (
 
 LOCK TABLES `translation_google` WRITE;
 /*!40000 ALTER TABLE `translation_google` DISABLE KEYS */;
-INSERT INTO `translation_google` VALUES
+INSERT IGNORE INTO `translation_google` VALUES
 (1,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','fr','À propos de'),
 (2,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','ru','О'),
 (3,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','uk','про'),
