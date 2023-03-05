@@ -18,7 +18,7 @@ use \Glial\Sgbd\Sgbd;
 class Export extends Controller
 {
     var $table_with_data        = array("translation_main", "geolocalisation_city",
-        "geolocalisation_continent", "geolocalisation_country", "translation_google");
+        "geolocalisation_continent", "geolocalisation_country");
     var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file",
         "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "architecture_legend",
         "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial");
