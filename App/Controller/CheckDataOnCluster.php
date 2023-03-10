@@ -22,7 +22,6 @@ class CheckDataOnCluster extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['database']) && !empty($_POST['sql'])) {
 
@@ -149,14 +148,10 @@ class CheckDataOnCluster extends Controller {
             }
         }
 
-
-
-
         $sql = "select group_concat(b.name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
             from link__architecture__mysql_server a
             INNER JOIN mysql_server b ON a.id_mysql_server= b.id
             group by id_architecture having count(1) > 1;";
-
 
         $res = $db->sql_query($sql);
 
@@ -287,20 +282,13 @@ class CheckDataOnCluster extends Controller {
 
     public function see($param) {
         $db = Sgbd::sql(DB_DEFAULT);
-
-
         $display_name = $param[0];
         $sql = "SELECT * FROM mysql_server WHERE display_name='" . $display_name . "'";
-
-
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
-
             $_db = Sgbd::sql($ob->name);
         }
-
 
         if (!empty($_db)) {
 
@@ -309,11 +297,9 @@ class CheckDataOnCluster extends Controller {
             foreach ($users as $user) {
 
                 $pos = strpos($user, "debian-sys-maint");
-
 // Notez notre utilisation de ===.  == ne fonctionnerait pas comme attendu
 // car la position de 'a' est la 0-ième (premier) caractère.
                 if ($pos !== false) {
-
                     continue;
                 }
 
