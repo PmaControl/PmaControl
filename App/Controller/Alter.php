@@ -13,6 +13,7 @@ use App\Library\Debug;
 
 class Alter extends Controller
 {
+
     public function dropsp($param)
     {
         Debug::parseDebug($param);
@@ -45,7 +46,7 @@ class Alter extends Controller
 
             if ($gg != false) {
                 Debug::debug("slave");
-                
+
                 $remote->sql_query("STOP SLAVE;");
                 $remote->sql_query("SET GLOBAL read_only = 1;");
                 $remote->sql_query("SET GLOBAL replicate_wild_ignore_table = '';");

@@ -1,8 +1,8 @@
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.10.3-MariaDB, for debian-linux-gnu (aarch64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.10.3-MariaDB-1:10.10.3+maria~deb11-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162815,1439 +162815,6 @@ INSERT INTO `geolocalisation_country` VALUES
 UNLOCK TABLES;
 
 --
--- Table structure for table `translation_google`
---
-
-DROP TABLE IF EXISTS `translation_google`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `translation_google` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `key` char(42) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `source_language` char(10) NOT NULL,
-  `source_text` text NOT NULL,
-  `target_language` char(10) NOT NULL,
-  `target_text` text NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`,`target_language`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `translation_google`
---
-
-LOCK TABLES `translation_google` WRITE;
-/*!40000 ALTER TABLE `translation_google` DISABLE KEYS */;
-INSERT INTO `translation_google` VALUES
-(1,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','fr','À propos de'),
-(2,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','ru','О'),
-(3,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','uk','про'),
-(4,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','fr','Reconnaître'),
-(5,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','ru','Сознавать'),
-(6,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','uk','Визнати'),
-(7,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','fr','DNS d&#39;alias'),
-(8,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','ru','Псевдоним DNS'),
-(9,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','uk','Псевдонім DNS'),
-(10,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','fr','Architecture'),
-(11,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','ru','Архитектура'),
-(12,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','uk','Архітектура'),
-(13,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','fr','Les archives'),
-(14,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','ru','Архивы'),
-(15,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','uk','Архіви'),
-(16,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','fr','Disponible'),
-(17,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','ru','Доступный'),
-(18,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','uk','в наявності'),
-(19,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','fr','Sauvegardes'),
-(20,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','ru','Резервные копии'),
-(21,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','uk','Резервні копії'),
-(22,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','fr','Commencer'),
-(23,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','ru','Начинать'),
-(24,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','uk','Почніть'),
-(25,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','fr','Référence'),
-(26,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','ru','BenchMark'),
-(27,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','uk','BenchMark'),
-(28,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','fr','Vérifier la configuration'),
-(29,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','ru','Проверить конфигурацию'),
-(30,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','uk','Перевірте конфігурацію'),
-(31,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','fr','Vérifier la mise à jour'),
-(32,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','ru','Проверить обновления'),
-(33,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','uk','Перевірити оновлення'),
-(34,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','fr','Nettoyeur'),
-(35,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','ru','Очиститель'),
-(36,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','uk','Прибиральник'),
-(37,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','fr','Client'),
-(38,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','ru','Клиент'),
-(39,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','uk','Клієнт'),
-(40,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','fr','Commettre'),
-(41,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','ru','Совершить'),
-(42,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','uk','Здійснити'),
-(43,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','fr','Comparer'),
-(44,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','ru','Сравнивать'),
-(45,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','uk','Порівняйте'),
-(46,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','fr','Démon'),
-(47,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','ru','Демон'),
-(48,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','uk','Демон'),
-(49,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','fr','Tableau de bord'),
-(50,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','ru','Приборная доска'),
-(51,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','uk','Панель приладів'),
-(52,'2a238000a577ce326594097f4780e17496e0295e','en','Database','fr','Base de données'),
-(53,'2a238000a577ce326594097f4780e17496e0295e','en','Database','ru','База данных'),
-(54,'2a238000a577ce326594097f4780e17496e0295e','en','Database','uk','База даних'),
-(55,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','fr','Bases de données'),
-(56,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','ru','Базы данных'),
-(57,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','uk','Бази даних'),
-(58,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','fr','Actualisation de la date'),
-(59,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','ru','Обновление даты'),
-(60,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','uk','Оновлення дати'),
-(61,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','fr','Effacer'),
-(62,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','ru','Удалить'),
-(63,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','uk','Видалити'),
-(64,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','fr','Déployer la clé RSA'),
-(65,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','ru','Развернуть ключ RSA'),
-(66,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','uk','Розгорнути ключ RSA'),
-(67,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','fr','Développeur'),
-(68,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','ru','Разработчик'),
-(69,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','uk','Розробник'),
-(70,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','fr','Environnement'),
-(71,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','ru','Окружающая среда'),
-(72,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','uk','Навколишнє середовище'),
-(73,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','fr','Erreur'),
-(74,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','ru','Ошибка'),
-(75,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','uk','Помилка'),
-(76,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','fr','Filtre'),
-(77,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','ru','Фильтр'),
-(78,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','uk','фільтр'),
-(79,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','fr','Formater SQL'),
-(80,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','ru','Формат SQL'),
-(81,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','uk','Формат SQL'),
-(82,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','fr','Grappe Galera'),
-(83,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','ru','Кластер Галера'),
-(84,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','uk','Скупчення Галери'),
-(85,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','fr','Graphiques'),
-(86,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','ru','Графики'),
-(87,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','uk','графіки'),
-(88,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','fr','Groupes'),
-(89,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','ru','Группы'),
-(90,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','uk','Групи'),
-(91,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','fr','Matériel'),
-(92,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','ru','Аппаратное обеспечение'),
-(93,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','uk','Обладнання'),
-(94,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','fr','Aider'),
-(95,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','ru','Помощь'),
-(96,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','uk','Довідка'),
-(97,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','fr','Maison'),
-(98,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','ru','Дом'),
-(99,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','uk','додому'),
-(100,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','fr','IDENTIFIANT'),
-(101,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','ru','Я БЫ'),
-(102,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','uk','ID'),
-(103,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','fr','IP'),
-(104,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','ru','IP'),
-(105,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','uk','IP'),
-(106,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','fr','Importer / Exporter'),
-(107,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','ru','Импорт Экспорт'),
-(108,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','uk','Імпорт-експорт'),
-(109,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','fr','Indice'),
-(110,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','ru','Индекс'),
-(111,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','uk','Індекс'),
-(112,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','fr','Insérer'),
-(113,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','ru','Вставлять'),
-(114,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','uk','Вставка'),
-(115,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','fr','Emploi'),
-(116,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','ru','Работа'),
-(117,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','uk','Робота'),
-(118,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','fr','LDAP'),
-(119,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','ru','LDAP'),
-(120,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','uk','LDAP'),
-(121,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','fr','Se déconnecter'),
-(122,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','ru','Выйти'),
-(123,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','uk','Вийти'),
-(124,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','fr','Gérer le binlog'),
-(125,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','ru','Управление бинлогом'),
-(126,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','uk','Керувати binlog'),
-(127,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','fr','Gérer le menu'),
-(128,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','ru','Управление меню'),
-(129,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','uk','Керувати меню'),
-(130,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','fr','Maître d&#39;esclave'),
-(131,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','ru','Мастер / Раб'),
-(132,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','uk','Господар/Раб'),
-(133,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','fr','Mémoire'),
-(134,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','ru','Память'),
-(135,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','uk','Пам&#39;ять'),
-(136,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','fr','Utilisateur MySQL'),
-(137,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','ru','Пользователь MySQL'),
-(138,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','uk','Користувач MySQL'),
-(139,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','fr','Nom'),
-(140,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','ru','Имя'),
-(141,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','uk','Ім&#39;я'),
-(142,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','fr','Non'),
-(143,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','ru','Нет'),
-(144,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','uk','Ні'),
-(145,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','fr','Rien de sélectionné'),
-(146,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','ru','Ничего не выбрано'),
-(147,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','uk','Нічого не вибрано'),
-(148,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','fr','OLTP/OLAP'),
-(149,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','ru','OLTP/OLAP'),
-(150,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','uk','OLTP / OLAP'),
-(151,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','fr','Documents et assistance en ligne'),
-(152,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','ru','Онлайн-документы и поддержка'),
-(153,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','uk','Онлайн-документи та підтримка'),
-(154,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','fr','PHP en direct REGEX'),
-(155,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','ru','Регламент PHP в реальном времени'),
-(156,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','uk','PHP Live REGEX'),
-(157,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','fr','Mot de passe'),
-(158,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','ru','Пароль'),
-(159,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','uk','Пароль'),
-(160,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','fr','Pour cent'),
-(161,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','ru','Процент'),
-(162,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','uk','Відсоток'),
-(163,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','fr','Ping'),
-(164,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','ru','пинг'),
-(165,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','uk','Пінг'),
-(166,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','fr','Plugins'),
-(167,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','ru','Плагины'),
-(168,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','uk','Плагіни'),
-(169,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','fr','Port'),
-(170,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','ru','Порт'),
-(171,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','uk','Порт'),
-(172,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','fr','Analyseur de requête'),
-(173,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','ru','Анализатор запросов'),
-(174,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','uk','Аналізатор запитів'),
-(175,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','fr','LECTURE SEULEMENT'),
-(176,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','ru','ТОЛЬКО ЧТЕНИЕ'),
-(177,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','uk','ЛИШЕ ДЛЯ ЧИТАННЯ'),
-(178,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','fr','Remplacer'),
-(179,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','ru','Заменять'),
-(180,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','uk','Замінити'),
-(181,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','fr','Signaler un problème'),
-(182,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','ru','Сообщить о проблеме'),
-(183,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','uk','Повідомити про проблему'),
-(184,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','fr','Retour en arriere'),
-(185,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','ru','Откат'),
-(186,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','uk','Відкат'),
-(187,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','fr','Clés SSH'),
-(188,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','ru','SSH-ключи'),
-(189,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','uk','Ключі SSH'),
-(190,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','fr','Analyser le réseau'),
-(191,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','ru','Сканировать сеть'),
-(192,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','uk','Сканувати мережу'),
-(193,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','fr','Sécurité'),
-(194,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','ru','Безопасность'),
-(195,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','uk','Безпека'),
-(196,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','fr','Sélectionner'),
-(197,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','ru','Выбирать'),
-(198,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','uk','Виберіть'),
-(199,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','fr','Serveur :'),
-(200,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','ru','Сервер:'),
-(201,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','uk','сервер:'),
-(202,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','fr','Les serveurs'),
-(203,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','ru','Серверы'),
-(204,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','uk','Сервери'),
-(205,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','fr','Réglages'),
-(206,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','ru','Настройки'),
-(207,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','uk','Налаштування'),
-(208,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','fr','Statistiques'),
-(209,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','ru','Статистика'),
-(210,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','uk','Статистика'),
-(211,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','fr','Zone de stockage'),
-(212,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','ru','Зона хранения'),
-(213,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','uk','Зона зберігання'),
-(214,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','fr','Mots clés'),
-(215,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','ru','Теги'),
-(216,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','uk','Теги'),
-(217,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','fr','Outils'),
-(218,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','ru','Инструменты'),
-(219,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','uk','Інструменти'),
-(220,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','fr','Haut'),
-(221,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','ru','верхний'),
-(222,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','uk','Топ'),
-(223,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','fr','Topologie'),
-(224,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','ru','Топология'),
-(225,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','uk','Топологія'),
-(226,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','fr','Total'),
-(227,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','ru','Общий'),
-(228,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','uk','Всього'),
-(229,'523083d34591725b2863c87fd696274a2e82920e','en','Update','fr','Mise à jour'),
-(230,'523083d34591725b2863c87fd696274a2e82920e','en','Update','ru','Обновлять'),
-(231,'523083d34591725b2863c87fd696274a2e82920e','en','Update','uk','оновлення'),
-(232,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','fr','Disponibilité'),
-(233,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','ru','Время безотказной работы'),
-(234,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','uk','Час роботи'),
-(235,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','fr','Utilisateur'),
-(236,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','ru','Пользователь'),
-(237,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','uk','Користувач'),
-(238,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','fr','Utilisateur connecté'),
-(239,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','ru','Пользователь подключен'),
-(240,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','uk','Користувач підключений'),
-(241,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','fr','Utilisateurs'),
-(242,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','ru','Пользователи'),
-(243,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','uk','Користувачі'),
-(244,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','fr','Contrôle de version des variables'),
-(245,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','ru','Контроль версий переменных'),
-(246,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','uk','Контроль версій змінних'),
-(247,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','fr','Version'),
-(248,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','ru','Версия'),
-(249,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','uk','Версія'),
-(250,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','fr','Oui'),
-(251,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','ru','Да'),
-(252,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','uk','Так'),
-(253,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','fr','par seconde'),
-(254,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','ru','на секунду'),
-(255,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','uk','на секунду'),
-(256,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','fr','Schéma sys'),
-(257,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','ru','системная схема'),
-(258,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','uk','sys Схема'),
-(259,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','fr','Comptes'),
-(260,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','ru','учетные записи'),
-(261,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','uk','Облікові записи'),
-(262,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','fr','Ajouter un groupe'),
-(263,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','ru','Добавить группу'),
-(264,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','uk','Додайте групу'),
-(265,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','fr','Ajouter une balise'),
-(266,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','ru','Добавить тег'),
-(267,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','uk','Додайте тег'),
-(268,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','fr','Alias'),
-(269,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','ru','Псевдоним'),
-(270,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','uk','Псевдонім'),
-(271,'545f3f15137131f66094b5d7943712976d731421','en','All','fr','Tout'),
-(272,'545f3f15137131f66094b5d7943712976d731421','en','All','ru','Все'),
-(273,'545f3f15137131f66094b5d7943712976d731421','en','All','uk','всі'),
-(274,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','fr','Permettre'),
-(275,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','ru','Разрешать'),
-(276,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','uk','Дозволити'),
-(277,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','fr','Cambre'),
-(278,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','ru','Арка'),
-(279,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','uk','Арк'),
-(280,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','fr','SSH disponible'),
-(281,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','ru','Доступный SSH'),
-(282,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','uk','Доступний SSH'),
-(283,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','fr','Arrière plan'),
-(284,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','ru','Фон'),
-(285,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','uk','Фон'),
-(286,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','fr','Numéro de journal'),
-(287,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','ru','Номер бинлога'),
-(288,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','uk','Номер бінлога'),
-(289,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','fr','Taille du binlog par fichier'),
-(290,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','ru','Размер бинлога по файлам'),
-(291,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','uk','Розмір binlog за файлом'),
-(292,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','fr','Jeu de caractères'),
-(293,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','ru','Набор символов'),
-(294,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','uk','Кодування'),
-(295,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','fr','Collation'),
-(296,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','ru','Сопоставление'),
-(297,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','uk','зіставлення'),
-(298,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','fr','Collations'),
-(299,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','ru','Сопоставления'),
-(300,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','uk','Зіставлення'),
-(301,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','fr','Couleur'),
-(302,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','ru','Цвет'),
-(303,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','uk','Колір'),
-(304,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','fr','Commande'),
-(305,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','ru','Команда'),
-(306,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','uk','Команда'),
-(307,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','fr','Date'),
-(308,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','ru','Свидание'),
-(309,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','uk','Дата'),
-(310,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','fr','Refuser'),
-(311,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','ru','Отрицать'),
-(312,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','uk','Заперечувати'),
-(313,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','fr','Affichage'),
-(314,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','ru','Отображать'),
-(315,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','uk','Дисплей'),
-(316,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','fr','Éditer'),
-(317,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','ru','Редактировать'),
-(318,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','uk','Редагувати'),
-(319,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','fr','Moteur'),
-(320,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','ru','Двигатель'),
-(321,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','uk','Двигун'),
-(322,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','fr','Jour d&#39;expiration des journaux'),
-(323,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','ru','Дата истечения срока действия журналов'),
-(324,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','uk','Термін дії журналів день'),
-(325,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','fr','Journal de fichiers'),
-(326,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','ru','Журнал файлов'),
-(327,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','uk','Журнал файлів'),
-(328,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','fr','Premier fichier'),
-(329,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','ru','Первый файл'),
-(330,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','uk','Перший файл'),
-(331,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','fr','Première page'),
-(332,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','ru','Первая страница'),
-(333,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','uk','Перша сторінка'),
-(334,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','fr','Aller'),
-(335,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','ru','Идти'),
-(336,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','uk','Іди'),
-(337,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','fr','Gestionnaire_read_first'),
-(338,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','ru','Handler_read_first'),
-(339,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','uk','Handler_read_first'),
-(340,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','fr','Handler_read_key'),
-(341,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','ru','Handler_read_key'),
-(342,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','uk','Handler_read_key'),
-(343,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','fr','Gestionnaire_read_next'),
-(344,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','ru','Handler_read_next'),
-(345,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','uk','Handler_read_next'),
-(346,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','fr','Gestionnaire_read_prev'),
-(347,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','ru','Handler_read_prev'),
-(348,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','uk','Handler_read_prev'),
-(349,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','fr','Gestionnaire_read_rnd'),
-(350,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','ru','Handler_read_rnd'),
-(351,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','uk','Handler_read_rnd'),
-(352,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','fr','Gestionnaire_read_rnd_next'),
-(353,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','ru','Handler_read_rnd_next'),
-(354,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','uk','Handler_read_rnd_next'),
-(355,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','fr','Héberger'),
-(356,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','ru','Хозяин'),
-(357,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','uk','Хост'),
-(358,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','fr','Nom d&#39;hôte'),
-(359,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','ru','Имя хоста'),
-(360,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','uk','Ім&#39;я хоста'),
-(361,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','fr','Identifiant'),
-(362,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','ru','Идентификатор'),
-(363,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','uk','ID'),
-(364,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','fr','Utilisation de l&#39;index'),
-(365,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','ru','Использование индекса'),
-(366,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','uk','Використання індексу'),
-(367,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','fr','installée'),
-(368,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','ru','Установлены'),
-(369,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','uk','встановлено'),
-(370,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','fr','est super'),
-(371,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','ru','Супер'),
-(372,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','uk','Супер'),
-(373,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','fr','Noyau'),
-(374,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','ru','ядро'),
-(375,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','uk','Ядро'),
-(376,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','fr','Dernier fichier'),
-(377,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','ru','Последний файл'),
-(378,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','uk','Останній файл'),
-(379,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','fr','Dernière page'),
-(380,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','ru','Последняя страница'),
-(381,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','uk','Остання сторінка'),
-(382,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','fr','Référencement'),
-(383,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','ru','Листинг'),
-(384,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','uk','Лістинг'),
-(385,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','fr','Tableau principal'),
-(386,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','ru','Основная таблица'),
-(387,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','uk','Основна таблиця'),
-(388,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','fr','Taille maximale du binlog'),
-(389,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','ru','Максимальный размер бинлога'),
-(390,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','uk','Максимальний розмір binlog'),
-(391,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','fr','Délai maximal'),
-(392,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','ru','Максимальная задержка'),
-(393,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','uk','Максимальна затримка'),
-(394,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','fr','Surveillance'),
-(395,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','ru','Мониторинг'),
-(396,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','uk','Моніторинг'),
-(397,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','fr','Nb fichier'),
-(398,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','ru','NB-файл'),
-(399,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','uk','Nb файл'),
-(400,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','fr','Numéro de compte sans mot de passe :'),
-(401,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','ru','Номер аккаунта без пароля:'),
-(402,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','uk','Номер облікового запису без пароля:'),
-(403,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','fr','COMMANDÉ PAR'),
-(404,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','ru','СОРТИРОВАТЬ ПО'),
-(405,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','uk','СОРТУВАТИ ЗА'),
-(406,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','fr','Système d&#39;exploitation'),
-(407,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','ru','Операционная система'),
-(408,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','uk','Операційна система'),
-(409,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','fr','Organisation'),
-(410,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','ru','Организация'),
-(411,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','uk','Організація'),
-(412,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','fr','Chemin'),
-(413,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','ru','Дорожка'),
-(414,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','uk','шлях'),
-(415,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','fr','Veuillez saisir un numéro de page valide !'),
-(416,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','ru','Пожалуйста, введите действительный номер страницы!'),
-(417,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','uk','Введіть правильний номер сторінки!'),
-(418,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','fr','Brancher'),
-(419,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','ru','Плагин'),
-(420,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','uk','Підключати'),
-(421,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','fr','Processeur'),
-(422,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','ru','Процессор'),
-(423,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','uk','Процесор'),
-(424,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','fr','Nom du produit'),
-(425,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','ru','Наименование товара'),
-(426,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','uk','Назва продукту'),
-(427,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','fr','Purge'),
-(428,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','ru','Удалять'),
-(429,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','uk','Чистка'),
-(430,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','fr','Msg file d&#39;attente'),
-(431,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','ru','Очередь сообщения'),
-(432,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','uk','Повідомлення в черзі'),
-(433,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','fr','Numéro de file d&#39;attente'),
-(434,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','ru','Номер очереди'),
-(435,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','uk','Номер черги'),
-(436,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','fr','Temps de rafraîchissement'),
-(437,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','ru','Обновить время'),
-(438,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','uk','Час оновлення'),
-(439,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','fr','Retirer'),
-(440,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','ru','Удалять'),
-(441,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','uk','видалити'),
-(442,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','fr','Résultats trouvés :'),
-(443,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','ru','Найдены результаты:'),
-(444,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','uk','Знайдено результати:'),
-(445,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','fr','Les rôles'),
-(446,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','ru','Роли'),
-(447,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','uk','Ролі'),
-(448,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','fr','Format de ligne'),
-(449,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','ru','Формат строки'),
-(450,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','uk','Формат рядка'),
-(451,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','fr','Lignes'),
-(452,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','ru','Ряды'),
-(453,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','uk','рядки'),
-(454,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','fr','Serveur'),
-(455,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','ru','Сервер'),
-(456,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','uk','Сервер'),
-(457,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','fr','Source du serveur'),
-(458,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','ru','Источник сервера'),
-(459,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','uk','Джерело сервера'),
-(460,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','fr','Taille (données)'),
-(461,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','ru','Размер (данные)'),
-(462,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','uk','Розмір (дані)'),
-(463,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','fr','Taille (libre)'),
-(464,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','ru','Безразмерный)'),
-(465,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','uk','Розмір (безкоштовно)'),
-(466,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','fr','Taille (indice)'),
-(467,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','ru','Размер (индекс)'),
-(468,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','uk','Розмір (індекс)'),
-(469,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','fr','Taille binlog utilisée'),
-(470,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','ru','Размер используемого бинлога'),
-(471,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','uk','Використаний розмір binlog'),
-(472,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','fr','Taille max autorisée'),
-(473,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','ru','Максимально допустимый размер'),
-(474,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','uk','Максимально допустимий розмір'),
-(475,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','fr','Taille maximale autorisée sur le serveur pour tous les binlogs'),
-(476,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','ru','Максимально допустимый размер на сервере для всех бинлогов'),
-(477,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','uk','Максимально дозволений розмір на сервері для всіх binlogs'),
-(478,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','fr','Statut'),
-(479,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','ru','Статус'),
-(480,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','uk','Статус'),
-(481,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','fr','Soumettre'),
-(482,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','ru','Представлять на рассмотрение'),
-(483,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','uk','Надіслати'),
-(484,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','fr','TOTAL'),
-(485,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','ru','ОБЩИЙ'),
-(486,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','uk','РАЗОМ'),
-(487,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','fr','les tables'),
-(488,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','ru','Столы'),
-(489,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','uk','Таблиці'),
-(490,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','fr','Étiquette'),
-(491,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','ru','Ярлык'),
-(492,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','uk','Тег'),
-(493,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','fr','Concurrence de thread'),
-(494,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','ru','Параллелизм потоков'),
-(495,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','uk','Паралельність потоків'),
-(496,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','fr','Jeudi'),
-(497,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','ru','Четверг'),
-(498,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','uk','четвер'),
-(499,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','fr','Temps'),
-(500,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','ru','Время'),
-(501,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','uk','час'),
-(502,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','fr','Mettre à jour'),
-(503,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','ru','Обновить'),
-(504,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','uk','Оновити'),
-(505,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','fr','Boîte à outils'),
-(506,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','ru','Ящик для инструментов'),
-(507,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','uk','Ящик для інструментів'),
-(508,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','fr','Taille totale'),
-(509,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','ru','Общий размер'),
-(510,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','uk','Загальний розмір'),
-(511,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','fr','Taille totale utilisée par tous les binlog :'),
-(512,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','ru','Общий размер, используемый всеми бинлогами:'),
-(513,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','uk','Загальний розмір, який використовується всім binlog :'),
-(514,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','fr','Mardi'),
-(515,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','ru','Вторник'),
-(516,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','uk','вівторок'),
-(517,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','fr','Usage'),
-(518,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','ru','Применение'),
-(519,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','uk','Використання'),
-(520,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','fr','L&#39;utilisation de l&#39;indice est calculée comme suit :'),
-(521,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','ru','Использование индекса рассчитывается следующим образом:'),
-(522,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','uk','Використання індексу розраховується таким чином:'),
-(523,'c387f14c55e25617048123e845e170525f61376b','en','Value','fr','Évaluer'),
-(524,'c387f14c55e25617048123e845e170525f61376b','en','Value','ru','Ценность'),
-(525,'c387f14c55e25617048123e845e170525f61376b','en','Value','uk','Значення'),
-(526,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','fr','Variable'),
-(527,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','ru','Переменная'),
-(528,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','uk','змінна'),
-(529,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','fr','classer'),
-(530,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','ru','учебный класс'),
-(531,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','uk','клас'),
-(532,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','fr','date de fin'),
-(533,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','ru','дата окончания'),
-(534,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','uk','дата закінчення'),
-(535,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','fr','date de depart'),
-(536,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','ru','дата начала'),
-(537,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','uk','початок дати'),
-(538,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','fr','Erreur'),
-(539,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','ru','ошибка'),
-(540,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','uk','помилка'),
-(541,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','fr','Journal'),
-(542,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','ru','журнал'),
-(543,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','uk','журнал'),
-(544,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','fr','méthode'),
-(545,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','ru','метод'),
-(546,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','uk','метод'),
-(547,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','fr','pages de'),
-(548,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','ru','страницы'),
-(549,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','uk','сторінки'),
-(550,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','fr','paramètre'),
-(551,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','ru','параметр'),
-(552,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','uk','параметр'),
-(553,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','fr','pid'),
-(554,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','ru','pid'),
-(555,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','uk','під'),
-(556,'277da490aada977dbd340cff0d6c740a2421c430','en','status','fr','statut'),
-(557,'277da490aada977dbd340cff0d6c740a2421c430','en','status','ru','статус'),
-(558,'277da490aada977dbd340cff0d6c740a2421c430','en','status','uk','статус'),
-(559,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','fr','IO'),
-(560,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','ru','ИО'),
-(561,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','uk','IO'),
-(562,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','fr','Maître'),
-(563,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','ru','Мастер'),
-(564,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','uk','майстер'),
-(565,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','fr','SQL'),
-(566,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','ru','SQL'),
-(567,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','uk','SQL'),
-(568,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','fr','Secondes'),
-(569,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','ru','Секунды'),
-(570,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','uk','секунд'),
-(571,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','fr','Trimer'),
-(572,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','ru','Раб'),
-(573,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','uk','Раб'),
-(574,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','fr','Bienvenue sur PmaControl !'),
-(575,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','ru','Добро пожаловать в PmaControl!'),
-(576,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','uk','Ласкаво просимо до PmaControl!'),
-(577,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','fr','Ajouter'),
-(578,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','ru','Добавлять'),
-(579,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','uk','додати'),
-(580,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','fr','Statut_cluster'),
-(581,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','ru','Cluster_status'),
-(582,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','uk','Cluster_status'),
-(583,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','fr','Nom de la connexion'),
-(584,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','ru','Название соединения'),
-(585,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','uk','Назва підключення'),
-(586,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','fr','Désynchroniser'),
-(587,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','ru','Рассинхронизация'),
-(588,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','uk','Десинхронізувати'),
-(589,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','fr','État local'),
-(590,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','ru','Местное состояние'),
-(591,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','uk','Місцева держава'),
-(592,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','fr','Stockage local'),
-(593,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','ru','Локальное хранилище'),
-(594,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','uk','Локальне сховище'),
-(595,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','fr','Emplacement'),
-(596,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','ru','Расположение'),
-(597,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','uk','Місцезнаходження'),
-(598,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','fr','La mémoire est calculée comme suit :'),
-(599,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','ru','Память рассчитывается следующим образом:'),
-(600,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','uk','Пам&#39;ять розраховується наступним чином:'),
-(601,'c54592fd312afa517640ef9218ec41859b079614','en','Node','fr','Nœud'),
-(602,'c54592fd312afa517640ef9218ec41859b079614','en','Node','ru','Узел'),
-(603,'c54592fd312afa517640ef9218ec41859b079614','en','Node','uk','Вузол'),
-(604,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','fr','Mémoire physique'),
-(605,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','ru','Физическая память'),
-(606,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','uk','Фізична пам&#39;ять'),
-(607,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','fr','Stockage à distance'),
-(608,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','ru','Удаленное хранилище'),
-(609,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','uk','Віддалене зберігання'),
-(610,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','fr','Deuxième derrière le maître'),
-(611,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','ru','Второй после хозяина'),
-(612,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','uk','Другий позаду господаря'),
-(613,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','fr','Taille'),
-(614,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','ru','Размер'),
-(615,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','uk','Розмір'),
-(616,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','fr','Espace utilisé'),
-(617,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','ru','Используемое пространство'),
-(618,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','uk','Використаний простір'),
-(619,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','fr','Fuseau horaire'),
-(620,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','ru','Часовой пояс'),
-(621,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','uk','Часовий пояс'),
-(622,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','fr','Utilisé'),
-(623,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','ru','Использовал'),
-(624,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','uk','б/в'),
-(625,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','fr','défaut'),
-(626,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','ru','дефолт'),
-(627,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','uk','за замовчуванням'),
-(628,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','fr','Ajouter une feuille'),
-(629,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','ru','Добавить лист'),
-(630,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','uk','Додайте листочок'),
-(631,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','fr','Menu principal'),
-(632,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','ru','Главное меню'),
-(633,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','uk','Головне меню'),
-(634,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','fr','Paramètres des menus'),
-(635,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','ru','Настройки меню'),
-(636,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','uk','Налаштування меню'),
-(637,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','fr','sauvegarder'),
-(638,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','ru','Сохранять'),
-(639,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','uk','зберегти'),
-(640,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','fr','Sélectionnez le menu'),
-(641,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','ru','Выберите меню'),
-(642,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','uk','Виберіть меню'),
-(643,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','fr','Le menu peut être différent pour chaque groupe d&#39;utilisateurs'),
-(644,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','ru','Меню может быть разным для каждой группы пользователей'),
-(645,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','uk','Для кожної групи користувачів меню може відрізнятися'),
-(646,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','fr','Il y a un menu pour l&#39;utilisateur connecté et un autre pour tout le monde'),
-(647,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','ru','Есть одно меню для зарегистрированного пользователя и одно для всех.'),
-(648,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','uk','Існує одне меню для зареєстрованого користувача та одне для всіх інших'),
-(649,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','fr','Actions'),
-(650,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','ru','действия'),
-(651,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','uk','дії'),
-(652,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','fr','actif'),
-(653,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','ru','активный'),
-(654,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','uk','активний'),
-(655,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','fr','bd'),
-(656,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','ru','бд'),
-(657,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','uk','бд'),
-(658,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','fr','bg'),
-(659,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','ru','бг'),
-(660,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','uk','bg'),
-(661,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','fr','icône'),
-(662,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','ru','значок'),
-(663,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','uk','значок'),
-(664,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','fr','identifiant'),
-(665,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','ru','я бы'),
-(666,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','uk','id'),
-(667,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','fr','id_parent'),
-(668,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','ru','id_parent'),
-(669,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','uk','id_parent'),
-(670,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','fr','Titre'),
-(671,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','ru','заглавие'),
-(672,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','uk','назва'),
-(673,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','fr','URL'),
-(674,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','ru','URL'),
-(675,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','uk','url'),
-(676,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','fr','Actif'),
-(677,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','ru','Активный'),
-(678,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','uk','Активний'),
-(679,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','fr','Identifiant à utiliser'),
-(680,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','ru','Учетные данные для использования'),
-(681,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','uk','Облікові дані для використання'),
-(682,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','fr','Déployer'),
-(683,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','ru','Развертывать'),
-(684,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','uk','Розгорнути'),
-(685,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','fr','CLÉ privée'),
-(686,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','ru','КЛЮЧ частный'),
-(687,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','uk','КЛЮЧ закритий'),
-(688,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','fr','Clé'),
-(689,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','ru','Ключ'),
-(690,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','uk','ключ'),
-(691,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','fr','MySQL'),
-(692,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','ru','MySQL'),
-(693,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','uk','MySQL'),
-(694,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','fr','Organisme'),
-(695,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','ru','Организация'),
-(696,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','uk','організація'),
-(697,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','fr','Clé privée à utiliser'),
-(698,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','ru','Закрытый ключ для использования'),
-(699,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','uk','Приватний ключ для використання'),
-(700,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','fr','Clé publique à déployer'),
-(701,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','ru','Открытый ключ для развертывания'),
-(702,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','uk','Відкритий ключ для розгортання'),
-(703,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','fr','Clé publique à pousser'),
-(704,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','ru','Открытый ключ для отправки'),
-(705,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','uk','Відкритий ключ для натискання'),
-(706,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','fr','SSH'),
-(707,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','ru','SSH'),
-(708,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','uk','SSH'),
-(709,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','fr','Sélectionnez la clé privée à utiliser'),
-(710,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','ru','Выберите закрытый ключ для использования'),
-(711,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','uk','Виберіть закритий ключ для використання'),
-(712,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','fr','Taille totale utilisée par tous les binlog :'),
-(713,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','ru','Общий размер, используемый всеми бинлогами:'),
-(714,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','uk','Загальний розмір, який використовується всім binlog:'),
-(715,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','fr','Utilisateur lié à cette clé privée'),
-(716,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','ru','Пользователь, связанный с этим закрытым ключом'),
-(717,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','uk','Користувач, який пов’язаний із цим закритим ключем'),
-(718,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','fr','Gestionnaire_read_rnd_next'),
-(719,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','ru','Handler_read_rnd_next'),
-(720,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','uk','Handler_read_rnd_next'),
-(721,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','fr','Serveur :'),
-(722,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','ru','Сервер:'),
-(723,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','uk','сервер:'),
-(724,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','fr','Analyser les tableaux'),
-(725,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','ru','Анализировать таблицы'),
-(726,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','uk','Проаналізуйте таблиці'),
-(727,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','fr','Comparer la base de données'),
-(728,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','ru','Сравнить базу данных'),
-(729,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','uk','Порівняти базу даних'),
-(730,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','fr','Tableau de comparaison'),
-(731,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','ru','Сравнить таблицу'),
-(732,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','uk','Таблиця порівняння'),
-(733,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','fr','Créer une base de données'),
-(734,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','ru','Создать базу данных'),
-(735,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','uk','Створити базу даних'),
-(736,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','fr','Actualiser la base de données'),
-(737,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','ru','Обновить базу данных'),
-(738,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','uk','Оновити базу даних'),
-(739,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','fr','Renommer la base de données'),
-(740,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','ru','Переименовать базу данных'),
-(741,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','uk','Перейменувати базу даних'),
-(742,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','fr','Ajuster les privilèges'),
-(743,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','ru','Настроить привилегии'),
-(744,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','uk','Налаштуйте привілеї'),
-(745,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','fr','Mise à jour automatique des statistiques des index'),
-(746,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','ru','Автоматическое обновление статистики индексов'),
-(747,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','uk','Автоматичне оновлення статистики індексів'),
-(748,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','fr','Base de données à actualiser'),
-(749,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','ru','База данных для обновления'),
-(750,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','uk','Базу даних для оновлення'),
-(751,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','fr','Bases de données à créer (séparées par des virgules)'),
-(752,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','ru','Базы данных для создания (разделенные запятой)'),
-(753,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','uk','Бази даних для створення (розділені комою)'),
-(754,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','fr','Privilèges globaux'),
-(755,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','ru','Глобальные привилегии'),
-(756,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','uk','Глобальні привілеї'),
-(757,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','fr','Original'),
-(758,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','ru','Оригинал'),
-(759,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','uk','Оригінал'),
-(760,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','fr','Chemin pour stocker la sauvegarde temporaire sur PmaControl'),
-(761,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','ru','Путь для хранения временной резервной копии на PmaControl'),
-(762,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','uk','Шлях для зберігання тимчасової резервної копії на PmaControl'),
-(763,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','fr','Actualiser la base de données à partir d&#39;un autre serveur'),
-(764,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','ru','Обновить базу данных с другого сервера'),
-(765,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','uk','Оновити базу даних з іншого сервера'),
-(766,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','fr','Renommer la base de données en'),
-(767,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','ru','Переименовать базу данных в'),
-(768,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','uk','Перейменувати базу даних на'),
-(769,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','fr','Réinitialiser'),
-(770,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','ru','Перезагрузить'),
-(771,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','uk','Скинути'),
-(772,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','fr','Serveur à rafraichir'),
-(773,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','ru','Сервер для обновления'),
-(774,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','uk','Сервер для оновлення'),
-(775,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','fr','Nom d&#39;utilisateur'),
-(776,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','ru','Имя пользователя'),
-(777,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','uk','Ім&#39;я користувача'),
-(778,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','fr','Анализировать таблицы'),
-(779,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','ru','Анализировать таблицу'),
-(780,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','uk','Аналізувати таблицы'),
-(781,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','fr','Обновить базу данных'),
-(782,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','ru','Обновить базу данных'),
-(783,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','uk','Оновити базу даних'),
-(784,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','fr','Переименовать базу данных'),
-(785,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','ru','Переименовать базу данных'),
-(786,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','uk','Переіменувати базу даних'),
-(787,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','fr','Создать базу данных'),
-(788,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','ru','Создать базу данных'),
-(789,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','uk','Створити базу даних'),
-(790,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','fr','Сравнить базу данных'),
-(791,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','ru','Сравнить базу данных'),
-(792,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','uk','Зрівняти базу даних'),
-(793,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','fr','Сравнить таблицу'),
-(794,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','ru','Сравнить таблицу'),
-(795,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','uk','Зрівняти таблицю'),
-(796,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','fr','Ajouter une zone de stockage'),
-(797,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','ru','Добавить место для хранения'),
-(798,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','uk','Додати зону зберігання'),
-(799,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','fr','Ville'),
-(800,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','ru','Город'),
-(801,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','uk','Місто'),
-(802,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','fr','Pays'),
-(803,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','ru','Страна'),
-(804,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','uk','Контрі'),
-(805,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','fr','Si vous utilisez sudo pour exécuter les commandes système, spécifiez ici le nom d&#39;utilisateur que vous souhaitez utiliser. L&#39;utilisateur doit exister sur tous les nœuds.'),
-(806,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','ru','Если вы используете системные команды sudo ro execute, укажите здесь имя пользователя, которое вы хотите использовать. Пользователь должен существовать на всех узлах.'),
-(807,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','uk','Якщо ви використовуєте sudo ro для виконання системних команд, укажіть тут ім’я користувача, яке ви хочете використовувати. Користувач повинен існувати на всіх вузлах.'),
-(808,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','fr','Clé SSH'),
-(809,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','ru','Ключ SSH'),
-(810,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','uk','Ключ SSH'),
-(811,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','fr','Lister toutes les zones de stockage'),
-(812,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','ru','Список всех складских помещений'),
-(813,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','uk','Перелічіть всю область зберігання'),
-(814,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','fr','Principal'),
-(815,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','ru','Главный'),
-(816,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','uk','Головна'),
-(817,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','fr','Sélectionnez la clé'),
-(818,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','ru','Выберите ключ'),
-(819,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','uk','Виберіть ключ'),
-(820,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','fr','Spécifiez root si vous disposez d&#39;informations d&#39;identification root.'),
-(821,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','ru','Укажите root, если у вас есть учетные данные root.'),
-(822,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','uk','Укажіть root, якщо у вас є облікові дані root.'),
-(823,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','fr','Dimanche'),
-(824,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','ru','Воскресенье'),
-(825,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','uk','неділя'),
-(826,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','fr','Cette partie correspond à la partie utilisée par les sauvegardes sur la partition :'),
-(827,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','ru','Эта часть соответствует части, используемой резервными копиями в разделе:'),
-(828,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','uk','Ця частина відповідає частині, яка використовується резервними копіями на розділі:'),
-(829,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','fr','Valider'),
-(830,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','ru','Подтвердить'),
-(831,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','uk','Перевірити'),
-(832,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','fr','Gestion des sauvegardes'),
-(833,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','ru','Управление резервным копированием'),
-(834,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','uk','Управління резервним копіюванням'),
-(835,'639af914197615682d432915ecc85e852f1565a0','en','Date end','fr','Date de fin'),
-(836,'639af914197615682d432915ecc85e852f1565a0','en','Date end','ru','Дата окончания'),
-(837,'639af914197615682d432915ecc85e852f1565a0','en','Date end','uk','Кінець дати'),
-(838,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','fr','Date de depart'),
-(839,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','ru','Дата начала'),
-(840,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','uk','Початок дати'),
-(841,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','fr','Destination'),
-(842,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','ru','Назначения'),
-(843,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','uk','Пункт призначення'),
-(844,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','fr','Détails'),
-(845,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','ru','Подробности'),
-(846,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','uk','Подробиці'),
-(847,'506b819386e108d89282215655cb0b281819b481','en','Error message','fr','Message d&#39;erreur'),
-(848,'506b819386e108d89282215655cb0b281819b481','en','Error message','ru','Сообщение об ошибке'),
-(849,'506b819386e108d89282215655cb0b281819b481','en','Error message','uk','Повідомлення про помилку'),
-(850,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','fr','Dossier'),
-(851,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','ru','Файл'),
-(852,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','uk','Файл'),
-(853,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','fr','Niveau'),
-(854,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','ru','Уровень'),
-(855,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','uk','Рівень'),
-(856,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','fr','Journaux'),
-(857,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','ru','Журналы'),
-(858,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','uk','Журнали'),
-(859,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','fr','Message'),
-(860,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','ru','Сообщение'),
-(861,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','uk','повідомлення'),
-(862,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','fr','Propriétaire'),
-(863,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','ru','Владелец'),
-(864,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','uk','Власник'),
-(865,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','fr','Progrès'),
-(866,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','ru','Прогресс'),
-(867,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','uk','Прогрес'),
-(868,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','fr','Progression'),
-(869,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','ru','Прогресс'),
-(870,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','uk','Прогресія'),
-(871,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','fr','Détail de la restauration'),
-(872,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','ru','Деталь реставрации'),
-(873,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','uk','Деталь реставрації'),
-(874,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','fr','Historique de la restauration'),
-(875,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','ru','История реставрации'),
-(876,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','uk','Історія реставрації'),
-(877,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','fr','Des horaires'),
-(878,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','ru','Расписания'),
-(879,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','uk','Розклади'),
-(880,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','fr','Taille sur la zone de stockage'),
-(881,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','ru','Размер на складе'),
-(882,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','uk','Розмір по площі зберігання'),
-(883,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','fr','La source'),
-(884,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','ru','Источник'),
-(885,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','uk','Джерело'),
-(886,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','fr','Statistiques par tableau'),
-(887,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','ru','Статистика по таблице'),
-(888,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','uk','Статистика за табл'),
-(889,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','fr','Table'),
-(890,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','ru','Стол'),
-(891,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','uk','Таблиця'),
-(892,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','fr','Déchiffrer le temps'),
-(893,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','ru','Время расшифровки'),
-(894,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','uk','Розшифрувати час'),
-(895,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','fr','Temps de charge'),
-(896,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','ru','Время нагрузки'),
-(897,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','uk','Часове навантаження'),
-(898,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','fr','Temps scp'),
-(899,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','ru','Время SCP'),
-(900,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','uk','Час scp'),
-(901,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','fr','Décompresser le temps'),
-(902,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','ru','Время распаковать'),
-(903,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','uk','Час розпакувати'),
-(904,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','fr','Total des archives par nettoyeur'),
-(905,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','ru','Всего архивов по очистителю'),
-(906,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','uk','Всього архівів по очисникам'),
-(907,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','fr','Temps total'),
-(908,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','ru','Общее время'),
-(909,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','uk','Загальний час'),
-(910,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','fr','Taper'),
-(911,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','ru','Тип'),
-(912,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','uk','Тип'),
-(913,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','fr','secondes'),
-(914,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','ru','секунды'),
-(915,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','uk','секунд'),
-(916,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','fr','taille sur la zone de stockage'),
-(917,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','ru','размер на складе'),
-(918,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','uk','розмір на складську площу'),
-(919,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','fr','Avant de programmer une sauvegarde, vous devez ajouter un tableau de stockage :'),
-(920,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','ru','Прежде чем запланировать резервное копирование, вы должны добавить массив запасов:'),
-(921,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','uk','Перш ніж запланувати резервне копіювання, ви повинні додати масив запасів:'),
-(922,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','fr','Référence'),
-(923,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','ru','Ориентир'),
-(924,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','uk','Еталон'),
-(925,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','fr','Configuration'),
-(926,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','ru','Конфигурация'),
-(927,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','uk','Конфігурація'),
-(928,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','fr','Courants'),
-(929,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','ru','Токи'),
-(930,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','uk','Течії'),
-(931,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','fr','Faire un nouveau benchmark'),
-(932,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','ru','Сделать новый эталон'),
-(933,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','uk','Зробіть новий тест'),
-(934,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','fr','Scénarios'),
-(935,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','ru','Скрипты'),
-(936,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','uk','Сценарії'),
-(937,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','fr','Ajouter un client'),
-(938,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','ru','Добавить клиента'),
-(939,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','uk','Додайте клієнта'),
-(940,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','fr','Ajouter une clé SSH'),
-(941,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','ru','Добавить ключ SSH'),
-(942,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','uk','Додайте ключ SSH'),
-(943,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','fr','Ajouter une clé ssh'),
-(944,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','ru','Добавить ssh-ключ'),
-(945,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','uk','Додайте ключ ssh'),
-(946,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','fr','Administrateur'),
-(947,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','ru','Администратор'),
-(948,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','uk','Адміністратор'),
-(949,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','fr','Associé'),
-(950,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','ru','Ассоциированный'),
-(951,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','uk','асоційований'),
-(952,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','fr','Classer'),
-(953,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','ru','Учебный класс'),
-(954,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','uk','Клас'),
-(955,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','fr','Clients'),
-(956,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','ru','Клиенты'),
-(957,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','uk','Клієнти'),
-(958,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','fr','Afficher un nom'),
-(959,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','ru','Показать имя'),
-(960,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','uk','Відображуване ім&#39;я'),
-(961,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','fr','Modifier le mot de passe'),
-(962,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','ru','Изменить пароль'),
-(963,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','uk','Змінити пароль'),
-(964,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','fr','E-mail'),
-(965,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','ru','Эл. адрес'),
-(966,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','uk','Електронна пошта'),
-(967,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','fr','Exporter la configuration'),
-(968,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','ru','Экспорт конфигурации'),
-(969,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','uk','Конфігурація експорту'),
-(970,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','fr','Importer la configuration'),
-(971,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','ru','Импорт конфигурации'),
-(972,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','uk','Імпорт конфігурації'),
-(973,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','fr','Dernier en ligne'),
-(974,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','ru','Последний онлайн'),
-(975,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','uk','Останній онлайн'),
-(976,'4e297600378b29419d17fac6205b997df482461c','en','Letter','fr','Lettre'),
-(977,'4e297600378b29419d17fac6205b997df482461c','en','Letter','ru','Письмо'),
-(978,'4e297600378b29419d17fac6205b997df482461c','en','Letter','uk','лист'),
-(979,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','fr','Libelle'),
-(980,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','ru','Либель'),
-(981,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','uk','Libelle'),
-(982,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','fr','Lié à'),
-(983,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','ru','Связано с'),
-(984,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','uk','Пов&#39;язані з'),
-(985,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','fr','Logo'),
-(986,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','ru','Логотип'),
-(987,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','uk','логотип'),
-(988,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','fr','Membre'),
-(989,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','ru','Член'),
-(990,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','uk','Член'),
-(991,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','fr','Membres'),
-(992,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','ru','Члены'),
-(993,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','uk','Члени'),
-(994,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','fr','Surveillé'),
-(995,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','ru','Отслеживается'),
-(996,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','uk','Моніторинг'),
-(997,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','fr','Nouvelle clé SSH'),
-(998,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','ru','Новый SSH-ключ'),
-(999,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','uk','Новий ключ SSH'),
-(1000,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','fr','Sous-traitant'),
-(1001,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','ru','Аутсорсер'),
-(1002,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','uk','Аутсорсер'),
-(1003,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','fr','Points'),
-(1004,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','ru','Точки'),
-(1005,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','uk','Очки'),
-(1006,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','fr','Rang'),
-(1007,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','ru','Классифицировать'),
-(1008,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','uk','ранг'),
-(1009,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','fr','Serveurs liés'),
-(1010,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','ru','Серверы связаны'),
-(1011,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','uk','Сервери пов&#39;язані'),
-(1012,'e11f628d47c72058ec7750609921c45822387526','en','Since','fr','Depuis'),
-(1013,'e11f628d47c72058ec7750609921c45822387526','en','Since','ru','С'),
-(1014,'e11f628d47c72058ec7750609921c45822387526','en','Since','uk','Оскільки'),
-(1015,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','fr','Super administrateur'),
-(1016,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','ru','Супер администратор'),
-(1017,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','uk','Суперадміністратор'),
-(1018,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','fr','Soutien'),
-(1019,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','ru','Поддерживать'),
-(1020,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','uk','Підтримка'),
-(1021,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','fr','TechOps'),
-(1022,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','ru','ТехОпс'),
-(1023,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','uk','TechOps'),
-(1024,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','fr','Visiteur'),
-(1025,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','ru','Посетитель'),
-(1026,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','uk','Відвідувач'),
-(1027,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','fr','Auteur :'),
-(1028,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','ru','Автор:'),
-(1029,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','uk','Автор:'),
-(1030,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','fr','Crédits'),
-(1031,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','ru','Кредиты'),
-(1032,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','uk','Кредити'),
-(1033,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','fr','Dépendances'),
-(1034,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','ru','Зависимости'),
-(1035,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','uk','Залежності'),
-(1036,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','fr','LA FRANCE'),
-(1037,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','ru','ФРАНЦИЯ'),
-(1038,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','uk','ФРАНЦІЯ'),
-(1039,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','fr','Noyau :'),
-(1040,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','ru','Ядро:'),
-(1041,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','uk','Ядро:'),
-(1042,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','fr','Licence :'),
-(1043,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','ru','Лицензия:'),
-(1044,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','uk','Ліцензія:'),
-(1045,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','fr','Fabriqué en'),
-(1046,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','ru','Сделано в'),
-(1047,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','uk','Зроблено в'),
-(1048,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','fr','Alimenté par'),
-(1049,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','ru','Питаться от'),
-(1050,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','uk','На основі'),
-(1051,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','fr','Produit'),
-(1052,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','ru','Товар'),
-(1053,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','uk','Продукт'),
-(1054,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','fr','Version de produit:'),
-(1055,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','ru','Версия продукта:'),
-(1056,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','uk','Версія продукту:'),
-(1057,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','fr','Version:'),
-(1058,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','ru','Версия:'),
-(1059,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','uk','Версія:'),
-(1060,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','fr','bifurqué de'),
-(1061,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','ru','разветвлен от'),
-(1062,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','uk','роздвоєний від'),
-(1063,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','fr','68k-proxysql-3 (2022-09-01 09:49:07)'),
-(1064,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','ru','68k-proxysql-3 (2022-09-01 09:49:07)'),
-(1065,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','uk','68k-proxysql-3 (2022-09-01 09:49:07)'),
-(1066,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','fr','les erreurs'),
-(1067,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','ru','Ошибки'),
-(1068,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','uk','Помилки'),
-(1069,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','fr','Rapport'),
-(1070,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','ru','Соотношение'),
-(1071,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','uk','співвідношення'),
-(1072,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','fr','Lit par seconde'),
-(1073,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','ru','Читает за секунду'),
-(1074,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','uk','Читає по секундах'),
-(1075,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','fr','Temps de réponse (ms)'),
-(1076,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','ru','Время отклика (мс)'),
-(1077,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','uk','Час відгуку (мс)'),
-(1078,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','fr','Transactions par seconde'),
-(1079,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','ru','Сделки по секундам'),
-(1080,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','uk','Операції по секундах'),
-(1081,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','fr','Écrit par seconde'),
-(1082,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','ru','Записывает по секундам'),
-(1083,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','uk','Пише по секундах'),
-(1084,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','fr','Vous n&#39;utilisez pas la journalisation binaire'),
-(1085,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','ru','Вы не используете двоичное ведение журнала'),
-(1086,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','uk','Ви не використовуєте двійкове журналювання'),
-(1087,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','fr','Ajouter une entrée de menu'),
-(1088,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','ru','Добавить пункт меню'),
-(1089,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','uk','Додати пункт меню'),
-(1090,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','fr','Langue'),
-(1091,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','ru','Язык'),
-(1092,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','uk','Мову'),
-(1093,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','fr','Résultats trouvés :'),
-(1094,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','ru','Найдены результаты:'),
-(1095,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','uk','Знайдено результати:'),
-(1096,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','fr','???????'),
-(1097,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','ru','?????????'),
-(1098,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','uk','???????'),
-(1099,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','fr','??????????'),
-(1100,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','ru','????????????'),
-(1101,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','uk','??????????'),
-(1102,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','fr','proche'),
-(1103,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','ru','Закрывать'),
-(1104,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','uk','Закрити'),
-(1105,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','fr','Anglais'),
-(1106,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','ru','Английский'),
-(1107,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','uk','англійська'),
-(1108,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','fr','Erreur 404'),
-(1109,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','ru','Ошибка 404'),
-(1110,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','uk','Помилка 404'),
-(1111,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','fr','English'),
-(1112,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','ru','французский'),
-(1113,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','uk','Français'),
-(1114,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','fr','Page non trouvée'),
-(1115,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','ru','Страница не найдена'),
-(1116,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','uk','Сторінку не знайдено'),
-(1117,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Langue/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1118,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Язык/индекс&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1119,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Мова/індекс&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1120,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','fr',''),
-(1121,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','ru',''),
-(1122,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','uk',''),
-(1123,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','fr','Paramètres d&#39;apparence'),
-(1124,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','ru','Настройки внешнего вида'),
-(1125,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','uk','Налаштування зовнішнього вигляду'),
-(1126,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','fr','Traitement'),
-(1127,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','ru','Обработка'),
-(1128,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','uk','Обробка'),
-(1129,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','fr','heures'),
-(1130,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','ru','часы'),
-(1131,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','uk','години'),
-(1132,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','fr','Оновити базу даних'),
-(1133,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','ru','Оновити базы данных'),
-(1134,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','uk','Оновити базу даних'),
-(1135,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','fr','Перейменувати базу даних'),
-(1136,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','ru','Переименовать базу данных'),
-(1137,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','uk','Перейменувати базу даних'),
-(1138,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','fr','Порівняти базу даних'),
-(1139,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','ru','Основание базы данных'),
-(1140,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','uk','Порівняти базу даних'),
-(1141,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','fr','Проаналізуйте таблиці'),
-(1142,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','ru','Проанализируйте таблицы'),
-(1143,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','uk','Проаналізуйте таблиці'),
-(1144,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','fr','Створити базу даних'),
-(1145,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','ru','Создание базы данных'),
-(1146,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','uk','Створити базу даних'),
-(1147,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','fr','Таблиця порівняння'),
-(1148,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','ru','Таблиця порівняння'),
-(1149,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','uk','Таблиця порівняння'),
-(1150,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','fr','Ajouter un nouveau serveur'),
-(1151,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','ru','Добавить новый сервер'),
-(1152,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','uk','Додайте новий сервер'),
-(1153,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','fr','Tous les lock/pid/md5 ont été supprimés et les partitions ont été mises à jour'),
-(1154,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','ru','Все блокировки/pid/md5 были удалены, а разделы обновлены.'),
-(1155,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','uk','Усі блокування/pid/md5 видалено, а розділи оновлено'),
-(1156,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','fr','Tous les démons ont été arrêtés avec succès'),
-(1157,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','ru','Весь демон был успешно остановлен'),
-(1158,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','uk','Усі демони були успішно зупинені'),
-(1159,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','fr','Erreur de connexion'),
-(1160,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','ru','Ошибка соединения'),
-(1161,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','uk','Помилка з&#39;єднання'),
-(1162,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','fr','Journées'),
-(1163,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','ru','Дни'),
-(1164,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','uk','днів'),
-(1165,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','fr','Environnement'),
-(1166,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','ru','Окружающая среда'),
-(1167,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','uk','Навколишнє середовище'),
-(1168,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','fr','Impossible d&#39;atteindre ce serveur MySQL'),
-(1169,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','ru','Невозможно связаться с этим сервером MySQL'),
-(1170,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','uk','Неможливо отримати доступ до цього сервера MySQL'),
-(1171,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','fr','Connexion'),
-(1172,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','ru','Авторизоваться'),
-(1173,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','uk','Логін'),
-(1174,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','fr','Peut-être que cette adresse n&#39;est pas la bonne'),
-(1175,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','ru','Может быть, этот адрес не подходит'),
-(1176,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','uk','Можливо, ця адреса не підходить'),
-(1177,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','fr','Peut-être que ce port n&#39;est pas bon'),
-(1178,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','ru','Может этот порт не подходит'),
-(1179,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','uk','Можливо, цей порт не підходить'),
-(1180,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','fr','Paramètres'),
-(1181,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','ru','Параметры'),
-(1182,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','uk','Параметри'),
-(1183,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','fr','Chemin pour la sauvegarde temporaire'),
-(1184,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','ru','Путь для временной резервной копии'),
-(1185,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','uk','Шлях для тимчасової резервної копії'),
-(1186,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','fr','Clé privée'),
-(1187,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','ru','Закрытый ключ'),
-(1188,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','uk','Приватний ключ'),
-(1189,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','fr','Clé publique'),
-(1190,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','ru','Открытый ключ'),
-(1191,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','uk','Відкритий ключ'),
-(1192,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','fr','Le compte de SSH'),
-(1193,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','ru','SSH-аккаунт'),
-(1194,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','uk','обліковий запис SSH'),
-(1195,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','fr','Succès'),
-(1196,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','ru','Успех'),
-(1197,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','uk','Успіх'),
-(1198,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;185854&#39; s&#39;est arrêté avec succès'),
-(1199,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','ru','Демон (id=9) с pid: &#39;185854&#39; успешно остановлен'),
-(1200,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','uk','Демон (id=9) з pid: &#39;185854&#39; успішно зупинився'),
-(1201,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;186449&#39; s&#39;est arrêté avec succès'),
-(1202,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','ru','Демон (id=9) с pid: &#39;186449&#39; успешно остановлен'),
-(1203,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','uk','Демон (id=9) з pid: &#39;186449&#39; успішно зупинився'),
-(1204,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','fr','Tapez un nom pour la connexion, si vous laissez vide nous prendrons &#39;select @@hostname&#39;'),
-(1205,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','ru','Введите имя для соединения, если вы оставите его пустым, мы возьмем «выбрать @@hostname».'),
-(1206,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','uk','Введіть ім’я для з’єднання, якщо залишити порожнім, ми візьмемо «виберіть @@hostname»'),
-(1207,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','fr','Date de création'),
-(1208,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','ru','Дата создания'),
-(1209,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','uk','Дата створення'),
-(1210,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','fr','Taille des données'),
-(1211,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','ru','Размер данных'),
-(1212,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','uk','Розмір даних'),
-(1213,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','fr','Taille libre'),
-(1214,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','ru','Свободный размер'),
-(1215,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','uk','Вільний розмір'),
-(1216,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','fr','Taille de l&#39;index'),
-(1217,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','ru','Размер индекса'),
-(1218,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','uk','Розмір індексу'),
-(1219,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','fr','Percône'),
-(1220,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','ru','Перкона'),
-(1221,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','uk','Перкона'),
-(1222,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/displayOsc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1223,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/displayOsc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1224,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/displayOsc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1225,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/display_osc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1226,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/display_osc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1227,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/display_osc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1228,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1229,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1230,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1231,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3362486&#39; s&#39;est arrêté avec succès'),
-(1232,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','ru','Демон (id=9) с pid: &#39;3362486&#39; успешно остановлен'),
-(1233,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','uk','Демон (id=9) з pid: &#39;3362486&#39; успішно зупинився'),
-(1234,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','fr','en cours d&#39;exécution'),
-(1235,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','ru','в настоящее время работает'),
-(1236,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','uk','зараз працює'),
-(1237,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','fr','journées'),
-(1238,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','ru','дни'),
-(1239,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','uk','днів'),
-(1240,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','fr','Agé de'),
-(1241,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','ru','старый'),
-(1242,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','uk','старий'),
-(1243,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','fr','Action'),
-(1244,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','ru','Действие'),
-(1245,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','uk','Дія'),
-(1246,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','fr','Table de dépôt'),
-(1247,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','ru','Удалить таблицу'),
-(1248,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','uk','Відкидний стіл'),
-(1249,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','fr','Minutes'),
-(1250,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','ru','Минуты'),
-(1251,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','uk','хвилин'),
-(1252,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/delOldOscTable&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1253,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/delOldOscTable&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1254,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/delOldOscTable&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1255,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/del_old_osc_table&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1256,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/del_old_osc_table&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1257,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/del_old_osc_table&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1258,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;4063&#39; s&#39;est arrêté avec succès'),
-(1259,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','ru','Демон (id=9) с pid: &#39;4063&#39; успешно остановлен'),
-(1260,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','uk','Демон (id=9) з pid: &#39;4063&#39; успішно зупинився'),
-(1261,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','fr','Actualiser la base de données'),
-(1262,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','ru','Actualiser la base de données'),
-(1263,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','uk','Actualiser la base de données'),
-(1264,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','fr','Ajouter un nouveau client'),
-(1265,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','ru','Добавить нового клиента'),
-(1266,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','uk','Додайте нового клієнта'),
-(1267,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','fr','Identifiants d&#39;administrateur'),
-(1268,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','ru','Учетные данные администратора'),
-(1269,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','uk','Облікові дані адміністратора'),
-(1270,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','fr','Analyser les tableaux'),
-(1271,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','ru','Анализатор картин'),
-(1272,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','uk','Аналізатор таблиць'),
-(1273,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','fr','Vérifiez le DN de liaison et/ou le mot de passe de liaison'),
-(1274,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','ru','Проверьте Bind DN и/или Bind пароль.'),
-(1275,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','uk','Перевірте Bind DN та/або Bind password'),
-(1276,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','fr','Comparer la base de données'),
-(1277,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','ru','Comparer la base de données'),
-(1278,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','uk','Comparer la base de données'),
-(1279,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','fr','Créer une base de données'),
-(1280,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','ru','Creer une base de données'),
-(1281,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','uk','Créer une base de données'),
-(1282,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','en','Refresh date:'),
-(1283,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','ru','Дата обновления:'),
-(1284,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','uk','Дата оновлення:'),
-(1285,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','fr','Différence'),
-(1286,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','ru','Диф'),
-(1287,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','uk','різниця'),
-(1288,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','fr','Champ'),
-(1289,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','ru','Поле'),
-(1290,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','uk','Поле'),
-(1291,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','fr','Tuer'),
-(1292,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','ru','Убийство'),
-(1293,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','uk','вбити'),
-(1294,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','fr','Général LDAP'),
-(1295,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','ru','Общие сведения о LDAP'),
-(1296,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','uk','LDAP Загальні'),
-(1297,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','fr','Nom du client'),
-(1298,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','ru','Имя клиента'),
-(1299,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','uk','Ім&#39;я клієнта'),
-(1300,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','fr','Opération'),
-(1301,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','ru','Операция'),
-(1302,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','uk','Операція'),
-(1303,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','fr','ProxySQL'),
-(1304,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','ru','ПроксиSQL'),
-(1305,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','uk','ProxySQL'),
-(1306,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','fr','Renommer la base de données'),
-(1307,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','ru','Renommer la base de données'),
-(1308,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','uk','Renommer la base de données'),
-(1309,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','fr','Rapports'),
-(1310,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','ru','Составление отчетов'),
-(1311,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','uk','Звітність'),
-(1312,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','fr','Schéma'),
-(1313,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','ru','Схема'),
-(1314,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','uk','Схема'),
-(1315,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','fr','Rechercher un groupe'),
-(1316,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','ru','Поиск группы'),
-(1317,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','uk','Пошук групи'),
-(1318,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;ProxySQL/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1319,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;ProxySQL/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1320,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;ProxySQL/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1321,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Proxysql/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations'),
-(1322,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Proxysql/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы'),
-(1323,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Proxysql/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви'),
-(1324,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','fr','Tableau de comparaison'),
-(1325,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','ru','Сравнительная таблица'),
-(1326,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','uk','Tableau de comparaison'),
-(1327,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','fr','Le démon (id=7) a démarré avec succès avec'),
-(1328,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','ru','Демон (id=7) успешно запущен с'),
-(1329,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','uk','Демон (id=7) успішно запущений з'),
-(1330,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;693862&#39; s&#39;est arrêté avec succès'),
-(1331,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','ru','Демон (id=7) с pid: &#39;693862&#39; успешно остановлен'),
-(1332,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','uk','Демон (id=7) з pid: &#39;693862&#39; успішно зупинився'),
-(1333,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;693874&#39; s&#39;est arrêté avec succès'),
-(1334,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','ru','Демон (id=9) с pid: &#39;693874&#39; успешно остановлен'),
-(1335,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','uk','Демон (id=9) з pid: &#39;693874&#39; успішно зупинився'),
-(1336,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','fr','Les statistiques ont été réinitialisées'),
-(1337,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','ru','Статистика была сброшена'),
-(1338,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','uk','Статистику скинуто'),
-(1339,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','fr','Nom de variable'),
-(1340,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','ru','Имя_переменной'),
-(1341,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','uk','Ім&#39;я_змінної'),
-(1342,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','fr','Votre serveur MySQL a été ajouté avec succès !'),
-(1343,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','ru','Ваш сервер MySQL успешно добавлен!'),
-(1344,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','uk','Ваш сервер MySQL успішно додано!'),
-(1345,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','fr','ref_field'),
-(1346,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','ru','ref_field'),
-(1347,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','uk','ref_field'),
-(1348,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','fr','ref_schema'),
-(1349,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','ru','ref_schema'),
-(1350,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','uk','ref_schema'),
-(1351,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','fr','ref_table'),
-(1352,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','ru','ref_table'),
-(1353,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','uk','ref_table'),
-(1354,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','fr','Tous les démons ont été démarrés avec succès'),
-(1355,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','ru','Все демон был успешно запущен'),
-(1356,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','uk','Весь демон успішно запущено'),
-(1357,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','fr','Nouveau serveur ProxySQL'),
-(1358,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','ru','Новый ProxySQL-сервер'),
-(1359,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','uk','Новий сервер ProxySQL'),
-(1360,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','fr','Le démon (id=11) a démarré avec succès avec'),
-(1361,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','ru','Демон (id=11) успешно запущен с'),
-(1362,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','uk','Демон (id=11) успішно запущений з'),
-(1363,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','fr','Le démon (id=11) avec le pid : &#39;3035213&#39; s&#39;est arrêté avec succès'),
-(1364,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','ru','Демон (id=11) с pid: &#39;3035213&#39; успешно остановлен'),
-(1365,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','uk','Демон (id=11) з pid: &#39;3035213&#39; успішно зупинено'),
-(1366,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','fr','Le démon (id=12) a démarré avec succès avec'),
-(1367,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','ru','Демон (id=12) успешно запущен с'),
-(1368,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','uk','Демон (id=12) успішно запущено з'),
-(1369,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','fr','Le démon (id=13) a démarré avec succès avec'),
-(1370,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','ru','Демон (id=13) успешно запущен с'),
-(1371,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','uk','Демон (id=13) успішно запущено з'),
-(1372,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2843607&#39; s&#39;est arrêté avec succès'),
-(1373,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','ru','Демон (id=13) с pid: &#39;2843607&#39; успешно остановлен'),
-(1374,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','uk','Демон (id=13) з pid: &#39;2843607&#39; успішно зупинено'),
-(1375,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;3034289&#39; s&#39;est arrêté avec succès'),
-(1376,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','ru','Демон (id=13) с pid: &#39;3034289&#39; успешно остановлен'),
-(1377,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','uk','Демон (id=13) з pid: &#39;3034289&#39; успішно зупинено'),
-(1378,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;62296&#39; s&#39;est arrêté avec succès'),
-(1379,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','ru','Демон (id=13) с pid: &#39;62296&#39; успешно остановлен'),
-(1380,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','uk','Демон (id=13) з pid: &#39;62296&#39; успішно зупинився'),
-(1381,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','fr','Le démon (id=5) a démarré avec succès avec'),
-(1382,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','ru','Демон (id=5) успешно запущен с'),
-(1383,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','uk','Демон (id=5) успішно запущений з'),
-(1384,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;3035572&#39; s&#39;est arrêté avec succès'),
-(1385,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','ru','Демон (id=7) с pid: &#39;3035572&#39; успешно остановлен'),
-(1386,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','uk','Демон (id=7) з pid: &#39;3035572&#39; успішно зупинився'),
-(1387,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','fr','Le démon (id=9) a démarré avec succès avec'),
-(1388,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','ru','Демон (id=9) успешно запущен с'),
-(1389,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','uk','Демон (id=9) успішно запущено з'),
-(1390,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3035594&#39; s&#39;est arrêté avec succès'),
-(1391,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','ru','Демон (id=9) с pid: &#39;3035594&#39; успешно остановлен'),
-(1392,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','uk','Демон (id=9) з pid: &#39;3035594&#39; успішно зупинився'),
-(1393,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','fr','Enregistrer'),
-(1394,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','ru','Журнал'),
-(1395,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','uk','Журнал'),
-(1396,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2576689&#39; s&#39;est arrêté avec succès'),
-(1397,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','ru','Демон (id=13) с pid: &#39;2576689&#39; успешно остановлен'),
-(1398,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','uk','Демон (id=13) з pid: &#39;2576689&#39; успішно зупинено'),
-(1399,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','fr','Travail'),
-(1400,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','ru','За работой'),
-(1401,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','uk','Працює'),
-(1402,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','fr','Travaille sur'),
-(1403,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','ru','Работа над'),
-(1404,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','uk','Працює на');
-/*!40000 ALTER TABLE `translation_google` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `translation_main`
 --
 
@@ -164290,11 +162857,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.10.3-MariaDB, for debian-linux-gnu (aarch64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.10.3-MariaDB-1:10.10.3+maria~deb11-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -164434,12 +163001,12 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',3873,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',3880,64,'log/daemon_7.log',5,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',3892,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',3904,64,'log/daemon_11.log',30,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',3917,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',3925,1,'log/daemon_13.log',10,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',1159,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',2256,64,'log/daemon_7.log',5,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',1169,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',1179,64,'log/daemon_11.log',30,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',1188,64,'log/daemon_12.log',2,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',1196,1,'log/daemon_13.log',10,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -165518,7 +164085,1707 @@ INSERT INTO `translation_glial` VALUES (656,'1121fb85e3f32507c69c7388b24a0332afb
 INSERT INTO `translation_glial` VALUES (657,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','Daemon (id=5) was already stopped or in error','en','App/Controller/Agent.php',186);
 INSERT INTO `translation_glial` VALUES (658,'6351665355d18349b18a24f28142e8837e7c908e','Impossible to launch the daemon','en','App/Controller/Agent.php',121);
 INSERT INTO `translation_glial` VALUES (659,'71173421a61a24713a262ecd56de0b0999f3c412','Already running !','en','App/Controller/Agent.php',121);
+INSERT INTO `translation_glial` VALUES (660,'2e920573e09041fa6e645bb16c8d1d25310df00d','Log on','en','App/Controller/User.php',762);
+INSERT INTO `translation_glial` VALUES (661,'84261ac586093d32a02d6f4b3fad5dc88ebbeaaf','Contact the creator of the application / Report a bug','en','App/view/User/connection.view.php',56);
+INSERT INTO `translation_glial` VALUES (662,'922ce2b7813bd9fda40cd6dd691aa07dec8cc2cc','Sign up, it\'s free !','en','App/view/User/connection.view.php',65);
+INSERT INTO `translation_glial` VALUES (663,'cabafd045d3e496f5b69fe7eac217825e7f509ba','password forgotten','en','App/view/User/connection.view.php',66);
+INSERT INTO `translation_glial` VALUES (664,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/view/Menu/show.view.php',105);
+INSERT INTO `translation_glial` VALUES (665,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/view/Menu/show.view.php',105);
+INSERT INTO `translation_glial` VALUES (666,'54d3ce892358f64e1f2b248fc75c75325c3bf082','Registration','en','App/Controller/User.php',185);
+INSERT INTO `translation_glial` VALUES (667,'3d273535f8f2f8041c06129cbaba914da32c695b','Username','en','App/view/User/register.view.php',26);
+INSERT INTO `translation_glial` VALUES (668,'8d92293ab3bd064e41b054f0cae2394215145201','Firstname','en','App/view/User/register.view.php',31);
+INSERT INTO `translation_glial` VALUES (669,'ee013433d06fef751ffcc78959966d652a361982','Lastname','en','App/view/User/register.view.php',36);
+INSERT INTO `translation_glial` VALUES (670,'0d3c73bdad37bdda874ab12bf11c9ae118e93d78','Country','en','App/view/User/register.view.php',47);
+INSERT INTO `translation_glial` VALUES (671,'8a30265788312a09935c3df79ad755f5c6fc79ea','repeat','en','App/view/User/register.view.php',76);
+INSERT INTO `translation_glial` VALUES (672,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (673,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (674,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (675,'6a3b0cda85632e44f9b24914e3e97948ef99a11a','Password forgotten ?','en','App/Controller/User.php',346);
+INSERT INTO `translation_glial` VALUES (676,'a2e4ce28bbcffd7836350dbd4334743ca1c154da','Forgot password ?','en','App/view/User/lost_password.view.php',30);
+INSERT INTO `translation_glial` VALUES (677,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (678,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (679,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',48);
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `translation_google`
+--
+
+DROP TABLE IF EXISTS `translation_google`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `translation_google` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `key` char(42) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `source_language` char(10) NOT NULL,
+  `source_text` text NOT NULL,
+  `target_language` char(10) NOT NULL,
+  `target_text` text NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key` (`key`,`target_language`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `translation_google`
+--
+
+LOCK TABLES `translation_google` WRITE;
+/*!40000 ALTER TABLE `translation_google` DISABLE KEYS */;
+INSERT INTO `translation_google` VALUES (1,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','fr','À propos de');
+INSERT INTO `translation_google` VALUES (2,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','ru','О');
+INSERT INTO `translation_google` VALUES (3,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','en','About','uk','про');
+INSERT INTO `translation_google` VALUES (4,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','fr','Reconnaître');
+INSERT INTO `translation_google` VALUES (5,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','ru','Сознавать');
+INSERT INTO `translation_google` VALUES (6,'73c610db2ed869250579adf5d41e2df21339cf81','en','Acknowledge','uk','Визнати');
+INSERT INTO `translation_google` VALUES (7,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','fr','DNS d&#39;alias');
+INSERT INTO `translation_google` VALUES (8,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','ru','Псевдоним DNS');
+INSERT INTO `translation_google` VALUES (9,'8bea0772c5357a70eabb18fb30d25356504216f0','en','Alias DNS','uk','Псевдонім DNS');
+INSERT INTO `translation_google` VALUES (10,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','fr','Architecture');
+INSERT INTO `translation_google` VALUES (11,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','ru','Архитектура');
+INSERT INTO `translation_google` VALUES (12,'a3d63f0104f93544ca19abddcee410ce41b27f03','en','Architecture','uk','Архітектура');
+INSERT INTO `translation_google` VALUES (13,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','fr','Les archives');
+INSERT INTO `translation_google` VALUES (14,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','ru','Архивы');
+INSERT INTO `translation_google` VALUES (15,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','en','Archives','uk','Архіви');
+INSERT INTO `translation_google` VALUES (16,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','fr','Disponible');
+INSERT INTO `translation_google` VALUES (17,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','ru','Доступный');
+INSERT INTO `translation_google` VALUES (18,'e056e97690c57dc7708f2293bd824449b7cbe359','en','Available','uk','в наявності');
+INSERT INTO `translation_google` VALUES (19,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','fr','Sauvegardes');
+INSERT INTO `translation_google` VALUES (20,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','ru','Резервные копии');
+INSERT INTO `translation_google` VALUES (21,'2284e61b03bcbee1dbc099ce420e830929dde56e','en','Backups','uk','Резервні копії');
+INSERT INTO `translation_google` VALUES (22,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','fr','Commencer');
+INSERT INTO `translation_google` VALUES (23,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','ru','Начинать');
+INSERT INTO `translation_google` VALUES (24,'178fcbb78480db85f449b6694244e1bad52647a7','en','Begin','uk','Почніть');
+INSERT INTO `translation_google` VALUES (25,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','fr','Référence');
+INSERT INTO `translation_google` VALUES (26,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','ru','BenchMark');
+INSERT INTO `translation_google` VALUES (27,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','en','BenchMark','uk','BenchMark');
+INSERT INTO `translation_google` VALUES (28,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','fr','Vérifier la configuration');
+INSERT INTO `translation_google` VALUES (29,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','ru','Проверить конфигурацию');
+INSERT INTO `translation_google` VALUES (30,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','en','Check Config','uk','Перевірте конфігурацію');
+INSERT INTO `translation_google` VALUES (31,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','fr','Vérifier la mise à jour');
+INSERT INTO `translation_google` VALUES (32,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','ru','Проверить обновления');
+INSERT INTO `translation_google` VALUES (33,'a8ce43c6919c02302283336bab5ac4b430595f47','en','Check for update','uk','Перевірити оновлення');
+INSERT INTO `translation_google` VALUES (34,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','fr','Nettoyeur');
+INSERT INTO `translation_google` VALUES (35,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','ru','Очиститель');
+INSERT INTO `translation_google` VALUES (36,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','en','Cleaner','uk','Прибиральник');
+INSERT INTO `translation_google` VALUES (37,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','fr','Client');
+INSERT INTO `translation_google` VALUES (38,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','ru','Клиент');
+INSERT INTO `translation_google` VALUES (39,'a96232936c26dc6c5174693b6412f0b811499b5d','en','Client','uk','Клієнт');
+INSERT INTO `translation_google` VALUES (40,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','fr','Commettre');
+INSERT INTO `translation_google` VALUES (41,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','ru','Совершить');
+INSERT INTO `translation_google` VALUES (42,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','en','Commit','uk','Здійснити');
+INSERT INTO `translation_google` VALUES (43,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','fr','Comparer');
+INSERT INTO `translation_google` VALUES (44,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','ru','Сравнивать');
+INSERT INTO `translation_google` VALUES (45,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','en','Compare','uk','Порівняйте');
+INSERT INTO `translation_google` VALUES (46,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','fr','Démon');
+INSERT INTO `translation_google` VALUES (47,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','ru','Демон');
+INSERT INTO `translation_google` VALUES (48,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','en','Daemon','uk','Демон');
+INSERT INTO `translation_google` VALUES (49,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','fr','Tableau de bord');
+INSERT INTO `translation_google` VALUES (50,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','ru','Приборная доска');
+INSERT INTO `translation_google` VALUES (51,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','en','Dashboard','uk','Панель приладів');
+INSERT INTO `translation_google` VALUES (52,'2a238000a577ce326594097f4780e17496e0295e','en','Database','fr','Base de données');
+INSERT INTO `translation_google` VALUES (53,'2a238000a577ce326594097f4780e17496e0295e','en','Database','ru','База данных');
+INSERT INTO `translation_google` VALUES (54,'2a238000a577ce326594097f4780e17496e0295e','en','Database','uk','База даних');
+INSERT INTO `translation_google` VALUES (55,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','fr','Bases de données');
+INSERT INTO `translation_google` VALUES (56,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','ru','Базы данных');
+INSERT INTO `translation_google` VALUES (57,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','en','Databases','uk','Бази даних');
+INSERT INTO `translation_google` VALUES (58,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','fr','Actualisation de la date');
+INSERT INTO `translation_google` VALUES (59,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','ru','Обновление даты');
+INSERT INTO `translation_google` VALUES (60,'78f24143f7493e20800ceaebbb476113adf7b385','en','Date refresh','uk','Оновлення дати');
+INSERT INTO `translation_google` VALUES (61,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','fr','Effacer');
+INSERT INTO `translation_google` VALUES (62,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','ru','Удалить');
+INSERT INTO `translation_google` VALUES (63,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','en','Delete','uk','Видалити');
+INSERT INTO `translation_google` VALUES (64,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','fr','Déployer la clé RSA');
+INSERT INTO `translation_google` VALUES (65,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','ru','Развернуть ключ RSA');
+INSERT INTO `translation_google` VALUES (66,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','en','Deploy RSA key','uk','Розгорнути ключ RSA');
+INSERT INTO `translation_google` VALUES (67,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','fr','Développeur');
+INSERT INTO `translation_google` VALUES (68,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','ru','Разработчик');
+INSERT INTO `translation_google` VALUES (69,'413520995a35ecb9100fec9747e9d30dc0389bc9','en','Developer','uk','Розробник');
+INSERT INTO `translation_google` VALUES (70,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','fr','Environnement');
+INSERT INTO `translation_google` VALUES (71,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','ru','Окружающая среда');
+INSERT INTO `translation_google` VALUES (72,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','en','Environment','uk','Навколишнє середовище');
+INSERT INTO `translation_google` VALUES (73,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','fr','Erreur');
+INSERT INTO `translation_google` VALUES (74,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','ru','Ошибка');
+INSERT INTO `translation_google` VALUES (75,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','en','Error','uk','Помилка');
+INSERT INTO `translation_google` VALUES (76,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','fr','Filtre');
+INSERT INTO `translation_google` VALUES (77,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','ru','Фильтр');
+INSERT INTO `translation_google` VALUES (78,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','en','Filter','uk','фільтр');
+INSERT INTO `translation_google` VALUES (79,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','fr','Formater SQL');
+INSERT INTO `translation_google` VALUES (80,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','ru','Формат SQL');
+INSERT INTO `translation_google` VALUES (81,'1a4b9a6f5703b936a2f0ee068cae623513e50281','en','Format SQL','uk','Формат SQL');
+INSERT INTO `translation_google` VALUES (82,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','fr','Grappe Galera');
+INSERT INTO `translation_google` VALUES (83,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','ru','Кластер Галера');
+INSERT INTO `translation_google` VALUES (84,'e95c54ab25e5aef87fba7bb780e99ab801b32037','en','Galera Cluster','uk','Скупчення Галери');
+INSERT INTO `translation_google` VALUES (85,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','fr','Graphiques');
+INSERT INTO `translation_google` VALUES (86,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','ru','Графики');
+INSERT INTO `translation_google` VALUES (87,'0bd0efc4e70319aab1f734568a792ad70086ad5b','en','Graphs','uk','графіки');
+INSERT INTO `translation_google` VALUES (88,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','fr','Groupes');
+INSERT INTO `translation_google` VALUES (89,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','ru','Группы');
+INSERT INTO `translation_google` VALUES (90,'fe449f419da5e0cd3ff3a0814355b018a355bfba','en','Groups','uk','Групи');
+INSERT INTO `translation_google` VALUES (91,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','fr','Matériel');
+INSERT INTO `translation_google` VALUES (92,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','ru','Аппаратное обеспечение');
+INSERT INTO `translation_google` VALUES (93,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','en','Hardware','uk','Обладнання');
+INSERT INTO `translation_google` VALUES (94,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','fr','Aider');
+INSERT INTO `translation_google` VALUES (95,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','ru','Помощь');
+INSERT INTO `translation_google` VALUES (96,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','en','Help','uk','Довідка');
+INSERT INTO `translation_google` VALUES (97,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','fr','Maison');
+INSERT INTO `translation_google` VALUES (98,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','ru','Дом');
+INSERT INTO `translation_google` VALUES (99,'f14772c28798cacfbd133725dec8efd9f5b48bd8','en','Home','uk','додому');
+INSERT INTO `translation_google` VALUES (100,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','fr','IDENTIFIANT');
+INSERT INTO `translation_google` VALUES (101,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','ru','Я БЫ');
+INSERT INTO `translation_google` VALUES (102,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','en','ID','uk','ID');
+INSERT INTO `translation_google` VALUES (103,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','fr','IP');
+INSERT INTO `translation_google` VALUES (104,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','ru','IP');
+INSERT INTO `translation_google` VALUES (105,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','en','IP','uk','IP');
+INSERT INTO `translation_google` VALUES (106,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','fr','Importer / Exporter');
+INSERT INTO `translation_google` VALUES (107,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','ru','Импорт Экспорт');
+INSERT INTO `translation_google` VALUES (108,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','en','Import / Export','uk','Імпорт-експорт');
+INSERT INTO `translation_google` VALUES (109,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','fr','Indice');
+INSERT INTO `translation_google` VALUES (110,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','ru','Индекс');
+INSERT INTO `translation_google` VALUES (111,'08a0e046f7d26a7ea08677d70234ced16db781e0','en','Index','uk','Індекс');
+INSERT INTO `translation_google` VALUES (112,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','fr','Insérer');
+INSERT INTO `translation_google` VALUES (113,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','ru','Вставлять');
+INSERT INTO `translation_google` VALUES (114,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','en','Insert','uk','Вставка');
+INSERT INTO `translation_google` VALUES (115,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','fr','Emploi');
+INSERT INTO `translation_google` VALUES (116,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','ru','Работа');
+INSERT INTO `translation_google` VALUES (117,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','en','Job','uk','Робота');
+INSERT INTO `translation_google` VALUES (118,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','fr','LDAP');
+INSERT INTO `translation_google` VALUES (119,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','ru','LDAP');
+INSERT INTO `translation_google` VALUES (120,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','en','LDAP','uk','LDAP');
+INSERT INTO `translation_google` VALUES (121,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','fr','Se déconnecter');
+INSERT INTO `translation_google` VALUES (122,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','ru','Выйти');
+INSERT INTO `translation_google` VALUES (123,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','en','Logout','uk','Вийти');
+INSERT INTO `translation_google` VALUES (124,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','fr','Gérer le binlog');
+INSERT INTO `translation_google` VALUES (125,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','ru','Управление бинлогом');
+INSERT INTO `translation_google` VALUES (126,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','en','Manage binlog','uk','Керувати binlog');
+INSERT INTO `translation_google` VALUES (127,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','fr','Gérer le menu');
+INSERT INTO `translation_google` VALUES (128,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','ru','Управление меню');
+INSERT INTO `translation_google` VALUES (129,'e1680d524e90b893d5fcf36d9615a8f151ed459b','en','Manage menu','uk','Керувати меню');
+INSERT INTO `translation_google` VALUES (130,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','fr','Maître d&#39;esclave');
+INSERT INTO `translation_google` VALUES (131,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','ru','Мастер / Раб');
+INSERT INTO `translation_google` VALUES (132,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','en','Master / Slave','uk','Господар/Раб');
+INSERT INTO `translation_google` VALUES (133,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','fr','Mémoire');
+INSERT INTO `translation_google` VALUES (134,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','ru','Память');
+INSERT INTO `translation_google` VALUES (135,'a12e9c31056233d54524ab1c4f240cd377769fd6','en','Memory','uk','Пам&#39;ять');
+INSERT INTO `translation_google` VALUES (136,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','fr','Utilisateur MySQL');
+INSERT INTO `translation_google` VALUES (137,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','ru','Пользователь MySQL');
+INSERT INTO `translation_google` VALUES (138,'ba5af2521e1d5af81fa693202c1adb13da6035f6','en','MySQL User','uk','Користувач MySQL');
+INSERT INTO `translation_google` VALUES (139,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','fr','Nom');
+INSERT INTO `translation_google` VALUES (140,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','ru','Имя');
+INSERT INTO `translation_google` VALUES (141,'c909bc0cda86579cf24df85bc9e8352122ca6019','en','Name','uk','Ім&#39;я');
+INSERT INTO `translation_google` VALUES (142,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','fr','Non');
+INSERT INTO `translation_google` VALUES (143,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','ru','Нет');
+INSERT INTO `translation_google` VALUES (144,'873f273b48dc791cce8d5fc48b3bac97d29977cc','en','No','uk','Ні');
+INSERT INTO `translation_google` VALUES (145,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','fr','Rien de sélectionné');
+INSERT INTO `translation_google` VALUES (146,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','ru','Ничего не выбрано');
+INSERT INTO `translation_google` VALUES (147,'852440e7d9ee0122183930aaf6b88847e1540ee3','en','Nothing selected','uk','Нічого не вибрано');
+INSERT INTO `translation_google` VALUES (148,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','fr','OLTP/OLAP');
+INSERT INTO `translation_google` VALUES (149,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','ru','OLTP/OLAP');
+INSERT INTO `translation_google` VALUES (150,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','en','OLTP / OLAP','uk','OLTP / OLAP');
+INSERT INTO `translation_google` VALUES (151,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','fr','Documents et assistance en ligne');
+INSERT INTO `translation_google` VALUES (152,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','ru','Онлайн-документы и поддержка');
+INSERT INTO `translation_google` VALUES (153,'2f86f430eb46036d70873afb394fd950c8f2992e','en','Online docs and support','uk','Онлайн-документи та підтримка');
+INSERT INTO `translation_google` VALUES (154,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','fr','PHP en direct REGEX');
+INSERT INTO `translation_google` VALUES (155,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','ru','Регламент PHP в реальном времени');
+INSERT INTO `translation_google` VALUES (156,'48614717c6457dab8800831d82b6f6dbfd3ae071','en','PHP Live REGEX','uk','PHP Live REGEX');
+INSERT INTO `translation_google` VALUES (157,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','fr','Mot de passe');
+INSERT INTO `translation_google` VALUES (158,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','ru','Пароль');
+INSERT INTO `translation_google` VALUES (159,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','en','Password','uk','Пароль');
+INSERT INTO `translation_google` VALUES (160,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','fr','Pour cent');
+INSERT INTO `translation_google` VALUES (161,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','ru','Процент');
+INSERT INTO `translation_google` VALUES (162,'05a79d4efa59bfacc8ec9881313426dfda3f738e','en','Percent','uk','Відсоток');
+INSERT INTO `translation_google` VALUES (163,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','fr','Ping');
+INSERT INTO `translation_google` VALUES (164,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','ru','пинг');
+INSERT INTO `translation_google` VALUES (165,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','en','Ping','uk','Пінг');
+INSERT INTO `translation_google` VALUES (166,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','fr','Plugins');
+INSERT INTO `translation_google` VALUES (167,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','ru','Плагины');
+INSERT INTO `translation_google` VALUES (168,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','en','Plugins','uk','Плагіни');
+INSERT INTO `translation_google` VALUES (169,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','fr','Port');
+INSERT INTO `translation_google` VALUES (170,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','ru','Порт');
+INSERT INTO `translation_google` VALUES (171,'36020c5fbf6c9d4f11641d456a5770666c145e7a','en','Port','uk','Порт');
+INSERT INTO `translation_google` VALUES (172,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','fr','Analyseur de requête');
+INSERT INTO `translation_google` VALUES (173,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','ru','Анализатор запросов');
+INSERT INTO `translation_google` VALUES (174,'f662132cfed1c3166826b58573c599800ed734ae','en','Query Analyzer','uk','Аналізатор запитів');
+INSERT INTO `translation_google` VALUES (175,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','fr','LECTURE SEULEMENT');
+INSERT INTO `translation_google` VALUES (176,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','ru','ТОЛЬКО ЧТЕНИЕ');
+INSERT INTO `translation_google` VALUES (177,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','en','READ ONLY','uk','ЛИШЕ ДЛЯ ЧИТАННЯ');
+INSERT INTO `translation_google` VALUES (178,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','fr','Remplacer');
+INSERT INTO `translation_google` VALUES (179,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','ru','Заменять');
+INSERT INTO `translation_google` VALUES (180,'0b65585af5173485167e735385f88f3cd4de1780','en','Replace','uk','Замінити');
+INSERT INTO `translation_google` VALUES (181,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','fr','Signaler un problème');
+INSERT INTO `translation_google` VALUES (182,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','ru','Сообщить о проблеме');
+INSERT INTO `translation_google` VALUES (183,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','en','Report issue','uk','Повідомити про проблему');
+INSERT INTO `translation_google` VALUES (184,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','fr','Retour en arriere');
+INSERT INTO `translation_google` VALUES (185,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','ru','Откат');
+INSERT INTO `translation_google` VALUES (186,'6923b1a48a990486d4bc7c5898130df5390d89f6','en','Rollback','uk','Відкат');
+INSERT INTO `translation_google` VALUES (187,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','fr','Clés SSH');
+INSERT INTO `translation_google` VALUES (188,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','ru','SSH-ключи');
+INSERT INTO `translation_google` VALUES (189,'77c7f04ac73287ed1fd169f71459d0b0196c6204','en','SSH keys','uk','Ключі SSH');
+INSERT INTO `translation_google` VALUES (190,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','fr','Analyser le réseau');
+INSERT INTO `translation_google` VALUES (191,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','ru','Сканировать сеть');
+INSERT INTO `translation_google` VALUES (192,'4f91604890a27c775abe3c89f9f7f8b5d693800b','en','Scan network','uk','Сканувати мережу');
+INSERT INTO `translation_google` VALUES (193,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','fr','Sécurité');
+INSERT INTO `translation_google` VALUES (194,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','ru','Безопасность');
+INSERT INTO `translation_google` VALUES (195,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','en','Security','uk','Безпека');
+INSERT INTO `translation_google` VALUES (196,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','fr','Sélectionner');
+INSERT INTO `translation_google` VALUES (197,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','ru','Выбирать');
+INSERT INTO `translation_google` VALUES (198,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','en','Select','uk','Виберіть');
+INSERT INTO `translation_google` VALUES (199,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','fr','Serveur :');
+INSERT INTO `translation_google` VALUES (200,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','ru','Сервер:');
+INSERT INTO `translation_google` VALUES (201,'c1676d87da90ae31e047d3e7b8fd6946284760fa','en','Server : ','uk','сервер:');
+INSERT INTO `translation_google` VALUES (202,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','fr','Les serveurs');
+INSERT INTO `translation_google` VALUES (203,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','ru','Серверы');
+INSERT INTO `translation_google` VALUES (204,'291288fa12690b74e3ec9e0ce072b165268898f8','en','Servers','uk','Сервери');
+INSERT INTO `translation_google` VALUES (205,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','fr','Réglages');
+INSERT INTO `translation_google` VALUES (206,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','ru','Настройки');
+INSERT INTO `translation_google` VALUES (207,'4cfa361c1c272499dd88ec961f929c1368cc42e5','en','Settings','uk','Налаштування');
+INSERT INTO `translation_google` VALUES (208,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','fr','Statistiques');
+INSERT INTO `translation_google` VALUES (209,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','ru','Статистика');
+INSERT INTO `translation_google` VALUES (210,'9f35d11a978d46e57f327cc521c7384a325adbdc','en','Statistics','uk','Статистика');
+INSERT INTO `translation_google` VALUES (211,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','fr','Zone de stockage');
+INSERT INTO `translation_google` VALUES (212,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','ru','Зона хранения');
+INSERT INTO `translation_google` VALUES (213,'bc041d6795ac41ea34399510106a5fa3f47fb559','en','Storage area','uk','Зона зберігання');
+INSERT INTO `translation_google` VALUES (214,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','fr','Mots clés');
+INSERT INTO `translation_google` VALUES (215,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','ru','Теги');
+INSERT INTO `translation_google` VALUES (216,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','en','Tags','uk','Теги');
+INSERT INTO `translation_google` VALUES (217,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','fr','Outils');
+INSERT INTO `translation_google` VALUES (218,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','ru','Инструменты');
+INSERT INTO `translation_google` VALUES (219,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','en','Tools','uk','Інструменти');
+INSERT INTO `translation_google` VALUES (220,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','fr','Haut');
+INSERT INTO `translation_google` VALUES (221,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','ru','верхний');
+INSERT INTO `translation_google` VALUES (222,'41824968eec56c648196d6bf67cd178b14ac3ef8','en','Top','uk','Топ');
+INSERT INTO `translation_google` VALUES (223,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','fr','Topologie');
+INSERT INTO `translation_google` VALUES (224,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','ru','Топология');
+INSERT INTO `translation_google` VALUES (225,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','en','Topology','uk','Топологія');
+INSERT INTO `translation_google` VALUES (226,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','fr','Total');
+INSERT INTO `translation_google` VALUES (227,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','ru','Общий');
+INSERT INTO `translation_google` VALUES (228,'d904e94791995c8e255757b6670933e8acfe7cad','en','Total','uk','Всього');
+INSERT INTO `translation_google` VALUES (229,'523083d34591725b2863c87fd696274a2e82920e','en','Update','fr','Mise à jour');
+INSERT INTO `translation_google` VALUES (230,'523083d34591725b2863c87fd696274a2e82920e','en','Update','ru','Обновлять');
+INSERT INTO `translation_google` VALUES (231,'523083d34591725b2863c87fd696274a2e82920e','en','Update','uk','оновлення');
+INSERT INTO `translation_google` VALUES (232,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','fr','Disponibilité');
+INSERT INTO `translation_google` VALUES (233,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','ru','Время безотказной работы');
+INSERT INTO `translation_google` VALUES (234,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','en','Uptime','uk','Час роботи');
+INSERT INTO `translation_google` VALUES (235,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','fr','Utilisateur');
+INSERT INTO `translation_google` VALUES (236,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','ru','Пользователь');
+INSERT INTO `translation_google` VALUES (237,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','en','User','uk','Користувач');
+INSERT INTO `translation_google` VALUES (238,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','fr','Utilisateur connecté');
+INSERT INTO `translation_google` VALUES (239,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','ru','Пользователь подключен');
+INSERT INTO `translation_google` VALUES (240,'bf4c28185da4faa84947223c05a9be0f938255dd','en','User connected','uk','Користувач підключений');
+INSERT INTO `translation_google` VALUES (241,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','fr','Utilisateurs');
+INSERT INTO `translation_google` VALUES (242,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','ru','Пользователи');
+INSERT INTO `translation_google` VALUES (243,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','en','Users','uk','Користувачі');
+INSERT INTO `translation_google` VALUES (244,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','fr','Contrôle de version des variables');
+INSERT INTO `translation_google` VALUES (245,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','ru','Контроль версий переменных');
+INSERT INTO `translation_google` VALUES (246,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','en','Variables version control','uk','Контроль версій змінних');
+INSERT INTO `translation_google` VALUES (247,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','fr','Version');
+INSERT INTO `translation_google` VALUES (248,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','ru','Версия');
+INSERT INTO `translation_google` VALUES (249,'1741951310efcfcc29c696ecfa58230b898c0030','en','Version','uk','Версія');
+INSERT INTO `translation_google` VALUES (250,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','fr','Oui');
+INSERT INTO `translation_google` VALUES (251,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','ru','Да');
+INSERT INTO `translation_google` VALUES (252,'6995050e32bb8698ad5390842ba00259e45ab121','en','Yes','uk','Так');
+INSERT INTO `translation_google` VALUES (253,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','fr','par seconde');
+INSERT INTO `translation_google` VALUES (254,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','ru','на секунду');
+INSERT INTO `translation_google` VALUES (255,'9a343a82e6033818cd7ba4f90bcade8f2111c408','en','by second','uk','на секунду');
+INSERT INTO `translation_google` VALUES (256,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','fr','Schéma sys');
+INSERT INTO `translation_google` VALUES (257,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','ru','системная схема');
+INSERT INTO `translation_google` VALUES (258,'7cc5a15897401428da7d364d2aac39be0caa9ca5','en','sys Schema','uk','sys Схема');
+INSERT INTO `translation_google` VALUES (259,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','fr','Comptes');
+INSERT INTO `translation_google` VALUES (260,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','ru','учетные записи');
+INSERT INTO `translation_google` VALUES (261,'906fb070176b64307fb3d863d2ef246979d4afaa','en','Accounts','uk','Облікові записи');
+INSERT INTO `translation_google` VALUES (262,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','fr','Ajouter un groupe');
+INSERT INTO `translation_google` VALUES (263,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','ru','Добавить группу');
+INSERT INTO `translation_google` VALUES (264,'b8b42a8c9b44bec10cd6a8800c6626780845bced','en','Add a group','uk','Додайте групу');
+INSERT INTO `translation_google` VALUES (265,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','fr','Ajouter une balise');
+INSERT INTO `translation_google` VALUES (266,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','ru','Добавить тег');
+INSERT INTO `translation_google` VALUES (267,'9c5851232dcac006f9a9082ca94a931e6e14089c','en','Add a tag','uk','Додайте тег');
+INSERT INTO `translation_google` VALUES (268,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','fr','Alias');
+INSERT INTO `translation_google` VALUES (269,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','ru','Псевдоним');
+INSERT INTO `translation_google` VALUES (270,'364adc454392725ab21df87b0aa607f6e669943e','en','Alias','uk','Псевдонім');
+INSERT INTO `translation_google` VALUES (271,'545f3f15137131f66094b5d7943712976d731421','en','All','fr','Tout');
+INSERT INTO `translation_google` VALUES (272,'545f3f15137131f66094b5d7943712976d731421','en','All','ru','Все');
+INSERT INTO `translation_google` VALUES (273,'545f3f15137131f66094b5d7943712976d731421','en','All','uk','всі');
+INSERT INTO `translation_google` VALUES (274,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','fr','Permettre');
+INSERT INTO `translation_google` VALUES (275,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','ru','Разрешать');
+INSERT INTO `translation_google` VALUES (276,'eac7cc27234d7aaca5acb51830af8543da7e00c1','en','Allow','uk','Дозволити');
+INSERT INTO `translation_google` VALUES (277,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','fr','Cambre');
+INSERT INTO `translation_google` VALUES (278,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','ru','Арка');
+INSERT INTO `translation_google` VALUES (279,'a95fea48a1f00ce99224634f67c528a17ed4cb15','en','Arch','uk','Арк');
+INSERT INTO `translation_google` VALUES (280,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','fr','SSH disponible');
+INSERT INTO `translation_google` VALUES (281,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','ru','Доступный SSH');
+INSERT INTO `translation_google` VALUES (282,'263d9b17a3125f08de24a9249cde30b8a118554f','en','Available SSH','uk','Доступний SSH');
+INSERT INTO `translation_google` VALUES (283,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','fr','Arrière plan');
+INSERT INTO `translation_google` VALUES (284,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','ru','Фон');
+INSERT INTO `translation_google` VALUES (285,'bb72c37effc8e419b516312a133f4dc03977a719','en','Background','uk','Фон');
+INSERT INTO `translation_google` VALUES (286,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','fr','Numéro de journal');
+INSERT INTO `translation_google` VALUES (287,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','ru','Номер бинлога');
+INSERT INTO `translation_google` VALUES (288,'19445508e8a2786d03a3ad8312aee18b2f692a1e','en','Binlog number','uk','Номер бінлога');
+INSERT INTO `translation_google` VALUES (289,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','fr','Taille du binlog par fichier');
+INSERT INTO `translation_google` VALUES (290,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','ru','Размер бинлога по файлам');
+INSERT INTO `translation_google` VALUES (291,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','en','Binlog size by file','uk','Розмір binlog за файлом');
+INSERT INTO `translation_google` VALUES (292,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','fr','Jeu de caractères');
+INSERT INTO `translation_google` VALUES (293,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','ru','Набор символов');
+INSERT INTO `translation_google` VALUES (294,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','en','Charset','uk','Кодування');
+INSERT INTO `translation_google` VALUES (295,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','fr','Collation');
+INSERT INTO `translation_google` VALUES (296,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','ru','Сопоставление');
+INSERT INTO `translation_google` VALUES (297,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','en','Collation','uk','зіставлення');
+INSERT INTO `translation_google` VALUES (298,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','fr','Collations');
+INSERT INTO `translation_google` VALUES (299,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','ru','Сопоставления');
+INSERT INTO `translation_google` VALUES (300,'07e782d25488989d1532783d764bac87ee75a4a7','en','Collations','uk','Зіставлення');
+INSERT INTO `translation_google` VALUES (301,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','fr','Couleur');
+INSERT INTO `translation_google` VALUES (302,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','ru','Цвет');
+INSERT INTO `translation_google` VALUES (303,'db4ce8e8ee4be7a8332b588022298d8569fedde3','en','Color','uk','Колір');
+INSERT INTO `translation_google` VALUES (304,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','fr','Commande');
+INSERT INTO `translation_google` VALUES (305,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','ru','Команда');
+INSERT INTO `translation_google` VALUES (306,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','en','Command','uk','Команда');
+INSERT INTO `translation_google` VALUES (307,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','fr','Date');
+INSERT INTO `translation_google` VALUES (308,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','ru','Свидание');
+INSERT INTO `translation_google` VALUES (309,'1868af9e208611cde3460d4f69e9144a0860800c','en','Date','uk','Дата');
+INSERT INTO `translation_google` VALUES (310,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','fr','Refuser');
+INSERT INTO `translation_google` VALUES (311,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','ru','Отрицать');
+INSERT INTO `translation_google` VALUES (312,'08d7ef133c935d4d86fea103ee44756166f534e2','en','Deny','uk','Заперечувати');
+INSERT INTO `translation_google` VALUES (313,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','fr','Affichage');
+INSERT INTO `translation_google` VALUES (314,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','ru','Отображать');
+INSERT INTO `translation_google` VALUES (315,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','en','Display','uk','Дисплей');
+INSERT INTO `translation_google` VALUES (316,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','fr','Éditer');
+INSERT INTO `translation_google` VALUES (317,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','ru','Редактировать');
+INSERT INTO `translation_google` VALUES (318,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','en','Edit','uk','Редагувати');
+INSERT INTO `translation_google` VALUES (319,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','fr','Moteur');
+INSERT INTO `translation_google` VALUES (320,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','ru','Двигатель');
+INSERT INTO `translation_google` VALUES (321,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','en','Engine','uk','Двигун');
+INSERT INTO `translation_google` VALUES (322,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','fr','Jour d&#39;expiration des journaux');
+INSERT INTO `translation_google` VALUES (323,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','ru','Дата истечения срока действия журналов');
+INSERT INTO `translation_google` VALUES (324,'5d313c9f433d5cf06008484e64edca847b871f7d','en','Expire logs day','uk','Термін дії журналів день');
+INSERT INTO `translation_google` VALUES (325,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','fr','Journal de fichiers');
+INSERT INTO `translation_google` VALUES (326,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','ru','Журнал файлов');
+INSERT INTO `translation_google` VALUES (327,'f48f36cd342057f637b710ca70a7c184d39eca4f','en','File log','uk','Журнал файлів');
+INSERT INTO `translation_google` VALUES (328,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','fr','Premier fichier');
+INSERT INTO `translation_google` VALUES (329,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','ru','Первый файл');
+INSERT INTO `translation_google` VALUES (330,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','en','First file','uk','Перший файл');
+INSERT INTO `translation_google` VALUES (331,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','fr','Première page');
+INSERT INTO `translation_google` VALUES (332,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','ru','Первая страница');
+INSERT INTO `translation_google` VALUES (333,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','en','First page','uk','Перша сторінка');
+INSERT INTO `translation_google` VALUES (334,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','fr','Aller');
+INSERT INTO `translation_google` VALUES (335,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','ru','Идти');
+INSERT INTO `translation_google` VALUES (336,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','en','Go','uk','Іди');
+INSERT INTO `translation_google` VALUES (337,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','fr','Gestionnaire_read_first');
+INSERT INTO `translation_google` VALUES (338,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','ru','Handler_read_first');
+INSERT INTO `translation_google` VALUES (339,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','en','Handler_read_first','uk','Handler_read_first');
+INSERT INTO `translation_google` VALUES (340,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','fr','Handler_read_key');
+INSERT INTO `translation_google` VALUES (341,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','ru','Handler_read_key');
+INSERT INTO `translation_google` VALUES (342,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','en','Handler_read_key','uk','Handler_read_key');
+INSERT INTO `translation_google` VALUES (343,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','fr','Gestionnaire_read_next');
+INSERT INTO `translation_google` VALUES (344,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','ru','Handler_read_next');
+INSERT INTO `translation_google` VALUES (345,'4039d08c936735755d424a857b273b1edf3cf4eb','en','Handler_read_next','uk','Handler_read_next');
+INSERT INTO `translation_google` VALUES (346,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','fr','Gestionnaire_read_prev');
+INSERT INTO `translation_google` VALUES (347,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','ru','Handler_read_prev');
+INSERT INTO `translation_google` VALUES (348,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','en','Handler_read_prev','uk','Handler_read_prev');
+INSERT INTO `translation_google` VALUES (349,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','fr','Gestionnaire_read_rnd');
+INSERT INTO `translation_google` VALUES (350,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','ru','Handler_read_rnd');
+INSERT INTO `translation_google` VALUES (351,'7c8a8fcbbd215f349369f7f56707929970b4c05d','en','Handler_read_rnd','uk','Handler_read_rnd');
+INSERT INTO `translation_google` VALUES (352,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','fr','Gestionnaire_read_rnd_next');
+INSERT INTO `translation_google` VALUES (353,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','ru','Handler_read_rnd_next');
+INSERT INTO `translation_google` VALUES (354,'69860265cee87d0db8334b9107033220346ff149','en','Handler_read_rnd_next ','uk','Handler_read_rnd_next');
+INSERT INTO `translation_google` VALUES (355,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','fr','Héberger');
+INSERT INTO `translation_google` VALUES (356,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','ru','Хозяин');
+INSERT INTO `translation_google` VALUES (357,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','en','Host','uk','Хост');
+INSERT INTO `translation_google` VALUES (358,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','fr','Nom d&#39;hôte');
+INSERT INTO `translation_google` VALUES (359,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','ru','Имя хоста');
+INSERT INTO `translation_google` VALUES (360,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','en','Hostname','uk','Ім&#39;я хоста');
+INSERT INTO `translation_google` VALUES (361,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','fr','Identifiant');
+INSERT INTO `translation_google` VALUES (362,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','ru','Идентификатор');
+INSERT INTO `translation_google` VALUES (363,'a116ff8caff97297311c9e6e5c5d96c242517909','en','Id','uk','ID');
+INSERT INTO `translation_google` VALUES (364,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','fr','Utilisation de l&#39;index');
+INSERT INTO `translation_google` VALUES (365,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','ru','Использование индекса');
+INSERT INTO `translation_google` VALUES (366,'398d43082cb27203ab48f5a901e3fbdec3fe302a','en','Index usage','uk','Використання індексу');
+INSERT INTO `translation_google` VALUES (367,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','fr','installée');
+INSERT INTO `translation_google` VALUES (368,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','ru','Установлены');
+INSERT INTO `translation_google` VALUES (369,'10a554a27192fdcd4020be64dc7d0c52386b65db','en','Installed','uk','встановлено');
+INSERT INTO `translation_google` VALUES (370,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','fr','est super');
+INSERT INTO `translation_google` VALUES (371,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','ru','Супер');
+INSERT INTO `translation_google` VALUES (372,'11b07f207bd97dde92d6183df068ea79420d15b5','en','Is super','uk','Супер');
+INSERT INTO `translation_google` VALUES (373,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','fr','Noyau');
+INSERT INTO `translation_google` VALUES (374,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','ru','ядро');
+INSERT INTO `translation_google` VALUES (375,'e021541b873b8a9aca7bfc45568c4d65944e6036','en','Kernel','uk','Ядро');
+INSERT INTO `translation_google` VALUES (376,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','fr','Dernier fichier');
+INSERT INTO `translation_google` VALUES (377,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','ru','Последний файл');
+INSERT INTO `translation_google` VALUES (378,'392f3174115e0e761b41f6627a097932b8f36d8c','en','Last file','uk','Останній файл');
+INSERT INTO `translation_google` VALUES (379,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','fr','Dernière page');
+INSERT INTO `translation_google` VALUES (380,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','ru','Последняя страница');
+INSERT INTO `translation_google` VALUES (381,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','en','Last page','uk','Остання сторінка');
+INSERT INTO `translation_google` VALUES (382,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','fr','Référencement');
+INSERT INTO `translation_google` VALUES (383,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','ru','Листинг');
+INSERT INTO `translation_google` VALUES (384,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','en','Listing','uk','Лістинг');
+INSERT INTO `translation_google` VALUES (385,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','fr','Tableau principal');
+INSERT INTO `translation_google` VALUES (386,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','ru','Основная таблица');
+INSERT INTO `translation_google` VALUES (387,'e53d79ed6e562312ebb57de1c12146ff45b67668','en','Main table','uk','Основна таблиця');
+INSERT INTO `translation_google` VALUES (388,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','fr','Taille maximale du binlog');
+INSERT INTO `translation_google` VALUES (389,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','ru','Максимальный размер бинлога');
+INSERT INTO `translation_google` VALUES (390,'53973956baa06a4e605289d00d46aaa6a93324f1','en','Max binlog size','uk','Максимальний розмір binlog');
+INSERT INTO `translation_google` VALUES (391,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','fr','Délai maximal');
+INSERT INTO `translation_google` VALUES (392,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','ru','Максимальная задержка');
+INSERT INTO `translation_google` VALUES (393,'53c25380be4434bae535fb5946f6a7f889a7721c','en','Maximum Delay','uk','Максимальна затримка');
+INSERT INTO `translation_google` VALUES (394,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','fr','Surveillance');
+INSERT INTO `translation_google` VALUES (395,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','ru','Мониторинг');
+INSERT INTO `translation_google` VALUES (396,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','en','Monitoring','uk','Моніторинг');
+INSERT INTO `translation_google` VALUES (397,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','fr','Nb fichier');
+INSERT INTO `translation_google` VALUES (398,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','ru','NB-файл');
+INSERT INTO `translation_google` VALUES (399,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','en','Nb file','uk','Nb файл');
+INSERT INTO `translation_google` VALUES (400,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','fr','Numéro de compte sans mot de passe :');
+INSERT INTO `translation_google` VALUES (401,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','ru','Номер аккаунта без пароля:');
+INSERT INTO `translation_google` VALUES (402,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','en','Number of account without password:','uk','Номер облікового запису без пароля:');
+INSERT INTO `translation_google` VALUES (403,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','fr','COMMANDÉ PAR');
+INSERT INTO `translation_google` VALUES (404,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','ru','СОРТИРОВАТЬ ПО');
+INSERT INTO `translation_google` VALUES (405,'b64b98c8154f1978488d01b4ed73a30226381570','en','ORDER BY','uk','СОРТУВАТИ ЗА');
+INSERT INTO `translation_google` VALUES (406,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','fr','Système d&#39;exploitation');
+INSERT INTO `translation_google` VALUES (407,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','ru','Операционная система');
+INSERT INTO `translation_google` VALUES (408,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','en','Operations system','uk','Операційна система');
+INSERT INTO `translation_google` VALUES (409,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','fr','Organisation');
+INSERT INTO `translation_google` VALUES (410,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','ru','Организация');
+INSERT INTO `translation_google` VALUES (411,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','en','Oraganization','uk','Організація');
+INSERT INTO `translation_google` VALUES (412,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','fr','Chemin');
+INSERT INTO `translation_google` VALUES (413,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','ru','Дорожка');
+INSERT INTO `translation_google` VALUES (414,'b0b7a09465609a282f567b13ae75198c4db792e7','en','Path','uk','шлях');
+INSERT INTO `translation_google` VALUES (415,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','fr','Veuillez saisir un numéro de page valide !');
+INSERT INTO `translation_google` VALUES (416,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','ru','Пожалуйста, введите действительный номер страницы!');
+INSERT INTO `translation_google` VALUES (417,'90d754311d4ec860dc4c09c86695a16fcc965471','en','Please input a valid page number!','uk','Введіть правильний номер сторінки!');
+INSERT INTO `translation_google` VALUES (418,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','fr','Brancher');
+INSERT INTO `translation_google` VALUES (419,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','ru','Плагин');
+INSERT INTO `translation_google` VALUES (420,'9189eea605396ac732f884eca5230a6d4f199781','en','Plugin','uk','Підключати');
+INSERT INTO `translation_google` VALUES (421,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','fr','Processeur');
+INSERT INTO `translation_google` VALUES (422,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','ru','Процессор');
+INSERT INTO `translation_google` VALUES (423,'86cb659d95bc657a471c379f90a115f5c38bbf16','en','Processor','uk','Процесор');
+INSERT INTO `translation_google` VALUES (424,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','fr','Nom du produit');
+INSERT INTO `translation_google` VALUES (425,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','ru','Наименование товара');
+INSERT INTO `translation_google` VALUES (426,'d499969cd59a7a05ae794bd850c776a72b0f903a','en','Product name','uk','Назва продукту');
+INSERT INTO `translation_google` VALUES (427,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','fr','Purge');
+INSERT INTO `translation_google` VALUES (428,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','ru','Удалять');
+INSERT INTO `translation_google` VALUES (429,'83f5cd82b700eacc40112b22708ebab3796dec1c','en','Purge','uk','Чистка');
+INSERT INTO `translation_google` VALUES (430,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','fr','Msg file d&#39;attente');
+INSERT INTO `translation_google` VALUES (431,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','ru','Очередь сообщения');
+INSERT INTO `translation_google` VALUES (432,'9d42068c771045e1c968899689087e476e624ea7','en','Queue msg','uk','Повідомлення в черзі');
+INSERT INTO `translation_google` VALUES (433,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','fr','Numéro de file d&#39;attente');
+INSERT INTO `translation_google` VALUES (434,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','ru','Номер очереди');
+INSERT INTO `translation_google` VALUES (435,'d2619651971a3e7134e4cade43dd9bba8916d963','en','Queue number','uk','Номер черги');
+INSERT INTO `translation_google` VALUES (436,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','fr','Temps de rafraîchissement');
+INSERT INTO `translation_google` VALUES (437,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','ru','Обновить время');
+INSERT INTO `translation_google` VALUES (438,'4139795a103345001392065136e82bf3c91976be','en','Refresh time','uk','Час оновлення');
+INSERT INTO `translation_google` VALUES (439,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','fr','Retirer');
+INSERT INTO `translation_google` VALUES (440,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','ru','Удалять');
+INSERT INTO `translation_google` VALUES (441,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','en','Remove','uk','видалити');
+INSERT INTO `translation_google` VALUES (442,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','fr','Résultats trouvés :');
+INSERT INTO `translation_google` VALUES (443,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','ru','Найдены результаты:');
+INSERT INTO `translation_google` VALUES (444,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','en','Results found : ','uk','Знайдено результати:');
+INSERT INTO `translation_google` VALUES (445,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','fr','Les rôles');
+INSERT INTO `translation_google` VALUES (446,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','ru','Роли');
+INSERT INTO `translation_google` VALUES (447,'00aebfecd8920944fb297344c8e3cf3fe6625b46','en','Roles','uk','Ролі');
+INSERT INTO `translation_google` VALUES (448,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','fr','Format de ligne');
+INSERT INTO `translation_google` VALUES (449,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','ru','Формат строки');
+INSERT INTO `translation_google` VALUES (450,'2753282f9983ac41f0b1872ada75e837198694c7','en','Row format','uk','Формат рядка');
+INSERT INTO `translation_google` VALUES (451,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','fr','Lignes');
+INSERT INTO `translation_google` VALUES (452,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','ru','Ряды');
+INSERT INTO `translation_google` VALUES (453,'749ef415f0252bfdf5640222d055a231ab1b8b1d','en','Rows','uk','рядки');
+INSERT INTO `translation_google` VALUES (454,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','fr','Serveur');
+INSERT INTO `translation_google` VALUES (455,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','ru','Сервер');
+INSERT INTO `translation_google` VALUES (456,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','en','Server','uk','Сервер');
+INSERT INTO `translation_google` VALUES (457,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','fr','Source du serveur');
+INSERT INTO `translation_google` VALUES (458,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','ru','Источник сервера');
+INSERT INTO `translation_google` VALUES (459,'507b9d29019baefc118f883574c024a73769684c','en','Serveur source','uk','Джерело сервера');
+INSERT INTO `translation_google` VALUES (460,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','fr','Taille (données)');
+INSERT INTO `translation_google` VALUES (461,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','ru','Размер (данные)');
+INSERT INTO `translation_google` VALUES (462,'aabf1f274fe15f91efa051ff0b1be553436e277a','en','Size (data)','uk','Розмір (дані)');
+INSERT INTO `translation_google` VALUES (463,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','fr','Taille (libre)');
+INSERT INTO `translation_google` VALUES (464,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','ru','Безразмерный)');
+INSERT INTO `translation_google` VALUES (465,'ac293660aead3155dc744d64b5325395f34236b3','en','Size (free)','uk','Розмір (безкоштовно)');
+INSERT INTO `translation_google` VALUES (466,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','fr','Taille (indice)');
+INSERT INTO `translation_google` VALUES (467,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','ru','Размер (индекс)');
+INSERT INTO `translation_google` VALUES (468,'33d50a917d4f98924d32a66771fbf33348637495','en','Size (index)','uk','Розмір (індекс)');
+INSERT INTO `translation_google` VALUES (469,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','fr','Taille binlog utilisée');
+INSERT INTO `translation_google` VALUES (470,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','ru','Размер используемого бинлога');
+INSERT INTO `translation_google` VALUES (471,'676f1c5b5d813770fb066292bcd94e669572d28a','en','Size binlog used','uk','Використаний розмір binlog');
+INSERT INTO `translation_google` VALUES (472,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','fr','Taille max autorisée');
+INSERT INTO `translation_google` VALUES (473,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','ru','Максимально допустимый размер');
+INSERT INTO `translation_google` VALUES (474,'766c60528cebdd06a72674860630ac01149bbedf','en','Size max allowed','uk','Максимально допустимий розмір');
+INSERT INTO `translation_google` VALUES (475,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','fr','Taille maximale autorisée sur le serveur pour tous les binlogs');
+INSERT INTO `translation_google` VALUES (476,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','ru','Максимально допустимый размер на сервере для всех бинлогов');
+INSERT INTO `translation_google` VALUES (477,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','en','Size maximum allowed on server to all binlogs','uk','Максимально дозволений розмір на сервері для всіх binlogs');
+INSERT INTO `translation_google` VALUES (478,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','fr','Statut');
+INSERT INTO `translation_google` VALUES (479,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','ru','Статус');
+INSERT INTO `translation_google` VALUES (480,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','en','Status','uk','Статус');
+INSERT INTO `translation_google` VALUES (481,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','fr','Soumettre');
+INSERT INTO `translation_google` VALUES (482,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','ru','Представлять на рассмотрение');
+INSERT INTO `translation_google` VALUES (483,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','en','Submit','uk','Надіслати');
+INSERT INTO `translation_google` VALUES (484,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','fr','TOTAL');
+INSERT INTO `translation_google` VALUES (485,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','ru','ОБЩИЙ');
+INSERT INTO `translation_google` VALUES (486,'bebb8dabc36aca782f30c6741544a0080506520b','en','TOTAL','uk','РАЗОМ');
+INSERT INTO `translation_google` VALUES (487,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','fr','les tables');
+INSERT INTO `translation_google` VALUES (488,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','ru','Столы');
+INSERT INTO `translation_google` VALUES (489,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','en','Tables','uk','Таблиці');
+INSERT INTO `translation_google` VALUES (490,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','fr','Étiquette');
+INSERT INTO `translation_google` VALUES (491,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','ru','Ярлык');
+INSERT INTO `translation_google` VALUES (492,'c460690bfcb3edb07cf4ab79476966f8612c99d5','en','Tag','uk','Тег');
+INSERT INTO `translation_google` VALUES (493,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','fr','Concurrence de thread');
+INSERT INTO `translation_google` VALUES (494,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','ru','Параллелизм потоков');
+INSERT INTO `translation_google` VALUES (495,'0462202bf061d0150877a4b94559ddba56e571a6','en','Thread concurrency','uk','Паралельність потоків');
+INSERT INTO `translation_google` VALUES (496,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','fr','Jeudi');
+INSERT INTO `translation_google` VALUES (497,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','ru','Четверг');
+INSERT INTO `translation_google` VALUES (498,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','en','Thursday','uk','четвер');
+INSERT INTO `translation_google` VALUES (499,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','fr','Temps');
+INSERT INTO `translation_google` VALUES (500,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','ru','Время');
+INSERT INTO `translation_google` VALUES (501,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','en','Time','uk','час');
+INSERT INTO `translation_google` VALUES (502,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','fr','Mettre à jour');
+INSERT INTO `translation_google` VALUES (503,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','ru','Обновить');
+INSERT INTO `translation_google` VALUES (504,'ab272cb5c83c6ca5eb19388aca503e936c434f73','en','ToUpdate','uk','Оновити');
+INSERT INTO `translation_google` VALUES (505,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','fr','Boîte à outils');
+INSERT INTO `translation_google` VALUES (506,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','ru','Ящик для инструментов');
+INSERT INTO `translation_google` VALUES (507,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','en','Tools Box','uk','Ящик для інструментів');
+INSERT INTO `translation_google` VALUES (508,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','fr','Taille totale');
+INSERT INTO `translation_google` VALUES (509,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','ru','Общий размер');
+INSERT INTO `translation_google` VALUES (510,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','en','Total Size','uk','Загальний розмір');
+INSERT INTO `translation_google` VALUES (511,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','fr','Taille totale utilisée par tous les binlog :');
+INSERT INTO `translation_google` VALUES (512,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','ru','Общий размер, используемый всеми бинлогами:');
+INSERT INTO `translation_google` VALUES (513,'1e721ba8276245262209da3171085ac6496b34d0','en','Total size used by all binlog : ','uk','Загальний розмір, який використовується всім binlog :');
+INSERT INTO `translation_google` VALUES (514,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','fr','Mardi');
+INSERT INTO `translation_google` VALUES (515,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','ru','Вторник');
+INSERT INTO `translation_google` VALUES (516,'e97e945df6760a8b503d4b158f0b60122a2faac1','en','Tuesday','uk','вівторок');
+INSERT INTO `translation_google` VALUES (517,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','fr','Usage');
+INSERT INTO `translation_google` VALUES (518,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','ru','Применение');
+INSERT INTO `translation_google` VALUES (519,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','en','Usage','uk','Використання');
+INSERT INTO `translation_google` VALUES (520,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','fr','L&#39;utilisation de l&#39;indice est calculée comme suit :');
+INSERT INTO `translation_google` VALUES (521,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','ru','Использование индекса рассчитывается следующим образом:');
+INSERT INTO `translation_google` VALUES (522,'eb32c2866181ac1aef8bb02be4121ffe326a8809','en','Usage of index is calculed as follow :','uk','Використання індексу розраховується таким чином:');
+INSERT INTO `translation_google` VALUES (523,'c387f14c55e25617048123e845e170525f61376b','en','Value','fr','Évaluer');
+INSERT INTO `translation_google` VALUES (524,'c387f14c55e25617048123e845e170525f61376b','en','Value','ru','Ценность');
+INSERT INTO `translation_google` VALUES (525,'c387f14c55e25617048123e845e170525f61376b','en','Value','uk','Значення');
+INSERT INTO `translation_google` VALUES (526,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','fr','Variable');
+INSERT INTO `translation_google` VALUES (527,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','ru','Переменная');
+INSERT INTO `translation_google` VALUES (528,'03d5e253395832269b17d8c58528adf1338ed604','en','Variable','uk','змінна');
+INSERT INTO `translation_google` VALUES (529,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','fr','classer');
+INSERT INTO `translation_google` VALUES (530,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','ru','учебный класс');
+INSERT INTO `translation_google` VALUES (531,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','en','class','uk','клас');
+INSERT INTO `translation_google` VALUES (532,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','fr','date de fin');
+INSERT INTO `translation_google` VALUES (533,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','ru','дата окончания');
+INSERT INTO `translation_google` VALUES (534,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','en','date end','uk','дата закінчення');
+INSERT INTO `translation_google` VALUES (535,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','fr','date de depart');
+INSERT INTO `translation_google` VALUES (536,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','ru','дата начала');
+INSERT INTO `translation_google` VALUES (537,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','en','date start','uk','початок дати');
+INSERT INTO `translation_google` VALUES (538,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','fr','Erreur');
+INSERT INTO `translation_google` VALUES (539,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','ru','ошибка');
+INSERT INTO `translation_google` VALUES (540,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','en','error','uk','помилка');
+INSERT INTO `translation_google` VALUES (541,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','fr','Journal');
+INSERT INTO `translation_google` VALUES (542,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','ru','журнал');
+INSERT INTO `translation_google` VALUES (543,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','en','log','uk','журнал');
+INSERT INTO `translation_google` VALUES (544,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','fr','méthode');
+INSERT INTO `translation_google` VALUES (545,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','ru','метод');
+INSERT INTO `translation_google` VALUES (546,'2bb6502e52718dc712c740c111547cb3995ac334','en','method','uk','метод');
+INSERT INTO `translation_google` VALUES (547,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','fr','pages de');
+INSERT INTO `translation_google` VALUES (548,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','ru','страницы');
+INSERT INTO `translation_google` VALUES (549,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','en','pages of','uk','сторінки');
+INSERT INTO `translation_google` VALUES (550,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','fr','paramètre');
+INSERT INTO `translation_google` VALUES (551,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','ru','параметр');
+INSERT INTO `translation_google` VALUES (552,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','en','param','uk','параметр');
+INSERT INTO `translation_google` VALUES (553,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','fr','pid');
+INSERT INTO `translation_google` VALUES (554,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','ru','pid');
+INSERT INTO `translation_google` VALUES (555,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','en','pid','uk','під');
+INSERT INTO `translation_google` VALUES (556,'277da490aada977dbd340cff0d6c740a2421c430','en','status','fr','statut');
+INSERT INTO `translation_google` VALUES (557,'277da490aada977dbd340cff0d6c740a2421c430','en','status','ru','статус');
+INSERT INTO `translation_google` VALUES (558,'277da490aada977dbd340cff0d6c740a2421c430','en','status','uk','статус');
+INSERT INTO `translation_google` VALUES (559,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','fr','IO');
+INSERT INTO `translation_google` VALUES (560,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','ru','ИО');
+INSERT INTO `translation_google` VALUES (561,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','en','IO','uk','IO');
+INSERT INTO `translation_google` VALUES (562,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','fr','Maître');
+INSERT INTO `translation_google` VALUES (563,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','ru','Мастер');
+INSERT INTO `translation_google` VALUES (564,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','en','Master','uk','майстер');
+INSERT INTO `translation_google` VALUES (565,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','fr','SQL');
+INSERT INTO `translation_google` VALUES (566,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','ru','SQL');
+INSERT INTO `translation_google` VALUES (567,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','en','SQL','uk','SQL');
+INSERT INTO `translation_google` VALUES (568,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','fr','Secondes');
+INSERT INTO `translation_google` VALUES (569,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','ru','Секунды');
+INSERT INTO `translation_google` VALUES (570,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','en','Seconds','uk','секунд');
+INSERT INTO `translation_google` VALUES (571,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','fr','Trimer');
+INSERT INTO `translation_google` VALUES (572,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','ru','Раб');
+INSERT INTO `translation_google` VALUES (573,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','en','Slave','uk','Раб');
+INSERT INTO `translation_google` VALUES (574,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','fr','Bienvenue sur PmaControl !');
+INSERT INTO `translation_google` VALUES (575,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','ru','Добро пожаловать в PmaControl!');
+INSERT INTO `translation_google` VALUES (576,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','en','Welcome to PmaControl !','uk','Ласкаво просимо до PmaControl!');
+INSERT INTO `translation_google` VALUES (577,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','fr','Ajouter');
+INSERT INTO `translation_google` VALUES (578,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','ru','Добавлять');
+INSERT INTO `translation_google` VALUES (579,'e359bf83c998b719ad72fa04ab0e471bb86e2492','en','Add','uk','додати');
+INSERT INTO `translation_google` VALUES (580,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','fr','Statut_cluster');
+INSERT INTO `translation_google` VALUES (581,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','ru','Cluster_status');
+INSERT INTO `translation_google` VALUES (582,'b1ba77336be4434af0d188cb93c7fa33ed88a875','en','Cluster_status','uk','Cluster_status');
+INSERT INTO `translation_google` VALUES (583,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','fr','Nom de la connexion');
+INSERT INTO `translation_google` VALUES (584,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','ru','Название соединения');
+INSERT INTO `translation_google` VALUES (585,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','en','Connection name','uk','Назва підключення');
+INSERT INTO `translation_google` VALUES (586,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','fr','Désynchroniser');
+INSERT INTO `translation_google` VALUES (587,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','ru','Рассинхронизация');
+INSERT INTO `translation_google` VALUES (588,'ab6033e3b2bda03fdbad7983777425d3313c82ad','en','Desync','uk','Десинхронізувати');
+INSERT INTO `translation_google` VALUES (589,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','fr','État local');
+INSERT INTO `translation_google` VALUES (590,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','ru','Местное состояние');
+INSERT INTO `translation_google` VALUES (591,'914769af4e039a3dee99245792e92784017d46e2','en','Local state','uk','Місцева держава');
+INSERT INTO `translation_google` VALUES (592,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','fr','Stockage local');
+INSERT INTO `translation_google` VALUES (593,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','ru','Локальное хранилище');
+INSERT INTO `translation_google` VALUES (594,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','en','Local storage','uk','Локальне сховище');
+INSERT INTO `translation_google` VALUES (595,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','fr','Emplacement');
+INSERT INTO `translation_google` VALUES (596,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','ru','Расположение');
+INSERT INTO `translation_google` VALUES (597,'49def57e2477f48edede905f25f19d4910253e0a','en','Location','uk','Місцезнаходження');
+INSERT INTO `translation_google` VALUES (598,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','fr','La mémoire est calculée comme suit :');
+INSERT INTO `translation_google` VALUES (599,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','ru','Память рассчитывается следующим образом:');
+INSERT INTO `translation_google` VALUES (600,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','en','Memory is calculed as follow :','uk','Пам&#39;ять розраховується наступним чином:');
+INSERT INTO `translation_google` VALUES (601,'c54592fd312afa517640ef9218ec41859b079614','en','Node','fr','Nœud');
+INSERT INTO `translation_google` VALUES (602,'c54592fd312afa517640ef9218ec41859b079614','en','Node','ru','Узел');
+INSERT INTO `translation_google` VALUES (603,'c54592fd312afa517640ef9218ec41859b079614','en','Node','uk','Вузол');
+INSERT INTO `translation_google` VALUES (604,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','fr','Mémoire physique');
+INSERT INTO `translation_google` VALUES (605,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','ru','Физическая память');
+INSERT INTO `translation_google` VALUES (606,'be00f5ccb937361782a834b15413567667583c1a','en','Physical memory','uk','Фізична пам&#39;ять');
+INSERT INTO `translation_google` VALUES (607,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','fr','Stockage à distance');
+INSERT INTO `translation_google` VALUES (608,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','ru','Удаленное хранилище');
+INSERT INTO `translation_google` VALUES (609,'4ba5692469c332db6ffbdaab17a61ab9d417378d','en','Remote storage','uk','Віддалене зберігання');
+INSERT INTO `translation_google` VALUES (610,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','fr','Deuxième derrière le maître');
+INSERT INTO `translation_google` VALUES (611,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','ru','Второй после хозяина');
+INSERT INTO `translation_google` VALUES (612,'14df8426f894bcf267bbfb2df5c8f8b454af8341','en','Second behind master','uk','Другий позаду господаря');
+INSERT INTO `translation_google` VALUES (613,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','fr','Taille');
+INSERT INTO `translation_google` VALUES (614,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','ru','Размер');
+INSERT INTO `translation_google` VALUES (615,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','en','Size','uk','Розмір');
+INSERT INTO `translation_google` VALUES (616,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','fr','Espace utilisé');
+INSERT INTO `translation_google` VALUES (617,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','ru','Используемое пространство');
+INSERT INTO `translation_google` VALUES (618,'e5190ef6dbb2415796dab960cf064fca9aa38c14','en','Space used','uk','Використаний простір');
+INSERT INTO `translation_google` VALUES (619,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','fr','Fuseau horaire');
+INSERT INTO `translation_google` VALUES (620,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','ru','Часовой пояс');
+INSERT INTO `translation_google` VALUES (621,'4388737fbdf35b0830c9de5436f427f6fd311b86','en','Time zone','uk','Часовий пояс');
+INSERT INTO `translation_google` VALUES (622,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','fr','Utilisé');
+INSERT INTO `translation_google` VALUES (623,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','ru','Использовал');
+INSERT INTO `translation_google` VALUES (624,'d859a846db34afa9bce537e2faba3d83f329fba8','en','Used','uk','б/в');
+INSERT INTO `translation_google` VALUES (625,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','fr','défaut');
+INSERT INTO `translation_google` VALUES (626,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','ru','дефолт');
+INSERT INTO `translation_google` VALUES (627,'d88d564d6f7d46dc872d8acb0c08977be7e11303','en','default','uk','за замовчуванням');
+INSERT INTO `translation_google` VALUES (628,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','fr','Ajouter une feuille');
+INSERT INTO `translation_google` VALUES (629,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','ru','Добавить лист');
+INSERT INTO `translation_google` VALUES (630,'d589e7abf644bcda457ccb89e24b25083e4525c0','en','Add a leaf','uk','Додайте листочок');
+INSERT INTO `translation_google` VALUES (631,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','fr','Menu principal');
+INSERT INTO `translation_google` VALUES (632,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','ru','Главное меню');
+INSERT INTO `translation_google` VALUES (633,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','en','Main Menu','uk','Головне меню');
+INSERT INTO `translation_google` VALUES (634,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','fr','Paramètres des menus');
+INSERT INTO `translation_google` VALUES (635,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','ru','Настройки меню');
+INSERT INTO `translation_google` VALUES (636,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','en','Menu Settings','uk','Налаштування меню');
+INSERT INTO `translation_google` VALUES (637,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','fr','sauvegarder');
+INSERT INTO `translation_google` VALUES (638,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','ru','Сохранять');
+INSERT INTO `translation_google` VALUES (639,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','en','Save','uk','зберегти');
+INSERT INTO `translation_google` VALUES (640,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','fr','Sélectionnez le menu');
+INSERT INTO `translation_google` VALUES (641,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','ru','Выберите меню');
+INSERT INTO `translation_google` VALUES (642,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','en','Select menu','uk','Виберіть меню');
+INSERT INTO `translation_google` VALUES (643,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','fr','Le menu peut être différent pour chaque groupe d&#39;utilisateurs');
+INSERT INTO `translation_google` VALUES (644,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','ru','Меню может быть разным для каждой группы пользователей');
+INSERT INTO `translation_google` VALUES (645,'e49265977684f0636f2a658b38ad3ac46882dd9e','en','The menu can be different for each group of user','uk','Для кожної групи користувачів меню може відрізнятися');
+INSERT INTO `translation_google` VALUES (646,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','fr','Il y a un menu pour l&#39;utilisateur connecté et un autre pour tout le monde');
+INSERT INTO `translation_google` VALUES (647,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','ru','Есть одно меню для зарегистрированного пользователя и одно для всех.');
+INSERT INTO `translation_google` VALUES (648,'84859bcdbbbe4d584d0a84955fef061722210c35','en','There is one menu for loged user and one other everybody','uk','Існує одне меню для зареєстрованого користувача та одне для всіх інших');
+INSERT INTO `translation_google` VALUES (649,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','fr','Actions');
+INSERT INTO `translation_google` VALUES (650,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','ru','действия');
+INSERT INTO `translation_google` VALUES (651,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','en','actions','uk','дії');
+INSERT INTO `translation_google` VALUES (652,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','fr','actif');
+INSERT INTO `translation_google` VALUES (653,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','ru','активный');
+INSERT INTO `translation_google` VALUES (654,'63ff0fff56a78364b21f3438e71ebf588c213148','en','active','uk','активний');
+INSERT INTO `translation_google` VALUES (655,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','fr','bd');
+INSERT INTO `translation_google` VALUES (656,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','ru','бд');
+INSERT INTO `translation_google` VALUES (657,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','en','bd','uk','бд');
+INSERT INTO `translation_google` VALUES (658,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','fr','bg');
+INSERT INTO `translation_google` VALUES (659,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','ru','бг');
+INSERT INTO `translation_google` VALUES (660,'d5c1955df78aa6cfa411aee3671eb31a5055d205','en','bg','uk','bg');
+INSERT INTO `translation_google` VALUES (661,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','fr','icône');
+INSERT INTO `translation_google` VALUES (662,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','ru','значок');
+INSERT INTO `translation_google` VALUES (663,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','en','icon','uk','значок');
+INSERT INTO `translation_google` VALUES (664,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','fr','identifiant');
+INSERT INTO `translation_google` VALUES (665,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','ru','я бы');
+INSERT INTO `translation_google` VALUES (666,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','en','id','uk','id');
+INSERT INTO `translation_google` VALUES (667,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','fr','id_parent');
+INSERT INTO `translation_google` VALUES (668,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','ru','id_parent');
+INSERT INTO `translation_google` VALUES (669,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','en','id_parent','uk','id_parent');
+INSERT INTO `translation_google` VALUES (670,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','fr','Titre');
+INSERT INTO `translation_google` VALUES (671,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','ru','заглавие');
+INSERT INTO `translation_google` VALUES (672,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','en','title','uk','назва');
+INSERT INTO `translation_google` VALUES (673,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','fr','URL');
+INSERT INTO `translation_google` VALUES (674,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','ru','URL');
+INSERT INTO `translation_google` VALUES (675,'7ddff31858e17978f2faf6f20d4270c78969fe60','en','url','uk','url');
+INSERT INTO `translation_google` VALUES (676,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','fr','Actif');
+INSERT INTO `translation_google` VALUES (677,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','ru','Активный');
+INSERT INTO `translation_google` VALUES (678,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','en','Active','uk','Активний');
+INSERT INTO `translation_google` VALUES (679,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','fr','Identifiant à utiliser');
+INSERT INTO `translation_google` VALUES (680,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','ru','Учетные данные для использования');
+INSERT INTO `translation_google` VALUES (681,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','en','Credential to use','uk','Облікові дані для використання');
+INSERT INTO `translation_google` VALUES (682,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','fr','Déployer');
+INSERT INTO `translation_google` VALUES (683,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','ru','Развертывать');
+INSERT INTO `translation_google` VALUES (684,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','en','Deploy','uk','Розгорнути');
+INSERT INTO `translation_google` VALUES (685,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','fr','CLÉ privée');
+INSERT INTO `translation_google` VALUES (686,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','ru','КЛЮЧ частный');
+INSERT INTO `translation_google` VALUES (687,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','en','KEY private','uk','КЛЮЧ закритий');
+INSERT INTO `translation_google` VALUES (688,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','fr','Clé');
+INSERT INTO `translation_google` VALUES (689,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','ru','Ключ');
+INSERT INTO `translation_google` VALUES (690,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','en','Key','uk','ключ');
+INSERT INTO `translation_google` VALUES (691,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','fr','MySQL');
+INSERT INTO `translation_google` VALUES (692,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','ru','MySQL');
+INSERT INTO `translation_google` VALUES (693,'cec8644a40efcddafa330bcae8b1a191e6e9b968','en','MySQL','uk','MySQL');
+INSERT INTO `translation_google` VALUES (694,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','fr','Organisme');
+INSERT INTO `translation_google` VALUES (695,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','ru','Организация');
+INSERT INTO `translation_google` VALUES (696,'83749512ea9b54cbbb01a71079f139d970d6b590','en','Organization','uk','організація');
+INSERT INTO `translation_google` VALUES (697,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','fr','Clé privée à utiliser');
+INSERT INTO `translation_google` VALUES (698,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','ru','Закрытый ключ для использования');
+INSERT INTO `translation_google` VALUES (699,'07101c5b9a5b365895a1e31156973c5399a51030','en','Private Key to use','uk','Приватний ключ для використання');
+INSERT INTO `translation_google` VALUES (700,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','fr','Clé publique à déployer');
+INSERT INTO `translation_google` VALUES (701,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','ru','Открытый ключ для развертывания');
+INSERT INTO `translation_google` VALUES (702,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','en','Public key to deploy','uk','Відкритий ключ для розгортання');
+INSERT INTO `translation_google` VALUES (703,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','fr','Clé publique à pousser');
+INSERT INTO `translation_google` VALUES (704,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','ru','Открытый ключ для отправки');
+INSERT INTO `translation_google` VALUES (705,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','en','Public key to push','uk','Відкритий ключ для натискання');
+INSERT INTO `translation_google` VALUES (706,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','fr','SSH');
+INSERT INTO `translation_google` VALUES (707,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','ru','SSH');
+INSERT INTO `translation_google` VALUES (708,'9230901cfc881df3553f35347f0ed6419600360d','en','SSH','uk','SSH');
+INSERT INTO `translation_google` VALUES (709,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','fr','Sélectionnez la clé privée à utiliser');
+INSERT INTO `translation_google` VALUES (710,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','ru','Выберите закрытый ключ для использования');
+INSERT INTO `translation_google` VALUES (711,'62b79522bee65156e868cc41e682328006a9f3a9','en','Select private key to use','uk','Виберіть закритий ключ для використання');
+INSERT INTO `translation_google` VALUES (712,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','fr','Taille totale utilisée par tous les binlog :');
+INSERT INTO `translation_google` VALUES (713,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','ru','Общий размер, используемый всеми бинлогами:');
+INSERT INTO `translation_google` VALUES (714,'eda124dee8b5e804797bf30e1280f88924434cdc','en','Total size used by all binlog :','uk','Загальний розмір, який використовується всім binlog:');
+INSERT INTO `translation_google` VALUES (715,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','fr','Utilisateur lié à cette clé privée');
+INSERT INTO `translation_google` VALUES (716,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','ru','Пользователь, связанный с этим закрытым ключом');
+INSERT INTO `translation_google` VALUES (717,'e1e88625275102ac416206611483b066b3f0e43e','en','User who is linked with this private key','uk','Користувач, який пов’язаний із цим закритим ключем');
+INSERT INTO `translation_google` VALUES (718,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','fr','Gestionnaire_read_rnd_next');
+INSERT INTO `translation_google` VALUES (719,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','ru','Handler_read_rnd_next');
+INSERT INTO `translation_google` VALUES (720,'dd0343e17bc175ecca91485057924218bfff3b3f','en','Handler_read_rnd_next','uk','Handler_read_rnd_next');
+INSERT INTO `translation_google` VALUES (721,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','fr','Serveur :');
+INSERT INTO `translation_google` VALUES (722,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','ru','Сервер:');
+INSERT INTO `translation_google` VALUES (723,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','en','Server :','uk','сервер:');
+INSERT INTO `translation_google` VALUES (724,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','fr','Analyser les tableaux');
+INSERT INTO `translation_google` VALUES (725,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','ru','Анализировать таблицы');
+INSERT INTO `translation_google` VALUES (726,'efd2622638872af26b1dd034b88a04afde769293','en','Analyze tables','uk','Проаналізуйте таблиці');
+INSERT INTO `translation_google` VALUES (727,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','fr','Comparer la base de données');
+INSERT INTO `translation_google` VALUES (728,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','ru','Сравнить базу данных');
+INSERT INTO `translation_google` VALUES (729,'2784840e4fd660b4c457f6b32132cc20f30dc77b','en','Compare database','uk','Порівняти базу даних');
+INSERT INTO `translation_google` VALUES (730,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','fr','Tableau de comparaison');
+INSERT INTO `translation_google` VALUES (731,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','ru','Сравнить таблицу');
+INSERT INTO `translation_google` VALUES (732,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','en','Compare table','uk','Таблиця порівняння');
+INSERT INTO `translation_google` VALUES (733,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','fr','Créer une base de données');
+INSERT INTO `translation_google` VALUES (734,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','ru','Создать базу данных');
+INSERT INTO `translation_google` VALUES (735,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','en','Create database','uk','Створити базу даних');
+INSERT INTO `translation_google` VALUES (736,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','fr','Actualiser la base de données');
+INSERT INTO `translation_google` VALUES (737,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','ru','Обновить базу данных');
+INSERT INTO `translation_google` VALUES (738,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','en','Refresh database','uk','Оновити базу даних');
+INSERT INTO `translation_google` VALUES (739,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','fr','Renommer la base de données');
+INSERT INTO `translation_google` VALUES (740,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','ru','Переименовать базу данных');
+INSERT INTO `translation_google` VALUES (741,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','en','Rename database','uk','Перейменувати базу даних');
+INSERT INTO `translation_google` VALUES (742,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','fr','Ajuster les privilèges');
+INSERT INTO `translation_google` VALUES (743,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','ru','Настроить привилегии');
+INSERT INTO `translation_google` VALUES (744,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','en','Adjust privileges','uk','Налаштуйте привілеї');
+INSERT INTO `translation_google` VALUES (745,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','fr','Mise à jour automatique des statistiques des index');
+INSERT INTO `translation_google` VALUES (746,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','ru','Автоматическое обновление статистики индексов');
+INSERT INTO `translation_google` VALUES (747,'ddd72d5f26563bb19b34abde22dcf3706dd86196','en','Automatic updating indexes statistics','uk','Автоматичне оновлення статистики індексів');
+INSERT INTO `translation_google` VALUES (748,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','fr','Base de données à actualiser');
+INSERT INTO `translation_google` VALUES (749,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','ru','База данных для обновления');
+INSERT INTO `translation_google` VALUES (750,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','en','Database to refresh','uk','Базу даних для оновлення');
+INSERT INTO `translation_google` VALUES (751,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','fr','Bases de données à créer (séparées par des virgules)');
+INSERT INTO `translation_google` VALUES (752,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','ru','Базы данных для создания (разделенные запятой)');
+INSERT INTO `translation_google` VALUES (753,'feafad01ff4295bdf80374560f9e1c3af3884010','en','Databases to create (separated by coma)','uk','Бази даних для створення (розділені комою)');
+INSERT INTO `translation_google` VALUES (754,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','fr','Privilèges globaux');
+INSERT INTO `translation_google` VALUES (755,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','ru','Глобальные привилегии');
+INSERT INTO `translation_google` VALUES (756,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','en','Global privileges','uk','Глобальні привілеї');
+INSERT INTO `translation_google` VALUES (757,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','fr','Original');
+INSERT INTO `translation_google` VALUES (758,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','ru','Оригинал');
+INSERT INTO `translation_google` VALUES (759,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','en','Orginal','uk','Оригінал');
+INSERT INTO `translation_google` VALUES (760,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','fr','Chemin pour stocker la sauvegarde temporaire sur PmaControl');
+INSERT INTO `translation_google` VALUES (761,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','ru','Путь для хранения временной резервной копии на PmaControl');
+INSERT INTO `translation_google` VALUES (762,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','en','Path to store temporary backup on PmaControl','uk','Шлях для зберігання тимчасової резервної копії на PmaControl');
+INSERT INTO `translation_google` VALUES (763,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','fr','Actualiser la base de données à partir d&#39;un autre serveur');
+INSERT INTO `translation_google` VALUES (764,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','ru','Обновить базу данных с другого сервера');
+INSERT INTO `translation_google` VALUES (765,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','en','Refresh database from an other server','uk','Оновити базу даних з іншого сервера');
+INSERT INTO `translation_google` VALUES (766,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','fr','Renommer la base de données en');
+INSERT INTO `translation_google` VALUES (767,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','ru','Переименовать базу данных в');
+INSERT INTO `translation_google` VALUES (768,'4ace9333c57e64df94a0ba6a46aa74e70177409a','en','Rename database to','uk','Перейменувати базу даних на');
+INSERT INTO `translation_google` VALUES (769,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','fr','Réinitialiser');
+INSERT INTO `translation_google` VALUES (770,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','ru','Перезагрузить');
+INSERT INTO `translation_google` VALUES (771,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','en','Reset','uk','Скинути');
+INSERT INTO `translation_google` VALUES (772,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','fr','Serveur à rafraichir');
+INSERT INTO `translation_google` VALUES (773,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','ru','Сервер для обновления');
+INSERT INTO `translation_google` VALUES (774,'e469245c3427df4612737ab7e7c5833de500aa7c','en','Server to refresh','uk','Сервер для оновлення');
+INSERT INTO `translation_google` VALUES (775,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','fr','Nom d&#39;utilisateur');
+INSERT INTO `translation_google` VALUES (776,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','ru','Имя пользователя');
+INSERT INTO `translation_google` VALUES (777,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','en','User name','uk','Ім&#39;я користувача');
+INSERT INTO `translation_google` VALUES (778,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','fr','Анализировать таблицы');
+INSERT INTO `translation_google` VALUES (779,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','ru','Анализировать таблицу');
+INSERT INTO `translation_google` VALUES (780,'90d9b4b42227106177ed86803f60489c74bea59f','en','Анализировать таблицы','uk','Аналізувати таблицы');
+INSERT INTO `translation_google` VALUES (781,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','fr','Обновить базу данных');
+INSERT INTO `translation_google` VALUES (782,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','ru','Обновить базу данных');
+INSERT INTO `translation_google` VALUES (783,'d27f0cb82eea0b627da27296c4c5542e7d6db791','en','Обновить базу данных','uk','Оновити базу даних');
+INSERT INTO `translation_google` VALUES (784,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','fr','Переименовать базу данных');
+INSERT INTO `translation_google` VALUES (785,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','ru','Переименовать базу данных');
+INSERT INTO `translation_google` VALUES (786,'9f846d4d689c199ea86e49eab55e1c8994694d64','en','Переименовать базу данных','uk','Переіменувати базу даних');
+INSERT INTO `translation_google` VALUES (787,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','fr','Создать базу данных');
+INSERT INTO `translation_google` VALUES (788,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','ru','Создать базу данных');
+INSERT INTO `translation_google` VALUES (789,'7dec93e3bcbaf9daebe98355c52aba802a21352d','en','Создать базу данных','uk','Створити базу даних');
+INSERT INTO `translation_google` VALUES (790,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','fr','Сравнить базу данных');
+INSERT INTO `translation_google` VALUES (791,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','ru','Сравнить базу данных');
+INSERT INTO `translation_google` VALUES (792,'aed6c76af496cb45c9d8da900388535533aaab8e','en','Сравнить базу данных','uk','Зрівняти базу даних');
+INSERT INTO `translation_google` VALUES (793,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','fr','Сравнить таблицу');
+INSERT INTO `translation_google` VALUES (794,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','ru','Сравнить таблицу');
+INSERT INTO `translation_google` VALUES (795,'f96bcfc4739086d42c62dcaad9a1703305859be8','en','Сравнить таблицу','uk','Зрівняти таблицю');
+INSERT INTO `translation_google` VALUES (796,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','fr','Ajouter une zone de stockage');
+INSERT INTO `translation_google` VALUES (797,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','ru','Добавить место для хранения');
+INSERT INTO `translation_google` VALUES (798,'c6719ac6d65b54ba0320ee6a552f9284132b301e','en','Add a storage area','uk','Додати зону зберігання');
+INSERT INTO `translation_google` VALUES (799,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','fr','Ville');
+INSERT INTO `translation_google` VALUES (800,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','ru','Город');
+INSERT INTO `translation_google` VALUES (801,'12ec9e069b648a2de41a7d1d0498854de062b109','en','City','uk','Місто');
+INSERT INTO `translation_google` VALUES (802,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','fr','Pays');
+INSERT INTO `translation_google` VALUES (803,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','ru','Страна');
+INSERT INTO `translation_google` VALUES (804,'e4ea318761cc1a43ea578a829eba811f06cb1beb','en','Contry','uk','Контрі');
+INSERT INTO `translation_google` VALUES (805,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','fr','Si vous utilisez sudo pour exécuter les commandes système, spécifiez ici le nom d&#39;utilisateur que vous souhaitez utiliser. L&#39;utilisateur doit exister sur tous les nœuds.');
+INSERT INTO `translation_google` VALUES (806,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','ru','Если вы используете системные команды sudo ro execute, укажите здесь имя пользователя, которое вы хотите использовать. Пользователь должен существовать на всех узлах.');
+INSERT INTO `translation_google` VALUES (807,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','en','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','uk','Якщо ви використовуєте sudo ro для виконання системних команд, укажіть тут ім’я користувача, яке ви хочете використовувати. Користувач повинен існувати на всіх вузлах.');
+INSERT INTO `translation_google` VALUES (808,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','fr','Clé SSH');
+INSERT INTO `translation_google` VALUES (809,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','ru','Ключ SSH');
+INSERT INTO `translation_google` VALUES (810,'40638dca94c51c8903c21e6aa53b04067e38109a','en','Key SSH','uk','Ключ SSH');
+INSERT INTO `translation_google` VALUES (811,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','fr','Lister toutes les zones de stockage');
+INSERT INTO `translation_google` VALUES (812,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','ru','Список всех складских помещений');
+INSERT INTO `translation_google` VALUES (813,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','en','List all storage area','uk','Перелічіть всю область зберігання');
+INSERT INTO `translation_google` VALUES (814,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','fr','Principal');
+INSERT INTO `translation_google` VALUES (815,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','ru','Главный');
+INSERT INTO `translation_google` VALUES (816,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','en','Main','uk','Головна');
+INSERT INTO `translation_google` VALUES (817,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','fr','Sélectionnez la clé');
+INSERT INTO `translation_google` VALUES (818,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','ru','Выберите ключ');
+INSERT INTO `translation_google` VALUES (819,'2ad2811e6ce521c9faef540c16a3ae97c365becf','en','Select the key','uk','Виберіть ключ');
+INSERT INTO `translation_google` VALUES (820,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','fr','Spécifiez root si vous disposez d&#39;informations d&#39;identification root.');
+INSERT INTO `translation_google` VALUES (821,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','ru','Укажите root, если у вас есть учетные данные root.');
+INSERT INTO `translation_google` VALUES (822,'45c6af4ad554abbeb89009d14e3917b07fb8e694','en','Specify root if you have root credentials.','uk','Укажіть root, якщо у вас є облікові дані root.');
+INSERT INTO `translation_google` VALUES (823,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','fr','Dimanche');
+INSERT INTO `translation_google` VALUES (824,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','ru','Воскресенье');
+INSERT INTO `translation_google` VALUES (825,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','en','Sunday','uk','неділя');
+INSERT INTO `translation_google` VALUES (826,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','fr','Cette partie correspond à la partie utilisée par les sauvegardes sur la partition :');
+INSERT INTO `translation_google` VALUES (827,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','ru','Эта часть соответствует части, используемой резервными копиями в разделе:');
+INSERT INTO `translation_google` VALUES (828,'dad33a1fa63814424d6c46d7274972d08c1513ad','en','This part correspond to the part used by the backups on the partition :','uk','Ця частина відповідає частині, яка використовується резервними копіями на розділі:');
+INSERT INTO `translation_google` VALUES (829,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','fr','Valider');
+INSERT INTO `translation_google` VALUES (830,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','ru','Подтвердить');
+INSERT INTO `translation_google` VALUES (831,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','en','Validate','uk','Перевірити');
+INSERT INTO `translation_google` VALUES (832,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','fr','Gestion des sauvegardes');
+INSERT INTO `translation_google` VALUES (833,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','ru','Управление резервным копированием');
+INSERT INTO `translation_google` VALUES (834,'e3f8af5288d96bdc7fca02e57630eac1230ec380','en','Backup management','uk','Управління резервним копіюванням');
+INSERT INTO `translation_google` VALUES (835,'639af914197615682d432915ecc85e852f1565a0','en','Date end','fr','Date de fin');
+INSERT INTO `translation_google` VALUES (836,'639af914197615682d432915ecc85e852f1565a0','en','Date end','ru','Дата окончания');
+INSERT INTO `translation_google` VALUES (837,'639af914197615682d432915ecc85e852f1565a0','en','Date end','uk','Кінець дати');
+INSERT INTO `translation_google` VALUES (838,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','fr','Date de depart');
+INSERT INTO `translation_google` VALUES (839,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','ru','Дата начала');
+INSERT INTO `translation_google` VALUES (840,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','en','Date start','uk','Початок дати');
+INSERT INTO `translation_google` VALUES (841,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','fr','Destination');
+INSERT INTO `translation_google` VALUES (842,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','ru','Назначения');
+INSERT INTO `translation_google` VALUES (843,'68c0d3263654208133ccf18fb527654354a11fe5','en','Destination','uk','Пункт призначення');
+INSERT INTO `translation_google` VALUES (844,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','fr','Détails');
+INSERT INTO `translation_google` VALUES (845,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','ru','Подробности');
+INSERT INTO `translation_google` VALUES (846,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','en','Details','uk','Подробиці');
+INSERT INTO `translation_google` VALUES (847,'506b819386e108d89282215655cb0b281819b481','en','Error message','fr','Message d&#39;erreur');
+INSERT INTO `translation_google` VALUES (848,'506b819386e108d89282215655cb0b281819b481','en','Error message','ru','Сообщение об ошибке');
+INSERT INTO `translation_google` VALUES (849,'506b819386e108d89282215655cb0b281819b481','en','Error message','uk','Повідомлення про помилку');
+INSERT INTO `translation_google` VALUES (850,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','fr','Dossier');
+INSERT INTO `translation_google` VALUES (851,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','ru','Файл');
+INSERT INTO `translation_google` VALUES (852,'3c79b8f267002cd860d74dc72d8c2f636177350c','en','File','uk','Файл');
+INSERT INTO `translation_google` VALUES (853,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','fr','Niveau');
+INSERT INTO `translation_google` VALUES (854,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','ru','Уровень');
+INSERT INTO `translation_google` VALUES (855,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','en','Level','uk','Рівень');
+INSERT INTO `translation_google` VALUES (856,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','fr','Journaux');
+INSERT INTO `translation_google` VALUES (857,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','ru','Журналы');
+INSERT INTO `translation_google` VALUES (858,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','en','Logs','uk','Журнали');
+INSERT INTO `translation_google` VALUES (859,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','fr','Message');
+INSERT INTO `translation_google` VALUES (860,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','ru','Сообщение');
+INSERT INTO `translation_google` VALUES (861,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','en','Message','uk','повідомлення');
+INSERT INTO `translation_google` VALUES (862,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','fr','Propriétaire');
+INSERT INTO `translation_google` VALUES (863,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','ru','Владелец');
+INSERT INTO `translation_google` VALUES (864,'5167a1ae3f55d50ad623175369166b9aa922efdd','en','Owner','uk','Власник');
+INSERT INTO `translation_google` VALUES (865,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','fr','Progrès');
+INSERT INTO `translation_google` VALUES (866,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','ru','Прогресс');
+INSERT INTO `translation_google` VALUES (867,'d87786807468abcc5b142ef04282c8d2777b6fa6','en','Progress','uk','Прогрес');
+INSERT INTO `translation_google` VALUES (868,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','fr','Progression');
+INSERT INTO `translation_google` VALUES (869,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','ru','Прогресс');
+INSERT INTO `translation_google` VALUES (870,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','en','Progression','uk','Прогресія');
+INSERT INTO `translation_google` VALUES (871,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','fr','Détail de la restauration');
+INSERT INTO `translation_google` VALUES (872,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','ru','Деталь реставрации');
+INSERT INTO `translation_google` VALUES (873,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','en','Restoration detail','uk','Деталь реставрації');
+INSERT INTO `translation_google` VALUES (874,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','fr','Historique de la restauration');
+INSERT INTO `translation_google` VALUES (875,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','ru','История реставрации');
+INSERT INTO `translation_google` VALUES (876,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','en','Restoration history','uk','Історія реставрації');
+INSERT INTO `translation_google` VALUES (877,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','fr','Des horaires');
+INSERT INTO `translation_google` VALUES (878,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','ru','Расписания');
+INSERT INTO `translation_google` VALUES (879,'9ce79c3c5a98f364a36021f184e062b8fc907a90','en','Schedules','uk','Розклади');
+INSERT INTO `translation_google` VALUES (880,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','fr','Taille sur la zone de stockage');
+INSERT INTO `translation_google` VALUES (881,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','ru','Размер на складе');
+INSERT INTO `translation_google` VALUES (882,'480accc454f4bcac2350352960dc7d8cf36d2df8','en','Size on storage area','uk','Розмір по площі зберігання');
+INSERT INTO `translation_google` VALUES (883,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','fr','La source');
+INSERT INTO `translation_google` VALUES (884,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','ru','Источник');
+INSERT INTO `translation_google` VALUES (885,'0c3f8bd56a076094078a9eb4b5c274d666509763','en','Source','uk','Джерело');
+INSERT INTO `translation_google` VALUES (886,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','fr','Statistiques par tableau');
+INSERT INTO `translation_google` VALUES (887,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','ru','Статистика по таблице');
+INSERT INTO `translation_google` VALUES (888,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','en','Statistics by table','uk','Статистика за табл');
+INSERT INTO `translation_google` VALUES (889,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','fr','Table');
+INSERT INTO `translation_google` VALUES (890,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','ru','Стол');
+INSERT INTO `translation_google` VALUES (891,'366a2a69f4fe4ae4671b8228db1a0d608753158b','en','Table','uk','Таблиця');
+INSERT INTO `translation_google` VALUES (892,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','fr','Déchiffrer le temps');
+INSERT INTO `translation_google` VALUES (893,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','ru','Время расшифровки');
+INSERT INTO `translation_google` VALUES (894,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','en','Time decrypt','uk','Розшифрувати час');
+INSERT INTO `translation_google` VALUES (895,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','fr','Temps de charge');
+INSERT INTO `translation_google` VALUES (896,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','ru','Время нагрузки');
+INSERT INTO `translation_google` VALUES (897,'7ae71befa6916ad558646b14214f97353dc3981b','en','Time load','uk','Часове навантаження');
+INSERT INTO `translation_google` VALUES (898,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','fr','Temps scp');
+INSERT INTO `translation_google` VALUES (899,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','ru','Время SCP');
+INSERT INTO `translation_google` VALUES (900,'f5df0dc640a5e46dec39fcefda7105ef7746309d','en','Time scp','uk','Час scp');
+INSERT INTO `translation_google` VALUES (901,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','fr','Décompresser le temps');
+INSERT INTO `translation_google` VALUES (902,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','ru','Время распаковать');
+INSERT INTO `translation_google` VALUES (903,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','en','Time uncompress','uk','Час розпакувати');
+INSERT INTO `translation_google` VALUES (904,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','fr','Total des archives par nettoyeur');
+INSERT INTO `translation_google` VALUES (905,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','ru','Всего архивов по очистителю');
+INSERT INTO `translation_google` VALUES (906,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','en','Total archives by cleaner','uk','Всього архівів по очисникам');
+INSERT INTO `translation_google` VALUES (907,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','fr','Temps total');
+INSERT INTO `translation_google` VALUES (908,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','ru','Общее время');
+INSERT INTO `translation_google` VALUES (909,'09911b2af87518ef1d0193b1f517898ecd25cdfe','en','Total time','uk','Загальний час');
+INSERT INTO `translation_google` VALUES (910,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','fr','Taper');
+INSERT INTO `translation_google` VALUES (911,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','ru','Тип');
+INSERT INTO `translation_google` VALUES (912,'dfce468249edee539c77fbc33c2436dc90ff898c','en','Type','uk','Тип');
+INSERT INTO `translation_google` VALUES (913,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','fr','secondes');
+INSERT INTO `translation_google` VALUES (914,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','ru','секунды');
+INSERT INTO `translation_google` VALUES (915,'c73b4a8e9883128043f26a5210897df242564bd0','en','seconds','uk','секунд');
+INSERT INTO `translation_google` VALUES (916,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','fr','taille sur la zone de stockage');
+INSERT INTO `translation_google` VALUES (917,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','ru','размер на складе');
+INSERT INTO `translation_google` VALUES (918,'9b55338c7f9178b321e7944db0744c8bbb30e90e','en','size on storage area','uk','розмір на складську площу');
+INSERT INTO `translation_google` VALUES (919,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','fr','Avant de programmer une sauvegarde, vous devez ajouter un tableau de stockage :');
+INSERT INTO `translation_google` VALUES (920,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','ru','Прежде чем запланировать резервное копирование, вы должны добавить массив запасов:');
+INSERT INTO `translation_google` VALUES (921,'33e93408e812c309528b8552e466ac90f88f180f','en','Before to schedule a backup, you must add an array of stockage :','uk','Перш ніж запланувати резервне копіювання, ви повинні додати масив запасів:');
+INSERT INTO `translation_google` VALUES (922,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','fr','Référence');
+INSERT INTO `translation_google` VALUES (923,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','ru','Ориентир');
+INSERT INTO `translation_google` VALUES (924,'b7643956dced1001dca28022f79cf3aa8165fd16','en','Benchmark','uk','Еталон');
+INSERT INTO `translation_google` VALUES (925,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','fr','Configuration');
+INSERT INTO `translation_google` VALUES (926,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','ru','Конфигурация');
+INSERT INTO `translation_google` VALUES (927,'4e527a49d4764939ffb324fec498ffc248f195b2','en','Configuration','uk','Конфігурація');
+INSERT INTO `translation_google` VALUES (928,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','fr','Courants');
+INSERT INTO `translation_google` VALUES (929,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','ru','Токи');
+INSERT INTO `translation_google` VALUES (930,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','en','Currents','uk','Течії');
+INSERT INTO `translation_google` VALUES (931,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','fr','Faire un nouveau benchmark');
+INSERT INTO `translation_google` VALUES (932,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','ru','Сделать новый эталон');
+INSERT INTO `translation_google` VALUES (933,'4d536c278530219d09c6b0e4e49695b5442f1359','en','Make a new benchmark','uk','Зробіть новий тест');
+INSERT INTO `translation_google` VALUES (934,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','fr','Scénarios');
+INSERT INTO `translation_google` VALUES (935,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','ru','Скрипты');
+INSERT INTO `translation_google` VALUES (936,'e81028a9548e096eca733f4980a6a82b05a4002c','en','Scripts','uk','Сценарії');
+INSERT INTO `translation_google` VALUES (937,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','fr','Ajouter un client');
+INSERT INTO `translation_google` VALUES (938,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','ru','Добавить клиента');
+INSERT INTO `translation_google` VALUES (939,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','en','Add a client','uk','Додайте клієнта');
+INSERT INTO `translation_google` VALUES (940,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','fr','Ajouter une clé SSH');
+INSERT INTO `translation_google` VALUES (941,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','ru','Добавить ключ SSH');
+INSERT INTO `translation_google` VALUES (942,'e920c2b868bda1947913810176173cc983e123c5','en','Add a key SSH','uk','Додайте ключ SSH');
+INSERT INTO `translation_google` VALUES (943,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','fr','Ajouter une clé ssh');
+INSERT INTO `translation_google` VALUES (944,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','ru','Добавить ssh-ключ');
+INSERT INTO `translation_google` VALUES (945,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','en','Add a ssh key','uk','Додайте ключ ssh');
+INSERT INTO `translation_google` VALUES (946,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','fr','Administrateur');
+INSERT INTO `translation_google` VALUES (947,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','ru','Администратор');
+INSERT INTO `translation_google` VALUES (948,'b14d634e56fd467cf132991deca37ec8bae5c61a','en','Administrator','uk','Адміністратор');
+INSERT INTO `translation_google` VALUES (949,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','fr','Associé');
+INSERT INTO `translation_google` VALUES (950,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','ru','Ассоциированный');
+INSERT INTO `translation_google` VALUES (951,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','en','Associate','uk','асоційований');
+INSERT INTO `translation_google` VALUES (952,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','fr','Classer');
+INSERT INTO `translation_google` VALUES (953,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','ru','Учебный класс');
+INSERT INTO `translation_google` VALUES (954,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','en','Class','uk','Клас');
+INSERT INTO `translation_google` VALUES (955,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','fr','Clients');
+INSERT INTO `translation_google` VALUES (956,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','ru','Клиенты');
+INSERT INTO `translation_google` VALUES (957,'07359c6d9cc884f5763c54d0f8e849cff25debe5','en','Clients','uk','Клієнти');
+INSERT INTO `translation_google` VALUES (958,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','fr','Afficher un nom');
+INSERT INTO `translation_google` VALUES (959,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','ru','Показать имя');
+INSERT INTO `translation_google` VALUES (960,'5d2bf64249a6942dcfd40074c24a79885afadbc1','en','Display name','uk','Відображуване ім&#39;я');
+INSERT INTO `translation_google` VALUES (961,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','fr','Modifier le mot de passe');
+INSERT INTO `translation_google` VALUES (962,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','ru','Изменить пароль');
+INSERT INTO `translation_google` VALUES (963,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','en','Edit password','uk','Змінити пароль');
+INSERT INTO `translation_google` VALUES (964,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','fr','E-mail');
+INSERT INTO `translation_google` VALUES (965,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','ru','Эл. адрес');
+INSERT INTO `translation_google` VALUES (966,'bb39921b291c51b258882de1a259df21f5525ff5','en','Email','uk','Електронна пошта');
+INSERT INTO `translation_google` VALUES (967,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','fr','Exporter la configuration');
+INSERT INTO `translation_google` VALUES (968,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','ru','Экспорт конфигурации');
+INSERT INTO `translation_google` VALUES (969,'78a864e6733c266115dc1e1d604159dd0ff849bb','en','Export configuration','uk','Конфігурація експорту');
+INSERT INTO `translation_google` VALUES (970,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','fr','Importer la configuration');
+INSERT INTO `translation_google` VALUES (971,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','ru','Импорт конфигурации');
+INSERT INTO `translation_google` VALUES (972,'91a5b311b1f138329fda71a1daf9495b1e492325','en','Import configuration','uk','Імпорт конфігурації');
+INSERT INTO `translation_google` VALUES (973,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','fr','Dernier en ligne');
+INSERT INTO `translation_google` VALUES (974,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','ru','Последний онлайн');
+INSERT INTO `translation_google` VALUES (975,'addb0c0adcc648539ea4346821faa54f5325d23e','en','Last online','uk','Останній онлайн');
+INSERT INTO `translation_google` VALUES (976,'4e297600378b29419d17fac6205b997df482461c','en','Letter','fr','Lettre');
+INSERT INTO `translation_google` VALUES (977,'4e297600378b29419d17fac6205b997df482461c','en','Letter','ru','Письмо');
+INSERT INTO `translation_google` VALUES (978,'4e297600378b29419d17fac6205b997df482461c','en','Letter','uk','лист');
+INSERT INTO `translation_google` VALUES (979,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','fr','Libelle');
+INSERT INTO `translation_google` VALUES (980,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','ru','Либель');
+INSERT INTO `translation_google` VALUES (981,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','en','Libelle','uk','Libelle');
+INSERT INTO `translation_google` VALUES (982,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','fr','Lié à');
+INSERT INTO `translation_google` VALUES (983,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','ru','Связано с');
+INSERT INTO `translation_google` VALUES (984,'72c4dfdff267b52a23c0728a5ae44e037db60ced','en','Linked to','uk','Пов&#39;язані з');
+INSERT INTO `translation_google` VALUES (985,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','fr','Logo');
+INSERT INTO `translation_google` VALUES (986,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','ru','Логотип');
+INSERT INTO `translation_google` VALUES (987,'7ab00f61e46eaedd3c04307202c1c1f275cadace','en','Logo','uk','логотип');
+INSERT INTO `translation_google` VALUES (988,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','fr','Membre');
+INSERT INTO `translation_google` VALUES (989,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','ru','Член');
+INSERT INTO `translation_google` VALUES (990,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','en','Member','uk','Член');
+INSERT INTO `translation_google` VALUES (991,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','fr','Membres');
+INSERT INTO `translation_google` VALUES (992,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','ru','Члены');
+INSERT INTO `translation_google` VALUES (993,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','en','Members','uk','Члени');
+INSERT INTO `translation_google` VALUES (994,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','fr','Surveillé');
+INSERT INTO `translation_google` VALUES (995,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','ru','Отслеживается');
+INSERT INTO `translation_google` VALUES (996,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','en','Monitored','uk','Моніторинг');
+INSERT INTO `translation_google` VALUES (997,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','fr','Nouvelle clé SSH');
+INSERT INTO `translation_google` VALUES (998,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','ru','Новый SSH-ключ');
+INSERT INTO `translation_google` VALUES (999,'6e170c52780878ac10ba9a3a6e31112293803472','en','New SSH key','uk','Новий ключ SSH');
+INSERT INTO `translation_google` VALUES (1000,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','fr','Sous-traitant');
+INSERT INTO `translation_google` VALUES (1001,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','ru','Аутсорсер');
+INSERT INTO `translation_google` VALUES (1002,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','en','OutSourcer','uk','Аутсорсер');
+INSERT INTO `translation_google` VALUES (1003,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','fr','Points');
+INSERT INTO `translation_google` VALUES (1004,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','ru','Точки');
+INSERT INTO `translation_google` VALUES (1005,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','en','Points','uk','Очки');
+INSERT INTO `translation_google` VALUES (1006,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','fr','Rang');
+INSERT INTO `translation_google` VALUES (1007,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','ru','Классифицировать');
+INSERT INTO `translation_google` VALUES (1008,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','en','Rank','uk','ранг');
+INSERT INTO `translation_google` VALUES (1009,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','fr','Serveurs liés');
+INSERT INTO `translation_google` VALUES (1010,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','ru','Серверы связаны');
+INSERT INTO `translation_google` VALUES (1011,'f41728405df24e8c67efadd256b20a38f63821f2','en','Servers linked','uk','Сервери пов&#39;язані');
+INSERT INTO `translation_google` VALUES (1012,'e11f628d47c72058ec7750609921c45822387526','en','Since','fr','Depuis');
+INSERT INTO `translation_google` VALUES (1013,'e11f628d47c72058ec7750609921c45822387526','en','Since','ru','С');
+INSERT INTO `translation_google` VALUES (1014,'e11f628d47c72058ec7750609921c45822387526','en','Since','uk','Оскільки');
+INSERT INTO `translation_google` VALUES (1015,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','fr','Super administrateur');
+INSERT INTO `translation_google` VALUES (1016,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','ru','Супер администратор');
+INSERT INTO `translation_google` VALUES (1017,'60a5397ef35cf18a66bc92248fb81e5684055dcd','en','Super administrator','uk','Суперадміністратор');
+INSERT INTO `translation_google` VALUES (1018,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','fr','Soutien');
+INSERT INTO `translation_google` VALUES (1019,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','ru','Поддерживать');
+INSERT INTO `translation_google` VALUES (1020,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','en','Support','uk','Підтримка');
+INSERT INTO `translation_google` VALUES (1021,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','fr','TechOps');
+INSERT INTO `translation_google` VALUES (1022,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','ru','ТехОпс');
+INSERT INTO `translation_google` VALUES (1023,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','en','TechOps','uk','TechOps');
+INSERT INTO `translation_google` VALUES (1024,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','fr','Visiteur');
+INSERT INTO `translation_google` VALUES (1025,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','ru','Посетитель');
+INSERT INTO `translation_google` VALUES (1026,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','en','Visitor','uk','Відвідувач');
+INSERT INTO `translation_google` VALUES (1027,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','fr','Auteur :');
+INSERT INTO `translation_google` VALUES (1028,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','ru','Автор:');
+INSERT INTO `translation_google` VALUES (1029,'73de752c8f5fe3be6ab51296adc998678f5d1db4','en','Author :','uk','Автор:');
+INSERT INTO `translation_google` VALUES (1030,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','fr','Crédits');
+INSERT INTO `translation_google` VALUES (1031,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','ru','Кредиты');
+INSERT INTO `translation_google` VALUES (1032,'0b9d40f4c6b00d7a1402db568fba8112088532f1','en','Credits','uk','Кредити');
+INSERT INTO `translation_google` VALUES (1033,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','fr','Dépendances');
+INSERT INTO `translation_google` VALUES (1034,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','ru','Зависимости');
+INSERT INTO `translation_google` VALUES (1035,'97e0622acdca809e89973d578d377cf29849a017','en','Dependencies','uk','Залежності');
+INSERT INTO `translation_google` VALUES (1036,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','fr','LA FRANCE');
+INSERT INTO `translation_google` VALUES (1037,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','ru','ФРАНЦИЯ');
+INSERT INTO `translation_google` VALUES (1038,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','FRANCE','uk','ФРАНЦІЯ');
+INSERT INTO `translation_google` VALUES (1039,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','fr','Noyau :');
+INSERT INTO `translation_google` VALUES (1040,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','ru','Ядро:');
+INSERT INTO `translation_google` VALUES (1041,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','en','Kernel :','uk','Ядро:');
+INSERT INTO `translation_google` VALUES (1042,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','fr','Licence :');
+INSERT INTO `translation_google` VALUES (1043,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','ru','Лицензия:');
+INSERT INTO `translation_google` VALUES (1044,'f81bc6378c874626465b552586882eb06bab93d7','en','Lisense:','uk','Ліцензія:');
+INSERT INTO `translation_google` VALUES (1045,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','fr','Fabriqué en');
+INSERT INTO `translation_google` VALUES (1046,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','ru','Сделано в');
+INSERT INTO `translation_google` VALUES (1047,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','en','Made in','uk','Зроблено в');
+INSERT INTO `translation_google` VALUES (1048,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','fr','Alimenté par');
+INSERT INTO `translation_google` VALUES (1049,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','ru','Питаться от');
+INSERT INTO `translation_google` VALUES (1050,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','en','Powered by','uk','На основі');
+INSERT INTO `translation_google` VALUES (1051,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','fr','Produit');
+INSERT INTO `translation_google` VALUES (1052,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','ru','Товар');
+INSERT INTO `translation_google` VALUES (1053,'f59bdcce798cdc35c253e5381b313c9921844600','en','Product','uk','Продукт');
+INSERT INTO `translation_google` VALUES (1054,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','fr','Version de produit:');
+INSERT INTO `translation_google` VALUES (1055,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','ru','Версия продукта:');
+INSERT INTO `translation_google` VALUES (1056,'1ef39c943a1897edc11b320a5d39d351732cfc19','en','Product Version:','uk','Версія продукту:');
+INSERT INTO `translation_google` VALUES (1057,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','fr','Version:');
+INSERT INTO `translation_google` VALUES (1058,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','ru','Версия:');
+INSERT INTO `translation_google` VALUES (1059,'17412f33ee944298ba8e098173d6ba0bcba4a293','en','Version:','uk','Версія:');
+INSERT INTO `translation_google` VALUES (1060,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','fr','bifurqué de');
+INSERT INTO `translation_google` VALUES (1061,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','ru','разветвлен от');
+INSERT INTO `translation_google` VALUES (1062,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','en','forked from','uk','роздвоєний від');
+INSERT INTO `translation_google` VALUES (1063,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','fr','68k-proxysql-3 (2022-09-01 09:49:07)');
+INSERT INTO `translation_google` VALUES (1064,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','ru','68k-proxysql-3 (2022-09-01 09:49:07)');
+INSERT INTO `translation_google` VALUES (1065,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','en','68k-proxysql-3 (2022-09-01 09:49:07)','uk','68k-proxysql-3 (2022-09-01 09:49:07)');
+INSERT INTO `translation_google` VALUES (1066,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','fr','les erreurs');
+INSERT INTO `translation_google` VALUES (1067,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','ru','Ошибки');
+INSERT INTO `translation_google` VALUES (1068,'f6bb3a859c0ce29932181010f13eb05ce01b1148','en','Errors','uk','Помилки');
+INSERT INTO `translation_google` VALUES (1069,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','fr','Rapport');
+INSERT INTO `translation_google` VALUES (1070,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','ru','Соотношение');
+INSERT INTO `translation_google` VALUES (1071,'fddd41f0637364af980ed0fa0b042fbdbd7649db','en','Ratio','uk','співвідношення');
+INSERT INTO `translation_google` VALUES (1072,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','fr','Lit par seconde');
+INSERT INTO `translation_google` VALUES (1073,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','ru','Читает за секунду');
+INSERT INTO `translation_google` VALUES (1074,'cec499f1452034228e46835fd49ddb1c817195c7','en','Reads by second','uk','Читає по секундах');
+INSERT INTO `translation_google` VALUES (1075,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','fr','Temps de réponse (ms)');
+INSERT INTO `translation_google` VALUES (1076,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','ru','Время отклика (мс)');
+INSERT INTO `translation_google` VALUES (1077,'9f2cad04a60320a7feb65309f38065026fca246e','en','Response Time (ms)','uk','Час відгуку (мс)');
+INSERT INTO `translation_google` VALUES (1078,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','fr','Transactions par seconde');
+INSERT INTO `translation_google` VALUES (1079,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','ru','Сделки по секундам');
+INSERT INTO `translation_google` VALUES (1080,'2cd5781803ddd4b9267c2c9924fea797c9605d88','en','Transactions by second','uk','Операції по секундах');
+INSERT INTO `translation_google` VALUES (1081,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','fr','Écrit par seconde');
+INSERT INTO `translation_google` VALUES (1082,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','ru','Записывает по секундам');
+INSERT INTO `translation_google` VALUES (1083,'daf0f8815aef764cceb15ac194cb088267dbe21e','en','Writes by second','uk','Пише по секундах');
+INSERT INTO `translation_google` VALUES (1084,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','fr','Vous n&#39;utilisez pas la journalisation binaire');
+INSERT INTO `translation_google` VALUES (1085,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','ru','Вы не используете двоичное ведение журнала');
+INSERT INTO `translation_google` VALUES (1086,'ee518a4ab216041674aabd8ea7077068e4f6969a','en','You are not using binary logging','uk','Ви не використовуєте двійкове журналювання');
+INSERT INTO `translation_google` VALUES (1087,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','fr','Ajouter une entrée de menu');
+INSERT INTO `translation_google` VALUES (1088,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','ru','Добавить пункт меню');
+INSERT INTO `translation_google` VALUES (1089,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','en','Add menu entry','uk','Додати пункт меню');
+INSERT INTO `translation_google` VALUES (1090,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','fr','Langue');
+INSERT INTO `translation_google` VALUES (1091,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','ru','Язык');
+INSERT INTO `translation_google` VALUES (1092,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','en','Language','uk','Мову');
+INSERT INTO `translation_google` VALUES (1093,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','fr','Résultats trouvés :');
+INSERT INTO `translation_google` VALUES (1094,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','ru','Найдены результаты:');
+INSERT INTO `translation_google` VALUES (1095,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','en','Results found :','uk','Знайдено результати:');
+INSERT INTO `translation_google` VALUES (1096,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','fr','???????');
+INSERT INTO `translation_google` VALUES (1097,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','ru','?????????');
+INSERT INTO `translation_google` VALUES (1098,'1c6776cb674c12117bb3caa581339e466406977c','en','???????','uk','???????');
+INSERT INTO `translation_google` VALUES (1099,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','fr','??????????');
+INSERT INTO `translation_google` VALUES (1100,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','ru','????????????');
+INSERT INTO `translation_google` VALUES (1101,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','en','??????????','uk','??????????');
+INSERT INTO `translation_google` VALUES (1102,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','fr','proche');
+INSERT INTO `translation_google` VALUES (1103,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','ru','Закрывать');
+INSERT INTO `translation_google` VALUES (1104,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','en','Close','uk','Закрити');
+INSERT INTO `translation_google` VALUES (1105,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','fr','Anglais');
+INSERT INTO `translation_google` VALUES (1106,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','ru','Английский');
+INSERT INTO `translation_google` VALUES (1107,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','en','English','uk','англійська');
+INSERT INTO `translation_google` VALUES (1108,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','fr','Erreur 404');
+INSERT INTO `translation_google` VALUES (1109,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','ru','Ошибка 404');
+INSERT INTO `translation_google` VALUES (1110,'c3a41287cd46631a27c4ce1afeb20edb32714db5','en','Error 404','uk','Помилка 404');
+INSERT INTO `translation_google` VALUES (1111,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','fr','English');
+INSERT INTO `translation_google` VALUES (1112,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','ru','французский');
+INSERT INTO `translation_google` VALUES (1113,'717bd504990cd91fe80b06b67a1202fa86e2f579','en','Français','uk','Français');
+INSERT INTO `translation_google` VALUES (1114,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','fr','Page non trouvée');
+INSERT INTO `translation_google` VALUES (1115,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','ru','Страница не найдена');
+INSERT INTO `translation_google` VALUES (1116,'e442c2872ead41375c8faa2117d44396def018cd','en','Page not found','uk','Сторінку не знайдено');
+INSERT INTO `translation_google` VALUES (1117,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Langue/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1118,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Язык/индекс&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1119,'81eca1f469afa12b1a49100870eb61e620116e97','en','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Мова/індекс&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1120,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','fr','');
+INSERT INTO `translation_google` VALUES (1121,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','ru','');
+INSERT INTO `translation_google` VALUES (1122,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','en','','uk','');
+INSERT INTO `translation_google` VALUES (1123,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','fr','Paramètres d&#39;apparence');
+INSERT INTO `translation_google` VALUES (1124,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','ru','Настройки внешнего вида');
+INSERT INTO `translation_google` VALUES (1125,'2fda514e4e2154651f67c5e78db9cdaad496064c','en','Appearance settings','uk','Налаштування зовнішнього вигляду');
+INSERT INTO `translation_google` VALUES (1126,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','fr','Traitement');
+INSERT INTO `translation_google` VALUES (1127,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','ru','Обработка');
+INSERT INTO `translation_google` VALUES (1128,'beec6b755c9877caae350174b5f0cf5f94dc4f53','en','Processing','uk','Обробка');
+INSERT INTO `translation_google` VALUES (1129,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','fr','heures');
+INSERT INTO `translation_google` VALUES (1130,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','ru','часы');
+INSERT INTO `translation_google` VALUES (1131,'3219c7df7832762fd6f216d7f7d522080f764ed6','en','hours','uk','години');
+INSERT INTO `translation_google` VALUES (1132,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','fr','Оновити базу даних');
+INSERT INTO `translation_google` VALUES (1133,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','ru','Оновити базы данных');
+INSERT INTO `translation_google` VALUES (1134,'dbdca79e034939dedd8077b38094075c05e13473','en','Оновити базу даних','uk','Оновити базу даних');
+INSERT INTO `translation_google` VALUES (1135,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','fr','Перейменувати базу даних');
+INSERT INTO `translation_google` VALUES (1136,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','ru','Переименовать базу данных');
+INSERT INTO `translation_google` VALUES (1137,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','en','Перейменувати базу даних','uk','Перейменувати базу даних');
+INSERT INTO `translation_google` VALUES (1138,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','fr','Порівняти базу даних');
+INSERT INTO `translation_google` VALUES (1139,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','ru','Основание базы данных');
+INSERT INTO `translation_google` VALUES (1140,'5384677b25565ddd86dc7ed63ccaec665d89a91c','en','Порівняти базу даних','uk','Порівняти базу даних');
+INSERT INTO `translation_google` VALUES (1141,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','fr','Проаналізуйте таблиці');
+INSERT INTO `translation_google` VALUES (1142,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','ru','Проанализируйте таблицы');
+INSERT INTO `translation_google` VALUES (1143,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','en','Проаналізуйте таблиці','uk','Проаналізуйте таблиці');
+INSERT INTO `translation_google` VALUES (1144,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','fr','Створити базу даних');
+INSERT INTO `translation_google` VALUES (1145,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','ru','Создание базы данных');
+INSERT INTO `translation_google` VALUES (1146,'3219ced87986eda2103f361c42d952d39bf3f5ad','en','Створити базу даних','uk','Створити базу даних');
+INSERT INTO `translation_google` VALUES (1147,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','fr','Таблиця порівняння');
+INSERT INTO `translation_google` VALUES (1148,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','ru','Таблиця порівняння');
+INSERT INTO `translation_google` VALUES (1149,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','en','Таблиця порівняння','uk','Таблиця порівняння');
+INSERT INTO `translation_google` VALUES (1150,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','fr','Ajouter un nouveau serveur');
+INSERT INTO `translation_google` VALUES (1151,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','ru','Добавить новый сервер');
+INSERT INTO `translation_google` VALUES (1152,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','en','Add a new server','uk','Додайте новий сервер');
+INSERT INTO `translation_google` VALUES (1153,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','fr','Tous les lock/pid/md5 ont été supprimés et les partitions ont été mises à jour');
+INSERT INTO `translation_google` VALUES (1154,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','ru','Все блокировки/pid/md5 были удалены, а разделы обновлены.');
+INSERT INTO `translation_google` VALUES (1155,'50778e0c4210a7aac82e6127aa67c30937259c7e','en','All lock/pid/md5 has been deleted and partions has been updated','uk','Усі блокування/pid/md5 видалено, а розділи оновлено');
+INSERT INTO `translation_google` VALUES (1156,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','fr','Tous les démons ont été arrêtés avec succès');
+INSERT INTO `translation_google` VALUES (1157,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','ru','Весь демон был успешно остановлен');
+INSERT INTO `translation_google` VALUES (1158,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','en','All the daemon was successfully stopped','uk','Усі демони були успішно зупинені');
+INSERT INTO `translation_google` VALUES (1159,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','fr','Erreur de connexion');
+INSERT INTO `translation_google` VALUES (1160,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','ru','Ошибка соединения');
+INSERT INTO `translation_google` VALUES (1161,'0057ab77d96f3f7379f9a3e6524089914614200d','en','Connection error','uk','Помилка з&#39;єднання');
+INSERT INTO `translation_google` VALUES (1162,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','fr','Journées');
+INSERT INTO `translation_google` VALUES (1163,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','ru','Дни');
+INSERT INTO `translation_google` VALUES (1164,'89e9b0224b8e2d875701386ce4ee207aed9decfb','en','Days','uk','днів');
+INSERT INTO `translation_google` VALUES (1165,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','fr','Environnement');
+INSERT INTO `translation_google` VALUES (1166,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','ru','Окружающая среда');
+INSERT INTO `translation_google` VALUES (1167,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','en','Environement','uk','Навколишнє середовище');
+INSERT INTO `translation_google` VALUES (1168,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','fr','Impossible d&#39;atteindre ce serveur MySQL');
+INSERT INTO `translation_google` VALUES (1169,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','ru','Невозможно связаться с этим сервером MySQL');
+INSERT INTO `translation_google` VALUES (1170,'81e9df9ef9b590195330857b60634bbc32e1dcc0','en','Impossible to reach this MySQL server','uk','Неможливо отримати доступ до цього сервера MySQL');
+INSERT INTO `translation_google` VALUES (1171,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','fr','Connexion');
+INSERT INTO `translation_google` VALUES (1172,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','ru','Авторизоваться');
+INSERT INTO `translation_google` VALUES (1173,'0381a465ae9421715641b7fe899c0fc1895284db','en','Login','uk','Логін');
+INSERT INTO `translation_google` VALUES (1174,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','fr','Peut-être que cette adresse n&#39;est pas la bonne');
+INSERT INTO `translation_google` VALUES (1175,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','ru','Может быть, этот адрес не подходит');
+INSERT INTO `translation_google` VALUES (1176,'d1d684969d0e09e550d393c529292058434f2cc9','en','Maybe this address is not good','uk','Можливо, ця адреса не підходить');
+INSERT INTO `translation_google` VALUES (1177,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','fr','Peut-être que ce port n&#39;est pas bon');
+INSERT INTO `translation_google` VALUES (1178,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','ru','Может этот порт не подходит');
+INSERT INTO `translation_google` VALUES (1179,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','en','Maybe this port is not good','uk','Можливо, цей порт не підходить');
+INSERT INTO `translation_google` VALUES (1180,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','fr','Paramètres');
+INSERT INTO `translation_google` VALUES (1181,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','ru','Параметры');
+INSERT INTO `translation_google` VALUES (1182,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','en','Parameters','uk','Параметри');
+INSERT INTO `translation_google` VALUES (1183,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','fr','Chemin pour la sauvegarde temporaire');
+INSERT INTO `translation_google` VALUES (1184,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','ru','Путь для временной резервной копии');
+INSERT INTO `translation_google` VALUES (1185,'edf2782c0ac398da330de6719021054374dbaa20','en','Path for temp backup','uk','Шлях для тимчасової резервної копії');
+INSERT INTO `translation_google` VALUES (1186,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','fr','Clé privée');
+INSERT INTO `translation_google` VALUES (1187,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','ru','Закрытый ключ');
+INSERT INTO `translation_google` VALUES (1188,'96f30996b70aa9caeb0112256aae21d45832ddc0','en','Private key','uk','Приватний ключ');
+INSERT INTO `translation_google` VALUES (1189,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','fr','Clé publique');
+INSERT INTO `translation_google` VALUES (1190,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','ru','Открытый ключ');
+INSERT INTO `translation_google` VALUES (1191,'e1a369bf6c1e59c0123805ef98d5de384aa74856','en','Public key','uk','Відкритий ключ');
+INSERT INTO `translation_google` VALUES (1192,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','fr','Le compte de SSH');
+INSERT INTO `translation_google` VALUES (1193,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','ru','SSH-аккаунт');
+INSERT INTO `translation_google` VALUES (1194,'3cc195b6b09d7a73b3a36549749744e929caaf0f','en','SSH\'s account','uk','обліковий запис SSH');
+INSERT INTO `translation_google` VALUES (1195,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','fr','Succès');
+INSERT INTO `translation_google` VALUES (1196,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','ru','Успех');
+INSERT INTO `translation_google` VALUES (1197,'42e7354a685a47e426d9f7bd0af785fde356ec9a','en','Success','uk','Успіх');
+INSERT INTO `translation_google` VALUES (1198,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;185854&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1199,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','ru','Демон (id=9) с pid: &#39;185854&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1200,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','en','The daemon (id=9) with pid : \'185854\' successfully stopped','uk','Демон (id=9) з pid: &#39;185854&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1201,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;186449&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1202,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','ru','Демон (id=9) с pid: &#39;186449&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1203,'1716e191124ed35d6c8f6128d846d3a7ad056868','en','The daemon (id=9) with pid : \'186449\' successfully stopped','uk','Демон (id=9) з pid: &#39;186449&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1204,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','fr','Tapez un nom pour la connexion, si vous laissez vide nous prendrons &#39;select @@hostname&#39;');
+INSERT INTO `translation_google` VALUES (1205,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','ru','Введите имя для соединения, если вы оставите его пустым, мы возьмем «выбрать @@hostname».');
+INSERT INTO `translation_google` VALUES (1206,'277b1e5fe97bdecd46c2a585083f051c4852725e','en','Type a name for the connection, if you let empty we will take \'select @@hostname\'','uk','Введіть ім’я для з’єднання, якщо залишити порожнім, ми візьмемо «виберіть @@hostname»');
+INSERT INTO `translation_google` VALUES (1207,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','fr','Date de création');
+INSERT INTO `translation_google` VALUES (1208,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','ru','Дата создания');
+INSERT INTO `translation_google` VALUES (1209,'ec47d38ddb5ca683737956ef82d1228becb887a3','en','Creation date','uk','Дата створення');
+INSERT INTO `translation_google` VALUES (1210,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','fr','Taille des données');
+INSERT INTO `translation_google` VALUES (1211,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','ru','Размер данных');
+INSERT INTO `translation_google` VALUES (1212,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','en','Data size','uk','Розмір даних');
+INSERT INTO `translation_google` VALUES (1213,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','fr','Taille libre');
+INSERT INTO `translation_google` VALUES (1214,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','ru','Свободный размер');
+INSERT INTO `translation_google` VALUES (1215,'321912a313963860ad6cc00e6409e64a1450f947','en','Free size','uk','Вільний розмір');
+INSERT INTO `translation_google` VALUES (1216,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','fr','Taille de l&#39;index');
+INSERT INTO `translation_google` VALUES (1217,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','ru','Размер индекса');
+INSERT INTO `translation_google` VALUES (1218,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','en','Index size','uk','Розмір індексу');
+INSERT INTO `translation_google` VALUES (1219,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','fr','Percône');
+INSERT INTO `translation_google` VALUES (1220,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','ru','Перкона');
+INSERT INTO `translation_google` VALUES (1221,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','en','Percona','uk','Перкона');
+INSERT INTO `translation_google` VALUES (1222,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/displayOsc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1223,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/displayOsc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1224,'c33965f45beb4225c6e90d7596f09a2ffec285fb','en','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/displayOsc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1225,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/display_osc&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1226,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/display_osc&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1227,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','en','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/display_osc&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1228,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1229,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1230,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','en','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1231,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3362486&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1232,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','ru','Демон (id=9) с pid: &#39;3362486&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1233,'ba47cbada5436052a4dda8063a08d60daead5439','en','The daemon (id=9) with pid : \'3362486\' successfully stopped','uk','Демон (id=9) з pid: &#39;3362486&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1234,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','fr','en cours d&#39;exécution');
+INSERT INTO `translation_google` VALUES (1235,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','ru','в настоящее время работает');
+INSERT INTO `translation_google` VALUES (1236,'88291d86be4fca0eb93bf72c5f690d5335c19911','en','currently running','uk','зараз працює');
+INSERT INTO `translation_google` VALUES (1237,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','fr','journées');
+INSERT INTO `translation_google` VALUES (1238,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','ru','дни');
+INSERT INTO `translation_google` VALUES (1239,'fac0d09e955bdb342ffe8fc858cff265622df7bd','en','days','uk','днів');
+INSERT INTO `translation_google` VALUES (1240,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','fr','Agé de');
+INSERT INTO `translation_google` VALUES (1241,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','ru','старый');
+INSERT INTO `translation_google` VALUES (1242,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','en','old','uk','старий');
+INSERT INTO `translation_google` VALUES (1243,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','fr','Action');
+INSERT INTO `translation_google` VALUES (1244,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','ru','Действие');
+INSERT INTO `translation_google` VALUES (1245,'ad93a51cb6e6600df677b51f2b19088504a8054d','en','Action','uk','Дія');
+INSERT INTO `translation_google` VALUES (1246,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','fr','Table de dépôt');
+INSERT INTO `translation_google` VALUES (1247,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','ru','Удалить таблицу');
+INSERT INTO `translation_google` VALUES (1248,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','en','Drop table','uk','Відкидний стіл');
+INSERT INTO `translation_google` VALUES (1249,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','fr','Minutes');
+INSERT INTO `translation_google` VALUES (1250,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','ru','Минуты');
+INSERT INTO `translation_google` VALUES (1251,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','en','Minutes','uk','хвилин');
+INSERT INTO `translation_google` VALUES (1252,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/delOldOscTable&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1253,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/delOldOscTable&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1254,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','en','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/delOldOscTable&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1255,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Percona/del_old_osc_table&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1256,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Percona/del_old_osc_table&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1257,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','en','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Percona/del_old_osc_table&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1258,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;4063&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1259,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','ru','Демон (id=9) с pid: &#39;4063&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1260,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','en','The daemon (id=9) with pid : \'4063\' successfully stopped','uk','Демон (id=9) з pid: &#39;4063&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1261,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','fr','Actualiser la base de données');
+INSERT INTO `translation_google` VALUES (1262,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','ru','Actualiser la base de données');
+INSERT INTO `translation_google` VALUES (1263,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','en','Actualiser la base de données','uk','Actualiser la base de données');
+INSERT INTO `translation_google` VALUES (1264,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','fr','Ajouter un nouveau client');
+INSERT INTO `translation_google` VALUES (1265,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','ru','Добавить нового клиента');
+INSERT INTO `translation_google` VALUES (1266,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','en','Add a new client','uk','Додайте нового клієнта');
+INSERT INTO `translation_google` VALUES (1267,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','fr','Identifiants d&#39;administrateur');
+INSERT INTO `translation_google` VALUES (1268,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','ru','Учетные данные администратора');
+INSERT INTO `translation_google` VALUES (1269,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','en','Admin credentials','uk','Облікові дані адміністратора');
+INSERT INTO `translation_google` VALUES (1270,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','fr','Analyser les tableaux');
+INSERT INTO `translation_google` VALUES (1271,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','ru','Анализатор картин');
+INSERT INTO `translation_google` VALUES (1272,'63e82a90b25dd27a27c0192625f78fbfae1b995d','en','Analyser les tableaux','uk','Аналізатор таблиць');
+INSERT INTO `translation_google` VALUES (1273,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','fr','Vérifiez le DN de liaison et/ou le mot de passe de liaison');
+INSERT INTO `translation_google` VALUES (1274,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','ru','Проверьте Bind DN и/или Bind пароль.');
+INSERT INTO `translation_google` VALUES (1275,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','en','Check Bind DN and/or Bind password','uk','Перевірте Bind DN та/або Bind password');
+INSERT INTO `translation_google` VALUES (1276,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','fr','Comparer la base de données');
+INSERT INTO `translation_google` VALUES (1277,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','ru','Comparer la base de données');
+INSERT INTO `translation_google` VALUES (1278,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','en','Comparer la base de données','uk','Comparer la base de données');
+INSERT INTO `translation_google` VALUES (1279,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','fr','Créer une base de données');
+INSERT INTO `translation_google` VALUES (1280,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','ru','Creer une base de données');
+INSERT INTO `translation_google` VALUES (1281,'62fca64391ab34bcb36449184628607ba4f0559d','en','Créer une base de données','uk','Créer une base de données');
+INSERT INTO `translation_google` VALUES (1282,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','en','Refresh date:');
+INSERT INTO `translation_google` VALUES (1283,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','ru','Дата обновления:');
+INSERT INTO `translation_google` VALUES (1284,'74b6db1405aa9cc6490d83fc4fae39809219ad18','fr','Date de rafraichissement :','uk','Дата оновлення:');
+INSERT INTO `translation_google` VALUES (1285,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','fr','Différence');
+INSERT INTO `translation_google` VALUES (1286,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','ru','Диф');
+INSERT INTO `translation_google` VALUES (1287,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','en','Diff','uk','різниця');
+INSERT INTO `translation_google` VALUES (1288,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','fr','Champ');
+INSERT INTO `translation_google` VALUES (1289,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','ru','Поле');
+INSERT INTO `translation_google` VALUES (1290,'47394aff553372bba0f8bccc8284d56e4756d023','en','Field','uk','Поле');
+INSERT INTO `translation_google` VALUES (1291,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','fr','Tuer');
+INSERT INTO `translation_google` VALUES (1292,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','ru','Убийство');
+INSERT INTO `translation_google` VALUES (1293,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','en','Kill','uk','вбити');
+INSERT INTO `translation_google` VALUES (1294,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','fr','Général LDAP');
+INSERT INTO `translation_google` VALUES (1295,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','ru','Общие сведения о LDAP');
+INSERT INTO `translation_google` VALUES (1296,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','en','LDAP General','uk','LDAP Загальні');
+INSERT INTO `translation_google` VALUES (1297,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','fr','Nom du client');
+INSERT INTO `translation_google` VALUES (1298,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','ru','Имя клиента');
+INSERT INTO `translation_google` VALUES (1299,'420675e3f670b9e2d45d3e57911b2401708fcc06','en','Name of the client','uk','Ім&#39;я клієнта');
+INSERT INTO `translation_google` VALUES (1300,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','fr','Opération');
+INSERT INTO `translation_google` VALUES (1301,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','ru','Операция');
+INSERT INTO `translation_google` VALUES (1302,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','en','Operation','uk','Операція');
+INSERT INTO `translation_google` VALUES (1303,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','fr','ProxySQL');
+INSERT INTO `translation_google` VALUES (1304,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','ru','ПроксиSQL');
+INSERT INTO `translation_google` VALUES (1305,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','en','ProxySQL','uk','ProxySQL');
+INSERT INTO `translation_google` VALUES (1306,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','fr','Renommer la base de données');
+INSERT INTO `translation_google` VALUES (1307,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','ru','Renommer la base de données');
+INSERT INTO `translation_google` VALUES (1308,'aeef72bdd63a200a901b4dde0f16f1af3433112a','en','Renommer la base de données','uk','Renommer la base de données');
+INSERT INTO `translation_google` VALUES (1309,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','fr','Rapports');
+INSERT INTO `translation_google` VALUES (1310,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','ru','Составление отчетов');
+INSERT INTO `translation_google` VALUES (1311,'0ab89e190a1708c1cc8be75da05267d306fee98d','en','Reporting','uk','Звітність');
+INSERT INTO `translation_google` VALUES (1312,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','fr','Schéma');
+INSERT INTO `translation_google` VALUES (1313,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','ru','Схема');
+INSERT INTO `translation_google` VALUES (1314,'10f44cb4caea5e972d7428be73058033ef580d8f','en','Schema','uk','Схема');
+INSERT INTO `translation_google` VALUES (1315,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','fr','Rechercher un groupe');
+INSERT INTO `translation_google` VALUES (1316,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','ru','Поиск группы');
+INSERT INTO `translation_google` VALUES (1317,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','en','Search for a group','uk','Пошук групи');
+INSERT INTO `translation_google` VALUES (1318,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;ProxySQL/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1319,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;ProxySQL/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1320,'8be350328d443ef2e0130e483dc740b9fe81428c','en','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;ProxySQL/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1321,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','fr','Désolé, la page demandée : &quot;Proxysql/index&quot; n&#39;est pas sur ce serveur. Veuillez nous contacter si vous avez des questions ou des préoccupations');
+INSERT INTO `translation_google` VALUES (1322,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','ru','Извините, запрошенная вами страница: &quot;Proxysql/index&quot; не находится на этом сервере. Пожалуйста, свяжитесь с нами, если у вас есть вопросы или проблемы');
+INSERT INTO `translation_google` VALUES (1323,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','en','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','uk','На жаль, сторінки, яку ви запитували: &quot;Proxysql/index&quot; немає на цьому сервері. Будь ласка, зв&#39;яжіться з нами, якщо у вас виникли запитання чи сумніви');
+INSERT INTO `translation_google` VALUES (1324,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','fr','Tableau de comparaison');
+INSERT INTO `translation_google` VALUES (1325,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','ru','Сравнительная таблица');
+INSERT INTO `translation_google` VALUES (1326,'49be5aaf527e3497a394e5163fff0442571e2c66','en','Tableau de comparaison','uk','Tableau de comparaison');
+INSERT INTO `translation_google` VALUES (1327,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','fr','Le démon (id=7) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1328,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','ru','Демон (id=7) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1329,'20ec6f0917dc343de03b27e9747641a4849139c0','en','The daemon (id=7) successfully started with','uk','Демон (id=7) успішно запущений з');
+INSERT INTO `translation_google` VALUES (1330,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;693862&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1331,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','ru','Демон (id=7) с pid: &#39;693862&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1332,'6ef3d67449741f6c6b84fb452f8e492601580774','en','The daemon (id=7) with pid : \'693862\' successfully stopped','uk','Демон (id=7) з pid: &#39;693862&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1333,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;693874&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1334,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','ru','Демон (id=9) с pid: &#39;693874&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1335,'6fa95dbba22dbf9285c9456a0cec268b944469de','en','The daemon (id=9) with pid : \'693874\' successfully stopped','uk','Демон (id=9) з pid: &#39;693874&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1336,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','fr','Les statistiques ont été réinitialisées');
+INSERT INTO `translation_google` VALUES (1337,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','ru','Статистика была сброшена');
+INSERT INTO `translation_google` VALUES (1338,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','en','The statistics has been reseted','uk','Статистику скинуто');
+INSERT INTO `translation_google` VALUES (1339,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','fr','Nom de variable');
+INSERT INTO `translation_google` VALUES (1340,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','ru','Имя_переменной');
+INSERT INTO `translation_google` VALUES (1341,'9c35011459b7cf246b5e180fd73195abbc23b492','en','Variable_name','uk','Ім&#39;я_змінної');
+INSERT INTO `translation_google` VALUES (1342,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','fr','Votre serveur MySQL a été ajouté avec succès !');
+INSERT INTO `translation_google` VALUES (1343,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','ru','Ваш сервер MySQL успешно добавлен!');
+INSERT INTO `translation_google` VALUES (1344,'a315816d1b9118a0988a816904ae0046ae4ef4c8','en','Your MySQL server was successfully added !','uk','Ваш сервер MySQL успішно додано!');
+INSERT INTO `translation_google` VALUES (1345,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','fr','ref_field');
+INSERT INTO `translation_google` VALUES (1346,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','ru','ref_field');
+INSERT INTO `translation_google` VALUES (1347,'1d31ae299df857ca84dc076756f6432c2b765f6f','en','ref_field','uk','ref_field');
+INSERT INTO `translation_google` VALUES (1348,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','fr','ref_schema');
+INSERT INTO `translation_google` VALUES (1349,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','ru','ref_schema');
+INSERT INTO `translation_google` VALUES (1350,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','en','ref_schema','uk','ref_schema');
+INSERT INTO `translation_google` VALUES (1351,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','fr','ref_table');
+INSERT INTO `translation_google` VALUES (1352,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','ru','ref_table');
+INSERT INTO `translation_google` VALUES (1353,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','en','ref_table','uk','ref_table');
+INSERT INTO `translation_google` VALUES (1354,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','fr','Tous les démons ont été démarrés avec succès');
+INSERT INTO `translation_google` VALUES (1355,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','ru','Все демон был успешно запущен');
+INSERT INTO `translation_google` VALUES (1356,'06bce48eb781262eee36c9b382dce2892becaecc','en','All the daemon was successfully started','uk','Весь демон успішно запущено');
+INSERT INTO `translation_google` VALUES (1357,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','fr','Nouveau serveur ProxySQL');
+INSERT INTO `translation_google` VALUES (1358,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','ru','Новый ProxySQL-сервер');
+INSERT INTO `translation_google` VALUES (1359,'708ccb3e2db313a49136e9baf3c5089ce33f7497','en','New ProxySQL Server','uk','Новий сервер ProxySQL');
+INSERT INTO `translation_google` VALUES (1360,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','fr','Le démon (id=11) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1361,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','ru','Демон (id=11) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1362,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','en','The daemon (id=11) successfully started with','uk','Демон (id=11) успішно запущений з');
+INSERT INTO `translation_google` VALUES (1363,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','fr','Le démon (id=11) avec le pid : &#39;3035213&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1364,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','ru','Демон (id=11) с pid: &#39;3035213&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1365,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','en','The daemon (id=11) with pid : \'3035213\' successfully stopped','uk','Демон (id=11) з pid: &#39;3035213&#39; успішно зупинено');
+INSERT INTO `translation_google` VALUES (1366,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','fr','Le démon (id=12) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1367,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','ru','Демон (id=12) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1368,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','en','The daemon (id=12) successfully started with','uk','Демон (id=12) успішно запущено з');
+INSERT INTO `translation_google` VALUES (1369,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','fr','Le démon (id=13) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1370,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','ru','Демон (id=13) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1371,'a9985d0471fbd19d696ae71846ed0dc102ef540b','en','The daemon (id=13) successfully started with','uk','Демон (id=13) успішно запущено з');
+INSERT INTO `translation_google` VALUES (1372,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2843607&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1373,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','ru','Демон (id=13) с pid: &#39;2843607&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1374,'0fe707b3a79eead84e53bd63575374f326992cfd','en','The daemon (id=13) with pid : \'2843607\' successfully stopped','uk','Демон (id=13) з pid: &#39;2843607&#39; успішно зупинено');
+INSERT INTO `translation_google` VALUES (1375,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;3034289&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1376,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','ru','Демон (id=13) с pid: &#39;3034289&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1377,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','en','The daemon (id=13) with pid : \'3034289\' successfully stopped','uk','Демон (id=13) з pid: &#39;3034289&#39; успішно зупинено');
+INSERT INTO `translation_google` VALUES (1378,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;62296&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1379,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','ru','Демон (id=13) с pid: &#39;62296&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1380,'b11d10998cbf4cdd7255728dac72708fdde27d1a','en','The daemon (id=13) with pid : \'62296\' successfully stopped','uk','Демон (id=13) з pid: &#39;62296&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1381,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','fr','Le démon (id=5) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1382,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','ru','Демон (id=5) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1383,'fb5db38b7134c32b25055f7b6faaf6451052e04d','en','The daemon (id=5) successfully started with','uk','Демон (id=5) успішно запущений з');
+INSERT INTO `translation_google` VALUES (1384,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','fr','Le démon (id=7) avec pid : &#39;3035572&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1385,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','ru','Демон (id=7) с pid: &#39;3035572&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1386,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','en','The daemon (id=7) with pid : \'3035572\' successfully stopped','uk','Демон (id=7) з pid: &#39;3035572&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1387,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','fr','Le démon (id=9) a démarré avec succès avec');
+INSERT INTO `translation_google` VALUES (1388,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','ru','Демон (id=9) успешно запущен с');
+INSERT INTO `translation_google` VALUES (1389,'f246c534f967f145600f54e45d6c8c153d5ff221','en','The daemon (id=9) successfully started with','uk','Демон (id=9) успішно запущено з');
+INSERT INTO `translation_google` VALUES (1390,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','fr','Le démon (id=9) avec pid : &#39;3035594&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1391,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','ru','Демон (id=9) с pid: &#39;3035594&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1392,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','en','The daemon (id=9) with pid : \'3035594\' successfully stopped','uk','Демон (id=9) з pid: &#39;3035594&#39; успішно зупинився');
+INSERT INTO `translation_google` VALUES (1393,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','fr','Enregistrer');
+INSERT INTO `translation_google` VALUES (1394,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','ru','Журнал');
+INSERT INTO `translation_google` VALUES (1395,'b789eafe106519942bacd941807cf584b908c9ee','en','Log','uk','Журнал');
+INSERT INTO `translation_google` VALUES (1396,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','fr','Le démon (id=13) avec le pid : &#39;2576689&#39; s&#39;est arrêté avec succès');
+INSERT INTO `translation_google` VALUES (1397,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','ru','Демон (id=13) с pid: &#39;2576689&#39; успешно остановлен');
+INSERT INTO `translation_google` VALUES (1398,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','en','The daemon (id=13) with pid : \'2576689\' successfully stopped','uk','Демон (id=13) з pid: &#39;2576689&#39; успішно зупинено');
+INSERT INTO `translation_google` VALUES (1399,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','fr','Travail');
+INSERT INTO `translation_google` VALUES (1400,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','ru','За работой');
+INSERT INTO `translation_google` VALUES (1401,'eec961422796f80c3c6ae1249fa9971aa3c0870f','en','Working','uk','Працює');
+INSERT INTO `translation_google` VALUES (1402,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','fr','Travaille sur');
+INSERT INTO `translation_google` VALUES (1403,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','ru','Работа над');
+INSERT INTO `translation_google` VALUES (1404,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','en','Working on','uk','Працює на');
+INSERT INTO `translation_google` VALUES (1405,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','cs','');
+INSERT INTO `translation_google` VALUES (1406,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','da','');
+INSERT INTO `translation_google` VALUES (1407,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','de','');
+INSERT INTO `translation_google` VALUES (1408,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','es','');
+INSERT INTO `translation_google` VALUES (1409,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','fi','');
+INSERT INTO `translation_google` VALUES (1410,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','fr','');
+INSERT INTO `translation_google` VALUES (1411,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','it','');
+INSERT INTO `translation_google` VALUES (1412,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','ja','');
+INSERT INTO `translation_google` VALUES (1413,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','nl','');
+INSERT INTO `translation_google` VALUES (1414,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','pl','');
+INSERT INTO `translation_google` VALUES (1415,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','pt','');
+INSERT INTO `translation_google` VALUES (1416,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','ru','');
+INSERT INTO `translation_google` VALUES (1417,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','en','Add a cleaner','zh-cn','');
+INSERT INTO `translation_google` VALUES (1418,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','cs','');
+INSERT INTO `translation_google` VALUES (1419,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','da','');
+INSERT INTO `translation_google` VALUES (1420,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','de','');
+INSERT INTO `translation_google` VALUES (1421,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','es','');
+INSERT INTO `translation_google` VALUES (1422,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','fi','');
+INSERT INTO `translation_google` VALUES (1423,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','fr','');
+INSERT INTO `translation_google` VALUES (1424,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','it','');
+INSERT INTO `translation_google` VALUES (1425,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','ja','');
+INSERT INTO `translation_google` VALUES (1426,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','nl','');
+INSERT INTO `translation_google` VALUES (1427,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','pl','');
+INSERT INTO `translation_google` VALUES (1428,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','pt','');
+INSERT INTO `translation_google` VALUES (1429,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','ru','');
+INSERT INTO `translation_google` VALUES (1430,'71173421a61a24713a262ecd56de0b0999f3c412','en','Already running !','zh-cn','');
+INSERT INTO `translation_google` VALUES (1431,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','cs','');
+INSERT INTO `translation_google` VALUES (1432,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','da','');
+INSERT INTO `translation_google` VALUES (1433,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','de','');
+INSERT INTO `translation_google` VALUES (1434,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','es','');
+INSERT INTO `translation_google` VALUES (1435,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','fi','');
+INSERT INTO `translation_google` VALUES (1436,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','fr','');
+INSERT INTO `translation_google` VALUES (1437,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','it','');
+INSERT INTO `translation_google` VALUES (1438,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','ja','');
+INSERT INTO `translation_google` VALUES (1439,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','nl','');
+INSERT INTO `translation_google` VALUES (1440,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','pl','');
+INSERT INTO `translation_google` VALUES (1441,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','pt','');
+INSERT INTO `translation_google` VALUES (1442,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','ru','');
+INSERT INTO `translation_google` VALUES (1443,'9432e3a2065c359cfbc26eda83f2fc57283977fb','en','Archiving','zh-cn','');
+INSERT INTO `translation_google` VALUES (1444,'8bca5aad0ab7e764fba067952a1110491aa99b0a','en','Cleaner\'s name','cs','');
+INSERT INTO `translation_google` VALUES (1445,'8bca5aad0ab7e764fba067952a1110491aa99b0a','en','Cleaner\'s name','da','');
+INSERT INTO `translation_google` VALUES (1446,'8bca5aad0ab7e764fba067952a1110491aa99b0a','en','Cleaner\'s name','de','');
+INSERT INTO `translation_google` VALUES (1447,'8bca5aad0ab7e764fba067952a1110491aa99b0a','en','Cleaner\'s name','es','');
+INSERT INTO `translation_google` VALUES (1448,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','cs','Zašifrované soubory');
+INSERT INTO `translation_google` VALUES (1449,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','da','Krypterede filer');
+INSERT INTO `translation_google` VALUES (1450,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','de','Verschlüsselte Dateien');
+INSERT INTO `translation_google` VALUES (1451,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','es','Archivos encriptados');
+INSERT INTO `translation_google` VALUES (1452,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','fi','Salatut tiedostot');
+INSERT INTO `translation_google` VALUES (1453,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','fr','Fichiers cryptés');
+INSERT INTO `translation_google` VALUES (1454,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','it','File criptati');
+INSERT INTO `translation_google` VALUES (1455,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','ja','暗号化されたファイル');
+INSERT INTO `translation_google` VALUES (1456,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','nl','Versleutelde bestanden');
+INSERT INTO `translation_google` VALUES (1457,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','pl','Zaszyfrowane pliki');
+INSERT INTO `translation_google` VALUES (1458,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','pt','arquivos criptografados');
+INSERT INTO `translation_google` VALUES (1459,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','ru','Зашифрованные файлы');
+INSERT INTO `translation_google` VALUES (1460,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','en','Crypted files','zh-cn','加密文件');
+INSERT INTO `translation_google` VALUES (1461,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','cs','Démon (id=5) byl již zastaven nebo došlo k chybě');
+INSERT INTO `translation_google` VALUES (1462,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','da','Dæmon (id=5) var allerede stoppet eller ved en fejl');
+INSERT INTO `translation_google` VALUES (1463,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','de','Daemon (id=5) wurde bereits angehalten oder ist fehlerhaft');
+INSERT INTO `translation_google` VALUES (1464,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','es','Daemon (id=5) ya se detuvo o tuvo un error');
+INSERT INTO `translation_google` VALUES (1465,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','fi','Daemon (id=5) oli jo pysäytetty tai virheessä');
+INSERT INTO `translation_google` VALUES (1466,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','fr','Le démon (id=5) était déjà arrêté ou en erreur');
+INSERT INTO `translation_google` VALUES (1467,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','it','Daemon (id=5) era già stato arrestato o in errore');
+INSERT INTO `translation_google` VALUES (1468,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','ja','デーモン (id=5) は既に停止しているか、エラーが発生しています');
+INSERT INTO `translation_google` VALUES (1469,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','nl','Daemon (id=5) is al gestopt of heeft een fout');
+INSERT INTO `translation_google` VALUES (1470,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','en','Daemon (id=5) was already stopped or in error','pl','Demon (id=5) został już zatrzymany lub wystąpił błąd');
+INSERT INTO `translation_google` VALUES (1471,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','cs','Použití databáze pro čištění');
+INSERT INTO `translation_google` VALUES (1472,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','da','Databasebrug til rengøring');
+INSERT INTO `translation_google` VALUES (1473,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','de','Datenbanknutzung zur Reinigung');
+INSERT INTO `translation_google` VALUES (1474,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','es','Uso de la base de datos para la limpieza');
+INSERT INTO `translation_google` VALUES (1475,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','fi','Tietokannan käyttö puhdistukseen');
+INSERT INTO `translation_google` VALUES (1476,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','fr','Utilisation de la base de données pour le nettoyage');
+INSERT INTO `translation_google` VALUES (1477,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','it','Uso del database per la pulizia');
+INSERT INTO `translation_google` VALUES (1478,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','ja','クリーニングのためのデータベースの使用');
+INSERT INTO `translation_google` VALUES (1479,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','nl','Databasegebruik voor opschonen');
+INSERT INTO `translation_google` VALUES (1480,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','pl','Wykorzystanie bazy danych do czyszczenia');
+INSERT INTO `translation_google` VALUES (1481,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','pt','Uso do banco de dados para limpeza');
+INSERT INTO `translation_google` VALUES (1482,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','ru','Использование базы данных для очистки');
+INSERT INTO `translation_google` VALUES (1483,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','en','Database use for cleaning','zh-cn','数据库用于清理');
+INSERT INTO `translation_google` VALUES (1484,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','cs','Informace pro generála');
+INSERT INTO `translation_google` VALUES (1485,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','da','Generalens info');
+INSERT INTO `translation_google` VALUES (1486,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','de','Informationen des Generals');
+INSERT INTO `translation_google` VALUES (1487,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','es','Información general');
+INSERT INTO `translation_google` VALUES (1488,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','fi','Kenraalin tiedot');
+INSERT INTO `translation_google` VALUES (1489,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','fr','Infos générales');
+INSERT INTO `translation_google` VALUES (1490,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','it','Informazioni generali');
+INSERT INTO `translation_google` VALUES (1491,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','ja','将軍の情報');
+INSERT INTO `translation_google` VALUES (1492,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','nl','Algemene informatie');
+INSERT INTO `translation_google` VALUES (1493,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','pl','Informacje generała');
+INSERT INTO `translation_google` VALUES (1494,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','pt','informações gerais');
+INSERT INTO `translation_google` VALUES (1495,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','ru','Информация генерала');
+INSERT INTO `translation_google` VALUES (1496,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','en','General\'s infos','zh-cn','将军资料');
+INSERT INTO `translation_google` VALUES (1497,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','cs','Pokud je vybráno, archivní soubory budou zašifrovány v úložném prostoru');
+INSERT INTO `translation_google` VALUES (1498,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','da','Hvis valgt, vil arkivfilerne blive krypteret på lagerområdet');
+INSERT INTO `translation_google` VALUES (1499,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','de','Wenn ausgewählt, werden die Archivdateien im Speicherbereich verschlüsselt');
+INSERT INTO `translation_google` VALUES (1500,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','es','Si se selecciona, los archivos comprimidos se cifrarán en el área de almacenamiento');
+INSERT INTO `translation_google` VALUES (1501,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','fi','Jos tämä on valittuna, arkistotiedostot salataan tallennusalueella');
+INSERT INTO `translation_google` VALUES (1502,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','fr','Si sélectionné, les fichiers d&#39;archives seront cryptés sur la zone de stockage');
+INSERT INTO `translation_google` VALUES (1503,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','it','Se selezionato, i file di archivio verranno crittografati nell&#39;area di archiviazione');
+INSERT INTO `translation_google` VALUES (1504,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','ja','選択した場合、アーカイブ ファイルはストレージ領域で暗号化されます');
+INSERT INTO `translation_google` VALUES (1505,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','nl','Indien geselecteerd, worden de archiefbestanden versleuteld in het opslagruimte');
+INSERT INTO `translation_google` VALUES (1506,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','pl','Jeśli wybrano, pliki archiwów zostaną zaszyfrowane w obszarze przechowywania');
+INSERT INTO `translation_google` VALUES (1507,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','pt','Se selecionado, os arquivos compactados serão criptografados na área de armazenamento');
+INSERT INTO `translation_google` VALUES (1508,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','ru','Если выбрано, файлы архивов будут зашифрованы в области хранения.');
+INSERT INTO `translation_google` VALUES (1509,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','en','If selelected the archives files will be crypted on storage area','zh-cn','如果选中，存档文件将在存储区域加密');
+INSERT INTO `translation_google` VALUES (1510,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','cs','Pokud je následující volba zaměřena na oblast úložiště, čistič automaticky archivuje odstraněné řádky');
+INSERT INTO `translation_google` VALUES (1511,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','da','Hvis følgende valg fokuserer på et lagerområde, vil renseren automatisk arkivere de slettede rækker');
+INSERT INTO `translation_google` VALUES (1512,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','de','Wenn sich die folgende Auswahl auf einen Speicherbereich konzentriert, archiviert der Cleaner automatisch die gelöschten Zeilen');
+INSERT INTO `translation_google` VALUES (1513,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','es','Si la siguiente selección se centra en un área de almacenamiento, el limpiador archivará automáticamente las filas eliminadas');
+INSERT INTO `translation_google` VALUES (1514,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','fi','Jos seuraava valinta kohdistuu tallennusalueeseen, siivooja arkistoi automaattisesti poistetut rivit');
+INSERT INTO `translation_google` VALUES (1515,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','fr','Si la sélection suivante se concentre sur une zone de stockage, le nettoyeur archivera automatiquement les lignes supprimées');
+INSERT INTO `translation_google` VALUES (1516,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','it','Se la selezione successiva si concentra su un&#39;area di archiviazione, il pulitore archivierà automaticamente le righe eliminate');
+INSERT INTO `translation_google` VALUES (1517,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','ja','次の選択がストレージ領域にフォーカスされている場合、クリーナーは削除された行を自動的にアーカイブします');
+INSERT INTO `translation_google` VALUES (1518,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','nl','Als de volgende selectie gericht is op een opslagruimte, archiveert de opschoner automatisch de verwijderde rijen');
+INSERT INTO `translation_google` VALUES (1519,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','pl','Jeśli poniższe zaznaczenie skupia się na obszarze przechowywania, program czyszczący automatycznie zarchiwizuje usunięte wiersze');
+INSERT INTO `translation_google` VALUES (1520,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','pt','Se a seleção a seguir for focada em uma área de armazenamento, o limpador arquivará automaticamente as linhas excluídas');
+INSERT INTO `translation_google` VALUES (1521,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','ru','Если следующий выбор фокусируется на области хранения, очиститель автоматически заархивирует удаленные строки.');
+INSERT INTO `translation_google` VALUES (1522,'48f5561a032871fc206d0cc2ff8004884bfac59f','en','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','zh-cn','如果后面的select是focus在一个存储区，cleaner会自动归档删除的行');
+INSERT INTO `translation_google` VALUES (1523,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','cs','Pokud zde není žádný úložný prostor, přidejte jej tam:');
+INSERT INTO `translation_google` VALUES (1524,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','da','Hvis der ikke er noget lagerområde, skal du tilføje et der:');
+INSERT INTO `translation_google` VALUES (1525,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','de','Wenn kein Lagerraum vorhanden ist, fügen Sie dort bitte einen hinzu:');
+INSERT INTO `translation_google` VALUES (1526,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','es','Si no hay un área de almacenamiento, agregue una allí:');
+INSERT INTO `translation_google` VALUES (1527,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','fi','Jos säilytystilaa ei ole, lisää se sinne:');
+INSERT INTO `translation_google` VALUES (1528,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','fr','S&#39;il n&#39;y a pas de zone de stockage, veuillez en ajouter une :');
+INSERT INTO `translation_google` VALUES (1529,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','it','Se non è presente un&#39;area di archiviazione, aggiungine una lì:');
+INSERT INTO `translation_google` VALUES (1530,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','ja','ストレージ領域がない場合は、そこに追加してください:');
+INSERT INTO `translation_google` VALUES (1531,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','nl','Als er geen opslagruimte is, voeg er dan een toe:');
+INSERT INTO `translation_google` VALUES (1532,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','pl','Jeśli nie ma miejsca do przechowywania, dodaj je tam:');
+INSERT INTO `translation_google` VALUES (1533,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','pt','Se não houver área de armazenamento, adicione uma lá:');
+INSERT INTO `translation_google` VALUES (1534,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','ru','Если места для хранения нет, добавьте его:');
+INSERT INTO `translation_google` VALUES (1535,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','en','If there is no storage area, please add one there :','zh-cn','如果没有存储区，请在那里添加一个：');
+INSERT INTO `translation_google` VALUES (1536,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','cs','Nelze najít démona (id=5) s pid:');
+INSERT INTO `translation_google` VALUES (1537,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','da','Umuligt at finde dæmonen (id=5) med pid&#39;en:');
+INSERT INTO `translation_google` VALUES (1538,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','de','Unmöglich, den Daemon (id=5) mit der PID zu finden:');
+INSERT INTO `translation_google` VALUES (1539,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','es','Imposible encontrar el daemon (id=5) con el pid:');
+INSERT INTO `translation_google` VALUES (1540,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','fi','On mahdotonta löytää demonia (id=5) pid:llä:');
+INSERT INTO `translation_google` VALUES (1541,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','fr','Impossible de trouver le démon (id=5) avec le pid :');
+INSERT INTO `translation_google` VALUES (1542,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','it','Impossibile trovare il demone (id=5) con il pid :');
+INSERT INTO `translation_google` VALUES (1543,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','ja','pid のデーモン (id=5) を見つけることができません:');
+INSERT INTO `translation_google` VALUES (1544,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','nl','Onmogelijk om de daemon (id=5) te vinden met de pid :');
+INSERT INTO `translation_google` VALUES (1545,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','pl','Nie można znaleźć demona (id=5) z pid:');
+INSERT INTO `translation_google` VALUES (1546,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','pt','Impossível encontrar o daemon (id=5) com o pid:');
+INSERT INTO `translation_google` VALUES (1547,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','ru','Невозможно найти демона (id=5) с pid:');
+INSERT INTO `translation_google` VALUES (1548,'1121fb85e3f32507c69c7388b24a0332afb74ddf','en','Impossible to find the daemon (id=5) with the pid :','zh-cn','无法使用 pid 找到守护进程 (id=5)：');
+INSERT INTO `translation_google` VALUES (1549,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','cs','Nelze spustit démona');
+INSERT INTO `translation_google` VALUES (1550,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','da','Umuligt at starte dæmonen');
+INSERT INTO `translation_google` VALUES (1551,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','de','Unmöglich, den Daemon zu starten');
+INSERT INTO `translation_google` VALUES (1552,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','es','Imposible lanzar el daemon');
+INSERT INTO `translation_google` VALUES (1553,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','fi','Demonin käynnistäminen on mahdotonta');
+INSERT INTO `translation_google` VALUES (1554,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','fr','Impossible de lancer le démon');
+INSERT INTO `translation_google` VALUES (1555,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','it','Impossibile avviare il demone');
+INSERT INTO `translation_google` VALUES (1556,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','ja','デーモンを起動できません');
+INSERT INTO `translation_google` VALUES (1557,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','nl','Onmogelijk om de daemon te starten');
+INSERT INTO `translation_google` VALUES (1558,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','pl','Nie można uruchomić demona');
+INSERT INTO `translation_google` VALUES (1559,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','pt','Impossível iniciar o daemon');
+INSERT INTO `translation_google` VALUES (1560,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','ru','Невозможно запустить демон');
+INSERT INTO `translation_google` VALUES (1561,'6351665355d18349b18a24f28142e8837e7c908e','en','Impossible to launch the daemon','zh-cn','无法启动守护程序');
+INSERT INTO `translation_google` VALUES (1562,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','cs','Informace');
+INSERT INTO `translation_google` VALUES (1563,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','da','Informationer');
+INSERT INTO `translation_google` VALUES (1564,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','de','Informationen');
+INSERT INTO `translation_google` VALUES (1565,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','es','Informaciones');
+INSERT INTO `translation_google` VALUES (1566,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','fi','Tiedot');
+INSERT INTO `translation_google` VALUES (1567,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','fr','Informations');
+INSERT INTO `translation_google` VALUES (1568,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','it','Informazioni');
+INSERT INTO `translation_google` VALUES (1569,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','ja','インフォメーション');
+INSERT INTO `translation_google` VALUES (1570,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','nl','Informatie');
+INSERT INTO `translation_google` VALUES (1571,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','pl','Informacje');
+INSERT INTO `translation_google` VALUES (1572,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','pt','Informações');
+INSERT INTO `translation_google` VALUES (1573,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','ru','Информация');
+INSERT INTO `translation_google` VALUES (1574,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','en','Informations','zh-cn','资讯');
+INSERT INTO `translation_google` VALUES (1575,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','cs','Počet smazaných řádků najednou');
+INSERT INTO `translation_google` VALUES (1576,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','da','Antal linje slettet på én gang');
+INSERT INTO `translation_google` VALUES (1577,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','de','Anzahl der auf einmal gelöschten Zeilen');
+INSERT INTO `translation_google` VALUES (1578,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','es','Número de línea eliminada en una vez');
+INSERT INTO `translation_google` VALUES (1579,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','fi','Kerralla poistettujen rivien määrä');
+INSERT INTO `translation_google` VALUES (1580,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','fr','Nombre de lignes supprimées en une seule fois');
+INSERT INTO `translation_google` VALUES (1581,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','it','Numero di righe cancellate in una volta');
+INSERT INTO `translation_google` VALUES (1582,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','ja','一度に削除される行数');
+INSERT INTO `translation_google` VALUES (1583,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','nl','Aantal regels in één keer verwijderd');
+INSERT INTO `translation_google` VALUES (1584,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','pl','Liczba wierszy usuniętych w jednym czasie');
+INSERT INTO `translation_google` VALUES (1585,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','pt','Número de linhas excluídas de uma vez');
+INSERT INTO `translation_google` VALUES (1586,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','ru','Количество строк, удаленных за один раз');
+INSERT INTO `translation_google` VALUES (1587,'2c05c0a22288a20f540a7ca7125738000567ea08','en','Number of line deleted in one time','zh-cn','一次删除行数');
+INSERT INTO `translation_google` VALUES (1588,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','cs','Na tomto serveru MySQL chybí jeden úložný modul');
+INSERT INTO `translation_google` VALUES (1589,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','da','Der mangler én lagermotor på denne MySQL-server');
+INSERT INTO `translation_google` VALUES (1590,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','de','Auf diesem MySQL-Server fehlt eine Speicher-Engine');
+INSERT INTO `translation_google` VALUES (1591,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','es','Falta un motor de almacenamiento en este servidor MySQL');
+INSERT INTO `translation_google` VALUES (1592,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','fi','Yksi tallennusmoottori puuttuu tästä MySQL-palvelimesta');
+INSERT INTO `translation_google` VALUES (1593,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','fr','Un moteur de stockage est manquant sur ce serveur MySQL');
+INSERT INTO `translation_google` VALUES (1594,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','it','Su questo server MySQL manca un motore di archiviazione');
+INSERT INTO `translation_google` VALUES (1595,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','ja','この MySQL サーバーには 1 つのストレージ エンジンがありません');
+INSERT INTO `translation_google` VALUES (1596,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','nl','Er ontbreekt één storage-engine op deze MySQL-server');
+INSERT INTO `translation_google` VALUES (1597,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','pl','Na tym serwerze MySQL brakuje jednego silnika pamięci masowej');
+INSERT INTO `translation_google` VALUES (1598,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','pt','Um mecanismo de armazenamento está faltando neste servidor MySQL');
+INSERT INTO `translation_google` VALUES (1599,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','ru','На этом сервере MySQL отсутствует один механизм хранения.');
+INSERT INTO `translation_google` VALUES (1600,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','en','One storage engine is missing on this MySQL server','zh-cn','此 MySQL 服务器上缺少一个存储引擎');
+INSERT INTO `translation_google` VALUES (1601,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','cs','Předpona pro tabulky používané pro čištění');
+INSERT INTO `translation_google` VALUES (1602,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','da','Præfiks for tabeller, der bruges til rengøring');
+INSERT INTO `translation_google` VALUES (1603,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','de','Präfix für Tabellen, die für clean verwendet werden');
+INSERT INTO `translation_google` VALUES (1604,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','es','Prefijo para tablas usadas para limpiar');
+INSERT INTO `translation_google` VALUES (1605,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','fi','Puhdistukseen käytettyjen pöytien etuliite');
+INSERT INTO `translation_google` VALUES (1606,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','fr','Préfixe pour les tables utilisées pour le nettoyage');
+INSERT INTO `translation_google` VALUES (1607,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','it','Prefisso per tabelle utilizzate per pulire');
+INSERT INTO `translation_google` VALUES (1608,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','ja','クリーンに使用されるテーブルのプレフィックス');
+INSERT INTO `translation_google` VALUES (1609,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','nl','Voorvoegsel voor tabellen die worden gebruikt voor schoon');
+INSERT INTO `translation_google` VALUES (1610,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','pl','Przedrostek dla tabel używanych do czyszczenia');
+INSERT INTO `translation_google` VALUES (1611,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','pt','Prefixo para tabelas usadas para limpar');
+INSERT INTO `translation_google` VALUES (1612,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','ru','Префикс для таблиц, используемых для очистки');
+INSERT INTO `translation_google` VALUES (1613,'71161180013a089d6ab8596d5a96b5ca8052b0eb','en','Prefix for tables used for clean','zh-cn','用于清理的表的前缀');
+INSERT INTO `translation_google` VALUES (1614,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','cs','Dotaz');
+INSERT INTO `translation_google` VALUES (1615,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','da','Forespørgsel');
+INSERT INTO `translation_google` VALUES (1616,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','de','Anfrage');
+INSERT INTO `translation_google` VALUES (1617,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','es','Consulta');
+INSERT INTO `translation_google` VALUES (1618,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','fi','Kysely');
+INSERT INTO `translation_google` VALUES (1619,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','fr','Mettre en doute');
+INSERT INTO `translation_google` VALUES (1620,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','it','Domanda');
+INSERT INTO `translation_google` VALUES (1621,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','ja','クエリ');
+INSERT INTO `translation_google` VALUES (1622,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','nl','Vraag');
+INSERT INTO `translation_google` VALUES (1623,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','pl','Zapytanie');
+INSERT INTO `translation_google` VALUES (1624,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','pt','Consulta');
+INSERT INTO `translation_google` VALUES (1625,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','ru','Запрос');
+INSERT INTO `translation_google` VALUES (1626,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','en','Query','zh-cn','询问');
+INSERT INTO `translation_google` VALUES (1627,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','cs','Skladovací prostor');
+INSERT INTO `translation_google` VALUES (1628,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','da','Opbevaringsområde');
+INSERT INTO `translation_google` VALUES (1629,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','de','Lagerfläche');
+INSERT INTO `translation_google` VALUES (1630,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','es','Zona de almacenamiento');
+INSERT INTO `translation_google` VALUES (1631,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','fi','Varasto alue');
+INSERT INTO `translation_google` VALUES (1632,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','fr','Zone de stockage');
+INSERT INTO `translation_google` VALUES (1633,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','it','Deposito');
+INSERT INTO `translation_google` VALUES (1634,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','ja','記憶領域');
+INSERT INTO `translation_google` VALUES (1635,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','nl','Opslagruimte');
+INSERT INTO `translation_google` VALUES (1636,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','pl','Powierzchnia magazynowa');
+INSERT INTO `translation_google` VALUES (1637,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','pt','Área de armazenamento');
+INSERT INTO `translation_google` VALUES (1638,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','ru','Зона хранения');
+INSERT INTO `translation_google` VALUES (1639,'3629ab537d9203bf809329f0b545f556f76853de','en','Storage Area','zh-cn','储藏区域');
+INSERT INTO `translation_google` VALUES (1640,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','cs','Čekací doba mezi běhy');
+INSERT INTO `translation_google` VALUES (1641,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','da','Ventetid mellem løb');
+INSERT INTO `translation_google` VALUES (1642,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','de','Wartezeit zwischen den Läufen');
+INSERT INTO `translation_google` VALUES (1643,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','es','Tiempo de espera entre ejecuciones');
+INSERT INTO `translation_google` VALUES (1644,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','fi','Odota aika juoksun välillä');
+INSERT INTO `translation_google` VALUES (1645,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','fr','Temps d&#39;attente entre les courses');
+INSERT INTO `translation_google` VALUES (1646,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','it','Tempo di attesa tra una corsa e l&#39;altra');
+INSERT INTO `translation_google` VALUES (1647,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','ja','実行間の待ち時間');
+INSERT INTO `translation_google` VALUES (1648,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','nl','Wachttijd tussen run');
+INSERT INTO `translation_google` VALUES (1649,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','pl','Czas oczekiwania między uruchomieniami');
+INSERT INTO `translation_google` VALUES (1650,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','pt','Tempo de espera entre corridas');
+INSERT INTO `translation_google` VALUES (1651,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','ru','Время ожидания между запусками');
+INSERT INTO `translation_google` VALUES (1652,'aca2399e84e1706ed2fb7a9977cda021670213dd','en','Wait time between run','zh-cn','运行之间的等待时间');
+/*!40000 ALTER TABLE `translation_google` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -168173,6 +168440,14 @@ INSERT INTO `ts_variable` VALUES (2771,7,'mysql-aurora_max_lag_ms_only_read_from
 INSERT INTO `ts_variable` VALUES (2772,7,'mysql-stats_time_backend_query','TEXT','proxysql_main_var','general',1,1);
 INSERT INTO `ts_variable` VALUES (2773,7,'mysql-stats_time_query_processor','TEXT','proxysql_main_var','general',1,1);
 INSERT INTO `ts_variable` VALUES (2774,7,'mysql-query_cache_stores_empty_result','TEXT','proxysql_main_var','general',1,1);
+INSERT INTO `ts_variable` VALUES (2775,4,'allow_suspicious_udfs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2776,4,'binlog_alter_two_phase','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2777,4,'innodb_log_file_buffering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2778,4,'optimizer_extra_pruning_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2779,4,'skip_grant_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2780,4,'slave_max_statement_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2781,3,'com_show_analyze','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2782,3,'optimizer_join_prefixes_check_calls','INT','status','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168215,11 +168490,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.7.7-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.10.3-MariaDB, for debian-linux-gnu (aarch64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.7.7-MariaDB-1:10.7.7+maria~ubu2004-log
+-- Server version	10.10.3-MariaDB-1:10.10.3+maria~deb11-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -169457,7 +169732,7 @@ CREATE TABLE `mysql_server` (
   KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

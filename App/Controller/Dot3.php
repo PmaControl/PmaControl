@@ -27,7 +27,7 @@ use \Glial\Sgbd\Sgbd;
 class Dot3 extends Controller
 {
 
-    public function getInformations($param)
+    public function getInformation($param)
     {
         Debug::parseDebug($param);
 
