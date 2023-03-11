@@ -38,9 +38,16 @@ class Extraction2
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        //il faudrait retirer la liste qui peut ralentir la requette quand il y a beaucoup de serveurs
         if (empty($server)) {
             $server = self::getServerList();
         }
+
+
+        $variable = self::getIdVariable($var);
+
+        Debug::debug($variable);
+    
 
         $extra_where = "";
         $INNER       = "";
@@ -61,6 +68,9 @@ class Extraction2
                 } else {
 
 //still used ?
+
+                    $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) from ts_date_by_server where date < '".$date[0]."' group by 1,2;";
+
                     $all_date    = implode("','", $date);
                     $extra_where = " AND a.`date` IN ('".$all_date."') ";
                 }
@@ -78,18 +88,18 @@ class Extraction2
             $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
         }
 
-        Debug::debug($var, "VAR");
+        //Debug::debug($var, "VAR");
 
-        $variable = self::getIdVariable($var);
+        
         $sql2     = array();
         $WINDOW   = "";
 
-        Debug::debug($variable);
+        //Debug::debug($variable);
 
         foreach ($variable as $radical => $data_type) {
             foreach ($data_type as $type => $tab_ids) {
 
-                Debug::debug($radical);
+                //Debug::debug($radical);
 
                 if ($radical == "slave") {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
@@ -126,6 +136,9 @@ class Extraction2
             }
         }
 
+
+
+        Debug::sql($sql4);
 //debug($sql2);
 
         $sql3 = implode(" UNION ALL ", $sql2);
@@ -177,7 +190,7 @@ class Extraction2
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
-        Debug::sql($sql3);
+        //Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
@@ -217,10 +230,6 @@ class Extraction2
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         $db = Sgbd::sql(DB_DEFAULT);
-
-//return(array());
-
-
         $res = self::extract($var, $server, $date, $range, $graph);
 
         $table = array();
@@ -230,10 +239,7 @@ class Extraction2
         }
 
         while ($ob = $db->sql_fetch_object($res)) {
-
-//debug(self::$variable[$ob->id_ts_variable]);
-
-            Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
+            //Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
 
             if ($range) {
                 if ($ob->connection_name === "N/A") {
@@ -279,7 +285,7 @@ class Extraction2
 
             if (count($split) === 2) {
 
-                Debug::debug($split);
+                //Debug::debug($split);
                 $name = $split[1];
                 $from = $split[0];
 
@@ -303,12 +309,19 @@ class Extraction2
 //echo \SqlFormatter::format($sql) . "\n";
         $from     = array();
         $variable = array();
+        $ts_file = array();
+
         while ($ob       = $db->sql_fetch_object($res)) {
+
+            $ts_file[$ob->id] = $ob->id_ts_file;
+
             self::$variable[$ob->id]['name']                 = $ob->name;
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
 //$radical                              = $ob->radical;
         }
 
+
+        Debug::debug($ts_file, "TS_file");
         return $variable;
     }
 

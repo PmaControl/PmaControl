@@ -1586,6 +1586,8 @@ class Mysql extends Controller
         $fk1 = $this->getRealForeignKey($param);
         $fk2 = $this->getVirtualForeignKey($param);
 
+        //debug($fk2);
+
         $fks = array_merge($fk1, $fk2);
 
         //Debug::debug($fks);

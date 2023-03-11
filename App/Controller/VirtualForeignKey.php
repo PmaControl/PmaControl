@@ -204,11 +204,15 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
     public function fill($param)
     {
-
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM virtual_foreign_key";
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $sql = "SELECT * FROM virtual_foreign_key WHERE id_mysql_server = ".$id_mysql_server." 
+        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')";
+        
         $res = $db->sql_query($sql);
 
         $data['virtual_fk'] = array();

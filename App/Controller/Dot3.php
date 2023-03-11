@@ -27,9 +27,24 @@ use \Glial\Sgbd\Sgbd;
 class Dot3 extends Controller
 {
 
+
+
     public function getInformation($param)
     {
         Debug::parseDebug($param);
+
+
+        $date_request = $param[0] ?? "";
+
+        $versioning = "";
+        $versioning2 = "";
+        if ( ! empty($date_request))
+        {
+            $versioning = " WHERE '".$date_request."' between a.row_start and a.row_end ";
+            $versioning2 = " WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
+        }
+
+        Debug::debug($date_request, "Date");
 
         $db  = Sgbd::sql(DB_DEFAULT);
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
@@ -40,10 +55,17 @@ class Dot3 extends Controller
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql"));
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql"), array(), array($date_request));
 
-        $sql = "SELECT id as id_mysql_server, ip, port, display_name,is_available  FROM mysql_server a
-        UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_available  from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id;";
+        $sql = "SELECT id as id_mysql_server, ip, port, display_name,is_available  
+        FROM mysql_server a ".$versioning."
+        UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_available  
+        from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
+        ".$versioning2.";";
+
+
+        Debug::sql($sql);
+
         $res = $db->sql_query($sql);
 
         $server_mysql = array();
@@ -64,6 +86,9 @@ class Dot3 extends Controller
 
         $proxy = Extraction2::display(array("proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-web_port", "proxysql_main_var::admin-version"));
         Debug::debug($proxy, "proxysql");
+
+
+
 
         return $data;
     }
