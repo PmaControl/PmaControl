@@ -145,7 +145,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
 
         $nb_tables = $db->sql_num_rows($res);
         if ($nb_tables > 1) {
-            Debug::parseDebug($nb_tables, "Nombre de tables");
+            Debug::debug($nb_tables, "Nombre de tables");
         }
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
