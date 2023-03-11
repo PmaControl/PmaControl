@@ -3,11 +3,9 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use \Glial\Cli\Color;
 use \Glial\Cli\Table;
 use \Glial\Sgbd\Sql\Mysql\MasterSlave;
 use \Glial\Security\Crypt\Crypt;
-use \Glial\Synapse\FactoryController;
 use \Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Graphviz;
@@ -45,11 +43,11 @@ class Mysql extends Controller
                 if (filter_var($buffer, FILTER_VALIDATE_IP)) {
                     $server[] = $buffer;
                 } else {
-                    Throw new Exception("PTB-002 : this ip is not valid : ".$buffer);
+                    Throw new \Exception("PTB-002 : this ip is not valid : ".$buffer);
                 }
             }
             if (!feof($handle)) {
-                Throw new Exception("PTB-001 : impossible to load serveur.csv");
+                Throw new \Exception("PTB-001 : impossible to load serveur.csv");
             }
             fclose($handle);
         }
@@ -57,80 +55,6 @@ class Mysql extends Controller
         return $server;
     }
 
-    public function user_add($param)
-    {
-
-        $this->view = false;
-
-        $servers = $this->get_server();
-
-        debug($param);
-
-        $user   = $param[0];
-        $passwd = $this->generate_passswd(10);
-
-        if (empty($user)) {
-            Throw new Exception("PTB-004 : user is requested !");
-        }
-
-        echo "Password generated : ".$passwd."\n";
-
-        $i = 1;
-        foreach ($servers as $server) {
-            echo "\n[".$i."] Server : ".$server."\n";
-
-            echo str_repeat("#", 80);
-//$this->create_grant_account_mysql($server, $user, $passwd, "10.%");
-            $this->ssh($server, 22, $this->_ssh_user, $this->_ssh_passwd);
-            $i++;
-        }
-    }
-
-    private function ssh($host, $port, $user, $passwd)
-    {
-        $connection = ssh2_connect($host, $port);
-
-        if (ssh2_auth_password($connection, $user, $passwd)) {
-            echo "Authentication Successful!\n";
-
-            if (!($stdio = @ssh2_shell($connection, "xterm"))) {
-                echo "[FAILED]<br />";
-                exit(1);
-            }
-
-            $this->shell_cmd($stdio, "whoami");
-            $this->shell_cmd($stdio, "sudo su -");
-            $this->shell_cmd($stdio, "whoami");
-            $this->shell_cmd($stdio, "adduser mlemanissier sudo");
-            $this->shell_cmd($stdio, "echo 'xfghxfgh:452452:::xgfhxfgh,fdgwdfg,,:/home/sdffdf:/bin/bash' > /tmp/users");
-            $this->shell_cmd($stdio, "newusers /tmp/users");
-            $this->shell_cmd($stdio, "rm /tmp/users");
-
-            fclose($stdio);
-        } else {
-            echo "FAIL !!!!!!!!!!!!!!!!!\n";
-//Throw new \Exception("PTB-005 : impossible to login in : " . $host);
-        }
-    }
-
-    private function exec($connection, $cmd)
-    {
-
-        $stream = ssh2_exec($connection, $cmd);
-
-        $errorStream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
-
-        stream_set_blocking($errorStream, true);
-        stream_set_blocking($stream, true);
-
-        echo stream_get_contents($stream)."\n";
-
-        $error = stream_get_contents($errorStream);
-
-        if (!empty($error)) {
-            echo "[ERROR] : ".$error."\n";
-        }
-    }
 
     private function shell_cmd($stdio, $cmd)
     {
@@ -571,7 +495,8 @@ class Mysql extends Controller
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
+        WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
         Debug::sql($sql);
 
         $liste_table_connected = $this->tableListLinked($param);
@@ -856,8 +781,7 @@ class Mysql extends Controller
         }
 
 
-        echo "DATABASES FOUND : \n";
-        debug($database);
+  
 
         $db_order = [];
 
@@ -1124,7 +1048,7 @@ class Mysql extends Controller
                 $table['mysql_server'] = $_POST['mysql_server'];
 
                 $table['mysql_server']['port']                = $_POST['mysql_server']['port'] ?? 3306;
-                $table['mysql_server']['ip']                  = $table['mysql_server']['ip'];
+                $table['mysql_server']['ip']                  = $_POST['mysql_server']['ip'];
                 $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
                         array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
@@ -1465,7 +1389,7 @@ class Mysql extends Controller
             ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
                           UNION
-                          SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
+             SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
             ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
             ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
