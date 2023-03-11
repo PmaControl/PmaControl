@@ -163249,10 +163249,10 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,221,222,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,223,224,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,225,226,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,176,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,223,224,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,225,226,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,227,228,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,178,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
 INSERT INTO `menu` VALUES (95,92,4,27,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
@@ -163269,14 +163269,14 @@ INSERT INTO `menu` VALUES (109,92,106,111,1,'<i style=\"font-size: 16px\" class=
 INSERT INTO `menu` VALUES (110,109,107,108,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
 INSERT INTO `menu` VALUES (111,109,109,110,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
 INSERT INTO `menu` VALUES (112,103,59,60,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,112,155,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (113,92,112,157,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
 INSERT INTO `menu` VALUES (114,108,83,92,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
 INSERT INTO `menu` VALUES (115,108,93,100,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,156,165,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,157,158,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,159,160,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,161,162,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,163,164,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,158,167,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,159,160,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,161,162,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,163,164,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,165,166,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
 INSERT INTO `menu` VALUES (121,113,113,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
 INSERT INTO `menu` VALUES (122,113,115,116,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
 INSERT INTO `menu` VALUES (123,113,117,120,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
@@ -163290,21 +163290,21 @@ INSERT INTO `menu` VALUES (131,113,133,134,1,'<i class=\"fa fa-address-book\" ar
 INSERT INTO `menu` VALUES (132,113,135,136,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
 INSERT INTO `menu` VALUES (133,113,137,142,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
 INSERT INTO `menu` VALUES (136,103,65,66,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,166,167,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (137,92,168,169,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
 INSERT INTO `menu` VALUES (138,113,143,148,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
 INSERT INTO `menu` VALUES (139,103,67,68,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
 INSERT INTO `menu` VALUES (140,108,101,104,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
 INSERT INTO `menu` VALUES (141,113,149,150,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,168,175,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,169,170,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,171,174,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,170,177,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,171,172,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,173,176,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
 INSERT INTO `menu` VALUES (145,113,151,154,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
 INSERT INTO `menu` VALUES (146,103,69,70,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
 INSERT INTO `menu` VALUES (147,102,29,30,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
 INSERT INTO `menu` VALUES (148,102,31,34,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
 INSERT INTO `menu` VALUES (149,102,35,36,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
 INSERT INTO `menu` VALUES (150,103,71,74,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,172,173,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (153,144,174,175,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
 INSERT INTO `menu` VALUES (155,105,44,47,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
 INSERT INTO `menu` VALUES (156,114,84,85,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
@@ -163340,6 +163340,7 @@ INSERT INTO `menu` VALUES (185,103,77,78,1,'<i class=\"glyphicon glyphicon-searc
 INSERT INTO `menu` VALUES (191,95,25,26,1,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
 INSERT INTO `menu` VALUES (193,102,37,38,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
 INSERT INTO `menu` VALUES (194,183,20,21,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
+INSERT INTO `menu` VALUES (195,113,155,156,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164117,6 +164118,26 @@ INSERT INTO `translation_glial` VALUES (687,'386dc4a46dba4a91b8707192717a156767a
 INSERT INTO `translation_glial` VALUES (688,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',43);
 INSERT INTO `translation_glial` VALUES (689,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',47);
 INSERT INTO `translation_glial` VALUES (690,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (691,'f439acaa01422ecbbe8e00af33d5a3b02bd6d03c','Min','en','App/view/Database/size.view.php',33);
+INSERT INTO `translation_glial` VALUES (692,'8b57eb5000c5ef8c0d9501720a7389d36ba52b41','Max','en','App/view/Database/size.view.php',34);
+INSERT INTO `translation_glial` VALUES (693,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/view/Menu/show.view.php',105);
+INSERT INTO `translation_glial` VALUES (694,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (695,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (696,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (697,'cc4d4acad7448d0e577ddaec3a9023a7d5b80253','Slave status','en','App/Controller/Slave.php',183);
+INSERT INTO `translation_glial` VALUES (698,'4aa15f30f637c8720cb24471af57e3028f74f1aa','Switch Master To','en','App/view/Slave/show.view.php',35);
+INSERT INTO `translation_glial` VALUES (699,'b1014851eb19f5b3d32410132c6dba30f7c34157','Commands','en','App/view/Slave/show.view.php',59);
+INSERT INTO `translation_glial` VALUES (700,'3fdba91a1d6fe01a1af94be0bbce6ed8952d2391','Global transaction identifier','en','App/view/Slave/show.view.php',120);
+INSERT INTO `translation_glial` VALUES (701,'2f8fae879bfd757dd7c286a9a0683baf7a4c4b43','Activate GTID','en','App/view/Slave/show.view.php',123);
+INSERT INTO `translation_glial` VALUES (702,'2253ac9bca304215fd09dbce02def835b512c773','Desactivate GTID','en','App/view/Slave/show.view.php',124);
+INSERT INTO `translation_glial` VALUES (703,'28a7a5aac191c1e6b8c3c1444351ba88377b568e','Variables','en','App/view/Slave/show.view.php',147);
+INSERT INTO `translation_glial` VALUES (704,'7915bb9a8e3f50480e2554018ac3a1e07711ed97','Values','en','App/view/Slave/show.view.php',148);
+INSERT INTO `translation_glial` VALUES (705,'28a7a5aac191c1e6b8c3c1444351ba88377b568e','Variables','en','App/view/Slave/show.view.php',176);
+INSERT INTO `translation_glial` VALUES (706,'7915bb9a8e3f50480e2554018ac3a1e07711ed97','Values','en','App/view/Slave/show.view.php',177);
+INSERT INTO `translation_glial` VALUES (707,'0bc255d372e5e46bbee9d94eb5b28d489417f56a','Repliacation load average','en','App/view/Slave/show.view.php',227);
+INSERT INTO `translation_glial` VALUES (708,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (709,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (710,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',48);
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -169108,54 +169129,6 @@ CREATE TABLE `daemon_worker` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `dictionary_port`
---
-
-DROP TABLE IF EXISTS `dictionary_port`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `dictionary_port` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_dictionary_serveur` int(11) NOT NULL,
-  `id_dictionary_service` int(11) NOT NULL,
-  `port` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `dictionary_serveur`
---
-
-DROP TABLE IF EXISTS `dictionary_serveur`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `dictionary_serveur` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ip` char(15) NOT NULL,
-  `dns` varchar(200) NOT NULL,
-  `comment` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `dictionary_service`
---
-
-DROP TABLE IF EXISTS `dictionary_service`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `dictionary_service` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_dictionary_serveur` int(11) NOT NULL,
-  `port_default` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ha_proxy_stats`
 --
 
@@ -169395,22 +169368,6 @@ CREATE TABLE `link__haproxy_main_output__mysql_server` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `link__master__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__master__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__master__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_master_name` int(11) NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `link__mysql_database__mysql_replication_thread`
 --
 
@@ -169488,38 +169445,6 @@ CREATE TABLE `link__slave__mysql_replication_thread` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `link__slave__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__slave__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__slave__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_slave_name` int(11) NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `link__status__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__status__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__status__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_status_name` int(11) NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `link__ts_variable__mysql_server`
 --
 
@@ -169532,22 +169457,6 @@ CREATE TABLE `link__ts_variable__mysql_server` (
   `id_ts_variable` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_gg` (`id_mysql_server`,`id_ts_variable`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `link__variables__mysql_server`
---
-
-DROP TABLE IF EXISTS `link__variables__mysql_server`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__variables__mysql_server` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_variables_name` int(11) NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
