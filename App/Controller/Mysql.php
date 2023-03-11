@@ -484,7 +484,7 @@ class Mysql extends Controller
           }
          */
 
-        $file_name               = TMP.$id_mysql_server."_".$database.".svg";
+        $file_name               = TMP."dot/".$id_mysql_server."_".$database.".svg";
         $data['file']            = $file_name;
         $data['database']        = $database;
         $data['id_mysql_server'] = $id_mysql_server;
@@ -507,24 +507,22 @@ class Mysql extends Controller
 
         if ($fp) {
 
-            fwrite($fp, "digraph Replication { rankdir=LR; splines=ortho fontname=\"arial\" ".PHP_EOL); //splines=ortho;
-            fwrite($fp, "labelloc=\"t\"; ".PHP_EOL); //splines=ortho;
-            fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  ".PHP_EOL); //splines=ortho;
+            //    
+            fwrite($fp, "digraph Replication {\nrankdir=LR; splines=ortho; fontname=\"arial\" ".PHP_EOL); 
+            fwrite($fp, "labelloc=\"t\"; ".PHP_EOL);
+            fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  ".PHP_EOL);
 
             foreach ($tables as $table) {
 
-                //pour retirer les tables en attente d'être éffacer
 
-                if (substr($table['TABLE_NAME'], 0, 4) === "zzz_") {
-                    continue;
-                }
 
                 // si c'est pas dans la liste des tables qui sont connecté on ne l'affiche pas
                 // On affiche pas les tables qui ne sont pas lié à une autre (on retire les tables singleton)
 
+                /*
                 if (!in_array($table['TABLE_NAME'], $liste_table_connected)) {
                     continue;
-                }
+                }*/
 
                 if (count($table_to_purge) > 0) {
                     if (in_array($table['TABLE_NAME'], $table_to_purge)) {
@@ -537,7 +535,7 @@ class Mysql extends Controller
                 }
 
                 //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
-                fwrite($fp, "\t node [color=\"".$color."\" shape=circo style=filled fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+                fwrite($fp, "\t node [color=\"".$color."\" style=filled shape=box fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
 
 // shape=Mrecord
                 fwrite($fp,
@@ -1294,69 +1292,11 @@ class Mysql extends Controller
             }
         }
     }
-    /*
-     *
-     *
-     *
-     *
-     */
-
-    /*
-      public function getRealForeignKey($param) {
-      Debug::parseDebug($param);
-
-      $id_mysql_server = $param[0];
-      $database = $param[1];
-
-      $name = Mysql2::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
-      $db = Sgbd::sql($name);
-
-      $sql = "select TABLE_NAME as table_name,column_name, referenced_table_name, referenced_column_name
-      from information_schema.KEY_COLUMN_USAGE
-      where TABLE_SCHEMA = '" . $database . "' AND REFERENCED_TABLE_SCHEMA = '" . $database . "'
-      and REFERENCED_COLUMN_NAME is not null;";
-
-      $res = $db->sql_query($sql);
-
-      while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-      $this->foreign_key[$id_mysql_server][$database][] = $ob;
-      }
-
-
-      return $this->foreign_key[$id_mysql_server][$database];
-      } */
-
-    public function getColumns($param)
-    {
-        Debug::parseDebug($param);
-
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
-
-        $name = Mysql2::getDbLink(Sgbd::sql(DB_DEFAULT), $id_mysql_server);
-        $db   = Sgbd::sql($name);
-
-        $sql = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE , DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from information_schema.COLUMNS WHERE TABLE_SCHEMA='".$database."';";
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $this->columns[$id_mysql_server][$database][$ob['TABLE_NAME']][$ob['COLUMN_NAME']] = $ob;
-        }
-
-        return $this->columns[$id_mysql_server][$database];
-    }
 
     public function getColor($string)
     {
 
-
-
         $color = Graphviz::$color[hexdec(substr(md5($string), 0, 2))];
-
-        //echo $color ."\n";
-
-
 
         $h1 = substr(md5($string), 5, 2);
         $h2 = substr(md5($string), 10, 2);
@@ -1367,11 +1307,6 @@ class Mysql extends Controller
         return "#".$color;
     }
 
-    public function bb()
-    {
-
-        Mysql2::generateMySQLConfig(Sgbd::sql(DB_DEFAULT));
-    }
 
     public function addDate($param = array())
     {
@@ -1382,16 +1317,19 @@ class Mysql extends Controller
     {
         Debug::parseDebug($param);
 
+        $id_mysql_sever = $param[0];
+        $database = $param[1];
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
                           UNION
              SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$param[1]."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$param[1]."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
 
         $res2 = $db->sql_query($sql2);
@@ -1404,9 +1342,9 @@ class Mysql extends Controller
         Debug::debug(count($liste_table_1), "Natural Foreign keys");
 
         $sql1 = "SELECT distinct a.`constraint_table` as table_name
-         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '".$param[1]."' AND a.id_mysql_server = ".$param[0]."
+         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '".$database."' AND a.id_mysql_server = ".$id_mysql_sever."
          UNION SELECT distinct b.`referenced_table` as table_name
-         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '".$param[1]."' AND b.id_mysql_server = ".$param[0].";
+         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '".$database."' AND b.id_mysql_server = ".$id_mysql_sever.";
         ";
         Debug::sql($sql1);
 
@@ -1423,15 +1361,6 @@ class Mysql extends Controller
         $liste_table_connected = array_unique($liste_table);
 
         Debug::debug(count($liste_table_connected), "Merge");
-
-        //Debug::debug($liste_table_connected);
-        /*
-          $filter = array('commande_services', 'flux_commande_acces', 'service', 'histo_etape_commande_service', 'reseau', 'dsp', 'operateur', 'adresse', 'local', 'batiment', 'equipement', 'site', 'crmad_services',
-          'local', 'adresse', 'etape_commande_service', 'cr', 'crmes');
-          /* */
-
-        //$filter = array();
-        // $sql .= " AND TABLE_NAME in('batiment', 'equipement','escalier', 'etage', 'local', 'site' )";
 
         return $liste_table_connected;
     }
@@ -1548,6 +1477,7 @@ class Mysql extends Controller
         return $id_mysql_servers;
     }
 
+/*
     public function png($param)
     {
 
@@ -1560,7 +1490,7 @@ class Mysql extends Controller
 
         header('Content-type: image/png');
 
-        $file = TMP.$id_mysql_server."_".$database."png";
+        $file = TMP."dot/".$id_mysql_server."_".$database."png";
 
         $data = file_get_contents($file);
 
@@ -1573,4 +1503,5 @@ class Mysql extends Controller
 
         Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
+    */
 }
