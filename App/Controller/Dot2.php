@@ -434,9 +434,6 @@ class Dot2 extends Controller
     public function generateGraph($group)
     {
 
-
-
-
 //label=\"Step 2\";
         $graph = "digraph PmaControl {";
         $graph .= "rankdir=LR; splines=line;"; //ortho  =>  Try using xlabels
@@ -460,7 +457,7 @@ class Dot2 extends Controller
         $graph .= $this->generateEdge($group);
 
         $graph .= $this->generateGaleraCluster($group);
-
+        
         /*
           $gg2 = $this->groupEdgeSegment($list_id);
           $gg = $this->generateCluster($list_id);
@@ -783,8 +780,6 @@ class Dot2 extends Controller
 
     private function nodeHead($display_name, $id_mysql_server)
     {
-
-
         $backup = '&#x2610;';
         if (in_array($id_mysql_server, $this->getServerBackuped($id_mysql_server))) {
             $backup = '&#x2611;';

@@ -64,8 +64,7 @@ class Extraction2
 
                     $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
-                    echo "dfg";
-                    exit;
+
                     // il y aurait moyen de faire mieux pour récupérer uniquement les bonnes dates 
                     // certainement avec un windows function
 
