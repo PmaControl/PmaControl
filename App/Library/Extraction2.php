@@ -9,7 +9,6 @@
  * https://nagix.github.io/chartjs-plugin-datasource/
  * https://www.npmjs.com/package/chartjs-plugin-datasource-prometheus
 
- *
  * vertical line
  * https://jsfiddle.net/pu68rhLd/7/
  *  */
@@ -21,20 +20,21 @@ use \App\Library\Debug;
 
 class Extraction2
 {
-
     use \App\Library\Filter;
     static $variable   = array();
     static $server     = array();
     static $groupbyday = false;
+    static $ts_file = array();
 
     static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
-
         /*
           debug($var);
           debug($server);
           debug($date);
           /**** */
+
+          Debug::debug($date);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -43,11 +43,9 @@ class Extraction2
             $server = self::getServerList();
         }
 
-
         $variable = self::getIdVariable($var);
 
         Debug::debug($variable);
-    
 
         $extra_where = "";
         $INNER       = "";
@@ -56,7 +54,7 @@ class Extraction2
             $INNER = " INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
             $INNER .= " INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
-//$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
+            //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
         } else {
 
             if (is_array($date)) {
@@ -66,13 +64,29 @@ class Extraction2
 
                     $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
+                    echo "dfg";
+                    exit;
+                    // il y aurait moyen de faire mieux pour récupérer uniquement les bonnes dates 
+                    // certainement avec un windows function
 
-//still used ?
+                    $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) as date from ts_date_by_server 
+                    where date < '".$date[0]."' 
+                    AND id_ts_file in (".implode(",", self::$ts_file ).")
+                    group by 1,2;";
 
-                    $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) from ts_date_by_server where date < '".$date[0]."' group by 1,2;";
+                    Debug::sql($sql_get_mindate);
 
-                    $all_date    = implode("','", $date);
+                    $res2 = $db->sql_query($sql_get_mindate);
+
+                    $dates = array();
+                    while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+                    {
+                        $dates[] = $arr['date'];                        
+                    }        
+
+                    $all_date    = implode("','", $dates);
                     $extra_where = " AND a.`date` IN ('".$all_date."') ";
+
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
@@ -90,7 +104,6 @@ class Extraction2
 
         //Debug::debug($var, "VAR");
 
-        
         $sql2     = array();
         $WINDOW   = "";
 
@@ -117,7 +130,6 @@ class Extraction2
                         $fields .= ", a.`value` as value ";
                     }
 
-
 //a.`value`";
 // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
                 }
@@ -136,21 +148,13 @@ class Extraction2
             }
         }
 
-
-
-        Debug::sql($sql4);
-//debug($sql2);
-
         $sql3 = implode(" UNION ALL ", $sql2);
 
         if ($graph === true) {
 
-// quel est l'interet pour l'order by ?
-//$sql3 .= " ORDER BY id_mysql_server, id_ts_variable, date";
         } else {
-//$sql3 .= "ORDER by date";
+
         }
-//echo \SqlFormatter::format($sql3) . "\n";
 
         if ($graph === true) {
 
@@ -181,16 +185,14 @@ class Extraction2
             }
         }
 
-
         if (empty($sql3)) {
             return false;
         }
 
-//echo \SqlFormatter::format($sql3)."\n";
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
-        //Debug::sql($sql3);
+        Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
@@ -214,7 +216,6 @@ class Extraction2
             $server = array();
             while ($ob     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $server[] = $ob['id'];
-//self::$server[] = $ob;
             }
 
             if (count($server) === 0) {//int negatif pour être sur de rien remonté
@@ -313,15 +314,18 @@ class Extraction2
 
         while ($ob       = $db->sql_fetch_object($res)) {
 
-            $ts_file[$ob->id] = $ob->id_ts_file;
+            
+
+            if (! in_array($ob->id_ts_file, self::$ts_file ))
+            {
+                self::$ts_file[] = $ob->id_ts_file;
+            }
 
             self::$variable[$ob->id]['name']                 = $ob->name;
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
 //$radical                              = $ob->radical;
         }
 
-
-        Debug::debug($ts_file, "TS_file");
         return $variable;
     }
 
