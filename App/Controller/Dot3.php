@@ -27,12 +27,15 @@ use \Glial\Sgbd\Sgbd;
 class Dot3 extends Controller
 {
 
+    /*
+    * récupére toutes les infomations du serveur à un date t   
+    */
+
 
 
     public function getInformation($param)
     {
         Debug::parseDebug($param);
-
 
         $date_request = $param[0] ?? "";
 
@@ -42,6 +45,7 @@ class Dot3 extends Controller
         {
             $versioning = " WHERE '".$date_request."' between a.row_start and a.row_end ";
             $versioning2 = " WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
+            $date_request = array($date_request);
         }
 
         Debug::debug($date_request, "Date");
@@ -51,11 +55,11 @@ class Dot3 extends Controller
                 "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment",
-                "status::wsrep_incoming_addresses", "variables::wsrep_patch_version",
+                "status::wsrep_incoming_addresses", "variables::wsrep_patch_version","mysql_server::available", "mysql_server::ping", "mysql_server::error",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql"), array(), array($date_request));
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql"),array() , $date_request);
 
         $sql = "SELECT id as id_mysql_server, ip, port, display_name,is_available  
         FROM mysql_server a ".$versioning."
@@ -86,9 +90,6 @@ class Dot3 extends Controller
 
         $proxy = Extraction2::display(array("proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-web_port", "proxysql_main_var::admin-version"));
         Debug::debug($proxy, "proxysql");
-
-
-
 
         return $data;
     }
