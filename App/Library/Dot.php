@@ -15,8 +15,6 @@ trait Dot
 
     public function generateAllGraph()
     {
-
-
         foreach ($this->groups['groups'] as $group) {
 
             //debug($group);
@@ -88,57 +86,6 @@ trait Dot
         return $line;
     }
 
-
-    public function generateGraph($group, $information)
-    {
-
-//label=\"Step 2\";
-        $graph = "digraph PmaControl {";
-        $graph .= "rankdir=LR; splines=line;"; //ortho  =>  Try using xlabels
-        $graph .= " graph [fontname = \"helvetica\" ];
- node [fontname = \"helvetica\"];
- edge [fontname = \"helvetica\"];
- node [shape=rect style=filled fontsize=8 fontname=\"arial\" ranksep=0 concentrate=true splines=true overlap=false];\n";
-
-        // nodesep=0
-
-        foreach ($group as $id_mysql_server) {
-            $graph .= $this->generateNode($id_mysql_server);
-        }
-//cas des multi master
-
-
-        $graph .= $this->generateRankForMM($group);
-
-        $graph .= $this->generateEdge($group);
-
-        $graph .= $this->generateGaleraCluster($group);
-
-        /*
-          $gg2 = $this->groupEdgeSegment($list_id);
-          $gg = $this->generateCluster($list_id);
-          // on genere les fleches avant afin de determiner les double flèches et pas refaire les calculs une deuxieme fois
-          $graph .= $this->generateEdge($list_id);
-
-          //$graph .= $this->generateEdge($list_id);
-          // on genere les fleches avant afin de determiner les double flèches et pas refaire les calculs une deuxieme fois
-          //$graph .= $this->generateEdge($list_id);
-          //$gg2 = $this->generateMerge($list_id);
-
-          if ($this->sst) {
-          $graph .= $this->generateEdgeSst();
-          }
-         */
-
-//$graph .= $this->getHaProxy($list_id);
-//        $graph .= $gg;
-//        $graph .= $gg2;
-
-
-        $graph .= '}';
-
-        return $graph;
-    }
 
     public function generateNode($id_mysql_server)
     {
