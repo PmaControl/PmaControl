@@ -36,10 +36,12 @@ class Dot3 extends Controller
 
     public function getInformation($param)
     {
-        Debug::parseDebug($param);
+       
+	
+
+	Debug::parseDebug($param);
 
         $date_request = $param[0] ?? "";
-
         $versioning = "";
         $versioning2 = "";
         if ( ! empty($date_request))
@@ -49,7 +51,7 @@ class Dot3 extends Controller
             $date_request = array($date_request);
         }
 
-        Debug::debug($date_request, "Date");
+        //Debug::debug($date_request, "Date");
 
         $db  = Sgbd::sql(DB_DEFAULT);
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
@@ -68,8 +70,7 @@ class Dot3 extends Controller
         from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
         ".$versioning2.";";
 
-
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -85,13 +86,29 @@ class Dot3 extends Controller
 
         $data['servers'] = array_replace_recursive($all, $server_mysql);
 
-        
         //echo json_encode($data, JSON_PRETTY_PRINT);
 
         $proxy = Extraction2::display(array("proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-web_port", "proxysql_main_var::admin-version"));
-        Debug::debug($proxy, "proxysql");
+        //Debug::debug($proxy, "proxysql");
 
-        return $data;
+	Debug::debug($data, "DATA");
+        
+
+	//insert to DB
+	$sql = "INSERT INTO";
+
+
+	$dot3 = array();
+	$dot3['dot3']['information'] = json_encode($data);
+	$dot3['dot3']['date_generated'] = date('Y-m-d H:i:s');
+	$dot3['dot3']['information'] = json_encode($data);
+	$dot3['dot3']['information'] = json_encode($data);
+	$dot3['dot3']['information'] = json_encode($data);
+	$dot3['dot3']['information'] = json_encode($data);
+
+
+
+	return $data;
     }
 
 
