@@ -39,8 +39,6 @@ trait Dot
 
         // nodesep=0
 
-
-
         foreach ($group as $id_mysql_server) {
             $graph .= $this->generateNode($id_mysql_server);
         }
@@ -56,12 +54,7 @@ trait Dot
           $graph .= $this->generateEdgeSst();
           }
          */
-
 //$graph .= $this->getHaProxy($list_id);
-//        $graph .= $gg;
-//        $graph .= $gg2;
-
-
         $graph .= '}';
 
         return $graph;

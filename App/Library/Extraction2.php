@@ -73,7 +73,7 @@ class Extraction2
                     AND id_ts_file in (".implode(",", self::$ts_file ).")
                     group by 1,2;";
 
-                    Debug::sql($sql_get_mindate);
+                    Debug::sql($sql_get_mindate, "GET MINDATE");
 
                     $res2 = $db->sql_query($sql_get_mindate);
 
