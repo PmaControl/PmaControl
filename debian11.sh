@@ -78,6 +78,8 @@ cd pmacontrol
 git pull origin develop
 git config core.fileMode false
 
+
+export COMPOSER_ALLOW_SUPERUSER=1
 composer install -n
 
 service apache2 restart
