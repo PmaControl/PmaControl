@@ -24,7 +24,7 @@ cd Toolkit
 chmod +x install-mariadb.sh
 
 
-curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.6"
+curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.11"
 
 
 ./install-mariadb.sh -v 10.11 -p $password -d /srv/mysql -r
