@@ -415,7 +415,10 @@ class Integrate extends Controller
 
         if (!empty($ids)) {
             //il faut ajouter le non primary pour les neud galera qui prenne pas de query
-            $sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (".$ids.")";
+
+            //see bug : https://jira.mariadb.org/browse/MDEV-32124
+            //and task : https://jira.mariadb.org/browse/MDEV-32125
+            $sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (SELECT id from  mysql_server where (is_available != 1 or  error != '') and id in (".$ids."));";
             $db->sql_query($sql);
         }
     }
@@ -429,7 +432,7 @@ class Integrate extends Controller
 
         if (!empty($ids)) {
             //il faut ajouter le non primary pour les neud galera qui prenne pas de query
-            $sql = "UPDATE mysql_server SET ssh_available = 1, ssh_error = '', ssh_date_refresh='".date("Y-m-d H:i:s")."' WHERE id in (".$ids.")";
+            $sql = "UPDATE mysql_server SET ssh_available = 1, ssh_error = '' WHERE id in (".$ids.")";
             $db->sql_query($sql);
         }
     }

@@ -67,7 +67,7 @@ function onOff($string)
     }
 
 
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    //return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
 }
 echo '<div class="well">';
 

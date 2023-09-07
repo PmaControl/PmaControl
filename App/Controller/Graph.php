@@ -269,4 +269,64 @@ var myChart = new Chart(ctx, {
 ');
     }
 
+
+    public function agregate($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
+
+
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if (!empty($_POST['mysql_cluster']['id'])) {
+
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_cluster:id:'.$_POST['mysql_cluster']['id']);
+            }
+
+            if (!empty($_POST['mysql_server']['id'])) {
+
+                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_server:id:'.implode(',', $_POST['mysql_server']['id']));
+            }
+        } else {
+
+            Debug::debug($_GET);
+        }
+
+        //generate liste of cluster (for select)
+        $sql = "select group_concat(a.id_mysql_server) as id_mysql_servers, group_concat(b.display_name) as display_name
+            from link__architecture__mysql_server a
+            INNER JOIN mysql_server b ON a.id_mysql_server= b.id
+            group by id_architecture having count(1) > 1;";
+
+        $res = $db->sql_query($sql);
+
+        $data['grappe'] = array();
+        while ($ob             = $db->sql_fetch_object($res)) {
+
+            $id_mysql_server_splited = explode(",", $ob->id_mysql_servers);
+            $libelle                 = array();
+
+            foreach ($id_mysql_server_splited as $id_mysql_server) {
+                $pretty_server = str_replace('"', "'", \App\Library\Display::srv($id_mysql_server));
+                $libelle[]     = strip_tags($pretty_server, '<span><small>');
+            }
+
+            $item = implode(' , ', $libelle);
+
+            $tmp            = array();
+            $tmp['id']      = $ob->id_mysql_servers;
+            $tmp['extra']   = array("data-content" => $item);
+            $tmp['libelle'] = $ob->display_name;
+
+
+            $data['grappe'][] = $tmp;
+        }
+
+        $this->set('data', $data);
+
+
+    }
+
 }
