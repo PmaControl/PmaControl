@@ -177,7 +177,10 @@ class Aspirateur extends Controller
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_server.";";
+           
+            //only update if not detected as proxy already
+            $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id` IN(SELECT id FROM mysql_server WHERE id=".$id_server." AND `is_proxy`!=1) ;";
+            //$sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_server.";";
             Debug::sql($sql);
             $db->sql_query($sql);
             $db->sql_close();
@@ -712,13 +715,14 @@ class Aspirateur extends Controller
 
         $sql = "select a.id,a.name from mysql_server a
             INNER JOIN client b on a.id_client =b.id
+            INNER JOIN ts_max_date c on c.id_mysql_server = a.id AND id_ts_file=3
             WHERE a.is_monitored =1 and b.is_monitored=1";
 
         if (!empty($mysql_servers)) {
             $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
 
-        $sql .= " ORDER by is_available ASC, date_refresh DESC;";
+        $sql .= " ORDER by is_available ASC, c.date DESC;";
 
 //echo \SqlFormatter::format($sql);
 
@@ -1211,12 +1215,14 @@ class Aspirateur extends Controller
 
         $this->view = false;
 
-        $sql = "select `id`,`name` from `mysql_server` WHERE `is_monitored`=1 ";
+        $sql = "select a.`id`,a.`name` from `mysql_server` a 
+        INNER JOIN ts_max_date c on c.id_mysql_server = a.id AND c.id_ts_file=1
+        WHERE a.`is_monitored`=1 ";
 
         if (!empty($mysql_servers)) {
-            $sql .= " AND id NOT IN (".implode(',', $mysql_servers).")";
+            $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
-        $sql .= " ORDER by ssh_available ASC, ssh_date_refresh DESC;";
+        $sql .= " ORDER by ssh_available ASC, c.date DESC;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
@@ -1255,26 +1261,6 @@ class Aspirateur extends Controller
         }
     }
 
-    public function queue($param)
-    {
-        $pheanstalk = Pheanstalk::create('127.0.0.1');
-
-// ----------------------------------------
-// producer (queues jobs)
-
-        $pheanstalk
-            ->useTube('testtube')
-            ->put("job payload goes here\n");
-
-        $job = $pheanstalk
-            ->watch('testtube2')
-            ->ignore('default')
-            ->reserve();
-
-        echo $job->getData();
-
-        $pheanstalk->delete($job);
-    }
 
     public function workerSsh()
     {

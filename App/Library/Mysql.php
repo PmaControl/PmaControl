@@ -663,7 +663,7 @@ END IF;";
      * @See Glial\Sgbd\Sgbd->sql()
      * @version 1.0
      */
-    static public function getIdFromDns($dns_port)
+    static public function getIdFromDns(string $dns_port)
     {
         if (empty(self::$master[$dns_port])) {
 
@@ -709,8 +709,12 @@ END IF;";
         }
     }
 
-    static public function getMysqlById($param)
-    {
+
+    /*
+    * @deprecated
+    */
+
+    static public function getMysqlById($param) {
         //need to save in case of multiple ask
         Debug::parseDebug($param);
         $id_mysql_server = $param[0];

@@ -445,7 +445,7 @@ class Server extends Controller
             }
 
 
-            $interval = array('5 minute', '15 minute', '1 hour', '2 hour', '6 hour', '12 hour', '1 day', '2 day', '1 week', '2 week', '1 month');
+            $interval = array('5-minute', '15-minute', '1-hour', '2-hour', '6-hour', '12-hour', '1-day', '2-day', '1-week', '2-week', '1-month');
             $libelles = array('5 minutes', '15 minutes', '1 hour', '2 hours', '6 hours', '12 hours', '1 day', '2 days', '1 week', '2 weeks',
                 '1 month');
             $elems    = array(60 * 5, 60 * 15, 3600, 3600 * 2, 3600 * 6, 3600 * 12, 3600 * 24, 3600 * 48, 3600 * 24 * 7, 3600 * 24 * 14, 3600 * 24 * 30);
@@ -471,9 +471,8 @@ class Server extends Controller
 
             if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])
             ) {
-
-
-                $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), $_GET['ts_variable']['date']);
+                
+                $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), str_replace("-"," ",$_GET['ts_variable']['date']));
 
                 /*
                   $sql = "SELECT * FROM status_value_int a
@@ -763,7 +762,7 @@ var myChart = new Chart(ctx, {
                         }
                         $sql = "COMMIT";
                         $db->sql_query($sql);
-                    } catch (Exception $ex) {
+                    } catch (\Exception $ex) {
                         $sql = "ROLLBACK";
                         $db->sql_query($sql);
                     }
