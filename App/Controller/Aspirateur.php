@@ -693,7 +693,6 @@ class Aspirateur extends Controller
                     if ($ob->is_available != 0) {
 // UPDATE is_available X => YELLOW  (not answered)
                         $sql = "UPDATE `mysql_server` SET is_available = -1,
-                            `date_refresh` = '".date("Y-m-d H:i:s")."',
                             `warning`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
                         echo \SqlFormatter::format($sql);
                         $db->sql_query($sql);
