@@ -139,6 +139,7 @@ class Mysql
         $res1 = $db->sql_query($sql1);
 
         $sql2 = "SELECT id_mysql_server,id_ts_file  FROM `ts_max_date`";
+        
         if (!empty($id_mysql_server)) {
             $sql2 .= "WHERE id_mysql_server IN (".$id_mysql_server.") ";
         }
@@ -149,14 +150,18 @@ class Mysql
         $couple_server_file = array();
         while ($ob2 = $db->sql_fetch_object($res2)) {
             $couple_server_file[$ob2->id_mysql_server][$ob2->id_ts_file] = 1;
-        }
+        }    
 
         while ($ob1 = $db->sql_fetch_object($res1)) {
             if (empty($couple_server_file[$ob1->id_mysql_server][$ob1->id_ts_file])) {
 
                 $sql3 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
                     ."SELECT 7,".$ob1->id_mysql_server.", now(), now(),now(),now(),now(), ".$ob1->id_ts_file." from mysql_server";
-
+       
+                if (!empty($id_mysql_server)) {
+                    $sql3 .= " WHERE id IN (".$id_mysql_server.") ";
+                }
+                
                 Debug::sql($sql3);
                 $db->sql_query($sql3);
             }

@@ -21,7 +21,7 @@ class Alert extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $res = Extraction2::extract($this->to_check, $id_servers, $date);
+        $res = Extraction($this->to_check, $id_servers, $date);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -56,6 +56,7 @@ class Alert extends Controller
         Debug::sql($sql);
 
         $uptime = Extraction2::extract(array('status::Uptime'), array($id_mysql_server), $list_dates);
+
         Debug::debug($uptime, "UPTIME");
 
         //$sql = "SELECT * FROM ts_max_date WHERE id_mysql_server"=.$id_mysql_server;
