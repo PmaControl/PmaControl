@@ -60,11 +60,11 @@ class Mysql
         return $users;
     }
 
-    static public function onAddMysqlServer()
+    static public function onAddMysqlServer($id_mysql_server)
     {
 
 
-        self::addMaxDate();
+        self::addMaxDate(array($id_mysql_server));
         self::generateMySQLConfig();
 
 //stopAll daemon
@@ -138,22 +138,27 @@ class Mysql
 
         $res1 = $db->sql_query($sql1);
 
+        $sql2 = "SELECT id_mysql_server,id_ts_file  FROM `ts_max_date`";
+        if (!empty($id_mysql_server)) {
+            $sql2 .= "WHERE id_mysql_server IN (".$id_mysql_server.") ";
+        }
+        
+        Debug::sql($sql2);
+        $res2 = $db->sql_query($sql2);
+
+        $couple_server_file = array();
+        while ($ob2 = $db->sql_fetch_object($res2)) {
+            $couple_server_file[$ob2->id_mysql_server][$ob2->id_ts_file] = 1;
+        }
+
         while ($ob1 = $db->sql_fetch_object($res1)) {
+            if (empty($couple_server_file[$ob1->id_mysql_server][$ob1->id_ts_file])) {
 
-            $sql2 = "SELECT count(1) as `cpt` FROM `ts_max_date` WHERE `id_mysql_server`=".$ob1->id_mysql_server." AND `id_ts_file`=".$ob1->id_ts_file.";";
+                $sql3 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
+                    ."SELECT 7,".$ob1->id_mysql_server.", now(), now(),now(),now(),now(), ".$ob1->id_ts_file." from mysql_server";
 
-            Debug::sql($sql2);
-            $res2 = $db->sql_query($sql2);
-
-            while ($ob2 = $db->sql_fetch_object($res2)) {
-                if ($ob2->cpt === "0") {
-
-                    $sql3 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                        ."SELECT 7,".$ob1->id_mysql_server.", now(), now(),now(),now(),now(), ".$ob1->id_ts_file." from mysql_server";
-
-                    Debug::sql($sql3);
-                    $db->sql_query($sql3);
-                }
+                Debug::sql($sql3);
+                $db->sql_query($sql3);
             }
         }
     }
@@ -166,11 +171,10 @@ class Mysql
                 "slave::connection_name"), array($id_mysql_server));
 
         //debug($masters);
-
+        
         foreach ($masters as $master) {
 
-
-//a mapper aussi avec les ip virtuel (version enterprise)
+            //a mapper aussi avec les ip virtuel (version enterprise)
             $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
 
             $res = $db->sql_query($sql);
@@ -217,6 +221,10 @@ class Mysql
         }
 
         $ip = System::getIp($data['fqdn']);
+
+        if (empty($ip)) {
+            $ip = $data['fqdn'];
+        }
 
         if (empty($data['password'])) {
             $data['password'] = $data['passwd'];
@@ -290,7 +298,7 @@ class Mysql
                 }
             }
 
-            Mysql::onAddMysqlServer($db);
+            Mysql::onAddMysqlServer($id_mysql_server);
         } else {
 
 
@@ -302,6 +310,8 @@ class Mysql
                 .json_encode(array($db->sql_error(), $server));
 
             Debug::debug($msg, "FAIL INSERT");
+
+            Debug::debug($db->sql_error(), "ERROR");
 
             self::$return['mysql']['failed'][] = $msg;
         }
@@ -435,7 +445,7 @@ END IF;";
 
                 $db->close();
             } else {
-                Debug::error($data, "Impossible to connect to");
+                Debug::error($data);
                 return false;
             }
         } else {
@@ -532,7 +542,7 @@ END IF;";
 
                 if (!$result) {
                     printf("Error: %s\n", mysqli_error($db_link->link));
-                    debug($query);
+                    Debug::debug($query);
                     exit();
                 }
 

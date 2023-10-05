@@ -99,6 +99,9 @@ class System
         $ip = shell_exec("dig +short ".$hostname);
         Debug::debug($ip, "getIp");
 
+        if (empty($ip)) {
+            $ip =  $hostname; 
+        }
         return trim($ip);
     }
 
