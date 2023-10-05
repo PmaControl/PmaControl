@@ -155,7 +155,7 @@ class Debug
             if (!empty($var)) {
 
                 if (IS_CLI) {
-                    echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+                    echo Color::getColoredString($var, "grey", "blue")." ";
                 } else {
                     echo $var."<br>";
                 }
@@ -177,6 +177,9 @@ class Debug
             } else {
 
                 if (IS_CLI) {
+                    if (empty($string)) {
+                        $string = "";
+                    }
                     echo trim($string)."\n";
                 } else {
                     echo "<b>".trim(str_replace("\n", "<br>", $string))."</b><br>";
@@ -193,7 +196,7 @@ class Debug
             if (!empty($var)) {
 
                 if (IS_CLI) {
-                    echo \Glial\Cli\Color::getColoredString($var, "grey", "blue")." ";
+                    echo Color::getColoredString($var, "grey", "blue")." ";
                 } else {
                     echo $var." ";
                 }
@@ -215,7 +218,7 @@ class Debug
     static function getDate()
     {
         if (IS_CLI) {
-            return \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+            return Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
         } else {
             return "[".date('Y-m-d H:i:s')."] ";
         }
@@ -229,7 +232,7 @@ class Debug
 
 
             if (IS_CLI) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "yellow")." ";
+                echo Color::getColoredString($var, "grey", "yellow")." ";
                 echo "\n";
             }
         }
@@ -241,7 +244,7 @@ class Debug
 
         if (self::$debug) {
             if (IS_CLI) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "red")." ";
+                echo Color::getColoredString($var, "grey", "red")." ";
 
                 echo "\n";
             }
@@ -254,7 +257,7 @@ class Debug
 
         if (self::$debug) {
             if (IS_CLI) {
-                echo \Glial\Cli\Color::getColoredString($var, "grey", "green")." ";
+                echo Color::getColoredString($var, "grey", "green")." ";
                 echo "\n";
             }
         }

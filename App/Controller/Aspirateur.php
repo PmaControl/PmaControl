@@ -30,6 +30,34 @@ use Pheanstalk\Pheanstalk;
   1 row in set (0.000 sec)
   SELECT /*!40001 SQL_NO_CACHE * / * FROM
  *
+ * 
+ * 
+ * 
+ SELECT
+t.THREAD_ID AS id,
+t.PROCESSLIST_USER AS user,
+t.PROCESSLIST_HOST AS host,
+CONVERT (
+CAST( CONVERT ( uvt.VARIABLE_VALUE USING latin1 ) AS BINARY ) USING utf8
+) AS replica_uuid
+FROM
+`performance_schema`.threads AS t JOIN
+`performance_schema`.user_variables_by_thread AS uvt ON t.THREAD_ID = uvt.THREAD_ID
+WHERE
+t.PROCESSLIST_COMMAND LIKE 'Binlog Dump%'
+AND uvt.VARIABLE_NAME = 'slave_uuid'
+
+
+
+
+SELECT
+CONVERT(SUM(SUM_NUMBER_OF_BYTES_READ), UNSIGNED) AS io_read,
+CONVERT(SUM(SUM_NUMBER_OF_BYTES_WRITE), UNSIGNED) AS io_write
+FROM
+`performance_schema`.`file_summary_by_event_name`
+WHERE
+`performance_schema`.`file_summary_by_event_name`.`EVENT_NAME` LIKE 'wait/io/file/%' AND
+`performance_schema`.`file_summary_by_event_name`.`COUNT_STAR` > 0
  */
 
 // https://github.com/php-amqplib/php-amqplib
