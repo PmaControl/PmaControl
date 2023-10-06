@@ -58,8 +58,10 @@ awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf >
 mkdir -p /srv/www/
 cd /srv/www/
 
-curl -sS https://getcomposer.org/installer | php --
-mv composer.phar /usr/local/bin/composer
+#curl -sS https://getcomposer.org/installer | php --
+#mv composer.phar /usr/local/bin/composer
+
+apt-get install -y composer
 
 cd /srv/www/
 
@@ -79,8 +81,8 @@ git pull origin develop
 git config core.fileMode false
 
 
-export COMPOSER_ALLOW_SUPERUSER=1
-composer install -n
+#export COMPOSER_ALLOW_SUPERUSER=1
+#composer install -n
 
 service apache2 restart
 
