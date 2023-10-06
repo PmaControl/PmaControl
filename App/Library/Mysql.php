@@ -60,7 +60,7 @@ class Mysql
         return $users;
     }
 
-    static public function onAddMysqlServer($id_mysql_server)
+    static public function onAddMysqlServer($id_mysql_server = "")
     {
 
 
