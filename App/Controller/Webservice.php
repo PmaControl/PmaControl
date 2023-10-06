@@ -23,57 +23,56 @@ class Webservice extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
+        define (IS_CLI, true);
+
         Debug::parseDebug($param);
+
+        $jsonData = file_get_contents('php://input');
+
+        if (! $this->isJson($jsonData)) {
+            header('WWW-Authenticate: Basic realm="My Realm"');
+            header('HTTP/1.0 400 Bad request');
+            echo "{\"error\": \"JSON malformed\", \"json\" : \"$jsonData\"}"."\n";
+            exit;
+        }
+
+        $finale_name = "/tmp/tmp.".uniqid();
+        file_put_contents($finale_name, json_encode(json_decode($jsonData)));
+        Debug::debug($jsonData);
 
         if (!isset($_SERVER['PHP_AUTH_USER'])) {
             header('WWW-Authenticate: Basic realm="My Realm"');
             header('HTTP/1.0 401 Unauthorized');
-            echo '{"error": "Vous n\'êtes pas autorisé à acceder à la ressource requise"}'."\n";
+            echo '{"error": "Vous n\'êtes pas autorisé à acceder à la ressource requise, Login or password not good"}'."\n";
             exit;
         }
-
+        
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
-
         Debug::debug($id_user_main, "Authorized Access");
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {
-
+        if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {   
             if ($id_user_main === true) {
-
-                if (!empty(end($_FILES)['tmp_name'])) {
-
-                    $this->return['authenticate'] = "ok";
-
-                    Debug::debug(end($_FILES)['tmp_name']);
-
-                    $this->parseServer(end($_FILES)['tmp_name']);
-
-                    //$this->pushFile(trim(file_get_contents()));
-                } else {
-
-                    $this->return['authenticate'] = "ok";
-                    $this->return['error'][]      = "Impossible to load json";
-                }
+                $this->return['authenticate'] = "ok";
+                $this->parseServer($finale_name);
             } else {
                 $this->return['authenticate'] = "ko";
                 $this->return['error'][]      = "Unauthorized access";
-
-                //echo "KO\n";
             }
 
             $db = Sgbd::sql(DB_DEFAULT);
-            Mysql::onAddMysqlServer($db);
+            Mysql::onAddMysqlServer();
 
-            $this->saveHistory($id_user_main);
+            $this->saveHistory($id_user_main, $jsonData);
         } else {
 
             $this->return['error'][] = "This request method is not allowed : ".$_SERVER['REQUEST_METHOD'];
         }
 
+        header('WWW-Authenticate: Basic realm="My Realm"');
+        header('HTTP/1.1 200 OK');
         header('Content-Type: application/json');
         echo json_encode($this->return, JSON_PRETTY_PRINT)."\n";
-
-        //echo "\n";
+        //Debug::debug($this->return);
     }
 
     public function importFile($param)
@@ -110,8 +109,6 @@ class Webservice extends Controller
 
     private function parseServer($filename)
     {
-
-
         $data = Json::getDataFromFile($filename);
 
         Debug::debug($data, "data");
@@ -131,7 +128,7 @@ class Webservice extends Controller
             }
         }
 
-        Mysql::generateMySQLConfig($db);
+        Mysql::generateMySQLConfig();
 
         return true;
     }
@@ -150,7 +147,7 @@ class Webservice extends Controller
         //$this->parseServer($json);
     }
 
-    private function saveHistory($id_user_main)
+    private function saveHistory($id_user_main, $json)
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -166,13 +163,13 @@ class Webservice extends Controller
         $data['webservice_history_main']['password']     = $_SERVER['PHP_AUTH_PW'];
         $data['webservice_history_main']['date']         = date('Y-m-d H:i:s');
         $data['webservice_history_main']['logon']        = $logon;
-        $data['webservice_history_main']['message']      = trim(file_get_contents(end($_FILES)['tmp_name']));
+        $data['webservice_history_main']['message']      = $json;
         $data['webservice_history_main']['remote_addr']  = $_SERVER["REMOTE_ADDR"];
 
         $res = $db->sql_save($data);
 
         if (!$res) {
-            debug($data);
+            Debug::debug($data);
         }
     }
     /*     * ************************ */
@@ -255,5 +252,11 @@ class Webservice extends Controller
     public function decrypt($param)
     {
         echo Crypt::decrypt($param[0], CRYPT_KEY);
+    }
+
+
+    function isJson($string) {
+        json_decode($string);
+        return json_last_error() === JSON_ERROR_NONE;
     }
 }
