@@ -360,7 +360,7 @@ PARTITION BY RANGE (to_days(`date`))
         $this->dropTsTable();
         $this->createTsTable();
 
-        Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
+        Mysql::onAddMysqlServer();
 
         //drop lock sur
         $this->dropLock();
