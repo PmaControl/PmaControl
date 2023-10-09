@@ -10,6 +10,8 @@ namespace App\Library;
 use \Glial\Cli\Color;
 use \Glial\Cli\Table;
 
+use \Glial\Synapse\FactoryController;
+
 class Debug
 {
     static $debug       = false;
@@ -49,7 +51,7 @@ class Debug
 
             foreach ($thread_sgbd as $name_db) {
 
-                echo \Glial\Cli\Color::getColoredString($name_db, "black", "yellow")."\n";
+                echo Color::getColoredString($name_db, "black", "yellow")."\n";
 
                 $db = $di_link->sql($name_db);
 
