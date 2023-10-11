@@ -179,7 +179,7 @@ class Debug
             } else {
 
                 if (IS_CLI) {
-                    if (empty($string)) {
+                    if (! isset($string)) {
                         $string = "";
                     }
                     echo trim($string)."\n";
