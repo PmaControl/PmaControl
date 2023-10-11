@@ -18,6 +18,8 @@ class Daemon extends Controller
 
     public function index()
     {
+
+
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 

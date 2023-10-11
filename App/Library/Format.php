@@ -19,46 +19,36 @@ class Format
 
     static public function mysqlVersion($version, $comment, $is_proxysql=0)
     {
-        if (strpos($version, "-")) {
-            $number = explode("-", $version)[0];
-            $fork   = explode("-", $version)[1];
-        } else {
-            $number = $version;
-            $fork = 'mysql';
+
+        
+        $format = self::getMySQLNumVersion($version, $comment);
+
+        $fork = $format['fork'];
+        $number = $format['number'];
+
+        $name = '';
+        $logo = true;
+        
+        if ($is_proxysql === "1")
+        {
+            $logo = false;
+            $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
         }
 
-
-        $pos = strpos(strtolower($comment), "percona");
-        if ($pos !== false) {
-            $fork = "percona";
-        }
-
-
-	$name = '';
-	$logo = true;
-	
-	if ($is_proxysql === "1")
-	{
-		$logo = false;
-		$name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
-	}
-
-	
+        
 
         switch (strtolower($fork)) {
             case 'mariadb':
                 if ($logo)
-		{
-			$name .= '<span class="geek">&#xF130;</span>';
-		}
+                {
+                    $name .= '<span class="geek">&#xF130;</span>';
+                }
 		$name .=  ' MariaDB';
                 break;
 
             case 'percona':
-
-                //$name = 'percona.svg'
-		if ($logo)
-		{
+                if ($logo)
+                {
                 	$name .= '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
                 }
 		$name .= ' Percona Server';
@@ -90,5 +80,24 @@ class Format
         }
 
         return round($microtime, $precision).' '.$units[$pow];
+    }
+
+    static public function getMySQLNumVersion($version, $comment)
+    {
+        if (strpos($version, "-")) {
+            $number = explode("-", $version)[0];
+            $fork   = explode("-", $version)[1];
+        } else {
+            $number = $version;
+            $fork = 'mysql';
+        }
+
+
+        $pos = strpos(strtolower($comment), "percona");
+        if ($pos !== false) {
+            $fork = "percona";
+        }
+
+        return array('number'=>$number, 'fork'=> $fork);
     }
 }

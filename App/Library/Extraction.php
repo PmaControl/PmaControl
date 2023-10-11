@@ -233,6 +233,11 @@ class Extraction
         while ($ob = $db->sql_fetch_object($res)) {
 
             //debug(self::$variable[$ob->id_ts_variable]);
+            //$ob->value ?? '';
+
+            if (is_null($ob->value)){
+                $ob->value = '';
+            }
 
             if ($range) {
                 $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
