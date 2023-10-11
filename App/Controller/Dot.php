@@ -354,7 +354,7 @@ rankdir=LR;
 
 
         if (Debug::$debug) {
-            echo SqlFormatter::format($sql);
+            echo \SqlFormatter::format($sql);
         }
 
         $res = $db->sql_query($sql);

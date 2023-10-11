@@ -116,8 +116,16 @@ class Dot2 extends Controller
 
                 //remove if not a slave
                 if (empty($slave['master_host'])) {
+
+                    unset($this->slaves[$id_mysql_server][$connection]);
+
+                    if (empty($this->slaves[$id_mysql_server]))
+                    {
+                        unset($this->slaves[$id_mysql_server]);
+                    }
                     continue;
                 }
+                
 
 
                 Debug::debug($rosae);
@@ -135,13 +143,15 @@ class Dot2 extends Controller
                 $tmp_group[$id_group][] = $id_mysql_server;
 
                 $this->slaves[$id_mysql_server][$connection]['id_master'] = $id_master;
+                $this->slaves[$id_mysql_server][$connection]['connection_name'] = $connection;
+                
 
                 $id_group++;
             }
         }
         $this->master_slave = $tmp_group;
 
-        //Debug::debug($this->slaves, "MASTER / SLAVE");
+        Debug::debug($this->slaves, "MASTER / SLAVE");
 
         return $this->master_slave;
     }
@@ -532,8 +542,8 @@ class Dot2 extends Controller
                     continue;
                 }
 
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['style']           = "filled";
-                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
+                //Debug::debug($connection_name, 'connection_name');
+
 
                 if ($slave['seconds_behind_master'] === "0" && $slave['slave_io_running'] === "Yes" && $slave['slave_sql_running'] === "Yes") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_OK'];
@@ -542,14 +552,14 @@ class Dot2 extends Controller
 
 
 
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_DELAY'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]         = $this->edge['REPLICATION_DELAY'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['seconds_behind_master'];
                 } elseif ($slave['slave_io_running'] === "No" && $slave['slave_sql_running'] === "No") {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_STOPPED'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "STOPPED";
                 } else {
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "BUG ?";
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color'] = "pink";
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']] = "pink";
                 }
 
                 if ($slave['last_io_errno'] !== "0") {
@@ -558,12 +568,12 @@ class Dot2 extends Controller
                 }
 
                 if ($slave['last_sql_errno'] !== "0") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_SQL'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]         = $this->edge['REPLICATION_ERROR_SQL'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = $slave['last_sql_errno'];
                 }
 
                 if ($slave['slave_io_running'] == "Connecting") {
-                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]          = $this->edge['REPLICATION_ERROR_CONNECT'];
+                    $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]         = $this->edge['REPLICATION_ERROR_CONNECT'];
                     $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['label'] = "wrong password";
                 }
 
@@ -577,6 +587,13 @@ class Dot2 extends Controller
                         $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['arrow'] = "double";
                     }
                 }
+
+                
+                $this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['connection_name'] = $connection_name;
+
+
+
+                //Debug::debug($this->graph_edge, "XXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
 
 //debug($this->graph_edge[$slave['id_mysql_server']][$slave['id_master']]['color']);
@@ -1073,11 +1090,13 @@ class Dot2 extends Controller
 
                     $connection_name = "";
 
-                    //Debug::debug($this->graph_edge, "xfghbxfhg");
+                    Debug::debug($this->graph_edge, "graph_edge");
 
-                    if (!empty($this->graph_edge[$id_master][$id_slave]['connection_name'])) {
-                        $connection_name = $this->graph_edge[$id_master][$id_slave]['connection_name'];
+                    if (!empty($this->graph_edge[$id_slave][$id_master]['connection_name'])) {
+                        $connection_name = $this->graph_edge[$id_slave][$id_master]['connection_name'];
                     }
+
+                    Debug::debug($connection_name, "connection_name");
 
                     if (empty($val['arrow'])) {
                         $val['arrow'] = 'double';
