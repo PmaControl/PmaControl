@@ -59,10 +59,4 @@ class Tag {
          */
     }
 
-    //a deporter dans les test
-    function testa() {
-        $id = $this->getId("galera", "tag", "name");
-        debug($id);
-    }
-
 }
