@@ -49,7 +49,7 @@ class Display
             ." ".$url1.self::$server[$id_mysql_server]['display_name'].$url2.' ';
 
         if ($withip) {
-            $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].'</small> ';
+            $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].':'.self::$server[$id_mysql_server]['port'].'</small> ';
         }
 
         return $ret;

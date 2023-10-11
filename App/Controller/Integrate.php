@@ -147,6 +147,11 @@ class Integrate extends Controller
                                                 }
                                             } else {
                                                 if ($variables[$type_metrics][$slave_variable]['type'] == "TEXT") {
+
+                                                    if (is_null($slave_value)) {
+                                                        $slave_value = '';
+                                                    }
+
                                                     $slave_value = $db->sql_real_escape_string($slave_value);
 
                                                     $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','

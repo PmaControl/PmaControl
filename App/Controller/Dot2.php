@@ -910,7 +910,7 @@ class Dot2 extends Controller
             }
         }
 
-        Debug::debug($databases, "database");
+        //$Debug::debug($databases, "database");
 
         $node .= 'node [color = "'.$this->graph_node[$id_mysql_server]['color'].'" style="'.$this->graph_node[$id_mysql_server]['style'].'"];'."\n";
         $node .= '  '.$id_mysql_server.' [penwidth="3" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white">';
