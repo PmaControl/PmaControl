@@ -78,7 +78,6 @@ class MasterSlave extends Controller {
         Debug::debug($nombre_de_niveau,'nombre_de_niveau');
 
         $reste = $nb_mysql_server -($nombre_de_niveau * ($nombre_de_niveau+1))/2;
-
         $level = 1;
 
         $data['bylevel'] = array();
@@ -167,7 +166,6 @@ class MasterSlave extends Controller {
             }
         }
 
-
         Debug::debug($levels, 'data');
 
         $id_parsed = array();
@@ -200,8 +198,6 @@ class MasterSlave extends Controller {
 
                 uasort($temp_levels[$level_master], array($this,'compareDigit'));
                 Debug::debug($temp_levels[$level_master], "AFTER");
-
-
 
                 $i = 0;
                 Debug::debug($mysql_server['id'], "id_mysql__slave");
@@ -277,8 +273,6 @@ class MasterSlave extends Controller {
         Debug::debug($FILE, "FILE");
         Debug::debug($POSITION, "POSITION");
 
-
-
         $res2 = $db_slave->sql_query("SHOW ALL SLAVES STATUS");
         while($arr2 = $db_slave->sql_fetch_array($res2, MYSQLI_ASSOC)){
 
@@ -335,8 +329,3 @@ class MasterSlave extends Controller {
         }
     }
 }
-
-
-/*
-129 => 131 
-*/

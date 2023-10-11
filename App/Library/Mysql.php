@@ -282,9 +282,7 @@ class Mysql
 
         if (self::isPmaControl($server['mysql_server']['ip'], $server['mysql_server']['port']) === true) {
 
-
             self::$return['mysql']['caution'] = "Impossible to overright the server of PmaControl (".$server['mysql_server']['ip'].":".$server['mysql_server']['port'].")";
-
             return false;
         }
 
@@ -294,13 +292,11 @@ class Mysql
                 self::$return['mysql']['inserted'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
             } else {
                 self::$return['mysql']['updated'][] = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].")";
+            }
 
-                if (!empty($data['tag'])) {
-
-                    Debug::debug($data['tag'], "Tags");
-
-                    Tag::insertTag($id_mysql_server, $data['tag']);
-                }
+            if (!empty($data['tag'])) {
+                Debug::debug($data['tag'], "Tags");
+                Tag::insertTag($id_mysql_server, $data['tag']);
             }
 
             Mysql::onAddMysqlServer($id_mysql_server);
