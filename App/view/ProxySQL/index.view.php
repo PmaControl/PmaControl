@@ -15,24 +15,27 @@ echo '<a href="'.LINK.'ssh/add" type="button" class="btn btn-success">'.__('New 
 echo '</div>';
 echo '</div>';
 
-foreach ($data['proxysql'] as $proxysql) {
-    echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
+if ( ! empty($proxysql))
+{
+    foreach ($data['proxysql'] as $proxysql) {
+        echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
 
-    echo '<div class="col-md-2 text-center">';
-    echo '<img src="'.IMG.'icon/proxysql.png" height="64px" width="64px">';
-    echo '</div>';
+        echo '<div class="col-md-2 text-center">';
+        echo '<img src="'.IMG.'icon/proxysql.png" height="64px" width="64px">';
+        echo '</div>';
 
-    echo '<div class="col-md-2">';
-    echo "<b>".$proxysql['hostname'].":".$proxysql['port']."</b>";
-    echo '</div>';
+        echo '<div class="col-md-2">';
+        echo "<b>".$proxysql['hostname'].":".$proxysql['port']."</b>";
+        echo '</div>';
 
-    echo '<div class="col-md-2">';
-    echo $proxysql['login'];
-    echo '</div>';
+        echo '<div class="col-md-2">';
+        echo $proxysql['login'];
+        echo '</div>';
 
-    echo '<div class="col-md-2">';
-    echo $proxysql['password'];
-    echo '</div>';
+        echo '<div class="col-md-2">';
+        echo $proxysql['password'];
+        echo '</div>';
 
-    echo '</div>';
+        echo '</div>';
+    }
 }
