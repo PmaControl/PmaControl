@@ -34,6 +34,39 @@ apt-get -y install php7.4 apache2 graphviz php7.4-mysql php7.4-ldap php7.4-json 
 
 apt-get -y install mariadb-plugin-rocksdb 
 
+apt-get -y install logrotate
+
+cat > /etc/logrotate.d/pmacontrol << EOF
+{
+    /srv/www/pmacontrol/tmp/log/glial.log {
+            daily
+            missingok
+            rotate 7
+            notifempty
+            create 0640 www-data www-data
+            sharedscripts
+    }
+    /srv/www/pmacontrol/tmp/log/sql.log {
+            daily
+            missingok
+            rotate 7
+            notifempty
+            create 0640 www-data www-data
+            sharedscripts
+    }
+    /srv/www/pmacontrol/tmp/log/error_php.log {
+            daily
+            missingok
+            rotate 7
+            notifempty
+            create 0640 www-data www-data
+            sharedscripts
+    }
+}
+
+EOF
+
+
 
 
 #apt-get install beanstalkd
