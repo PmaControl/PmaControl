@@ -199,15 +199,15 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $server = $ob;
         }
 
-//debug($server);
-
         $data['slave'] = array();
 
         if ($server['is_available'] === "1") {
             $link_slave = Sgbd::sql($server['name']);
 
+            
             $slaves = $link_slave->isSlave();
 
+            
             if (count($slaves) === 1) {
                 $slave = end($slaves);
             } else {
@@ -221,7 +221,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
             $data['slave'] = $slave;
         }
-
         ksort($data['slave']);
 
         $data['replication_name'] = $replication_name;
@@ -239,13 +238,14 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date, $date), true, true);
 
+        
         $this->generateGraphSlave($slaves);
 
         foreach ($slaves as $slave) {
             $data['graph'][$slave['day']] = $slave;
         }
 
-
+        
 
 //change master
         $sql = "SELECT a.id_mysql_server FROM link__architecture__mysql_server a
@@ -267,30 +267,35 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $data['id_slave']              = array($id_mysql_server);
         $_GET['mysql_slave']['server'] = $id_mysql_server;
 
+
+       // debug($_GET['mysql_server']['id']);
+       
 //le cas ou on arrive pas a trouver le master
-        if (!empty($_GET['mysql_server']['id'])) {
-            $db_master = Mysql::getDbLink($_GET['mysql_server']['id']);
 
-            $sql  = "show databases;";
-            $res7 = $db_master->sql_query($sql);
+/*
+if (!empty($_GET['mysql_server']['id'])) {
+    $db_master = Mysql::getDbLink($_GET['mysql_server']['id']);
+    //exit;
+    $sql  = "show databases;";
+    $res7 = $db_master->sql_query($sql);
 
-            $data['db_on_master'] = array();
-            $i                    = 0;
-            while ($ob7                  = $db->sql_fetch_object($res7)) {
-                if (in_array($ob7->Database, array('information_schema', 'performance_schema', 'mysql', 'sys'))) {
-                    continue;
-                }
-
-                if ($i > 1) {
-                    $data['db_on_master'][] = "...";
-                    break;
-                }
-
-                $data['db_on_master'][] = $ob7->Database;
-                $i++;
-            }
+    $data['db_on_master'] = array();
+    $i                    = 0;
+    while ($ob7                  = $db->sql_fetch_object($res7)) {
+        if (in_array($ob7->Database, array('information_schema', 'performance_schema', 'mysql', 'sys'))) {
+            continue;
         }
 
+        if ($i > 1) {
+            $data['db_on_master'][] = "...";
+            break;
+        }
+
+        $data['db_on_master'][] = $ob7->Database;
+        $i++;
+    }
+}*/
+        
 //gtid
 // https://mariadb.com/fr/node/493
 // https://mariadb.com/kb/en/library/gtid/

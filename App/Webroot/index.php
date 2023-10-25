@@ -101,6 +101,8 @@ try {
                 E_USER_ERROR);
         }
     }
+
+
 } catch (Exception $e) {
 
     if (IS_CLI)
@@ -137,15 +139,16 @@ try {
     //debug($e);
 } finally {
     if (!IS_CLI) {
-        /*
-          $stat = new Statistics;
-          $stat->getData($GLOBALS['_SITE']['IdUser']);
-          $stat->callDeamon(); */
+        
+        //  $stat = new Statistics;
+        //  $stat->getData($GLOBALS['_SITE']['IdUser']);
+        //  $stat->callDeamon(); 
     }
     if (isset($error_code)) {
 
         echo "CODE ERROR : ".$e->getCode()."\n";
-
-        exit(1);
+        exit($e->getCode());
     }
 }
+
+/* */

@@ -153,7 +153,12 @@ foreach ($data['slave'] as $slaves) {
             $data['graph'][$slave['id_mysql_server']][$connect_name]['avg'] = "n/a";
         }
 
-        echo ' (max : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['max'].' / avg : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['avg'].' / std : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['std'].')';
+        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['std'])) {
+            $data['graph'][$slave['id_mysql_server']][$connect_name]['std'] = "n/a";
+        }
+        echo ' (max : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['max']
+	.' / avg : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['avg']
+	.' / std : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['std'].')';
         echo '</td>';
 
         echo '<td class="'.$class.'">';
