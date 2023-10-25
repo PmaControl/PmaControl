@@ -228,7 +228,6 @@ class Daemon extends Controller
         $total = array();
         foreach ($all_files as $fullpath) {
 
-
             $filename = pathinfo($fullpath)['filename'];
 
             $prefix = explode('_', $filename)[0];
@@ -240,7 +239,6 @@ class Daemon extends Controller
             }
         }
 
-
         foreach ($total as $key => $nb_file) {
             if ($nb_file > 10) {
 
@@ -250,7 +248,6 @@ class Daemon extends Controller
                 }
             }
         }
-
 
         $data['registered']   = $file;
         $data['to_integrate'] = $total;

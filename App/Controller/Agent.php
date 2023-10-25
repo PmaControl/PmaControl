@@ -59,23 +59,10 @@ class Agent extends Controller {
 
         Debug::parseDebug($param);
 
-
         $id_daemon = $param[0];
         $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
-
-
-
-        if (!$this->checkAllEngines()) {
-
-            
-            $msg = I18n::getTranslation(__("One storage engine is missing on this MySQL server"));
-            $title = I18n::getTranslation(__("Error"));
-            set_flash("error", $title, $msg);
-            //header("location: ".LINK.$this->url);
-            exit;
-        }
 
         $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
         $res = $db->sql_query($sql);
@@ -242,7 +229,7 @@ class Agent extends Controller {
         }
 
         $id_loop = 0;
-        while (1) {
+        while (true) {
 
             $id_loop++;
 
@@ -255,9 +242,7 @@ class Agent extends Controller {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . "";
-
-                
+                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
 
                 Debug::debug($cmd);
                 shell_exec($cmd);
@@ -268,7 +253,7 @@ class Agent extends Controller {
             Debug::debug("refresh time : " . $refresh_time);
 
 
-            shell_exec('date=$(date "+%Y-%m-%d %H:%M:%S") && echo "[${date}] $@" >> '.TMP.'run.'.$id.'.log');
+            shell_exec('date=$(date "+%Y-%m-%d %H:%M:%S") && echo "[${date}] $@" >> '.TMP.'log/run.'.$id.'.log');
 
             // in case of mysql gone away, like this daemon restart when mysql is back
             Sgbd::sql(DB_DEFAULT)->sql_close();
@@ -377,17 +362,7 @@ class Agent extends Controller {
         Mysql::addMaxDate();
     }
 
-    public function index() {
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `daemon_main` order by id";
-        $res = $db->sql_query($sql);
 
-        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['daemon'][] = $ob;
-        }
-
-        $this->set('data', $data);
-    }
 
     public function logs() {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -418,7 +393,6 @@ class Agent extends Controller {
         $res = $db->sql_query($sql);
         $ob = $db->sql_fetch_object($res);
 
-
         $data['log_file'] = TMP . $ob->log_file;
 
         $data['log'] = __("Log file doens't exist yet !");
@@ -428,7 +402,7 @@ class Agent extends Controller {
             //$ob->log_file = escapeshellarg($ob->log_file); // for the security concious (should be everyone!)
             //$data['log'] = `tail -n 10000 $ob->log_file`;
             //full php implementation
-            $data['log'] = $this->tailCustom($data['log_file'], 10000);
+            $data['log'] = $this->tailCustom($data['log_file'], 100);
         }
 
         $_GET['daemon_main']['thread_concurency'] = $ob->thread_concurency;
@@ -442,7 +416,6 @@ class Agent extends Controller {
 
             $data['thread_concurency'][] = $tmp;
         }
-
 
         $_GET['daemon_main']['refresh_time'] = $ob->refresh_time;
 
@@ -469,58 +442,11 @@ class Agent extends Controller {
         }
         //$data[''] = ;
 
-
-
         $this->set('data', $data);
     }
 
-    /*
-
-      public function updateHaProxy()
-      {
-      $this->view = false;
-      $db         = Sgbd::sql(DB_DEFAULT);
-
-      $haproxys = $this->di['config']->get('haproxy');
-
-      foreach ($haproxys as $name => $haproxy) {
-
-      $table                                   = [];
-      $talbe['haproxy_main']['hostname']       = $haproxy['hostname'];
-      $talbe['haproxy_main']['ip']             = $haproxy['hostname'];
-      $talbe['haproxy_main']['vip']            = $haproxy['vip'];
-      $talbe['haproxy_main']['csv']            = $haproxy['csv'];
-      $talbe['haproxy_main']['stats_login']    = $haproxy['csv'];
-      $talbe['haproxy_main']['stats_password'] = $haproxy['csv'];
-
-      print_r($haproxy);
-      }
-      } */
-
-    public function checkAllEngines() {
-
-        return true; // time to fix with mariadb 10.3.2
-
-        $this->view = false;
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "select distinct a.engine from information_schema.tables a
-                LEFT JOIN information_schema.engines b ON a.engine = b.engine
-                where a.table_schema = database() and b.engine is null;";
 
 
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-
-            if ($ob->cpt !== "1") {
-                return false;
-            }
-        }
-
-
-        return true;
-    }
 
     /**
      * Slightly modified version of http://www.geekality.net/2011/05/28/php-tail-tackling-large-files/
@@ -572,51 +498,6 @@ class Agent extends Controller {
         fclose($f);
         return trim($output);
     }
-
-    /*
-      private function addIpVirtuel($ssh, $id_mysql_server)
-      {
-
-      $db = Sgbd::sql(DB_DEFAULT);
-      // bug il faudrait extraire les ip de la boucle local qui ne sont pas 127.0.0.1
-      $cmd = "ifconfig | grep -Eo 'inet (a[d]{1,2}r:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'";
-
-      $cmd = "ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'";
-      $ip  = $ssh->exec($cmd);
-      Debug::debug($cmd);
-
-      $ips_actual = explode("\n", trim($ip));
-
-      $sql = "SELECT * FROM `virtual_ip` WHERE id_mysql_server=".$id_mysql_server.";";
-      Debug::debug(SqlFormatter::highlight($sql));
-      $res = $db->sql_query($sql);
-
-      $sqls = array();
-      while ($ob   = $db->sql_fetch_object($res)) {
-      if (in_array($ob->ip, $ips_actual)) {
-      $revert = array_flip($ips_actual);
-
-      unset($ips_actual[$revert[$ob->ip]]);
-      } else {
-      $sql = "DELETE FROM `virtual_ip` WHERE `ip` IN ('".implode("','", $ips_actual)."') AND `id_mysql_server`= ".$id_mysql_server."";
-      Debug::debug(SqlFormatter::highlight($sql));
-      $db->sql_query($sql);
-      }
-      }
-
-      if (count($ips_actual) > 0) {
-      $vals = array();
-      foreach ($ips_actual as $ip) {
-      $vals[] = "(NULL,'".$id_mysql_server."', '".$ip."', NULL)";
-      }
-
-
-      $sql = "INSERT INTO `virtual_ip` VALUES ".implode(",", $vals).";";
-      Debug::debug(SqlFormatter::highlight($sql));
-      $db->sql_query($sql);
-      }
-      }
-     */
 
     public function check_daemon() {
 

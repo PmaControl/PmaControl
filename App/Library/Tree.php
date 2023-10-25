@@ -16,7 +16,7 @@ class Tree
     var $fields  = array("id" => "id", "id_parent" => "id_parent", "bg" => "bg", "bd" => "bd");
     var $options = array(); // extra mapping
 
-    public function __construct($db_link, $table_name, $fields = array(), $options)
+    public function __construct($db_link, $table_name, $fields = array(), $options=array())
     {
         $this->db         = $db_link;
         $this->table_name = $table_name;

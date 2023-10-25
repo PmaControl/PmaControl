@@ -5,7 +5,6 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
-use App\Library\ParseCnf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -14,9 +13,8 @@ use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Proxy;
-use \Glial\Cli\Color;
 use \Glial\Sgbd\Sgbd;
-use Pheanstalk\Pheanstalk;
+use \App\Library\Extraction;
 
 /*
  *
@@ -76,6 +74,9 @@ class Aspirateur extends Controller
     var $files             = array();
     public $variables         = array();
 
+    //log with monolog
+    var $logger;
+
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -88,11 +89,11 @@ class Aspirateur extends Controller
 
     public function before($param)
     {
-        $logger       = new Logger("Aspirateur");
-        $handler      = new StreamHandler(LOG_FILE, Logger::INFO);
+        $monolog       = new Logger("Aspirateur");
+        $handler      = new StreamHandler(LOG_FILE, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
-        $logger->pushHandler($handler);
-        $this->logger = $logger;
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
     }
 
     /**
@@ -106,81 +107,56 @@ class Aspirateur extends Controller
      * @access public
      */
     public function tryMysqlConnection($param)
-    {
-
-        $display_error = ini_get('display_errors');
-        ini_set("display_errors", 0);
-
+    {   
         Debug::parseDebug($param);
         $this->view = false;
 
         $name_server = $param[0];
-        $id_server   = $param[1];
+        $id_mysql_server   = $param[1];
 
-        $db = Sgbd::sql(DB_DEFAULT); // ?????
-        $db->sql_close(); // ?????????????
+        $db = Sgbd::sql(DB_DEFAULT); 
+        $db->sql_close();
 
         Debug::checkPoint('avant query');
 
+        /* Only for testing for processing long time, don't think some got more than 999 999 mysql server :D */
+        if ($id_mysql_server === "999999") {
+            $this->logger->notice('### WAIT 55 sec for id_mysql_server=10');
+            sleep(135);
+        }
+
         $time_start   = microtime(true);
-        $mysql_tested = Sgbd::sql($name_server);
 
-        $err = error_get_last();
-        error_clear_last();
-
-        $error_msg = "";
-        if ($err !== NULL) {
-            $error_msg = $err['message'];
+        try{
+            $error_msg='';
+            $mysql_tested = Sgbd::sql($name_server);
         }
-
-        $data                   = array();
-        $data['server']['ping'] = microtime(true) - $time_start;
-
-        /*
-         * test for processing long time
-          if ($id_server == 114) {
-          sleep(55);
-          } */
-
-        $service                              = array();
-        $service['mysql_server']['available'] = empty($error_msg) ? 1 : 0;
-        $service['mysql_server']['ping']      = $data['server']['ping'];
-        $service['mysql_server']['error']     = $error_msg;
-
-        Debug::debug($service);
-
-        $services                                  = array();
-        $services[date('Y-m-d H:i:s')][$id_server] = $service;
-
-        $this->allocate_shared_storage('service');
-        $this->shared['service']->{$id_server} = $services;
-
-        if (!empty($error_msg)) {
-            echo $name_server." : ".$error_msg."\n";
-
-            $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "UPDATE `mysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."',
-                `date_refresh` = '".date("Y-m-d H:i:s")."',
-                    `is_available` = 0 WHERE id =".$id_server;
-            Debug::sql($sql);
-
-            $db->sql_query($sql);
-            $db->sql_close();
-
-            return false;
+        catch(\Exception $e){
+            $error_msg = $e->getMessage();
+            $this->logger->warning($error_msg." id_mysql_server:$id_mysql_server");
         }
+        finally{
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+            
+            $this->setService($id_mysql_server, $ping, $error_msg, $available);
+            $this->logger->notice("id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
 
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+            if ($available === 0) {
+                return false;
+            }
+        }
+        
 //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
 // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
-        Debug::debug("Avant");
 
-// traitement SHOW GLOBAL VARIABLES
-
+        // traitement SHOW GLOBAL VARIABLES
         $var['variables'] = $mysql_tested->getVariables();
 
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
-//shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
+        //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
 
         if (!empty($var['variables']['gtid_binlog_pos'])) {
             unset($var['variables']['gtid_binlog_pos']);
@@ -202,16 +178,20 @@ class Aspirateur extends Controller
             unset($var['variables']['timestamp']);
         }
 
-
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
             $db  = Sgbd::sql(DB_DEFAULT);
-           
-            //only update if not detected as proxy already
-            $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id` IN(SELECT id FROM mysql_server WHERE id=".$id_server." AND `is_proxy`!=1) ;";
-            //$sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_server.";";
-            Debug::sql($sql);
-            $db->sql_query($sql);
-            $db->sql_close();
+            $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
+            $res = $db->sql_query($sql);
+            while ($ob = $db->sql_fetch_object($res)){
+
+                //only update if not detected as proxy already
+                //$sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id` IN(SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1) ;";
+                $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server.";";
+                Debug::sql($sql);
+                $db->sql_query($sql);
+
+                $this->logger->info("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
+            }
 
             $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
             $var_temp['variables']['hostname']        = $var['variables']['hostname'];
@@ -234,13 +214,13 @@ class Aspirateur extends Controller
             $data['slave']  = $mysql_tested->isSlave();
             Debug::debug("apres slave");
 
-            $data['locking'] = $this->getLockingQueries(array($id_server));
+            $data['locking'] = $this->getLockingQueries(array($id_mysql_server));
 
-//SHOW SLAVE HOSTS; => add in glial
-//$data['processlist'] = $mysql_tested->getProcesslist(1);
+            //SHOW SLAVE HOSTS; => add in glial
+            //$data['processlist'] = $mysql_tested->getProcesslist(1);
 
             if ($var['variables']['log_bin'] === "ON") {
-                $data['binlog'] = $this->binaryLog(array($id_server));
+                $data['binlog'] = $this->binaryLog(array($id_mysql_server));
             }
 
             Debug::debug("apres la récupération de la liste des binlogs");
@@ -256,7 +236,7 @@ class Aspirateur extends Controller
          */
 
 
-        $date[date('Y-m-d H:i:s')][$id_server] = $data;
+        $date[date('Y-m-d H:i:s')][$id_mysql_server] = $data;
 
         if ($mysql_tested->is_connected === false) {
             echo "PAS BON DU TOUT ! ask creator of PmaControl";
@@ -264,7 +244,7 @@ class Aspirateur extends Controller
         }
 
         $md5      = md5(json_encode($var));
-        $file_md5 = str_replace('{id_mysql_server}', $id_server, $this->lock_variable);
+        $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, $this->lock_variable);
 
         $export_variables = false;
 
@@ -291,8 +271,8 @@ class Aspirateur extends Controller
             $export_variables = true;
         }
 
-//to know if we grab statistics on databases & tables
-        $lock_database = str_replace('{id_mysql_server}', $id_server, $this->lock_database);
+        //to know if we grab statistics on databases & tables
+        $lock_database = str_replace('{id_mysql_server}', $id_mysql_server, $this->lock_database);
 
         Debug::debug($lock_database, "lock file database");
 
@@ -305,9 +285,8 @@ class Aspirateur extends Controller
                 $get_databases = true;
             }
         } else {
-
-//test if first run, if yes remove grabbing of databases because getting to much time
-// test if last all 5 ts_dates before made it to grab data more faster
+            //test if first run, if yes remove grabbing of databases because getting to much time
+            // test if last all 5 ts_dates before made it to grab data more faster
 
             $get_databases = true;
         }
@@ -315,7 +294,6 @@ class Aspirateur extends Controller
         Debug::debug($get_databases, "getDatabase");
 
         if ($get_databases === true) {
-
             $data_db = $this->getDatabase($mysql_tested);
 
             if (!empty($data_db)) {
@@ -325,8 +303,8 @@ class Aspirateur extends Controller
                 $dbs['databases']['databases'] = $data_db;
 
                 $databases                                  = array();
-                $databases[date('Y-m-d H:i:s')][$id_server] = $dbs;
-                $this->shared['database']->{$id_server}     = $databases;
+                $databases[date('Y-m-d H:i:s')][$id_mysql_server] = $dbs;
+                $this->shared['database']->{$id_mysql_server}     = $databases;
 
                 file_put_contents($lock_database, date('Y-m-d'));
             }
@@ -334,9 +312,9 @@ class Aspirateur extends Controller
 
         Debug::debug($date, "answer");
 
-//push data in memory
+        //push data in memory
         $this->allocate_shared_storage('answer');
-        $this->shared['answer']->{$id_server} = $date;
+        $this->shared['answer']->{$id_mysql_server} = $date;
 
         if ($export_variables) {
             $this->allocate_shared_storage('variable');
@@ -344,14 +322,16 @@ class Aspirateur extends Controller
             Debug::debug($var, "SHOW GLOBAL VARIABLE;");
 
             $variables                                  = array();
-            $variables[date('Y-m-d H:i:s')][$id_server] = $var;
-            $this->shared['variable']->{$id_server}     = $variables;
+            $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
+            $this->shared['variable']->{$id_mysql_server}     = $variables;
         }
 
         $mysql_tested->sql_close();
 
         Debug::debugShowTime();
-        ini_set("display_errors", $display_error);
+        //ini_set("display_errors", $display_error);
+
+        return true;
     }
 
     public function allocate_shared_storage($name = 'answer')
@@ -647,13 +627,17 @@ class Aspirateur extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $queue_key        = intval($ob->queue_key);
             $maxExecutionTime = $ob->max_delay;
+            $refresh_time = $ob->refresh_time;
         }
 
 //add message to queue
         $queue    = msg_get_queue($queue_key);
         $msg_qnum = (int) msg_stat_queue($queue)['msg_qnum'];
 
-// on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (30 sec maximum)
+        // on attend d'avoir vider la file d'attente avant d'avoir une nouvelle liste de message (daemon_main.max_delay sec maximum)
+        // securité dans 2 cas de figure, 
+        // 1 - trop de serveurs à monitorer et les worker non pas le temps de suivre
+        // 2 - trop de serveur en erreur (DNS unreachable or MySQL who don't give back or just going down)
         if ($msg_qnum != 0) {
 
             Debug::debug('On attends de vider la file d\'attente');
@@ -663,17 +647,13 @@ class Aspirateur extends Controller
                 if ($msg_qnum == 0) {
                     break;
                 } else {
-                    Debug::debug($msg_qnum, "Nombre de message en attente");
+                    $this->logger->warning('Number message waiting in queue : '. $msg_qnum .'');
                 }
                 sleep(1);
             }
         }
 
-
         $mysql_servers = array();
-
-//mémoire partagé
-
         $lock_directory = TMP."lock/worker/*.lock";
 
         $elems = array();
@@ -686,51 +666,49 @@ class Aspirateur extends Controller
             $elems[] = $data;
         }
 
-
         Debug::debug($elems, "liste des serveur en retard !");
-
-//$list = array();
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($elems as $server) {
 
 
-//on verifie avec le double buffer qu'on est bien sur le même pid
-//et ce dernier est toujours sur le serveur MySQL qui pose problème
+            //on verifie avec le double buffer qu'on est bien sur le même pid
+            //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
 
-// si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
+            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
 
                 Debug::debug($server['pid'], "GOOD");
 
                 $mysql_servers[] = $server['id'];
-//$list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
+                //$list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
 
                 $time = microtime(true) - $server['microtime'];
-                $this->logger->warning("MySQL server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
 
-//special case for timeout 60 seconds, else we see working since ... and not the real error
-                $sql = "SELECT error,is_available from mysql_server WHERE id = ".$server['id'].";";
-                $res = $db->sql_query($sql);
+                $msg = "Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid'];
+                $msg2 = "Worker still runnig - pid : ".$server['pid'];
+                $this->logger->warning("MySQL server with id : ".$server['id']." is late !!!  ".$msg);
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->is_available != 0) {
-// UPDATE is_available X => YELLOW  (not answered)
-                        $sql = "UPDATE `mysql_server` SET is_available = -1,
-                            `warning`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
-                        echo \SqlFormatter::format($sql);
-                        $db->sql_query($sql);
-                    }
+                //special case for timeout 60 seconds, else we see working since ... and not the real error
+                $last_error = Extraction::display(array("mysql_server::available", "mysql_server::error"));
+
+                $error = $last_error[$server['id']][''];
+
+                if (isset($error['available']) && $error['available'] != 0) {
+                    // UPDATE is_available X => YELLOW  (not answered)
+                    $this->logger->warning("id_mysql_server:$idmysqlserver");
+                    $this->setService($idmysqlserver,round($time,2),$msg2, 2);
                 }
+                
             } else {
-//si pid n'existe plus alors on efface le fichier de lock
+                //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker/".$server['id'].".lock";
-
-                unlink($lock_file);
+                if (file_exists($lock_file)) {
+                    unlink($lock_file);
+                }
             }
         }
 
@@ -751,8 +729,6 @@ class Aspirateur extends Controller
 
         $sql .= " ORDER by is_available ASC, c.date DESC;";
 
-//echo \SqlFormatter::format($sql);
-
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -761,32 +737,34 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-//Debug::debug($server_list, "Liste des serveurs monitoré");
-//to prevent any trouble with fork
-//$this->debugShowQueries();
-
+        //Debug::debug($server_list, "Liste des serveurs monitoré");
+        //to prevent any trouble with fork
         $db->sql_close();
 
-// filename: add_to_queue.php
-//creating a queue requires we come up with an arbitrary number
+        // le but est de lisser le charge du serveur au maximum afin d'éviter l'effet dans de scie sur le CPU.
+        $nb_server_to_monitor = count($server_list);
 
+        if ($refresh_time < 2){
+            $refresh_time = 2;
+        }
+
+        $delay = floor(1000000 * $refresh_time / 2 / $nb_server_to_monitor);
+
+        $this->logger->debug("Delay : ".$delay."");
 
         foreach ($server_list as $server) {
 
-// Create dummy message object
+            // Create dummy message object
             $object       = new \stdclass;
             $object->name = $server['name'];
             $object->id   = $server['id'];
 
-//try to add message to queue
+            //try to add message to queue
             if (msg_send($queue, 1, $object)) {
-
-                Debug::debug($server, "Ajout dans la file d'attente");
-//echo "added to queue  \n";
-// you can use the msg_stat_queue() function to see queue status
-//print_r(msg_stat_queue($queue));
+                $this->logger->debug("Add id_mysql_server:".$server['id']." to the queue ($queue_key)");
+                usleep($delay);
             } else {
-                echo "could not add message to queue \n";
+                $this->logger->warning("could not add message to queue ($queue_key)");
             }
         }
 
@@ -797,11 +775,11 @@ class Aspirateur extends Controller
     public function worker()
     {
 
-
         $pid = getmypid();
+        $this->logger->debug("[".__METHOD__."] Started new worker with pid : $pid");
 
-//get mypid
-//start worker => pid / id_mysql_server
+        //get mypid
+        //start worker => pid / id_mysql_server
 
         $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_close();
@@ -847,29 +825,29 @@ class Aspirateur extends Controller
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
 
-//do your business logic here and process this message!
+            $this->logger->debug("[WORKER] [@Start] process id_mysql_server:$msg->id");
 
+            //do your business logic here and process this message!
             $this->tryMysqlConnection(array($msg->name, $msg->id));
+            // if mysql connection is down, the worker will be down too and we have to restart one
 
-            /*
-              if ($msg->id == "16") {
-              sleep(60);
-              }
-              /**
-             * test retard reponse mysql
-             */
+            $this->logger->debug("[WORKER] [@END] process id_mysql_server:$msg->id");
+
             if (file_exists($lock_file)) {
                 unlink($lock_file);
             }
 
-//finally, reset our msg vars for when we loop and run again
+            // on vide le pid 
+            file_put_contents($double_buffer,"N/A");
+
+            //finally, reset our msg vars for when we loop and run again
             $msg_type = NULL;
             $msg      = NULL;
         }
 
 
+        $this->logger->warning("WWe not wait waited next msh in queue ($queue_key)");
 
-//remove pid and id_mysql_server
     }
 
     public function checkWorker($param)
@@ -915,9 +893,26 @@ class Aspirateur extends Controller
                     $file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
                     Debug::debug($file, "FILE");
 
-//remove pid of worker there
+                    //remove pid of worker there
+                    $double_buffer = TMP."lock/worker/".$ob2->pid.".pid";
 
+                    //on a joute le worker avant de purger le fichier de l'ancien, afin d'aviter : PHP Warning:  file_get_contents 
                     $this->addWorker(array($ob2->id, $id_daemon_main, $debug));
+
+                    if (file_exists($double_buffer)) {
+
+                        $id_mysql_server = file_get_contents($double_buffer);
+                        $lock = TMP."lock/worker/".$id_mysql_server.".lock";
+
+                        unlink($double_buffer);
+                        if (file_exists($lock)) {
+                            $this->logger->info("[DEBUG][WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
+                            unlink($lock);
+                        }
+
+                        $this->logger->info("[DEBUG][WORKER] removed worker with pid : ".$ob2->pid."");
+                    }
+
                 }
 
                 $nb_thread++;
@@ -961,8 +956,6 @@ class Aspirateur extends Controller
             $debug = " --debug";
         }
 
-
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM daemon_main where id=".intval($id_daemon_main);
@@ -971,8 +964,6 @@ class Aspirateur extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $worker_name = $ob->worker_name;
         }
-
-
 
         if (empty($id_daemon_worker)) {
             $sql = "INSERT INTO daemon_worker (`id_daemon_main`, `pid`) VALUES (".$id_daemon_main.", 0);";
@@ -1816,6 +1807,8 @@ GROUP BY C.ID, C.INFO;";
 
         Debug::debugShowTime();
         ini_set("display_errors", $display_error);
+
+        return true;
     }
 
     public function testProxy($param)
@@ -1908,5 +1901,28 @@ GROUP BY C.ID, C.INFO;";
 
 
 //remove pid and id_mysql_server
+    }
+
+
+    /*
+     * available = 0 : server down
+     * available = 1 : server operationel
+     * available = 2 : waiting answer
+     * 
+     */
+    public function setService($id_mysql_server, $ping, $error_msg, $available)
+    {
+        $service                              = array();
+        $service['mysql_server']['available'] = $available;
+        $service['mysql_server']['ping']      = $ping;
+        $service['mysql_server']['error']     = $error_msg;
+
+        Debug::debug($service);
+
+        $services                                  = array();
+        $services[date('Y-m-d H:i:s')][$id_mysql_server] = $service;
+
+        $this->allocate_shared_storage('service');
+        $this->shared['service']->{$id_mysql_server} = $services;
     }
 }

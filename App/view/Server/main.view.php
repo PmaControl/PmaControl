@@ -73,24 +73,26 @@ if (!empty($data['servers'])) {
 
         $style = "";
 
+        $extra = $data['extra'][$server['id']][''];
+
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
-        if (empty($server['is_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (empty($extra['available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
         }
 
         // cas des warning
-        if ($server['is_available'] == -1 && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (!empty($extra['available']) && $extra['available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
         }
 
-        // acknoledge
+        // acknoledge GREEN
         if ($server['is_acknowledged'] !== "0") {
             $style = 'background-color:rgb(92, 184, 92, 0.7); color:#666666';
         }
 
-        // serveur non monitoré
+        // serveur non monitoré   BLUE
         if (empty($server['is_monitored']) || empty($server['client_monitored'])) {
             $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
         }
@@ -128,7 +130,7 @@ if (!empty($data['servers'])) {
 
         echo '<td style="'.$style.'">'.$server['ip'];
 
-        if (!empty($data['extra'][$server['id']]['']['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON") {
+        if (!empty($extra['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON") {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }
 
@@ -187,11 +189,11 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
         //echo $data['extra'][$server['id']]['']['performance_schema'];
 
-        if (!empty($data['extra'][$server['id']]['']['performance_schema'])) {
+        if (!empty($extra['performance_schema'])) {
 
             $checked = array();
 
-            if ($data['extra'][$server['id']]['']['performance_schema'] === "ON") {
+            if ($extra['performance_schema'] === "ON") {
                 $checked = array("checked" => "checked");
             }
             ?>
@@ -216,19 +218,17 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        if (!empty($server['is_available'])) {
-            if (!empty($data['extra'][$server['id']]['']['date'])) {
-                echo $data['extra'][$server['id']]['']['date'];
-            }
-        } else {
-            echo $server['date_refresh'];
+        
+        if (!empty($extra['date'])) {
+            echo $extra['date'];
         }
+        
         echo '</td>';
 
         echo '<td style="'.$style.'">';
 
-        if (!empty($data['extra'][$server['id']]['']['ping'])) {
-            echo Format::ping($data['extra'][$server['id']]['']['ping']);
+        if (!empty($extra['ping'])) {
+            echo Format::ping($extra['ping']);
         }
 
 
@@ -236,6 +236,11 @@ if (!empty($data['servers'])) {
 
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
+
+        if (isset($extra['available'])) {
+            echo $extra['error'];
+        }
+        
         if (strstr($server['error'], '[0m')) {
             $converter = new AnsiToHtmlConverter();
             $html      = $converter->convert($server['error']);
@@ -257,9 +262,7 @@ if (!empty($data['servers'])) {
 
             if (!empty($data['last_date'][$server['id']]['date'])) {
                 echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
-                //echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
             }
-            //echo $server['error'];
         } else {
             echo str_replace("\n", '<br>', trim($server['error']));
 
@@ -268,14 +271,6 @@ if (!empty($data['servers'])) {
                     echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
                 }
             }
-
-
-
-            /*
-              echo "   -   ".$y." years\n";
-              echo $d." days\n";
-              echo $h." hours\n";
-              echo $m." minutes\n"; */
         }
 
 
@@ -283,11 +278,13 @@ if (!empty($data['servers'])) {
 
         $date1   = strtotime($data['last_date'][$server['id']]['date']);
         $date2   = time();
-        $subTime = $date2 - $date1;
+        $subTime = intval($date2 - $date1);
 
-        $d = ($subTime / (60 * 60 * 24));
-        $h = ($subTime / (60 * 60)) % 24;
-        $m = ($subTime / 60) % 60;
+
+	$d = $subTime / (60 * 60 * 24);
+	$h = intval(((int)$subTime / (60 * 60))) % 24;
+	$m = (int)($subTime / 60) % 60;
+
 
         if (!empty($data['processing'][$server['id']])) {
             echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds").'</span>';

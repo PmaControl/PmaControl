@@ -29,7 +29,7 @@ class Monitoring extends Controller
         return true;
     }
 
-    function compare($tab_from = array(), $tab_to)
+    function compare($tab_from = array(), $tab_to=array())
     {
         $tab_update = array_intersect_key($tab_from, $tab_to);
         foreach ($tab_update as $key => $value) {
@@ -304,6 +304,7 @@ class Monitoring extends Controller
         $this->set('data', $data);
     }
 
+    /*
     public function search()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -322,7 +323,7 @@ class Monitoring extends Controller
 
         $this->set('data', $data);
     }
-
+/****/ 
     public function explain()
     {
 
@@ -343,10 +344,7 @@ class Monitoring extends Controller
         $this->set('data', $data);
     }
 
-    public function getExplain($param)
-    {
 
-    }
 
     private function getServer()
     {
@@ -363,20 +361,3 @@ class Monitoring extends Controller
         return $remote;
     }
 }
-/*
- *
- * USE INFORMATION_SCHEMA;
-SELECT
-    TABLES.table_name
-FROM TABLES
-LEFT JOIN KEY_COLUMN_USAGE AS c
-ON (
-       TABLES.TABLE_NAME = c.TABLE_NAME
-   AND c.CONSTRAINT_SCHEMA = TABLES.TABLE_SCHEMA
-   AND c.constraint_name = 'PRIMARY'
-)
-WHERE
-    TABLES.table_schema = 'amdapplication_FR_fr'
-AND c.constraint_name IS NULL;
- *
- */
