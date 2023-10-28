@@ -163001,12 +163001,12 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',2847216,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',2847151,64,'log/daemon_7.log',2,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',2847163,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',2847177,64,'log/daemon_11.log',10,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',2847194,64,'log/daemon_12.log',4,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',2847250,1,'log/daemon_13.log',5,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',64003,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',63947,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',63959,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',63971,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',63985,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',64032,1,'log/daemon_13.log',2,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -170136,9 +170136,6 @@ CREATE TABLE `mysql_server` (
   `is_proxy` int(11) NOT NULL DEFAULT 0,
   `is_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
-  `error` text NOT NULL DEFAULT '',
-  `warning` text NOT NULL DEFAULT '',
-  `date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
   `ssh_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `ssh_date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
   `ssh_error` text NOT NULL DEFAULT '',
@@ -170150,7 +170147,7 @@ CREATE TABLE `mysql_server` (
   KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

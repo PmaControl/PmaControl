@@ -36,7 +36,7 @@ class Agent extends Controller {
 
     public function before($param) {
         $logger = new Logger("Agent");
-        $handler = new StreamHandler(LOG_FILE, Logger::INFO);
+        $handler = new StreamHandler(LOG_FILE, Logger::DEBUG);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
@@ -93,6 +93,7 @@ class Agent extends Controller {
 
             $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $id_daemon . " " . $debug . " >> " . $this->log_file . " & echo $!";
             Debug::debug($cmd);
+            $this->logger->debug("$cmd");
             $pid = trim(shell_exec($cmd));
 
             $this->logger->debug("CMD : " . $cmd);
@@ -244,8 +245,10 @@ class Agent extends Controller {
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
                 $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
 
-                Debug::debug($cmd);
-                shell_exec($cmd);
+               
+                
+                $pid = shell_exec($cmd);
+                $this->logger->debug("{pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
 
                 $refresh_time = $ob->refresh_time;
             }

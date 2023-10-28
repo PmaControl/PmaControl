@@ -257,7 +257,9 @@ class Server extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT a.id,a.name,a.ip,a.port,a.error,
+
+        //TODO add available === 1
+        $sql = "SELECT a.id,a.name,a.ip,a.port,
 			GROUP_CONCAT('',b.name) as dbs,
 			GROUP_CONCAT('',b.id) as id_db,
 			GROUP_CONCAT('',b.data_length) as data_length,
@@ -422,7 +424,10 @@ class Server extends Controller
         } else {
 
 // get server available
-            $sql             = "SELECT * FROM mysql_server a WHERE error = '' ".$this->getFilter()." order by a.name ASC";
+
+  
+            //TODO : add available ===1
+            $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".$this->getFilter()." order by a.name ASC";
             $res             = $db->sql_query($sql);
             $data['servers'] = array();
             while ($ob              = $db->sql_fetch_object($res)) {
@@ -434,7 +439,7 @@ class Server extends Controller
 
 
 // get variable available
-            $sql            = "SELECT name FROM ts_variable WHERE `from` in('status','slave','server') order by name ASC";
+            $sql            = "SELECT name FROM ts_variable WHERE `type` in('INT','DOUBLE') order by name ASC";
             $res            = $db->sql_query($sql);
             $data['status'] = array();
             while ($ob             = $db->sql_fetch_object($res)) {
@@ -798,14 +803,12 @@ var myChart = new Chart(ctx, {
             $data['tag'][] = $tmp;
         }
 
-
         $sql = "SELECT * FROM link__mysql_server__tag";
         $res = $db->sql_query($sql);
         while ($ob  = $db->sql_fetch_object($res)) {
 
             $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
         }
-
 
         $this->set('data', $data);
     }

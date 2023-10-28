@@ -259,11 +259,11 @@ class Integrate extends Controller
 
             switch ($this->memory_file) {
                 case self::ANSWER:
-                    $this->putServerMySQLAvailable($id_servers);
+                    //$this->putServerMySQLAvailable($id_servers);
                     break;
 
                 case self::SYSTEM:
-                    $this->putServerSshAvailable($id_servers);
+                    //$this->putServerSshAvailable($id_servers);
                     break;
 
                 case self::VARIABLES:
@@ -423,8 +423,8 @@ class Integrate extends Controller
 
             //see bug : https://jira.mariadb.org/browse/MDEV-32124
             //and task : https://jira.mariadb.org/browse/MDEV-32125
-            $sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (SELECT id from  mysql_server where (is_available != 1 or  error != '') and id in (".$ids."));";
-            $db->sql_query($sql);
+            //$sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (SELECT id from  mysql_server where (is_available != 1 or  error != '') and id in (".$ids."));";
+            //$db->sql_query($sql);
         }
     }
 
