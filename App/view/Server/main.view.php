@@ -73,12 +73,22 @@ if (!empty($data['servers'])) {
 
         $style = "";
 
-        $extra = $data['extra'][$server['id']][''];
+        $extra = array();
+        if (!empty($data['extra'][$server['id']][''])) {
+            $extra = $data['extra'][$server['id']][''];
+        }
+        else{
+            $style = 'background-color:rgb(150, 150, 150, 0.7); color:#ffffff';
+        }
 
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
         if (empty($extra['available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
-            $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+            
+            if (empty($style))
+            {
+                $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+            }
         }
 
         // cas des warning
@@ -108,7 +118,7 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">'.$i.'</td>';
         echo '<td style="'.$style.'">'.$server['id'].'</td>';
         echo '<td style="'.$style.'">';
-        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : ($server['is_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
+        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['available']) && $extra['available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
         echo '</td>';
 
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
@@ -231,48 +241,12 @@ if (!empty($data['servers'])) {
             echo Format::ping($extra['ping']);
         }
 
-
         echo '</td>';
-
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
-
         if (isset($extra['available'])) {
-            echo $extra['error'];
+            echo $extra['error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
         }
-        
-        if (strstr($server['error'], '[0m')) {
-            $converter = new AnsiToHtmlConverter();
-            $html      = $converter->convert($server['error']);
-
-            echo '<pre style="background-color: black; overflow: auto; height:500px; padding: 10px 15px; font-family: monospace;">'.$html.'</pre>';
-
-            if (!empty($data['last_date'][$server['id']]['date'])) {
-                echo "<br>Last online : ".$data['last_date'][$server['id']]['date'];
-            }
-
-//$server['error'];
-        } else if (strstr($server['error'], 'Call Stack:')) {
-            //echo end(explode("\n", $server['error']));
-            preg_match_all("/\[[\s0-9:_-]+\]\[ERROR\](.*)/", $server['error'], $output_array);
-
-            if (!empty($output_array[0][0])) {
-                echo $output_array[0][0];
-            }
-
-            if (!empty($data['last_date'][$server['id']]['date'])) {
-                echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
-            }
-        } else {
-            echo str_replace("\n", '<br>', trim($server['error']));
-
-            if (!empty(trim($server['error']))) {
-                if (!empty($data['last_date'][$server['id']]['date'])) {
-                    echo '<br><span class="label label-primary">Last online : '.$data['last_date'][$server['id']]['date']."</span>";
-                }
-            }
-        }
-
 
         $data['last_date'][$server['id']]['date'] = $data['last_date'][$server['id']]['date'] ?? "";
 
@@ -309,7 +283,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        if (empty($server['is_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+        if (empty($extra['available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';

@@ -741,12 +741,15 @@ class Aspirateur extends Controller
         //to prevent any trouble with fork
         $db->sql_close();
 
+
+        //to prevent negative value from UI, and impose minimal wait to not kill the serveur
+        if ($refresh_time < 1){
+            $refresh_time = 1;
+        }
+
+
         // le but est de lisser le charge du serveur au maximum afin d'éviter l'effet dans de scie sur le CPU.
         $nb_server_to_monitor = count($server_list);
-
-        if ($refresh_time < 2){
-            $refresh_time = 2;
-        }
 
         $delay = floor(1000000 * $refresh_time / 2 / $nb_server_to_monitor);
 
@@ -825,13 +828,13 @@ class Aspirateur extends Controller
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
 
-            $this->logger->debug("[WORKER] [@Start] process id_mysql_server:$msg->id");
+            $this->logger->debug("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
             //do your business logic here and process this message!
             $this->tryMysqlConnection(array($msg->name, $msg->id));
             // if mysql connection is down, the worker will be down too and we have to restart one
 
-            $this->logger->debug("[WORKER] [@END] process id_mysql_server:$msg->id");
+            $this->logger->debug("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
 
             if (file_exists($lock_file)) {
                 unlink($lock_file);

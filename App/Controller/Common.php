@@ -321,7 +321,7 @@ class Common extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT case error WHEN nullif(a.`error`,'') THEN 1 ELSE 0 END AS error, a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle, a.is_available
+        $sql = "SELECT 0 AS error, a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle, a.is_available
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
             WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
