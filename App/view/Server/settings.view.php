@@ -1,4 +1,3 @@
-
 <?php
 
 use Glial\Html\Form\Form;
@@ -63,6 +62,8 @@ foreach ($data['servers'] as $server) {
 
     $style2 = '';
 
+
+    /*
     if (empty($server['is_available']) && $server['is_monitored'] === "1") {
         $style2 = 'background-color:#d9534f; color:#FFFFFF';
     }
@@ -71,7 +72,7 @@ foreach ($data['servers'] as $server) {
         $style2 = 'background-color:#cccccc; color:#999999';
     }
 
-
+*/
 
 
 

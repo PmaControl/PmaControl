@@ -39,7 +39,7 @@ class Ssh
      * return un objet de type phpseclib\Net\SSH2
      */
 
-    static function connect($ip, $port = 22, $user, $password)
+    static function connect($ip, $port, $user, $password)
     {
 
         /*
