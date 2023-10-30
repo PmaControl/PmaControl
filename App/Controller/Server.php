@@ -730,7 +730,6 @@ var myChart = new Chart(ctx, {
                         $_POST['mysql_server'][$key]['is_monitored'] = 1;
                     }
 
-
                     $server_main                                   = array();
                     $server_main['mysql_server']['id']             = $value;
                     $server_main['mysql_server']['display_name']   = $_POST['mysql_server'][$key]['display_name'];
