@@ -337,7 +337,7 @@ class Dot2 extends Controller
     {
 
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,ip,port,is_available FROM mysql_server";
+        $sql = "SELECT id,ip,port FROM mysql_server";
 
         $res = $db->sql_query($sql);
 
@@ -362,7 +362,7 @@ class Dot2 extends Controller
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_cluster_status", "status::wsrep_local_state", "status::wsrep_local_state_comment",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "variables::server_id", "variables::auto_increment_increment",
-                "variables::auto_increment_offset",
+                "variables::auto_increment_offset","mysql_server::available",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid"), "ALL");
 
         //Debug::debug($temp);
@@ -506,11 +506,11 @@ class Dot2 extends Controller
             //Debug::debug($server, "server");
 //$this->graph_node[$id_mysql_server] = $server;
 
-            if ($this->servers[$id_mysql_server]['is_available'] === "1") {
+            if ($server['available'] === "1") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_OK'];
-            } else if ($this->servers[$id_mysql_server]['is_available'] === "0") {
+            } else if ($server['available'] === "0") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_ERROR'];
-            } else if ($this->servers[$id_mysql_server]['is_available'] === "-1") {
+            } else if ($server['available'] === "2") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_BUSY'];
             }
 

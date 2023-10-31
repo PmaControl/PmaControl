@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Library\Extraction;
+use App\Library\Debug;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
@@ -295,6 +297,19 @@ class Common extends Controller
 
         //debug($param);
         
+        
+        $all_selectable = false;
+        foreach ($data['options'] as $key => $val) {
+            if ($key === "all_selectable") {
+                $all_selectable = true;
+
+                unset($data['options'][$key]);
+            }
+        }
+
+
+
+        /* check if need to remove */
         $mysql_server_specify = array();
         foreach ($data['options'] as $key => $val) {
             if ($key === "mysql_server_specify") {
@@ -313,6 +328,7 @@ class Common extends Controller
                 unset($data['options'][$key]);
             }
         }
+        /** end to remove */
 
         
         
@@ -321,7 +337,9 @@ class Common extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT 0 AS error, a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle, a.is_available
+        $available = self::getAvailable();
+
+        $sql = "SELECT ".$available['case'].", a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
             WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
@@ -334,7 +352,20 @@ class Common extends Controller
         while ($ob                   = $db->sql_fetch_object($res)) {
             $tmp            = [];
             $tmp['id']      = $ob->id;
-            //$tmp['error']   = $ob->error;
+            $tmp['error']   = $ob->error;
+
+            if ($servers_not_available_disabled)   {
+                if ($ob->error !== "0"){
+                    $tmp['disabled']   = "1";
+                }
+                else{
+                    $tmp['disabled']   = "0";
+                }
+            }
+            else{
+                $tmp['disabled']   = "1";
+            }
+            
             $tmp['libelle'] = $ob->display_name." (".$ob->ip.")";
 
             //$tmp['extra'] = array("data-content" => "<span title='" . $ob->libelle . "' class='label label-" . $ob->class . "'>" . $ob->letter . "</span> " . $ob->display_name . " <small class='text-muted'>" . $ob->ip . "</small>");
@@ -343,13 +374,12 @@ class Common extends Controller
             $remove_tag_a  = strip_tags($pretty_server, '<span><small>');
             $tmp['extra']  = array("data-content" => $remove_tag_a);
 
-            if (empty($ob->is_available) && $servers_not_available_disabled === true) {
-                $tmp['extra']["disabled"] = "disabled";
+            if ($ob->error !== "0" && ! $all_selectable ) {
+                //$tmp['extra']["disabled"] = "disabled";
             }
 
             $data['list_server'][] = $tmp;
         }
-
 
         $this->set('data', $data);
 
@@ -475,5 +505,58 @@ class Common extends Controller
         }
 
         return self::$tags;
+    }
+
+
+    static public function getAvailable($param = array())
+    {
+
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $servers = Extraction::display(array('mysql_server::available'));
+
+        $data =array();
+        $available = array();
+        $down = array();
+        $warning = array();
+        
+        foreach($servers as $id_mysql_server => $server)
+        {
+            $data['id_mysql_server'][$id_mysql_server] = $server['']['available'];
+            if ($server['']['available'] === "1"){
+                $available[] = $id_mysql_server;
+            }elseif ($server['']['available'] === "0"){
+                $down[] = $id_mysql_server;
+            }elseif ($server['']['available'] === "2"){
+                $warning[] = $id_mysql_server;
+            }
+            
+        }
+
+        $caseArray = array();
+        
+        foreach ($data['id_mysql_server'] as $id_mysql_server => $value) {
+            if ($value == 1) {
+                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 0\n";
+            } elseif($value == 0) {
+                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 1\n";
+            }
+            elseif($value == 2) {
+                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 2\n";
+            }
+        }
+        $caseArray[] = "ELSE 3\n";
+
+        $data['case'] = "CASE " . implode(' ', $caseArray) . " END AS error";
+
+        $data['available'] = implode(",", $available);
+        $data['down'] = implode(",", $down);
+        $data['warning'] = implode(",", $warning);
+
+        Debug::debug($data);
+
+        return $data;
+
     }
 }

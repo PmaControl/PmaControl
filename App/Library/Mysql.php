@@ -666,7 +666,6 @@ END IF;";
      * @license GNU/GPL
      * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
      * @param array
-     * @return void
      * @description construct the object and set the connection available
      * @access public
      * @example new Sgbd(array from \Glial\Synapse\Config);

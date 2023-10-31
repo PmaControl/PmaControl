@@ -54,7 +54,7 @@ echo '<th>'."Replicate ignore db".'</th>';
 echo '<th>'.__("Date").'</th>';
 echo '</tr>';
 
-//debug($data['hostname']);
+//debug($data);
 
 $i = 0;
 
@@ -75,9 +75,9 @@ foreach ($data['slave'] as $slaves) {
 
         $class = "";
         if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
-            $master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']];
+            $id_mysql_server_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
 
-            if ($master['is_available'] === "0") {
+            if ($data['info_server'][$id_mysql_server_master]['']['available'] === "0") {
                 $class = "pma pma-danger";
             }
         }
@@ -101,9 +101,11 @@ foreach ($data['slave'] as $slaves) {
         echo '</td>';
 
         $class = "";
-        if (empty($data['server']['master'][$slave['id_mysql_server']]['is_available'])) {
-
+        if (empty($data['info_server'][$slave['id_mysql_server']]['']['available'])) {
             $class = "pma pma-danger";
+        }elseif($data['info_server'][$slave['id_mysql_server']]['']['available'])
+        {
+            $class = "pma pma-warning";
         }
 
         echo '<td class="'.$class.'">';

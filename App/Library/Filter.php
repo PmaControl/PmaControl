@@ -181,6 +181,8 @@ trait Filter
         $lines[] = $this->formatVersion($server['version']);
         $lines[] = "Server-id : ".$server['server_id'];
         $lines[] = "Auto_inc : (".$server['auto_increment_offset']." / ".$server['auto_increment_increment'].")";
+        
+        /* TODO replace with good filter
         if (!empty($server['wsrep_local_state_comment'])) {
 
             if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
@@ -188,7 +190,7 @@ trait Filter
             } else {
                 $lines[] = "Galera status : ".__("Out of order");
             }
-        }
+        }*/
 
 
         foreach ($lines as $line) {

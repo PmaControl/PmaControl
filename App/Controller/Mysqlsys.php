@@ -19,6 +19,7 @@ class Mysqlsys extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         
+        $data = array();
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_server']['id'])) {
@@ -37,7 +38,11 @@ class Mysqlsys extends Controller {
             $data = [];
 
             // get server available
-            $sql = "SELECT * FROM mysql_server a WHERE error = '' " . self::getFilter() . " order by a.name ASC";
+            $available = Common::getAvailable();
+            $case = $available['case'];
+
+            $sql = "SELECT *,".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " order by a.name ASC";
+
             $res = $db->sql_query($sql);
             $data['servers'] = array();
             while ($ob = $db->sql_fetch_object($res)) {
@@ -50,6 +55,8 @@ class Mysqlsys extends Controller {
                     $link_name = $ob->name;
                 }
             }
+
+            //Debug::debug($link_name);
 
             if (!empty($link_name)) {
 
@@ -94,41 +101,6 @@ class Mysqlsys extends Controller {
         $this->set('data', $data);
     }
 
-//to mutualize
-    /* deprecated
-      private function getFilter()
-      {
-
-      $where = "";
-
-
-      if (!empty($_GET['environment']['libelle'])) {
-      $environment = $_GET['environment']['libelle'];
-      }
-      if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-      $environment                    = $_SESSION['environment']['libelle'];
-      $_GET['environment']['libelle'] = $environment;
-      }
-
-      if (!empty($_SESSION['client']['libelle'])) {
-      $client = $_SESSION['client']['libelle'];
-      }
-      if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-      $client                    = $_GET['client']['libelle'];
-      $_GET['client']['libelle'] = $client;
-      }
-
-
-      if (!empty($environment)) {
-      $where .= " AND a.id_environment IN (".implode(',', json_decode($environment, true)).")";
-      }
-
-      if (!empty($client)) {
-      $where .= " AND a.id_client IN (".implode(',', json_decode($client, true)).")";
-      }
-
-      return $where;
-      } */
 
     public function install() {
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
@@ -192,7 +164,11 @@ class Mysqlsys extends Controller {
 
 
 // get server available
-        $sql = "SELECT name FROM mysql_server a WHERE error = '' " . self::getFilter() . " AND id=" . $id_mysql_server;
+
+        $available = Common::getAvailable();
+        $case = $available['case'];
+
+        $sql = "SELECT name, ".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {

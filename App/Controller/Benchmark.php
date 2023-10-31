@@ -818,7 +818,8 @@ Threads fairness:
 //debug($_GET['benchmark_main']);
 // get server available
         // génération des <select></select>
-        $sql             = "SELECT * FROM mysql_server a WHERE error = '' ".$this->getFilter()." order by a.name ASC";
+        //TODO : add filter on error where 1=1
+        $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".$this->getFilter()." order by a.name ASC";
         $res             = $db->sql_query($sql);
         $data['servers'] = array();
         while ($ob              = $db->sql_fetch_object($res)) {

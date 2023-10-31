@@ -244,7 +244,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
-        if (isset($extra['available'])) {
+        if (isset($extra['available']) && $extra['available']==="0") {
             echo $extra['error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
         }
 
@@ -275,7 +275,7 @@ if (!empty($data['servers'])) {
             echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
-        if ($server['is_available'] == -1) {
+        if (!empty($extra['available']) && $extra['available'] === "2") {
             echo '&nbsp;'.$server['warning'];
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
         }

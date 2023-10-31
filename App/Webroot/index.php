@@ -108,6 +108,7 @@ try {
     if (IS_CLI)
     {
         echo \Glial\Cli\Color::getColoredString("[".date("Y-m-d H:i:s")."][ERROR] ".$e->getMessage()." ", "black", "red")."\n";
+        //trigger_error($e->getMessage()." {".$e->getFile().":".$e->getLine()."}", E_USER_ERROR);
     }
     else
     {

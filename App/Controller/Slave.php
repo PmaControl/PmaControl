@@ -47,9 +47,11 @@ class Slave extends Controller
           usort($data['slave'], 'invenDescSort');
          */
 
-        $data['info_server'] = Extraction::display(array("variables::hostname", "variables::is_proxysql"));
+        $data['info_server'] = Extraction::display(array("variables::hostname", "variables::is_proxysql", "mysql_server::available"));
 
-        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
+        
+
+        $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
@@ -201,7 +203,11 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $data['slave'] = array();
 
-        if ($server['is_available'] === "1") {
+        $data['server'] = Extraction::display(array("mysql_server::available"));
+
+        //debug($data['server'][$server['id']]['']['available']);
+
+        if ($data['server'][$server['id']]['']['available'] === "1") {
             $link_slave = Sgbd::sql($server['name']);
 
             
@@ -237,7 +243,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         );
 
         $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date, $date), true, true);
-
         
         $this->generateGraphSlave($slaves);
 
