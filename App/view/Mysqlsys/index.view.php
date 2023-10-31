@@ -26,7 +26,7 @@ function remove($array) {
     return $ret;
 }
 
-echo '<br />';
+echo '<br /><br />';
 echo '<form action="" method="POST">';
 echo __("Server") . " : ";
 
