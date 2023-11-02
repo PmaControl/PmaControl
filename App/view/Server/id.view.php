@@ -11,7 +11,7 @@ use Glial\Html\Form\Form;
 
     <?php
     \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
-    echo '<br >';
+    echo '<br><br>';
     //print_r($_GET);
     //echo $data['sql'];
 

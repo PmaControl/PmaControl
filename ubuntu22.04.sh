@@ -33,7 +33,7 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 apt-get -y install php8.1 apache2 graphviz  php8.1-ldap php-json php8.1-curl php8.1-cli php8.1-mbstring php8.1-intl php8.1-fpm libapache2-mod-php8.1 php8.1-xml 
 apt -y install php8.1-mysql php8.1-gd php8.1-gmp
 
-
+apt-get -y install phpi8.1-ldap
 apt-get -y install mariadb-plugin-rocksdb 
 
 apt-get -y install logrotate
