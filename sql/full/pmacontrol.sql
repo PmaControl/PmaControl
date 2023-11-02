@@ -162961,6 +162961,37 @@ INSERT INTO `backup_type` VALUES (2,'xtrabackup');
 UNLOCK TABLES;
 
 --
+-- Table structure for table `benchmark_config`
+--
+
+DROP TABLE IF EXISTS `benchmark_config`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `benchmark_config` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `threads` text NOT NULL,
+  `lua_script` varchar(255) NOT NULL,
+  `tables_count` int(11) NOT NULL,
+  `table_size` int(11) NOT NULL,
+  `max_time` int(11) NOT NULL,
+  `mode` varchar(64) NOT NULL,
+  `script` varchar(250) NOT NULL,
+  `pid` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `benchmark_config`
+--
+
+LOCK TABLES `benchmark_config` WRITE;
+/*!40000 ALTER TABLE `benchmark_config` DISABLE KEYS */;
+INSERT INTO `benchmark_config` VALUES (1,'','',0,0,0,'','',1349421);
+/*!40000 ALTER TABLE `benchmark_config` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `daemon_main`
 --
 
@@ -163001,12 +163032,12 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',64003,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',63947,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',63959,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',63971,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',63985,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',64032,1,'log/daemon_13.log',2,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',1206409,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1206353,64,'log/daemon_7.log',2,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',1206365,64,'log/daemon_9.log',30,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',1206377,64,'log/daemon_11.log',1,5,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',1206391,64,'log/daemon_12.log',1,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',1206439,1,'log/daemon_13.log',5,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163073,12 +163104,7 @@ INSERT INTO `environment` VALUES (3,'Recipe','recette','default','R');
 INSERT INTO `environment` VALUES (4,'Integration','integration','info','I');
 INSERT INTO `environment` VALUES (5,'Developpement','dev','success','D');
 INSERT INTO `environment` VALUES (6,'Test','test','primary','T');
-INSERT INTO `environment` VALUES (8,'SANDBOX','sandbox','info','S');
-INSERT INTO `environment` VALUES (16,'Recette','recette','info','R');
-INSERT INTO `environment` VALUES (17,'Dev','dev','info','D');
-INSERT INTO `environment` VALUES (18,'Backup','backup','info','B');
-INSERT INTO `environment` VALUES (19,'Prod','prod','info','P');
-INSERT INTO `environment` VALUES (20,'','','info','');
+INSERT INTO `environment` VALUES (8,'Sandbox','sandbox','primary','S');
 /*!40000 ALTER TABLE `environment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -169326,27 +169352,6 @@ CREATE TABLE `backup_storage_space` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `benchmark_config`
---
-
-DROP TABLE IF EXISTS `benchmark_config`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `benchmark_config` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `threads` text NOT NULL,
-  `lua_script` varchar(255) NOT NULL,
-  `tables_count` int(11) NOT NULL,
-  `table_size` int(11) NOT NULL,
-  `max_time` int(11) NOT NULL,
-  `mode` varchar(64) NOT NULL,
-  `script` varchar(250) NOT NULL,
-  `pid` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `benchmark_main`
 --
 
@@ -170136,6 +170141,9 @@ CREATE TABLE `mysql_server` (
   `is_proxy` int(11) NOT NULL DEFAULT 0,
   `is_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
+  `error` text NOT NULL DEFAULT '',
+  `warning` text NOT NULL DEFAULT '',
+  `date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
   `ssh_available` int(11) NOT NULL DEFAULT 0 COMMENT '-1= not asnwered, 0 = HS, 1=OK',
   `ssh_date_refresh` datetime NOT NULL DEFAULT current_timestamp(),
   `ssh_error` text NOT NULL DEFAULT '',
@@ -170147,7 +170155,7 @@ CREATE TABLE `mysql_server` (
   KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
