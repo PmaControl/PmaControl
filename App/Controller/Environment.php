@@ -25,7 +25,7 @@ class Environment extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM environment order by `libelle`";
+        $sql = "SELECT * FROM environment order by `id`";
 
         $res = $db->sql_query($sql);
 
@@ -56,18 +56,6 @@ class Environment extends Controller {
         }
     }
 
-    public function up($param) {
-
-        Debug::parseDebug($param);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $id_menu = $param[0];
-        $id = $param[1];
-
-
-        header("location: " . LINK . "environment/index/");
-    }
 
     public function add($param) {
         $this->di['js']->addJavascript(array("bootstrap-select.min.js"));

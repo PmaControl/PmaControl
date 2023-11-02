@@ -65,8 +65,10 @@ if (version_compare($data['sysbench'], '0.5', ">=")) {
         ?>
     <div class="well">
         <h1>Information</h1>
-        <p style="font-size: 15px"><?= __('You need to install sysbench v0.5 or more before to use this tools') ?> (<?= $data['sysbench'] ?>)</p>
-
+        <p style="font-size: 15px"><?= __('You need to install sysbench v0.5 or more before to use this tools') ?></p>
+        <p>&nbsp;</p>
+        <p style="font-size: 15px"><?= __('To install Sysbench on debian / Ubuntu :') ?> <code>apt install sysbench</code></p>
+        <p style="font-size: 15px"><?= __('To install Sysbench on ReHat /CentOs :') ?> <code>dnf install sysbench</code></p>
     </div>
     <?php
 }

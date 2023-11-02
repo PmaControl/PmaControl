@@ -66,8 +66,10 @@ class Server extends Controller
     {
         
     }
-    /*
 
+
+
+    /*
       public function listing($param)
       {
       // doc : http://silviomoreto.github.io/bootstrap-select/examples/#standard-select-boxes
@@ -740,7 +742,7 @@ var myChart = new Chart(ctx, {
                     $ret = $db->sql_save($server_main);
 
                     if (!$ret) {
-                        debug($server_main);
+                        
                         print_r($db->sql_error());
                     }
                 }
@@ -1000,8 +1002,6 @@ var myChart = new Chart(ctx, {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
-
-        debug($sql);
         $db->sql_query($sql);
 
         header("location: ".LINK.$this->getClass()."/main/");

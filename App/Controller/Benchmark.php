@@ -163,7 +163,7 @@ class Benchmark extends Controller
                       SET `id_benchmark_main` = '".$id_benchmark_main."',
                       `date` = '".date("Y-m-d H:i:s")."',
                       `threads`  = '".$thread."',
-                      `mode`  = '".$mode."',
+                      `mode`  = 'mode',
                       `read` = '".$this->getQueriesPerformedRead($input_lines)."',
                       `write` = '".$this->getQueriesPerformedWrite($input_lines)."',
                       `other` = '".$this->getQueriesPerformedOther($input_lines)."',
@@ -524,17 +524,7 @@ Threads fairness:
         return false;
     }
 
-    public function saveVariables($id_benchmark_main)
-    {
-        $name_server = $param[0];
-        $id_server   = $param[1];
 
-        $mysql_tested = Sgbd::sql($name_server);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $variables = $mysql_tested->getVariables();
-    }
 
     public function install()
     {
@@ -659,6 +649,8 @@ Threads fairness:
 
         $i = 1;
 
+        $tmp =array();
+
         if (!empty($results)) {
             foreach ($results as $title => $result) {
 
@@ -676,7 +668,7 @@ Threads fairness:
 
                     $j = $j % count($this->colors);
 
-                    $tmp[] .= '
+                    $tmp[] = '
                 {
                     label: "'.$benchmark[$server].'",
                     data: ['.$res_by_server.'],
@@ -729,7 +721,7 @@ Threads fairness:
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if (! IS_CLI && $_SERVER['REQUEST_METHOD'] == "POST") {
 
             if (!empty($_POST['benchmark'])) {
                 if (!empty($_POST['mysql_server']['id'])) {
@@ -801,6 +793,7 @@ Threads fairness:
         // version de sysbench
         $data['sysbench'] = $this->getSysbenchVersion();
 
+
         // chargement de la config
         $sql = "SELECT * FROM benchmark_config where id=1";
         $res = $db->sql_query($sql);
@@ -815,8 +808,8 @@ Threads fairness:
             //$_GET['benchmark_main']['read_only']    = $ob->read_only;
         }
 
-//debug($_GET['benchmark_main']);
-// get server available
+        //debug($_GET['benchmark_main']);
+        // get server available
         // génération des <select></select>
         //TODO : add filter on error where 1=1
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".$this->getFilter()." order by a.name ASC";
@@ -860,15 +853,15 @@ Threads fairness:
 
 
         /*
-          $read_o = array("ON", "OFF");
+        $read_o = array("ON", "OFF");
 
-          $data['read_only'] = array();
-          foreach ($read_o as $mode) {
-          $tmp                 = array();
-          $tmp['id']           = $mode;
-          $tmp['libelle']      = $mode;
-          $data['read_only'][] = $tmp;
-          } */
+        $data['read_only'] = array();
+        foreach ($read_o as $mode) {
+        $tmp                 = array();
+        $tmp['id']           = $mode;
+        $tmp['libelle']      = $mode;
+        $data['read_only'][] = $tmp;
+        } */
 
         $data['max_time'] = array();
 
@@ -879,7 +872,8 @@ Threads fairness:
             $data['max_time'][] = $tmp;
         }
 
-
+    
+    
         $this->set("data", $data);
     }
 
@@ -1030,7 +1024,7 @@ Threads fairness:
 
             echo "#".$this->count++."\t";
             echo $file.":".$line."\t";
-            echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
+            echo Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
             echo $string."\n";
         }
     }
@@ -1085,22 +1079,24 @@ Threads fairness:
         Debug::parseDebug($param);
         $version = $param[0];
 
+        $ret = '';
         if (version_compare($version, '0.5', "=")) {
             $ret = self::DIRECTORY_LUA_SYSBENCH_05;
         } else if (version_compare($version, '1', ">=")) {
             $ret = self::DIRECTORY_LUA_SYSBENCH_1;
         } else {
-            Throw new \Exception("This verion of sysbench is not supported yet");
+            //Throw new \Exception("This verion of sysbench is not supported yet");
         }
 
         if (!is_dir($ret)) {
-            Throw new \Exception("The directory does not exist : $ret", 1548);
+            //Throw new \Exception("The directory does not exist : $ret", 1548);
         }
 
         Debug::debug($ret, "directory lua");
 
         return $ret;
     }
+
 
     public function script($param)
     {

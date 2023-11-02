@@ -17,15 +17,15 @@ class Integrate extends Controller
     const MAX_FILE_AT_ONCE = 20;
 
     /* not used ? have to remove */
-    const VARIABLES        = "variable";
-    const ANSWER           = "answer";   //merge of SHOW GLOBAL STATUS / SHOW MASTER STATUS / SHOW SLAVE HOSTS / SHOW SLAVE STATUS
-    const SYSTEM           = "ssh_stats";
-    const HARDWARE         = "hardware";
-    const SERVICE         = "service";
+    const VARIABLES = "variable";
+    const ANSWER = "answer"; //merge of SHOW GLOBAL STATUS / SHOW MASTER STATUS / SHOW SLAVE HOSTS / SHOW SLAVE STATUS
+    const SYSTEM = "ssh_stats";
+    const HARDWARE = "hardware";
+    const SERVICE = "service";
 
     var $shared;
     var $memory_file = "answer";
-    var $files       = array();
+    var $files = array();
 
     public function evaluate($param)
     {
@@ -49,7 +49,7 @@ class Integrate extends Controller
         $db         = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
 
-        $files = glob(TMP."tmp_file/".$memory_file."_*");
+        $files = glob(TMP . "tmp_file/" . $memory_file . "_*");
 
 
         if (empty($files)) {
@@ -61,7 +61,6 @@ class Integrate extends Controller
         }
 
         array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
-        //usort( $files, function( $a, $b ) { return filemtime($a) - filemtime($b); } );
 
         Debug::debug($files);
 
@@ -135,7 +134,7 @@ class Integrate extends Controller
                                                     //$variables_to_insert[]                     = '("'.$slave_variable.'", '.$this->getTypeOfData($slave_value).', "'.$type_metrics.'", "slave")';
                                                     //  '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
 
-                                                    $variables_to_insert[] = '('.$id_ts_file.',"'.$slave_variable.'", "'.$this->getTypeOfData($value).'", "'.$type_metrics.'", "slave")';
+                                                    $variables_to_insert[] = '(' . $id_ts_file . ',"' . $slave_variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "slave")';
 
                                                     Debug::debug($value);
                                                     Debug::debug($variables_to_insert);
@@ -154,11 +153,11 @@ class Integrate extends Controller
 
                                                     $slave_value = $db->sql_real_escape_string($slave_value);
 
-                                                    $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
-                                                        .'"'.$connection_name.'", '
-                                                        .$variables[$type_metrics][$slave_variable]['id'].', "'
-                                                        .$date.'", "'
-                                                        .$slave_value.'")';
+                                                    $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
+                                                        . '"' . $connection_name . '", '
+                                                        . $variables[$type_metrics][$slave_variable]['id'] . ', "'
+                                                        . $date . '", "'
+                                                        . $slave_value . '")';
                                                 } else {
 
                                                     if ($slave_value == "") {
@@ -166,18 +165,18 @@ class Integrate extends Controller
                                                     }
 
                                                     if ($variables[$type_metrics][$slave_variable]['type'] == "DOUBLE") {
-                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
-                                                            .'"'.$connection_name.'", '
-                                                            .$variables[$type_metrics][$slave_variable]['id'].', "'
-                                                            .$date.'", "'
-                                                            .$slave_value.'")';
+                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
+                                                            . '"' . $connection_name . '", '
+                                                            . $variables[$type_metrics][$slave_variable]['id'] . ', "'
+                                                            . $date . '", "'
+                                                            . $slave_value . '")';
                                                     } else {
 
-                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '('.$id_server.','
-                                                            .'"'.$connection_name.'", '
-                                                            .$variables[$type_metrics][$slave_variable]['id'].', "'
-                                                            .$date.'", '
-                                                            .$slave_value.')';
+                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
+                                                            . '"' . $connection_name . '", '
+                                                            . $variables[$type_metrics][$slave_variable]['id'] . ', "'
+                                                            . $date . '", '
+                                                            . $slave_value . ')';
                                                     }
                                                 }
                                             }
@@ -202,10 +201,10 @@ class Integrate extends Controller
                                                 $value = $db->sql_real_escape_string($value);
                                             }
 
-                                            $insert[$variables[$type_metrics][$variable]['type']][] = '('.$id_server.','
-                                                .$variables[$type_metrics][$variable]['id'].', "'
-                                                .$date.'", "'
-                                                .$value.'")';
+                                            $insert[$variables[$type_metrics][$variable]['type']][] = '(' . $id_server . ','
+                                                . $variables[$type_metrics][$variable]['id'] . ', "'
+                                                . $date . '", "'
+                                                . $value . '")';
                                         } else {
                                             if ($value === "-1" || $value === "") {
                                                 continue;
@@ -218,18 +217,18 @@ class Integrate extends Controller
                                                 Debug::debug($insert, "val to insert in ts_variable");
 
                                                 $var_index[$type_metrics][$variable] = 1;
-                                                $variables_to_insert[]               = '('.$id_ts_file.',"'.$variable.'", "'.$this->getTypeOfData($value).'", "'.$type_metrics.'", "general")';
+                                                $variables_to_insert[]               = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
                                             }
                                         }
                                     }
-                                }//end variable
+                                } //end variable
                             }
                         }
                     }
                 } // date
             }
 
-            Debug::checkPoint("before insert file : ".$file);
+            Debug::checkPoint("before insert file : " . $file);
 
             if (file_exists($file)) {
                 unlink($file);
@@ -290,7 +289,7 @@ class Integrate extends Controller
         $res = $db->sql_query($sql);
 
         $variables = array();
-        while ($ob        = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $variables[$ob->from][$ob->name]['id']   = $ob->id;
             $variables[$ob->from][$ob->name]['type'] = $ob->type;
         }
@@ -304,7 +303,7 @@ class Integrate extends Controller
         if (strstr($value, ".")) {
             return true;
         }
-        return ((int) $value != $value);  // problem avec PHP_INT_MAX
+        return ((int) $value != $value); // problem avec PHP_INT_MAX
     }
     /* Type :
      *  - 1 => int
@@ -330,7 +329,7 @@ class Integrate extends Controller
 
             //case of negative int (not allowed)
             if ($value < 0) {
-                throw new \Exception("PMACTRL-497 : Negative value not allowed (".$value.")");
+                throw new \Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
             }
         }
 
@@ -344,13 +343,12 @@ class Integrate extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
-        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES ".implode(",", $variables_to_insert).";";
+        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
         $res = $db->sql_query($sql);
 
 
         if (!$res) {
             throw new \Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
-            exit;
         }
     }
 
@@ -367,10 +365,10 @@ class Integrate extends Controller
         Debug::checkPoint("start save");
 
         foreach ($values as $type => $elems) {
-            $sql = "INSERT INTO `ts_value_general_".strtolower($type)."` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES ".implode(",", $elems).";";
+            $sql = "INSERT INTO `ts_value_general_" . strtolower($type) . "` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES " . implode(",", $elems) . ";";
             $db->sql_query($sql);
 
-            Debug::checkPoint("saved ".$type." elems : ".count($elems));
+            Debug::checkPoint("saved " . $type . " elems : " . count($elems));
         }
     }
 
@@ -380,7 +378,7 @@ class Integrate extends Controller
         $db         = Sgbd::sql(DB_DEFAULT);
 
         foreach (array('int', 'double', 'text') as $type) {
-            $db->sql_query("TRUNCATE TABLE `ts_value_general_".strtolower($type)."`;");
+            $db->sql_query("TRUNCATE TABLE `ts_value_general_" . strtolower($type) . "`;");
         }
     }
 
@@ -398,7 +396,7 @@ class Integrate extends Controller
 
         foreach ($values as $type => $elems) {
 
-            $sql = "INSERT INTO `ts_value_".$val."_".strtolower($type)."` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES ".implode(",\n", $elems).";";
+            $sql = "INSERT INTO `ts_value_" . $val . "_" . strtolower($type) . "` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES " . implode(",\n", $elems) . ";";
 
             Debug::sql($sql);
             $gg = $db->sql_query($sql);
@@ -407,40 +405,12 @@ class Integrate extends Controller
               debug($db->sql_error());
               } */
 
-            Debug::checkPoint("saved ".$type." elems : ".count($elems));
+            Debug::checkPoint("saved " . $type . " elems : " . count($elems));
         }
     }
 
-    private function putServerMySQLAvailable($id_servers)
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $ids = implode(",", array_unique($id_servers));
-
-        if (!empty($ids)) {
-            //il faut ajouter le non primary pour les neud galera qui prenne pas de query
-
-            //see bug : https://jira.mariadb.org/browse/MDEV-32124
-            //and task : https://jira.mariadb.org/browse/MDEV-32125
-            //$sql = "UPDATE mysql_server SET is_available = 1, error = '',is_acknowledged=0  WHERE id in (SELECT id from  mysql_server where (is_available != 1 or  error != '') and id in (".$ids."));";
-            //$db->sql_query($sql);
-        }
-    }
-
-    private function putServerSshAvailable($id_servers)
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
-
-
-        $ids = implode(",", array_unique($id_servers));
-
-        if (!empty($ids)) {
-            //il faut ajouter le non primary pour les neud galera qui prenne pas de query
-            $sql = "UPDATE mysql_server SET ssh_available = 1, ssh_error = '' WHERE id in (".$ids.")";
-            $db->sql_query($sql);
-        }
-    }
 
     private function linkServerVariable($history, $memory_file)
     {
@@ -452,19 +422,19 @@ class Integrate extends Controller
         foreach ($history as $date => $is_servers) {
             //Debug::debug($is_servers);
 
-            $sql = "UPDATE `ts_max_date`  SET `date_p4`=`date_p3`,`date_p3`=`date_p2`,`date_p2`=`date_p1`,`date_p1`=`date`,`date`= '".$date."'
-                WHERE `id_mysql_server` IN (".implode(",", $is_servers).") AND `id_ts_file`=".$id_file_name.";";
+            $sql = "UPDATE `ts_max_date`  SET `date_p4`=`date_p3`,`date_p3`=`date_p2`,`date_p2`=`date_p1`,`date_p1`=`date`,`date`= '" . $date . "'
+                WHERE `id_mysql_server` IN (" . implode(",", $is_servers) . ") AND `id_ts_file`=" . $id_file_name . ";";
 
             Debug::sql($sql);
             $db->sql_query($sql);
 
             foreach ($is_servers as $id_server) {
-                $sql3[] = "(".$id_server.", ".$id_file_name.", '".$date."')";
+                $sql3[] = "(" . $id_server . ", " . $id_file_name . ", '" . $date . "')";
             }
         }
 
         $sql2 = "INSERT INTO `ts_date_by_server` (`id_mysql_server`,`id_ts_file`, `date`) VALUES ";
-        $sql4 = $sql2.implode(",\n", $sql3).";";
+        $sql4 = $sql2 . implode(",\n", $sql3) . ";";
 
         Debug::sql($sql4);
 
@@ -501,7 +471,7 @@ class Integrate extends Controller
         }
 
         if (empty($this->files[$memory_file])) {
-            throw new \Exception('PMACTRL-098 : Impossible to find this file name : "'.$memory_file.'"');
+            throw new \Exception('PMACTRL-098 : Impossible to find this file name : "' . $memory_file . '"');
         }
         $id_file_name = $this->files[$memory_file];
 
@@ -539,12 +509,12 @@ class Integrate extends Controller
     public function feedMysqlVariable($data)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_variable` WHERE `id_mysql_server` IN (".implode(',', array_keys($data)).");";
+        $sql = "SELECT * FROM `mysql_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $in_base = array();
-        while ($ob      = $db->sql_fetch_object($res)) {
+        while ($ob = $db->sql_fetch_object($res)) {
             $in_base[$ob->id_mysql_server][$ob->variable] = $ob->value;
         }
         $in_base[1]['jexistedansmesreve'] = "dream!";
@@ -574,12 +544,12 @@ class Integrate extends Controller
             $elem_ins = array();
             foreach ($insert as $id_mysql_server => $variables) {
                 foreach ($variables as $variable => $value) {
-                    $elem_ins[] = '('.$id_mysql_server.',"'.$variable.'", "'.$db->sql_real_escape_string($value).'")';
+                    $elem_ins[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
                 }
             }
 
             if (!empty($elem_ins)) {
-                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES ".implode(",", $elem_ins).";";
+                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES " . implode(",", $elem_ins) . ";";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }
@@ -591,11 +561,11 @@ class Integrate extends Controller
             $elem_del = array();
             foreach ($delete as $id_mysql_server => $variables) {
                 foreach ($variables as $variable => $value) {
-                    $elem_del[] = 'SELECT id FROM mysql_server WHERE id_mysql_server='.$id_mysql_server.' AND `variable` ="'.$variable.'"';
+                    $elem_del[] = 'SELECT id FROM mysql_server WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable` ="' . $variable . '"';
                 }
             }
             if (!empty($elem_del)) {
-                $sql = "DELETE FROM mysql_variable WHERE id IN (".implode(" UNION ", $elem_del).");";
+                $sql = "DELETE FROM mysql_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }
@@ -607,11 +577,11 @@ class Integrate extends Controller
             $elem_upt = array();
             foreach ($update as $id_mysql_server => $variables) {
                 foreach ($variables as $variable => $value) {
-                    $elem_upt[] = '('.$id_mysql_server.',"'.$variable.'", "'.$db->sql_real_escape_string($value).'")';
+                    $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
                 }
             }
             if (!empty($elem_upt)) {
-                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES ".implode(",", $elem_upt)." ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
+                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }
