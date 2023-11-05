@@ -15,6 +15,7 @@ use App\Library\Mysql;
 use Glial\Security\Crypt\Crypt;
 use App\Library\Display;
 use \Glial\Sgbd\Sgbd;
+use \Glial\I18n\I18n;
 
 class Binlog extends Controller {
 
@@ -57,6 +58,19 @@ class Binlog extends Controller {
                             $number *= 1024;
                             break;
                     }
+                }
+                else{
+                    $number = intval($_POST['binlog_max']['size']);
+                }
+
+                if ($number < $_POST['variables']['file_binlog_size'])
+                {
+                    $msg   = I18n::getTranslation(__("The size cannot be less than max_binlog_size (".$_POST['variables']['file_binlog_size']." < ".$number.")"));
+                    $title = I18n::getTranslation(__("Error"));
+                    set_flash("error", $title, $msg);
+
+                    header('location: ' . LINK . $this->getClass() . '/index');
+                    exit;
                 }
 
                 $max_file_to_keep = ceil($number / $_POST['variables']['file_binlog_size']);
@@ -158,26 +172,14 @@ class Binlog extends Controller {
             $data['max_bin_log'][] = $arr;
         }
 
-
-
-
-        $res = Extraction::extract(array("binlog::max_binlog_size"), $all_id_mysql_server);
-
+        //$res = Extraction::extract(array("binlog::max_binlog_size"), $all_id_mysql_server);
         /* */
-
-
-
 
         $res = Extraction::extract(array("variables::max_binlog_size"), $mysql_server);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
-
             $data['extra'][$ob->id_mysql_server]['max_binlog_size'] = $ob->value;
         }
-
-        //debug($data);
-
 
         $this->set('data', $data);
     }
@@ -303,6 +305,8 @@ class Binlog extends Controller {
         }
     }
 
+
+
     public function purgeAll($param) {
         Debug::parseDebug($param);
 
@@ -319,6 +323,9 @@ class Binlog extends Controller {
         }
     }
 
+    /* Purge les binlog qui dépasse la valeur max pour être juste en dessous */
+
+
     public function purgeServer($param) {
         Debug::parseDebug($param);
 
@@ -334,7 +341,6 @@ class Binlog extends Controller {
 
         //only one server at once
         while ($ob = $db->sql_fetch_object($res)) {
-
 
             $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"),
                             array($id_mysql_server));
@@ -361,8 +367,8 @@ class Binlog extends Controller {
                 }
 
                 if ($total_size > $ob->size_max) {
-                    $name_link = Mysql::getDbLink($db, $id_mysql_server);
-                    $db_remote = Sgbd::sql($name_link);
+                    
+                    $db_remote = Mysql::getDbLink($id_mysql_server);
                     $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
                     Debug::sql($sql);
                     $db_remote->sql_query($sql);
@@ -418,76 +424,7 @@ class Binlog extends Controller {
         $this->set('data', $data);
     }
 
-    /*
-     * *************************** 3. row ***************************
-      Connection_name: slave5
-      Slave_SQL_State:
-      Slave_IO_State: Waiting for master to send event
-      Master_Host: 10.64.8.151
-      Master_User: repl
-      Master_Port: 3306
-      Connect_Retry: 60
-      Master_Log_File: mysql-bin.027049
-      Read_Master_Log_Pos: 49045710
-      Relay_Log_File: relay-bin-slave5.000002
-      Relay_Log_Pos: 693
-      Relay_Master_Log_File: mysql-bin.026842
-      Slave_IO_Running: Yes
-      Slave_SQL_Running: No
-      Replicate_Do_DB: pc_natixisFlows,pc_statistics
-      Replicate_Ignore_DB:
-      Replicate_Do_Table:
-      Replicate_Ignore_Table:
-      Replicate_Wild_Do_Table:
-      Replicate_Wild_Ignore_Table:
-      Last_Errno: 1032
-      Last_Error: Could not execute Update_rows_v1 event on table pc_statistics.hourlyStatsToProcess; Can't find record in 'hourlyStatsToProcess', Error_code: 1032; handler error HA_ERR_KEY_NOT_FOUND; the event's master log mysql-bin.026842, end_log_pos 632
-      Skip_Counter: 0
-      Exec_Master_Log_Pos: 398
-      Relay_Log_Space: 80445217873
-      Until_Condition: None
-      Until_Log_File:
-      Until_Log_Pos: 0
-      Master_SSL_Allowed: No
-      Master_SSL_CA_File:
-      Master_SSL_CA_Path:
-      Master_SSL_Cert:
-      Master_SSL_Cipher:
-      Master_SSL_Key:
-      Seconds_Behind_Master: NULL
-      Master_SSL_Verify_Server_Cert: No
-      Last_IO_Errno: 0
-      Last_IO_Error:
-      Last_SQL_Errno: 1032
-      Last_SQL_Error: Could not execute Update_rows_v1 event on table pc_statistics.hourlyStatsToProcess; Can't find record in 'hourlyStatsToProcess', Error_code: 1032; handler error HA_ERR_KEY_NOT_FOUND; the event's master log mysql-bin.026842, end_log_pos 632
-      Replicate_Ignore_Server_Ids:
-      Master_Server_Id: 161
-      Master_SSL_Crl:
-      Master_SSL_Crlpath:
-      Using_Gtid: No
-      Gtid_IO_Pos: 161-161-2253305835,0-4255000500-51149,111-111-7767533535,162-162-2198746
-      Replicate_Do_Domain_Ids:
-      Replicate_Ignore_Domain_Ids:
-      Parallel_Mode: optimistic
-      SQL_Delay: 0
-      SQL_Remaining_Delay: NULL
-      Slave_SQL_Running_State:
-      Slave_DDL_Groups: 0
-      Slave_Non_Transactional_Groups: 0
-      Slave_Transactional_Groups: 4555839
-      Retried_transactions: 0
-      Max_relay_log_size: 1073741824
-      Executed_log_entries: 21713146
-      Slave_received_heartbeats: 0
-      Slave_heartbeat_period: 30.000
-      Gtid_Slave_Pos: 0-4216710495-187665,21-21-44860636,22-22-425773,31-31-125433409,111-111-7807187333,161-161-2253378057,162-162-2198746
-      3 rows in set (0.000 sec)
-
-
-
-
-     * 
-     */
+/* récupére une portion de binlog directement depuis le serveur */
 
     public function getBinlog($param) {
 

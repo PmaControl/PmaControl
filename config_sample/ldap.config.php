@@ -45,7 +45,7 @@ if (!defined('LDAP_CHECK')) {
 
 /************************/
 
-// in case we can find contry and city in LDAP
+// in case we can find country and city in LDAP
 
 
 if (!defined('LDAP_DEFAULT_COUNTRY')) {

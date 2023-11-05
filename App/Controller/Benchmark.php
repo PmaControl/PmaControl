@@ -883,7 +883,7 @@ Threads fairness:
 
         $sql = "SELECT *,a.id as id_benchmark_main FROM benchmark_main a
              INNER JOIN mysql_server b on a.id_mysql_server = b.id
-             ORDER BY a.id desc limit 50";
+             ORDER BY a.id desc";
 
         $res = $db->sql_query($sql);
 
