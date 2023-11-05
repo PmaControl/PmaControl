@@ -40,6 +40,7 @@ use App\Library\Format;
     $i     = 0;
     $style = '';
 
+
     foreach ($data['max_bin_log'] as $server) {
 
         $i++;
@@ -59,7 +60,15 @@ use App\Library\Format;
 
         echo '<td>'.Format::bytes($total_size_used).'</td>';
 
-        $percent = round($total_size_used / $server['size_max'] * 100, 2);
+        if ($server['size_max'] !== "0")
+        {
+            $percent = round($total_size_used / $server['size_max'] * 100, 2);
+        }
+        else
+        {
+            $percent = 0;
+        }
+        
 
         echo '<td>';
         ?>

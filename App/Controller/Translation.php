@@ -6,10 +6,14 @@ use Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
-
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
 class Translation extends Controller
 {
     public $module_group = "Other";
+
+    private $logger;
 
     function index()
     {
@@ -284,7 +288,7 @@ class Translation extends Controller
         exit;
     }
 
-    function translateUknow($param)
+    function getNew($param)
     {
 
         $languages = explode(',', LANGUAGE_AVAILABLE);
@@ -315,15 +319,21 @@ GROUP by a.`text`, a.`language`;";
 
                     $text_translated = $this->askApiGoogle(array($ob->language, $target_language, $ob->text));
 
-                    // insert
-                    $sql2 = "INSERT INTO `translation_google` (`key`, `source_language`,`source_text` , `target_language`,`target_text` )"
-                        ."VALUES ('".$ob->key."', '".$ob->language."', '".$db->sql_real_escape_string($ob->text)."','".$target_language."','".$db->sql_real_escape_string($text_translated)."');";
+                    if ($text_translated)
+                    {
+                        // insert
+                        $sql2 = "INSERT INTO `translation_google` (`key`, `source_language`,`source_text` , `target_language`,`target_text` )"
+                            ."VALUES ('".$ob->key."', '".$ob->language."', '".$db->sql_real_escape_string($ob->text)."','".$target_language."','".$db->sql_real_escape_string($text_translated)."');";
 
-                    Debug::sql($sql2);
+                        Debug::sql($sql2);
 
-                    $db->sql_query($sql2);
+                        $db->sql_query($sql2);
 
-                    Debug::debug($text_translated, "text_translated");
+                        Debug::debug($text_translated, "text_translated");
+
+                        usleep(rand(1000000,2000000));
+                    }
+
                 }
             }
         }
@@ -356,6 +366,8 @@ GROUP by a.`text`, a.`language`;";
         } else {
             return false;
         }
+
+        
     }
 
     function settings($param)
@@ -378,4 +390,24 @@ GROUP by a.`text`, a.`language`;";
 
         Debug::debug($data);
     }
+
+
+    /*
+    * (PmaControl 3.0)<br/>
+    * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
+    * @return boolean Success
+    * @package Controller
+    * @description log error 
+    * @access public
+    */
+
+    public function before($param)
+    {
+        $monolog = new Logger("Translation");
+        $handler = new StreamHandler(LOG_FILE, Logger::DEBUG);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
+
 }
