@@ -7,6 +7,9 @@ use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
 
 //require ROOT."/application/library/Filter.php";
 // ./glial control rebuildAll --debug
@@ -26,6 +29,17 @@ class Integrate extends Controller
     var $shared;
     var $memory_file = "answer";
     var $files = array();
+
+    var $logger;
+
+    public function before($param)
+    {
+        $monolog       = new Logger("Integrate");
+        $handler      = new StreamHandler(LOG_FILE, Logger::DEBUG);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
 
     public function evaluate($param)
     {
@@ -233,6 +247,7 @@ class Integrate extends Controller
             if (file_exists($file)) {
                 unlink($file);
             } else {
+                $this->logger->emergency('Two process in same time for integrate data, please remove one');
                 throw new \Exception("PMACTRL-647 : deux integrateur lancer en même temps (suprimer le pas bon)");
             }
 
@@ -254,7 +269,6 @@ class Integrate extends Controller
             if (!empty($slave)) {
                 $this->insert_slave_value($slave);
             }
-
 
             switch ($this->memory_file) {
                 case self::ANSWER:
@@ -372,6 +386,8 @@ class Integrate extends Controller
         }
     }
 
+
+    /*
     public function reset()
     {
         $this->view = false;
@@ -380,7 +396,7 @@ class Integrate extends Controller
         foreach (array('int', 'double', 'text') as $type) {
             $db->sql_query("TRUNCATE TABLE `ts_value_general_" . strtolower($type) . "`;");
         }
-    }
+    }*/
 
     private function insert_slave_value($values, $val = "slave")
     {
@@ -471,7 +487,8 @@ class Integrate extends Controller
         }
 
         if (empty($this->files[$memory_file])) {
-            throw new \Exception('PMACTRL-098 : Impossible to find this file name : "' . $memory_file . '"');
+            $this->logger->error('Impossible to find this file name : "'.$memory_file.'"');
+            //throw new \Exception('PMACTRL-098 : Impossible to find this file name : "'.$memory_file.'"');
         }
         $id_file_name = $this->files[$memory_file];
 

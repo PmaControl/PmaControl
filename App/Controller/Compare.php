@@ -30,15 +30,8 @@ class Compare extends Controller {
     function index($params) {
 
 
-
-        /*
-         * SHOW TABLES
-         * SHOW COLUMNS FROM table_name
-         */
         $db = Sgbd::sql(DB_DEFAULT);
-        $this->db_default = $db;
         $this->title = __("Compare");
-        //$this->ariane      = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Plugins')."</a> > ".$this->title;
 
         $redirect = false;
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -71,21 +64,9 @@ class Compare extends Controller {
             );
         }
 
-
-
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "bootstrap-select.min.js", "compare/index.js"));
 
-        $sql = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
-        $servers = $db->sql_fetch_yield($sql);
-
-        $data['server'] = [];
-        foreach ($servers as $server) {
-            $tmp = [];
-            $tmp['id'] = $server['id'];
-            $tmp['libelle'] = str_replace('_', '-', $server['name']) . " (" . $server['ip'] . ")";
-            $data['server'][] = $tmp;
-        }
 
         $data['listdb1'] = array();
         if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
@@ -187,7 +168,6 @@ class Compare extends Controller {
 
         $this->db_origin = $db_original;
         $this->db_target = $db_compare;
-        $this->db_default = $db;
 
         foreach ($this->object as $object) {
             if ($object === "EVENT" && ($db1 === "performance_schema" || $db2 === "performance_schema")) {

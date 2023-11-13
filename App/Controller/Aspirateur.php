@@ -121,8 +121,9 @@ class Aspirateur extends Controller
 
         /* Only for testing for processing long time, don't think some got more than 999 999 mysql server :D */
         if ($id_mysql_server === "999999") {
-            $this->logger->notice('### WAIT 55 sec for id_mysql_server=10');
-            sleep(135);
+            $wait_sec = 135;
+            $this->logger->notice('### WAIT '.$wait_sec.' sec for id_mysql_server='.$id_mysql_server);
+            sleep($wait_sec);
         }
 
         $time_start   = microtime(true);
@@ -183,13 +184,9 @@ class Aspirateur extends Controller
             $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
             $res = $db->sql_query($sql);
             while ($ob = $db->sql_fetch_object($res)){
-
-                //only update if not detected as proxy already
-                //$sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id` IN(SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1) ;";
                 $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server.";";
                 Debug::sql($sql);
                 $db->sql_query($sql);
-
                 $this->logger->info("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
             }
 
@@ -340,8 +337,13 @@ class Aspirateur extends Controller
 
         Debug::debug($name, 'create file');
 
-        $storage             = new StorageFile(TMP.'tmp_file/'.$name.'_'.time()); // to export in config ?
+        $shared_file = TMP.'tmp_file/'.$name.'_'.time();
+        $storage             = new StorageFile($shared_file); // to export in config ?
         $this->shared[$name] = new SharedMemory($storage);
+
+        //to prevent error on fopen when executed in root and ww-data try to delete it
+        chown($shared_file,"www-data");
+
     }
 
     public function trySshConnection($param)
@@ -1515,7 +1517,7 @@ class Aspirateur extends Controller
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "select count(1) as cpt FROM INFORMATION_SCHEMA.PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
+        $sql = "select /* pmacontrol */ count(1) as cpt FROM INFORMATION_SCHEMA.PLUGINS where PLUGIN_NAME='METADATA_LOCK_INFO' and PLUGIN_STATUS='ACTIVE';";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
