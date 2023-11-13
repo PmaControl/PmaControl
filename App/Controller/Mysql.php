@@ -1496,12 +1496,12 @@ class Mysql extends Controller
 
         echo $data;
     }
-
+/*** */
     public function refreshConfig()
     {
         Debug::parseDebug($param);
 
         Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
-    */
+    
 }
