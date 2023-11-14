@@ -41,17 +41,6 @@ class Integrate extends Controller
         $this->logger = $monolog;
     }
 
-    var $logger;
-
-    public function before($param)
-    {
-        $monolog       = new Logger("Integrate");
-        $handler      = new StreamHandler(LOG_FILE, Logger::DEBUG);
-        $handler->setFormatter(new LineFormatter(null, null, false, true));
-        $monolog->pushHandler($handler);
-        $this->logger = $monolog;
-    }
-
     public function evaluate($param)
     {
         Debug::parseDebug($param);
