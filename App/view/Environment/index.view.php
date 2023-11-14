@@ -14,6 +14,7 @@ echo '<th style="width: 20%">' . __('Libelle') . '</th>';
 echo '<th style="width: 20%">' . __('Key') . '</th>';
 echo '<th style="width: 20%">' . __('Class') . '</th>';
 echo '<th style="width: 20%">' . __('Letter') . '</th>';
+echo '<th style="width: 20%">' . __('Remove') . '</th>';
 echo '</tr>';
 
 $i = 0;
@@ -27,6 +28,13 @@ foreach ($data['env'] as $env) {
     echo '<td class="line-edit" data-name="key" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter key">' . $env['key'] . '</td>';
     echo '<td class="line-edit" data-name="class" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter class">' . $env['class'] . '</td>';
     echo '<td class="line-edit" data-name="letter" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter letter">' . $env['letter'] . '</td>';
+    echo '<td>';
+    
+    if ($env['id'] > 6){
+        echo '<a href="'.LINK.'environment/delete/'.$env['id'].'" role="button" class="btn btn-xs btn-danger">Delete</a>';
+    }
+
+    echo '</td>';
     echo '</tr>';
 }
 

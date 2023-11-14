@@ -10,12 +10,27 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
+
 
 class Server extends Controller
 {
 
     use \App\Library\Filter;
     var $clip = 0;
+
+    var $logger;
+
+    public function before($param)
+    {
+        $monolog       = new Logger("Server");
+        $handler      = new StreamHandler(LOG_FILE, Logger::DEBUG);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
 
 //dba_source
     public function hardware()
@@ -62,10 +77,6 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
-    public function before($param)
-    {
-        
-    }
 
 
 
@@ -412,7 +423,7 @@ class Server extends Controller
 
         $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if ($_SERVER['REQUEST_METHOD'] === "POST" && !empty($_POST['mysql_server'])) {
 
             $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
             $res = $db->sql_query($sql);

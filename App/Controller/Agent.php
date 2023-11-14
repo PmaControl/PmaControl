@@ -36,7 +36,7 @@ class Agent extends Controller {
 
     public function before($param) {
         $logger = new Logger("Agent");
-        $handler = new StreamHandler(LOG_FILE, Logger::DEBUG);
+        $handler = new StreamHandler(LOG_FILE, Logger::WARNING);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
