@@ -1247,7 +1247,7 @@ class Aspirateur extends Controller
         if (!empty($mysql_servers)) {
             $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
-        $sql .= " ORDER by ssh_available ASC, c.date DESC;";
+        $sql .= " ORDER by c.date DESC;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
