@@ -342,8 +342,10 @@ class Aspirateur extends Controller
         $this->shared[$name] = new SharedMemory($storage);
 
         //to prevent error on fopen when executed in root and ww-data try to delete it
-        chown($shared_file,"www-data");
-
+        //TODO replace with 
+        if (file_exists($shared_file)) {
+            chown($shared_file,"www-data");
+        }
     }
 
     public function trySshConnection($param)
