@@ -90,7 +90,7 @@ class Aspirateur extends Controller
     public function before($param)
     {
         $monolog       = new Logger("Aspirateur");
-        $handler      = new StreamHandler(LOG_FILE, Logger::DEBUG);
+        $handler      = new StreamHandler(LOG_FILE, Logger::WARNING);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
         $this->logger = $monolog;

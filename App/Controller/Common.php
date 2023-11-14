@@ -290,6 +290,8 @@ class Common extends Controller
             $options = (array) $param[2];
         }
 
+        $data['list_server'] = array();
+
         $data['options'] = $options;
 
         //$data['width'] = $param[2] ?? "auto";
@@ -348,7 +350,7 @@ class Common extends Controller
 
         $res = $db->sql_query($sql);
 
-        $data['list_servers'] = array();
+        
         while ($ob                   = $db->sql_fetch_object($res)) {
             $tmp            = [];
             $tmp['id']      = $ob->id;
@@ -516,43 +518,54 @@ class Common extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
         $servers = Extraction::display(array('mysql_server::available'));
 
+
         $data =array();
         $available = array();
         $down = array();
         $warning = array();
         
-        foreach($servers as $id_mysql_server => $server)
+
+        if (!empty($servers))
         {
-            $data['id_mysql_server'][$id_mysql_server] = $server['']['available'];
-            if ($server['']['available'] === "1"){
-                $available[] = $id_mysql_server;
-            }elseif ($server['']['available'] === "0"){
-                $down[] = $id_mysql_server;
-            }elseif ($server['']['available'] === "2"){
-                $warning[] = $id_mysql_server;
+            foreach($servers as $id_mysql_server => $server)
+            {
+                $data['id_mysql_server'][$id_mysql_server] = $server['']['available'];
+                if ($server['']['available'] === "1"){
+                    $available[] = $id_mysql_server;
+                }elseif ($server['']['available'] === "0"){
+                    $down[] = $id_mysql_server;
+                }elseif ($server['']['available'] === "2"){
+                    $warning[] = $id_mysql_server;
+                }
+                
             }
+
+            $caseArray = array();
             
-        }
-
-        $caseArray = array();
-        
-        foreach ($data['id_mysql_server'] as $id_mysql_server => $value) {
-            if ($value == 1) {
-                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 0\n";
-            } elseif($value == 0) {
-                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 1\n";
+            foreach ($data['id_mysql_server'] as $id_mysql_server => $value) {
+                if ($value == 1) {
+                    $caseArray[] = "WHEN a.id = $id_mysql_server THEN 0\n";
+                } elseif($value == 0) {
+                    $caseArray[] = "WHEN a.id = $id_mysql_server THEN 1\n";
+                }
+                elseif($value == 2) {
+                    $caseArray[] = "WHEN a.id = $id_mysql_server THEN 2\n";
+                }
             }
-            elseif($value == 2) {
-                $caseArray[] = "WHEN a.id = $id_mysql_server THEN 2\n";
-            }
+            $caseArray[] = "ELSE 3\n";
+
+            $data['case'] = "CASE " . implode(' ', $caseArray) . " END AS error";
+
+            $data['available'] = implode(",", $available);
+            $data['down'] = implode(",", $down);
+            $data['warning'] = implode(",", $warning);
         }
-        $caseArray[] = "ELSE 3\n";
-
-        $data['case'] = "CASE " . implode(' ', $caseArray) . " END AS error";
-
-        $data['available'] = implode(",", $available);
-        $data['down'] = implode(",", $down);
-        $data['warning'] = implode(",", $warning);
+        else{
+            $data['case'] = " 0 as error";
+            $data['available'] ='';
+            $data['down'] = '';
+            $data['warning'] = '';
+        }
 
         Debug::debug($data);
 

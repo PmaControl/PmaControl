@@ -98,4 +98,18 @@ class Environment extends Controller {
         $this->set('data', $data);
     }
 
+
+    public function delete($param) {
+        
+        $this->view = false;
+        $id_environment = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "DELETE FROM environment WHERE id = '".$id_environment."' and id > 6";
+        $db->sql_query($sql);
+
+        header("location:". LINK . "environment/index/");
+    }
+
 }
