@@ -526,13 +526,13 @@ class Integrate extends Controller
     public function feedMysqlVariable($data)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
+        $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $in_base = array();
         while ($ob = $db->sql_fetch_object($res)) {
-            $in_base[$ob->id_mysql_server][$ob->variable] = $ob->value;
+            $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
         }
         $in_base[1]['jexistedansmesreve'] = "dream!";
 
@@ -566,7 +566,7 @@ class Integrate extends Controller
             }
 
             if (!empty($elem_ins)) {
-                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES " . implode(",", $elem_ins) . ";";
+                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }
@@ -578,11 +578,11 @@ class Integrate extends Controller
             $elem_del = array();
             foreach ($delete as $id_mysql_server => $variables) {
                 foreach ($variables as $variable => $value) {
-                    $elem_del[] = 'SELECT id FROM mysql_server WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable` ="' . $variable . '"';
+                    $elem_del[] = 'SELECT id FROM global_variable WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
                 }
             }
             if (!empty($elem_del)) {
-                $sql = "DELETE FROM mysql_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
+                $sql = "DELETE FROM global_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }
@@ -598,7 +598,7 @@ class Integrate extends Controller
                 }
             }
             if (!empty($elem_upt)) {
-                $sql = "INSERT INTO mysql_variable (`id_mysql_server`,`variable`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
+                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
                 Debug::sql($sql);
                 $db->sql_query($sql);
             }

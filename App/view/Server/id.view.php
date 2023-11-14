@@ -10,6 +10,9 @@ use Glial\Html\Form\Form;
 <div class="well">
 
     <?php
+    //debug($data);
+    //debug($data['status']);
+
     \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '<br><br>';
     //print_r($_GET);

@@ -48,13 +48,13 @@ class Variable extends Controller
 
 
 
-        $sql = "with z as (select id_mysql_server,variable from mysql_variable FOR SYSTEM_TIME ALL WHERE id_mysql_server IN (".$list_server.")
+        $sql = "with z as (select id_mysql_server,variable_name from global_variable FOR SYSTEM_TIME ALL WHERE id_mysql_server IN (".$list_server.")
         $variable
-GROUP BY id_mysql_server,variable having count(1) > 1)
- SELECT a.id_mysql_server, a.variable, a.value,date(ROW_START) as date, DATE_FORMAT(ROW_START, '%H:%i:%s') as time, DATE_FORMAT(ROW_START, '%W') as day
- FROM mysql_variable FOR SYSTEM_TIME ALL a
- INNER JOIN z ON a.id_mysql_server=z.id_mysql_server and a.variable=z.variable
- order by a.ROW_START,a.id_mysql_server, a.variable;";
+GROUP BY id_mysql_server,variable_name having count(1) > 1)
+ SELECT a.id_mysql_server, a.variable_name, a.value,date(ROW_START) as date, DATE_FORMAT(ROW_START, '%H:%i:%s') as time, DATE_FORMAT(ROW_START, '%W') as day
+ FROM global_variable FOR SYSTEM_TIME ALL a
+ INNER JOIN z ON a.id_mysql_server=z.id_mysql_server and a.variable_name=z.variable_name
+ order by a.ROW_START,a.id_mysql_server, a.variable_name;";
 
         Debug::sql($sql);
 
@@ -63,9 +63,7 @@ GROUP BY id_mysql_server,variable having count(1) > 1)
         while ($arr              = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['variable'][] = $arr;
         }
-
-
-
+        
         $this->set('data', $data);
     }
 }

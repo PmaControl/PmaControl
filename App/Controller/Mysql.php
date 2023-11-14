@@ -19,6 +19,7 @@ class Mysql extends Controller
     public $foreign_key = array();
     public $columns     = array();
 
+
     private function generate_passswd($length)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -827,7 +828,7 @@ class Mysql extends Controller
         }
 
         ksort($db_order);
-        debug($db_order);
+
 
         $change_master = [];
 
@@ -837,7 +838,7 @@ class Mysql extends Controller
             $db_order[$timestamp] = array_merge($db_order[$timestamp], $out);
         }
 
-        debug($db_order);
+ 
 
         $i = 0;
 
@@ -853,12 +854,14 @@ class Mysql extends Controller
 
             $sql = "STOP SLAVE;";
             $db->sql_query($sql);
-            $this->log($sql);
+            
+            Debug::sql($sql);
 
             if ($i !== 0) {
                 $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$arr['file']."', MASTER_LOG_POS=".$arr['position'].";";
                 $db->sql_query($sql);
-                $this->log($sql);
+                
+                Debug::sql($sql);
 
 // wait file and position
                 $this->waitPosition($db, $arr['file'], $arr['position']);
@@ -868,11 +871,12 @@ class Mysql extends Controller
 
                 $sql = "DROP DATABASE IF EXISTS `".$arr['db']."`;";
                 $db->sql_query($sql);
-                $this->log($sql);
+                Debug::sql($sql);
 
                 $sql = "CREATE DATABASE `".$arr['db']."`;";
                 $db->sql_query($sql);
-                $this->log($sql);
+                
+                Debug::sql($sql);
             } else {
                 continue;
             }
@@ -891,22 +895,25 @@ class Mysql extends Controller
             if ($i === 0) {
                 $sql = "CHANGE MASTER TO MASTER_LOG_FILE='".$arr['file']."', MASTER_LOG_POS=".$arr['position'].";";
                 $db->sql_query($sql);
-                $this->log($sql);
+                
+                Debug::sql($sql);
             }
 
             $replicate_do_db[] = $arr['db'];
 
             $sql = "SET GLOBAL replicate_do_db = '".implode(",", $replicate_do_db)."';";
             $db->sql_query($sql);
-            $this->log($sql);
-
+            
+            Debug::sql($sql);
             $i++;
         }
 
 
         $sql = "START SLAVE";
         $db->sql_query($sql);
-        $this->log($sql);
+        
+
+        Debug::sql($sql);
     }
 
     private function getLogAndPos($filename)
@@ -966,7 +973,9 @@ class Mysql extends Controller
             }
 
             $sql = "SHOW SLAVE STATUS;";
-            $this->log($sql);
+            Debug::sql($sql);
+            
+
 
             if (!empty($thread['Last_Errno'])) {
                 debug($thread);
@@ -982,11 +991,6 @@ class Mysql extends Controller
 
             sleep(1);
         } while ($file != $Relay_Master_Log_File || $position != $Exec_Master_Log_Pos);
-    }
-
-    public function log($sql)
-    {
-        echo \SqlFormatter::highlight($sql);
     }
 
     public function after($param)
@@ -1048,7 +1052,7 @@ class Mysql extends Controller
                 $table['mysql_server']['port']                = $_POST['mysql_server']['port'] ?? 3306;
                 $table['mysql_server']['ip']                  = $_POST['mysql_server']['ip'];
                 $table['mysql_server']['display_name']        = Mysql2::getHostname($table['mysql_server']['display_name'],
-                        array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
+                    array($table['mysql_server']['ip'], $table['mysql_server']['login'], $table['mysql_server']['password'], $table['mysql_server']['port']));
                 $table['mysql_server']['name']                = "server_".uniqid();
                 $table['mysql_server']['hostname']            = $table['mysql_server']['display_name'];
                 $table['mysql_server']['passwd']              = Crypt::encrypt($table['mysql_server']['password'], CRYPT_KEY);
@@ -1137,9 +1141,9 @@ class Mysql extends Controller
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-        $this->link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
 
-        if ($this->link) {
+        if ($link) {
             return true;
         } else {
             return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
@@ -1267,10 +1271,14 @@ class Mysql extends Controller
      * @since 5.1.5 Switched to static, update __construc to setConfig
      * @version 4.0
      */
-    public function getAlias($db)
+    public function getAlias($param)
     {
+        $this->view=false;
+        
+        Debug::parseDebug($param);
+
         $default = Sgbd::sql(DB_DEFAULT);
-        $slaves  = $db->isSlave();
+        $slaves  = $default->isSlave();
 
         foreach ($slaves as $slave) {
             if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {

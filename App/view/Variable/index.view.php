@@ -40,7 +40,6 @@ if (! empty($_GET['variable'])) {
 }
 
 echo '<br><br>';
-
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
 echo '<th>'.__('Top').'</th>';
@@ -58,13 +57,12 @@ foreach ($data['variable'] as $elem) {
     echo '<tr>';
     echo '<td>'.$i.'</td>';
     echo '<td>'.Display::srv($elem['id_mysql_server'], true, LINK."variable/index/id_mysql_server:".$elem['id_mysql_server']).'</td>';
-    echo '<td><a href="'.LINK.'variable/index/id_mysql_server:'.$elem['id_mysql_server'].'/variable:'.$elem['variable'].'">'.$elem['variable'].'</a></td>';
+    echo '<td><a href="'.LINK.'variable/index/id_mysql_server:'.$elem['id_mysql_server'].'/variable:'.$elem['variable_name'].'">'.$elem['variable_name'].'</a></td>';
     echo '<td>'.$elem['value'].'</td>';
 
     echo '<td style="background: '.getrgba($elem['date'], 0.5).'"> '.__($elem['day']).' '.$elem['date'].'</td>';
     echo '<td style="background: '.getrgba($elem['time'], 0.5).'">'.$elem['time'].'</td>';
     echo '</tr>';
 }
-
 
 echo '</table>';
