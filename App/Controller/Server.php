@@ -410,6 +410,8 @@ class Server extends Controller
         $this->di['js']->addJavascript(array("moment.js", "chart.min.js"));
         $db = Sgbd::sql(DB_DEFAULT);
 
+        $data = array();
+
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
             $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
@@ -422,12 +424,11 @@ class Server extends Controller
                     .'/ts_variable:name:'.$_POST['ts_variable']['name']
                     .'/ts_variable:date:'.$_POST['ts_variable']['date']
                     .'/ts_variable:derivate:'.$_POST['ts_variable']['derivate']);
+                    exit;
             }
         } else {
 
-// get server available
-
-  
+            // get server available
             //TODO : add available ===1
             $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".$this->getFilter()." order by a.name ASC";
             $res             = $db->sql_query($sql);
@@ -439,8 +440,7 @@ class Server extends Controller
                 $data['servers'][] = $tmp;
             }
 
-
-// get variable available
+            // get variable available
             $sql            = "SELECT name FROM ts_variable WHERE `type` in('INT','DOUBLE') order by name ASC";
             $res            = $db->sql_query($sql);
             $data['status'] = array();
@@ -450,7 +450,6 @@ class Server extends Controller
                 $tmp['libelle']   = $ob->name;
                 $data['status'][] = $tmp;
             }
-
 
             $interval = array('5-minute', '15-minute', '1-hour', '2-hour', '6-hour', '12-hour', '1-day', '2-day', '1-week', '2-week', '1-month');
             $libelles = array('5 minutes', '15 minutes', '1 hour', '2 hours', '6 hours', '12 hours', '1 day', '2 days', '1 week', '2 weeks',

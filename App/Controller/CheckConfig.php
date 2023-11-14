@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Extraction;
 
 //version de 14 octobre 2020, comparaison de tableau multidimensions avec agregation des entetes
 //ne servait a rien ici car chaque serveur au moins un element different
@@ -66,10 +67,14 @@ class CheckConfig extends Controller
 
                 $res = $db->sql_query($sql);
 
+                $is_available = 0;
+                $available = Extraction::display(array("available"), array($_GET['mysql_server']['id']));
+                $is_available = end($available)['']['available'];
+
                 $server_note_available = array();
                 while ($ob                    = $db->sql_fetch_object($res)) {
 
-                    if ($ob->is_available !== "1") {
+                    if ($is_available !== "1") {
                         $server_note_available[] = $ob->id;
                         $cache                   = " <i>[cache]</i>";
                     } else {
@@ -127,7 +132,7 @@ class CheckConfig extends Controller
 
                         //debug("cache");
 
-                        $res = $db->sql_query("SELECT variable as Variable_name, value as Value FROM mysql_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;");
+                        $res = $db->sql_query("SELECT variable_name as Variable_name, value as Value FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;");
                         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
                             $tmp                  = array();
@@ -180,7 +185,7 @@ class CheckConfig extends Controller
                                     $resultat[$id_server][$arr['Variable_name']."<i>__".$sous_variable."</i>"] = $sous_value;
                                 }
                             } else {
-                                $resultat[$id_server][$arr['Variable_name']] = $arr['Value'];
+                                $resultat[$id_server][$arr['Variable_name']] = (int)$arr['Value'];
                                 $data['show']                                = true;
                             }
                         } else {
