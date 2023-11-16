@@ -506,7 +506,7 @@ class Dot2 extends Controller
             //Debug::debug($server, "server");
             //$this->graph_node[$id_mysql_server] = $server;
 
-            if ($server['available'] === "1") {
+            if (isset($server['available']) && $server['available'] === "1") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_OK'];
             } elseif ($server['available'] === "0") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_ERROR'];

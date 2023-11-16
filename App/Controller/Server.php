@@ -970,7 +970,7 @@ var myChart = new Chart(ctx, {
 
                 if ($ret) {
 
-                    Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
+                    Mysql::onAddMysqlServer();
 
                     set_flash("success", "Success", "Password updated !");
 
@@ -994,13 +994,6 @@ var myChart = new Chart(ctx, {
 
 
         $this->set('data', $data);
-    }
-
-    public function upd()
-    {
-
-
-        Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
     public function acknowledge($param)
