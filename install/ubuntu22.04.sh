@@ -189,8 +189,8 @@ cat > /tmp/config.json << EOF
 EOF
 
 
-
-./install -c /tmp/config.json
+chmod +x install.sh
+./install.sh -c /tmp/config.json
 
 echo "Save these credentials"
 echo "#########################################################"
