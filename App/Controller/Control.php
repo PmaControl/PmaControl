@@ -202,8 +202,9 @@ class Control extends Controller
         return $partition;
     }
 
-// each hour ?
+
     /*
+     * each 4 hour, used in crontab => # crontab -l -u www-data
      * check space and delete old partition
      * and create new parttion
      */
@@ -214,15 +215,15 @@ class Control extends Controller
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
 
-//we drop oldest parttion if free space is low
+        //we drop oldest parttion if free space is low
         if ($this->checkSize() > $this->percent_max_disk_used) {
             Debug::debug($partitions['min'], "Drop Partition");
 
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
-//delete server_*
+                //delete server_*
                 System::deleteFiles("server");
 
-//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
+                //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
                 Sleep(5);
 
                 $this->dropPartition(array($partitions['min']));
@@ -235,7 +236,7 @@ class Control extends Controller
         if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
             System::deleteFiles("server");
 
-//pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
+            //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
             Sleep(5);
 
             $this->dropPartition(array($partitions['min']));
@@ -245,7 +246,7 @@ class Control extends Controller
 
         Debug::debug($part);
 
-// check partition of today and tomorow and create it if it's not exist
+        // check partition of today and tomorow and create it if it's not exist
         foreach ($part as $date) {
             $partition_to_check = $this->getToDays(array($date));
 
@@ -257,10 +258,7 @@ class Control extends Controller
         }
 
         $this->updateLinkVariableServeur();
-
         $this->refreshVariable(array());
-
-//Mysql::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
     }
 
     public function dropTsTable($param = array())

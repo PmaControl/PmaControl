@@ -280,6 +280,8 @@ $("#export_all-all2").click(function(){
         }
     }
 
+
+    /*
     private function addMysql($arr)
     {
 
@@ -350,15 +352,17 @@ $("#export_all-all2").click(function(){
                 debug($data);
                 debug($db->sql_error());
             } else {
-                Mysql::addMaxDate($db, $id_mysql_server);
+                Mysql::addMaxDate(array($id_mysql_server));
             }
         }
 
         //$this->generateMySQLConfig();
-        //Mysql::onAddMysqlServer($db);
+        Mysql::onAddMysqlServer();
         Mysql::generateMySQLConfig($db);
-    }
+    }*/
 
+
+    /*
     public function generateMySQLConfig($param = '')
     {
         $this->view = false;
@@ -395,6 +399,7 @@ $("#export_all-all2").click(function(){
 
         file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
     }
+    */
 
     public function test_import($param)
     {

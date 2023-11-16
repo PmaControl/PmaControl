@@ -1081,7 +1081,7 @@ class Mysql extends Controller
                     exit;
                 } else {
 
-                    Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
+                    Mysql2::onAddMysqlServer();
 
                     $msg   = I18n::getTranslation(__("Your MySQL server was successfully added !"));
                     $title = I18n::getTranslation(__("Success"));
@@ -1509,7 +1509,7 @@ class Mysql extends Controller
     {
         Debug::parseDebug($param);
 
-        Mysql2::onAddMysqlServer(Sgbd::sql(DB_DEFAULT));
+        Mysql2::onAddMysqlServer();
     }
     
 }
