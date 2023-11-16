@@ -21,10 +21,19 @@ class VirtualForeignKey extends Controller
 
     public function autoDetect($param)
     {
+        $this->view = false;
         Debug::parseDebug($param);
         //$id_mysql_server = $param[0];
 
         $this->autoId($param);
+
+        if ( ! IS_CLI){
+
+            $location = $_SERVER['HTTP_REFERER'];
+            header("locatlion: $location");
+            //exit;
+            debug($location);
+        }
     }
 
     public function autoId($param)
@@ -35,13 +44,15 @@ class VirtualForeignKey extends Controller
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
+        $sql = "DELETE FROM virtual_foreign_key WHERE id_mysql_server ='".$id_mysql_server."' and is_automatic = 1";
+        $db->sql_query($sql);
+
         $sql = "select TABLE_SCHEMA,TABLE_NAME, COLUMN_NAME 
 from information_schema.COLUMNS 
-where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema') 
-and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
+where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys') 
+and COLUMN_NAME != 'id' and (COLUMN_NAME like 'id%' OR COLUMN_NAME like '%id')";
 
         $res = $db->sql_query($sql);
-
         $nb_key = $db->sql_num_rows($res);
 
         Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
@@ -50,35 +61,49 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         while ($arr         = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $schema_ref = $arr['TABLE_SCHEMA'];
-            $table_ref  = preg_replace('/(^id\_?)/i', '$2', $arr['COLUMN_NAME']);
             $table_id   = "id";
+
+            //start with id
+            $table_ref  = preg_replace('/(^id\_?)/i', '$2', $arr['COLUMN_NAME']);
+            
+            //end with id
+            $table_ref2  = preg_replace('/(\_?id$)/i', '$2', $arr['COLUMN_NAME']);
+
+            if (in_array($arr['TABLE_NAME'], array($table_ref, $table_ref2) )) {
+                continue;
+            }
+
+            Debug::debug($table_ref2, "table_ref");
 
             if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref))) {
                 
-            } else {
-                if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref."s"))) {
+            } 
+            else if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref."s"))) {
                     
-                } else {
-                    if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref."x"))) {
-                        
-                    } else {
-                        //Debug::debug($arr, "Impossible de trouver la table");
-                        continue;
-                    }
-                }
             }
-
-
-
+            else if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref."x"))) {
+                        
+            } 
+            else if ($arr2 = $this->isTableExist(array($id_mysql_server, $schema_ref, $table_ref2))) {
+                $table_id = $arr['COLUMN_NAME'];
+                //Debug::debug($arr2, 'ARR2');   
+            }
+            else {
+                //Debug::debug($arr, "Impossible de trouver la table");
+                continue;
+            }
+            
             $schema_ref = $arr2['TABLE_SCHEMA'];
             $table_ref  = $arr2['TABLE_NAME'];
 
             $sql2 = "SELECT count(1) as cpt
-            from information_schema.COLUMNS     
+            from information_schema.COLUMNS
             where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema') 
             AND table_schema = '".$schema_ref."'
-                AND TABLE_NAME = '".$table_ref."'
-                    AND COLUMN_NAME = '".$table_id."'";
+            AND TABLE_NAME = '".$table_ref."'
+            AND (COLUMN_NAME = '".$table_id."' OR COLUMN_NAME ='".$arr['COLUMN_NAME']."')";
+
+                    Debug::sql($sql2);
 
             $res2 = $db->sql_query($sql2);
 
@@ -216,6 +241,7 @@ and COLUMN_NAME != 'id' and COLUMN_NAME like 'id%'";
         $res = $db->sql_query($sql);
 
         $data['virtual_fk'] = array();
+        
         while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['virtual_fk'][] = $ob;
         }
