@@ -54,10 +54,16 @@ class Alias extends Controller
      */
     public function updateAlias($param)
     {
+
+        $this->view = false;
+
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
         $host = $this->getExtraction(array("slave::master_host", "slave::master_port"));
+
+        Debug::debug($host, "HOST");
+        
 
         $alias_to_add = array();
 
