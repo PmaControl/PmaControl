@@ -17,8 +17,6 @@ class Format extends Controller
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Format SQL");
 
-
-
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
 
 
@@ -41,9 +39,7 @@ class Format extends Controller
                     $data['sql_formated'][] = \SqlFormatter::format($query);
                 }
             }
-
-
-
+            
             $this->set('data', $data);
         }
     }
