@@ -43,7 +43,7 @@ class Variable extends Controller
 
         $variable = '';
         if (!empty($_GET['variable'])) {
-            $variable = ' AND `variable` ="'.$_GET['variable'].'" ';
+            $variable = ' AND `variable_name` ="'.$_GET['variable'].'" ';
         }
 
 
