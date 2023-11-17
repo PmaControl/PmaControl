@@ -152,31 +152,23 @@ class Aspirateur extends Controller
 //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
 // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
-
         // traitement SHOW GLOBAL VARIABLES
         $var['variables'] = $mysql_tested->getVariables();
 
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
         //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
 
-        if (!empty($var['variables']['gtid_binlog_pos'])) {
-            unset($var['variables']['gtid_binlog_pos']);
-        }
 
-        if (!empty($var['variables']['gtid_binlog_state'])) {
-            unset($var['variables']['gtid_binlog_state']);
-        }
+        //we delete variable who change each time and put in on status
+        $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
 
-        if (!empty($var['variables']['gtid_current_pos'])) {
-            unset($var['variables']['gtid_current_pos']);
-        }
-
-        if (!empty($var['variables']['gtid_slave_pos'])) {
-            unset($var['variables']['gtid_slave_pos']);
-        }
-
-        if (!empty($var['variables']['timestamp'])) {
-            unset($var['variables']['timestamp']);
+        $move_to_status = array();
+        foreach($remove_var as $var_to_remove){
+            if (!empty($var['variables'][$var_to_remove])) {
+                
+                $move_to_status[$var_to_remove] = $var['variables'][$var_to_remove];
+                unset($var['variables'][$var_to_remove]);
+            }
         }
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
@@ -201,8 +193,10 @@ class Aspirateur extends Controller
             $var = $var_temp;
         } else {
 
+            //get SHOW GLOBAL STATUS
             Debug::debug("apres Variables");
             $data['status'] = $mysql_tested->getStatus();
+            $data['status'] = array_merge($data['status'], $move_to_status);
 
             Debug::debug("apres status");
             $data['master'] = $mysql_tested->isMaster();
