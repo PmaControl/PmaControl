@@ -635,7 +635,7 @@ if (! defined('CRYPT_KEY'))
     {
 
         \Glial\I18n\I18n::injectDb($db);
-        \Glial\I18n\I18n::install();
+        //\Glial\I18n\I18n::install();
     }
 
     private function parseConfig($configFile)
