@@ -87,9 +87,6 @@ class Install extends Controller
     {
         $this->view = false;
 
-        //$title = Hoa\Console\Window::getTitle();
-        //Hoa\Console\Window::setTitle('Install of PmaControl 0.8');
-
         echo "\n";
         echo SITE_LOGO;
         echo Color::getColoredString(SITE_NAME, "green")." version ".Color::getColoredString(SITE_VERSION, "yellow")." (".SITE_LAST_UPDATE.")\n";
@@ -136,7 +133,6 @@ class Install extends Controller
         $this->cmd("echo 1", "Testing system & configuration");
 
         echo Color::getColoredString("\n".SITE_NAME." ".SITE_VERSION." has been successfully installed !\n", "green");
-        //Hoa\Console\Window::setTitle($title);
     }
 
     private function prompt($test)
@@ -185,11 +181,8 @@ class Install extends Controller
         do {
             echo "MySQL account on (".$hostname.":".$port.")\n";
 
-            $rl   = new \Hoa\Console\Readline\Readline ();
-            $user = $rl->readLine('User     [default : root]    : ');
-
-            $rl       = new \Hoa\Console\Readline\Password();
-            $password = $rl->readLine('Password [default : (empty)] : ');
+            $user = readline('User     [default : root]    : ');
+            $password = readline('Password [default : (empty)] : ');
 
             if (empty($user)) {
                 $user = "root";
@@ -238,8 +231,7 @@ class Install extends Controller
         do {
             echo "Name of database who will be used by PmaControl\n";
 
-            $rl       = new \Hoa\Console\Readline\Readline ();
-            $database = $rl->readLine('Database     [default : pmacontrol]    : ');
+            $database = readline('Database     [default : pmacontrol]    : ');
 
             if (empty($database)) {
                 $database = "pmacontrol";
@@ -395,8 +387,7 @@ database=".$server['database']."";
 
             $email_is_valid = false;
             do {
-                $rl    = new \Hoa\Console\Readline\Readline ();
-                $email = $rl->readLine('Your email : ');
+                $email = readline('Your email : ');
 
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $this->displayResult("This email considered as valid !", "KO");
@@ -418,13 +409,13 @@ database=".$server['database']."";
             } while ($email_is_valid === false);
 
             //login
-            $login = $rl->readLine('Your login : ');
+            $login = readline('Your login : ');
 
             //first name
-            $firstname = $rl->readLine('Your firstname : ');
+            $firstname = readline('Your firstname : ');
 
             //last name
-            $lastname = $rl->readLine('Your lastname : ');
+            $lastname = readline('Your lastname : ');
 
             //country
             $sql = "SELECT libelle FROM geolocalisation_country where libelle != '' ORDER BY libelle";
@@ -437,9 +428,7 @@ database=".$server['database']."";
             }
 
             do {
-                $rl       = new \Hoa\Console\Readline\Readline();
-                $rl->setAutocompleter(new \Hoa\Console\Readline\Autocompleter\Word($country));
-                $country2 = $rl->readLine('Your country [First letter in upper case, then tab for help] : ');
+                $country2 = readline('Your country [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_country where libelle = '".$db->sql_real_escape_string($country2)."'";
                 $res = $db->sql_query($sql);
@@ -464,9 +453,7 @@ database=".$server['database']."";
             }
 
             do {
-                $rl    = new \Hoa\Console\Readline\Readline();
-                $rl->setAutocompleter(new \Hoa\Console\Readline\Autocompleter\Word($city));
-                $city2 = $rl->readLine('Your city [First letter in upper case, then tab for help] : ');
+                $city2 = readline('Your city [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_city where libelle = '".$db->sql_real_escape_string($city2)."'";
                 $res = $db->sql_query($sql);
@@ -480,13 +467,10 @@ database=".$server['database']."";
                 }
             } while ($db->sql_num_rows($res) != 1);
 
-            //password
-            $rl = new \Hoa\Console\Readline\Password();
-
             $good = false;
             do {
-                $pwd  = $rl->readLine('Password : ');
-                $pwd2 = $rl->readLine('Password (repeat) : ');
+                $pwd  = readline('Password : ');
+                $pwd2 = readline('Password (repeat) : ');
 
                 if (!empty($pwd) && $pwd === $pwd2) {
                     $good = true;
@@ -550,9 +534,11 @@ database=".$server['database']."";
 
         echo Color::getColoredString("\nAdministrator successfully created !\n", "green");
 
-        $ip_list = shell_exec('ifconfig -a | grep "inet ad" | cut -d ":" -f 2 | cut -d " " -f 1');
+        //$ip_list = shell_exec('ifconfig -a | grep "inet ad" | cut -d ":" -f 2 | cut -d " " -f 1');
+	$ip_list = trim(shell_exec("hostname -I"));
 
-        $ips = explode("\n", $ip_list);
+	$ips = explode(" ", $ip_list);
+        //$ips = explode("\n", $ip_list);
 
         foreach ($ips as $ip) {
             if (empty($ip)) {
@@ -583,8 +569,7 @@ database=".$server['database']."";
             $this->cadre("create organization");
 
             do {
-                $rl           = new \Hoa\Console\Readline\Readline();
-                $organization = $rl->readLine('Your Organization : ');
+                $organization = readline('Your Organization : ');
             } while (strlen($organization) < 3);
 
             $orgas = array($organization);
@@ -693,24 +678,18 @@ if (! defined('CRYPT_KEY'))
 
 
 
-        $sql = "select count(1) as cpt from information_schema.engines where engine in ('TokuDB','ROCKSDB') and (SUPPORT = 'YES' OR SUPPORT = 'DEFAULT');";
+        $sql = "select count(1) as cpt from information_schema.engines where engine in ('ROCKSDB') and (SUPPORT = 'YES' OR SUPPORT = 'DEFAULT');";
 
         $res = mysqli_query($this->link, $sql);
 
         while ($ob = mysqli_fetch_object($res)) {
 
             if ($ob->cpt < "1") {
-                echo Color::getColoredString('Engine "TokuDB" is not installed yet', "grey", "red")."\n";
 
-                echo "To install TokuDB :\n";
-                echo "\t- Add : \"plugin-load-add=ha_tokudb.so\" in your my.cnf\n";
-                echo "\t- Disable transparent_hugepage : \"echo never > /sys/kernel/mm/transparent_hugepage/enabled\" \n";
-                echo "\t- Disable transparent_hugepage : \"echo never > /sys/kernel/mm/transparent_hugepage/defrag\" \n";
-                echo "\t- Restart MySQL server\n";
 
                 echo Color::getColoredString('Engine "ROCKSDB" is not installed yet', "grey", "red")."\n";
                 echo "To install ROCKSDB :\n";
-                echo "\t- mariadb-plugin-rocksdb\n";
+                echo "\t- apt install mariadb-plugin-rocksdb\n";
 
                 exit(2);
             }

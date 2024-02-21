@@ -20,7 +20,6 @@
         "glial/glial": "5.1.*",
         "sensiolabs/ansi-to-html": "1.1.1",
         "alfallouji/php_multithread": "0.1.4",
-        "hoa/console": "3.*",
         "esysteme/mysql-sys": "1.6.4",
         "ninsuo/php-shared-memory": "*",
         "geerlingguy/ping": "*",
