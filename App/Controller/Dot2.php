@@ -10,6 +10,7 @@ namespace App\Controller;
 use Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
+use App\Library\Available;
 use App\Library\Debug;
 use Glial\Sgbd\Sgbd;
 use App\Controller\Common;
@@ -201,7 +202,7 @@ class Dot2 extends Controller
 
                 $node = array_pop($all_nodes);
 
-                if ($node['is_available'] === "0") {
+                if (Available::getMySQL($node['id_mysql_server']) === true) {
                     Debug::debug($cluster_name, "TO_REMOVE");
                     Debug::debug($node, "NODE OFFLINE ALONE");
 
@@ -506,11 +507,13 @@ class Dot2 extends Controller
             //Debug::debug($server, "server");
             //$this->graph_node[$id_mysql_server] = $server;
 
-            if (isset($server['available']) && $server['available'] === "1") {
+            if (isset($server['mysql_available']) && $server['mysql_available'] === "1") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_OK'];
-            } elseif ($server['available'] === "0") {
+            } elseif (isset($server['mysql_available']) && $server['mysql_available'] === "0") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_ERROR'];
-            } elseif ($server['available'] === "2") {
+            } elseif (isset($server['mysql_available']) && $server['mysql_available'] === "2") {
+                $this->graph_node[$id_mysql_server] = $this->node['NODE_BUSY'];
+            }else{
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_BUSY'];
             }
 
@@ -518,7 +521,7 @@ class Dot2 extends Controller
             if (!empty($server['wsrep_local_state']) && $server['wsrep_local_state'] === "1") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_IST'];
             }
-
+            
             //MANUAL DESYNC
             if (!empty($server['wsrep_desync']) && $server['wsrep_desync'] === "ON") {
                 $this->graph_node[$id_mysql_server] = $this->node['NODE_MANUAL_DESYNC'];
@@ -946,7 +949,7 @@ class Dot2 extends Controller
         $lines[] = "Auto_inc : (" . $server['auto_increment_offset'] . " / " . $server['auto_increment_increment'] . ")";
         if (!empty($server['wsrep_local_state_comment'])) {
 
-            if ($server['is_available'] == "1" || $server['is_available'] == "-1") {
+            if (Available::getMySQL($server['id_mysql_server']) === true) {  //TODO need add case == -1
                 $lines[] = "Galera status : " . $server['wsrep_local_state_comment'];
             } else {
                 $lines[] = "Galera status : " . __("Out of order");
@@ -1219,7 +1222,7 @@ class Dot2 extends Controller
         foreach ($this->graph_galera_cluster as $cluster_name => $segments) {
             foreach ($segments as $segment => $nodes) {
                 foreach ($nodes as $node) {
-                    $cluster_check[$cluster_name][$node] = $this->servers[$node]['is_available'];
+                    $cluster_check[$cluster_name][$node] = Available::getMySQL($this->servers[$node]['id_mysql_server']);
                 }
             }
         }

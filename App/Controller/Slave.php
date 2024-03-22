@@ -11,6 +11,7 @@ use App\Library\Mysql;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
+use \App\Library\Available;
 
 class Slave extends Controller
 {
@@ -203,11 +204,11 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $data['slave'] = array();
 
-        $data['server'] = Extraction::display(array("mysql_server::available"));
+        $data['server'] = Extraction::display(array("mysql_server::mysql_available"));
 
-        //debug($data['server'][$server['id']]['']['available']);
+        //debug($data['server'][$server['id']]['']['mysql_available']);
 
-        if ($data['server'][$server['id']]['']['available'] === "1") {
+        if ($data['server'][$server['id']]['']['mysql_available'] === "1") {
             $link_slave = Sgbd::sql($server['name']);
 
             

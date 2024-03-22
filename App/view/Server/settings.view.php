@@ -57,25 +57,20 @@ $style = '';
 
 Form::setIndice(true);
 
-foreach ($data['servers'] as $server) {
 
+//debug($data['mysql']);
+
+foreach ($data['servers'] as $server) {
 
     $style2 = '';
 
-
-    /*
-    if (empty($server['is_available']) && $server['is_monitored'] === "1") {
+    if (empty($data['mysql'][$server['id']]['']['mysql_available']) && $server['is_monitored'] === "1") {
         $style2 = 'background-color:#d9534f; color:#FFFFFF';
     }
 
     if ($server['is_acknowledged'] !== "0") {
         $style2 = 'background-color:#cccccc; color:#999999';
     }
-
-*/
-
-
-
 
     $i++;
     echo '<tr>';
@@ -87,11 +82,11 @@ foreach ($data['servers'] as $server) {
     echo '</td>';
 
     echo '<td style="'.$style.' '.$style2.'">';
-    echo '<span class="glyphicon '.(empty($server['error']) ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
+    echo '<span class="glyphicon '.(!empty($data['mysql'][$server['id']]['']['mysql_available']) ? "glyphicon-ok" : "glyphicon-remove").'" aria-hidden="true"></span>';
     echo '</td>';
 
     echo '<td style="'.$style.' '.$style2.'">';
-    echo '<span class="glyphicon '.(empty($server['ssh_available']) ? "glyphicon-remove" : "glyphicon-ok").'" aria-hidden="true"></span>';
+    echo '<span class="glyphicon '.(empty($data['ssh'][$server['id']]['']['ssh_available']) ? "glyphicon-remove" : "glyphicon-ok").'" aria-hidden="true"></span>';
     echo '</td>';
 
 

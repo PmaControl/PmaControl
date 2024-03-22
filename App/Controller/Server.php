@@ -52,6 +52,8 @@ class Server extends Controller
                 "hardware::swapiness"
         ));
 
+        $data['service_ssh'] = Extraction::display(array("ssh_available"));
+
         $id_mysql_servers = array_keys($data['hardware']);
 
         if (!empty($id_mysql_servers)) {
@@ -237,9 +239,9 @@ class Server extends Controller
         }
 
 //debug($servers);
-        $test = Extraction::display(array("mysql_server::available"));
+        $test = Extraction::display(array("mysql_server::mysql_available"));
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_server::ping","mysql_server::available", "mysql_server::error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_server::ping","mysql_ping", "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res               = $db->sql_query($sql);
@@ -247,7 +249,6 @@ class Server extends Controller
         while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['last_date'][$arr['id_mysql_server']] = $arr;
         }
-
 
         // get Tag
         $sql          = "SELECT * FROM link__mysql_server__tag a
@@ -258,9 +259,6 @@ class Server extends Controller
             $data['tag'][$arr['id_mysql_server']][] = $arr;
         }
 
-
-        //debug($data['tag']);
-
         $data['processing'] = $this->getDaemonRunning(array());
 
         $this->set('data', $data);
@@ -269,7 +267,6 @@ class Server extends Controller
     public function database()
     {
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         //TODO add available === 1
         $sql = "SELECT a.id,a.name,a.ip,a.port,
@@ -789,11 +786,12 @@ var myChart = new Chart(ctx, {
             }
         }
 
-
-
         $this->title  = '<i class="fa fa-server"></i> '.__("Servers");
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-cog" style="font-size:14px"></i> '
             .__("Settings").'</a> > <i class="fa fa-server"  style="font-size:14px"></i> '.__("Servers");
+
+        $data['ssh']   = Extraction::display(array("ssh_available"));
+        $data['mysql'] = Extraction::display(array("mysql_available"));
 
         $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);

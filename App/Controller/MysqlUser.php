@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
+use \App\Library\Available;
 
 class MysqlUser extends Controller
 {
@@ -248,7 +249,9 @@ class MysqlUser extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server WHERE is_available = 1";
+        $id_mysql_available = Available::getMySQL();
+
+        $sql = "SELECT * FROM mysql_server WHERE id in (".$id_mysql_available.")";
         $res = $db->sql_query($sql);
 
         $data = array();
@@ -353,4 +356,11 @@ SQL;
             echo $role."\n";
         }
     }
+
+    /*
+        if none => return array of all server
+        if id_mysql_server is set, return true or false
+    */
+
+
 }

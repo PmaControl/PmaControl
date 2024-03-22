@@ -12,6 +12,7 @@ use \Glial\Synapse\Controller;
 use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use \App\Library\Debug;
+use \App\Library\Available;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -79,7 +80,7 @@ class CompareConfig extends Controller {
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "bootstrap-select.min.js", "compare/index.js"));
 
-        $sql = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
+        $sql = "SELECT * FROM mysql_server WHERE `id` in(".Available::getMySQL().") order by `name`";
         $servers = $db->sql_fetch_yield($sql);
 
         $data['server'] = [];

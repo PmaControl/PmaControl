@@ -68,8 +68,8 @@ class CheckConfig extends Controller
                 $res = $db->sql_query($sql);
 
                 $is_available = 0;
-                $available = Extraction::display(array("available"), array($_GET['mysql_server']['id']));
-                $is_available = end($available)['']['available'];
+                $available = Extraction::display(array("mysql_available"), array($_GET['mysql_server']['id']));
+                $is_available = end($available)['']['mysql_available'];
 
                 $server_note_available = array();
                 while ($ob                    = $db->sql_fetch_object($res)) {
