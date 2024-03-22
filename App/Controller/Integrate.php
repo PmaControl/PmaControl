@@ -24,7 +24,7 @@ class Integrate extends Controller
     const ANSWER = "answer"; //merge of SHOW GLOBAL STATUS / SHOW MASTER STATUS / SHOW SLAVE HOSTS / SHOW SLAVE STATUS
     const SYSTEM = "ssh_stats";
     const HARDWARE = "hardware";
-    const SERVICE = "service";
+    const SERVICE = "service_mysql";
 
     var $shared;
     var $memory_file = "answer";

@@ -249,4 +249,23 @@ and COLUMN_NAME != 'id' and (COLUMN_NAME like 'id%' OR COLUMN_NAME like '%id')";
         $data['real_fk'] = Mysql::getRealForeignKey($param);
         $this->set('data', $data);
     }
+
+
+    public function getPrefix($param)
+    {
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM fk_remove_prefix";
+        $res = $db->sql_query($sql);
+
+        while ($ob          = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
+            $data['prefix'][$ob->id_mysql_server][$ob->database_name][$ob->prefix] = 1;
+        }
+
+        Debug::debug($data['prefix']);
+
+        return $data['prefix'];
+
+    }
 }

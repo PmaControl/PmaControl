@@ -265,7 +265,7 @@ class Mysql
         $server['mysql_server']['ssh_port']        = $data['ssh_port'] ?? 22;
         $server['mysql_server']['ssh_login']       = $data['ssh_login'] ?? "root";
         $server['mysql_server']['is_proxy']        = $data['is_proxy'] ?? 0;
-        $server['mysql_server']['ssh_available']   = 0;
+        
 
         $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
         $res = $db->sql_query($sql);
@@ -719,26 +719,7 @@ END IF;";
     }
 
 
-    /*
-    * @deprecated
-    */
 
-    static public function getMysqlById($param) {
-        //need to save in case of multiple ask
-        Debug::parseDebug($param);
-        $id_mysql_server = $param[0];
-
-        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $name = $ob->name;
-        }
-
-        $db = Sgbd::sql($name);
-
-        return $db;
-    }
 
     static public function getRealForeignKey($param)
     {

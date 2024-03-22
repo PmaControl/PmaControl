@@ -30,7 +30,7 @@ class Control extends Controller
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
     private $engine               = "tokudb";
-    private $engine_preference    = array("ROCKSDB", "TokuDB");
+    private $engine_preference    = array("ROCKSDB");
     public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_proxysql" => "`server` varchar(64) NOT NULL,",
         "ts_value_general" => "");
     //when mysql reach 80% of disk we start to drop partition
@@ -382,7 +382,7 @@ PARTITION BY RANGE (to_days(`date`))
         $sql = "SELECT `TABLE_NAME`,`PARTITION_NAME`,`SUBPARTITION_NAME` ,`TABLE_ROWS` FROM information_schema.partitions
             where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
 
-        Debug::debug(SqlFormatter::format($sql));
+        Debug::sql($sql);
     }
 
     private function getDates()
@@ -445,9 +445,7 @@ PARTITION BY RANGE (to_days(`date`))
             WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=4
                 )
             ";
-
-//Debug::sql($sql);
-
+            
         $res = $db->sql_query($sql);
 
         $link2 = array();
@@ -455,16 +453,9 @@ PARTITION BY RANGE (to_days(`date`))
             $link2[] = $ob->id_ts_variable;
         }
 
-//$resultat = array_intersect($link1, $link2);
-//Debug::debug($link1, "link1");
-//Debug::debug($link2, "link2");
-
-
         $to_delete = array_diff($link1, $link2);
         $to_create = array_diff($link2, $link1);
 
-//Debug::debug($to_delete, "to delete");
-//Debug::debug($to_create, "to create");
 
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)

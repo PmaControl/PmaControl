@@ -516,7 +516,7 @@ class Common extends Controller
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $servers = Extraction::display(array('mysql_server::available'));
+        $servers = Extraction::display(array('mysql_server::mysql_available'));
 
 
         $data =array();
@@ -529,12 +529,12 @@ class Common extends Controller
         {
             foreach($servers as $id_mysql_server => $server)
             {
-                $data['id_mysql_server'][$id_mysql_server] = $server['']['available'];
-                if ($server['']['available'] === "1"){
+                $data['id_mysql_server'][$id_mysql_server] = $server['']['mysql_available'];
+                if ($server['']['mysql_available'] === "1"){
                     $available[] = $id_mysql_server;
-                }elseif ($server['']['available'] === "0"){
+                }elseif ($server['']['mysql_available'] === "0"){
                     $down[] = $id_mysql_server;
-                }elseif ($server['']['available'] === "2"){
+                }elseif ($server['']['mysql_available'] === "2"){
                     $warning[] = $id_mysql_server;
                 }
                 

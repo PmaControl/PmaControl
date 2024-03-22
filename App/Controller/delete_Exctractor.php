@@ -41,7 +41,12 @@ class Exctractor extends Controller {
 
         $this->view = false;
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `mysql_server` WHERE  ssh_available =1 AND is_monitored=1";
+
+        $id_mysql_server = Extraction::display(array("ssh_server::available"));
+
+        Debug::debug($id_mysql_server, "ssh available");
+
+        $sql = "SELECT * FROM `mysql_server` WHERE  is_monitored=1";
         $res = $db->sql_query($sql);
 
         Debug::debug($sql);

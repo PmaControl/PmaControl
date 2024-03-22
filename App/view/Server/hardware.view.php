@@ -47,7 +47,7 @@ $i = 0;
           } */
 
         $style = "";
-        if (empty($server['ssh_available']) && $server['is_monitored'] == "1") {
+        if (empty($data['service_ssh'][$server['id']]['']['ssh_available']) && $server['is_monitored'] == "1") {
             $style = 'background-color:#d9534f; color:#FFFFFF';
         }
 
@@ -58,7 +58,7 @@ $i = 0;
         echo '<td style="' . $style . '">' . $i . '</td>';
         echo '<td style="' . $style . '">' . $server['id'] . '</td>';
         echo '<td style="' . $style . '">';
-        echo '<span class="glyphicon ' . ($server['ssh_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove") . '" aria-hidden="true"></span>';
+        echo '<span class="glyphicon ' . ($data['service_ssh'][$server['id']]['']['ssh_available'] == 1 ? "glyphicon-ok" : "glyphicon-remove") . '" aria-hidden="true"></span>';
         echo '</td>';
         echo '<td style="' . $style . '">' . $server['display_name'] . '</td>';
         echo '<td style="' . $style . '">' . $hardware['hostname'] . '</td>';

@@ -170,7 +170,7 @@ trait Galera {
     public function mappingMaster() {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,ip,port,is_available FROM mysql_server";
+        $sql = "SELECT id,ip,port FROM mysql_server";
 
         $res = $db->sql_query($sql);
 

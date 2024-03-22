@@ -1,5 +1,8 @@
 <?php
 
+
+use App\Library\Available;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -54,12 +57,10 @@ foreach ($data['galera'] as $cluster_name => $galera) {
             echo '<tr>';
             echo '<td>' . $j . '</td>';
             
-            if ($node['is_available'] === "1")
-            {
+            if (Available::getMySQL($node['id_mysql_server']))  {
                 $class = "ok";
             }
-            else
-            {
+            else {
                 $class = "remove";
             }
             

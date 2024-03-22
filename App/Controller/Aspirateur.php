@@ -140,7 +140,10 @@ class Aspirateur extends Controller
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
             
-            $this->setService($id_mysql_server, $ping, $error_msg, $available);
+            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            
+
+            
             $this->logger->notice("id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
 
             // VERY important else we got error and we kill the worker and have to restart with a new one
@@ -362,9 +365,31 @@ class Aspirateur extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $time_start = microtime(true);
-            $ssh        = Ssh::ssh($id_mysql_server);
-            $ping       = microtime(true) - $time_start;
+
+          
+            try{
+                $error_msg='';
+                $time_start = microtime(true);
+                $ssh        = Ssh::ssh($id_mysql_server);
+            }
+            catch(\Exception $e){
+                $error_msg = $e->getMessage();
+                $this->logger->warning($error_msg." id_ssh_server:$id_mysql_server");
+            }
+            finally{
+                $ping = microtime(true) - $time_start;
+                $available = empty($error_msg) ? 1 : 0;
+                
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh");
+                $this->logger->notice("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
+    
+                // VERY important else we got error and we kill the worker and have to restart with a new one
+                if ($available === 0) {
+                    return false;
+                }
+            }
+
+
 
             if ($ssh !== false) {
 //Debug::debug($data);
@@ -695,10 +720,10 @@ class Aspirateur extends Controller
 
                 $error = $last_error[$server['id']][''];
 
-                if (isset($error['available']) && $error['available'] != 0) {
+                if (isset($error['mysql_available']) && $error['mysql_available'] != 0) {
                     // UPDATE is_available X => YELLOW  (not answered)
                     $this->logger->warning("id_mysql_server:$idmysqlserver");
-                    $this->setService($idmysqlserver,round($time,2),$msg2, 2);
+                    $this->setService($idmysqlserver,round($time,2),$msg2, 2, "mysql");
                 }
                 
             } else {
@@ -1194,13 +1219,12 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
 
 
-//on verifie avec le double buffer qu'on est bien sur le même pid
-//et ce dernier est toujours sur le serveur MySQL qui pose problème
+            //on verifie avec le double buffer qu'on est bien sur le même pid
+            //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/".$worker_type."/".$server['pid'].".pid"));
 
-// si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
+            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
-
 
                 Debug::debug($server['pid'], "GOOD");
 
@@ -1208,22 +1232,13 @@ class Aspirateur extends Controller
                 $time            = microtime(true) - $server['microtime'];
                 $this->logger->warning("SSH server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
 
-//special case for timeout 60 seconds, else we see working since ... and not the real error
-                $sql = "SELECT ssh_error,ssh_available  from mysql_server WHERE id = ".$server['id'].";";
-                $res = $db->sql_query($sql);
+                $id_mysql_server = Extraction::display(array("ssh_server::available"));
+                Debug::debug($id_mysql_server, "ssh available");
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    if (!empty($ob->is_available)) {
-// UPDATE ssh_available X => YELLOW  (not answered)
-                        $sql = "UPDATE `mysql_server` SET ssh_available  = -1,
-                            ` 	ssh_date_refresh ` = '".date("Y-m-d H:i:s")."',
-                            `ssh_error`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
-//Debug::sql($sql);
-                        $db->sql_query($sql);
-                    }
-                }
+                $this->logger->notice(json_encode($id_mysql_server));
+
             } else {
-//si pid n'existe plus alors on efface le fichier de lock
+                //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/".$worker_type."/".$server['id'].".lock";
 
                 unlink($lock_file);
@@ -1911,19 +1926,39 @@ GROUP BY C.ID, C.INFO;";
      * available = 2 : waiting answer
      * 
      */
-    public function setService($id_mysql_server, $ping, $error_msg, $available)
+    public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
+        if (! in_array($type, array('mysql', 'ssh')))
+        {
+            die('error');
+        }
+
         $service                              = array();
-        $service['mysql_server']['available'] = $available;
-        $service['mysql_server']['ping']      = $ping;
-        $service['mysql_server']['error']     = $error_msg;
+        $service[$type.'_server'][$type.'_available'] = $available;
+        $service[$type.'_server'][$type.'_ping']      = $ping;
+        $service[$type.'_server'][$type.'_error']     = $error_msg;
 
         Debug::debug($service);
 
         $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_mysql_server] = $service;
 
-        $this->allocate_shared_storage('service');
-        $this->shared['service']->{$id_mysql_server} = $services;
+        $this->allocate_shared_storage('service_'.$type);
+        $this->shared['service_'.$type]->{$id_mysql_server} = $services;
+
+        return $services;
     }
+
+
+    public function debug($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = Extraction::display(array(  "ssh_server::ssh_available"));
+        Debug::debug($id_mysql_server, "ssh available");
+
+        $mysql = Extraction::display(array( "mysql_server::mysql_available"), array(1));
+        Debug::debug($mysql, "mysql available");
+    }
+
 }

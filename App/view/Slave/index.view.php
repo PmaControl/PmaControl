@@ -77,7 +77,7 @@ foreach ($data['slave'] as $slaves) {
         if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
             $id_mysql_server_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
 
-            if ($data['info_server'][$id_mysql_server_master]['']['available'] === "0") {
+            if ($data['info_server'][$id_mysql_server_master]['']['mysql_available'] === "0") {
                 $class = "pma pma-danger";
             }
         }
@@ -101,9 +101,9 @@ foreach ($data['slave'] as $slaves) {
         echo '</td>';
 
         $class = "";
-        if (empty($data['info_server'][$slave['id_mysql_server']]['']['available'])) {
+        if (empty($data['info_server'][$slave['id_mysql_server']]['']['mysql_available'])) {
             $class = "pma pma-danger";
-        }elseif($data['info_server'][$slave['id_mysql_server']]['']['available'])
+        }elseif($data['info_server'][$slave['id_mysql_server']]['']['mysql_available'])
         {
             $class = "pma pma-warning";
         }

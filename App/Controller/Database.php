@@ -18,6 +18,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Param;
+use \App\Library\Available;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 
@@ -1011,7 +1012,7 @@ END;";
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "bootstrap-select.min.js", "compare/index.js"));
 
-        $sql     = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
+        $sql     = "SELECT * FROM mysql_server WHERE `id` in(".Available::getMySQL().") order by `name`";
         $servers = $db->sql_fetch_yield($sql);
 
         $data['server'] = [];
@@ -1301,7 +1302,7 @@ END;";
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "bootstrap-select.min.js", "database/data.js"));
 
-        $sql     = "SELECT * FROM mysql_server WHERE `error` = '' order by `name`";
+        $sql     = "SELECT * FROM mysql_server WHERE `id` in(".Available::getMySQL().") order by `name`";
         $servers = $db->sql_fetch_yield($sql);
 
         $data['server'] = [];

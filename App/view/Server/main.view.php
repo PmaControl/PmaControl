@@ -83,7 +83,7 @@ if (!empty($data['servers'])) {
 
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
-        if (empty($extra['available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (empty($extra['mysql_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             
             if (empty($style))
             {
@@ -92,7 +92,7 @@ if (!empty($data['servers'])) {
         }
 
         // cas des warning
-        if (!empty($extra['available']) && $extra['available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
         }
@@ -118,7 +118,7 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">'.$i.'</td>';
         echo '<td style="'.$style.'">'.$server['id'].'</td>';
         echo '<td style="'.$style.'">';
-        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['available']) && $extra['available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
+        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
         echo '</td>';
 
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
@@ -244,7 +244,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
-        if (isset($extra['available']) && $extra['available']==="0") {
+        if (isset($extra['mysql_available']) && $extra['mysql_available']==="0") {
             echo $extra['error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
         }
 
@@ -275,7 +275,7 @@ if (!empty($data['servers'])) {
             echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
         }
 
-        if (!empty($extra['available']) && $extra['available'] === "2") {
+        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2") {
             echo '&nbsp;'.$server['warning'];
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
         }
@@ -283,7 +283,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        if (empty($extra['available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+        if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
         echo '</td>';

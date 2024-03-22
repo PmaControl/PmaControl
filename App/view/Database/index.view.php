@@ -9,7 +9,7 @@ echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
 
-
+/*
 echo ' <div class="btn-group" role="group" aria-label="Default button group">';
 
 foreach ($data['menu'] as $key => $elem) {
@@ -30,7 +30,7 @@ foreach ($data['menu'] as $key => $elem) {
 }
 echo '</div>';
 echo '<br /><br />';
-
+*/
 \Glial\Synapse\FactoryController::addNode("Database", "create", array());
 \Glial\Synapse\FactoryController::addNode("Database", "rename", array());
 \Glial\Synapse\FactoryController::addNode("Database", "refresh", array());
