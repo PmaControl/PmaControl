@@ -148,7 +148,7 @@ class Debug
         self::$display_sql = false;
     }
 
-    static function debug($string, $var = "")
+    static function debug($string, $var = "", $font_color="grey", $background_color="blue")
     {
         if (self::$debug) {
 
@@ -157,12 +157,11 @@ class Debug
             if (!empty($var)) {
 
                 if (IS_CLI) {
-                    echo Color::getColoredString($var, "grey", "blue")." ";
+                    echo Color::getColoredString($var, $font_color, $background_color)." ";
                 } else {
                     echo $var."<br>";
                 }
             }
-
 
             if (is_array($string) || is_object($string)) {
 
@@ -226,43 +225,23 @@ class Debug
         }
     }
 
-    static function warning($var = "")
+    static function warning($string, $var = "")
     {
-        self::head();
+        //self::head();
+        self::debug($string, $var, "black", "grey");
 
-        if (self::$debug) {
-
-
-            if (IS_CLI) {
-                echo Color::getColoredString($var, "grey", "yellow")." ";
-                echo "\n";
-            }
-        }
     }
 
-    static function error($var = "")
+    static function error($string, $var = "")
     {
-        self::head();
-
-        if (self::$debug) {
-            if (IS_CLI) {
-                echo Color::getColoredString($var, "grey", "red")." ";
-
-                echo "\n";
-            }
-        }
+        //self::head();
+        self::debug($string, $var, "grey", "red");
     }
 
-    static function success($var = "")
+    static function success($string, $var = "")
     {
-        self::head();
-
-        if (self::$debug) {
-            if (IS_CLI) {
-                echo Color::getColoredString($var, "grey", "green")." ";
-                echo "\n";
-            }
-        }
+        //self::head();
+        self::debug($string, $var, "grey", "green");
     }
 
     static function head()

@@ -245,7 +245,7 @@ if (!empty($data['servers'])) {
         echo '<td style="max-width:400px;'.$style.'" class="">';
 
         if (isset($extra['mysql_available']) && $extra['mysql_available']==="0") {
-            echo $extra['error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
+            echo $extra['mysql_error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
         }
 
         $data['last_date'][$server['id']]['date'] = $data['last_date'][$server['id']]['date'] ?? "";
