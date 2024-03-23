@@ -58,35 +58,32 @@ class VirtualForeignKey extends Controller
         foreach($databases as $database)
         {
             $table_not_found = array();
+            $id_position = $this->getIdPosition(array($id_mysql_server, $database));
 
-            $position = $this->getIdPosition(array($id_mysql_server, $database));
-            $sql = "select TABLE_SCHEMA,TABLE_NAME, COLUMN_NAME 
-            from information_schema.COLUMNS 
-            where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys') 
-            AND TABLE_SCHEMA = '".$database."' 
-            AND COLUMN_KEY != 'PRI' and COLUMN_NAME like '".$position."'";
+            $column_1 = $this->getIdFromColumnName(array($id_mysql_server, $database, $id_position));
+            $column_2 = $this->getIdFromComposedPk(array($id_mysql_server, $database, $id_position));
 
-            // need add where PK on more than one field
-            //TO DO UPGRADE
+            $nb_key = count($column_1) + count($column_2);
 
-            $res = $db->sql_query($sql);
-            $nb_key = $db->sql_num_rows($res);
+            Debug::debug(count($column_1), "Nombre de clefs étrangère potentiels hors PK");
+            Debug::debug(count($column_2), "Nombre de clefs étrangère potentiels from composed PK");
+            Debug::debug($nb_key, "Nombre total de clefs étrangère potentiels");
 
-            Debug::debug($nb_key, "Nombre de clefs étrangère potentiels");
+            $all_column = array_merge($column_1, $column_2);
 
             $nb_fk_found = 0;
-            while ($arr         = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            foreach ($all_column as $arr) {
 
                 Debug::success($arr, "reference to find ");
 
                 $schema_ref = $arr['TABLE_SCHEMA'];
 
                 //start with id
-                if ($position === self::BEGIN) {
+                if ($id_position === self::BEGIN) {
                     $table_ref  = preg_replace('/(^id\_?)/i', '$2', $arr['COLUMN_NAME']);
                 }
                 //end with id
-                else if ($position === self::END) {
+                else if ($id_position === self::END) {
                     $table_ref  = preg_replace('/(\_?id$)/i', '$2', $arr['COLUMN_NAME']);
                 }
                 else {
@@ -336,21 +333,21 @@ class VirtualForeignKey extends Controller
         $table_schema = $param[1]; 
 
         $db = Mysql::getDbLink($id_mysql_server);
-        $positions = array(self::BEGIN, self::END);
+        $id_positions = array(self::BEGIN, self::END);
         $result = array();
 
-        foreach($positions as $position)
+        foreach($id_positions as $id_position)
         {
             $sql = "select count(1) as cpt
             from information_schema.COLUMNS 
             where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys') 
             AND TABLE_SCHEMA = '".$table_schema."'
             AND COLUMN_KEY != 'PRI' 
-            AND COLUMN_NAME like '".$position."'";
+            AND COLUMN_NAME like '".$id_position."'";
             $res = $db->sql_query($sql);
 
             while($ob = $db->sql_fetch_object($res)) {
-                $result[$position] = $ob->cpt;
+                $result[$id_position] = $ob->cpt;
             }
         }
 
@@ -451,5 +448,108 @@ class VirtualForeignKey extends Controller
         }
 
         return self::$primary_key[$database][$table];
+    }
+
+
+    public function getIdFromComposedPk($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $table_schema = $param[1];
+        $id_position = $param[2];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT group_concat(kcu.COLUMN_NAME) as col, tc.TABLE_NAME as table_name, COUNT(*) as nb_columns 
+        FROM information_schema.TABLE_CONSTRAINTS tc 
+        JOIN information_schema.KEY_COLUMN_USAGE kcu ON tc.CONSTRAINT_SCHEMA = kcu.CONSTRAINT_SCHEMA 
+        AND tc.TABLE_NAME = kcu.TABLE_NAME
+        AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME 
+        WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY' AND tc.TABLE_SCHEMA = '".$table_schema."'
+        GROUP BY tc.TABLE_SCHEMA, tc.TABLE_NAME HAVING COUNT(*) > 1;";
+
+        $res = $db->sql_query($sql);
+
+        $resultat = array();
+        $notfound = array();
+
+        while ($ob = $db->sql_fetch_object($res)) {
+
+            $cols = explode(",", $ob->col);
+            
+            foreach($cols as $col)
+            {
+                $output_array = array();
+                //start with id
+                if ($id_position === self::BEGIN) {
+                    preg_match('/(^id\_?)/i', $col, $output_array);
+                }
+                //end with id
+                else if ($id_position === self::END) {
+                    preg_match('/(\_?id$)/i', $col, $output_array);
+                }
+
+                $tmp = array();
+                $tmp['TABLE_SCHEMA'] = $table_schema;
+                $tmp['TABLE_NAME'] = $ob->table_name;
+                $tmp['COLUMN_NAME'] = $col;
+
+                if (count($output_array) === 2)
+                {
+                    // match
+                    $resultat[] = $tmp;
+                }
+                else
+                {
+                    // not match
+                    $notfound[] = $tmp;
+                }
+            }
+        }
+
+        Debug::success($resultat, "RESULTAT");
+        Debug::success($notfound, "ERROR");
+
+        return $resultat;
+    }
+
+
+    /*
+    get all id from column name except from primary key
+    */
+
+    public function getIdFromColumnName($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $table_schema = $param[1];
+        $id_position = $param[2];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+        $sql = "select TABLE_SCHEMA,TABLE_NAME, COLUMN_NAME 
+        from information_schema.COLUMNS 
+        where TABLE_SCHEMA NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys') 
+        AND TABLE_SCHEMA = '".$table_schema."'
+        AND COLUMN_KEY != 'PRI' and COLUMN_NAME like '".$id_position."'";
+
+        $res = $db->sql_query($sql);
+
+        $resultat = array();
+        $notfound = array();
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            $tmp = array();
+            $tmp['TABLE_SCHEMA'] = $arr['TABLE_SCHEMA'];
+            $tmp['TABLE_NAME'] = $arr['TABLE_NAME'];
+            $tmp['COLUMN_NAME'] = $arr['COLUMN_NAME'];
+            $resultat[] = $tmp;
+        }
+
+        Debug::success($resultat, "RESULTAT");
+
+        return $resultat;
     }
 }
