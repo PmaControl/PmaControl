@@ -162840,6 +162840,8 @@ CREATE TABLE `translation_main` (
 
 LOCK TABLES `translation_main` WRITE;
 /*!40000 ALTER TABLE `translation_main` DISABLE KEYS */;
+INSERT INTO `translation_main` VALUES
+(1,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','en','fr','France','App/view/About/index.view.php',24);
 /*!40000 ALTER TABLE `translation_main` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -163027,12 +163029,12 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',73468,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',73475,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',73486,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',73497,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',73510,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',73523,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',1374501,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1374445,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',1374457,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',1374469,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',1374483,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',1374529,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163269,10 +163271,10 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,223,224,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,225,226,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,227,228,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,178,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,225,226,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,227,228,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,229,230,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,180,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
 INSERT INTO `menu` VALUES (95,92,4,27,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
@@ -163289,14 +163291,14 @@ INSERT INTO `menu` VALUES (109,92,106,111,1,'<i style=\"font-size: 16px\" class=
 INSERT INTO `menu` VALUES (110,109,107,108,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
 INSERT INTO `menu` VALUES (111,109,109,110,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
 INSERT INTO `menu` VALUES (112,103,59,60,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,112,157,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (113,92,112,159,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
 INSERT INTO `menu` VALUES (114,108,83,92,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
 INSERT INTO `menu` VALUES (115,108,93,100,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,158,167,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,159,160,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,161,162,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,163,164,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,165,166,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,160,169,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,161,162,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,163,164,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,165,166,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,167,168,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
 INSERT INTO `menu` VALUES (121,113,113,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
 INSERT INTO `menu` VALUES (122,113,115,116,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
 INSERT INTO `menu` VALUES (123,113,117,120,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
@@ -163310,21 +163312,21 @@ INSERT INTO `menu` VALUES (131,113,133,134,1,'<i class=\"fa fa-address-book\" ar
 INSERT INTO `menu` VALUES (132,113,135,136,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
 INSERT INTO `menu` VALUES (133,113,137,142,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
 INSERT INTO `menu` VALUES (136,103,65,66,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,168,169,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (137,92,170,171,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
 INSERT INTO `menu` VALUES (138,113,143,148,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
 INSERT INTO `menu` VALUES (139,103,67,68,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
 INSERT INTO `menu` VALUES (140,108,101,104,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
 INSERT INTO `menu` VALUES (141,113,149,150,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,170,177,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,171,172,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,173,176,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,172,179,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,173,174,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,175,178,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
 INSERT INTO `menu` VALUES (145,113,151,154,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
 INSERT INTO `menu` VALUES (146,103,69,70,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
 INSERT INTO `menu` VALUES (147,102,29,30,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
 INSERT INTO `menu` VALUES (148,102,31,34,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
 INSERT INTO `menu` VALUES (149,102,35,36,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
 INSERT INTO `menu` VALUES (150,103,71,74,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,174,175,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (153,144,176,177,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
 INSERT INTO `menu` VALUES (155,105,44,47,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
 INSERT INTO `menu` VALUES (156,114,84,85,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
@@ -163361,6 +163363,7 @@ INSERT INTO `menu` VALUES (191,95,25,26,1,'<span class=\"glyphicon glyphicon-ran
 INSERT INTO `menu` VALUES (193,102,37,38,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
 INSERT INTO `menu` VALUES (194,183,20,21,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
 INSERT INTO `menu` VALUES (195,113,155,156,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
+INSERT INTO `menu` VALUES (196,113,157,158,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage Prefix for vFK','{LINK}VirtualForeignKey/settingPrefix','VirtualForeignKey','settingPrefix',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164161,6 +164164,38 @@ INSERT INTO `translation_glial` VALUES (710,'dd159c422f7d5c9a9e899f70701bf6d6026
 INSERT INTO `translation_glial` VALUES (711,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',43);
 INSERT INTO `translation_glial` VALUES (712,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',47);
 INSERT INTO `translation_glial` VALUES (713,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (714,'8376112f0718cf322769823a2fe3a7aff99bef78','Label','en','App/view/Environment/index.view.php',12);
+INSERT INTO `translation_glial` VALUES (715,'52b227b7f5ddf337d2c441cba82d165e8de4f0b1','Auto generate virtual foreign keys','en','App/view/Mysql/mpd.view.php',59);
+INSERT INTO `translation_glial` VALUES (716,'d908baf7c9d70241d000a1668b00a4c9e42520a5','Sorry, the page you requested : \"Menu/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
+INSERT INTO `translation_glial` VALUES (717,'37b790d30e688515ae1cf877c935be8b1d7bee27','Sorry, the page you requested : \"Table/mpd\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
+INSERT INTO `translation_glial` VALUES (718,'8783834cc286558edb40467b79acb593c7f39493','Sorry, the page you requested : \"VirtualForeignKey/addForeignKey\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
+INSERT INTO `translation_glial` VALUES (719,'66f1611d80bac5c7ade894f6bc691f4f439d24d8','Sorry, the page you requested : \"Menu/main\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
+INSERT INTO `translation_glial` VALUES (720,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/view/Menu/show.view.php',105);
+INSERT INTO `translation_glial` VALUES (721,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (722,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (723,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (724,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/VirtualForeignKey/settingPrefix.view.php',8);
+INSERT INTO `translation_glial` VALUES (725,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/VirtualForeignKey/settingPrefix.view.php',9);
+INSERT INTO `translation_glial` VALUES (726,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/VirtualForeignKey/settingPrefix.view.php',12);
+INSERT INTO `translation_glial` VALUES (727,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',20);
+INSERT INTO `translation_glial` VALUES (728,'9cb5cadf3ab594978d53e39dcf2bdf459d858487','Name of the tag','en','App/view/Tag/add.view.php',14);
+INSERT INTO `translation_glial` VALUES (729,'2d52ee4d1851a5136cbdfd2e32c0c247ab1f6242','Color of the text','en','App/view/Tag/add.view.php',21);
+INSERT INTO `translation_glial` VALUES (730,'4c5a6f2dc6efe0030b53941446e02e7e83e30212','Color of the background','en','App/view/Tag/add.view.php',27);
+INSERT INTO `translation_glial` VALUES (731,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (732,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (733,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (734,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',41);
+INSERT INTO `translation_glial` VALUES (735,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/VirtualForeignKey/settingPrefix.view.php',10);
+INSERT INTO `translation_glial` VALUES (736,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/VirtualForeignKey/settingPrefix.view.php',11);
+INSERT INTO `translation_glial` VALUES (737,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/VirtualForeignKey/settingPrefix.view.php',14);
+INSERT INTO `translation_glial` VALUES (738,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',22);
+INSERT INTO `translation_glial` VALUES (739,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',43);
+INSERT INTO `translation_glial` VALUES (740,'fc9691edede52e636f244fa3db2610384aa0a89d','Sorry, the page you requested : \"VirtualForeignKey/add\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
+INSERT INTO `translation_glial` VALUES (741,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',45);
+INSERT INTO `translation_glial` VALUES (742,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/add.view.php',9);
+INSERT INTO `translation_glial` VALUES (743,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',43);
+INSERT INTO `translation_glial` VALUES (744,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',55);
+INSERT INTO `translation_glial` VALUES (745,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/add.view.php',56);
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166337,7 +166372,8 @@ INSERT INTO `ts_file` VALUES (3,'answer');
 INSERT INTO `ts_file` VALUES (5,'database');
 INSERT INTO `ts_file` VALUES (2,'hardware');
 INSERT INTO `ts_file` VALUES (7,'proxysql');
-INSERT INTO `ts_file` VALUES (6,'service');
+INSERT INTO `ts_file` VALUES (6,'service_mysql');
+INSERT INTO `ts_file` VALUES (8,'service_ssh');
 INSERT INTO `ts_file` VALUES (1,'ssh_stats');
 INSERT INTO `ts_file` VALUES (4,'variable');
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
@@ -169006,6 +169042,12 @@ INSERT INTO `ts_variable` VALUES (2813,4,'spider_disable_group_by_handler','TEXT
 INSERT INTO `ts_variable` VALUES (2814,3,'gtid_binlog_pos','TEXT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (2815,3,'gtid_binlog_state','TEXT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (2816,3,'gtid_current_pos','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2817,4,'optimizer_adjust_secondary_key_costs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2820,8,'ssh_available','INT','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2821,8,'ssh_ping','DOUBLE','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2822,6,'mysql_available','INT','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2823,6,'mysql_ping','DOUBLE','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2824,6,'mysql_error','TEXT','mysql_server','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -169630,6 +169672,24 @@ CREATE TABLE `daemon_worker` (
   KEY `id_daemon_main` (`id_daemon_main`),
   CONSTRAINT `daemon_worker_ibfk_1` FOREIGN KEY (`id_daemon_main`) REFERENCES `daemon_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `fk_remove_prefix`
+--
+
+DROP TABLE IF EXISTS `fk_remove_prefix`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `fk_remove_prefix` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `database_name` varchar(255) NOT NULL,
+  `prefix` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_mysql_server` (`id_mysql_server`),
+  CONSTRAINT `fk_remove_prefix_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -170563,6 +170623,7 @@ CREATE TABLE `virtual_foreign_key` (
   `referenced_schema` varchar(64) NOT NULL DEFAULT '',
   `referenced_table` varchar(64) NOT NULL DEFAULT '',
   `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `is_automatic` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
   KEY `id_mysql_server` (`id_mysql_server`),

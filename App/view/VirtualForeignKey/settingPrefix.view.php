@@ -20,6 +20,7 @@ echo '<th>#</th>';
 echo '<th>'.__('Server').'</th>';
 echo '<th>'.__('Database').'</th>';
 echo '<th>'.__('Prefix').'</th>';
+echo '<th>'.__('Action').'</th>';
 echo '</tr>';
 
 $i = 0;
@@ -28,9 +29,10 @@ foreach ($data['prefix'] as $prefix) {
     $i++;
     echo '<tr>';
     echo '<td>'.$i.'</td>';
-    echo '<td class="line-edit" data-name="name" data-pk="'.$prefix['id_mysql_server'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle">'.Display::srv($prefix['id_mysql_server']).'</td>';
-    echo '<td class="line-edit" data-name="color" data-pk="'.$prefix['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color">'.$prefix['database_name'].'</td>';
-    echo '<td class="line-edit" data-name="background" data-pk="'.$prefix['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color">'.$prefix['prefix'].'</td>';
+    echo '<td>'.Display::srv($prefix['id_mysql_server']).'</td>';
+    echo '<td>'.$prefix['database_name'].'</td>';
+    echo '<td>'.$prefix['prefix'].'</td>';
+    echo '<td><small><a class="btn-xs btn btn-danger" href="'.LINK.'VirtualForeignKey/remove/'.$prefix['id'].'">'.__("Remove").'</a></small></td>';
     echo '</tr>'."\n";
 }
 echo '</table>';
