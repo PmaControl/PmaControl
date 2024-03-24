@@ -597,7 +597,6 @@ class VirtualForeignKey extends Controller
         }
 
         if ( ! IS_CLI){
-
             $location = $_SERVER['HTTP_REFERER'];
             header("location: $location");
         }
@@ -625,6 +624,44 @@ class VirtualForeignKey extends Controller
     public function add($param)
     {
 
-        
+
+
+        $this->di['js']->code_javascript('$("#fk_remove_prefix-id_mysql_server").change(function () {
+            data = $(this).val();
+            $("#fk_remove_prefix-database_name").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+               function(){
+            $("#fk_remove_prefix-database_name").selectpicker("refresh");
+            });
+        });');
+
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if (!empty($_POST['fk_remove_prefix']['id_mysql_server']) && !empty($_POST['fk_remove_prefix']['database_name']) && !empty($_POST['fk_remove_prefix']['prefix'])) {
+
+                $db = Sgbd::sql(DB_DEFAULT);
+                $db->sql_save($_POST);
+                
+                header('location: '.LINK.$this->getClass().'/settingPrefix/');
+            }
+        }
+
+    }
+
+
+    public function remove($param)
+    {
+        $this->view = false;
+        Debug::parseDebug($param);
+        $id_fk_remove_prefix = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "DELETE FROM fk_remove_prefix WHERE id=".$id_fk_remove_prefix."";
+
+        $res = $db->sql_query($sql);
+
+        if ( ! IS_CLI){
+            $location = $_SERVER['HTTP_REFERER'];
+            header("location: $location");
+        }
+
     }
 }
