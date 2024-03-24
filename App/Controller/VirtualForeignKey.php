@@ -36,7 +36,7 @@ class VirtualForeignKey extends Controller
         if ( ! IS_CLI){
 
             $location = $_SERVER['HTTP_REFERER'];
-            header("locatlion: $location");
+            header("location: $location");
             //exit;
         }
     }
@@ -551,5 +551,80 @@ class VirtualForeignKey extends Controller
         Debug::success($resultat, "RESULTAT");
 
         return $resultat;
+    }
+
+
+
+    public function createForeignKey($param)
+    {
+        $this->view = false;
+        $id_mysql_server = $param[0];
+        $table_schema = $param[1];
+        $table_name = $param[2];
+        $field_name = $param[3];
+        $database_constraint = $param[4];
+        $table_constraint = $param[5];
+        $field_constraint = $param[6];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "ALTER TABLE `".$table_schema."`.`".$table_name."` 
+        ADD FOREIGN KEY (`".$field_name."`) 
+        REFERENCES `".$database_constraint."`.`".$table_constraint."`(`".$field_constraint."`) ON DELETE RESTRICT ON UPDATE RESTRICT;";
+
+        $res = $db->sql_query($sql);
+    }
+
+    public function addForeignKey($param)
+    {
+        $this->view = false;
+        Debug::parseDebug($param);
+
+        $id_virtual_foreign_key = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT id_mysql_server,constraint_schema,constraint_table, constraint_column,
+        referenced_schema, referenced_table, referenced_column
+        FROM `virtual_foreign_key` WHERE id =".$id_virtual_foreign_key."";
+
+        $res = $db->sql_query($sql);
+
+        while($param = $db->sql_fetch_array($res, MYSQLI_NUM))
+        {
+            Debug::debug($param);
+            $this->createForeignKey($param);
+        }
+
+        if ( ! IS_CLI){
+
+            $location = $_SERVER['HTTP_REFERER'];
+            header("location: $location");
+        }
+    }
+
+    public function settingPrefix($param)
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM fk_remove_prefix";
+
+        $res = $db->sql_query($sql);
+
+        $data['prefix'] = array();
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['prefix'][] = $arr;
+        }
+
+        $this->set('data', $data);
+
+    }
+
+
+    public function add($param)
+    {
+
+        
     }
 }

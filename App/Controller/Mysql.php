@@ -511,6 +511,7 @@ class Mysql extends Controller
             //    
             fwrite($fp, "digraph Replication {\nrankdir=LR; splines=ortho; fontname=\"arial\" ".PHP_EOL); 
             fwrite($fp, "labelloc=\"t\"; ".PHP_EOL);
+            //fwrite($fp, "nodesep=2;".PHP_EOL);
             fwrite($fp, "label=\"\nServer : ".$data['display_name']." (Database : ".$data['database'].")\n \"  ".PHP_EOL);
 
             foreach ($tables as $table) {
@@ -536,7 +537,7 @@ class Mysql extends Controller
                 }
 
                 //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
-                fwrite($fp, "\t node [color=\"".$color."\" style=filled shape=box fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+                fwrite($fp, "\t node [color=\"".$color."\" href=\"".LINK."table/mpd/".$id_mysql_server."/".$database."/".$table['TABLE_NAME']."/\" style=filled shape=box fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
 
 // shape=Mrecord
                 fwrite($fp,
@@ -634,9 +635,28 @@ class Mysql extends Controller
             fwrite($fp, '}');
             fclose($fp);
 
-            $dot = 'dot -T'.$type.' '.$path.'/'.$file.'.dot -o '.$path.'/'.$file.'.'.$type.'';
-            Debug::debug($dot, 'DOT');
-            exec($dot);
+            $file_svg = $path.'/'.$file.'.'.$type;
+
+            $dot = 'dot -T'.$type.' '.$path.'/'.$file.'.dot -o '.$file_svg.'';
+
+            if(file_exists($file_svg)) {
+                $lastedit = filemtime($file_svg);
+                $unix = time();
+            
+                if(($unix - $lastedit) > 600) { //600 for 10min or 60 for 1min
+                    //DO YOUR STUFF
+                    
+                    Debug::debug($dot, 'DOT');
+                    exec($dot);
+
+                }
+            }
+            else{
+                Debug::debug($dot, 'DOT');
+                exec($dot);
+            }
+
+
         }
 
         $this->set('data', $data);
