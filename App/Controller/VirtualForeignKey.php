@@ -620,12 +620,8 @@ class VirtualForeignKey extends Controller
 
     }
 
-
     public function add($param)
     {
-
-
-
         $this->di['js']->code_javascript('$("#fk_remove_prefix-id_mysql_server").change(function () {
             data = $(this).val();
             $("#fk_remove_prefix-database_name").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
@@ -643,9 +639,7 @@ class VirtualForeignKey extends Controller
                 header('location: '.LINK.$this->getClass().'/settingPrefix/');
             }
         }
-
     }
-
 
     public function remove($param)
     {
@@ -663,5 +657,23 @@ class VirtualForeignKey extends Controller
             header("location: $location");
         }
 
+    }
+
+    public function rmForeignKey($param)
+    {
+        $this->view = false;
+        Debug::parseDebug($param);
+
+        $id_virtual_foreign_key = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "DELETE FROM `virtual_foreign_key` WHERE id =".$id_virtual_foreign_key."";
+        $db->sql_query($sql);
+
+        if ( ! IS_CLI){
+            $location = $_SERVER['HTTP_REFERER'];
+            header("location: $location");
+        }
     }
 }

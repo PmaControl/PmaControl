@@ -1,6 +1,5 @@
 <?php
 
-
 use Glial\Html\Form\Form;
 ?>
 <form action="" method="post">
@@ -38,7 +37,6 @@ use Glial\Html\Form\Form;
 
             <div class="row"><br><br></div>
 
-
             <div class="row">
                 <div class="col-md-6"><?= __("Prefix") ?>
                     <?=
@@ -47,9 +45,7 @@ use Glial\Html\Form\Form;
                 </div>
             </div>
 
-
             <div class="row"><br><br></div>
-
 
             <div class="row">
                 <div class="col-md-6">
