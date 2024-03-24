@@ -63,7 +63,7 @@ foreach($data['virtual_fk'] as $key => $fk )
     echo '<td>'
     . '<a href="'.LINK.'virtualForeignKey/addForeignKey/'.$fk['id'].'"><big><span class="label label-success">Add foreign key</span></big></a>'
             ."&nbsp;"
-    . '<big><span href="wqdfgdfg" class="label label-primary cursor">Remove virtual foreign key</span></big>'
+    . '<a href="'.LINK.'virtualForeignKey/rmForeignKey/'.$fk['id'].'"><big><span class="label label-primary cursor">Remove virtual foreign key</span></big><a/>'
     . '</label>'
     . '</td>';
     echo '</tr>';
