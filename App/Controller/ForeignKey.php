@@ -17,7 +17,7 @@ use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 
-class VirtualForeignKey extends Controller
+class ForeignKey extends Controller
 {
 
     CONST BEGIN = "id%";
@@ -49,8 +49,8 @@ class VirtualForeignKey extends Controller
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM virtual_foreign_key WHERE id_mysql_server ='".$id_mysql_server."' and is_automatic = 1";
-        $sql = "TRUNCATE table virtual_foreign_key;";
+        $sql = "DELETE FROM foreign_key_virtual WHERE id_mysql_server ='".$id_mysql_server."' and is_automatic = 1";
+        $sql = "TRUNCATE table foreign_key_virtual;";
         $db->sql_query($sql);
 
         $databases = $this->getDatabase($param);
@@ -122,22 +122,22 @@ class VirtualForeignKey extends Controller
                 $primary_key = $this->getPrimaryKey($id_mysql_server, $schema_ref, $table_ref);
 
 
-                $virtual_foreign_key                                             = array();
-                $virtual_foreign_key['virtual_foreign_key']['id_mysql_server']   = $id_mysql_server;
-                $virtual_foreign_key['virtual_foreign_key']['constraint_schema'] = $arr['TABLE_SCHEMA'];
-                $virtual_foreign_key['virtual_foreign_key']['constraint_table']  = $arr['TABLE_NAME'];
-                $virtual_foreign_key['virtual_foreign_key']['constraint_column'] = $arr['COLUMN_NAME'];
-                $virtual_foreign_key['virtual_foreign_key']['referenced_schema'] = $schema_ref;
-                $virtual_foreign_key['virtual_foreign_key']['referenced_table']  = $table_ref;
-                $virtual_foreign_key['virtual_foreign_key']['referenced_column'] = $primary_key;
+                $foreign_key_virtual                                             = array();
+                $foreign_key_virtual['foreign_key_virtual']['id_mysql_server']   = $id_mysql_server;
+                $foreign_key_virtual['foreign_key_virtual']['constraint_schema'] = $arr['TABLE_SCHEMA'];
+                $foreign_key_virtual['foreign_key_virtual']['constraint_table']  = $arr['TABLE_NAME'];
+                $foreign_key_virtual['foreign_key_virtual']['constraint_column'] = $arr['COLUMN_NAME'];
+                $foreign_key_virtual['foreign_key_virtual']['referenced_schema'] = $schema_ref;
+                $foreign_key_virtual['foreign_key_virtual']['referenced_table']  = $table_ref;
+                $foreign_key_virtual['foreign_key_virtual']['referenced_column'] = $primary_key;
 
                 if ($primary_key !== false) {
                     $nb_fk_found++;
-                    $default->sql_save($virtual_foreign_key);
+                    $default->sql_save($foreign_key_virtual);
                 } else {
 
                     //save to other table and propose to set link manually
-                    Debug::error($virtual_foreign_key, "No found\n");
+                    Debug::error($foreign_key_virtual, "No found\n");
                 }
                 
             }
@@ -164,7 +164,7 @@ class VirtualForeignKey extends Controller
     }
 
     /*
-      CREATE TABLE `virtual_foreign_key` (
+      CREATE TABLE `foreign_key_virtual` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `id_mysql_server` int(11) NOT NULL DEFAULT 0,
       `constraint_schema` varchar(64) NOT NULL DEFAULT '',
@@ -215,7 +215,7 @@ class VirtualForeignKey extends Controller
         Debug::parseDebug($param);
 
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "TRUNCATE TABLE `virtual_foreign_key`;";
+        $sql = "TRUNCATE TABLE `foreign_key_virtual`;";
         $db->sql_query($sql);
 
         Debug::sql($sql);
@@ -263,7 +263,7 @@ class VirtualForeignKey extends Controller
         $id_mysql_server = $param[0];
         $database = $param[1];
 
-        $sql = "SELECT * FROM virtual_foreign_key WHERE id_mysql_server = ".$id_mysql_server." 
+        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
         AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')";
         
         $res = $db->sql_query($sql);
@@ -300,7 +300,7 @@ class VirtualForeignKey extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM fk_remove_prefix WHERE id_mysql_server='".$id_mysql_server."' AND database_name='".$database_name."'";
+        $sql = "SELECT * FROM foreign_key_remove_prefix WHERE id_mysql_server='".$id_mysql_server."' AND database_name='".$database_name."'";
         $res = $db->sql_query($sql);
 
         $data['prefix'] = array();
@@ -580,13 +580,13 @@ class VirtualForeignKey extends Controller
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_virtual_foreign_key = $param[0];
+        $id_foreign_key_virtual = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id_mysql_server,constraint_schema,constraint_table, constraint_column,
         referenced_schema, referenced_table, referenced_column
-        FROM `virtual_foreign_key` WHERE id =".$id_virtual_foreign_key."";
+        FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
 
         $res = $db->sql_query($sql);
 
@@ -607,7 +607,7 @@ class VirtualForeignKey extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM fk_remove_prefix";
+        $sql = "SELECT * FROM foreign_key_remove_prefix";
 
         $res = $db->sql_query($sql);
 
@@ -622,16 +622,16 @@ class VirtualForeignKey extends Controller
 
     public function add($param)
     {
-        $this->di['js']->code_javascript('$("#fk_remove_prefix-id_mysql_server").change(function () {
+        $this->di['js']->code_javascript('$("#foreign_key_remove_prefix-id_mysql_server").change(function () {
             data = $(this).val();
-            $("#fk_remove_prefix-database_name").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
+            $("#foreign_key_remove_prefix-database_name").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
                function(){
-            $("#fk_remove_prefix-database_name").selectpicker("refresh");
+            $("#foreign_key_remove_prefix-database_name").selectpicker("refresh");
             });
         });');
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['fk_remove_prefix']['id_mysql_server']) && !empty($_POST['fk_remove_prefix']['database_name']) && !empty($_POST['fk_remove_prefix']['prefix'])) {
+            if (!empty($_POST['foreign_key_remove_prefix']['id_mysql_server']) && !empty($_POST['foreign_key_remove_prefix']['database_name']) && !empty($_POST['foreign_key_remove_prefix']['prefix'])) {
 
                 $db = Sgbd::sql(DB_DEFAULT);
                 $db->sql_save($_POST);
@@ -641,14 +641,14 @@ class VirtualForeignKey extends Controller
         }
     }
 
-    public function remove($param)
+    public function dropForeignKey($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
-        $id_fk_remove_prefix = $param[0];
+        $id_foreign_key_remove_prefix = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "DELETE FROM fk_remove_prefix WHERE id=".$id_fk_remove_prefix."";
+        $sql = "DELETE FROM foreign_key_remove_prefix WHERE id=".$id_foreign_key_remove_prefix."";
 
         $res = $db->sql_query($sql);
 
@@ -664,16 +664,95 @@ class VirtualForeignKey extends Controller
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_virtual_foreign_key = $param[0];
+        $id_foreign_key_virtual = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM `virtual_foreign_key` WHERE id =".$id_virtual_foreign_key."";
+        $sql = "DELETE FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
         $db->sql_query($sql);
 
         if ( ! IS_CLI){
             $location = $_SERVER['HTTP_REFERER'];
             header("location: $location");
+        }
+    }
+
+    public function getRealForeignKey($param)
+    {
+
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT * FROM `foreign_key_real` WHERE id_mysql_server = ".$id_mysql_server." AND "
+            ." (constraint_schema = '".$database."' OR 	referenced_schema = '".$database."'";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        $foreign_key = array();
+
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $md5 = md5($ob['constraint_schema'].$ob['constraint_table'].$ob['constraint_column']);
+            $foreign_key[$md5] = $ob;
+        }
+
+        //Debug::debug($foreign_key);
+        Debug::debug(count($foreign_key));
+
+        return $foreign_key;
+    }
+
+
+    /*
+        recupere en cache toute les clefs étrangère
+        a faire en webservice également
+        le but est de pouvoir travailler dessus même depuis un serveur distant
+    */
+
+    public function importRealForeignKey($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $database        = $param[1] ?? false;
+
+        $db = Mysql::getDbLink($id_mysql_server);
+        $default = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
+            ." REFERENCED_TABLE_SCHEMA as referenced_schema, REFERENCED_TABLE_NAME as referenced_table,REFERENCED_COLUMN_NAME as referenced_column"
+            ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `REFERENCED_TABLE_NAME` IS NOT NULL ";
+
+        if ($database !== false)
+        {
+            $sql .= " AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ." AND `CONSTRAINT_SCHEMA` ='".$database."' ";
+        }
+
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+        $sql2 = "DELETE FROM `foreign_key_real` WHERE id_mysql_server=".$id_mysql_server." ";
+        
+        if ($database !== false)
+        {
+            $sql2 .=" AND (constraint_table ='".$database."' OR referenced_table ='".$database."')";
+        }
+        Debug::sql($sql2);
+
+        $default->sql_query($sql2);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $table = array();
+            $table['foreign_key_real'] = $arr;
+            $table['foreign_key_real']['id_mysql_server'] = $id_mysql_server;
+            
+            Debug::debug($table);
+            $default->sql_save($table);
         }
     }
 }

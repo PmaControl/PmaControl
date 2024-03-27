@@ -19,7 +19,6 @@ class Mysql extends Controller
     public $foreign_key = array();
     public $columns     = array();
 
-
     private function generate_passswd($length)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1370,9 +1369,9 @@ class Mysql extends Controller
         Debug::debug(count($liste_table_1), "Natural Foreign keys");
 
         $sql1 = "SELECT distinct a.`constraint_table` as table_name
-         FROM `virtual_foreign_key` a WHERE `constraint_schema` = '".$database."' AND a.id_mysql_server = ".$id_mysql_sever."
+         FROM `foreign_key_virtual` a WHERE `constraint_schema` = '".$database."' AND a.id_mysql_server = ".$id_mysql_sever."
          UNION SELECT distinct b.`referenced_table` as table_name
-         FROM `virtual_foreign_key` b WHERE `referenced_schema` = '".$database."' AND b.id_mysql_server = ".$id_mysql_sever.";
+         FROM `foreign_key_virtual` b WHERE `referenced_schema` = '".$database."' AND b.id_mysql_server = ".$id_mysql_sever.";
         ";
         Debug::sql($sql1);
 
@@ -1404,7 +1403,7 @@ class Mysql extends Controller
 
         $sql = "select constraint_schema as CONSTRAINT_SCHEMA,constraint_table as TABLE_NAME,constraint_column as COLUMN_NAME,
             referenced_schema as REFERENCED_TABLE_SCHEMA, referenced_table as REFERENCED_TABLE_NAME, referenced_column as REFERENCED_COLUMN_NAME
-            from virtual_foreign_key
+            from foreign_key_virtual
             WHERE id_mysql_server = ".$id_mysql_server."
             AND constraint_schema = '".$database."';";
 
@@ -1485,7 +1484,7 @@ class Mysql extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "select id_mysql_server, constraint_schema, count(1)
-        from virtual_foreign_key
+        from foreign_key_virtual
         WHERE id_mysql_server in (SELECT id from mysql_server WHERE id_environment = 1 and id != 1)
         group by id_mysql_server,constraint_schema having count(1) > 1
         order by constraint_schema,3 asc;";

@@ -9,6 +9,7 @@ and open the template in the editor.
 https://github.com/file-icons/MFixx
 */
 
+
 @font-face {
     font-family: 'MFixx';
     src: url('../fonts/MFixx.eot'); /* IE9 Compat Modes */
@@ -1475,4 +1476,12 @@ tr.graph-underline td {
     -webkit-border-radius: 6px 0 6px 6px;
     -moz-border-radius: 6px 0 6px 6px;
     border-radius: 6px 0 6px 6px;
+}
+
+
+.mpd 
+{
+    background-color: #eee;
+    background-repeat: repeat;
+    
 }
