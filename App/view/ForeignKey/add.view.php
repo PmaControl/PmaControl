@@ -18,7 +18,7 @@ use Glial\Html\Form\Form;
                     <?= __("Server") ?>
                     
                     <?php
-                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("fk_remove_prefix", "id_mysql_server", array("data-width" => "100%")));
+                    \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("foreign_key_remove_prefix", "id_mysql_server", array("data-width" => "100%")));
                     ?>
                 </div>
             </div>
@@ -30,7 +30,7 @@ use Glial\Html\Form\Form;
                 <?php 
                 $data['table_schema'] = array(); 
                     
-                echo Form::select("fk_remove_prefix", "database_name", $data['table_schema'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "100%"))
+                echo Form::select("foreign_key_remove_prefix", "database_name", $data['table_schema'], "", array("data-live-search" => "true", "class" => "selectpicker", "data-width" => "100%"))
                     ?>
                 </div>
             </div>
@@ -40,7 +40,7 @@ use Glial\Html\Form\Form;
             <div class="row">
                 <div class="col-md-6"><?= __("Prefix") ?>
                     <?=
-                    Form::input("fk_remove_prefix", "prefix", array("type" => "input", "class" => "form-control", "placeholder" => "Prefix we should remove to generate virtual foreign keys"))
+                    Form::input("foreign_key_remove_prefix", "prefix", array("type" => "input", "class" => "form-control", "placeholder" => "Prefix we should remove to generate virtual foreign keys"))
                     ?>
                 </div>
             </div>

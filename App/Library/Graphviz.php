@@ -7,6 +7,8 @@
 
 namespace App\Library;
 
+use \App\Library\Table;
+use \Glial\Extract\Grabber;
 class Graphviz
 {
     static $color = array('aliceblue', 'antiquewhite', 'antiquewhite1', 'antiquewhite2', 'antiquewhite3', 'antiquewhite4', 'aquamarine', 'aquamarine1', 'aquamarine2', 'aquamarine3', 'aquamarine4', 'azure',
@@ -59,4 +61,176 @@ class Graphviz
         'grey78', 'grey79', 'grey8', 'grey80', 'grey81', 'grey82', 'grey83', 'grey84', 'grey85', 'grey86', 'grey87', 'grey88', 'grey89', 'grey9', 'grey90', 'grey91', 'grey92', 'grey93', 'grey94', 'grey95',
         'grey96', 'grey97', 'grey98', 'grey99');
 
+
+        static $table_count = 1;
+
+
+
+    public static function generateTable(array $param, $underline =array())
+    {
+        $id_mysql_server = $param[0];
+        $table_schema = $param[1];
+        $table_name = $param[2];
+        $color = $param[3] ?? self::getColor($table_name);
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT ROW_FORMAT as row_format, ENGINE as engine, TABLE_ROWS as table_rows
+        FROM `INFORMATION_SCHEMA`.`TABLES` 
+        WHERE TABLE_SCHEMA ='".$table_schema."' AND TABLE_NAME = '".$table_name."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED')";
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res)) {
+            $row_format = $ob->row_format;
+            $engine = $ob->engine;
+            $table_rows = $ob->table_rows;
+        }
+
+        $definitions = Table::getTableDefinition(array($id_mysql_server, $table_schema, $table_name));
+        
+        $return = '';
+        // define color
+        $return = "\t node[  shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
+        
+        //
+        $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
+        $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
+        label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
+        <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
+        $return .= '<tr><td colspan="3" bgcolor="#000000"  align="center"><font color="#ffffff">'.$table_name.'</font></td></tr>';
+        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
+        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.number_format($table_rows, 0, ',', ' ').'</b> row(s)</td></tr>';
+
+        $return .=
+        '<tr>'
+        .'<td bgcolor="#bbbbbb" align="left" title="'.__('Field').'">'.__('Field').'</td>'
+        .'<td bgcolor="#bbbbbb" align="left">'.__('Type').'</td>'
+        .'<td bgcolor="#bbbbbb" align="left">'.__('Key').'</td>'
+        .'</tr>'.PHP_EOL;
+        
+        $line = 1;
+
+        foreach ($definitions as $def) {
+
+            $forground_color = '#000000';
+            $bgcolor='bgcolor="'.$color.'"';
+            if (empty($underline[$def['Field']])) {
+                $bgcolor = 'bgcolor="#dddddd"';
+            }
+            else {
+                $background_color = $underline[$def['Field']]['color'];
+                $bgcolor = 'bgcolor="'.$background_color.'"';
+
+                if (static::get_brightness($background_color) < 70) {
+                    $forground_color = '#FFFFFF';
+                }
+            }
+
+            $return .=
+                '<tr>'
+                .'<td '.$bgcolor.' PORT="a'.$line.'" align="left" title="'.$def['Field'].'"><font color ="'.$forground_color.'">'.$def['Field'].'</font></td>'
+                .'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$def['Type'].'</font></td>'
+                .'<td '.$bgcolor.' PORT="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$def['Key'].'&nbsp;</font></td>'
+                .'</tr>'.PHP_EOL;
+            $line++;
+        }
+
+        $return .= '</table></td></tr></table>> ];'.PHP_EOL;
+
+        return $return;
+    }
+
+
+    public static function getColor($string)
+    {
+        $color = self::$color[hexdec(substr(md5($string), 0, 2))];
+
+        $h1 = substr(md5($string), 5, 2);
+        $h2 = substr(md5($string), 10, 2);
+        $h3 = substr(md5($string), 0, 2);
+
+        $color = $h1.$h2.$h3;
+
+        return "#".$color;
+    }
+
+    static public function generateStart($param)
+    {
+        $ret = "digraph structs {\nrankdir=LR; splines=polyline; fontname=\"arial\" ".PHP_EOL; 
+        $ret .= "labelloc=\"t\"; ".PHP_EOL;
+        $ret .= 'graph [pad="0.5", nodesep="1", ranksep="4"];'.PHP_EOL;
+        $ret .= 'node [shape=none  fontname = "Arial"];'.PHP_EOL;
+            //fwrite($fp, "nodesep=2;".PHP_EOL);
+        return $ret;
+    }
+    
+    static public function generateEnd($param)
+    {
+        $ret = "nodesep = 1;".PHP_EOL;
+        $ret .= "}\n";
+        return $ret;
+    }
+
+
+    
+    /*
+     * (PmaControl 2.0.64)<br/>
+     * @author Aurélien LEQUOY, <aurelien.lequoy@68koncept.com>
+     * @return boolean File_name where is locate the SVG
+     * @package Controller
+     * @since 2.0.64  First time this was introduced.
+     * @description 
+     * @access public
+     *
+     */
+
+    static public function generateDot($reference, $graph)
+    {
+        $type = "svg";
+
+        $dot_file = TMP."dot/".$reference.".dot";
+        $file_name = TMP."dot/".$reference.".".$type;
+
+        file_put_contents($dot_file, $graph);
+
+        $dot = 'dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
+        exec($dot);
+
+        self::removeBackground($file_name);
+
+        return $file_name;
+    }
+
+
+    static public function generateEdge($edge)
+    {
+        $return = "".$edge['arrow'].PHP_EOL;
+        $return .= '[arrowhead=none arrowsize="1.5" tooltip="'.$edge['tooltip'].'" penwidth="3" ';
+        $return .= 'fontname="arial" fontsize=8 color="'.$edge['color'].'" edgeURL=""];'.PHP_EOL;
+        
+        return $return;
+    }
+
+
+    static public function get_brightness($hex) {
+        // returns brightness value from 0 to 255
+        // strip off any leading #
+        $hex = str_replace('#', '', $hex);
+       
+        $c_r = hexdec(substr($hex, 0, 2));
+        $c_g = hexdec(substr($hex, 2, 2));
+        $c_b = hexdec(substr($hex, 4, 2));
+       
+        return (($c_r * 299) + ($c_g * 587) + ($c_b * 114)) / 1000;
+    }
+
+    static public function removeBackground($file_name)
+    {
+        // Remove background generated by Dot
+        // remove this polygon: <polygon fill="white" stroke="transparent" points="-4,4 -4,-2138 442,-2138 442,4 -4,4"></polygon>
+        $svg = file_get_contents($file_name);
+        $elem = Grabber::getTagContent($svg, '<polygon fill="white" stroke="transparent"', $strip = false);
+        $svg = str_replace($elem, '', $svg);
+        file_put_contents($file_name, $svg);
+    }
 }

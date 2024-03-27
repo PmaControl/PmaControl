@@ -56,6 +56,6 @@ echo '</div>';
 //\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
 
 
-echo '<a href="'.LINK.'VirtualForeignKey/autoDetect/'.$data['id_mysql_server'].'" role="button" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</a>';
+echo '<a href="'.LINK.'ForeignKey/autoDetect/'.$data['id_mysql_server'].'" role="button" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</a>';
 echo '<br /><br />';
-\Glial\Synapse\FactoryController::addNode("virtualForeignKey", "fill", array($data['id_mysql_server'],$data['database']));
+\Glial\Synapse\FactoryController::addNode("ForeignKey", "fill", array($data['id_mysql_server'],$data['database']));

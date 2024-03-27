@@ -32,7 +32,7 @@ foreach ($data['prefix'] as $prefix) {
     echo '<td>'.Display::srv($prefix['id_mysql_server']).'</td>';
     echo '<td>'.$prefix['database_name'].'</td>';
     echo '<td>'.$prefix['prefix'].'</td>';
-    echo '<td><small><a class="btn-xs btn btn-danger" href="'.LINK.'VirtualForeignKey/remove/'.$prefix['id'].'">'.__("Remove").'</a></small></td>';
+    echo '<td><small><a class="btn-xs btn btn-danger" href="'.LINK.'ForeignKey/remove/'.$prefix['id'].'">'.__("Remove").'</a></small></td>';
     echo '</tr>'."\n";
 }
 echo '</table>';
@@ -42,4 +42,4 @@ echo '</table>';
 
 
 
-echo '<a href="'.LINK.'VirtualForeignKey/add" class="btn btn-primary">'.__("Add a prefix").'</a>';
+echo '<a href="'.LINK.'ForeignKey/add" class="btn btn-primary">'.__("Add a prefix").'</a>';
