@@ -1481,7 +1481,27 @@ tr.graph-underline td {
 
 .mpd 
 {
+    background-image: url('../image/main/bg.png');
     background-color: #eee;
     background-repeat: repeat;
     
+}
+
+
+g.node{
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+
+g.edge{
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+
+
+#clust1 > polygon{
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
+    background-image: url('../image/main/bg.png');
+    background-color: #eee;
+    background-repeat: repeat;
 }

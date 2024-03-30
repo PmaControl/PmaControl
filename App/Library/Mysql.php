@@ -300,10 +300,6 @@ class Mysql
 
             Mysql::onAddMysqlServer($id_mysql_server);
         } else {
-
-
-
-
             unset($server['mysql_server']['passwd']);
 
             $msg = $server['mysql_server']['display_name']." (".$server['mysql_server']['hostname'].':'.$server['mysql_server']['port'].") : "
@@ -997,5 +993,22 @@ END IF;";
         }
 
         return $config;
+    }
+
+    static public function execute($id_mysql_server, $file_name)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SELECT * FROM mysql_server WHERE id=".$id_mysql_server;
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $cmd = "mysql -h " . $ob->ip . " -u " . $ob->login . " -P " . $ob->port 
+            . " -p" . Crypt::decrypt($ob->passwd) . " ".$ob->database." < " . $file_name . " 2>&1";
+            $ret = shell_exec($cmd);
+
+            return $ret;
+        }
     }
 }

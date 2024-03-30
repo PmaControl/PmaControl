@@ -13,12 +13,15 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Debug;
 
 class Chemin extends Controller
 {
 
     public function possibilite($param)
     {
+        Debug::parseDebug($param);
+
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
@@ -28,11 +31,16 @@ class Chemin extends Controller
         $db->sql_select_db($database);
 
 
-        $sql = "SELECT distinct `TABLE_NAME` as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` where TABLE_SCHEMA='mydb' and REFERENCED_TABLE_NAME is not null
+        $sql = "SELECT distinct `TABLE_NAME` as table_name 
+        FROM `information_schema`.`KEY_COLUMN_USAGE` 
+        where TABLE_SCHEMA='".$database."' and REFERENCED_TABLE_NAME is not null
 UNION
-SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` where REFERENCED_TABLE_SCHEMA='mydb' and REFERENCED_TABLE_NAME is not null;";
+SELECT REFERENCED_TABLE_NAME as table_name 
+FROM `information_schema`.`KEY_COLUMN_USAGE` 
+where REFERENCED_TABLE_SCHEMA='".$database."' and REFERENCED_TABLE_NAME is not null ORDER BY TABLE_NAME;";
         $res = $db->sql_query($sql);
 
+        Debug::sql($sql);
 
         $tables = array();
         while ($ob     = $db->sql_fetch_object($res)) {
@@ -45,9 +53,10 @@ SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN
         foreach ($tables as $table) {
             foreach ($tables2 as $table2) {
 
-
-                
-                
+                if ($table === $table2)
+                {
+                    continue;
+                }
                 $sql2 = $this->getPaths($table, $table2, $database);
                 $res2 = $db->sql_query($sql2);
 
@@ -55,7 +64,7 @@ SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN
                 if ($db->sql_num_rows($res2) > 0)
                 {
                     echo "---------------------------\n";
-                    echo $table2." ===> ".$table."\n";
+                    echo $table." ===> ".$table2."\n";
                 }
                 
                 

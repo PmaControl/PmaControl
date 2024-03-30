@@ -23,8 +23,7 @@ class Integrate extends Controller
     const VARIABLES = "variable";
     const ANSWER = "answer"; //merge of SHOW GLOBAL STATUS / SHOW MASTER STATUS / SHOW SLAVE HOSTS / SHOW SLAVE STATUS
     const SYSTEM = "ssh_stats";
-    const HARDWARE = "hardware";
-    const SERVICE = "service_mysql";
+
 
     var $shared;
     var $memory_file = "answer";
@@ -357,6 +356,8 @@ class Integrate extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         // insert IGNORE in case of first save have 2 slave
+
+        $this->logger->warning("Insert new value :".json_encode($variables_to_insert));
         $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
         $res = $db->sql_query($sql);
 
@@ -511,17 +512,9 @@ class Integrate extends Controller
         }
     }
 
-    /*
-     * to delete
-     */
-    static function cmp($a, $b)
-    {
-        if ($a !== $b) {
-            return "update";
-        } else {
-            return "no";
-        }
-    }
+
+
+    // deport to listener
 
     public function feedMysqlVariable($data)
     {

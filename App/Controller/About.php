@@ -20,6 +20,7 @@ class About extends Controller
         $data['mysql']    = shell_exec("mysql --version");
         $data['kernel']   = shell_exec("uname -a");
         $data['os']       = shell_exec("lsb_release -ds");
+        $data['build']    = shell_exec("git rev-parse HEAD");
         //$data['mysql'] = shell_exec("mysql --version");
 
 
