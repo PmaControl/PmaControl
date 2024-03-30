@@ -49,7 +49,8 @@ class ForeignKey extends Controller
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM foreign_key_virtual WHERE id_mysql_server ='".$id_mysql_server."' and is_automatic = 1";
+        $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server."
+        and is_automatic = 1";
         $sql = "TRUNCATE table foreign_key_virtual;";
         $db->sql_query($sql);
 
@@ -122,14 +123,15 @@ class ForeignKey extends Controller
                 $primary_key = $this->getPrimaryKey($id_mysql_server, $schema_ref, $table_ref);
 
 
-                $foreign_key_virtual                                             = array();
-                $foreign_key_virtual['foreign_key_virtual']['id_mysql_server']   = $id_mysql_server;
-                $foreign_key_virtual['foreign_key_virtual']['constraint_schema'] = $arr['TABLE_SCHEMA'];
-                $foreign_key_virtual['foreign_key_virtual']['constraint_table']  = $arr['TABLE_NAME'];
-                $foreign_key_virtual['foreign_key_virtual']['constraint_column'] = $arr['COLUMN_NAME'];
-                $foreign_key_virtual['foreign_key_virtual']['referenced_schema'] = $schema_ref;
-                $foreign_key_virtual['foreign_key_virtual']['referenced_table']  = $table_ref;
-                $foreign_key_virtual['foreign_key_virtual']['referenced_column'] = $primary_key;
+                $foreign_key_virtual                                                 = array();
+                $foreign_key_virtual['foreign_key_virtual']['id_mysql_server']       = $id_mysql_server;
+                $foreign_key_virtual['foreign_key_virtual']['constraint_schema']     = $arr['TABLE_SCHEMA'];
+                $foreign_key_virtual['foreign_key_virtual']['constraint_table']      = $arr['TABLE_NAME'];
+                $foreign_key_virtual['foreign_key_virtual']['constraint_column']     = $arr['COLUMN_NAME'];
+                $foreign_key_virtual['foreign_key_virtual']['id_mysql_server__link'] = $id_mysql_server;
+                $foreign_key_virtual['foreign_key_virtual']['referenced_schema']     = $schema_ref;
+                $foreign_key_virtual['foreign_key_virtual']['referenced_table']      = $table_ref;
+                $foreign_key_virtual['foreign_key_virtual']['referenced_column']     = $primary_key;
 
                 if ($primary_key !== false) {
                     $nb_fk_found++;
@@ -159,26 +161,7 @@ class ForeignKey extends Controller
 
             Debug::warning($percent,'-----------------------------------------------------------');
         }
-
-        //Color::printAll();
     }
-
-    /*
-      CREATE TABLE `foreign_key_virtual` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-      `constraint_schema` varchar(64) NOT NULL DEFAULT '',
-      `constraint_table` varchar(64) NOT NULL DEFAULT '',
-      `constraint_column` varchar(64) NOT NULL DEFAULT '',
-      `referenced_schema` varchar(64) NOT NULL DEFAULT '',
-      `referenced_table` varchar(64) NOT NULL DEFAULT '',
-      `referenced_column` varchar(64) NOT NULL DEFAULT '',
-      PRIMARY KEY (`id`),
-      UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
-      KEY `id_mysql_server` (`id_mysql_server`),
-      CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-      ) ENGINE=InnoDB AUTO_INCREMENT=170 DEFAULT CHARSET=utf8mb4
-     */
 
     public function isTableExist($param)
     {
@@ -217,7 +200,6 @@ class ForeignKey extends Controller
         $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "TRUNCATE TABLE `foreign_key_virtual`;";
         $db->sql_query($sql);
-
         Debug::sql($sql);
     }
 
@@ -555,7 +537,7 @@ class ForeignKey extends Controller
 
 
 
-    public function createForeignKey($param)
+    public function createVirtualForeignKey($param)
     {
         $this->view = false;
         $id_mysql_server = $param[0];
@@ -593,7 +575,7 @@ class ForeignKey extends Controller
         while($param = $db->sql_fetch_array($res, MYSQLI_NUM))
         {
             Debug::debug($param);
-            $this->createForeignKey($param);
+            $this->createVirtualForeignKey($param);
         }
 
         if ( ! IS_CLI){
@@ -736,7 +718,7 @@ class ForeignKey extends Controller
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
-        $sql2 = "DELETE FROM `foreign_key_real` WHERE id_mysql_server=".$id_mysql_server." ";
+        $sql2 = "DELETE FROM `foreign_key_real` WHERE id_mysql_server=".$id_mysql_server." OR id_mysql_server__link=".$id_mysql_server."";
         
         if ($database !== false)
         {
@@ -750,6 +732,7 @@ class ForeignKey extends Controller
             $table = array();
             $table['foreign_key_real'] = $arr;
             $table['foreign_key_real']['id_mysql_server'] = $id_mysql_server;
+            $table['foreign_key_real']['id_mysql_server__link'] = $id_mysql_server;
             
             Debug::debug($table);
             $default->sql_save($table);

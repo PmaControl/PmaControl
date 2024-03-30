@@ -163029,12 +163029,12 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',1374501,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1374445,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',1374457,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',1374469,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',1374483,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',1374529,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',2891433,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',2891374,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',2891386,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',2891400,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',2891414,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',2891461,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163271,99 +163271,103 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,225,226,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,227,228,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,229,230,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,180,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (95,92,4,27,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,233,234,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,235,236,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,237,238,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,188,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (95,92,4,35,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
 INSERT INTO `menu` VALUES (98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
 INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
 INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
 INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
-INSERT INTO `menu` VALUES (102,92,28,39,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
-INSERT INTO `menu` VALUES (103,92,40,79,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
-INSERT INTO `menu` VALUES (104,103,41,42,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
-INSERT INTO `menu` VALUES (105,103,43,58,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
-INSERT INTO `menu` VALUES (108,92,82,105,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
-INSERT INTO `menu` VALUES (109,92,106,111,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
-INSERT INTO `menu` VALUES (110,109,107,108,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
-INSERT INTO `menu` VALUES (111,109,109,110,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
-INSERT INTO `menu` VALUES (112,103,59,60,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,112,159,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
-INSERT INTO `menu` VALUES (114,108,83,92,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
-INSERT INTO `menu` VALUES (115,108,93,100,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,160,169,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,161,162,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,163,164,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,165,166,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,167,168,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
-INSERT INTO `menu` VALUES (121,113,113,114,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
-INSERT INTO `menu` VALUES (122,113,115,116,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
-INSERT INTO `menu` VALUES (123,113,117,120,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
-INSERT INTO `menu` VALUES (124,113,121,124,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
-INSERT INTO `menu` VALUES (125,113,125,126,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
-INSERT INTO `menu` VALUES (126,113,127,132,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
-INSERT INTO `menu` VALUES (127,103,61,62,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
-INSERT INTO `menu` VALUES (128,103,63,64,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
+INSERT INTO `menu` VALUES (102,92,36,47,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,48,87,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (104,103,49,50,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
+INSERT INTO `menu` VALUES (105,103,51,66,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,90,113,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,114,119,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,115,116,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,117,118,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (112,103,67,68,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
+INSERT INTO `menu` VALUES (113,92,120,167,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,91,100,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,101,108,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,168,177,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,169,170,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,171,172,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,173,174,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,175,176,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,121,122,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,123,124,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,125,128,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,129,132,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,133,134,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,135,140,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (127,103,69,70,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
+INSERT INTO `menu` VALUES (128,103,71,72,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
 INSERT INTO `menu` VALUES (129,92,2,3,0,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (131,113,133,134,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
-INSERT INTO `menu` VALUES (132,113,135,136,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
-INSERT INTO `menu` VALUES (133,113,137,142,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
-INSERT INTO `menu` VALUES (136,103,65,66,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,170,171,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
-INSERT INTO `menu` VALUES (138,113,143,148,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
-INSERT INTO `menu` VALUES (139,103,67,68,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
-INSERT INTO `menu` VALUES (140,108,101,104,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
-INSERT INTO `menu` VALUES (141,113,149,150,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,172,179,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,173,174,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,175,178,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
-INSERT INTO `menu` VALUES (145,113,151,154,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
-INSERT INTO `menu` VALUES (146,103,69,70,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
-INSERT INTO `menu` VALUES (147,102,29,30,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
-INSERT INTO `menu` VALUES (148,102,31,34,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
-INSERT INTO `menu` VALUES (149,102,35,36,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
-INSERT INTO `menu` VALUES (150,103,71,74,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,176,177,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (131,113,141,142,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,143,144,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,145,150,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (136,103,73,74,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,178,179,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,151,156,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (139,103,75,76,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,109,112,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,157,158,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,180,187,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,181,182,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,183,186,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,159,162,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (146,103,77,78,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
+INSERT INTO `menu` VALUES (147,102,37,38,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
+INSERT INTO `menu` VALUES (148,102,39,42,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
+INSERT INTO `menu` VALUES (149,102,43,44,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
+INSERT INTO `menu` VALUES (150,103,79,82,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (153,144,184,185,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
-INSERT INTO `menu` VALUES (155,105,44,47,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
-INSERT INTO `menu` VALUES (156,114,84,85,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
-INSERT INTO `menu` VALUES (157,114,86,87,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
-INSERT INTO `menu` VALUES (158,115,94,95,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
-INSERT INTO `menu` VALUES (159,115,96,97,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
-INSERT INTO `menu` VALUES (160,150,72,73,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
-INSERT INTO `menu` VALUES (161,126,128,129,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
-INSERT INTO `menu` VALUES (162,126,130,131,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
-INSERT INTO `menu` VALUES (163,123,118,119,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
-INSERT INTO `menu` VALUES (164,138,144,145,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
-INSERT INTO `menu` VALUES (165,138,146,147,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,80,81,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
-INSERT INTO `menu` VALUES (167,148,32,33,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
-INSERT INTO `menu` VALUES (168,145,152,153,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
-INSERT INTO `menu` VALUES (169,124,122,123,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
-INSERT INTO `menu` VALUES (170,133,138,139,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
-INSERT INTO `menu` VALUES (171,133,140,141,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
-INSERT INTO `menu` VALUES (172,105,48,49,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
-INSERT INTO `menu` VALUES (173,105,50,51,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
-INSERT INTO `menu` VALUES (174,155,45,46,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
-INSERT INTO `menu` VALUES (175,105,52,53,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
-INSERT INTO `menu` VALUES (176,105,54,55,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
-INSERT INTO `menu` VALUES (177,114,88,89,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
-INSERT INTO `menu` VALUES (178,105,56,57,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
-INSERT INTO `menu` VALUES (179,103,75,76,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
-INSERT INTO `menu` VALUES (180,115,98,99,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
-INSERT INTO `menu` VALUES (181,140,102,103,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
-INSERT INTO `menu` VALUES (182,114,90,91,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (155,105,52,55,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
+INSERT INTO `menu` VALUES (156,114,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,94,95,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,102,103,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,104,105,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (160,150,80,81,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
+INSERT INTO `menu` VALUES (161,126,136,137,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,138,139,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,126,127,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,152,153,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,154,155,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,88,89,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (167,148,40,41,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
+INSERT INTO `menu` VALUES (168,145,160,161,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,130,131,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,146,147,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,148,149,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (172,105,56,57,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
+INSERT INTO `menu` VALUES (173,105,58,59,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
+INSERT INTO `menu` VALUES (174,155,53,54,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
+INSERT INTO `menu` VALUES (175,105,60,61,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
+INSERT INTO `menu` VALUES (176,105,62,63,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
+INSERT INTO `menu` VALUES (177,114,96,97,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (178,105,64,65,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
+INSERT INTO `menu` VALUES (179,103,83,84,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
+INSERT INTO `menu` VALUES (180,115,106,107,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,110,111,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,98,99,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
 INSERT INTO `menu` VALUES (183,95,19,22,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
 INSERT INTO `menu` VALUES (184,95,23,24,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Security','{LINK}mysqlUser/security','mysqlUser','security',0,1,'');
-INSERT INTO `menu` VALUES (185,103,77,78,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
+INSERT INTO `menu` VALUES (185,103,85,86,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
 INSERT INTO `menu` VALUES (191,95,25,26,1,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
-INSERT INTO `menu` VALUES (193,102,37,38,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
+INSERT INTO `menu` VALUES (193,102,45,46,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
 INSERT INTO `menu` VALUES (194,183,20,21,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
-INSERT INTO `menu` VALUES (195,113,155,156,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
-INSERT INTO `menu` VALUES (196,113,157,158,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage Prefix for vFK','{LINK}VirtualForeignKey/settingPrefix','VirtualForeignKey','settingPrefix',0,1,'');
+INSERT INTO `menu` VALUES (195,113,163,164,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
+INSERT INTO `menu` VALUES (196,113,165,166,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage prefix for vFK','{LINK}ForeignKey/settingPrefix','ForeignKey','settingPrefix',0,1,'');
+INSERT INTO `menu` VALUES (197,95,27,34,1,'<i class=\"fa fa-bath\" aria-hidden=\"true\"></i>','Server','{LINK}Server/index','Server','index',0,1,'');
+INSERT INTO `menu` VALUES (198,197,28,33,1,'<i class=\"fa fa-database\" aria-hidden=\"true\"></i>','Databases','{LINK}Database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (199,198,29,32,1,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables','{LINK}Table/index','table','index',0,1,'');
+INSERT INTO `menu` VALUES (200,199,30,31,1,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Physical data model','{LINK}Table/mpd','table','mpd',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164196,6 +164200,15 @@ INSERT INTO `translation_glial` VALUES (742,'47f4665b4210c6ac04646b6d8ec8879efcb
 INSERT INTO `translation_glial` VALUES (743,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',43);
 INSERT INTO `translation_glial` VALUES (744,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',55);
 INSERT INTO `translation_glial` VALUES (745,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/add.view.php',56);
+INSERT INTO `translation_glial` VALUES (746,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/view/Menu/show.view.php',105);
+INSERT INTO `translation_glial` VALUES (747,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/ForeignKey/settingPrefix.view.php',10);
+INSERT INTO `translation_glial` VALUES (748,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/ForeignKey/settingPrefix.view.php',11);
+INSERT INTO `translation_glial` VALUES (749,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/ForeignKey/settingPrefix.view.php',14);
+INSERT INTO `translation_glial` VALUES (750,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/ForeignKey/settingPrefix.view.php',22);
+INSERT INTO `translation_glial` VALUES (751,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/ForeignKey/settingPrefix.view.php',45);
+INSERT INTO `translation_glial` VALUES (752,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',43);
+INSERT INTO `translation_glial` VALUES (753,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',47);
+INSERT INTO `translation_glial` VALUES (754,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',48);
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -169108,32 +169121,6 @@ UNLOCK TABLES;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `activity_events`
---
-
-DROP TABLE IF EXISTS `activity_events`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `activity_events` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) DEFAULT NULL,
-  `logged_as_user_id` int(11) DEFAULT NULL,
-  `project_id` int(11) DEFAULT NULL,
-  `name` varchar(255) NOT NULL,
-  `status` enum('DISPATCHED','ONGOING','SUCCEEDED','FAILED') DEFAULT NULL,
-  `data` longtext DEFAULT NULL COMMENT '(DC2Type:array)',
-  `created_at` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`,`created_at`),
-  KEY `IDX_1F1B74AA76ED395` (`user_id`),
-  KEY `IDX_1F1B74A3A572148` (`logged_as_user_id`),
-  KEY `IDX_1F1B74A166D1F9C` (`project_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci
- PARTITION BY RANGE (`created_at`)
-(PARTITION `p1599170400` VALUES LESS THAN (1599170400) ENGINE = InnoDB,
- PARTITION `p1599256800` VALUES LESS THAN (1599256800) ENGINE = InnoDB);
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `alias_dns`
 --
 
@@ -169675,20 +169662,72 @@ CREATE TABLE `daemon_worker` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `fk_remove_prefix`
+-- Table structure for table `foreign_key_real`
 --
 
-DROP TABLE IF EXISTS `fk_remove_prefix`;
+DROP TABLE IF EXISTS `foreign_key_real`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `fk_remove_prefix` (
+CREATE TABLE `foreign_key_real` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
+  `constraint_table` varchar(64) NOT NULL DEFAULT '',
+  `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
+  `referenced_table` varchar(64) NOT NULL DEFAULT '',
+  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `constraint_name` varchar(255) NOT NULL,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `id_mysql_server` (`id_mysql_server`,`constraint_schema`,`referenced_schema`),
+  KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `foreign_key_remove_prefix`
+--
+
+DROP TABLE IF EXISTS `foreign_key_remove_prefix`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `foreign_key_remove_prefix` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
   `database_name` varchar(255) NOT NULL,
   `prefix` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `fk_remove_prefix_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  CONSTRAINT `foreign_key_remove_prefix_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `foreign_key_virtual`
+--
+
+DROP TABLE IF EXISTS `foreign_key_virtual`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `foreign_key_virtual` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
+  `constraint_table` varchar(64) NOT NULL DEFAULT '',
+  `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
+  `referenced_table` varchar(64) NOT NULL DEFAULT '',
+  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `is_automatic` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
+  UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
+  UNIQUE KEY `constraint_column` (`constraint_column`,`constraint_table`,`constraint_schema`,`id_mysql_server`),
+  KEY `id_mysql_server` (`id_mysql_server`),
+  KEY `constraint_schema` (`constraint_schema`,`constraint_table`,`constraint_column`),
+  KEY `referenced_schema` (`referenced_schema`,`referenced_table`,`referenced_column`),
+  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -169965,27 +170004,6 @@ CREATE TABLE `link__haproxy_main_output__mysql_server` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `link__mysql_database__mysql_replication_thread`
---
-
-DROP TABLE IF EXISTS `link__mysql_database__mysql_replication_thread`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__mysql_database__mysql_replication_thread` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_database` int(11) NOT NULL,
-  `id_mysql_replication_thread` int(11) NOT NULL,
-  `replicate_do_db` int(11) NOT NULL,
-  `replicate_ignore_db` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_database` (`id_mysql_database`,`id_mysql_replication_thread`),
-  KEY `id_mysql_replication_thread` (`id_mysql_replication_thread`),
-  CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_database`) REFERENCES `mysql_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `link__mysql_database__mysql_replication_thread_ibfk_2` FOREIGN KEY (`id_mysql_replication_thread`) REFERENCES `mysql_replication_thread` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `link__mysql_server__ssh_key`
 --
 
@@ -170022,22 +170040,6 @@ CREATE TABLE `link__mysql_server__tag` (
   KEY `id_tag` (`id_tag`),
   CONSTRAINT `link__mysql_server__tag_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `link__mysql_server__tag_ibfk_2` FOREIGN KEY (`id_tag`) REFERENCES `tag` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `link__slave__mysql_replication_thread`
---
-
-DROP TABLE IF EXISTS `link__slave__mysql_replication_thread`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `link__slave__mysql_replication_thread` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_slave_name` int(11) NOT NULL,
-  `id_mysql_replication_thread` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -170116,27 +170118,6 @@ CREATE TABLE `mysql_dump` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `mysql_node`
---
-
-DROP TABLE IF EXISTS `mysql_node`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mysql_node` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_galera` int(11) NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
-  `size` int(11) NOT NULL,
-  `ready` int(11) NOT NULL,
-  `status` int(11) NOT NULL,
-  `nodes` varchar(200) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_mysql_galera` (`id_mysql_galera`),
-  KEY `id_mysql_server` (`id_mysql_server`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `mysql_privilege`
 --
 
@@ -170149,63 +170130,6 @@ CREATE TABLE `mysql_privilege` (
   `privilege` varchar(25) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `mysql_replication_stats`
---
-
-DROP TABLE IF EXISTS `mysql_replication_stats`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mysql_replication_stats` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `version` varchar(20) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `date` datetime NOT NULL,
-  `is_available` int(11) NOT NULL,
-  `is_master` int(11) NOT NULL,
-  `is_slave` int(11) NOT NULL,
-  `ping` int(11) NOT NULL,
-  `file` varchar(200) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `position` int(11) NOT NULL DEFAULT 0,
-  `databases` varchar(200) NOT NULL DEFAULT '',
-  `uptime` int(11) NOT NULL DEFAULT 0,
-  `time_zone` varchar(50) NOT NULL,
-  `binlog_format` varchar(20) NOT NULL,
-  `ssh_ok` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `mysql_replication_stats_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci COMMENT='1.9.6';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `mysql_replication_thread`
---
-
-DROP TABLE IF EXISTS `mysql_replication_thread`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mysql_replication_thread` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_replication_stats` int(11) NOT NULL,
-  `relay_master_log_file` varchar(200) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `exec_master_log_pos` int(11) NOT NULL,
-  `thread_io` varchar(65) NOT NULL,
-  `thread_sql` varchar(65) NOT NULL,
-  `thread_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `time_behind` varchar(11) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-  `master_host` char(15) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `master_port` int(11) NOT NULL,
-  `last_io_error` text NOT NULL,
-  `last_sql_error` text NOT NULL,
-  `last_sql_errno` int(11) NOT NULL,
-  `last_io_errno` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_replication_stats` (`id_mysql_replication_stats`,`thread_name`),
-  CONSTRAINT `mysql_replication_thread_ibfk_1` FOREIGN KEY (`id_mysql_replication_stats`) REFERENCES `mysql_replication_stats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -170495,6 +170419,45 @@ CREATE TABLE `statistics` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `table_columns`
+--
+
+DROP TABLE IF EXISTS `table_columns`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `table_columns` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `TABLE_CATALOG` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `TABLE_SCHEMA` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `TABLE_NAME` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `COLUMN_NAME` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `ORDINAL_POSITION` bigint(21) unsigned NOT NULL,
+  `COLUMN_DEFAULT` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
+  `IS_NULLABLE` varchar(3) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `DATA_TYPE` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned,
+  `CHARACTER_OCTET_LENGTH` bigint(21) unsigned,
+  `NUMERIC_PRECISION` bigint(21) unsigned,
+  `NUMERIC_SCALE` bigint(21) unsigned,
+  `DATETIME_PRECISION` bigint(21) unsigned,
+  `CHARACTER_SET_NAME` varchar(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
+  `COLLATION_NAME` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
+  `COLUMN_TYPE` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `COLUMN_KEY` varchar(3) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `EXTRA` varchar(80) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `PRIVILEGES` varchar(80) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `COLUMN_COMMENT` varchar(1024) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `IS_GENERATED` varchar(6) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `GENERATION_EXPRESSION` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `TABLE_SCHEMA` (`id_mysql_server`,`TABLE_SCHEMA`,`TABLE_NAME`,`COLUMN_NAME`) USING BTREE,
+  KEY `TABLE_SCHEMA_2` (`TABLE_SCHEMA`,`TABLE_NAME`,`COLUMN_NAME`) USING BTREE,
+  KEY `idx_tc_schema_name_column` (`TABLE_SCHEMA`,`TABLE_NAME`,`COLUMN_NAME`,`id_mysql_server`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `tag`
 --
 
@@ -170604,48 +170567,6 @@ CREATE TABLE `user_main_login` (
   PRIMARY KEY (`id`),
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `user_main_login_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `virtual_foreign_key`
---
-
-DROP TABLE IF EXISTS `virtual_foreign_key`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `virtual_foreign_key` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
-  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
-  `constraint_table` varchar(64) NOT NULL DEFAULT '',
-  `constraint_column` varchar(64) NOT NULL DEFAULT '',
-  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
-  `referenced_table` varchar(64) NOT NULL DEFAULT '',
-  `referenced_column` varchar(64) NOT NULL DEFAULT '',
-  `is_automatic` int(11) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `virtual_ip`
---
-
-DROP TABLE IF EXISTS `virtual_ip`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `virtual_ip` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
-  `ip` char(15) NOT NULL,
-  `hostname` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `virtual_ip_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -71,6 +71,9 @@ class Aspirateur extends Controller
     var $lock_variable     = TMP."lock/variable/{id_mysql_server}.md5";
     var $lock_database     = TMP."lock/database/{id_mysql_server}.lock";
     var $lock_proxysql_var = TMP."lock/proxysql_var/{id_proxysql_server}.lock";
+
+    var $lock_list_db = TMP."lock/list_db/{id_mysql_server}.md5";
+
     var $files             = array();
     public $variables         = array();
 
@@ -237,44 +240,49 @@ class Aspirateur extends Controller
             return false;
         }
 
-        $md5      = md5(json_encode($var));
-        $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, $this->lock_variable);
+        $export_variables = $this->isModified($id_mysql_server, $var,  $this->lock_variable);
 
-        $export_variables = false;
 
-        Debug::debug($md5, "NEW MD5");
+        Debug::debug($date, "answer");
 
-        if (file_exists($file_md5)) {
+        //push data in memory
+        $this->allocate_shared_storage('answer');
+        $this->shared['answer']->{$id_mysql_server} = $date;
 
-            $cmp_md5 = file_get_contents($file_md5);
+        if ($export_variables) {
+            $this->allocate_shared_storage('variable');
 
-            Debug::debug($cmp_md5, "OLD MD5");
+            Debug::debug($var, "SHOW GLOBAL VARIABLE;");
 
-            if ($cmp_md5 != $md5) {
-                $export_variables = true;
-
-                file_put_contents($file_md5, $md5);
-            }
-        } else {
-            /*
-              if (!is_writable(dirname($file_md5))) {
-              Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
-              } */
-
-            file_put_contents($file_md5, $md5);
-            $export_variables = true;
+            $variables                                  = array();
+            $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
+            $this->shared['variable']->{$id_mysql_server}     = $variables;
         }
 
+        /*************************************** list Database  */
+
+        $db_list = $this->getSchema($id_mysql_server);
+        if ($this->isModified($id_mysql_server, $db_list,  $this->lock_list_db) === true){
+
+            $this->logger->emergency("we import DB to shared memory");
+
+            $this->allocate_shared_storage('list_db');
+            $export_list_db[date('Y-m-d H:i:s')][$id_mysql_server]['list_db']['schema_list']  = json_encode($db_list);
+            $this->shared['list_db']->{$id_mysql_server}     = $export_list_db;
+        }
+
+        /*************************************** List table by DB  */
+
+
         //to know if we grab statistics on databases & tables
+
         $lock_database = str_replace('{id_mysql_server}', $id_mysql_server, $this->lock_database);
 
         Debug::debug($lock_database, "lock file database");
 
         $get_databases = false;
         if (file_exists($lock_database)) {
-
             $date_last_run_db = file_get_contents($lock_database);
-
             if ($date_last_run_db !== date('Y-m-d')) {
                 $get_databases = true;
             }
@@ -304,21 +312,7 @@ class Aspirateur extends Controller
             }
         }
 
-        Debug::debug($date, "answer");
-
-        //push data in memory
-        $this->allocate_shared_storage('answer');
-        $this->shared['answer']->{$id_mysql_server} = $date;
-
-        if ($export_variables) {
-            $this->allocate_shared_storage('variable');
-
-            Debug::debug($var, "SHOW GLOBAL VARIABLE;");
-
-            $variables                                  = array();
-            $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
-            $this->shared['variable']->{$id_mysql_server}     = $variables;
-        }
+        /****************************************************************** */
 
         $mysql_tested->sql_close();
 
@@ -630,7 +624,7 @@ class Aspirateur extends Controller
     public function addToQueueMySQL($param)
     {
 
-//$param[] = '--debug';
+        //$param[] = '--debug';
         Debug::parseDebug($param);
 
         $id_daemon = $param[0];
@@ -1959,6 +1953,86 @@ GROUP BY C.ID, C.INFO;";
 
         $mysql = Extraction::display(array( "mysql_server::mysql_available"), array(1));
         Debug::debug($mysql, "mysql available");
+    }
+
+
+    public function getSchema($id_mysql_server)
+    {
+
+        $this->logger->warning("get SHEMA ##############################");
+        $mysql_tested = Mysql::getDbLink($id_mysql_server);
+        $schemas = array();
+        if ($mysql_tested->testAccess()) {
+
+            $this->logger->warning("query sql #####################");
+            $sql = "SELECT SCHEMA_NAME as schema_name, DEFAULT_CHARACTER_SET_NAME as character_set_name, DEFAULT_COLLATION_NAME as collation_name  
+            FROM information_schema.schemata";
+
+            $res = $mysql_tested->sql_query($sql);
+
+            while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $schemas[] = $arr;
+            }
+        }
+        
+        return $schemas;
+    }
+    /*
+    *
+    *   chack if data as been modified if yes, we will import
+
+    */
+
+    public function isModified($id_mysql_server, $var, $lock_file)
+    {
+        return true;
+
+        $md5      = md5(json_encode($var));
+        $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, $lock_file);
+        $export = false;
+
+        Debug::debug($md5, "NEW MD5 $file_md5");
+
+        if (file_exists($file_md5)) {
+
+            $cmp_md5 = file_get_contents($file_md5);
+
+            Debug::debug($cmp_md5, "OLD MD5 $file_md5");
+
+            if ($cmp_md5 != $md5) {
+                $export = true;
+                $info = pathinfo($file_md5);
+                if (is_dir($info['dirname'])){
+                    file_put_contents($file_md5, $md5);
+                }
+                else {
+                    $this->logger->emergency('Cannot create directory : '.$info['dirname']);
+                }
+            }
+        } else {
+            /*
+              if (!is_writable(dirname($file_md5))) {
+              Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+              } */
+
+            file_put_contents($file_md5, $md5);
+            $export = true;
+        }
+
+        return $export;
+
+    }
+
+
+
+    public function getElem($param)
+    {
+        Debug::parseDebug($param);
+
+        $gg = Extraction::display(array("schema_name"));
+
+        Debug::debug($gg);
+
     }
 
 }

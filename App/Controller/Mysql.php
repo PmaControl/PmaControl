@@ -603,7 +603,7 @@ class Mysql extends Controller
                         }
                     } else {
 
-                        $color = $this->getColor($contraint['TABLE_NAME']);
+                        $color = $this->getColor($contraint['REFERENCED_TABLE_NAME']);
                     }
 
                     /*
@@ -642,7 +642,7 @@ class Mysql extends Controller
                 $lastedit = filemtime($file_svg);
                 $unix = time();
             
-                if(($unix - $lastedit) > 600) { //600 for 10min or 60 for 1min
+                if(($unix - $lastedit) > 10) { //600 for 10min or 60 for 1min
                     //DO YOUR STUFF
                     
                     Debug::debug($dot, 'DOT');

@@ -1,8 +1,15 @@
+
+<div >
+  <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", array()); ?></div>
+  <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlDatabase", "menu", array()); ?></div>
+  <div style="float:left;"><?= \Glial\Synapse\FactoryController::addNode("MysqlTable", "menu", array()); ?></div>
+</div> 
+<div style="clear:both"></div>
 <?php
 
+echo "<br />";
+
 $filename = $data['graph'];
-
-
 
 ?>
 

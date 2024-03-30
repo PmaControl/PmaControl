@@ -11,6 +11,11 @@ use \App\Library\Table;
 use \Glial\Extract\Grabber;
 class Graphviz
 {
+    // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
+    const MAX_ROWS_TO_REQUEST = 10000;
+
+    //max char for type, to prevent really big table with enum
+    const MAX_LENGTH = 25;
     static $color = array('aliceblue', 'antiquewhite', 'antiquewhite1', 'antiquewhite2', 'antiquewhite3', 'antiquewhite4', 'aquamarine', 'aquamarine1', 'aquamarine2', 'aquamarine3', 'aquamarine4', 'azure',
         'azure1', 'azure2', 'azure3', 'azure4', 'beige', 'bisque', 'bisque1', 'bisque2', 'bisque3', 'bisque4', 'black', 'blanchedalmond', 'blue', 'blue1', 'blue2', 'blue3', 'blue4', 'blueviolet', 'brown',
         'brown1',
@@ -61,10 +66,9 @@ class Graphviz
         'grey78', 'grey79', 'grey8', 'grey80', 'grey81', 'grey82', 'grey83', 'grey84', 'grey85', 'grey86', 'grey87', 'grey88', 'grey89', 'grey9', 'grey90', 'grey91', 'grey92', 'grey93', 'grey94', 'grey95',
         'grey96', 'grey97', 'grey98', 'grey99');
 
-
         static $table_count = 1;
 
-
+        static $subgraph_number = 0;
 
     public static function generateTable(array $param, $underline =array())
     {
@@ -86,20 +90,25 @@ class Graphviz
             $table_rows = $ob->table_rows;
         }
 
+        $number_rows = "~".number_format($table_rows, 0, ',', ' ');
+        if ($table_rows < self::MAX_ROWS_TO_REQUEST) {
+            $number_rows = number_format(Table::getCount($param), 0, ',', ' ');
+        }
+
         $definitions = Table::getTableDefinition(array($id_mysql_server, $table_schema, $table_name));
         
         $return = '';
         // define color
-        $return = "\t node[  shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
+        $return = "node[shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
         
         //
         $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
         $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
         label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
-        $return .= '<tr><td colspan="3" bgcolor="#000000"  align="center"><font color="#ffffff">'.$table_name.'</font></td></tr>';
+        $return .= '<tr><td PORT="title" colspan="3" bgcolor="#000000"  align="center"><font color="#ffffff">'.$table_name.'</font></td></tr>';
         $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
-        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.number_format($table_rows, 0, ',', ' ').'</b> row(s)</td></tr>';
+        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
 
         $return .=
         '<tr>'
@@ -121,9 +130,13 @@ class Graphviz
                 $background_color = $underline[$def['Field']]['color'];
                 $bgcolor = 'bgcolor="'.$background_color.'"';
 
-                if (static::get_brightness($background_color) < 70) {
+                if (static::getBrightness($background_color) < 100) {
                     $forground_color = '#FFFFFF';
                 }
+            }
+
+            if (strlen($def['Type']) > self::MAX_LENGTH){
+                $def['Type'] = substr($def['Type'],0,self::MAX_LENGTH)."...";
             }
 
             $return .=
@@ -156,9 +169,9 @@ class Graphviz
 
     static public function generateStart($param)
     {
-        $ret = "digraph structs {\nrankdir=LR; splines=polyline; fontname=\"arial\" ".PHP_EOL; 
+        $ret = 'digraph structs {rankdir=LR; splines="compound"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
-        $ret .= 'graph [pad="0.5", nodesep="1", ranksep="4"];'.PHP_EOL;
+        $ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;
         $ret .= 'node [shape=none  fontname = "Arial"];'.PHP_EOL;
             //fwrite($fp, "nodesep=2;".PHP_EOL);
         return $ret;
@@ -166,13 +179,13 @@ class Graphviz
     
     static public function generateEnd($param)
     {
-        $ret = "nodesep = 1;".PHP_EOL;
+        $ret = "".PHP_EOL;
+        //$ret .= '[arrowhead=none arrowtail=none arrowhead=none penwidth="3" ';
+        //$ret .= 'fontname="arial" fontsize=8 edgeURL=""];'.PHP_EOL;
         $ret .= "}\n";
         return $ret;
     }
 
-
-    
     /*
      * (PmaControl 2.0.64)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@68koncept.com>
@@ -201,18 +214,25 @@ class Graphviz
         return $file_name;
     }
 
-
     static public function generateEdge($edge)
     {
-        $return = "".$edge['arrow'].PHP_EOL;
-        $return .= '[arrowhead=none arrowsize="1.5" tooltip="'.$edge['tooltip'].'" penwidth="3" ';
-        $return .= 'fontname="arial" fontsize=8 color="'.$edge['color'].'" edgeURL=""];'.PHP_EOL;
+        if (empty($edge['options'])){
+            $edge['options'] = array();
+        }
+
+        $return = "".$edge['arrow'];
+        $return .= '[tooltip="'.$edge['tooltip'].'" color="'.$edge['color'].'" penwidth="3" ';
+        $return .= 'fontname="arial" fontsize=8 edgeURL="" ';
+        foreach($edge['options'] as $key => $option) {
+            $return .= $key.'="'.$option.'" ';
+        }
+
+        $return .= '];'.PHP_EOL;
         
         return $return;
     }
 
-
-    static public function get_brightness($hex) {
+    static public function getBrightness($hex) {
         // returns brightness value from 0 to 255
         // strip off any leading #
         $hex = str_replace('#', '', $hex);
@@ -232,5 +252,36 @@ class Graphviz
         $elem = Grabber::getTagContent($svg, '<polygon fill="white" stroke="transparent"', $strip = false);
         $svg = str_replace($elem, '', $svg);
         file_put_contents($file_name, $svg);
+    }
+
+    static public function generateHiddenEdge($hidden_edge)
+    {
+        $ret = '';
+        $ret .= "".$hidden_edge."[style=invis];".PHP_EOL;
+        //$ret .= "".$hidden_edge.";".PHP_EOL;
+        return $ret;
+    }
+
+    static public function openSubgraph($param)
+    {
+        self::$subgraph_number++;
+
+        $ret = '';
+        $ret .= "subgraph cluster_".self::$subgraph_number." {".PHP_EOL;
+        
+        foreach($param as $key => $elem) {
+            $ret .= $key.'="'.$elem.'";'.PHP_EOL;
+        }
+
+        return $ret;
+    }
+
+    static public function closeSubgraph($param)
+    {
+        self::$subgraph_number++;
+
+        $ret = '';
+        $ret .= "}".PHP_EOL;
+        return $ret;
     }
 }

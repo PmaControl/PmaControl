@@ -210,7 +210,7 @@ class Debug
             } else {
                 $sql = str_replace("\n\n", "", $sql);
                 $sql = preg_replace("/ {2,}/", " ", $sql);
-                $sql = \SqlFormatter::highlight($sql);
+                $sql = \SqlFormatter::format($sql);
                 echo trim($sql)."\n";
             }
         }

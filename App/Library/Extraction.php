@@ -220,7 +220,10 @@ class Extraction
         $db = Sgbd::sql(DB_DEFAULT);
 
         //return(array());
-
+        if (! is_array($var))
+        {
+            throw new \Exception('PMACTRL-472 : "'.$var.'" have to be in an array');
+        }
 
         $res = self::extract($var, $server, $date, $range, $graph);
 
@@ -308,17 +311,6 @@ class Extraction
         }
 
         return $count;
-    }
-
-    static public function graph($var, $server, $range)
-    {
-        $res   = self::extract($var, $server, $date  = "", $range, true);
-        $graph = array();
-        while ($ar    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $graph[$ar['id_mysql_server']] = $ar;
-        }
-
-        return $graph;
     }
 
     static public function setOption($var, $val)
