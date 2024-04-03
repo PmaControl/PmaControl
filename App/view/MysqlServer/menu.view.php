@@ -4,9 +4,9 @@
 ?>
 
 <div class="btn-group">
-  <button type="button" class="btn btn-primary">Cluster</button>
   <button type="button" class="btn btn-primary active">Database</button>
+  <!--<button type="button" class="btn btn-primary">Cluster</button>
   <button type="button" class="btn btn-primary">Graph</button>
   <button type="button" class="btn btn-primary">Binlogs</button>
-  <button type="button" class="btn btn-primary">Processlist</button>
+  <button type="button" class="btn btn-primary">Processlist</button>-->
 </div>

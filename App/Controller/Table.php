@@ -39,6 +39,19 @@ class Table extends Controller {
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
+
+        //deport to lib/database
+        $sql = "SELECT id from mysql_database where id_mysql_server=".$id_mysql_server." AND schema_name = '".$table_schema."'";
+        $res = $default->sql_query($sql);
+        while ($ob = $default->sql_fetch_object($res))
+        {
+            $_GET['mysql_database']['id'] = $ob->id;
+        }
+        /* end of deport */
+
+
+
+
         Debug::debug($param);
 
         $data = array();
@@ -162,18 +175,20 @@ class Table extends Controller {
         //debug(self::$main_table);
 
         // generate all table
-        foreach(self::$tables['tables'] as $mysql_server_id => $databases) {
-            foreach($databases as $schema => $tables ){
-                foreach($tables as $table_nom => $field){
 
-                    if (! in_array($table_nom, array_keys(self::$main_table['tables_before'])) ||  self::$main_table['nb_column_left'] ===1 )
-                    {
-                        $graph .= Graphviz::generateTable(array($mysql_server_id,$schema, $table_nom),$field['field']);
+        if (! empty(self::$tables['tables'])) {
+            foreach(self::$tables['tables'] as $mysql_server_id => $databases) {
+                foreach($databases as $schema => $tables ){
+                    foreach($tables as $table_nom => $field){
+
+                        if (! in_array($table_nom, array_keys(self::$main_table['tables_before'])) ||  self::$main_table['nb_column_left'] ===1 )
+                        {
+                            $graph .= Graphviz::generateTable(array($mysql_server_id,$schema, $table_nom),$field['field']);
+                        }
                     }
                 }
             }
         }
-
         // edge
         foreach(self::$edges as $edge){
             if (! in_array($edge['constraint_table'], array_keys(self::$main_table['tables_before']))  ||  self::$main_table['nb_column_left'] ===1 ) {
@@ -201,6 +216,8 @@ class Table extends Controller {
 
         $data['table_schema'] = $table_schema;
         $data['table_name'] = $table_name;
+
+        $data['param'] = $param;
 
         $this->set('data', $data);
     }
@@ -510,5 +527,13 @@ class Table extends Controller {
         }
 
         return $colonnes;
+    }
+
+
+    public function index($param)
+    {
+        //liste des tables d'un DB 
+
+
     }
 }

@@ -62,6 +62,7 @@ function format($bytes, $decimals = 2)
                     $size_index = 0;
                     $tables = 0;
                     $size_free = 0;
+                    $rows = 0;
 
                     $charset = array();
                     $all_engine = array();
@@ -70,7 +71,6 @@ function format($bytes, $decimals = 2)
                     $all_row_format = array();
                     
                     foreach ($db_attr['engine'] as $engine => $row_formats) {
-                        
                         
                         $charset[] = $db_attr['charset'];
                         $all_engine[] = $engine;
@@ -81,36 +81,34 @@ function format($bytes, $decimals = 2)
                             $size_index += $details['size_index'];
                             $tables += $details['tables'];
                             $size_free += $details['size_free'];
+                            $rows += $details['rows'];
 
                             $collation = array_merge($collation,explode(",",$db_attr['collation']));
                             $table_collation = array_merge($table_collation,explode(",",$details['table_collation']));
                             $all_row_format = array_merge($all_row_format,explode(",",$row_format));
                             
-
                             $total_data[]  = $details['size_data'];
                             $total_index[] = $details['size_index'];
                             $total_free[]  = $details['size_free'];
                             $total_table[] = $details['tables'];
                             $total_row[]   = $details['rows'];
-
-
                         }
                     }
                     
                     echo '<tr>';
                     echo '<td>'.$i++.'</td>';
                     echo '<td>'.Display::srv($id_mysql_server).'</td>';
-                    echo '<td><a href="'.LINK.'mysql/mpd/'.$id_mysql_server.'/'.$schema.'/">'.$schema.'</a></td>';
+                    echo '<td><a href="'.LINK.'mysqlDatabase/mpd/'.$id_mysql_server.'/'.$schema.'/">'.$schema.'</a></td>';
                     echo '<td>'.implode(',',array_unique($charset)).'</td>';
                     echo '<td>'.implode(',',array_unique($collation)).'</td>';
                     echo '<td>'.implode(",",array_unique($all_engine)).'</td>';
                     echo '<td>'.implode(",",array_unique($all_row_format)).'</td>';
                     echo '<td style="text-align:right;">'.format($size_data).'</td>';
-                    echo '<td>'.format($size_index).'</td>';
-                    echo '<td>'.format($size_free).'</td>';
+                    echo '<td style="text-align:right;">'.format($size_index).'</td>';
+                    echo '<td style="text-align:right;">'.format($size_free).'</td>';
                     echo '<td>'.Database::getTagSize($size_index + $size_data).'</td>';
                     echo '<td style="text-align:right;">'.$tables.'</td>';
-                    echo '<td style="text-align:right;">'.number_format($details['rows'], 0, ".", " ").'</td>';
+                    echo '<td style="text-align:right;">'.number_format($rows, 0, ".", " ").'</td>';
                     echo '<td>'.implode(',',array_unique($table_collation)).'</td>';
                     echo '<tr>';
 
@@ -126,12 +124,12 @@ function format($bytes, $decimals = 2)
             <th><?= __("Collation") ?></th>
             <th><?= __("Engine") ?></th>
             <th><?= __("Row format") ?></th>
-            <th><?= format(array_sum($total_data)) ?></th>
-            <th><?= format(array_sum($total_index)) ?></th>
-            <th><?= format(array_sum($total_free)) ?></th>
+            <th style="text-align:right;"><?= format(array_sum($total_data)) ?></th>
+            <th style="text-align:right;"><?= format(array_sum($total_index)) ?></th>
+            <th style="text-align:right;"><?= format(array_sum($total_free)) ?></th>
             <th><?= Database::getTagSize(array_sum($total_data) + array_sum($total_index)) ?></th>
             <th style="text-align:right;"><?= array_sum($total_table) ?></th>
-            <th style="text-align:right;"><?= array_sum($total_row) ?></th>
+            <th style="text-align:right;"><?= number_format(array_sum($total_row), 0, ".", " ") ?></th>
             <th><?= __("Collations") ?></th>
         </tr>
     </table>

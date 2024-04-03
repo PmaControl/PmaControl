@@ -1,8 +1,5 @@
 <?php
 
-
-
-
 if (!empty($data['NO_FK']))
 {
 	?>
@@ -13,18 +10,8 @@ if (!empty($data['NO_FK']))
 	<?php
 }
 
-
-
 $filename = $data['file'];
-
 $path_parts = pathinfo($filename)['basename'];
-
-
-
-//$file = LINK."mysql/png/".$data['id_mysql_server']."/".$data['database']."/";
-
-
-//echo '<img src="'.$file.'" />';
 
 echo '<div id="svg">';
 
@@ -36,8 +23,7 @@ $remove = true;
 if ($handle) {
     while (($buffer = fgets($handle, 4096)) !== false) {
         
-        if ("<svg" != substr($buffer, 0,4) && $remove)
-        {
+        if ("<svg" != substr($buffer, 0,4) && $remove) {
             $remove = false;
             continue;
         }
@@ -52,10 +38,7 @@ if ($handle) {
 
 echo '</div>';
 
-
 //\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
-
-
 echo '<a href="'.LINK.'ForeignKey/autoDetect/'.$data['id_mysql_server'].'" role="button" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</a>';
 echo '<br /><br />';
-\Glial\Synapse\FactoryController::addNode("ForeignKey", "fill", array($data['id_mysql_server'],$data['database']));
+// \Glial\Synapse\FactoryController::addNode("ForeignKey", "fill", array($data['id_mysql_server'],$data['database']));

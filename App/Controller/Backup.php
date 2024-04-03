@@ -337,11 +337,11 @@ class Backup extends Controller
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js", "jquery.autocomplete.min.js", "Backup/settings.js"));
 
-        $sql = "SELECT a.name, a.id, a.ip, group_concat('',b.id) as id_mysql_database, group_concat('',b.name) as db
+        $sql = "SELECT a.schema_name, a.id, a.ip, group_concat('',b.id) as id_mysql_database, group_concat('',b.name) as db
                 from mysql_server a
                 INNER JOIN mysql_database b ON a.id = b.id_mysql_server
-                GROUP BY a.name, a.id, a.ip
-                ORDER BY a.name";
+                GROUP BY a.schema_name, a.id, a.ip
+                ORDER BY a.schema_name";
 
         $data['database_list'] = $db->sql_fetch_yield($sql);
 
@@ -369,13 +369,13 @@ class Backup extends Controller
             $data['storage_area'][] = $tmp;
         }
 
-        $sql               = "SELECT id,name FROM mysql_database WHERE id_mysql_server = (SELECT min(id_mysql_server) from mysql_database) order by name";
+        $sql               = "SELECT id,schema_name FROM mysql_database WHERE id_mysql_server = (SELECT min(id_mysql_server) from mysql_database) order by schema_name";
         $res               = $db->sql_query($sql);
         $data['databases'] = [];
         while ($ob                = $db->sql_fetch_object($res)) {
             $tmp                 = [];
             $tmp['id']           = $ob->id;
-            $tmp['libelle']      = $ob->name;
+            $tmp['libelle']      = $ob->schema_name;
             $data['databases'][] = $tmp;
         }
 

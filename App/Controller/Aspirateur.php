@@ -1985,7 +1985,7 @@ GROUP BY C.ID, C.INFO;";
 
     public function isModified($id_mysql_server, $var, $lock_file)
     {
-        return true;
+        //return true;
 
         $md5      = md5(json_encode($var));
         $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, $lock_file);

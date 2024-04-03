@@ -82,6 +82,8 @@ class Extraction
         $sql2     = array();
         $WINDOW   = "";
 
+        //Debug::debug($var, "VARIABLES");
+
         foreach ($variable as $radical => $data_type) {
             foreach ($data_type as $type => $tab_ids) {
 
@@ -136,7 +138,7 @@ class Extraction
             //$sql3 .= "ORDER by date";
         }
 
-
+        //Debug::debug($sql3);
         //echo \SqlFormatter::format($sql3) . "\n";
 
 
@@ -178,7 +180,7 @@ class Extraction
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
-        Debug::sql($sql3);
+        //Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
@@ -285,6 +287,8 @@ class Extraction
 
         $sql = implode(' UNION ALL ', $sqls);
 
+        Debug::debug($sql);
+
         $res = $db->sql_query($sql);
 
         //echo \SqlFormatter::format($sql) . "\n";
@@ -295,6 +299,8 @@ class Extraction
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
             //$radical                              = $ob->radical;
         }
+
+        Debug::debug($variable);
 
         return $variable;
     }
