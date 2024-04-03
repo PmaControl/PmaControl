@@ -1,7 +1,7 @@
---ALTER TABLE `ts_max_date` ADD `last_date_listener` DATETIME NULL DEFAULT CURRENT_TIMESTAMP AFTER `id_ts_file`;
+ALTER TABLE `ts_max_date` ADD `last_date_listener` DATETIME NULL DEFAULT CURRENT_TIMESTAMP AFTER `id_ts_file`;
 
 
---ALTER TABLE ts_max_date ADD UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`id_ts_file`,`date`,`last_date_listener`);
+ALTER TABLE ts_max_date ADD UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`id_ts_file`,`date`,`last_date_listener`);
 
 
 DROP TABLE IF EXISTS `mysql_database`;
