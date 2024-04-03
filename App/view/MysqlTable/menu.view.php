@@ -1,18 +1,37 @@
+<?php
 
+use Glial\Html\Form\Form;
+use \Glial\Synapse\FactoryController;
+
+\Glial\Synapse\FactoryController::addNode("MysqlTable", "getTableByDatabase", array($_GET['mysql_server']['id'], $param[1], array("data-style" => "btn-default", "data-live-search" => "true", "class" => "selectpicker")));
+?>
 
 <div class="btn-group">
+  <!--<button type="button" class="btn btn-default">Dictionary</button>-->
+  <!--<button type="button" class="btn btn-default">Rename</button>-->
+<?php
 
-  <button type="button" class="btn btn-default">Browse</button>
-  <button type="button" class="btn btn-default">Structure</button>
-  <button type="button" class="btn btn-default active">Relation view</button>
+  $node = FactoryController::getRootNode();
+
+  $menu['MysqlDatabase']['table'] = 'Listing';
+  $menu['table']['mpd'] = 'Relation view';
   
-<!--
-    <button type="button" class="btn btn-default">Search</button>
-      <button type="button" class="btn btn-default">Insert</button>
-  <button type="button" class="btn btn-default">Export</button>
-  <button type="button" class="btn btn-default">Import</button>
-  <button type="button" class="btn btn-default">Privileges</button>
-  <button type="button" class="btn btn-default">Operations</button>
-  <button type="button" class="btn btn-default">Triggers</button>
-  -->
+  
+  foreach($menu as $controller => $views)
+  {
+    foreach($views as $view => $title)
+    {
+      if ((strtolower($node[0]) === strtolower($controller) && $node[1] === "$view") ){
+        $active ='active';
+      }
+      else{
+        $active ='';
+      }
+      echo '<a href="'.LINK.$controller.'/'.$view.'/'.$param[0].'/'.$param[1].'/" type="button" class="btn btn-default '.$active.'">'.$title.'</a>'."\n";
+    }
+  }
+
+?>
+
+
 </div>

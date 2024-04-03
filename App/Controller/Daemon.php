@@ -14,11 +14,10 @@ use \Glial\Sgbd\Sgbd;
 
 class Daemon extends Controller
 {
-    private $daemon = array(7, 9, 11, 12, 5, 13);
+    private $daemon = array(7, 9, 11, 12, 5, 13, 14);
 
     public function index()
     {
-
 
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
@@ -50,14 +49,10 @@ class Daemon extends Controller
             $arr['pid_file'] = $pid_file;
 
             if (file_exists($pid_file)) {
-
-
                 $arr['id_proxysql'] = file_get_contents($pid_file);
             } else {
                 $arr['id_proxysql'] = "...";
             }
-
-
 
             $log_file = TMP."log/worker_".$arr['id_daemon_main']."_".$arr['id_daemon_main'].".log";
             if (file_exists($log_file)) {
@@ -88,7 +83,7 @@ class Daemon extends Controller
     private function manageDaemon($commande)
     {
 
-        if ($commande == "stop") {
+        if ($commande == "start") {
             $this->daemon = array_reverse($this->daemon);
         }
 
@@ -165,6 +160,8 @@ class Daemon extends Controller
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
+        usleep(5000);
+
         $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." startAll".$debug;
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
@@ -183,7 +180,7 @@ class Daemon extends Controller
     {
         Debug::parseDebug($param);
 
-        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh", TMP.'lock/worker_proxysql');
+        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh", TMP.'lock/worker_proxysql', TMP.'lock/list_db');
 
         Debug::debug($directories);
 
