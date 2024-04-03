@@ -207,6 +207,7 @@ class Graphviz
         file_put_contents($dot_file, $graph);
 
         $dot = 'dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
+        //debug($dot);
         exec($dot);
 
         self::removeBackground($file_name);

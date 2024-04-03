@@ -1,15 +1,14 @@
 <?php
 
-
 use \Glial\Synapse\FactoryController;
 
-if (FactoryController::getRootNode()[0] === "table")
+if (strtolower(FactoryController::getRootNode()[0]) === "table")
 {
     ?>
     <div >
     <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", $data['param']); ?></div>
     <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlDatabase", "menu", $data['param']); ?></div>
-    <div style="float:left;"><?= \Glial\Synapse\FactoryController::addNode("MysqlTable", "menu", array()); ?></div>
+    <div style="float:left;"><?= \Glial\Synapse\FactoryController::addNode("MysqlTable", "menu", $data['param']); ?></div>
     </div> 
     <div style="clear:both"></div>
     <?php

@@ -32,12 +32,12 @@ class MysqlDatabase extends Controller
         }
 
         $this->di['js']->code_javascript('
-        $("#mysql_database-id").change(function () {
-            data = $("#mysql_database-id option:selected").text();
+        $("#mysql_table-id").change(function () {
+            data = $("#mysql_table-id option:selected").text();
             var segments = GLIAL_URL.split("/");
 
-            if(segments.length > 3) {
-                segments[3] = data;
+            if(segments.length > 4) {
+                segments[4] = data;
             }
             newPath = GLIAL_LINK + segments.join("/");
 
@@ -67,6 +67,7 @@ class MysqlDatabase extends Controller
                 $tmp['id']           = $ob->id;
                 $tmp['libelle']      = $ob->schema_name;
                 $data['databases'][] = $tmp;
+
             }
         } else {
             $data['databases'] = array();
@@ -75,7 +76,6 @@ class MysqlDatabase extends Controller
         $this->set("data", $data);
         return $data;
     }
-
 
     public function mpd($param)
     {
@@ -103,11 +103,10 @@ class MysqlDatabase extends Controller
     {
         $id_mysql_server = $param[0];
         $table_schema = $param[1];
+        $_GET['mysql_server']['id'] = $id_mysql_server;
 
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
-
-
 
         $sql = "SELECT * FROM information_schema.tables WHERE table_schema='".$table_schema."' ORDER BY table_name";
         $res = $db->sql_query($sql);
@@ -119,8 +118,9 @@ class MysqlDatabase extends Controller
 
         $data['table_schema'] = $table_schema;
 
-
+        $data['param'] = $param;
         $this->set('data',$data);
+        $this->set('param', $param);
     }
 
 

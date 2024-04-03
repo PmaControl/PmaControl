@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Library\Graphviz;
 use Glial\Synapse\Controller;
+use Glial\Synapse\FactoryController;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
+use \App\Library\Mysql;
 use \App\Library\Table as Tablelib;
 
 class Table extends Controller {
@@ -39,6 +41,29 @@ class Table extends Controller {
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
+        //force a table if empty
+        $node = FactoryController::getRootNode();
+        if (strtolower($node[0]) === "table" && strtolower($node[1]) == "mpd")
+        {
+            if ($table_name === false) {
+                $db = Mysql::getDbLink($id_mysql_server);
+                $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '".$table_schema."'";
+        
+                $res = $db->sql_query($sql);
+        
+                while ($ob = $db->sql_fetch_object($res)){
+                    $_GET['mysql_table']['id'] = $ob->table_name;
+        
+                    if ($table_schema != $ob->table_name) {
+                        $url = str_replace("/$table_schema/", "/".$table_schema."/".$table_name."/", $_GET['url'] );
+                        header("location: ".LINK.$url);
+                    }
+                }
+            }    
+        }
+        //end
+
+
 
         //deport to lib/database
         $sql = "SELECT id from mysql_database where id_mysql_server=".$id_mysql_server." AND schema_name = '".$table_schema."'";
@@ -48,9 +73,6 @@ class Table extends Controller {
             $_GET['mysql_database']['id'] = $ob->id;
         }
         /* end of deport */
-
-
-
 
         Debug::debug($param);
 
@@ -90,16 +112,20 @@ class Table extends Controller {
         }
         $sql .=";";
 
+        // debug($sql);
+
         $this->getElemeFromQuery($sql);
         
         $this->compressDisplay($param);
-        //debug(self::$main_table);
-        //debug(self::$tables);
+
         Debug::sql($sql);
 
         $graph = "";
         $graph .= Graphviz::generateStart(array());
 
+
+        //debug(self::$main_table);
+        //debug(self::$tables);
 
         // pour grouper les tables fille au sein d'un meme cluster
         // generate struc to order lot of table by row
@@ -112,6 +138,7 @@ class Table extends Controller {
             $cluster['tooltip'] = $table_schema.".".$table_name;
             
             $graph .= Graphviz::openSubgraph($cluster);
+
 
             $premiere_table_de_chaque_colonne = array();
             foreach(self::$main_table['table_par_colonne'] as $colonne_numero => $tables) {
@@ -141,6 +168,9 @@ class Table extends Controller {
             $graph .= Graphviz::closeSubgraph($param);
             $graph .= "".PHP_EOL;
             
+            //debug(self::$main_table);
+            //debug(self::$tables);
+
             //generate invisible edge bewteen column
             $this->generateHiddenArrow($premiere_table_de_chaque_colonne);
 
@@ -159,6 +189,11 @@ class Table extends Controller {
             $pos1 = Tablelib::findFieldPosition(array($id_mysql_server, $table_schema , $last_colone[$middle], $field1));
             $pos2 = self::$tables['table'][$indice_1]['column'][$field1]['target_position'];
 
+
+            //debug(self::$main_table);
+            //debug(self::$tables);
+
+
             $tmp = array();
             $tmp['constraint_table'] = $table_name;
             $tmp['referenced_table'] = $table_name;
@@ -175,14 +210,13 @@ class Table extends Controller {
         //debug(self::$main_table);
 
         // generate all table
+        //debug(self::$tables['tables']);
 
         if (! empty(self::$tables['tables'])) {
             foreach(self::$tables['tables'] as $mysql_server_id => $databases) {
                 foreach($databases as $schema => $tables ){
                     foreach($tables as $table_nom => $field){
-
-                        if (! in_array($table_nom, array_keys(self::$main_table['tables_before'])) ||  self::$main_table['nb_column_left'] ===1 )
-                        {
+                        if (! in_array($table_nom, array_keys(self::$main_table['tables_before'])) ||  self::$main_table['nb_column_left'] ===1 ) {
                             $graph .= Graphviz::generateTable(array($mysql_server_id,$schema, $table_nom),$field['field']);
                         }
                     }
@@ -218,7 +252,7 @@ class Table extends Controller {
         $data['table_name'] = $table_name;
 
         $data['param'] = $param;
-
+        $this->set('param', $param);
         $this->set('data', $data);
     }
 
