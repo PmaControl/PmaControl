@@ -41,17 +41,35 @@ class ForeignKey extends Controller
         }
     }
 
+    public function import($param)
+    {
+        $this->view = false;
+        Debug::parseDebug($param);
+        //$id_mysql_server = $param[0];
+
+        $this->importRealForeignKey($param);
+
+        if ( ! IS_CLI){
+
+            $location = $_SERVER['HTTP_REFERER'];
+            header("location: $location");
+            //exit;
+        }
+    }
+
     public function autoId($param)
     {
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
+        $database = $param[0];
+        
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server."
+        $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server.")
         and is_automatic = 1";
-        $sql = "TRUNCATE table foreign_key_virtual;";
+        //$sql = "TRUNCATE table foreign_key_virtual;";
         $db->sql_query($sql);
 
         $databases = $this->getDatabase($param);
@@ -137,6 +155,14 @@ class ForeignKey extends Controller
                     $nb_fk_found++;
                     $default->sql_save($foreign_key_virtual);
                 } else {
+                    $foreign_key_proposal                                                 = array();
+                    $foreign_key_proposal['foreign_key_proposal']['id_mysql_server']       = $id_mysql_server;
+                    $foreign_key_proposal['foreign_key_proposal']['constraint_schema']     = $arr['TABLE_SCHEMA'];
+                    $foreign_key_proposal['foreign_key_proposal']['constraint_table']      = $arr['TABLE_NAME'];
+                    $foreign_key_proposal['foreign_key_proposal']['constraint_column']     = $arr['COLUMN_NAME'];
+                    $foreign_key_proposal['foreign_key_proposal']['id_mysql_server__link'] = $id_mysql_server;
+                    $foreign_key_proposal['foreign_key_proposal']['referenced_schema']     = $schema_ref;
+                    //$default->sql_save($foreign_key_proposal);
 
                     //save to other table and propose to set link manually
                     Debug::error($foreign_key_virtual, "No found\n");
@@ -159,7 +185,7 @@ class ForeignKey extends Controller
                 Debug::error( $list_error, "Impossible to find these tables :");
             }
 
-            Debug::warning($percent,'-----------------------------------------------------------');
+            //Debug::warning($percent,'-----------------------------------------------------------');
         }
     }
 
@@ -738,4 +764,149 @@ class ForeignKey extends Controller
             $default->sql_save($table);
         }
     }
+
+    public function menu($param)
+    {
+
+        $data = array();
+
+
+
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+    public function index($param)
+    {
+        $data = array();
+
+
+
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+
+    public function virtual($param)
+    {
+        $data = array();
+
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
+        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')
+        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        
+        $res = $db->sql_query($sql);
+
+        $data['virtual_fk'] = array();
+        
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['virtual_fk'][] = $ob;
+        }
+
+        $this->set('data', $data);
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+    public function real($param)
+    {
+        $data = array();
+
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $sql = "SELECT * FROM foreign_key_real WHERE id_mysql_server = ".$id_mysql_server." 
+        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
+        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        
+        $res = $db->sql_query($sql);
+
+        $data['real_fk'] = array();
+        
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['real_fk'][] = $ob;
+        }
+
+   
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+    public function proposal($param)
+    {
+
+        $data = array();
+
+
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $sql = "SELECT * FROM foreign_key_proposal WHERE id_mysql_server = ".$id_mysql_server." 
+        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
+        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        
+        $res = $db->sql_query($sql);
+
+        $data['fk'] = array();
+        
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['fk'][] = $ob;
+        }
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+
+    public function blackList($param)
+    {
+        $data = array();
+
+
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        $sql = "SELECT * FROM foreign_key_blacklist WHERE id_mysql_server = ".$id_mysql_server." 
+        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
+        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        
+        $res = $db->sql_query($sql);
+
+        $data['fk'] = array();
+        
+        while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['fk'][] = $ob;
+        }
+
+        $data['param'] = $param;
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
 }
