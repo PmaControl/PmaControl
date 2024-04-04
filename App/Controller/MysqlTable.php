@@ -35,6 +35,18 @@ class MysqlTable extends Controller
         }
 
 
+        $this->di['js']->code_javascript('
+        $("#mysql_table-id").change(function () {
+            data = $("#mysql_table-id option:selected").text();
+            var segments = GLIAL_URL.split("/");
+
+            if(segments.length > 4) {
+                segments[4] = data;
+            }
+            newPath = GLIAL_LINK + segments.join("/");
+
+            window.location.href=newPath;
+        });');
 
 
 
