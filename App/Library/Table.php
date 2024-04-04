@@ -164,4 +164,29 @@ class Table
         }
     }
 
+
+    static public function getTableWithFk($param)
+    {
+        $id_mysql_server = $param[0];
+        $table_schema    = $param[1];
+
+        $default = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SELECT constraint_table as table_name FROM foreign_key_real WHERE id_mysql_server=".$id_mysql_server." AND constraint_schema='".$table_schema."'
+        UNION SELECT referenced_table as table_name FROM foreign_key_real WHERE id_mysql_server__link=".$id_mysql_server." AND referenced_schema='".$table_schema."'
+        UNION SELECT constraint_table as table_name FROM foreign_key_virtual WHERE id_mysql_server=".$id_mysql_server." AND constraint_schema='".$table_schema."'
+        UNION SELECT referenced_table as table_name FROM foreign_key_virtual WHERE id_mysql_server__link=".$id_mysql_server." AND referenced_schema='".$table_schema."'
+        ";
+
+        $res = $default->sql_query($sql);
+
+        $table_list = array();
+        while($ob = $default->sql_fetch_object($res)) {
+            $table_list[] = $ob->table_name;
+        }
+
+        return $table_list;
+
+    }
+
 }

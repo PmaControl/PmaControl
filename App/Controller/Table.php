@@ -43,22 +43,33 @@ class Table extends Controller {
 
         //force a table if empty
         $node = FactoryController::getRootNode();
+        
         if (strtolower($node[0]) === "table" && strtolower($node[1]) == "mpd")
         {
-            if ($table_name === false) {
-                $db = Mysql::getDbLink($id_mysql_server);
-                $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '".$table_schema."'";
+            $db = Mysql::getDbLink($id_mysql_server);
+            $sql ="SELECT count(1) as cpt FROM information_schema.tables WHERE table_schema = '".$table_schema."' AND table_name = '".$table_name."'";
+            $res = $db->sql_query($sql);
+            while ($ob = $db->sql_fetch_object($res)) {
+                $cpt = $ob->cpt;
+            }
+
+            if ($table_name === false || $cpt == "0") {
+                
+                $table_list = Tablelib::getTableWithFk($param);
+                
+                if (count($table_list) > 0){
+                    $table_name = $table_list[0];
+
+                    $_GET['mysql_table']['id'] = $table_name;
         
-                $res = $db->sql_query($sql);
-        
-                while ($ob = $db->sql_fetch_object($res)){
-                    $_GET['mysql_table']['id'] = $ob->table_name;
-        
-                    if ($table_schema != $ob->table_name) {
-                        $url = str_replace("/$table_schema/", "/".$table_schema."/".$table_name."/", $_GET['url'] );
-                        header("location: ".LINK.$url);
-                    }
+                    $elems = explode("\\", __CLASS__);
+                    $class = strtolower(end($elems));
+                    $url = $class.'/'.__FUNCTION__.'/'.$id_mysql_server.'/'.$table_schema."/".$table_name.'/';
+                    
+                    header("location: ".LINK.$url);
                 }
+                
+            
             }    
         }
         //end
