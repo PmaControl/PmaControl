@@ -32,12 +32,12 @@ class MysqlDatabase extends Controller
         }
 
         $this->di['js']->code_javascript('
-        $("#mysql_table-id").change(function () {
-            data = $("#mysql_table-id option:selected").text();
+        $("#mysql_database-id").change(function () {
+            data = $("#mysql_database-id option:selected").text();
             var segments = GLIAL_URL.split("/");
 
-            if(segments.length > 4) {
-                segments[4] = data;
+            if(segments.length > 3) {
+                segments[3] = data;
             }
             newPath = GLIAL_LINK + segments.join("/");
 
