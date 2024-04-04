@@ -153,23 +153,10 @@ class Translation extends Controller
         $("#none-field-to-update").val($(this).attr("name")+";"+$("#none-field-to-update").val());
 	});';
 
-            $i = 0;
-            foreach ($data['country'] as $key => $value) {
 
-                /*
-                  $key2 = $key;
-                  if (strstr($key, '-'))
-                  {
-                  $tmp2 = explode("-", $key);
-                  //$key2 = $tmp2[0] . '-' . $tmp2[1];
-                  } */
 
-                $data['geolocalisation_country'][$i]['libelle'] = ucfirst(I18n::$languages[$key]);
-                $data['geolocalisation_country'][$i]['id']      = $key;
-                $i++;
-            }
-
-            $sql1 = "SELECT a.id as aid, b.id as bid, a.key,a.file_found,a.line_found, a.source, a.text as atext, b.text as btext, a.translate_auto as auto1, b.translate_auto as auto2 ";
+            $sql1 = "SELECT a.id as aid, b.id as bid, a.key,a.file_found,a.line_found, a.source, a.text as atext, b.text as btext,
+             a.translate_auto as auto1, b.translate_auto as auto2 ";
             $sql2 = "SELECT count(1) as cpt ";
 
             $sql = " FROM  `translation_".$data['from']."` a
