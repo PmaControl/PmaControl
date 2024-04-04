@@ -26,12 +26,13 @@ class Upgrade extends Controller
 
             $id_version__before = $this->executePatch($param);
 
-            if ($id_version__before){
+            if ($id_version__before !== false){
 
                 $param[0] = $id_version__before;
                 $this->setNewVersion($param);
-                $this->updateConfig($param);
             }
+
+            $this->updateConfig($param);
             
             // start all daemon
         }   

@@ -68,12 +68,9 @@ class Table extends Controller {
                     
                     header("location: ".LINK.$url);
                 }
-                
-            
             }    
         }
         //end
-
 
 
         //deport to lib/database
