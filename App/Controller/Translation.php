@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use Glial\Synapse\Controller;
-use Glial\I18n\I18n;
+use \Glial\Synapse\Controller;
+use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use \Monolog\Logger;
@@ -24,12 +24,7 @@ class Translation extends Controller
     function admin_translation()
     {
 
-        if (\Glial\Synapse\Basic::from() == "administration.controller.php") {
-            $module['picture']     = "administration/Earth.png";
-            $module['name']        = __("Translations");
-            $module['description'] = __("Translate website in all language");
-            return $module;
-        }
+
 
         //include_once APP_DIR.DS."controller".DS."History.controller.php";
 

@@ -39,13 +39,15 @@ class Ariane
 
         while ($ob = $this->db->sql_fetch_object($res)) {
 
+            $title = __($ob->title);
+
             if (!empty($ob->url)) {
-                $ariane[] = '<a href="'.str_replace("{LINK}", LINK, $ob->url).'">'.$ob->icon.' '.__($ob->title).'</a>';
+                $ariane[] = '<a href="'.str_replace("{LINK}", LINK, $ob->url).'">'.$ob->icon.' '.$title.'</a>';
             } else {
-                $ariane[] = $ob->icon.' '.__($ob->title);
+                $ariane[] = $ob->icon.' '.$title;
             }
-            $ariane2[] = $ob->icon.' '.__($ob->title);
-            $title     = $ob->icon.' '.__($ob->title);
+            $ariane2[] = $ob->icon.' '.$title;
+            $title     = $ob->icon.' '.$title;
             $count++;
         }
 

@@ -101,7 +101,7 @@ class Agent extends Controller {
 
             $sql = "UPDATE daemon_main SET pid ='" . $pid . "' WHERE id = " . $id_daemon . ";";
             $db->sql_query($sql);
-            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") successfully started with") . " pid : " . $pid);
+            $msg = I18n::getTranslation(__("The daemon ")."(id=" . $id_daemon . ") ".__("successfully started with pid:") . " " . $pid);
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
         } else {
@@ -142,7 +142,8 @@ class Agent extends Controller {
         $this->logger->emergency($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
-            $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the id : ") . "'" . $id_daemon . "'");
+            $msg = I18n::getTranslation(__("Impossible to find the daemon")." (id=" . $id_daemon . ")");
+            
             $title = I18n::getTranslation(__("Error"));
             set_flash("error", $title, $msg);
             header("location: " . LINK . $this->url);
