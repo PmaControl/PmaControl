@@ -285,7 +285,7 @@ class Compare extends Controller {
         $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from information_schema.triggers where trigger_schema ='{DB}'";
         $query['FUNCTION']['query'] = "show function status WHERE Db ='{DB}';";
         $query['PROCEDURE']['query'] = "show procedure status WHERE Db ='{DB}'";
-        $query['TABLE']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
+        $query['TABLE']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND (TABLE_TYPE='BASE TABLE' OR TABLE_TYPE='SYSTEM VERSIONED') order by TABLE_NAME;";
         $query['VIEW']['query'] = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
         $query['EVENT']['query'] = "SHOW EVENTS FROM `{DB}`";
 
