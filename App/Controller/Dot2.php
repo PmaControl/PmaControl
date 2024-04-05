@@ -1252,25 +1252,25 @@ class Dot2 extends Controller
 
             if ($count_by_type['1'] === $nb_node) {
                 $galera_style = $this->galera['GALERA_AVAILABLE'];
-                $this->logger->notice("GALERA_AVAILABLE");
+                //$this->logger->notice("GALERA_AVAILABLE");
             } else {
                 $galera_style = $this->galera['GALERA_DEGRADED'];
-                $this->logger->notice("GALERA_DEGRADED");
+                //$this->logger->notice("GALERA_DEGRADED");
             }
 
             if ($nb_node % 2 == 0) {
                 $galera_style = $this->galera['GALERA_WARNING'];
-                $this->logger->notice("GALERA_WARNING");
+                //$this->logger->notice("GALERA_WARNING");
             }
 
             if ($count_by_type['1'] === 1) {
                 $galera_style = $this->galera['GALERA_EMERGENCY'];
-                $this->logger->notice("GALERA_EMERGENCY");
+                //$this->logger->notice("GALERA_EMERGENCY");
             }
 
             if ($count_by_type['1'] === 0) {
                 $galera_style = $this->galera['GALERA_OUTOFORDER'];
-                $this->logger->notice("GALERA_OUTOFORDER");
+                //$this->logger->notice("GALERA_OUTOFORDER");
             }
 
             $cluster_name_display = explode(":", $cluster_name)[1];
