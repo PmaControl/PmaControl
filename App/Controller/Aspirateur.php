@@ -77,6 +77,10 @@ class Aspirateur extends Controller
     var $files             = array();
     public $variables         = array();
 
+    static $timestamp_config_file = "";
+
+    static $md5_file = array(4 => TMP."lock/variable/{id_mysql_server}.md5", 9 => TMP."lock/list_db/{id_mysql_server}.md5");
+
     //log with monolog
     var $logger;
 
@@ -93,7 +97,7 @@ class Aspirateur extends Controller
     public function before($param)
     {
         $monolog       = new Logger("Aspirateur");
-        $handler      = new StreamHandler(LOG_FILE, Logger::WARNING);
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
         $this->logger = $monolog;
@@ -122,6 +126,8 @@ class Aspirateur extends Controller
 
         Debug::checkPoint('avant query');
 
+        $pid = getmypid();
+
         /* Only for testing for processing long time, don't think some got more than 999 999 mysql server :D */
         if ($id_mysql_server === "999999") {
             $wait_sec = 135;
@@ -145,9 +151,7 @@ class Aspirateur extends Controller
             
             $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
             
-
-            
-            $this->logger->notice("id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
+            $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
 
             // VERY important else we got error and we kill the worker and have to restart with a new one
             if ($available === 0) {
@@ -236,7 +240,7 @@ class Aspirateur extends Controller
         $date[date('Y-m-d H:i:s')][$id_mysql_server] = $data;
 
         if ($mysql_tested->is_connected === false) {
-            echo "PAS BON DU TOUT ! ask creator of PmaControl";
+            $this->logger->emergency("PAS BON DU TOUT ! ask creator of PmaControl");
             return false;
         }
 
@@ -264,7 +268,7 @@ class Aspirateur extends Controller
         $db_list = $this->getSchema($id_mysql_server);
         if ($this->isModified($id_mysql_server, $db_list,  $this->lock_list_db) === true){
 
-            $this->logger->emergency("we import DB to shared memory");
+            $this->logger->debug("we import DB to shared memory [id_mysql_server:".$id_mysql_server."]");
 
             $this->allocate_shared_storage('list_db');
             $export_list_db[date('Y-m-d H:i:s')][$id_mysql_server]['list_db']['schema_list']  = json_encode($db_list);
@@ -375,7 +379,7 @@ class Aspirateur extends Controller
                 $available = empty($error_msg) ? 1 : 0;
                 
                 $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh");
-                $this->logger->notice("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
+                $this->logger->info("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
     
                 // VERY important else we got error and we kill the worker and have to restart with a new one
                 if ($available === 0) {
@@ -694,7 +698,7 @@ class Aspirateur extends Controller
             //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
 
-            // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
+            // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
 
@@ -724,6 +728,7 @@ class Aspirateur extends Controller
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker/".$server['id'].".lock";
                 if (file_exists($lock_file)) {
+                    $this->logger->notice('[addToQueueMySQL] the pid didn\'t exist anymore : "'.$lock_file.'", we deleted id !');
                     unlink($lock_file);
                 }
             }
@@ -796,7 +801,7 @@ class Aspirateur extends Controller
     {
 
         $pid = getmypid();
-        $this->logger->debug("[".__METHOD__."] Started new worker with pid : $pid");
+        $this->logger->notice("[WORKER:$pid] Started new worker with pid : $pid");
 
         //get mypid
         //start worker => pid / id_mysql_server
@@ -822,9 +827,14 @@ class Aspirateur extends Controller
 
         $data        = array();
         $data['pid'] = $pid;
+        $param['pid'] = $pid;
+        
+
+        $this->keepConfigFile($param);
 
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
-//echo "[" . date("Y-m-d H:i:s") . "] Message pulled from queue - id:{$msg->id}, name:{$msg->name} [[" . $pid . "]]\n";
+
+            $this->keepConfigFile($param);
 
             $id_mysql_server = $msg->id;
 
@@ -845,13 +855,13 @@ class Aspirateur extends Controller
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
 
-            $this->logger->debug("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
+            $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
             //do your business logic here and process this message!
             $this->tryMysqlConnection(array($msg->name, $msg->id));
             // if mysql connection is down, the worker will be down too and we have to restart one
 
-            $this->logger->debug("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
+            $this->logger->info("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
 
             if (file_exists($lock_file)) {
                 unlink($lock_file);
@@ -866,7 +876,7 @@ class Aspirateur extends Controller
         }
 
 
-        $this->logger->warning("WWe not wait waited next msh in queue ($queue_key)");
+        $this->logger->warning("We not wait waited next msg in queue ($queue_key)");
 
     }
 
@@ -926,11 +936,11 @@ class Aspirateur extends Controller
 
                         unlink($double_buffer);
                         if (file_exists($lock)) {
-                            $this->logger->info("[DEBUG][WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
+                            $this->logger->notice("[WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
                             unlink($lock);
                         }
 
-                        $this->logger->info("[DEBUG][WORKER] removed worker with pid : ".$ob2->pid."");
+                        $this->logger->notice("[WORKER] removed worker with pid : ".$ob2->pid."");
                     }
 
                 }
@@ -1959,12 +1969,12 @@ GROUP BY C.ID, C.INFO;";
     public function getSchema($id_mysql_server)
     {
 
-        $this->logger->warning("get SHEMA ##############################");
+        
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
         $schemas = array();
         if ($mysql_tested->testAccess()) {
 
-            $this->logger->warning("query sql #####################");
+            $this->logger->debug("We import schema list from id_mysql_server : ".$id_mysql_server);
             $sql = "SELECT SCHEMA_NAME as schema_name, DEFAULT_CHARACTER_SET_NAME as character_set_name, DEFAULT_COLLATION_NAME as collation_name  
             FROM information_schema.schemata";
 
@@ -2024,15 +2034,34 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
-
-    public function getElem($param)
+    // Dans le cas des worker pour eviter de les relancer on recharge la configuation des serveurs MySQL, lorsque un nouveau server est ajouté.
+    public function keepConfigFile($param)
     {
         Debug::parseDebug($param);
+        $file = CONFIG."db.config.ini.php";
 
-        $gg = Extraction::display(array("schema_name"));
-
-        Debug::debug($gg);
-
+        $ts = filemtime($file);
+        if (empty(self::$timestamp_config_file)) {
+            $this->logger->debug("[WORKER:".$param['pid']."] We set TS for DB config");
+            self::$timestamp_config_file = $ts;
+        }
+        else if (self::$timestamp_config_file != $ts) {
+            
+            $db_config = parse_ini_file($file, true);
+            Sgbd::setConfig($db_config);
+            $this->logger->notice("[WORKER:".$param['pid']."] We imported new config for DB");
+            self::$timestamp_config_file = $ts;
+        }
+        Debug::debug($ts, "timestamp");
     }
 
+    static function cleanMd5($tab_id_mysql_servers)
+    {
+        foreach($tab_id_mysql_servers as $id_mysql_server) {
+            $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, self::$md5_file[4]);
+
+            unlink($file_md5);
+        }
+
+    }
 }

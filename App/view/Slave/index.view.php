@@ -5,6 +5,7 @@
  * and open the template in the editor.
  */
 
+use App\Library\Available;
 use App\Library\Mysql;
 use App\Library\Display;
 
@@ -77,7 +78,7 @@ foreach ($data['slave'] as $slaves) {
         if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
             $id_mysql_server_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
 
-            if ($data['info_server'][$id_mysql_server_master]['']['mysql_available'] === "0") {
+            if (! Available::getMySQL($id_mysql_server_master)) {
                 $class = "pma pma-danger";
             }
         }
@@ -101,9 +102,9 @@ foreach ($data['slave'] as $slaves) {
         echo '</td>';
 
         $class = "";
-        if (empty($data['info_server'][$slave['id_mysql_server']]['']['mysql_available'])) {
+        if (! Available::getMySQL($slave['id_mysql_server'])) {
             $class = "pma pma-danger";
-        }elseif($data['info_server'][$slave['id_mysql_server']]['']['mysql_available'])
+        }elseif(! Available::getMySQL($slave['id_mysql_server']))
         {
             $class = "pma pma-warning";
         }

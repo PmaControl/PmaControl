@@ -15,6 +15,11 @@ use App\Library\Debug;
 use Glial\Sgbd\Sgbd;
 use App\Controller\Common;
 
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
+
+
 // ""	&#9635;   ▣
 // "□"	&#9633;	&#x25A1;
 // ""	&#9679;  ●
@@ -76,12 +81,8 @@ class Dot2 extends Controller
     public $graph_edge              = array();
     public $graph_master_master     = array();
     public $graph_galera_cluster    = array();
-    public $graph_ha_proxy          = array();
-    public $graph_group_replication = array();
-    public $serveur_affiche         = array();
     public $graph_arbitrator        = array(); // containt all id of arbitrator
     public $joiner                  = array();
-    public $galera_border           = array();
     //used for legend from architecture_legend
     public $edge                    = array();
     public $node                    = array();
@@ -90,6 +91,8 @@ class Dot2 extends Controller
     // contain the list of cluster empty (made with offline node to get back full list of node from original cluster
     public $cluster_black_list      = array();
     public $server_backup           = array();
+
+    public $logger;
 
     public function getMasterSlave($param)
     {
@@ -1235,8 +1238,13 @@ class Dot2 extends Controller
 
             ksort($segments);
 
+            //$this->logger->notice(json_encode($cluster_check[$cluster_name]));
+            //$this->logger->notice(print_r($cluster_check[$cluster_name]));
             $nb_node       = count($cluster_check[$cluster_name]);
-            $count_by_type = array_count_values($cluster_check[$cluster_name]);
+            $sub_cluster = array_map('intval', $cluster_check[$cluster_name]);
+            $count_by_type = array_count_values($sub_cluster);
+
+            //$this->logger->notice("Count by type : ".print_r($count_by_type));
 
             $count_by_type['-1'] = $count_by_type['-1'] ?? 0;
             $count_by_type['0']  = $count_by_type['0'] ?? 0;
@@ -1244,24 +1252,25 @@ class Dot2 extends Controller
 
             if ($count_by_type['1'] === $nb_node) {
                 $galera_style = $this->galera['GALERA_AVAILABLE'];
+                $this->logger->notice("GALERA_AVAILABLE");
             } else {
                 $galera_style = $this->galera['GALERA_DEGRADED'];
+                $this->logger->notice("GALERA_DEGRADED");
             }
 
             if ($nb_node % 2 == 0) {
                 $galera_style = $this->galera['GALERA_WARNING'];
-            }
-
-            if ($count_by_type['1'] === 2) {
-                $galera_style = $this->galera['GALERA_CRITICAL'];
+                $this->logger->notice("GALERA_WARNING");
             }
 
             if ($count_by_type['1'] === 1) {
                 $galera_style = $this->galera['GALERA_EMERGENCY'];
+                $this->logger->notice("GALERA_EMERGENCY");
             }
 
             if ($count_by_type['1'] === 0) {
                 $galera_style = $this->galera['GALERA_OUTOFORDER'];
+                $this->logger->notice("GALERA_OUTOFORDER");
             }
 
             $cluster_name_display = explode(":", $cluster_name)[1];
@@ -1695,5 +1704,14 @@ class Dot2 extends Controller
         Debug::debug($this->galera_cluster);
 
         return $group_galera;
+    }
+
+    public function before($param)
+    {
+        $monolog       = new Logger("Dot2");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
     }
 }
