@@ -163029,12 +163029,13 @@ LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
 INSERT INTO `daemon_main` VALUES (2,'scan ip','2016-06-10 16:35:31',0,64,'log/scanip.log',60,2000,1,'','','',0,0,'',0,'','','','');
 INSERT INTO `daemon_main` VALUES (3,'scan port','2016-08-22 00:00:00',0,64,'log/scanport.log',1,60,1,'','','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',2891433,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',2891374,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',2891386,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
-INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',2891400,64,'log/daemon_11.log',10,8,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
-INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',2891414,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',2891461,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (5,'Generate architecture graph','2016-11-08 00:00:00',298535,64,'log/daemon_5.log',5,1,10,'Dot2','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',298638,64,'log/daemon_7.log',1,1,1,'integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (9,'aspirateur ssh (mode queue)','2017-11-23 18:15:54',298591,64,'log/daemon_9.log',10,1,3,'Aspirateur','addToQueueSsh','',0,21457,'',21457,'trySshConnection','','workerSsh','worker_ssh');
+INSERT INTO `daemon_main` VALUES (11,'aspirateur mysql (mode queue)','2018-11-27 18:15:54',298561,64,'log/daemon_11.log',10,10,2,'Aspirateur','addToQueueMySQL','',0,21671,'',21671,'tryMysqlConnection','','worker','worker');
+INSERT INTO `daemon_main` VALUES (12,'check all queue','2018-11-27 18:15:54',298549,64,'log/daemon_12.log',8,1,2,'Aspirateur','checkAllWorker','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (13,'aspirateur proxysql (mode queue)','2022-12-28 18:02:33',298523,1,'log/daemon_13.log',9,2,10,'Aspirateur','addToQueueProxySQL','',0,21672,'',21672,'tryProxySQLConnection','','workerProxysql','worker_proxysql');
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',298511,64,'log/daemon_14.log',1,1,1,'Listener','checkAll','',0,0,'',0,'','','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163271,103 +163272,109 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,233,234,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,235,236,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,237,238,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,188,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (95,92,4,35,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,245,246,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,247,248,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,249,250,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,200,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (95,92,4,47,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
 INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
 INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
 INSERT INTO `menu` VALUES (98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
 INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
 INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
 INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
-INSERT INTO `menu` VALUES (102,92,36,47,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
-INSERT INTO `menu` VALUES (103,92,48,87,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
-INSERT INTO `menu` VALUES (104,103,49,50,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
-INSERT INTO `menu` VALUES (105,103,51,66,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
-INSERT INTO `menu` VALUES (108,92,90,113,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
-INSERT INTO `menu` VALUES (109,92,114,119,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
-INSERT INTO `menu` VALUES (110,109,115,116,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
-INSERT INTO `menu` VALUES (111,109,117,118,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
-INSERT INTO `menu` VALUES (112,103,67,68,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,120,167,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
-INSERT INTO `menu` VALUES (114,108,91,100,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
-INSERT INTO `menu` VALUES (115,108,101,108,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,168,177,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,169,170,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,171,172,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,173,174,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,175,176,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
-INSERT INTO `menu` VALUES (121,113,121,122,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
-INSERT INTO `menu` VALUES (122,113,123,124,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
-INSERT INTO `menu` VALUES (123,113,125,128,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
-INSERT INTO `menu` VALUES (124,113,129,132,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
-INSERT INTO `menu` VALUES (125,113,133,134,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
-INSERT INTO `menu` VALUES (126,113,135,140,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
-INSERT INTO `menu` VALUES (127,103,69,70,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
-INSERT INTO `menu` VALUES (128,103,71,72,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
+INSERT INTO `menu` VALUES (102,92,48,59,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,60,99,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (104,103,61,62,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
+INSERT INTO `menu` VALUES (105,103,63,78,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,102,125,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,126,131,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,127,128,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,129,130,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (112,103,79,80,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
+INSERT INTO `menu` VALUES (113,92,132,179,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,103,112,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,113,120,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,180,189,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,181,182,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,183,184,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,185,186,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,187,188,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,133,134,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,135,136,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,137,140,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Client','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,141,144,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,145,146,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,147,152,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (127,103,81,82,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
+INSERT INTO `menu` VALUES (128,103,83,84,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
 INSERT INTO `menu` VALUES (129,92,2,3,0,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (131,113,141,142,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
-INSERT INTO `menu` VALUES (132,113,143,144,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
-INSERT INTO `menu` VALUES (133,113,145,150,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
-INSERT INTO `menu` VALUES (136,103,73,74,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,178,179,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
-INSERT INTO `menu` VALUES (138,113,151,156,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
-INSERT INTO `menu` VALUES (139,103,75,76,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
-INSERT INTO `menu` VALUES (140,108,109,112,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
-INSERT INTO `menu` VALUES (141,113,157,158,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,180,187,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,181,182,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,183,186,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
-INSERT INTO `menu` VALUES (145,113,159,162,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
-INSERT INTO `menu` VALUES (146,103,77,78,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
-INSERT INTO `menu` VALUES (147,102,37,38,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
-INSERT INTO `menu` VALUES (148,102,39,42,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
-INSERT INTO `menu` VALUES (149,102,43,44,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
-INSERT INTO `menu` VALUES (150,103,79,82,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,184,185,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (131,113,153,154,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,155,156,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,157,162,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (136,103,85,86,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,190,191,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,163,168,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (139,103,87,88,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,121,124,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,169,170,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,192,199,0,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,193,194,0,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,195,198,0,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,171,174,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (146,103,89,90,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
+INSERT INTO `menu` VALUES (147,102,49,50,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
+INSERT INTO `menu` VALUES (148,102,51,54,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
+INSERT INTO `menu` VALUES (149,102,55,56,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
+INSERT INTO `menu` VALUES (150,103,91,94,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (153,144,196,197,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
-INSERT INTO `menu` VALUES (155,105,52,55,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
-INSERT INTO `menu` VALUES (156,114,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
-INSERT INTO `menu` VALUES (157,114,94,95,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
-INSERT INTO `menu` VALUES (158,115,102,103,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
-INSERT INTO `menu` VALUES (159,115,104,105,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
-INSERT INTO `menu` VALUES (160,150,80,81,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
-INSERT INTO `menu` VALUES (161,126,136,137,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
-INSERT INTO `menu` VALUES (162,126,138,139,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
-INSERT INTO `menu` VALUES (163,123,126,127,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
-INSERT INTO `menu` VALUES (164,138,152,153,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
-INSERT INTO `menu` VALUES (165,138,154,155,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,88,89,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
-INSERT INTO `menu` VALUES (167,148,40,41,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
-INSERT INTO `menu` VALUES (168,145,160,161,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
-INSERT INTO `menu` VALUES (169,124,130,131,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
-INSERT INTO `menu` VALUES (170,133,146,147,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
-INSERT INTO `menu` VALUES (171,133,148,149,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
-INSERT INTO `menu` VALUES (172,105,56,57,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
-INSERT INTO `menu` VALUES (173,105,58,59,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
-INSERT INTO `menu` VALUES (174,155,53,54,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
-INSERT INTO `menu` VALUES (175,105,60,61,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
-INSERT INTO `menu` VALUES (176,105,62,63,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
-INSERT INTO `menu` VALUES (177,114,96,97,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
-INSERT INTO `menu` VALUES (178,105,64,65,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
-INSERT INTO `menu` VALUES (179,103,83,84,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
-INSERT INTO `menu` VALUES (180,115,106,107,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
-INSERT INTO `menu` VALUES (181,140,110,111,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
-INSERT INTO `menu` VALUES (182,114,98,99,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (155,105,64,67,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
+INSERT INTO `menu` VALUES (156,114,104,105,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,106,107,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,114,115,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,116,117,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (160,150,92,93,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
+INSERT INTO `menu` VALUES (161,126,148,149,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,150,151,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,138,139,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,164,165,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,166,167,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,100,101,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (167,148,52,53,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
+INSERT INTO `menu` VALUES (168,145,172,173,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,142,143,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,158,159,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,160,161,0,'<i class=\"far fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (172,105,68,69,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
+INSERT INTO `menu` VALUES (173,105,70,71,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
+INSERT INTO `menu` VALUES (174,155,65,66,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
+INSERT INTO `menu` VALUES (175,105,72,73,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
+INSERT INTO `menu` VALUES (176,105,74,75,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
+INSERT INTO `menu` VALUES (177,114,108,109,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (178,105,76,77,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
+INSERT INTO `menu` VALUES (179,103,95,96,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
+INSERT INTO `menu` VALUES (180,115,118,119,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,122,123,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,110,111,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
 INSERT INTO `menu` VALUES (183,95,19,22,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
 INSERT INTO `menu` VALUES (184,95,23,24,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Security','{LINK}mysqlUser/security','mysqlUser','security',0,1,'');
-INSERT INTO `menu` VALUES (185,103,85,86,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
-INSERT INTO `menu` VALUES (191,95,25,26,1,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
-INSERT INTO `menu` VALUES (193,102,45,46,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
+INSERT INTO `menu` VALUES (185,103,97,98,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
+INSERT INTO `menu` VALUES (191,95,25,26,0,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
+INSERT INTO `menu` VALUES (193,102,57,58,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
 INSERT INTO `menu` VALUES (194,183,20,21,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
-INSERT INTO `menu` VALUES (195,113,163,164,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
-INSERT INTO `menu` VALUES (196,113,165,166,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage prefix for vFK','{LINK}ForeignKey/settingPrefix','ForeignKey','settingPrefix',0,1,'');
-INSERT INTO `menu` VALUES (197,95,27,34,1,'<i class=\"fa fa-bath\" aria-hidden=\"true\"></i>','Server','{LINK}Server/index','Server','index',0,1,'');
-INSERT INTO `menu` VALUES (198,197,28,33,1,'<i class=\"fa fa-database\" aria-hidden=\"true\"></i>','Databases','{LINK}Database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (199,198,29,32,1,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables','{LINK}Table/index','table','index',0,1,'');
-INSERT INTO `menu` VALUES (200,199,30,31,1,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Physical data model','{LINK}Table/mpd','table','mpd',0,1,'');
+INSERT INTO `menu` VALUES (195,113,175,176,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
+INSERT INTO `menu` VALUES (196,113,177,178,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage prefix for vFK','{LINK}ForeignKey/settingPrefix','ForeignKey','settingPrefix',0,1,'');
+INSERT INTO `menu` VALUES (197,95,27,46,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Server','','Server','index',0,1,'');
+INSERT INTO `menu` VALUES (198,197,28,43,0,'<i class=\"fa fa-database\" aria-hidden=\"true\"></i>','Databases','','database','index',0,1,'');
+INSERT INTO `menu` VALUES (199,198,29,32,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables','{LINK}Table/index','table','index',0,1,'');
+INSERT INTO `menu` VALUES (200,199,30,31,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Relations view','{LINK}Table/mpd','table','mpd',0,1,'');
+INSERT INTO `menu` VALUES (201,198,33,34,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Physical data model','{LINK}MysqlDatabase/mpd','MysqlDatabase','mpd',0,1,'');
+INSERT INTO `menu` VALUES (202,198,35,40,0,'<i class=\"glyphicon glyphicon-random\"></i>','Foreign keys','','MysqlDatabaseSDF','foreignKey',0,1,'');
+INSERT INTO `menu` VALUES (203,202,36,37,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys virtual','{LINK}foreignKey/index','MysqlDatabase','foreignKey',0,1,'');
+INSERT INTO `menu` VALUES (204,202,38,39,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys real','{LINK}foreignKey/real','foreignKey','real',0,1,'');
+INSERT INTO `menu` VALUES (205,198,41,42,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','List of tables','{LINK}MysqlDatabase/table','MysqlDatabase','table',0,1,'');
+INSERT INTO `menu` VALUES (206,197,44,45,0,'<i class=\"fa fa-list-alt\" aria-hidden=\"true\"></i>','Processlist','{LINK}MysqlServer/processlist','MysqlServer','processlist',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163443,10 +163450,11 @@ CREATE TABLE `translation_glial` (
   `language` char(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `file_found` varchar(250) NOT NULL,
   `line_found` int(11) NOT NULL,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`,`language`,`file_found`,`line_found`),
   KEY `key_2` (`key`,`language`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163455,760 +163463,113 @@ CREATE TABLE `translation_glial` (
 
 LOCK TABLES `translation_glial` WRITE;
 /*!40000 ALTER TABLE `translation_glial` DISABLE KEYS */;
-INSERT INTO `translation_glial` VALUES (1,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','Databases','en','App/Controller/Dot2.php',944);
-INSERT INTO `translation_glial` VALUES (2,'a96232936c26dc6c5174693b6412f0b811499b5d','Client','en','App/view/Common/displayClientEnvironment.view.php',16);
-INSERT INTO `translation_glial` VALUES (3,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','Environment','en','App/view/Common/displayClientEnvironment.view.php',18);
-INSERT INTO `translation_glial` VALUES (4,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','Filter','en','App/view/Common/displayClientEnvironment.view.php',20);
-INSERT INTO `translation_glial` VALUES (5,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Server/main.view.php',19);
-INSERT INTO `translation_glial` VALUES (6,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Server/main.view.php',20);
-INSERT INTO `translation_glial` VALUES (7,'e056e97690c57dc7708f2293bd824449b7cbe359','Available','en','App/view/Server/main.view.php',21);
-INSERT INTO `translation_glial` VALUES (8,'a96232936c26dc6c5174693b6412f0b811499b5d','Client','en','App/view/Server/main.view.php',45);
-INSERT INTO `translation_glial` VALUES (9,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','Environment','en','App/view/Server/main.view.php',46);
-INSERT INTO `translation_glial` VALUES (10,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Server/main.view.php',47);
-INSERT INTO `translation_glial` VALUES (11,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','Tags','en','App/view/Server/main.view.php',51);
-INSERT INTO `translation_glial` VALUES (12,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','IP','en','App/view/Server/main.view.php',54);
-INSERT INTO `translation_glial` VALUES (13,'36020c5fbf6c9d4f11641d456a5770666c145e7a','Port','en','App/view/Server/main.view.php',55);
-INSERT INTO `translation_glial` VALUES (14,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','User','en','App/view/Server/main.view.php',56);
-INSERT INTO `translation_glial` VALUES (15,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','Password','en','App/view/Server/main.view.php',57);
-INSERT INTO `translation_glial` VALUES (16,'1741951310efcfcc29c696ecfa58230b898c0030','Version','en','App/view/Server/main.view.php',59);
-INSERT INTO `translation_glial` VALUES (17,'78f24143f7493e20800ceaebbb476113adf7b385','Date refresh','en','App/view/Server/main.view.php',62);
-INSERT INTO `translation_glial` VALUES (18,'f9b99c7ce323cf4ad2927c3216723eefefb41d35','Ping','en','App/view/Server/main.view.php',63);
-INSERT INTO `translation_glial` VALUES (19,'e817990fc3a6bf606bfc0410ed4eb23cd35460e8','Error','en','App/view/Server/main.view.php',65);
-INSERT INTO `translation_glial` VALUES (20,'73c610db2ed869250579adf5d41e2df21339cf81','Acknowledge','en','App/view/Server/main.view.php',66);
-INSERT INTO `translation_glial` VALUES (21,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','READ ONLY','en','App/view/Server/main.view.php',138);
-INSERT INTO `translation_glial` VALUES (22,'f14772c28798cacfbd133725dec8efd9f5b48bd8','Home','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (23,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','Dashboard','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (24,'291288fa12690b74e3ec9e0ce072b165268898f8','Servers','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (25,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','Hardware','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (26,'9f35d11a978d46e57f327cc521c7384a325adbdc','Statistics','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (27,'a12e9c31056233d54524ab1c4f240cd377769fd6','Memory','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (28,'08a0e046f7d26a7ea08677d70234ced16db781e0','Index','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (29,'0bd0efc4e70319aab1f734568a792ad70086ad5b','Graphs','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (30,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','Databases','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (31,'be4f2d5af1b233a6ebaa4035fe770e429261ae27','Security','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (32,'a3d63f0104f93544ca19abddcee410ce41b27f03','Architecture','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (33,'9c66401532803d68e4cc9f0f2eb7488ee86073cc','Topology','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (34,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','Master / Slave','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (35,'e95c54ab25e5aef87fba7bb780e99ab801b32037','Galera Cluster','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (36,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','Tools','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (37,'f662132cfed1c3166826b58573c599800ed734ae','Query Analyzer','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (38,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','Cleaner','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (39,'75fbe4b48cfc3910290175c9751ee596f0b0a86d','Deploy RSA key','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (40,'b3838e8419aa780cc70e67bd86dd92c89ecb277d','Compare','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (41,'4f91604890a27c775abe3c89f9f7f8b5d693800b','Scan network','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (42,'1a4b9a6f5703b936a2f0ee068cae623513e50281','Format SQL','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (43,'bdfa57b9a73beb279af2c657c3b38dac7cc58e37','Check Config','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (44,'ba5af2521e1d5af81fa693202c1adb13da6035f6','MySQL User','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (45,'2a238000a577ce326594097f4780e17496e0295e','Database','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (46,'3ab1dd947e89b5d1bd71e0c75aad9af24957dfd9','Manage binlog','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (47,'0d8ef3a02a10cb4425d2014a48382ee9e9052eef','Variables version control','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (48,'ebad167eba8061ad52da22a97540f72ef9a5d1cf','Job','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (49,'2284e61b03bcbee1dbc099ce420e830929dde56e','Backups','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (50,'bc041d6795ac41ea34399510106a5fa3f47fb559','Storage area','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (51,'0f1b0788ca4e690153ba1b176dd7ffacaaad83d1','Archives','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (52,'4cfa361c1c272499dd88ec961f929c1368cc42e5','Settings','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (53,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','Plugins','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (54,'7cc5a15897401428da7d364d2aac39be0caa9ca5','sys Schema','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (55,'ad1bd287b4020a91dc1de983894ab8c3d25b3e66','BenchMark','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (56,'4cfa361c1c272499dd88ec961f929c1368cc42e5','Settings','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (57,'c25ff84d665c8a09d010847c2f3f10c2b789dd7b','Users','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (58,'fe449f419da5e0cd3ff3a0814355b018a355bfba','Groups','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (59,'a96232936c26dc6c5174693b6412f0b811499b5d','Client','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (60,'d43ad05da4b084361a5e71fa1ba7319c3ce53e25','Environment','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (61,'aa7c206445e2cf111f6b90d1cd4e36e8045d7cec','Daemon','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (62,'f186fc00b77cf6bc964bac147a1d1e5dd658ddb5','LDAP','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (63,'c8ef1ea6f522e2e6aeda99eb90e7247d23f35d37','Plugins','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (64,'77c7f04ac73287ed1fd169f71459d0b0196c6204','SSH keys','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (65,'d94f2f379a7ce6c2a5328d0c671920c6c12f2674','Import / Export','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (66,'8bea0772c5357a70eabb18fb30d25356504216f0','Alias DNS','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (67,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','Tags','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (68,'fe4252cfd49487a7a2102f8a97ddbbb59bbd4fc0','Help','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (69,'2f86f430eb46036d70873afb394fd950c8f2992e','Online docs and support','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (70,'a8ce43c6919c02302283336bab5ac4b430595f47','Check for update','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (71,'d60c4ef8c5f1d2ae1b5bbdb96634f8d5590e908e','Report issue','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (72,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','About','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (73,'919d5a2f6598d2f86d1c2e8fae1be5bf8f4c167d','Logout','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (74,'413520995a35ecb9100fec9747e9d30dc0389bc9','Developer','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (75,'48614717c6457dab8800831d82b6f6dbfd3ae071','PHP Live REGEX','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (76,'e1680d524e90b893d5fcf36d9615a8f151ed459b','Manage menu','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (77,'6995050e32bb8698ad5390842ba00259e45ab121','Yes','en','App/Controller/Server.php',464);
-INSERT INTO `translation_glial` VALUES (78,'873f273b48dc791cce8d5fc48b3bac97d29977cc','No','en','App/Controller/Server.php',466);
-INSERT INTO `translation_glial` VALUES (79,'c1676d87da90ae31e047d3e7b8fd6946284760fa','Server : ','en','App/view/Server/id.view.php',21);
-INSERT INTO `translation_glial` VALUES (80,'852440e7d9ee0122183930aaf6b88847e1540ee3','Nothing selected','en','/srv/www/glial/Glial/Html/Form/Form.php',93);
-INSERT INTO `translation_glial` VALUES (81,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','Filter','en','App/view/Server/id.view.php',39);
-INSERT INTO `translation_glial` VALUES (82,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Server/statistics.view.php',19);
-INSERT INTO `translation_glial` VALUES (83,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Server/statistics.view.php',20);
-INSERT INTO `translation_glial` VALUES (84,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Server/statistics.view.php',21);
-INSERT INTO `translation_glial` VALUES (85,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','IP','en','App/view/Server/statistics.view.php',22);
-INSERT INTO `translation_glial` VALUES (86,'36020c5fbf6c9d4f11641d456a5770666c145e7a','Port','en','App/view/Server/statistics.view.php',23);
-INSERT INTO `translation_glial` VALUES (87,'bf4c28185da4faa84947223c05a9be0f938255dd','User connected','en','App/view/Server/statistics.view.php',24);
-INSERT INTO `translation_glial` VALUES (88,'62061ddc5751e3d737e8075f9bdc0ec53e913b29','Select','en','App/view/Server/statistics.view.php',25);
-INSERT INTO `translation_glial` VALUES (89,'9a343a82e6033818cd7ba4f90bcade8f2111c408','by second','en','App/view/Server/statistics.view.php',25);
-INSERT INTO `translation_glial` VALUES (90,'caa13c8d4632195ca3d4838ddc8330ebc0c1fbdf','Insert','en','App/view/Server/statistics.view.php',26);
-INSERT INTO `translation_glial` VALUES (91,'523083d34591725b2863c87fd696274a2e82920e','Update','en','App/view/Server/statistics.view.php',27);
-INSERT INTO `translation_glial` VALUES (92,'0b65585af5173485167e735385f88f3cd4de1780','Replace','en','App/view/Server/statistics.view.php',28);
-INSERT INTO `translation_glial` VALUES (93,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','Delete','en','App/view/Server/statistics.view.php',29);
-INSERT INTO `translation_glial` VALUES (94,'178fcbb78480db85f449b6694244e1bad52647a7','Begin','en','App/view/Server/statistics.view.php',30);
-INSERT INTO `translation_glial` VALUES (95,'b6fef5a9e1259441fe3fddb4f6ce49ddb4a629d3','Commit','en','App/view/Server/statistics.view.php',31);
-INSERT INTO `translation_glial` VALUES (96,'6923b1a48a990486d4bc7c5898130df5390d89f6','Rollback','en','App/view/Server/statistics.view.php',32);
-INSERT INTO `translation_glial` VALUES (97,'05a79d4efa59bfacc8ec9881313426dfda3f738e','Percent','en','App/view/Server/statistics.view.php',33);
-INSERT INTO `translation_glial` VALUES (98,'841fe4a2af7b5a4296ebe5358cf4a7b34cdd32b1','OLTP / OLAP','en','App/view/Server/statistics.view.php',34);
-INSERT INTO `translation_glial` VALUES (99,'78ef9354c45b9f4404e2d858a49fda927ac8d0b7','Uptime','en','App/view/Server/statistics.view.php',35);
-INSERT INTO `translation_glial` VALUES (100,'d904e94791995c8e255757b6670933e8acfe7cad','Total','en','App/view/Server/statistics.view.php',118);
-INSERT INTO `translation_glial` VALUES (101,'fe449f419da5e0cd3ff3a0814355b018a355bfba','Groups','en','App/Controller/Group.php',13);
-INSERT INTO `translation_glial` VALUES (102,'4cfa361c1c272499dd88ec961f929c1368cc42e5','Settings','en','App/Controller/Group.php',15);
-INSERT INTO `translation_glial` VALUES (103,'364adc454392725ab21df87b0aa607f6e669943e','Alias','en','App/view/Group/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (104,'00aebfecd8920944fb297344c8e3cf3fe6625b46','Roles','en','App/view/Group/index.view.php',15);
-INSERT INTO `translation_glial` VALUES (105,'eac7cc27234d7aaca5acb51830af8543da7e00c1','Allow','en','App/view/Group/index.view.php',16);
-INSERT INTO `translation_glial` VALUES (106,'08d7ef133c935d4d86fea103ee44756166f534e2','Deny','en','App/view/Group/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (107,'4cfa361c1c272499dd88ec961f929c1368cc42e5','Settings','en','App/view/Group/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (108,'857d1f51f8b2597f2f8789b972d02fad3f14e80d','Edit','en','App/view/Group/index.view.php',41);
-INSERT INTO `translation_glial` VALUES (109,'ef3f5f3def5d112c6b0fcf06b2aab8f8c32114ac','Delete','en','App/view/Group/index.view.php',44);
-INSERT INTO `translation_glial` VALUES (110,'b8b42a8c9b44bec10cd6a8800c6626780845bced','Add a group','en','App/view/Group/index.view.php',51);
-INSERT INTO `translation_glial` VALUES (111,'545f3f15137131f66094b5d7943712976d731421','All','en','App/view/Plugin/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (112,'10a554a27192fdcd4020be64dc7d0c52386b65db','Installed','en','App/view/Plugin/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (113,'ab272cb5c83c6ca5eb19388aca503e936c434f73','ToUpdate','en','App/view/Plugin/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (114,'a116ff8caff97297311c9e6e5c5d96c242517909','Id','en','App/view/Tag/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (115,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Tag/index.view.php',15);
-INSERT INTO `translation_glial` VALUES (116,'db4ce8e8ee4be7a8332b588022298d8569fedde3','Color','en','App/view/Tag/index.view.php',16);
-INSERT INTO `translation_glial` VALUES (117,'bb72c37effc8e419b516312a133f4dc03977a719','Background','en','App/view/Tag/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (118,'0746c14f750cfd26ce5c32b070de7aa6e0d4e56d','Display','en','App/view/Tag/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (119,'9c5851232dcac006f9a9082ca94a931e6e14089c','Add a tag','en','App/view/Tag/index.view.php',42);
-INSERT INTO `translation_glial` VALUES (120,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Daemon/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (121,'1868af9e208611cde3460d4f69e9144a0860800c','Date','en','App/view/Daemon/index.view.php',13);
-INSERT INTO `translation_glial` VALUES (122,'0462202bf061d0150877a4b94559ddba56e571a6','Thread concurrency','en','App/view/Daemon/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (123,'53c25380be4434bae535fb5946f6a7f889a7721c','Maximum Delay','en','App/view/Daemon/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (124,'4139795a103345001392065136e82bf3c91976be','Refresh time','en','App/view/Daemon/index.view.php',19);
-INSERT INTO `translation_glial` VALUES (125,'d2619651971a3e7134e4cade43dd9bba8916d963','Queue number','en','App/view/Daemon/index.view.php',20);
-INSERT INTO `translation_glial` VALUES (126,'9d42068c771045e1c968899689087e476e624ea7','Queue msg','en','App/view/Daemon/index.view.php',21);
-INSERT INTO `translation_glial` VALUES (127,'b0b7a09465609a282f567b13ae75198c4db792e7','Path','en','App/view/Daemon/index.view.php',22);
-INSERT INTO `translation_glial` VALUES (128,'f48f36cd342057f637b710ca70a7c184d39eca4f','File log','en','App/view/Daemon/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (129,'f3ffe31d6c0471331d3ac14f2d5f56e7fe94b97d','Command','en','App/view/Daemon/index.view.php',24);
-INSERT INTO `translation_glial` VALUES (130,'9c5a79bd5ea8d9ea3038afd2a1e04d597ebc1dfc','About','en','App/Controller/About.php',13);
-INSERT INTO `translation_glial` VALUES (131,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','Listing','en','App/view/Job/index.view.php',42);
-INSERT INTO `translation_glial` VALUES (132,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Job/index.view.php',48);
-INSERT INTO `translation_glial` VALUES (133,'4bc7db41b0daeb3352fdd43989bfcac2f397143f','class','en','App/view/Job/index.view.php',49);
-INSERT INTO `translation_glial` VALUES (134,'2bb6502e52718dc712c740c111547cb3995ac334','method','en','App/view/Job/index.view.php',50);
-INSERT INTO `translation_glial` VALUES (135,'15be5bde0f75217cca98c329cd5b42ed9d75a4c3','param','en','App/view/Job/index.view.php',51);
-INSERT INTO `translation_glial` VALUES (136,'e0b8aa5fbed7f3505e9c95f1bfd6125acfb937a3','date start','en','App/view/Job/index.view.php',52);
-INSERT INTO `translation_glial` VALUES (137,'1ae04f7482198ecf89f335c2b1d3ad6b24e80fa2','date end','en','App/view/Job/index.view.php',53);
-INSERT INTO `translation_glial` VALUES (138,'b38351aa7b28742c42acb74a70eaf8a4b24e6939','pid','en','App/view/Job/index.view.php',54);
-INSERT INTO `translation_glial` VALUES (139,'277da490aada977dbd340cff0d6c740a2421c430','status','en','App/view/Job/index.view.php',55);
-INSERT INTO `translation_glial` VALUES (140,'9c812caed3e8a029c5b7d48d84ada0135b0b3d61','log','en','App/view/Job/index.view.php',56);
-INSERT INTO `translation_glial` VALUES (141,'b0da803e7faca4ce6bacdf2396cc694d9c89d266','error','en','App/view/Job/index.view.php',57);
-INSERT INTO `translation_glial` VALUES (142,'f662132cfed1c3166826b58573c599800ed734ae','Query Analyzer','en','App/Controller/Monitoring.php',68);
-INSERT INTO `translation_glial` VALUES (143,'79bd682caf6cbaaff272d8b8c6f737acb513cd9c','Monitoring','en','App/Controller/Monitoring.php',69);
-INSERT INTO `translation_glial` VALUES (144,'90d754311d4ec860dc4c09c86695a16fcc965471','Please input a valid page number!','en','App/Controller/Monitoring.php',280);
-INSERT INTO `translation_glial` VALUES (145,'08d6aa0541fab29a4305ed5dba1097a3a7b5d6d2','pages of','en','App/Controller/Monitoring.php',281);
-INSERT INTO `translation_glial` VALUES (146,'ba732bbc5a4fc3b6a33278bea93d6f3abc1fb467','Go','en','App/Controller/Monitoring.php',282);
-INSERT INTO `translation_glial` VALUES (147,'e1ac6112f950d657c8916eb1be6669d8ed0fe8c4','First page','en','App/Controller/Monitoring.php',283);
-INSERT INTO `translation_glial` VALUES (148,'cf0bbbac1913d2a39509bbef95959d1db5b834cc','Last page','en','App/Controller/Monitoring.php',284);
-INSERT INTO `translation_glial` VALUES (149,'9d1d29b9507944a8cddb6992184b08fc6dbb170e','Filter','en','App/view/Monitoring/query.view.php',24);
-INSERT INTO `translation_glial` VALUES (150,'b64b98c8154f1978488d01b4ed73a30226381570','ORDER BY','en','App/view/Monitoring/query.view.php',25);
-INSERT INTO `translation_glial` VALUES (151,'edeb3113e710824b6bc3071a2a27abb76ef56dbe','Results found : ','en','App/view/Monitoring/query.view.php',46);
-INSERT INTO `translation_glial` VALUES (152,'6cacae2be7b47747dd3b6de19dfa325dd5c3c12a','Submit','en','App/view/MysqlUser/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (153,'83f5cd82b700eacc40112b22708ebab3796dec1c','Purge','en','App/view/Binlog/view.view.php',13);
-INSERT INTO `translation_glial` VALUES (154,'507b9d29019baefc118f883574c024a73769684c','Serveur source','en','App/view/Binlog/add.view.php',14);
-INSERT INTO `translation_glial` VALUES (155,'0e18795cffbd043ae0a2cb71d24cb3bef0de13df','Size maximum allowed on server to all binlogs','en','App/view/Binlog/add.view.php',19);
-INSERT INTO `translation_glial` VALUES (156,'53973956baa06a4e605289d00d46aaa6a93324f1','Max binlog size','en','App/view/Binlog/add.view.php',24);
-INSERT INTO `translation_glial` VALUES (157,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Binlog/view.view.php',28);
-INSERT INTO `translation_glial` VALUES (158,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Binlog/view.view.php',29);
-INSERT INTO `translation_glial` VALUES (159,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','Oraganization','en','App/view/Binlog/view.view.php',30);
-INSERT INTO `translation_glial` VALUES (160,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Binlog/view.view.php',31);
-INSERT INTO `translation_glial` VALUES (161,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','Tags','en','App/view/Binlog/view.view.php',33);
-INSERT INTO `translation_glial` VALUES (162,'766c60528cebdd06a72674860630ac01149bbedf','Size max allowed','en','App/view/Binlog/view.view.php',34);
-INSERT INTO `translation_glial` VALUES (163,'d15b87b8c5e33c032a2e71ace60d3dce02270a52','Binlog size by file','en','App/view/Binlog/view.view.php',35);
-INSERT INTO `translation_glial` VALUES (164,'19445508e8a2786d03a3ad8312aee18b2f692a1e','Binlog number','en','App/view/Binlog/view.view.php',36);
-INSERT INTO `translation_glial` VALUES (165,'676f1c5b5d813770fb066292bcd94e669572d28a','Size binlog used','en','App/view/Binlog/view.view.php',37);
-INSERT INTO `translation_glial` VALUES (166,'05a79d4efa59bfacc8ec9881313426dfda3f738e','Percent','en','App/view/Binlog/view.view.php',38);
-INSERT INTO `translation_glial` VALUES (167,'2c3bafaaac9494284f4e6be12d07e79ae52038ff','Listing','en','App/view/Binlog/liste.view.php',13);
-INSERT INTO `translation_glial` VALUES (168,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Binlog/liste.view.php',19);
-INSERT INTO `translation_glial` VALUES (169,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Binlog/liste.view.php',20);
-INSERT INTO `translation_glial` VALUES (170,'7cff4794333afdbd127a2748d21f1eb09fe6fdd0','Oraganization','en','App/view/Binlog/liste.view.php',21);
-INSERT INTO `translation_glial` VALUES (171,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Binlog/liste.view.php',22);
-INSERT INTO `translation_glial` VALUES (172,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','Tags','en','App/view/Binlog/liste.view.php',23);
-INSERT INTO `translation_glial` VALUES (173,'2dbf08209e8cd9fb8fcc0e25bfaa43a04467fc7f','First file','en','App/view/Binlog/liste.view.php',24);
-INSERT INTO `translation_glial` VALUES (174,'392f3174115e0e761b41f6627a097932b8f36d8c','Last file','en','App/view/Binlog/liste.view.php',25);
-INSERT INTO `translation_glial` VALUES (175,'5d313c9f433d5cf06008484e64edca847b871f7d','Expire logs day','en','App/view/Binlog/liste.view.php',26);
-INSERT INTO `translation_glial` VALUES (176,'83b5b6b5d6ed5d85511d9e66caa6743a93e14a1e','Nb file','en','App/view/Binlog/liste.view.php',27);
-INSERT INTO `translation_glial` VALUES (177,'bf6259ccda346a4f33ea66bbc83a5a720c6130ed','Total Size','en','App/view/Binlog/liste.view.php',28);
-INSERT INTO `translation_glial` VALUES (178,'05a79d4efa59bfacc8ec9881313426dfda3f738e','Percent','en','App/view/Binlog/liste.view.php',29);
-INSERT INTO `translation_glial` VALUES (179,'0d8c603a57953e0ae501c0451eb3ffa8621b6242','Tags','en','App/view/Binlog/liste.view.php',55);
-INSERT INTO `translation_glial` VALUES (180,'1e721ba8276245262209da3171085ac6496b34d0','Total size used by all binlog : ','en','App/view/Binlog/liste.view.php',93);
-INSERT INTO `translation_glial` VALUES (181,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Variable/index.view.php',46);
-INSERT INTO `translation_glial` VALUES (182,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Variable/index.view.php',47);
-INSERT INTO `translation_glial` VALUES (183,'03d5e253395832269b17d8c58528adf1338ed604','Variable','en','App/view/Variable/index.view.php',48);
-INSERT INTO `translation_glial` VALUES (184,'c387f14c55e25617048123e845e170525f61376b','Value','en','App/view/Variable/index.view.php',49);
-INSERT INTO `translation_glial` VALUES (185,'1868af9e208611cde3460d4f69e9144a0860800c','Date','en','App/view/Variable/index.view.php',50);
-INSERT INTO `translation_glial` VALUES (186,'1529e1edc4c87c0d25a9eb68e8dbaa8658d4b73c','Time','en','App/view/Variable/index.view.php',51);
-INSERT INTO `translation_glial` VALUES (187,'e97e945df6760a8b503d4b158f0b60122a2faac1','Tuesday','en','App/view/Variable/index.view.php',64);
-INSERT INTO `translation_glial` VALUES (188,'8ea09bedf44efaee1e09c048435bcf4c9360bd75','Thursday','en','App/view/Variable/index.view.php',64);
-INSERT INTO `translation_glial` VALUES (189,'ef4c6019f56394f4ef9b6adec4db11fd3bb0309d','Cleaner','en','App/Controller/Cleaner.php',324);
-INSERT INTO `translation_glial` VALUES (190,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Cleaner/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (191,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Cleaner/index.view.php',12);
-INSERT INTO `translation_glial` VALUES (192,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Cleaner/index.view.php',13);
-INSERT INTO `translation_glial` VALUES (193,'2a238000a577ce326594097f4780e17496e0295e','Database','en','App/view/Cleaner/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (194,'e53d79ed6e562312ebb57de1c12146ff45b67668','Main table','en','App/view/Cleaner/index.view.php',15);
-INSERT INTO `translation_glial` VALUES (195,'4bd1f5773fd9903a7c135043df1a1adb2d7f6430','Tools','en','App/view/Cleaner/index.view.php',16);
-INSERT INTO `translation_glial` VALUES (196,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','Status','en','App/view/Cleaner/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (197,'f792f7e3b1caab0f78637b4a3129f40160b7abaf','Remove','en','App/view/Cleaner/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (198,'12ac945992eed68b02ce5b3ae4ac710be4b4600e','Hardware','en','App/Controller/Server.php',24);
-INSERT INTO `translation_glial` VALUES (199,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Server/hardware.view.php',13);
-INSERT INTO `translation_glial` VALUES (200,'100fb3ab697bef0ac3e65f7c06e935be0ca9c205','ID','en','App/view/Server/hardware.view.php',14);
-INSERT INTO `translation_glial` VALUES (201,'263d9b17a3125f08de24a9249cde30b8a118554f','Available SSH','en','App/view/Server/hardware.view.php',15);
-INSERT INTO `translation_glial` VALUES (202,'c909bc0cda86579cf24df85bc9e8352122ca6019','Name','en','App/view/Server/hardware.view.php',16);
-INSERT INTO `translation_glial` VALUES (203,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','Hostname','en','App/view/Server/hardware.view.php',17);
-INSERT INTO `translation_glial` VALUES (204,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','User','en','App/view/Server/hardware.view.php',18);
-INSERT INTO `translation_glial` VALUES (205,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','IP','en','App/view/Server/hardware.view.php',19);
-INSERT INTO `translation_glial` VALUES (206,'2b3c15dfda4564af2ec0e6773fcbe65e176e0f4a','Operations system','en','App/view/Server/hardware.view.php',22);
-INSERT INTO `translation_glial` VALUES (207,'d499969cd59a7a05ae794bd850c776a72b0f903a','Product name','en','App/view/Server/hardware.view.php',23);
-INSERT INTO `translation_glial` VALUES (208,'a95fea48a1f00ce99224634f67c528a17ed4cb15','Arch','en','App/view/Server/hardware.view.php',24);
-INSERT INTO `translation_glial` VALUES (209,'e021541b873b8a9aca7bfc45568c4d65944e6036','Kernel','en','App/view/Server/hardware.view.php',25);
-INSERT INTO `translation_glial` VALUES (210,'86cb659d95bc657a471c379f90a115f5c38bbf16','Processor','en','App/view/Server/hardware.view.php',26);
-INSERT INTO `translation_glial` VALUES (211,'a12e9c31056233d54524ab1c4f240cd377769fd6','Memory','en','App/view/Server/hardware.view.php',29);
-INSERT INTO `translation_glial` VALUES (212,'01e3538b08d2c2d3b9b666cad6853f8326b3a9a3','Databases','en','App/view/Database/show.view.php',19);
-INSERT INTO `translation_glial` VALUES (213,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Database/show.view.php',23);
-INSERT INTO `translation_glial` VALUES (214,'2a238000a577ce326594097f4780e17496e0295e','Database','en','App/view/Database/show.view.php',24);
-INSERT INTO `translation_glial` VALUES (215,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','Charset','en','App/view/Database/show.view.php',25);
-INSERT INTO `translation_glial` VALUES (216,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','Collation','en','App/view/Database/show.view.php',26);
-INSERT INTO `translation_glial` VALUES (217,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','Engine','en','App/view/Database/show.view.php',27);
-INSERT INTO `translation_glial` VALUES (218,'2753282f9983ac41f0b1872ada75e837198694c7','Row format','en','App/view/Database/show.view.php',28);
-INSERT INTO `translation_glial` VALUES (219,'aabf1f274fe15f91efa051ff0b1be553436e277a','Size (data)','en','App/view/Database/show.view.php',29);
-INSERT INTO `translation_glial` VALUES (220,'33d50a917d4f98924d32a66771fbf33348637495','Size (index)','en','App/view/Database/show.view.php',30);
-INSERT INTO `translation_glial` VALUES (221,'ac293660aead3155dc744d64b5325395f34236b3','Size (free)','en','App/view/Database/show.view.php',31);
-INSERT INTO `translation_glial` VALUES (222,'c460690bfcb3edb07cf4ab79476966f8612c99d5','Tag','en','App/view/Database/show.view.php',32);
-INSERT INTO `translation_glial` VALUES (223,'4393c93e6fc4d91b9f0ad90ce67ce9e5d8920dea','Tables','en','App/view/Database/show.view.php',33);
-INSERT INTO `translation_glial` VALUES (224,'749ef415f0252bfdf5640222d055a231ab1b8b1d','Rows','en','App/view/Database/show.view.php',34);
-INSERT INTO `translation_glial` VALUES (225,'07e782d25488989d1532783d764bac87ee75a4a7','Collations','en','App/view/Database/show.view.php',35);
-INSERT INTO `translation_glial` VALUES (226,'bebb8dabc36aca782f30c6741544a0080506520b','TOTAL','en','App/view/Database/show.view.php',85);
-INSERT INTO `translation_glial` VALUES (227,'2a238000a577ce326594097f4780e17496e0295e','Database','en','App/view/Database/show.view.php',86);
-INSERT INTO `translation_glial` VALUES (228,'e47d3ec28c7ae1bc2b287f43cb2925f3bf780345','Charset','en','App/view/Database/show.view.php',87);
-INSERT INTO `translation_glial` VALUES (229,'fe910b177b8dfae915fbd9bb191b6bd96b291bd6','Collation','en','App/view/Database/show.view.php',88);
-INSERT INTO `translation_glial` VALUES (230,'a601745736ea8cdd3d9afa70a417f0f9ca6483fc','Engine','en','App/view/Database/show.view.php',89);
-INSERT INTO `translation_glial` VALUES (231,'2753282f9983ac41f0b1872ada75e837198694c7','Row format','en','App/view/Database/show.view.php',90);
-INSERT INTO `translation_glial` VALUES (232,'07e782d25488989d1532783d764bac87ee75a4a7','Collations','en','App/view/Database/show.view.php',97);
-INSERT INTO `translation_glial` VALUES (233,'906fb070176b64307fb3d863d2ef246979d4afaa','Accounts','en','App/view/MysqlUser/security.view.php',11);
-INSERT INTO `translation_glial` VALUES (234,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/MysqlUser/security.view.php',15);
-INSERT INTO `translation_glial` VALUES (235,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/MysqlUser/security.view.php',16);
-INSERT INTO `translation_glial` VALUES (236,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','IP','en','App/view/MysqlUser/security.view.php',17);
-INSERT INTO `translation_glial` VALUES (237,'36020c5fbf6c9d4f11641d456a5770666c145e7a','Port','en','App/view/MysqlUser/security.view.php',18);
-INSERT INTO `translation_glial` VALUES (238,'ab308d14f3f101424a836cbe66b42d7a8aee41e5','User','en','App/view/MysqlUser/security.view.php',19);
-INSERT INTO `translation_glial` VALUES (239,'2e25d8a3f2498e671a41ee5fd954ed0ada9500ed','Host','en','App/view/MysqlUser/security.view.php',20);
-INSERT INTO `translation_glial` VALUES (240,'15e9324c5e503b2d3bac79613b0c8c6646d0c871','Password','en','App/view/MysqlUser/security.view.php',21);
-INSERT INTO `translation_glial` VALUES (241,'9189eea605396ac732f884eca5230a6d4f199781','Plugin','en','App/view/MysqlUser/security.view.php',22);
-INSERT INTO `translation_glial` VALUES (242,'11b07f207bd97dde92d6183df068ea79420d15b5','Is super','en','App/view/MysqlUser/security.view.php',23);
-INSERT INTO `translation_glial` VALUES (243,'4b780583e36264d3cca9449e946e3ad1b67e3ae7','Number of account without password:','en','App/view/MysqlUser/security.view.php',73);
-INSERT INTO `translation_glial` VALUES (244,'398d43082cb27203ab48f5a901e3fbdec3fe302a','Index usage','en','App/Controller/Server.php',366);
-INSERT INTO `translation_glial` VALUES (245,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','Tools Box','en','App/Controller/Server.php',367);
-INSERT INTO `translation_glial` VALUES (246,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Server/index.view.php',25);
-INSERT INTO `translation_glial` VALUES (247,'69860265cee87d0db8334b9107033220346ff149','Handler_read_rnd_next ','en','App/view/Server/index.view.php',26);
-INSERT INTO `translation_glial` VALUES (248,'7c8a8fcbbd215f349369f7f56707929970b4c05d','Handler_read_rnd','en','App/view/Server/index.view.php',27);
-INSERT INTO `translation_glial` VALUES (249,'7bb81d50e3161f1b5bb4dd21936fc38e6a39ef00','Handler_read_first','en','App/view/Server/index.view.php',28);
-INSERT INTO `translation_glial` VALUES (250,'4039d08c936735755d424a857b273b1edf3cf4eb','Handler_read_next','en','App/view/Server/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (251,'542be07e13f0d58190ed73f2a5adcf51b0dac05f','Handler_read_key','en','App/view/Server/index.view.php',30);
-INSERT INTO `translation_glial` VALUES (252,'1fe4ab0182eccd30f91857ce81f1fe97fb7342f3','Handler_read_prev','en','App/view/Server/index.view.php',31);
-INSERT INTO `translation_glial` VALUES (253,'b4d157ae8552ee6c90be508d1bdb7bbbf8d15ee9','Usage','en','App/view/Server/index.view.php',32);
-INSERT INTO `translation_glial` VALUES (254,'05a79d4efa59bfacc8ec9881313426dfda3f738e','Percent','en','App/view/Server/index.view.php',33);
-INSERT INTO `translation_glial` VALUES (255,'eb32c2866181ac1aef8bb02be4121ffe326a8809','Usage of index is calculed as follow :','en','App/view/Server/index.view.php',87);
-INSERT INTO `translation_glial` VALUES (256,'f14772c28798cacfbd133725dec8efd9f5b48bd8','Home','en','App/Controller/Home.php',16);
-INSERT INTO `translation_glial` VALUES (257,'9dc9d3ac6089cd9c605456bba22a65be6f4e0d5b','Welcome to PmaControl !','en','App/Controller/Home.php',17);
-INSERT INTO `translation_glial` VALUES (258,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','Master','en','App/view/Slave/box.view.php',14);
-INSERT INTO `translation_glial` VALUES (259,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','Slave','en','App/view/Slave/box.view.php',15);
-INSERT INTO `translation_glial` VALUES (260,'beca4ac42c2a2ce6a98730f3d9c80ad82d11fbe4','IO','en','App/view/Slave/box.view.php',16);
-INSERT INTO `translation_glial` VALUES (261,'51d27f31ea1201d35ae2d0b99e99ecd5ed22f880','SQL','en','App/view/Slave/box.view.php',17);
-INSERT INTO `translation_glial` VALUES (262,'69d2b23f67357d885e4f4fcb724d3f307c9f2c72','Seconds','en','App/view/Slave/box.view.php',18);
-INSERT INTO `translation_glial` VALUES (263,'6bb6dabf95d65eafb082b2748875dd8be4d3c7f5','Master / Slave','en','App/Controller/Slave.php',21);
-INSERT INTO `translation_glial` VALUES (264,'41824968eec56c648196d6bf67cd178b14ac3ef8','Top','en','App/view/Slave/index.view.php',42);
-INSERT INTO `translation_glial` VALUES (265,'2fb5f36cd29e89b6e49130b51d344a0695b453ef','Master','en','App/view/Slave/index.view.php',44);
-INSERT INTO `translation_glial` VALUES (266,'a784882d5c8f736abfdb9c428fa0072e7d23c3ac','Slave','en','App/view/Slave/index.view.php',45);
-INSERT INTO `translation_glial` VALUES (267,'dd62a3b0efd591f2a160dd2add8ce51152a358cb','Connection name','en','App/view/Slave/index.view.php',46);
-INSERT INTO `translation_glial` VALUES (268,'14df8426f894bcf267bbfb2df5c8f8b454af8341','Second behind master','en','App/view/Slave/index.view.php',47);
-INSERT INTO `translation_glial` VALUES (269,'1868af9e208611cde3460d4f69e9144a0860800c','Date','en','App/view/Slave/index.view.php',54);
-INSERT INTO `translation_glial` VALUES (270,'d88d564d6f7d46dc872d8acb0c08977be7e11303','default','en','App/view/Slave/index.view.php',124);
-INSERT INTO `translation_glial` VALUES (271,'c54592fd312afa517640ef9218ec41859b079614','Node','en','App/view/GaleraCluster/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (272,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','Hostname','en','App/view/GaleraCluster/index.view.php',15);
-INSERT INTO `translation_glial` VALUES (273,'6347d32bc4a4f37e7addcbd3d0489fb0e2ac7dbf','IP','en','App/view/GaleraCluster/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (274,'1741951310efcfcc29c696ecfa58230b898c0030','Version','en','App/view/GaleraCluster/index.view.php',20);
-INSERT INTO `translation_glial` VALUES (275,'1868af9e208611cde3460d4f69e9144a0860800c','Date','en','App/view/GaleraCluster/index.view.php',21);
-INSERT INTO `translation_glial` VALUES (276,'4388737fbdf35b0830c9de5436f427f6fd311b86','Time zone','en','App/view/GaleraCluster/index.view.php',22);
-INSERT INTO `translation_glial` VALUES (277,'b1ba77336be4434af0d188cb93c7fa33ed88a875','Cluster_status','en','App/view/GaleraCluster/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (278,'914769af4e039a3dee99245792e92784017d46e2','Local state','en','App/view/GaleraCluster/index.view.php',24);
-INSERT INTO `translation_glial` VALUES (279,'ab6033e3b2bda03fdbad7983777425d3313c82ad','Desync','en','App/view/GaleraCluster/index.view.php',25);
-INSERT INTO `translation_glial` VALUES (280,'a12e9c31056233d54524ab1c4f240cd377769fd6','Memory','en','App/Controller/Server.php',348);
-INSERT INTO `translation_glial` VALUES (281,'e96ce9c7b9cf01f8aa2e74e462c92e49fe017693','Tools Box','en','App/Controller/Server.php',349);
-INSERT INTO `translation_glial` VALUES (282,'9a3cd8c252df74bb117c6eb19560e6c64584ee67','Server','en','App/view/Server/memory.view.php',79);
-INSERT INTO `translation_glial` VALUES (283,'d904e94791995c8e255757b6670933e8acfe7cad','Total','en','App/view/Server/memory.view.php',93);
-INSERT INTO `translation_glial` VALUES (284,'be00f5ccb937361782a834b15413567667583c1a','Physical memory','en','App/view/Server/memory.view.php',96);
-INSERT INTO `translation_glial` VALUES (285,'5241b412c94c7f3e2ab1b2f30e44ec7762e529af','Memory is calculed as follow :','en','App/view/Server/memory.view.php',189);
-INSERT INTO `translation_glial` VALUES (286,'a3d63f0104f93544ca19abddcee410ce41b27f03','Architecture','en','App/Controller/Architecture.php',18);
-INSERT INTO `translation_glial` VALUES (287,'ee4de3eb867d449c4ba70edda380a6a9ec10530c','Dashboard','en','App/Controller/Architecture.php',20);
-INSERT INTO `translation_glial` VALUES (288,'a3d63f0104f93544ca19abddcee410ce41b27f03','Architecture','en','App/Controller/Architecture.php',20);
-INSERT INTO `translation_glial` VALUES (289,'e359bf83c998b719ad72fa04ab0e471bb86e2492','Add','en','App/view/StorageArea/menu.view.php',9);
-INSERT INTO `translation_glial` VALUES (290,'4ba5692469c332db6ffbdaab17a61ab9d417378d','Remote storage','en','App/view/StorageArea/listStorage.view.php',16);
-INSERT INTO `translation_glial` VALUES (291,'49def57e2477f48edede905f25f19d4910253e0a','Location','en','App/view/StorageArea/listStorage.view.php',28);
-INSERT INTO `translation_glial` VALUES (292,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','Size','en','App/view/StorageArea/listStorage.view.php',30);
-INSERT INTO `translation_glial` VALUES (293,'d859a846db34afa9bce537e2faba3d83f329fba8','Used','en','App/view/StorageArea/listStorage.view.php',31);
-INSERT INTO `translation_glial` VALUES (294,'e5190ef6dbb2415796dab960cf064fca9aa38c14','Space used','en','App/view/StorageArea/listStorage.view.php',34);
-INSERT INTO `translation_glial` VALUES (295,'b8b6fe97ec55aeb0fc364c10ff042ce6f8494827','Local storage','en','App/view/StorageArea/listStorage.view.php',100);
-INSERT INTO `translation_glial` VALUES (296,'49def57e2477f48edede905f25f19d4910253e0a','Location','en','App/view/StorageArea/listStorage.view.php',112);
-INSERT INTO `translation_glial` VALUES (297,'b872b5cbab23d3037c7d40bbb373315b0a9556bf','Size','en','App/view/StorageArea/listStorage.view.php',114);
-INSERT INTO `translation_glial` VALUES (298,'d859a846db34afa9bce537e2faba3d83f329fba8','Used','en','App/view/StorageArea/listStorage.view.php',115);
-INSERT INTO `translation_glial` VALUES (299,'e5190ef6dbb2415796dab960cf064fca9aa38c14','Space used','en','App/view/StorageArea/listStorage.view.php',118);
-INSERT INTO `translation_glial` VALUES (300,'d265c21ffec3c568cb1dea9a793eae6ceca5ccfc','Menu Settings','en','App/view/Tree/index.view.php',16);
-INSERT INTO `translation_glial` VALUES (301,'a256f915dc15e88b216b6da8b94a5cb241b0a46c','Select menu','en','App/view/Tree/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (302,'e49265977684f0636f2a658b38ad3ac46882dd9e','The menu can be different for each group of user','en','App/view/Tree/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (303,'84859bcdbbbe4d584d0a84955fef061722210c35','There is one menu for loged user and one other everybody','en','App/view/Tree/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (304,'8674f3c9e7d60b109ac87a3f281cb7b89dd77261','Save','en','App/view/Tree/index.view.php',31);
-INSERT INTO `translation_glial` VALUES (305,'e9e06e60198fbc6fdf49824d8fe070c95863cbc4','Main Menu','en','App/view/Tree/index.view.php',49);
-INSERT INTO `translation_glial` VALUES (306,'6d2f9bbcdd1b97da7946503079abfe0d3cafbf85','id','en','App/view/Tree/index.view.php',56);
-INSERT INTO `translation_glial` VALUES (307,'1724dbff8045a024bbb31bf26dbd0f778f2835e9','id_parent','en','App/view/Tree/index.view.php',57);
-INSERT INTO `translation_glial` VALUES (308,'d5c1955df78aa6cfa411aee3671eb31a5055d205','bg','en','App/view/Tree/index.view.php',58);
-INSERT INTO `translation_glial` VALUES (309,'2fa78e8eab77fb1c27bd9617b010374a5ade5913','bd','en','App/view/Tree/index.view.php',59);
-INSERT INTO `translation_glial` VALUES (310,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','icon','en','App/view/Tree/index.view.php',60);
-INSERT INTO `translation_glial` VALUES (311,'6c123e366dddcc77af4dd4c0d9c21f87cd8aed58','icon','en','App/view/Tree/index.view.php',61);
-INSERT INTO `translation_glial` VALUES (312,'a26ba8a7a2d864f97fedc8144595dc2287d43c35','title','en','App/view/Tree/index.view.php',62);
-INSERT INTO `translation_glial` VALUES (313,'7ddff31858e17978f2faf6f20d4270c78969fe60','url','en','App/view/Tree/index.view.php',63);
-INSERT INTO `translation_glial` VALUES (314,'d46e63a66c1631cd8d5b82d0860d0b17209ca263','actions','en','App/view/Tree/index.view.php',66);
-INSERT INTO `translation_glial` VALUES (315,'63ff0fff56a78364b21f3438e71ebf588c213148','active','en','App/view/Tree/index.view.php',67);
-INSERT INTO `translation_glial` VALUES (316,'d589e7abf644bcda457ccb89e24b25083e4525c0','Add a leaf','en','App/view/Tree/add.view.php',15);
-INSERT INTO `translation_glial` VALUES (317,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','Credential to use','en','App/view/DeployRsaKey/index.view.php',34);
-INSERT INTO `translation_glial` VALUES (318,'e1e88625275102ac416206611483b066b3f0e43e','User who is linked with this private key','en','App/view/DeployRsaKey/index.view.php',41);
-INSERT INTO `translation_glial` VALUES (319,'7d6f25aaa1351f7d0aa6953a119a08f6b721d546','KEY private','en','App/view/DeployRsaKey/index.view.php',52);
-INSERT INTO `translation_glial` VALUES (320,'07101c5b9a5b365895a1e31156973c5399a51030','Private Key to use','en','App/view/DeployRsaKey/index.view.php',65);
-INSERT INTO `translation_glial` VALUES (321,'62b79522bee65156e868cc41e682328006a9f3a9','Select private key to use','en','App/view/DeployRsaKey/index.view.php',70);
-INSERT INTO `translation_glial` VALUES (322,'077bc43fd24cd8b3b6f6ade7ac0cc1dcdb0bb34c','Public key to push','en','App/view/DeployRsaKey/index.view.php',83);
-INSERT INTO `translation_glial` VALUES (323,'638fc77b5744e76fa9b0a9796e50f4aec4bba49b','Public key to deploy','en','App/view/DeployRsaKey/index.view.php',89);
-INSERT INTO `translation_glial` VALUES (324,'9b8a41f8eac5b48a18ed4e86ef50572bd852d784','Credential to use','en','App/view/DeployRsaKey/index.view.php',107);
-INSERT INTO `translation_glial` VALUES (325,'0bafceb6bd59b905cc3ef2e987253aca61b9fdac','Deploy','en','App/view/DeployRsaKey/index.view.php',121);
-INSERT INTO `translation_glial` VALUES (326,'cec8644a40efcddafa330bcae8b1a191e6e9b968','MySQL','en','App/view/DeployRsaKey/index.view.php',134);
-INSERT INTO `translation_glial` VALUES (327,'c5d06c7879fb431d82fbc1e9529304beb1df1af7','Key','en','App/view/DeployRsaKey/index.view.php',135);
-INSERT INTO `translation_glial` VALUES (328,'fd0625ef8f6b3d42945c9aa50df2bed502c86eaf','Active','en','App/view/DeployRsaKey/index.view.php',136);
-INSERT INTO `translation_glial` VALUES (329,'9230901cfc881df3553f35347f0ed6419600360d','SSH','en','App/view/DeployRsaKey/index.view.php',137);
-INSERT INTO `translation_glial` VALUES (330,'83749512ea9b54cbbb01a71079f139d970d6b590','Organization','en','App/view/DeployRsaKey/index.view.php',138);
-INSERT INTO `translation_glial` VALUES (331,'eda124dee8b5e804797bf30e1280f88924434cdc','Total size used by all binlog :','en','App/view/Binlog/liste.view.php',93);
-INSERT INTO `translation_glial` VALUES (332,'dd0343e17bc175ecca91485057924218bfff3b3f','Handler_read_rnd_next','en','App/view/Server/index.view.php',26);
-INSERT INTO `translation_glial` VALUES (333,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','Server :','en','App/view/Server/id.view.php',21);
-INSERT INTO `translation_glial` VALUES (334,'6daf9690aded13c06d95a6a442aabbc4cb56b15d','Create database','en','App/Controller/Database.php',33);
-INSERT INTO `translation_glial` VALUES (335,'08f88b5fa7f5d1b53b1aef10b6efed63c7e26a8f','Rename database','en','App/Controller/Database.php',35);
-INSERT INTO `translation_glial` VALUES (336,'901881b742d9ec0c8c0c3dd8b7db61e3582e3cb6','Refresh database','en','App/Controller/Database.php',38);
-INSERT INTO `translation_glial` VALUES (337,'2784840e4fd660b4c457f6b32132cc20f30dc77b','Compare database','en','App/Controller/Database.php',41);
-INSERT INTO `translation_glial` VALUES (338,'efd2622638872af26b1dd034b88a04afde769293','Analyze tables','en','App/Controller/Database.php',44);
-INSERT INTO `translation_glial` VALUES (339,'52a5c3b31a682ea1144edbbeeb01883229ed5b59','Compare table','en','App/Controller/Database.php',47);
-INSERT INTO `translation_glial` VALUES (340,'7dec93e3bcbaf9daebe98355c52aba802a21352d','Создать базу данных','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (341,'9f846d4d689c199ea86e49eab55e1c8994694d64','Переименовать базу данных','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (342,'d27f0cb82eea0b627da27296c4c5542e7d6db791','Обновить базу данных','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (343,'aed6c76af496cb45c9d8da900388535533aaab8e','Сравнить базу данных','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (344,'90d9b4b42227106177ed86803f60489c74bea59f','Анализировать таблицы','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (345,'f96bcfc4739086d42c62dcaad9a1703305859be8','Сравнить таблицу','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (346,'fc74d391a7358c94a3d9bd9f05d6d06577ae1568','User name','en','App/view/Database/create.view.php',51);
-INSERT INTO `translation_glial` VALUES (347,'9b6bfb76f1a83041704310269ebf6d5d28b8eb9d','Global privileges','en','App/view/Database/create.view.php',75);
-INSERT INTO `translation_glial` VALUES (348,'feafad01ff4295bdf80374560f9e1c3af3884010','Databases to create (separated by coma)','en','App/view/Database/create.view.php',92);
-INSERT INTO `translation_glial` VALUES (349,'4ace9333c57e64df94a0ba6a46aa74e70177409a','Rename database to','en','App/view/Database/rename.view.php',17);
-INSERT INTO `translation_glial` VALUES (350,'4ace9333c57e64df94a0ba6a46aa74e70177409a','Rename database to','en','App/view/Database/rename.view.php',37);
-INSERT INTO `translation_glial` VALUES (351,'6d498a9cdbdfd0c1f0f801b8c9fff8cca2c70bab','Adjust privileges','en','App/view/Database/rename.view.php',46);
-INSERT INTO `translation_glial` VALUES (352,'ce2d1eb1812f778e00e6703a0965c2dcb8210c5d','Refresh database from an other server','en','App/view/Database/refresh.view.php',20);
-INSERT INTO `translation_glial` VALUES (353,'3346c7adf66f0df02d2a4725e9d98c06c7178afe','Database to refresh','en','App/view/Database/refresh.view.php',30);
-INSERT INTO `translation_glial` VALUES (354,'e469245c3427df4612737ab7e7c5833de500aa7c','Server to refresh','en','App/view/Database/refresh.view.php',41);
-INSERT INTO `translation_glial` VALUES (355,'f9c8a39c8e75e66baf0c4c3d3bdf57dd610b2cc5','Path to store temporary backup on PmaControl','en','App/view/Database/refresh.view.php',55);
-INSERT INTO `translation_glial` VALUES (356,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','Orginal','en','App/view/Database/compare.view.php',57);
-INSERT INTO `translation_glial` VALUES (357,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','Reset','en','App/view/Database/compare.view.php',91);
-INSERT INTO `translation_glial` VALUES (358,'ddd72d5f26563bb19b34abde22dcf3706dd86196','Automatic updating indexes statistics','en','App/view/Database/analyze.view.php',16);
-INSERT INTO `translation_glial` VALUES (359,'2d7d6d3f42a283e37571610e63fd7d6785aa4cfe','Orginal','en','App/view/Database/data.view.php',19);
-INSERT INTO `translation_glial` VALUES (360,'a00a4e43b9dd92cdb04755d1c1506324f07bead7','Reset','en','App/view/Database/data.view.php',49);
-INSERT INTO `translation_glial` VALUES (361,'bab9e3bbd81143b0fa0f14fd9f91523d5cb9beb9','Sunday','en','App/view/Variable/index.view.php',64);
-INSERT INTO `translation_glial` VALUES (362,'dad33a1fa63814424d6c46d7274972d08c1513ad','This part correspond to the part used by the backups on the partition :','en','App/view/StorageArea/listStorage.view.php',176);
-INSERT INTO `translation_glial` VALUES (363,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','List all storage area','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (364,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','List all storage area','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (365,'252c65db5b2e9e492422dbc74b1bfe721f85bbe2','List all storage area','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (366,'0533258dd9661833ef8a11ccbfa34cdef9c2a0f2','Main','en','App/view/StorageArea/add.view.php',16);
-INSERT INTO `translation_glial` VALUES (367,'45c6af4ad554abbeb89009d14e3917b07fb8e694','Specify root if you have root credentials.','en','App/view/StorageArea/add.view.php',23);
-INSERT INTO `translation_glial` VALUES (368,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','en','App/view/StorageArea/add.view.php',23);
-INSERT INTO `translation_glial` VALUES (369,'e4ea318761cc1a43ea578a829eba811f06cb1beb','Contry','en','App/view/StorageArea/add.view.php',62);
-INSERT INTO `translation_glial` VALUES (370,'45c6af4ad554abbeb89009d14e3917b07fb8e694','Specify root if you have root credentials.','en','App/view/StorageArea/add.view.php',62);
-INSERT INTO `translation_glial` VALUES (371,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','en','App/view/StorageArea/add.view.php',62);
-INSERT INTO `translation_glial` VALUES (372,'12ec9e069b648a2de41a7d1d0498854de062b109','City','en','App/view/StorageArea/add.view.php',68);
-INSERT INTO `translation_glial` VALUES (373,'40638dca94c51c8903c21e6aa53b04067e38109a','Key SSH','en','App/view/StorageArea/add.view.php',77);
-INSERT INTO `translation_glial` VALUES (374,'2ad2811e6ce521c9faef540c16a3ae97c365becf','Select the key','en','App/view/StorageArea/add.view.php',82);
-INSERT INTO `translation_glial` VALUES (375,'45c6af4ad554abbeb89009d14e3917b07fb8e694','Specify root if you have root credentials.','en','App/view/StorageArea/add.view.php',82);
-INSERT INTO `translation_glial` VALUES (376,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','en','App/view/StorageArea/add.view.php',82);
-INSERT INTO `translation_glial` VALUES (377,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','Validate','en','App/view/StorageArea/add.view.php',94);
-INSERT INTO `translation_glial` VALUES (378,'45c6af4ad554abbeb89009d14e3917b07fb8e694','Specify root if you have root credentials.','en','App/view/StorageArea/add.view.php',114);
-INSERT INTO `translation_glial` VALUES (379,'af4bb013dd3199f5ad87582b29b8108e2e2c9cac','If you use sudo ro execute system commands, specify the username that you wish to use here. The user must exists on all nodes.','en','App/view/StorageArea/add.view.php',114);
-INSERT INTO `translation_glial` VALUES (380,'bafd0b81ecdcb0ad5b8db047b95707edf59abdae','Validate','en','App/view/StorageArea/add.view.php',130);
-INSERT INTO `translation_glial` VALUES (381,'c6719ac6d65b54ba0320ee6a552f9284132b301e','Add a storage area','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (382,'c6719ac6d65b54ba0320ee6a552f9284132b301e','Add a storage area','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (383,'c6719ac6d65b54ba0320ee6a552f9284132b301e','Add a storage area','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (384,'9b55338c7f9178b321e7944db0744c8bbb30e90e','size on storage area','en','App/Controller/Archives.php',91);
-INSERT INTO `translation_glial` VALUES (385,'480accc454f4bcac2350352960dc7d8cf36d2df8','Size on storage area','en','App/Controller/Archives.php',118);
-INSERT INTO `translation_glial` VALUES (386,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','Total archives by cleaner','en','App/Controller/Archives.php',616);
-INSERT INTO `translation_glial` VALUES (387,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','Restoration history','en','App/Controller/Archives.php',621);
-INSERT INTO `translation_glial` VALUES (388,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','Restoration detail','en','App/Controller/Archives.php',625);
-INSERT INTO `translation_glial` VALUES (389,'eb2a95aba86b64a91e0f1fbaeeb9f7f37c7bbb5f','Total archives by cleaner','en','App/Controller/Archives.php',579);
-INSERT INTO `translation_glial` VALUES (390,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','Restoration history','en','App/Controller/Archives.php',584);
-INSERT INTO `translation_glial` VALUES (391,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','Restoration detail','en','App/Controller/Archives.php',588);
-INSERT INTO `translation_glial` VALUES (392,'5167a1ae3f55d50ad623175369166b9aa922efdd','Owner','en','App/view/Archives/history.view.php',46);
-INSERT INTO `translation_glial` VALUES (393,'366a2a69f4fe4ae4671b8228db1a0d608753158b','Table','en','App/view/Archives/history.view.php',48);
-INSERT INTO `translation_glial` VALUES (394,'0c3f8bd56a076094078a9eb4b5c274d666509763','Source','en','App/view/Archives/history.view.php',49);
-INSERT INTO `translation_glial` VALUES (395,'68c0d3263654208133ccf18fb527654354a11fe5','Destination','en','App/view/Archives/history.view.php',50);
-INSERT INTO `translation_glial` VALUES (396,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','Date start','en','App/view/Archives/history.view.php',51);
-INSERT INTO `translation_glial` VALUES (397,'639af914197615682d432915ecc85e852f1565a0','Date end','en','App/view/Archives/history.view.php',52);
-INSERT INTO `translation_glial` VALUES (398,'dfc3405dc9eb5c9a91b0bd6801b7a6735057839a','Progression','en','App/view/Archives/history.view.php',53);
-INSERT INTO `translation_glial` VALUES (399,'f391f8c65d3357349c0f1ccb3f5cc92a9294d1c9','Details','en','App/view/Archives/history.view.php',56);
-INSERT INTO `translation_glial` VALUES (400,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','Restoration history','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (401,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','Restoration history','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (402,'dfaa5fbf3a5164475b22b74e06ef5f5a2223e950','Restoration history','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (403,'d87786807468abcc5b142ef04282c8d2777b6fa6','Progress','en','App/view/Archives/detail.view.php',37);
-INSERT INTO `translation_glial` VALUES (404,'d87786807468abcc5b142ef04282c8d2777b6fa6','Progress','en','App/view/Archives/detail.view.php',42);
-INSERT INTO `translation_glial` VALUES (405,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','Date start','en','App/view/Archives/detail.view.php',43);
-INSERT INTO `translation_glial` VALUES (406,'639af914197615682d432915ecc85e852f1565a0','Date end','en','App/view/Archives/detail.view.php',44);
-INSERT INTO `translation_glial` VALUES (407,'09911b2af87518ef1d0193b1f517898ecd25cdfe','Total time','en','App/view/Archives/detail.view.php',45);
-INSERT INTO `translation_glial` VALUES (408,'c73b4a8e9883128043f26a5210897df242564bd0','seconds','en','App/view/Archives/detail.view.php',61);
-INSERT INTO `translation_glial` VALUES (409,'409426fee99ddb03b7f16251c59df9fcfee2f9c8','Statistics by table','en','App/view/Archives/detail.view.php',76);
-INSERT INTO `translation_glial` VALUES (410,'c2fe6604d5a13ef096bbca289de45b7c80ceedfb','Date start','en','App/view/Archives/detail.view.php',85);
-INSERT INTO `translation_glial` VALUES (411,'639af914197615682d432915ecc85e852f1565a0','Date end','en','App/view/Archives/detail.view.php',86);
-INSERT INTO `translation_glial` VALUES (412,'3c79b8f267002cd860d74dc72d8c2f636177350c','File','en','App/view/Archives/detail.view.php',87);
-INSERT INTO `translation_glial` VALUES (413,'f5df0dc640a5e46dec39fcefda7105ef7746309d','Time scp','en','App/view/Archives/detail.view.php',88);
-INSERT INTO `translation_glial` VALUES (414,'b0ed9749c9fc969a63518c953e8155cfe5d5dab5','Time decrypt','en','App/view/Archives/detail.view.php',89);
-INSERT INTO `translation_glial` VALUES (415,'e89f2dc05aca0b35b4333c4f6f4c077837c392d4','Time uncompress','en','App/view/Archives/detail.view.php',90);
-INSERT INTO `translation_glial` VALUES (416,'7ae71befa6916ad558646b14214f97353dc3981b','Time load','en','App/view/Archives/detail.view.php',91);
-INSERT INTO `translation_glial` VALUES (417,'506b819386e108d89282215655cb0b281819b481','Error message','en','App/view/Archives/detail.view.php',93);
-INSERT INTO `translation_glial` VALUES (418,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','Logs','en','App/view/Archives/detail.view.php',134);
-INSERT INTO `translation_glial` VALUES (419,'0f0fe6eef47dc2ad2da9461e27441b1b027cbae2','Level','en','App/view/Archives/detail.view.php',155);
-INSERT INTO `translation_glial` VALUES (420,'dfce468249edee539c77fbc33c2436dc90ff898c','Type','en','App/view/Archives/detail.view.php',157);
-INSERT INTO `translation_glial` VALUES (421,'f2aa70d9c57cb2452386027b9ba4da124ed7db09','Message','en','App/view/Archives/detail.view.php',158);
-INSERT INTO `translation_glial` VALUES (422,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','Restoration detail','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (423,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','Restoration detail','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (424,'8f9fd525e90fb2f11888d38798b6dc8318c7d88d','Restoration detail','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (425,'9ce79c3c5a98f364a36021f184e062b8fc907a90','Schedules','en','App/Controller/Backup.php',257);
-INSERT INTO `translation_glial` VALUES (426,'e3f8af5288d96bdc7fca02e57630eac1230ec380','Backup management','en','App/Controller/Backup.php',258);
-INSERT INTO `translation_glial` VALUES (427,'b7643956dced1001dca28022f79cf3aa8165fd16','Benchmark','en','App/Controller/Benchmark.php',461);
-INSERT INTO `translation_glial` VALUES (428,'4d536c278530219d09c6b0e4e49695b5442f1359','Make a new benchmark','en','App/Controller/Benchmark.php',478);
-INSERT INTO `translation_glial` VALUES (429,'58fe4b7b555c7759207b533c8c81e4b2a9ef3baf','Currents','en','App/Controller/Benchmark.php',482);
-INSERT INTO `translation_glial` VALUES (430,'4e527a49d4764939ffb324fec498ffc248f195b2','Configuration','en','App/Controller/Benchmark.php',486);
-INSERT INTO `translation_glial` VALUES (431,'e81028a9548e096eca733f4980a6a82b05a4002c','Scripts','en','App/Controller/Benchmark.php',490);
-INSERT INTO `translation_glial` VALUES (432,'33e93408e812c309528b8552e466ac90f88f180f','Before to schedule a backup, you must add an array of stockage :','en','App/view/Backup/settings.view.php',17);
-INSERT INTO `translation_glial` VALUES (433,'72c4dfdff267b52a23c0728a5ae44e037db60ced','Linked to','en','App/view/Alias/index.view.php',21);
-INSERT INTO `translation_glial` VALUES (434,'e11f628d47c72058ec7750609921c45822387526','Since','en','App/view/Alias/index.view.php',22);
-INSERT INTO `translation_glial` VALUES (435,'07359c6d9cc884f5763c54d0f8e849cff25debe5','Clients','en','App/Controller/Client.php',19);
-INSERT INTO `translation_glial` VALUES (436,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','Monitored','en','App/view/Client/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (437,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','Libelle','en','App/view/Client/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (438,'7ab00f61e46eaedd3c04307202c1c1f275cadace','Logo','en','App/view/Client/index.view.php',20);
-INSERT INTO `translation_glial` VALUES (439,'45bbdf8349d9469c64e65dc74a52341cb3ce6b3c','Add a client','en','App/view/Client/index.view.php',70);
-INSERT INTO `translation_glial` VALUES (440,'8333b3757aeac67b4e847f5b36a6c3b31b8592e3','Members','en','App/Controller/User.php',30);
-INSERT INTO `translation_glial` VALUES (441,'b14d634e56fd467cf132991deca37ec8bae5c61a','Administrator','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (442,'8e6e0cd9d2e1e063bc722292ae13f9ba8dd4cc80','Member','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (443,'3c2c8a49274b52c8d3258ed66a735b246c4c5413','OutSourcer','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (444,'60a5397ef35cf18a66bc92248fb81e5684055dcd','Super administrator','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (445,'b01fae3368603e9aca0bfd313b9e4bc52a9d73bf','Support','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (446,'367a1c2eb5e8299e92dacc7bb336c0820e2bf0db','TechOps','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (447,'c7d13abe44493c6a6ca925350b4ea9bfceadfe5f','Visitor','en','App/Controller/User.php',58);
-INSERT INTO `translation_glial` VALUES (448,'bb39921b291c51b258882de1a259df21f5525ff5','Email','en','App/view/User/index.view.php',13);
-INSERT INTO `translation_glial` VALUES (449,'649701cdab96f3be9bf82ff9e6ca3196d28191eb','Rank','en','App/view/User/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (450,'edfe28f9ba82d344a5281df1ad41bc560d6ad6bb','Points','en','App/view/User/index.view.php',16);
-INSERT INTO `translation_glial` VALUES (451,'addb0c0adcc648539ea4346821faa54f5325d23e','Last online','en','App/view/User/index.view.php',17);
-INSERT INTO `translation_glial` VALUES (452,'7b0ccc0d92dff60ffd603fcfcabcd73edb7f28f6','Libelle','en','App/view/Environment/index.view.php',12);
-INSERT INTO `translation_glial` VALUES (453,'dbc80c82c063d1570812426ad50c2c7ed83e5dcf','Class','en','App/view/Environment/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (454,'4e297600378b29419d17fac6205b997df482461c','Letter','en','App/view/Environment/index.view.php',15);
-INSERT INTO `translation_glial` VALUES (455,'0df2a8a52b0b89e7fa3b5b4062fc4cfe20f5881b','Monitored','en','App/view/Server/settings.view.php',43);
-INSERT INTO `translation_glial` VALUES (456,'5d2bf64249a6942dcfd40074c24a79885afadbc1','Display name','en','App/view/Server/settings.view.php',50);
-INSERT INTO `translation_glial` VALUES (457,'96ba23d69ace7906f28d7f9ea954067dc3e01cb5','Edit password','en','App/view/Server/settings.view.php',143);
-INSERT INTO `translation_glial` VALUES (458,'6e170c52780878ac10ba9a3a6e31112293803472','New SSH key','en','App/view/Ssh/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (459,'093f0fa245e793ad4efa9c49ae3da11c5f4b8337','Associate','en','App/view/Ssh/index.view.php',59);
-INSERT INTO `translation_glial` VALUES (460,'f41728405df24e8c67efadd256b20a38f63821f2','Servers linked','en','App/view/Ssh/index.view.php',77);
-INSERT INTO `translation_glial` VALUES (461,'e920c2b868bda1947913810176173cc983e123c5','Add a key SSH','en','App/Controller/Ssh.php',50);
-INSERT INTO `translation_glial` VALUES (462,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','Add a ssh key','en','App/view/Ssh/add.view.php',8);
-INSERT INTO `translation_glial` VALUES (463,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','Add a ssh key','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (464,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','Add a ssh key','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (465,'a45b0b323c1d3f51704cacd35eb4a0ce411d19a6','Add a ssh key','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (466,'78a864e6733c266115dc1e1d604159dd0ff849bb','Export configuration','en','App/view/Export/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (467,'91a5b311b1f138329fda71a1daf9495b1e492325','Import configuration','en','App/view/Export/index.view.php',105);
-INSERT INTO `translation_glial` VALUES (468,'17412f33ee944298ba8e098173d6ba0bcba4a293','Version:','en','App/view/About/index.view.php',31);
-INSERT INTO `translation_glial` VALUES (469,'698f53dd900f06ebdd8acf6bc82f636659d53f0b','forked from','en','App/view/About/index.view.php',34);
-INSERT INTO `translation_glial` VALUES (470,'4e68fab1c22d5a2e25c8214b1a96ea8efd1d73c2','Kernel :','en','App/view/About/index.view.php',35);
-INSERT INTO `translation_glial` VALUES (471,'73de752c8f5fe3be6ab51296adc998678f5d1db4','Author :','en','App/view/About/index.view.php',43);
-INSERT INTO `translation_glial` VALUES (472,'0b9d40f4c6b00d7a1402db568fba8112088532f1','Credits','en','App/view/About/index.view.php',47);
-INSERT INTO `translation_glial` VALUES (473,'89f61a924cf46dbeba8dfb7dee273ca2ec8092ff','Made in','en','App/view/About/index.view.php',24);
-INSERT INTO `translation_glial` VALUES (474,'0804dac8a8231cd06a62eaf68f24b56500d7b0a2','FRANCE','en','App/view/About/index.view.php',24);
-INSERT INTO `translation_glial` VALUES (475,'f59bdcce798cdc35c253e5381b313c9921844600','Product','en','App/view/About/index.view.php',20);
-INSERT INTO `translation_glial` VALUES (476,'1ef39c943a1897edc11b320a5d39d351732cfc19','Product Version:','en','App/view/About/index.view.php',22);
-INSERT INTO `translation_glial` VALUES (477,'f81bc6378c874626465b552586882eb06bab93d7','Lisense:','en','App/view/About/index.view.php',23);
-INSERT INTO `translation_glial` VALUES (478,'97e0622acdca809e89973d578d377cf29849a017','Dependencies','en','App/view/About/index.view.php',27);
-INSERT INTO `translation_glial` VALUES (479,'865082364a2e3ccf1ec5a96389c5508ad2fe1998','Powered by','en','App/view/About/index.view.php',40);
-INSERT INTO `translation_glial` VALUES (480,'8fc77c0c20bf96b98e4a3dce378a081b2350bdd9','68k-proxysql-3 (2022-09-01 09:49:07)','en','App/Controller/Benchmark.php',681);
-INSERT INTO `translation_glial` VALUES (481,'cec499f1452034228e46835fd49ddb1c817195c7','Reads by second','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (482,'daf0f8815aef764cceb15ac194cb088267dbe21e','Writes by second','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (483,'9f2cad04a60320a7feb65309f38065026fca246e','Response Time (ms)','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (484,'2cd5781803ddd4b9267c2c9924fea797c9605d88','Transactions by second','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (485,'f6bb3a859c0ce29932181010f13eb05ce01b1148','Errors','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (486,'fddd41f0637364af980ed0fa0b042fbdbd7649db','Ratio','en','App/Controller/Benchmark.php',697);
-INSERT INTO `translation_glial` VALUES (487,'ee518a4ab216041674aabd8ea7077068e4f6969a','You are not using binary logging','en','App/view/Binlog/liste.view.php',85);
-INSERT INTO `translation_glial` VALUES (488,'016f8799476f9152a3f4aeb11edb93d2a24df5bc','Results found :','en','App/view/Monitoring/query.view.php',46);
-INSERT INTO `translation_glial` VALUES (489,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','Add menu entry','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (490,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','Add menu entry','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (491,'ebba70fa4bd01c5117a816a781dd6afe8c51fc4b','Add menu entry','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (492,'95959478a5fcbc946eb364e5bf0b3fdd1ce46708','Language','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (493,'c3a41287cd46631a27c4ce1afeb20edb32714db5','Error 404','en','/srv/www/glial/Glial/Bootstrap.php',229);
-INSERT INTO `translation_glial` VALUES (494,'e442c2872ead41375c8faa2117d44396def018cd','Page not found','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (495,'81eca1f469afa12b1a49100870eb61e620116e97','Sorry, the page you requested : \"Language/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (496,'c3a41287cd46631a27c4ce1afeb20edb32714db5','Error 404','en','App/Controller/ErrorWeb.php',18);
-INSERT INTO `translation_glial` VALUES (497,'eb06bc88ace5b687ef406a4ad963ef2e44b602d3','Close','en','App/element/flash.php',24);
-INSERT INTO `translation_glial` VALUES (498,'a09a36a9986a34516cfb4384f3fd7fdda0fcfac2','English','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (499,'717bd504990cd91fe80b06b67a1202fa86e2f579','Français','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (500,'717bd504990cd91fe80b06b67a1202fa86e2f579','Français','en','App/view/Menu/show.view.php',80);
-INSERT INTO `translation_glial` VALUES (501,'1c6776cb674c12117bb3caa581339e466406977c','???????','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (502,'8b29cb0214024e607a0b290d2b6ef764f2ea5e85','??????????','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (503,'d02735230f2a68c21f8edadcb7393cfbbaa009f4','','en','App/view/Home/index.view.php',18);
-INSERT INTO `translation_glial` VALUES (504,'2fda514e4e2154651f67c5e78db9cdaad496064c','Appearance settings','en','App/view/Home/index.view.php',51);
-INSERT INTO `translation_glial` VALUES (505,'3219ced87986eda2103f361c42d952d39bf3f5ad','Створити базу даних','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (506,'3653a8b075b41a691f55befaf363a2d0ddd8c7c0','Перейменувати базу даних','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (507,'dbdca79e034939dedd8077b38094075c05e13473','Оновити базу даних','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (508,'5384677b25565ddd86dc7ed63ccaec665d89a91c','Порівняти базу даних','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (509,'94c48cd2fa4246ae90a50ecd9216901acc810d7f','Проаналізуйте таблиці','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (510,'01c09d25ad7d32df3cc2df348e747d5f1b942b73','Таблиця порівняння','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (511,'3219c7df7832762fd6f216d7f7d522080f764ed6','hours','en','App/view/Server/main.view.php',320);
-INSERT INTO `translation_glial` VALUES (512,'beec6b755c9877caae350174b5f0cf5f94dc4f53','Processing','en','App/view/Server/main.view.php',309);
-INSERT INTO `translation_glial` VALUES (513,'06f53c2c1c6d3d80eac5f4afc629ef45ddfd8146','All the daemon was successfully stopped','en','App/Controller/Daemon.php',75);
-INSERT INTO `translation_glial` VALUES (514,'42e7354a685a47e426d9f7bd0af785fde356ec9a','Success','en','App/Controller/Daemon.php',76);
-INSERT INTO `translation_glial` VALUES (515,'89e9b0224b8e2d875701386ce4ee207aed9decfb','Days','en','App/view/Server/main.view.php',314);
-INSERT INTO `translation_glial` VALUES (516,'50778e0c4210a7aac82e6127aa67c30937259c7e','All lock/pid/md5 has been deleted and partions has been updated','en','App/Controller/Daemon.php',138);
-INSERT INTO `translation_glial` VALUES (517,'42e7354a685a47e426d9f7bd0af785fde356ec9a','Success','en','App/Controller/Daemon.php',139);
-INSERT INTO `translation_glial` VALUES (518,'9a0f2ce4c8dba33c57e3364ea937fb1fc6cdf47f','The daemon (id=9) with pid : \'185854\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (519,'42e7354a685a47e426d9f7bd0af785fde356ec9a','Success','en','App/Controller/Agent.php',168);
-INSERT INTO `translation_glial` VALUES (520,'1716e191124ed35d6c8f6128d846d3a7ad056868','The daemon (id=9) with pid : \'186449\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (521,'5132c1c94fa07d6d115ceae53b4ad050388c19e6','Parameters','en','App/view/Mysql/add.view.php',8);
-INSERT INTO `translation_glial` VALUES (522,'277b1e5fe97bdecd46c2a585083f051c4852725e','Type a name for the connection, if you let empty we will take \'select @@hostname\'','en','App/view/Mysql/add.view.php',20);
-INSERT INTO `translation_glial` VALUES (523,'0381a465ae9421715641b7fe899c0fc1895284db','Login','en','App/view/Mysql/add.view.php',44);
-INSERT INTO `translation_glial` VALUES (524,'2bf86e8f7146bf5752c91f047d113a23c1aae3c7','Environement','en','App/view/Mysql/add.view.php',64);
-INSERT INTO `translation_glial` VALUES (525,'3cc195b6b09d7a73b3a36549749744e929caaf0f','SSH\'s account','en','App/view/Mysql/add.view.php',91);
-INSERT INTO `translation_glial` VALUES (526,'0381a465ae9421715641b7fe899c0fc1895284db','Login','en','App/view/Mysql/add.view.php',106);
-INSERT INTO `translation_glial` VALUES (527,'e1a369bf6c1e59c0123805ef98d5de384aa74856','Public key','en','App/view/Mysql/add.view.php',122);
-INSERT INTO `translation_glial` VALUES (528,'96f30996b70aa9caeb0112256aae21d45832ddc0','Private key','en','App/view/Mysql/add.view.php',129);
-INSERT INTO `translation_glial` VALUES (529,'edf2782c0ac398da330de6719021054374dbaa20','Path for temp backup','en','App/view/Mysql/add.view.php',137);
-INSERT INTO `translation_glial` VALUES (530,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','Add a new server','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (531,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','Add a new server','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (532,'51c0ad08ce127a1441f038c7c7a45e238c2e8cfb','Add a new server','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (533,'d1d684969d0e09e550d393c529292058434f2cc9','Maybe this address is not good','en','App/Controller/Mysql.php',1094);
-INSERT INTO `translation_glial` VALUES (534,'d0add4f2b28a9e7f2edbeac7751ec8f150349ec1','Maybe this port is not good','en','App/Controller/Mysql.php',1095);
-INSERT INTO `translation_glial` VALUES (535,'81e9df9ef9b590195330857b60634bbc32e1dcc0','Impossible to reach this MySQL server','en','App/Controller/Mysql.php',1097);
-INSERT INTO `translation_glial` VALUES (536,'0057ab77d96f3f7379f9a3e6524089914614200d','Connection error','en','App/Controller/Mysql.php',1098);
-INSERT INTO `translation_glial` VALUES (537,'ba47cbada5436052a4dda8063a08d60daead5439','The daemon (id=9) with pid : \'3362486\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (538,'c33965f45beb4225c6e90d7596f09a2ffec285fb','Sorry, the page you requested : \"Percona/displayOsc\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (539,'ffd24055fdfe36d52645ae7a9be2e0f68d6a53ff','Sorry, the page you requested : \"Percona/display_osc\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (540,'091ac75ecaa1dcdb98da307f87c3dbd11562c68d','Sorry, the page you requested : \"Percona/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (541,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (542,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',17);
-INSERT INTO `translation_glial` VALUES (543,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',18);
-INSERT INTO `translation_glial` VALUES (544,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (545,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (546,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (547,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (548,'51880adb90d17c9d96a6daa3f9e7e2574e40bc17','Percona','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (549,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (550,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (551,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',21);
-INSERT INTO `translation_glial` VALUES (552,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',22);
-INSERT INTO `translation_glial` VALUES (553,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',41);
-INSERT INTO `translation_glial` VALUES (554,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',39);
-INSERT INTO `translation_glial` VALUES (555,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',18);
-INSERT INTO `translation_glial` VALUES (556,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',19);
-INSERT INTO `translation_glial` VALUES (557,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',20);
-INSERT INTO `translation_glial` VALUES (558,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',21);
-INSERT INTO `translation_glial` VALUES (559,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',30);
-INSERT INTO `translation_glial` VALUES (560,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',31);
-INSERT INTO `translation_glial` VALUES (561,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',32);
-INSERT INTO `translation_glial` VALUES (562,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',33);
-INSERT INTO `translation_glial` VALUES (563,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',53);
-INSERT INTO `translation_glial` VALUES (564,'4d2fd59f374283d1fae2a0d723a13f5b0c7749e3','old','en','App/view/Percona/displayOsc.view.php',14);
-INSERT INTO `translation_glial` VALUES (565,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',29);
-INSERT INTO `translation_glial` VALUES (566,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',30);
-INSERT INTO `translation_glial` VALUES (567,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',31);
-INSERT INTO `translation_glial` VALUES (568,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',32);
-INSERT INTO `translation_glial` VALUES (569,'88291d86be4fca0eb93bf72c5f690d5335c19911','currently running','en','App/view/Percona/displayOsc.view.php',65);
-INSERT INTO `translation_glial` VALUES (570,'1601276b0a9fe313fbc2b0e14cfc1af7c502c153','Data size','en','App/view/Percona/displayOsc.view.php',80);
-INSERT INTO `translation_glial` VALUES (571,'9bcd3e931f352cd7f7af90c9af5cf384fe5359d2','Index size','en','App/view/Percona/displayOsc.view.php',81);
-INSERT INTO `translation_glial` VALUES (572,'321912a313963860ad6cc00e6409e64a1450f947','Free size','en','App/view/Percona/displayOsc.view.php',82);
-INSERT INTO `translation_glial` VALUES (573,'ec47d38ddb5ca683737956ef82d1228becb887a3','Creation date','en','App/view/Percona/displayOsc.view.php',83);
-INSERT INTO `translation_glial` VALUES (574,'fac0d09e955bdb342ffe8fc858cff265622df7bd','days','en','App/view/Percona/displayOsc.view.php',52);
-INSERT INTO `translation_glial` VALUES (575,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',85);
-INSERT INTO `translation_glial` VALUES (576,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',34);
-INSERT INTO `translation_glial` VALUES (577,'edbb7820f5b9caf05c59b9b27c80d56894e911b3','Drop table','en','App/view/Percona/displayOsc.view.php',54);
-INSERT INTO `translation_glial` VALUES (578,'ad93a51cb6e6600df677b51f2b19088504a8054d','Action','en','App/view/Percona/displayOsc.view.php',87);
-INSERT INTO `translation_glial` VALUES (579,'49cefe3020c49877b9760ccb12a0bdf2c29a466b','Sorry, the page you requested : \"Percona/delOldOscTable\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (580,'bfd9c7fadae3488da8473abbc485a00cdb0b9054','Sorry, the page you requested : \"Percona/del_old_osc_table\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (581,'102a6e02b3d5050891a6eb4cc2d6127a190fe8b6','Minutes','en','App/view/Server/main.view.php',318);
-INSERT INTO `translation_glial` VALUES (582,'8b8b6a166c36e129490b7d9aaec2470049a6c9bb','The daemon (id=9) with pid : \'4063\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (583,'a315816d1b9118a0988a816904ae0046ae4ef4c8','Your MySQL server was successfully added !','en','App/Controller/Mysql.php',1160);
-INSERT INTO `translation_glial` VALUES (584,'6fa95dbba22dbf9285c9456a0cec268b944469de','The daemon (id=9) with pid : \'693874\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (585,'6ef3d67449741f6c6b84fb452f8e492601580774','The daemon (id=7) with pid : \'693862\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (586,'e4eabcac8bf01d5bc4b56625a9b4046feecc9063','LDAP General','en','App/view/Ldap/index.view.php',11);
-INSERT INTO `translation_glial` VALUES (587,'0e8deec4c7201b0b083ea7e5612f8e1091957a91','Check Bind DN and/or Bind password','en','App/view/Ldap/index.view.php',104);
-INSERT INTO `translation_glial` VALUES (588,'e53007fabddfe9ef26ae6bfc515f44a6814af67b','Search for a group','en','App/view/Ldap/getGroupFromUser.view.php',9);
-INSERT INTO `translation_glial` VALUES (589,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','Kill','en','App/view/Server/main.view.php',325);
-INSERT INTO `translation_glial` VALUES (590,'80568ef3eaf0cd1f25fee295c2f0681e08b9ecc3','Kill','en','App/view/Server/main.view.php',309);
-INSERT INTO `translation_glial` VALUES (591,'20ec6f0917dc343de03b27e9747641a4849139c0','The daemon (id=7) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (592,'cd888dc799c7a1a16045a1efff5f77e17f91eff7','Sorry, the page you requested : \"Proxysql/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (593,'1af0807bb58fa0c3c3eea59af365e88efcd74e7d','Admin credentials','en','App/view/ProxySQL/add.view.php',17);
-INSERT INTO `translation_glial` VALUES (594,'10f44cb4caea5e972d7428be73058033ef580d8f','Schema','en','App/view/VirtualForeignKey/fill.view.php',15);
-INSERT INTO `translation_glial` VALUES (595,'47394aff553372bba0f8bccc8284d56e4756d023','Field','en','App/view/VirtualForeignKey/fill.view.php',17);
-INSERT INTO `translation_glial` VALUES (596,'889638799e9fef7bd85b0cb6b4e066d73bd57f91','ref_schema','en','App/view/VirtualForeignKey/fill.view.php',18);
-INSERT INTO `translation_glial` VALUES (597,'db6d75a20a8dc80ad2aa213ef7171efdfdd81d40','ref_table','en','App/view/VirtualForeignKey/fill.view.php',19);
-INSERT INTO `translation_glial` VALUES (598,'1d31ae299df857ca84dc076756f6432c2b765f6f','ref_field','en','App/view/VirtualForeignKey/fill.view.php',20);
-INSERT INTO `translation_glial` VALUES (599,'afe12ef1df1bb92de364373006b20d0dba9eaaf8','Operation','en','App/view/VirtualForeignKey/fill.view.php',21);
-INSERT INTO `translation_glial` VALUES (600,'c13b56a65f2c8f8960fc247a1f76ff9440a34e21','Add a new client','en','App/Controller/Client.php',34);
-INSERT INTO `translation_glial` VALUES (601,'420675e3f670b9e2d45d3e57911b2401708fcc06','Name of the client','en','App/view/Client/add.view.php',14);
-INSERT INTO `translation_glial` VALUES (602,'420675e3f670b9e2d45d3e57911b2401708fcc06','Name of the client','en','App/view/Client/add.view.php',15);
-INSERT INTO `translation_glial` VALUES (603,'0ab89e190a1708c1cc8be75da05267d306fee98d','Reporting','en','App/view/Mysqlsys/index.view.php',63);
-INSERT INTO `translation_glial` VALUES (604,'62fca64391ab34bcb36449184628607ba4f0559d','Créer une base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (605,'aeef72bdd63a200a901b4dde0f16f1af3433112a','Renommer la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (606,'f025e5c4c26fa79352f81bb07a98c9fc68c7f871','Actualiser la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (607,'d3b5ebe0b0302114cb8223be10d3b6924f535e6d','Comparer la base de données','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (608,'63e82a90b25dd27a27c0192625f78fbfae1b995d','Analyser les tableaux','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (609,'49be5aaf527e3497a394e5163fff0442571e2c66','Tableau de comparaison','en','App/view/Database/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (610,'08bbc3e3aabfc4008894cb063ffb5a088319cd06','The statistics has been reseted','en','App/Controller/Mysqlsys.php',206);
-INSERT INTO `translation_glial` VALUES (611,'cfcae662fcf8382ddd467d2784ff3c1be0870d0b','Diff','en','App/view/CheckConfig/index.view.php',113);
-INSERT INTO `translation_glial` VALUES (612,'9c35011459b7cf246b5e180fd73195abbc23b492','Variable_name','en','App/view/CheckConfig/index.view.php',115);
-INSERT INTO `translation_glial` VALUES (613,'5a7e1e675138fd305126dc2e99b1e8e02ec12e7b','ProxySQL','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (614,'8be350328d443ef2e0130e483dc740b9fe81428c','Sorry, the page you requested : \"ProxySQL/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',230);
-INSERT INTO `translation_glial` VALUES (615,'74b6db1405aa9cc6490d83fc4fae39809219ad18','Date de rafraichissement :','fr','App/view/Architecture/index.view.php',29);
-INSERT INTO `translation_glial` VALUES (616,'708ccb3e2db313a49136e9baf3c5089ce33f7497','New ProxySQL Server','en','App/view/ProxySQL/index.view.php',14);
-INSERT INTO `translation_glial` VALUES (617,'a9985d0471fbd19d696ae71846ed0dc102ef540b','The daemon (id=13) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (618,'0fe707b3a79eead84e53bd63575374f326992cfd','The daemon (id=13) with pid : \'2843607\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (619,'8dfa31f2531c59d6ebd2a9ca734dd68b57d62c91','The daemon (id=12) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (620,'bb7087f20f841d4b0fa582c36ec61dad8541a4f8','The daemon (id=11) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (621,'f246c534f967f145600f54e45d6c8c153d5ff221','The daemon (id=9) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (622,'fb5db38b7134c32b25055f7b6faaf6451052e04d','The daemon (id=5) successfully started with','en','App/Controller/Agent.php',116);
-INSERT INTO `translation_glial` VALUES (623,'eb15fa4ef170ab4edb493a44d1382b1f75e264c0','The daemon (id=11) with pid : \'3035213\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (624,'1556fa6e21183d9fe73c65a88ca8d38bb05e457c','The daemon (id=9) with pid : \'3035594\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (625,'a4044bdfe6168a011d0dfd3184a54e3832e041b6','The daemon (id=7) with pid : \'3035572\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (626,'a7092c3c6bc7e437b1a9083bfd2541af90cb18fe','The daemon (id=13) with pid : \'3034289\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (627,'b11d10998cbf4cdd7255728dac72708fdde27d1a','The daemon (id=13) with pid : \'62296\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (628,'06bce48eb781262eee36c9b382dce2892becaecc','All the daemon was successfully started','en','App/Controller/Daemon.php',78);
-INSERT INTO `translation_glial` VALUES (629,'d6be441ba4237bd1bd4b78ca1a495f04faf0884a','The daemon (id=13) with pid : \'2576689\' successfully stopped','en','App/Controller/Agent.php',167);
-INSERT INTO `translation_glial` VALUES (630,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',86);
-INSERT INTO `translation_glial` VALUES (631,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',87);
-INSERT INTO `translation_glial` VALUES (632,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',96);
-INSERT INTO `translation_glial` VALUES (633,'b789eafe106519942bacd941807cf584b908c9ee','Log','en','App/view/Daemon/index.view.php',87);
-INSERT INTO `translation_glial` VALUES (634,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',88);
-INSERT INTO `translation_glial` VALUES (635,'eec961422796f80c3c6ae1249fa9971aa3c0870f','Working','en','App/view/Daemon/index.view.php',102);
-INSERT INTO `translation_glial` VALUES (636,'c7ff312f0516ea2d2935e7b5e2f0d5b91223c30a','Working on','en','App/view/Daemon/index.view.php',88);
-INSERT INTO `translation_glial` VALUES (637,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Controller/Cleaner.php',365);
-INSERT INTO `translation_glial` VALUES (638,'ec3109451dfa2349163c925a2d2a7c9d4ae56503','General\'s infos','en','App/view/Cleaner/add.view.php',11);
-INSERT INTO `translation_glial` VALUES (639,'8bca5aad0ab7e764fba067952a1110491aa99b0a','Cleaner\'s name','en','App/view/Cleaner/add.view.php',18);
-INSERT INTO `translation_glial` VALUES (640,'75c202fa3a4fc23345ee21e4b76cbad9d52bea8c','Query','en','App/view/Cleaner/add.view.php',56);
-INSERT INTO `translation_glial` VALUES (641,'2c05c0a22288a20f540a7ca7125738000567ea08','Number of line deleted in one time','en','App/view/Cleaner/add.view.php',64);
-INSERT INTO `translation_glial` VALUES (642,'aca2399e84e1706ed2fb7a9977cda021670213dd','Wait time between run','en','App/view/Cleaner/add.view.php',73);
-INSERT INTO `translation_glial` VALUES (643,'34129fdd15283e6aea1c0091c5892b2b0dbc5dce','Database use for cleaning','en','App/view/Cleaner/add.view.php',79);
-INSERT INTO `translation_glial` VALUES (644,'71161180013a089d6ab8596d5a96b5ca8052b0eb','Prefix for tables used for clean','en','App/view/Cleaner/add.view.php',86);
-INSERT INTO `translation_glial` VALUES (645,'9432e3a2065c359cfbc26eda83f2fc57283977fb','Archiving','en','App/view/Cleaner/add.view.php',100);
-INSERT INTO `translation_glial` VALUES (646,'809bf1cb35b4e7f7bff8aea0439b4ca14f2e7096','Informations','en','App/view/Cleaner/add.view.php',104);
-INSERT INTO `translation_glial` VALUES (647,'48f5561a032871fc206d0cc2ff8004884bfac59f','If the following select is focus on a storage area, the cleaner will automatically archive the rows deleted','en','App/view/Cleaner/add.view.php',106);
-INSERT INTO `translation_glial` VALUES (648,'ab1d091bb9e3ae1983d7f5ec46f1b10ca4c37d0e','If there is no storage area, please add one there :','en','App/view/Cleaner/add.view.php',107);
-INSERT INTO `translation_glial` VALUES (649,'3629ab537d9203bf809329f0b545f556f76853de','Storage Area','en','App/view/Cleaner/add.view.php',114);
-INSERT INTO `translation_glial` VALUES (650,'a20df4b263bd83b35f7cbce0eb098ed46f04633e','Crypted files','en','App/view/Cleaner/add.view.php',120);
-INSERT INTO `translation_glial` VALUES (651,'33d69096b80d3e1d26f77fd3efd17d0aa07102e5','If selelected the archives files will be crypted on storage area','en','App/view/Cleaner/add.view.php',137);
-INSERT INTO `translation_glial` VALUES (652,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (653,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (654,'2d923b983f6ddd7dc28f0d836c6e96196a4240fd','Add a cleaner','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (655,'b47079214b9d52cec66e4a2dd123c3f193b8a3a4','One storage engine is missing on this MySQL server','en','App/Controller/Cleaner.php',426);
-INSERT INTO `translation_glial` VALUES (656,'1121fb85e3f32507c69c7388b24a0332afb74ddf','Impossible to find the daemon (id=5) with the pid :','en','App/Controller/Agent.php',185);
-INSERT INTO `translation_glial` VALUES (657,'d05beac7e09a7f6a9e52e3273b95f22f1389ee67','Daemon (id=5) was already stopped or in error','en','App/Controller/Agent.php',186);
-INSERT INTO `translation_glial` VALUES (658,'6351665355d18349b18a24f28142e8837e7c908e','Impossible to launch the daemon','en','App/Controller/Agent.php',121);
-INSERT INTO `translation_glial` VALUES (659,'71173421a61a24713a262ecd56de0b0999f3c412','Already running !','en','App/Controller/Agent.php',121);
-INSERT INTO `translation_glial` VALUES (660,'2e920573e09041fa6e645bb16c8d1d25310df00d','Log on','en','App/Controller/User.php',762);
-INSERT INTO `translation_glial` VALUES (661,'84261ac586093d32a02d6f4b3fad5dc88ebbeaaf','Contact the creator of the application / Report a bug','en','App/view/User/connection.view.php',56);
-INSERT INTO `translation_glial` VALUES (662,'922ce2b7813bd9fda40cd6dd691aa07dec8cc2cc','Sign up, it\'s free !','en','App/view/User/connection.view.php',65);
-INSERT INTO `translation_glial` VALUES (663,'cabafd045d3e496f5b69fe7eac217825e7f509ba','password forgotten','en','App/view/User/connection.view.php',66);
-INSERT INTO `translation_glial` VALUES (664,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (665,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (666,'54d3ce892358f64e1f2b248fc75c75325c3bf082','Registration','en','App/Controller/User.php',185);
-INSERT INTO `translation_glial` VALUES (667,'3d273535f8f2f8041c06129cbaba914da32c695b','Username','en','App/view/User/register.view.php',26);
-INSERT INTO `translation_glial` VALUES (668,'8d92293ab3bd064e41b054f0cae2394215145201','Firstname','en','App/view/User/register.view.php',31);
-INSERT INTO `translation_glial` VALUES (669,'ee013433d06fef751ffcc78959966d652a361982','Lastname','en','App/view/User/register.view.php',36);
-INSERT INTO `translation_glial` VALUES (670,'0d3c73bdad37bdda874ab12bf11c9ae118e93d78','Country','en','App/view/User/register.view.php',47);
-INSERT INTO `translation_glial` VALUES (671,'8a30265788312a09935c3df79ad755f5c6fc79ea','repeat','en','App/view/User/register.view.php',76);
-INSERT INTO `translation_glial` VALUES (672,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (673,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (674,'96b55bf3aa160fd55575009c654cc4452deccde4','Register','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (675,'6a3b0cda85632e44f9b24914e3e97948ef99a11a','Password forgotten ?','en','App/Controller/User.php',346);
-INSERT INTO `translation_glial` VALUES (676,'a2e4ce28bbcffd7836350dbd4334743ca1c154da','Forgot password ?','en','App/view/User/lost_password.view.php',30);
-INSERT INTO `translation_glial` VALUES (677,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (678,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (679,'29770a13350adef7f1756b59e4233fea860a02e6','Lost password','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (680,'45f50b2393f7304edd5706afcef0b2e248b46bf4','You have to be registered to acces to this page','en','/srv/www/glial/Glial/Bootstrap.php',210);
-INSERT INTO `translation_glial` VALUES (681,'f38824f838fe687e09865709dd46f9f3c87c872d','Acess denied','en','/srv/www/glial/Glial/Bootstrap.php',217);
-INSERT INTO `translation_glial` VALUES (682,'8a63619b5cd495998c706481259cb04544aef076','Login successful !','en','App/Controller/User.php',776);
-INSERT INTO `translation_glial` VALUES (683,'66300386b9b75f3e7bc41cef89ae37cfbfb922f8','Congratulations, you have successfully logged in.','en','App/Controller/User.php',777);
-INSERT INTO `translation_glial` VALUES (684,'8378114ea43c0453c26162d2f1e2ffe2ffa0240f','Maybe this login is wrong','en','App/Controller/Mysql.php',1113);
-INSERT INTO `translation_glial` VALUES (685,'ac6843fe4cd4c26662d317a21b53b04ac044e8fb','Wrong password','en','App/Controller/Mysql.php',1114);
-INSERT INTO `translation_glial` VALUES (686,'69bc38a799a2c30e2eb167a1d15bd91aafef9f98','MySQL\'s connection error','en','App/Controller/Mysql.php',1117);
-INSERT INTO `translation_glial` VALUES (687,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (688,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (689,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (690,'386dc4a46dba4a91b8707192717a156767af5d6c','MPD','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (691,'f439acaa01422ecbbe8e00af33d5a3b02bd6d03c','Min','en','App/view/Database/size.view.php',33);
-INSERT INTO `translation_glial` VALUES (692,'8b57eb5000c5ef8c0d9501720a7389d36ba52b41','Max','en','App/view/Database/size.view.php',34);
-INSERT INTO `translation_glial` VALUES (693,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (694,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (695,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (696,'aee9963258dbddf95509c7681665d0a16247e607','Database size','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (697,'cc4d4acad7448d0e577ddaec3a9023a7d5b80253','Slave status','en','App/Controller/Slave.php',183);
-INSERT INTO `translation_glial` VALUES (698,'4aa15f30f637c8720cb24471af57e3028f74f1aa','Switch Master To','en','App/view/Slave/show.view.php',35);
-INSERT INTO `translation_glial` VALUES (699,'b1014851eb19f5b3d32410132c6dba30f7c34157','Commands','en','App/view/Slave/show.view.php',59);
-INSERT INTO `translation_glial` VALUES (700,'3fdba91a1d6fe01a1af94be0bbce6ed8952d2391','Global transaction identifier','en','App/view/Slave/show.view.php',120);
-INSERT INTO `translation_glial` VALUES (701,'2f8fae879bfd757dd7c286a9a0683baf7a4c4b43','Activate GTID','en','App/view/Slave/show.view.php',123);
-INSERT INTO `translation_glial` VALUES (702,'2253ac9bca304215fd09dbce02def835b512c773','Desactivate GTID','en','App/view/Slave/show.view.php',124);
-INSERT INTO `translation_glial` VALUES (703,'28a7a5aac191c1e6b8c3c1444351ba88377b568e','Variables','en','App/view/Slave/show.view.php',147);
-INSERT INTO `translation_glial` VALUES (704,'7915bb9a8e3f50480e2554018ac3a1e07711ed97','Values','en','App/view/Slave/show.view.php',148);
-INSERT INTO `translation_glial` VALUES (705,'28a7a5aac191c1e6b8c3c1444351ba88377b568e','Variables','en','App/view/Slave/show.view.php',176);
-INSERT INTO `translation_glial` VALUES (706,'7915bb9a8e3f50480e2554018ac3a1e07711ed97','Values','en','App/view/Slave/show.view.php',177);
-INSERT INTO `translation_glial` VALUES (707,'0bc255d372e5e46bbee9d94eb5b28d489417f56a','Repliacation load average','en','App/view/Slave/show.view.php',227);
-INSERT INTO `translation_glial` VALUES (708,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (709,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (710,'dd159c422f7d5c9a9e899f70701bf6d6026493ad','Slave Show','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (711,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (712,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (713,'917a9630a86e999013070a6e4b061dd7397a5bc5','Import / Export configuration','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (714,'8376112f0718cf322769823a2fe3a7aff99bef78','Label','en','App/view/Environment/index.view.php',12);
-INSERT INTO `translation_glial` VALUES (715,'52b227b7f5ddf337d2c441cba82d165e8de4f0b1','Auto generate virtual foreign keys','en','App/view/Mysql/mpd.view.php',59);
-INSERT INTO `translation_glial` VALUES (716,'d908baf7c9d70241d000a1668b00a4c9e42520a5','Sorry, the page you requested : \"Menu/index\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
-INSERT INTO `translation_glial` VALUES (717,'37b790d30e688515ae1cf877c935be8b1d7bee27','Sorry, the page you requested : \"Table/mpd\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
-INSERT INTO `translation_glial` VALUES (718,'8783834cc286558edb40467b79acb593c7f39493','Sorry, the page you requested : \"VirtualForeignKey/addForeignKey\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
-INSERT INTO `translation_glial` VALUES (719,'66f1611d80bac5c7ade894f6bc691f4f439d24d8','Sorry, the page you requested : \"Menu/main\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
-INSERT INTO `translation_glial` VALUES (720,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (721,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (722,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (723,'20b60fa8e6e821df8855720164aac1c970716be4','Manage Prefix for vFK','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (724,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/VirtualForeignKey/settingPrefix.view.php',8);
-INSERT INTO `translation_glial` VALUES (725,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/VirtualForeignKey/settingPrefix.view.php',9);
-INSERT INTO `translation_glial` VALUES (726,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/VirtualForeignKey/settingPrefix.view.php',12);
-INSERT INTO `translation_glial` VALUES (727,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',20);
-INSERT INTO `translation_glial` VALUES (728,'9cb5cadf3ab594978d53e39dcf2bdf459d858487','Name of the tag','en','App/view/Tag/add.view.php',14);
-INSERT INTO `translation_glial` VALUES (729,'2d52ee4d1851a5136cbdfd2e32c0c247ab1f6242','Color of the text','en','App/view/Tag/add.view.php',21);
-INSERT INTO `translation_glial` VALUES (730,'4c5a6f2dc6efe0030b53941446e02e7e83e30212','Color of the background','en','App/view/Tag/add.view.php',27);
-INSERT INTO `translation_glial` VALUES (731,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (732,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (733,'c2df3e11e6a170b62d7e911e7d095b5ea65df6e3','Add a new tag','en','App/Library/Ariane.php',48);
-INSERT INTO `translation_glial` VALUES (734,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',41);
-INSERT INTO `translation_glial` VALUES (735,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/VirtualForeignKey/settingPrefix.view.php',10);
-INSERT INTO `translation_glial` VALUES (736,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/VirtualForeignKey/settingPrefix.view.php',11);
-INSERT INTO `translation_glial` VALUES (737,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/VirtualForeignKey/settingPrefix.view.php',14);
-INSERT INTO `translation_glial` VALUES (738,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',22);
-INSERT INTO `translation_glial` VALUES (739,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',43);
-INSERT INTO `translation_glial` VALUES (740,'fc9691edede52e636f244fa3db2610384aa0a89d','Sorry, the page you requested : \"VirtualForeignKey/add\"is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227);
-INSERT INTO `translation_glial` VALUES (741,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/settingPrefix.view.php',45);
-INSERT INTO `translation_glial` VALUES (742,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/add.view.php',9);
-INSERT INTO `translation_glial` VALUES (743,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',43);
-INSERT INTO `translation_glial` VALUES (744,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/VirtualForeignKey/add.view.php',55);
-INSERT INTO `translation_glial` VALUES (745,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/VirtualForeignKey/add.view.php',56);
-INSERT INTO `translation_glial` VALUES (746,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/view/Menu/show.view.php',105);
-INSERT INTO `translation_glial` VALUES (747,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/ForeignKey/settingPrefix.view.php',10);
-INSERT INTO `translation_glial` VALUES (748,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/ForeignKey/settingPrefix.view.php',11);
-INSERT INTO `translation_glial` VALUES (749,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/ForeignKey/settingPrefix.view.php',14);
-INSERT INTO `translation_glial` VALUES (750,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/ForeignKey/settingPrefix.view.php',22);
-INSERT INTO `translation_glial` VALUES (751,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/ForeignKey/settingPrefix.view.php',45);
-INSERT INTO `translation_glial` VALUES (752,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',43);
-INSERT INTO `translation_glial` VALUES (753,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',47);
-INSERT INTO `translation_glial` VALUES (754,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',48);
+INSERT INTO `translation_glial` VALUES (1,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/view/Menu/show.view.php',105,'2024-04-04 12:54:41');
+INSERT INTO `translation_glial` VALUES (2,'6255413644c7275dd6613ad20665edd1cfd15d35','The goal there is to ignore the prefix of table to establish the mapping between tables.','en','App/view/ForeignKey/settingPrefix.view.php',10,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (3,'8a79259b3408575aa3db0e63288a5484fd6a6e32','example :','en','App/view/ForeignKey/settingPrefix.view.php',11,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (4,'104f5bc8dae2e1090a5b75626acf9816b7ef56ce','To be able to match the system have to know witch prefix are used on your database','en','App/view/ForeignKey/settingPrefix.view.php',14,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (5,'62a7c4066a43bfa17a0a351a1d00fdfffb5b2f2b','Prefix','en','App/view/ForeignKey/settingPrefix.view.php',22,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (6,'47f4665b4210c6ac04646b6d8ec8879efcbd3376','Add a prefix','en','App/view/ForeignKey/settingPrefix.view.php',45,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (7,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',43,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (8,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',47,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (9,'f65afa096b1a93132952d28f2d5bb5df7b47ffca','Manage prefix for vFK','en','App/Library/Ariane.php',48,'2024-04-04 12:59:33');
+INSERT INTO `translation_glial` VALUES (10,'0957d6f919a173143f4ecfde03ffd6de9f87887c','Physical data model','en','App/Library/Ariane.php',43,'2024-04-04 13:00:34');
+INSERT INTO `translation_glial` VALUES (11,'0957d6f919a173143f4ecfde03ffd6de9f87887c','Physical data model','en','App/Library/Ariane.php',47,'2024-04-04 13:00:34');
+INSERT INTO `translation_glial` VALUES (12,'0957d6f919a173143f4ecfde03ffd6de9f87887c','Physical data model','en','App/Library/Ariane.php',48,'2024-04-04 13:00:34');
+INSERT INTO `translation_glial` VALUES (13,'52b227b7f5ddf337d2c441cba82d165e8de4f0b1','Auto generate virtual foreign keys','en','App/view/ForeignKey/virtual.view.php',2,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (14,'5fa63392b1bd9ef2b5a8690026a0d2776718d1a8','Virtual foreign keys','en','App/view/ForeignKey/virtual.view.php',9,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (15,'8f0dd96e1094fe716734444b92aa52ec10a5c791','Date generated','en','App/view/ForeignKey/virtual.view.php',25,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (16,'320211678e78dc4b947e83f65adcebf82b04145c','Add real foreign key','en','App/view/ForeignKey/virtual.view.php',42,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (17,'9cbaa811a36851a46179624b08499742fdb9c9e9','Remove virtual foreign key','en','App/view/ForeignKey/virtual.view.php',44,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (18,'63b9e83ed2f1d8a1ee01ad1f71074c21efd438c9','Foreign keys','en','App/Library/Ariane.php',43,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (19,'63b9e83ed2f1d8a1ee01ad1f71074c21efd438c9','Foreign keys','en','App/Library/Ariane.php',47,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (20,'63b9e83ed2f1d8a1ee01ad1f71074c21efd438c9','Foreign keys','en','App/Library/Ariane.php',48,'2024-04-04 13:00:40');
+INSERT INTO `translation_glial` VALUES (21,'2d9ec636ba6c21b31dbbc4195d1e39e9750b8646','Import foreign keys','en','App/view/ForeignKey/real.view.php',9,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (22,'e4d92055051ace2ad7d94387c9cf52a2d7da2f66','Real foreign keys','en','App/view/ForeignKey/real.view.php',16,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (23,'8f0dd96e1094fe716734444b92aa52ec10a5c791','Date generated','en','App/view/ForeignKey/real.view.php',32,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (24,'255bf92ce03eb630b663a600ca7a6dd158698e6c','Foreign keys real','en','App/Library/Ariane.php',43,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (25,'255bf92ce03eb630b663a600ca7a6dd158698e6c','Foreign keys real','en','App/Library/Ariane.php',47,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (26,'255bf92ce03eb630b663a600ca7a6dd158698e6c','Foreign keys real','en','App/Library/Ariane.php',48,'2024-04-04 13:00:42');
+INSERT INTO `translation_glial` VALUES (27,'7d4fb0c36ce48c19ef710d2151e4360b4877434f','Translations','en','App/Controller/Translation.php',31,'2024-04-04 16:40:21');
+INSERT INTO `translation_glial` VALUES (28,'5749378385c57a639fa181bc9422482dd32550e9','Administration','en','App/Controller/Translation.php',32,'2024-04-04 16:40:21');
+INSERT INTO `translation_glial` VALUES (29,'0b2dd1d59a013f51d0139a112176eaac06760f11','Process list','en','App/view/MysqlServer/menu.view.php',24,'2024-04-04 18:11:40');
+INSERT INTO `translation_glial` VALUES (30,'0957d6f919a173143f4ecfde03ffd6de9f87887c','Physical data model','en','App/Library/Ariane.php',42,'2024-04-04 18:11:40');
+INSERT INTO `translation_glial` VALUES (31,'d852a1b5e5a8273c0218b713d3a750bfcc48c56d','Sorry, the page you requested :','en','/srv/www/glial/Glial/Bootstrap.php',227,'2024-04-04 18:11:42');
+INSERT INTO `translation_glial` VALUES (32,'e13e69f411d1f997b9a5bab03390986413a8acd9','is not on this server. Please contact us if you have questions or concerns','en','/srv/www/glial/Glial/Bootstrap.php',227,'2024-04-04 18:11:42');
+INSERT INTO `translation_glial` VALUES (33,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/view/MysqlServer/menu.view.php',24,'2024-04-04 18:15:36');
+INSERT INTO `translation_glial` VALUES (34,'d9f673bfa1b5ea8efe64b14122754c446300d059','Relations view','en','App/Library/Ariane.php',42,'2024-04-04 18:18:51');
+INSERT INTO `translation_glial` VALUES (35,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',9,'2024-04-04 18:25:08');
+INSERT INTO `translation_glial` VALUES (36,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',12,'2024-04-04 18:25:08');
+INSERT INTO `translation_glial` VALUES (37,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',25,'2024-04-04 18:25:47');
+INSERT INTO `translation_glial` VALUES (38,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',13,'2024-04-04 18:53:46');
+INSERT INTO `translation_glial` VALUES (39,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',14,'2024-04-04 18:53:46');
+INSERT INTO `translation_glial` VALUES (40,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',15,'2024-04-04 18:53:46');
+INSERT INTO `translation_glial` VALUES (41,'63b9e83ed2f1d8a1ee01ad1f71074c21efd438c9','Foreign keys','en','App/Library/Ariane.php',42,'2024-04-04 18:59:39');
+INSERT INTO `translation_glial` VALUES (42,'e9886e135fca04f7c8b2567dbab64be8b82990b9','Foreign keys virtual','en','App/Library/Ariane.php',42,'2024-04-04 18:59:39');
+INSERT INTO `translation_glial` VALUES (43,'255bf92ce03eb630b663a600ca7a6dd158698e6c','Foreign keys real','en','App/Library/Ariane.php',42,'2024-04-04 18:59:42');
+INSERT INTO `translation_glial` VALUES (44,'a9abc3f115926303ce9c8e2fcca92b86b6e61570','Overhead','en','App/view/MysqlDatabase/table.view.php',45,'2024-04-04 18:59:44');
+INSERT INTO `translation_glial` VALUES (45,'42577ed06ded9efa50779bd7d8c6501b4647a284','List of tables','en','App/Library/Ariane.php',42,'2024-04-04 18:59:44');
+INSERT INTO `translation_glial` VALUES (46,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',10,'2024-04-04 19:09:27');
+INSERT INTO `translation_glial` VALUES (47,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',13,'2024-04-04 19:09:27');
+INSERT INTO `translation_glial` VALUES (48,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',14,'2024-04-04 19:09:27');
+INSERT INTO `translation_glial` VALUES (49,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',15,'2024-04-04 19:09:27');
+INSERT INTO `translation_glial` VALUES (50,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',16,'2024-04-04 19:09:27');
+INSERT INTO `translation_glial` VALUES (51,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',11,'2024-04-04 19:15:46');
+INSERT INTO `translation_glial` VALUES (52,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',14,'2024-04-04 19:15:46');
+INSERT INTO `translation_glial` VALUES (53,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',15,'2024-04-04 19:15:46');
+INSERT INTO `translation_glial` VALUES (54,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',16,'2024-04-04 19:15:46');
+INSERT INTO `translation_glial` VALUES (55,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',17,'2024-04-04 19:15:46');
+INSERT INTO `translation_glial` VALUES (56,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',16,'2024-04-04 19:26:18');
+INSERT INTO `translation_glial` VALUES (57,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',19,'2024-04-04 19:26:18');
+INSERT INTO `translation_glial` VALUES (58,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',20,'2024-04-04 19:26:18');
+INSERT INTO `translation_glial` VALUES (59,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',21,'2024-04-04 19:26:18');
+INSERT INTO `translation_glial` VALUES (60,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',22,'2024-04-04 19:26:18');
+INSERT INTO `translation_glial` VALUES (61,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',21,'2024-04-04 19:34:57');
+INSERT INTO `translation_glial` VALUES (62,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',24,'2024-04-04 19:34:57');
+INSERT INTO `translation_glial` VALUES (63,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',25,'2024-04-04 19:34:57');
+INSERT INTO `translation_glial` VALUES (64,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',26,'2024-04-04 19:34:57');
+INSERT INTO `translation_glial` VALUES (65,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',27,'2024-04-04 19:34:57');
+INSERT INTO `translation_glial` VALUES (66,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',20,'2024-04-04 19:35:58');
+INSERT INTO `translation_glial` VALUES (67,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',23,'2024-04-04 19:35:58');
+INSERT INTO `translation_glial` VALUES (68,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',24,'2024-04-04 19:35:58');
+INSERT INTO `translation_glial` VALUES (69,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',25,'2024-04-04 19:35:58');
+INSERT INTO `translation_glial` VALUES (70,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',26,'2024-04-04 19:35:58');
+INSERT INTO `translation_glial` VALUES (71,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/view/Menu/show.view.php',105,'2024-04-04 19:49:24');
+INSERT INTO `translation_glial` VALUES (72,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/Library/Ariane.php',42,'2024-04-04 19:49:26');
+INSERT INTO `translation_glial` VALUES (73,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',37,'2024-04-04 20:01:51');
+INSERT INTO `translation_glial` VALUES (74,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',40,'2024-04-04 20:01:51');
+INSERT INTO `translation_glial` VALUES (75,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',41,'2024-04-04 20:01:51');
+INSERT INTO `translation_glial` VALUES (76,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',42,'2024-04-04 20:01:51');
+INSERT INTO `translation_glial` VALUES (77,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',43,'2024-04-04 20:01:51');
+INSERT INTO `translation_glial` VALUES (78,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/view/MysqlServer/processlist.view.php',20,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (79,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',36,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (80,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',39,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (81,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',40,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (82,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',41,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (83,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',42,'2024-04-04 20:02:36');
+INSERT INTO `translation_glial` VALUES (84,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/view/MysqlServer/processlist.view.php',15,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (85,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',25,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (86,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',28,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (87,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',29,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (88,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',30,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (89,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',31,'2024-04-04 20:03:54');
+INSERT INTO `translation_glial` VALUES (90,'ffaa3bfc9a8dc398beb75edc92bd4bd8eeae3c96','Processlist','en','App/view/MysqlServer/processlist.view.php',17,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (91,'bba268f8d0f2ab20636f2c1637f3316b8aba6276','Thread ID','en','App/view/MysqlServer/processlist.view.php',27,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (92,'a52a98d4bee2ab0800ec7e0fe01eea1e494dc5f4','State','en','App/view/MysqlServer/processlist.view.php',30,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (93,'fbbb0523315df56c4b5ca3ffb08999334a867875','TRX State','en','App/view/MysqlServer/processlist.view.php',31,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (94,'6d26e1ae8cad6886f14c06ffccbe463f5e21209d','R-Lock','en','App/view/MysqlServer/processlist.view.php',32,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (95,'c6c0f8aef087b48e8dec9f191349e28d4add1ed8','R-Mod','en','App/view/MysqlServer/processlist.view.php',33,'2024-04-04 20:11:36');
+INSERT INTO `translation_glial` VALUES (96,'ed5153f7ca0cdbb16e69472785a32a79a4b0316f','The daemon (id=12) with pid : \'1212746\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:02:37');
+INSERT INTO `translation_glial` VALUES (97,'87888e95bd46c3c1c0124709e2d27ef4f8530411','The daemon','en','App/Controller/Agent.php',104,'2024-04-05 00:02:39');
+INSERT INTO `translation_glial` VALUES (98,'73bacee386178d6f05ed29abda3a05f86393a524','successfully started with pid:','en','App/Controller/Agent.php',104,'2024-04-05 00:02:39');
+INSERT INTO `translation_glial` VALUES (99,'39f8d36559b7f775fa4e1eb62a1f5eb22282b1af','The daemon (id=11) with pid : \'1212760\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:04:01');
+INSERT INTO `translation_glial` VALUES (100,'cb71a8050e4abaa0800a91cb61a544467a9aea37','The daemon (id=7) with pid : \'1212838\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:04:15');
+INSERT INTO `translation_glial` VALUES (101,'d2ab2e10603e1299dc835255c81101dea2fa3a01','The daemon (id=12) with pid : \'2059988\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:05:07');
+INSERT INTO `translation_glial` VALUES (102,'b16ec12a5143c72770f7c8bbd44001efe38d68eb','The daemon (id=14) with pid : \'1212705\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:05:17');
+INSERT INTO `translation_glial` VALUES (103,'9976bb9628ecf8a80f2a50fff49357808e6dde89','The daemon (id=5) with pid : \'1212732\' successfully stopped','en','App/Controller/Agent.php',156,'2024-04-05 00:05:36');
+INSERT INTO `translation_glial` VALUES (104,'6cb39a7850e1ba540071dbbd9cd316f817a7858f','Analyze made :','en','App/Controller/Database.php',965,'2024-04-05 00:23:37');
+INSERT INTO `translation_glial` VALUES (105,'2d3d651f8147641f8d0d905aedb46ad6f5acd141','Edit a key SSH','en','App/Controller/Ssh.php',751,'2024-04-05 00:39:01');
+INSERT INTO `translation_glial` VALUES (106,'f3ecf6a4050f6efe9b75dfa83e4f8f4c5d0015c1','Edit a ssh key','en','App/Library/Ariane.php',42,'2024-04-05 00:39:01');
+INSERT INTO `translation_glial` VALUES (107,'a0e2d70fb38bbbf2e86a8ad16ec77478520fd4e9','Your private key was added','en','App/Controller/Ssh.php',228,'2024-04-05 00:39:18');
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166384,6 +165745,7 @@ LOCK TABLES `ts_file` WRITE;
 INSERT INTO `ts_file` VALUES (3,'answer');
 INSERT INTO `ts_file` VALUES (5,'database');
 INSERT INTO `ts_file` VALUES (2,'hardware');
+INSERT INTO `ts_file` VALUES (9,'list_db');
 INSERT INTO `ts_file` VALUES (7,'proxysql');
 INSERT INTO `ts_file` VALUES (6,'service_mysql');
 INSERT INTO `ts_file` VALUES (8,'service_ssh');
@@ -166391,6 +165753,47 @@ INSERT INTO `ts_file` VALUES (1,'ssh_stats');
 INSERT INTO `ts_file` VALUES (4,'variable');
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb3 */ ;
+/*!50003 SET character_set_results = utf8mb3 */ ;
+/*!50003 SET collation_connection  = utf8mb3_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`pmacontrol`@`127.0.0.1`*/ /*!50003 TRIGGER after_ts_file_insert
+AFTER INSERT ON ts_file
+FOR EACH ROW
+BEGIN
+  INSERT INTO listener (id_ts_file, date_previous_execution, execution_time)
+  VALUES (NEW.id, NOW(), 0);
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb3 */ ;
+/*!50003 SET character_set_results = utf8mb3 */ ;
+/*!50003 SET collation_connection  = utf8mb3_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`pmacontrol`@`127.0.0.1`*/ /*!50003 TRIGGER after_ts_file_delete
+AFTER DELETE ON ts_file
+FOR EACH ROW
+BEGIN
+  DELETE FROM listener WHERE id_ts_file = OLD.id;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `ts_variable`
@@ -169061,6 +168464,16 @@ INSERT INTO `ts_variable` VALUES (2821,8,'ssh_ping','DOUBLE','ssh_server','gener
 INSERT INTO `ts_variable` VALUES (2822,6,'mysql_available','INT','mysql_server','general',1,1);
 INSERT INTO `ts_variable` VALUES (2823,6,'mysql_ping','DOUBLE','mysql_server','general',1,1);
 INSERT INTO `ts_variable` VALUES (2824,6,'mysql_error','TEXT','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (2855,9,'schema_list','TEXT','list_db','general',1,1);
+INSERT INTO `ts_variable` VALUES (2856,3,'gtid_slave_pos','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2857,4,'binlog_row_event_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2858,4,'innodb_truncate_temporary_tablespace_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2865,3,'wsrep_flow_control_active','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2866,3,'wsrep_flow_control_requested','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2867,3,'wsrep_apply_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2868,3,'wsrep_gmcast_segment','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2869,3,'wsrep_provider_capabilities','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2870,4,'wsrep_mode','TEXT','variables','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -169074,9 +168487,12 @@ DROP TABLE IF EXISTS `version`;
 CREATE TABLE `version` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `date` datetime NOT NULL,
-  `version` varchar(20) NOT NULL,
+  `version` varchar(32) NOT NULL,
+  `build` char(40) NOT NULL,
   `comment` text NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `version` (`version`),
+  UNIQUE KEY `build` (`build`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -169086,10 +168502,15 @@ CREATE TABLE `version` (
 
 LOCK TABLES `version` WRITE;
 /*!40000 ALTER TABLE `version` DISABLE KEYS */;
-INSERT INTO `version` VALUES (1,'2015-04-13 14:49:09','0.5','Initial version');
-INSERT INTO `version` VALUES (2,'2015-04-27 17:00:00','0.6','upgrade cleaner_main, to add pid in database');
-INSERT INTO `version` VALUES (3,'2016-06-10 16:35:31','0.8','First RC');
-INSERT INTO `version` VALUES (4,'2017-01-14 11:31:14','0.9','release candidate');
+INSERT INTO `version` VALUES (1,'2024-03-24 22:03:49','v3.0.0','aead1b83c22f9d38dc6d81fe96d49e9c1b5f9da4','add remove virtual foreign key');
+INSERT INTO `version` VALUES (29,'2024-03-27 03:26:49','v3.0.1','1cac186f12b61ba8ad22826ea9fa7caf8b1aba7d','add special screen to navigate between tables');
+INSERT INTO `version` VALUES (30,'2024-03-30 23:14:25','v3.0.2','dcc5928a3317f41c2f89a381346eb97a620f399f','Add self::upgrade with patch management');
+INSERT INTO `version` VALUES (31,'2024-04-03 20:28:38','v3.0.3','8fc87f733ff9e338dac3f5296f19cce88760c816','add version for Vladimir');
+INSERT INTO `version` VALUES (32,'2024-04-04 01:58:39','v3.0.5','30a461a6084225222a7d73ea80f579a74df8750b','add alter table for upgrade');
+INSERT INTO `version` VALUES (33,'2024-04-04 10:40:09','v3.0.6','843bb377ae80d34ac3eb806dd8962f26dce965cb','fixed menu with databases');
+INSERT INTO `version` VALUES (34,'2024-04-04 11:48:03','v3.0.7','a0c7a11170955e7cb2c6651c32e12016377154f8','fixed auto feed table when we change database, we select first one with a FK');
+INSERT INTO `version` VALUES (35,'2024-04-04 13:27:46','v3.0.8','c60175fb72d07d1a1f4d1598ca94c10cf8bd83ce','removed variable from translation and replaced hover for mpd');
+INSERT INTO `version` VALUES (36,'2024-04-05 14:44:48','v3.0.10','ec51e388838cc31dec333e960ae02e5dc899adeb','Fixed trouble with refresh when we add new server with deamon curretly working');
 /*!40000 ALTER TABLE `version` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -169662,6 +169083,56 @@ CREATE TABLE `daemon_worker` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `foreign_key_blacklist`
+--
+
+DROP TABLE IF EXISTS `foreign_key_blacklist`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `foreign_key_blacklist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
+  `constraint_table` varchar(64) NOT NULL DEFAULT '',
+  `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `id_mysql_server__link` int(11) NOT NULL,
+  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
+  `referenced_table` varchar(64) NOT NULL DEFAULT '',
+  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `is_automatic` int(11) NOT NULL DEFAULT 1,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server_36` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
+  CONSTRAINT `id_mysql_server_ibfk_16` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `foreign_key_proposal`
+--
+
+DROP TABLE IF EXISTS `foreign_key_proposal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `foreign_key_proposal` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL DEFAULT 0,
+  `constraint_schema` varchar(64) NOT NULL DEFAULT '',
+  `constraint_table` varchar(64) NOT NULL DEFAULT '',
+  `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `id_mysql_server__link` int(11) NOT NULL,
+  `referenced_schema` varchar(64) NOT NULL DEFAULT '',
+  `referenced_table` varchar(64) NOT NULL DEFAULT '',
+  `referenced_column` varchar(64) NOT NULL DEFAULT '',
+  `is_automatic` int(11) NOT NULL DEFAULT 1,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server_35` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
+  CONSTRAINT `id_mysql_server_ibfk_13` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `foreign_key_real`
 --
 
@@ -169674,6 +169145,7 @@ CREATE TABLE `foreign_key_real` (
   `constraint_schema` varchar(64) NOT NULL DEFAULT '',
   `constraint_table` varchar(64) NOT NULL DEFAULT '',
   `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `id_mysql_server__link` int(11) NOT NULL,
   `referenced_schema` varchar(64) NOT NULL DEFAULT '',
   `referenced_table` varchar(64) NOT NULL DEFAULT '',
   `referenced_column` varchar(64) NOT NULL DEFAULT '',
@@ -169716,10 +169188,12 @@ CREATE TABLE `foreign_key_virtual` (
   `constraint_schema` varchar(64) NOT NULL DEFAULT '',
   `constraint_table` varchar(64) NOT NULL DEFAULT '',
   `constraint_column` varchar(64) NOT NULL DEFAULT '',
+  `id_mysql_server__link` int(11) NOT NULL,
   `referenced_schema` varchar(64) NOT NULL DEFAULT '',
   `referenced_table` varchar(64) NOT NULL DEFAULT '',
   `referenced_column` varchar(64) NOT NULL DEFAULT '',
   `is_automatic` int(11) NOT NULL DEFAULT 1,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`,`referenced_schema`,`referenced_table`,`referenced_column`),
   UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
@@ -170060,6 +169534,24 @@ CREATE TABLE `link__ts_variable__mysql_server` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `listener`
+--
+
+DROP TABLE IF EXISTS `listener`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `listener` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_ts_file` int(11) NOT NULL,
+  `date_previous_execution` datetime NOT NULL,
+  `execution_time` double NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_ts_file` (`id_ts_file`),
+  CONSTRAINT `listener_ibfk_1` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `mysql_database`
 --
 
@@ -170069,7 +169561,7 @@ DROP TABLE IF EXISTS `mysql_database`;
 CREATE TABLE `mysql_database` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
-  `name` varchar(64) NOT NULL,
+  `schema_name` varchar(64) NOT NULL,
   `tables` int(11) NOT NULL,
   `rows` bigint(20) NOT NULL,
   `data_length` bigint(20) NOT NULL,
@@ -170080,10 +169572,10 @@ CREATE TABLE `mysql_database` (
   `binlog_do_db` int(11) NOT NULL,
   `binlog_ignore_db` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`,`id_mysql_server`),
+  UNIQUE KEY `schema_name` (`schema_name`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`),
   CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -170167,6 +169659,25 @@ CREATE TABLE `mysql_server` (
   KEY `is_monitored` (`is_monitored`,`id_client`),
   CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
   CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mysql_table`
+--
+
+DROP TABLE IF EXISTS `mysql_table`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mysql_table` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_database` int(11) NOT NULL,
+  `table_name` int(11) NOT NULL,
+  `schema` text NOT NULL,
+  `date_inserted` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_database` (`id_mysql_database`,`table_name`),
+  CONSTRAINT `mysql_table_ibfk_1` FOREIGN KEY (`id_mysql_database`) REFERENCES `mysql_database` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -170190,19 +169701,22 @@ CREATE TABLE `myxplain` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `objet`
+-- Table structure for table `patch`
 --
 
-DROP TABLE IF EXISTS `objet`;
+DROP TABLE IF EXISTS `patch`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `objet` (
+CREATE TABLE `patch` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `table_name` varchar(64) NOT NULL,
-  `reference_id` int(11) NOT NULL,
-  `ip` char(15) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+  `id_version__before` int(11) NOT NULL,
+  `id_version__after` int(11) DEFAULT NULL,
+  `file` varchar(255) NOT NULL,
+  `date_executed` datetime NOT NULL,
+  `error` text NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `file` (`file`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -170475,18 +169989,6 @@ CREATE TABLE `tag` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `test_warning`
---
-
-DROP TABLE IF EXISTS `test_warning`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `test_warning` (
-  `a` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ts_max_date`
 --
 
@@ -170503,10 +170005,12 @@ CREATE TABLE `ts_max_date` (
   `date_p3` datetime NOT NULL,
   `date_p4` datetime NOT NULL,
   `id_ts_file` int(11) NOT NULL,
+  `last_date_listener` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`id_ts_file`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`),
   UNIQUE KEY `date` (`date`,`id_ts_file`,`id_mysql_server`),
+  UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`id_ts_file`,`date`,`last_date_listener`),
   KEY `id_ts_file` (`id_ts_file`),
   CONSTRAINT `ts_max_date_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ts_max_date_ibfk_3` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
