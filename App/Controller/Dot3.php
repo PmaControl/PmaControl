@@ -36,10 +36,7 @@ class Dot3 extends Controller
 
     public function getInformation($param)
     {
-       
-	
-
-	Debug::parseDebug($param);
+	    Debug::parseDebug($param);
 
         $date_request = $param[0] ?? "";
         $versioning = "";
@@ -64,11 +61,11 @@ class Dot3 extends Controller
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql"),array() , $date_request);
 
-        $sql = "SELECT id as id_mysql_server, ip, port, display_name,is_available  
-        FROM mysql_server a ".$versioning."
-        UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_available  
-        from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
-        ".$versioning2.";";
+        $sql = "SELECT id as id_mysql_server, ip, port, display_name  
+                FROM mysql_server a ".$versioning."
+                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name  
+                from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
+                ".$versioning2.";";
 
         //Debug::sql($sql);
 
@@ -88,27 +85,25 @@ class Dot3 extends Controller
 
         //echo json_encode($data, JSON_PRETTY_PRINT);
 
-        $proxy = Extraction2::display(array("proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-web_port", "proxysql_main_var::admin-version"));
+        //$proxy = Extraction2::display(array("proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-web_port", "proxysql_main_var::admin-version"));
         //Debug::debug($proxy, "proxysql");
 
-	Debug::debug($data, "DATA");
+	    Debug::debug($data, "DATA");
         
 
-	//insert to DB
-	$sql = "INSERT INTO";
+        //insert to DB
+        $sql = "INSERT INTO";
 
 
-	$dot3 = array();
-	$dot3['dot3']['information'] = json_encode($data);
-	$dot3['dot3']['date_generated'] = date('Y-m-d H:i:s');
-	$dot3['dot3']['information'] = json_encode($data);
-	$dot3['dot3']['information'] = json_encode($data);
-	$dot3['dot3']['information'] = json_encode($data);
-	$dot3['dot3']['information'] = json_encode($data);
+        $dot3 = array();
+        $dot3['dot3']['information'] = json_encode($data);
+        $dot3['dot3']['date_generated'] = date('Y-m-d H:i:s');
+        $dot3['dot3']['information'] = json_encode($data);
+        $dot3['dot3']['information'] = json_encode($data);
+        $dot3['dot3']['information'] = json_encode($data);
+        $dot3['dot3']['information'] = json_encode($data);
 
-
-
-	return $data;
+        return $data;
     }
 
 
@@ -136,7 +131,7 @@ class Dot3 extends Controller
                 {
                     $tmp_group[$id_group][] = $information['mapping'][$master];
                 }
-                else
+                else 
                 {
                     echo "This master was not found : ".$master."\n";
                 }
@@ -311,10 +306,7 @@ class Dot3 extends Controller
     }
     public function generateAllGraph($groups, $information)
     {
-
-
         foreach ($groups as $group) {
-
             //debug($group);
             $code2D = $this->generateGraph($group);
             $view2D = $this->getRenderer($code2D);

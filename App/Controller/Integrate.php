@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
+use \App\Controller\Aspirateur;
 use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -30,6 +31,9 @@ class Integrate extends Controller
     var $files = array();
 
     var $logger;
+
+    // on list ici les serveurs pour lequel il faut purger les fichiers de md5 pour forcer le rafraichissement
+    static $id_mysql_server__to_refresh = array();
 
     public function before($param)
     {
@@ -151,6 +155,8 @@ class Integrate extends Controller
 
                                                     Debug::debug($value);
                                                     Debug::debug($variables_to_insert);
+
+                                                    self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
                                                     //exit;
                                                 }
 
@@ -231,6 +237,9 @@ class Integrate extends Controller
 
                                                 $var_index[$type_metrics][$variable] = 1;
                                                 $variables_to_insert[]               = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
+
+
+                                                self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
                                             }
                                         }
                                     }
@@ -355,11 +364,15 @@ class Integrate extends Controller
         //Debug::debug($variables_to_insert);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        // insert IGNORE in case of first save have 2 slave
 
+
+        // insert IGNORE in case of first save have 2 slave
         $this->logger->warning("Insert new value :".json_encode($variables_to_insert));
         $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
         $res = $db->sql_query($sql);
+
+        if (! empty(self::$id_mysql_server__to_refresh[4]))
+        Aspirateur::cleanMd5(self::$id_mysql_server__to_refresh[4]);
 
 
         if (!$res) {
