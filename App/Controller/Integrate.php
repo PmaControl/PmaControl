@@ -38,7 +38,7 @@ class Integrate extends Controller
     public function before($param)
     {
         $monolog       = new Logger("Integrate");
-        $handler      = new StreamHandler(LOG_FILE, Logger::WARNING);
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
         $this->logger = $monolog;
@@ -112,6 +112,9 @@ class Integrate extends Controller
 
                         $history[$date][] = $id_server;
                         $id_servers[]     = $id_server;
+
+                        if (! empty($all_metrics))
+                        {
 
                         foreach ($all_metrics as $type_metrics => $metrics) {
 
@@ -246,6 +249,7 @@ class Integrate extends Controller
                                 } //end variable
                             }
                         }
+                    }
                     }
                 } // date
             }
@@ -519,10 +523,11 @@ class Integrate extends Controller
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
+        $this->logger->notice('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
         while ($ob = $db->sql_fetch_object($res)) {
-
             $this->evaluate(array($ob->file_name));
         }
+        $this->logger->notice('[END] IntegrateAll '.date('Y-m-d H:i:s'));
     }
 
 

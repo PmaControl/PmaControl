@@ -214,14 +214,31 @@ class Server extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        //$this->title  = __("Dashboard");
-        $this->ariane = " > ".$this->title;
-
-        $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
-
-        $this->di['js']->code_javascript('(function() {
-            new Clipboard(".copy-button");
-        })();');
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+        else {
+            $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
+            $this->di['js']->code_javascript('(function() {
+                new Clipboard(".copy-button");
+            })();');
+    
+            $this->di['js']->code_javascript('
+            $(document).ready(function()
+            {
+                function refresh()
+                {
+                    var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
+                    $("#servermain").load(myURL);
+                }
+    
+                var intervalId = window.setInterval(function(){
+                    // call your function here
+                    refresh()  
+                  }, 1000);
+    
+            });');
+        }
 
         $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
             FROM mysql_server a
@@ -238,7 +255,8 @@ class Server extends Controller
             $servers[]         = $arr['id'];
         }
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_server::ping","mysql_ping", "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_server::ping","mysql_ping",
+         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
 
         $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
         $res               = $db->sql_query($sql);

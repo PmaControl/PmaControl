@@ -1011,4 +1011,16 @@ END IF;";
             return $ret;
         }
     }
+
+    static function test($hostname, $port, $user, $password)
+    {
+        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+
+        if ($link) {
+            mysqli_close($link);
+            return true;
+        } else {
+            return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+        }
+    }
 }

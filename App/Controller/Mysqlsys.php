@@ -179,9 +179,9 @@ class Mysqlsys extends Controller {
             $remote->sql_multi_query($sql);
         }
 
-        $msg = I18n::getTranslation(__("The statistics has been reseted"));
-        $title = I18n::getTranslation(__("Success"));
-        set_flash("success", $title, $msg);
+        //$msg = I18n::getTranslation(__("The statistics has been reseted"));
+        //$title = I18n::getTranslation(__("Success"));
+        //set_flash("success", $title, $msg);
 
         header("location: " . $_SERVER['HTTP_REFERER']);
     }

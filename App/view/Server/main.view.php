@@ -4,13 +4,15 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use App\Library\Format;
 
-echo '<div class="well">';
-\Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
-echo '</div>';
+if (empty($_GET['ajax'])){
+    echo '<div class="well">';
+    \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+    echo '</div>';
+    echo '<div id="servermain">';
+}
 
 $converter = new AnsiToHtmlConverter();
 
-echo '<form action="" method="POST">';
 
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
@@ -223,14 +225,11 @@ if (!empty($data['servers'])) {
             <?php
         }
 
-
-
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        
-        if (!empty($extra['date'])) {
-            echo $extra['date'];
+        if (!empty($data['last_date'][$server['id']]['date'])) {
+            echo $data['last_date'][$server['id']]['date'];
         }
         
         echo '</td>';
@@ -292,6 +291,10 @@ if (!empty($data['servers'])) {
 }
 echo '</table>';
 
-echo '<input type="hidden" name="is_monitored" value="1" />';
-echo '<button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Update</button>';
-echo '</form>';
+
+if (empty($_GET['ajax'])){
+    echo '</div>';
+}
+
+
+

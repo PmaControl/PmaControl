@@ -5,15 +5,15 @@
  * and open the template in the editor.
  */
 
-echo '<table class="table table-condensed table-bordered table-striped">';
+ if (empty($_GET['ajax'])) {
+    echo '<div id="daemon-index">';
+ }
 
+echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>'.'PID'.'</th>';
 echo '<th>'.__('Date').'</th>';
-
-//echo '<th>'.__('By').'</th>';
-//echo '<th>'.__("Each").'</th>';
 echo '<th>'.__("Thread concurrency").'</th>';
 echo '<th>'.__("Maximum Delay").'</th>';
 echo '<th>'.__("Refresh time").'</th>';
@@ -22,7 +22,6 @@ echo '<th>'.__("Queue msg").'</th>';
 echo '<th>'.__("Path").'</th>';
 echo '<th>'.__("File log").'</th>';
 echo '<th>'.__("Command").'</th>';
-
 echo '</tr>';
 
 foreach ($data['daemon'] as $daemon) {
@@ -32,8 +31,6 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.$daemon['name'].'</td>';
     echo '<td>'.$daemon['pid'].'</td>';
     echo '<td>'.$daemon['date'].'</td>';
-    //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
-    //  echo '<td>'.'Aurélien LEQUOY'.'</td>';
     echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
     echo '<td>'.$daemon['max_delay'].'</td>';
     echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
@@ -43,11 +40,9 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.$daemon['log_file'].'</td>';
     echo '<td>';
 
-    //debug($daemon);
     echo ' <div style="float:right" class="btn-group" role="group" aria-label="Default button group">';
     echo '&nbsp;<a href="'.LINK.'Agent/stop/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop Daemon</a>';
     echo '<a href="'.LINK.'Agent/start/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start Daemon</a>';
-
     if (empty($daemon['pid'])) {
         echo '<a href="'.LINK.'Server/listing/logs" type="button" class="btn btn-warning" style="font-size:12px"><span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="font-size:13px"></span> Stopped</a>';
     } else {
@@ -62,41 +57,22 @@ foreach ($data['daemon'] as $daemon) {
     }
 
     echo '&nbsp;<a href="'.LINK.'Agent/logs/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon glyphicon-book" aria-hidden="true" style="font-size:12px"></span> Logs</a>';
-
     echo '</div>';
-
     echo '</td>';
     echo '</tr>';
 }
-
 echo '</table>';
 
-echo ' <div class="btn-group" role="group" aria-label="Default button group">';
-echo '&nbsp;<a href="'.LINK.'Daemon/stopAll/" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
-echo '<a href="'.LINK.'Daemon/startAll" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
 
-echo '</div>';
-echo '<a href="'.LINK.'Daemon/refresh" type="button" title="Use this if there are troubles after crash of server, can take several seconds" class="btn btn-warning" style="font-size:12px"> <span class="glyphicon glyphicon-refresh" aria-hidden="true" style="font-size:12px"></span> Refresh all</a>';
+if (empty($_GET['ajax'])) {
+    echo '</div>';
 
-echo '<br /><br />';
-echo '<table class="table table-condensed table-bordered table-striped">';
-echo '<tr>';
-echo '<th>'.__("Name").'</th>';
-echo '<th>'.'PID'.'</th>';
-echo '<th>'.__('Date').'</th>';
-echo '<th>'.__('Log').'</th>';
-echo '<th>'.__("Working on").'</th>';
-echo '</tr>';
+    echo ' <div class="btn-group" role="group" aria-label="Default button group">';
+    echo '&nbsp;<a href="'.LINK.'Daemon/stopAll/" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
+    echo '<a href="'.LINK.'Daemon/startAll" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
+    echo '</div>';
+    echo '<a href="'.LINK.'Daemon/refresh" type="button" title="Use this if there are troubles after crash of server, can take several seconds" class="btn btn-warning" style="font-size:12px"> <span class="glyphicon glyphicon-refresh" aria-hidden="true" style="font-size:12px"></span> Refresh all</a>';
+    echo '<br /><br />';
 
-foreach ($data['worker'] as $worker) {
-
-    echo '<tr>';
-    echo '<td>'.$worker['name'].'</td>';
-    echo '<td>'.$worker['pid'].'</td>';
-    echo '<td>'.$worker['date_created'].'</td>';
-    echo '<td>'.$worker['filesize'].'</td>';
-    echo '<td>'.$worker['id_proxysql'].'</td>';
-    echo '</tr>';
+    \Glial\Synapse\FactoryController::addNode("Worker", "index", array());
 }
-
-echo '</table>';

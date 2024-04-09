@@ -17,7 +17,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 
 /*
- *
+ *  => systemctl is-active mysql
  *
  * MySQL [(none)]> select @@version_comment limit 1;
   +-------------------+
@@ -45,6 +45,47 @@ WHERE
 t.PROCESSLIST_COMMAND LIKE 'Binlog Dump%'
 AND uvt.VARIABLE_NAME = 'slave_uuid'
 
+SELECT
+            COUNT(*) AS count
+        FROM
+            performance_schema.file_instances
+        WHERE
+            file_name LIKE '%innodb_redo/%' AND
+            file_name NOT LIKE '%_tmp'
+
+
+SELECT
+            NAME,
+            COUNT
+        FROM
+            information_schema.INNODB_METRICS
+        WHERE
+            name IN ('adaptive_hash_searches', 'adaptive_hash_searches_btree', 'trx_rseg_history_len')
+
++------------------------------+-------+
+| NAME                         | COUNT |
++------------------------------+-------+
+| trx_rseg_history_len         |     0 |
+| adaptive_hash_searches       |     0 |
+| adaptive_hash_searches_btree |     0 |
++------------------------------+-------+
+3 rows in set (0,001 sec)
+    
+
+
+        SELECT
+            t.THREAD_ID AS id,
+            t.PROCESSLIST_USER AS user,
+            t.PROCESSLIST_HOST AS host,
+            CONVERT (
+                CAST( CONVERT ( uvt.VARIABLE_VALUE USING latin1 ) AS BINARY ) USING utf8
+            ) AS replica_uuid
+        FROM
+            `performance_schema`.threads AS t JOIN
+            `performance_schema`.user_variables_by_thread AS uvt ON t.THREAD_ID = uvt.THREAD_ID
+        WHERE
+            t.PROCESSLIST_COMMAND LIKE 'Binlog Dump%'
+            AND uvt.VARIABLE_NAME = 'slave_uuid';
 
 
 
@@ -56,6 +97,14 @@ FROM
 WHERE
 `performance_schema`.`file_summary_by_event_name`.`EVENT_NAME` LIKE 'wait/io/file/%' AND
 `performance_schema`.`file_summary_by_event_name`.`COUNT_STAR` > 0
+
++------------+-------------+
+| io_read    | io_write    |
++------------+-------------+
+| 1146072309 | 22420098241 |
++------------+-------------+
+1 row in set (0,002 sec)
+
  */
 
 // https://github.com/php-amqplib/php-amqplib
@@ -180,6 +229,8 @@ class Aspirateur extends Controller
                 unset($var['variables'][$var_to_remove]);
             }
         }
+
+        $data = array();
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
             $db  = Sgbd::sql(DB_DEFAULT);
@@ -716,6 +767,8 @@ class Aspirateur extends Controller
                 //special case for timeout 60 seconds, else we see working since ... and not the real error
                 $last_error = Extraction::display(array("mysql_server::available", "mysql_server::error"));
 
+                $this->logger->warning("LAST_ERROR : ".print_r($last_error));
+
                 $error = $last_error[$server['id']][''];
 
                 if (isset($error['mysql_available']) && $error['mysql_available'] != 0) {
@@ -843,17 +896,20 @@ class Aspirateur extends Controller
 
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
 
-            $double_buffer = TMP."lock/worker/".$pid.".pid";
+            $worker_pid = TMP."lock/worker/".$pid.".pid";
 
             $fp = fopen($lock_file, "w+");
             fwrite($fp, json_encode($data));
             fflush($fp);            // libère le contenu avant d'enlever le verrou
             fclose($fp);
 
+            file_put_contents($worker_pid,$id_mysql_server);
+
+            /*
             $fp2 = fopen($double_buffer, "w+");
             fwrite($fp2, $id_mysql_server);
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
-            fclose($fp2);
+            fclose($fp2);*/
 
             $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
@@ -868,13 +924,13 @@ class Aspirateur extends Controller
             }
 
             // on vide le pid 
-            file_put_contents($double_buffer,"N/A");
+            //$waiting = __("Waiting...");
+            file_put_contents($worker_pid,"Waiting...");
 
             //finally, reset our msg vars for when we loop and run again
             $msg_type = NULL;
             $msg      = NULL;
         }
-
 
         $this->logger->warning("We not wait waited next msg in queue ($queue_key)");
 
@@ -1339,33 +1395,34 @@ class Aspirateur extends Controller
 
             $lock_file = TMP."lock/worker_ssh/".$id_mysql_server.".lock";
 
-            $double_buffer = TMP."lock/worker_ssh/".$pid.".pid";
+            $worker_pid = TMP."lock/worker_ssh/".$pid.".pid";
 
             $fp = fopen($lock_file, "w+");
             fwrite($fp, json_encode($data));
             fflush($fp);            // libère le contenu avant d'enlever le verrou
             fclose($fp);
 
+
+            file_put_contents($worker_pid,$id_mysql_server);
+
+            /*
             $fp2 = fopen($double_buffer, "w+");
             fwrite($fp2, $id_mysql_server);
             fflush($fp2);            // libère le contenu avant d'enlever le verrou
             fclose($fp2);
-
-//do your business logic here and process this message!
+            */
+            //do your business logic here and process this message!
             $this->trySshConnection(array($msg->id));
 
-            /*
-              if ($msg->id == "16") {
-              sleep(60);
-              }
-              /**
-             * test retard reponse mysql
-             */
             if (file_exists($lock_file)) {
                 unlink($lock_file);
             }
 
-//finally, reset our msg vars for when we loop and run again
+            //$waiting = __("Waiting...");
+            file_put_contents($worker_pid,"Waiting...");
+
+
+            //finally, reset our msg vars for when we loop and run again
             $msg_type = NULL;
             $msg      = NULL;
         }
@@ -1696,7 +1753,7 @@ GROUP BY C.ID, C.INFO;";
             $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
 
-        $sql .= " ORDER by a.is_available ASC, a.date_refresh DESC;";
+        $sql .= " ORDER by 1 DESC;";
 
 //echo \SqlFormatter::format($sql);
 
