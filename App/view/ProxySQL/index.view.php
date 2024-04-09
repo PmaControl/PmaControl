@@ -20,8 +20,8 @@ if ( ! empty($data['proxysql']))
     foreach ($data['proxysql'] as $proxysql) {
         echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
 
-        echo '<div class="col-md-1 text-center">';
-        echo '<img src="'.IMG.'icon/proxysql.png" height="64px" width="64px">';
+        echo '<div class="col-md-1 text-center" style="display: flex; justify-content: center; align-items: center; ">';
+        echo '<img src="'.IMG.'icon/proxysql.png" height="96px" width="96px">';
         echo '</div>';
 
         echo '<div class="col-md-2">';
@@ -37,6 +37,13 @@ if ( ! empty($data['proxysql']))
         echo '</div>';
 
         echo '<div class="col-md-7">';
+
+
+?>
+        <div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title"><?= __('Backend') ?></h3>
+    </div><?php
         echo '<table class="table table-condensed table-bordered table-striped" id="table">';
         echo '<tr>';
         echo '<th>'.__("Hostgroup").'</th>';
@@ -63,6 +70,7 @@ if ( ! empty($data['proxysql']))
         }
 
         echo '</table>';
+        echo '</div>';
         echo '</div>';
         echo '</div>';
     }

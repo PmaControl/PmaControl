@@ -188,7 +188,7 @@ EOF
 
 chmod +x install.sh
 
-./install.sh -c /tmp/config.json
+runuser -l  www-data -c './install.sh -c /tmp/config.json'
 
 echo "Save these credentials"
 echo "#########################################################"

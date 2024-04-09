@@ -291,6 +291,7 @@ class Extraction
 
         $res = $db->sql_query($sql);
 
+        
         //echo \SqlFormatter::format($sql) . "\n";
         $from     = array();
         $variable = array();
