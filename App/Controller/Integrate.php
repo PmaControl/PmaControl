@@ -523,11 +523,11 @@ class Integrate extends Controller
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
-        $this->logger->notice('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
+        $this->logger->info('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
         while ($ob = $db->sql_fetch_object($res)) {
             $this->evaluate(array($ob->file_name));
         }
-        $this->logger->notice('[END] IntegrateAll '.date('Y-m-d H:i:s'));
+        $this->logger->info('[END] IntegrateAll '.date('Y-m-d H:i:s'));
     }
 
 

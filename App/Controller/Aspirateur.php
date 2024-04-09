@@ -170,11 +170,19 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_mysql_server   = $param[1];
 
-        $db = Sgbd::sql(DB_DEFAULT); 
+
+        // To know if we use a proxy like PROXYSQL
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res)) {
+            $IS_PROXY = $ob->is_proxy;
+        }
         $db->sql_close();
+        //end of case of HA proxy
 
         Debug::checkPoint('avant query');
-
         $pid = getmypid();
 
         /* Only for testing for processing long time, don't think some got more than 999 999 mysql server :D */
@@ -192,13 +200,16 @@ class Aspirateur extends Controller
         }
         catch(\Exception $e){
             $error_msg = $e->getMessage();
-            $this->logger->warning($error_msg." id_mysql_server:$id_mysql_server");
+            $this->logger->emergency($error_msg." id_mysql_server:$id_mysql_server");
         }
         finally{
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
-            
-            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+
+            // only if REAL server => should make test if Galera if select 1 => not ready to use too
+            if (empty($IS_PROXY)) {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            }
             
             $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
 
@@ -208,15 +219,45 @@ class Aspirateur extends Controller
             }
         }
         
-//$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
-// SHOW /*!50000 ENGINE*/ INNODB STATUS
+        //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
+        // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
         // traitement SHOW GLOBAL VARIABLES
-        $var['variables'] = $mysql_tested->getVariables();
+
+        //CASE ProxySQL (with one hostgroup DEAD)
+        try{
+            $var['variables'] = $mysql_tested->getVariables();
+        }
+        catch(\Exception $e){
+            $error_ori = $e->getMessage();
+            //$error_msg = "ERROR 9001 (HY000) at line 1: Max connect timeout reached while reaching hostgroup 1 after 10000ms";
+
+            $output_array = array();
+            preg_match('/ERROR:\s(.*)}/', $error_ori, $output_array);
+
+            if (!empty($output_array[1])) {
+                $error_msg = $output_array[1];
+            }
+            else{
+                $error_msg = $error_ori;
+            }
+            $this->logger->emergency("[ERROR] id_mysql_server:$id_mysql_server ==> $error_ori");
+
+        }
+        finally{
+            $available = empty($error_ori) ? 1 : 0;
+            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." ".$error_msg." - is_available : ".$available." - ping : ".round($ping,6));
+
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+            if ($available === 0) {
+                return false;
+            }
+        }
+
 
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
         //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
-
 
         //we delete variable who change each time and put in on status
         $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
@@ -240,7 +281,7 @@ class Aspirateur extends Controller
                 $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server.";";
                 Debug::sql($sql);
                 $db->sql_query($sql);
-                $this->logger->info("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
+                $this->logger->notice("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
             }
 
             $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
@@ -454,8 +495,8 @@ class Aspirateur extends Controller
                 $date = array();
 
                 $this->allocate_shared_storage('ssh_stats');
-                $date[date('Y-m-d H:i:s')][$ob->id]['stats']         = $stats;
-                $date[date('Y-m-d H:i:s')][$ob->id]['stats']['ping'] = $ping;
+                $date[date('Y-m-d H:i:s')][$ob->id]['ssh_server']         = $stats;
+                $date[date('Y-m-d H:i:s')][$ob->id]['ssh_server']['ping'] = $ping;
 
 //$this->shared->$id                           = $date;
                 $this->shared['ssh_stats']->{$id_mysql_server} = $date;
@@ -764,19 +805,6 @@ class Aspirateur extends Controller
                 $msg2 = "Worker still runnig - pid : ".$server['pid'];
                 $this->logger->warning("MySQL server with id : ".$server['id']." is late !!!  ".$msg);
 
-                //special case for timeout 60 seconds, else we see working since ... and not the real error
-                $last_error = Extraction::display(array("mysql_server::available", "mysql_server::error"));
-
-                $this->logger->warning("LAST_ERROR : ".print_r($last_error));
-
-                $error = $last_error[$server['id']][''];
-
-                if (isset($error['mysql_available']) && $error['mysql_available'] != 0) {
-                    // UPDATE is_available X => YELLOW  (not answered)
-                    $this->logger->warning("id_mysql_server:$idmysqlserver");
-                    $this->setService($idmysqlserver,round($time,2),$msg2, 2, "mysql");
-                }
-                
             } else {
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker/".$server['id'].".lock";
@@ -888,28 +916,16 @@ class Aspirateur extends Controller
         while (msg_receive($queue, 1, $msg_type, $max_msg_size, $msg)) {
 
             $this->keepConfigFile($param);
-
             $id_mysql_server = $msg->id;
 
             $data['id']        = $id_mysql_server;
             $data['microtime'] = microtime(true);
 
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
-
             $worker_pid = TMP."lock/worker/".$pid.".pid";
 
-            $fp = fopen($lock_file, "w+");
-            fwrite($fp, json_encode($data));
-            fflush($fp);            // libère le contenu avant d'enlever le verrou
-            fclose($fp);
-
+            file_put_contents($lock_file, json_encode($data));
             file_put_contents($worker_pid,$id_mysql_server);
-
-            /*
-            $fp2 = fopen($double_buffer, "w+");
-            fwrite($fp2, $id_mysql_server);
-            fflush($fp2);            // libère le contenu avant d'enlever le verrou
-            fclose($fp2);*/
 
             $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
@@ -1989,8 +2005,7 @@ GROUP BY C.ID, C.INFO;";
      */
     public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
-        if (! in_array($type, array('mysql', 'ssh')))
-        {
+        if (! in_array($type, array('mysql', 'ssh'))) {
             die('error');
         }
 
@@ -1998,8 +2013,6 @@ GROUP BY C.ID, C.INFO;";
         $service[$type.'_server'][$type.'_available'] = $available;
         $service[$type.'_server'][$type.'_ping']      = $ping;
         $service[$type.'_server'][$type.'_error']     = $error_msg;
-
-        Debug::debug($service);
 
         $services                                  = array();
         $services[date('Y-m-d H:i:s')][$id_mysql_server] = $service;
@@ -2119,6 +2132,19 @@ GROUP BY C.ID, C.INFO;";
 
             unlink($file_md5);
         }
+
+    }
+
+    public function testproxysql($param)
+    {
+        $db = Sgbd::sql('server_6612a9fcb1641');
+
+        $db->sql_query("SHOW VARIABLES");
+
+        Debug::parseDebug($param);
+
+        //Mysql::test2("127.0.0.1", 6033, "stnduser", "stnduser");
+
 
     }
 }

@@ -1023,4 +1023,19 @@ END IF;";
             return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
     }
+
+    static function test2($hostname, $port, $user, $password)
+    {
+        $link = mysqli_init();
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 15);
+        mysqli_real_connect($link,$hostname.":".$port, $user, $password);
+
+        if ($link) {
+            mysqli_query($link, "SHOW GLOBAL VARIABLES;");
+            mysqli_close($link);
+            return true;
+        } else {
+            return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+        }
+    }
 }
