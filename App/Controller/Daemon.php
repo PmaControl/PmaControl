@@ -16,11 +16,30 @@ class Daemon extends Controller
 {
     private $daemon = array(7, 9, 11, 12, 5, 13, 14);
 
-    public function index()
+    public function index($param)
     {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+        
+
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+        else {
+            $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+    
+            $this->di['js']->code_javascript('
+            $(document).ready(function(){
+                function refresh(){
+                    var myURL = GLIAL_LINK+"worker/index"+"/ajax:true";
+                    $("#worker-index").load(myURL);
+                }
+
+                var intervalId = window.setInterval(function(){
+                    refresh()  
+                  }, 300);
+            });');
+        }
 
         $sql = "SELECT * from daemon_main order by id";
         $res = $db->sql_query($sql);
@@ -34,35 +53,6 @@ class Daemon extends Controller
                 $arr['nb_msg'] = "N/A";
             }
             $data['daemon'][] = $arr;
-        }
-
-        $data['worker'] = array();
-
-        $sql2 = "SELECT b.*,a.name,a.worker_path  FROM daemon_main a
-            INNER JOIN daemon_worker b ON a.id = b.id_daemon_main
-            ORDER BY a.id, b.pid";
-        $res2 = $db->sql_query($sql2);
-        while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-
-
-            $pid_file        = TMP."lock/".$arr['worker_path']."/".$arr['pid'].".pid";
-            $arr['pid_file'] = $pid_file;
-
-            if (file_exists($pid_file)) {
-                $arr['id_proxysql'] = file_get_contents($pid_file);
-            } else {
-                $arr['id_proxysql'] = "...";
-            }
-
-            $log_file = TMP."log/worker_".$arr['id_daemon_main']."_".$arr['id_daemon_main'].".log";
-            if (file_exists($log_file)) {
-                $arr['log']      = $log_file;
-                $arr['filesize'] = filesize($log_file);
-            } else {
-                $arr['log']      = '';
-                $arr['filesize'] = 0;
-            }
-            $data['worker'][] = $arr;
         }
 
         $this->set('data', $data);

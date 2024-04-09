@@ -326,6 +326,7 @@ PARTITION BY RANGE (to_days(`date`))
   `id_mysql_server` int(11) NOT NULL,
   `id_ts_file` int(11) NOT NULL,
   `date` datetime NOT NULL,
+  `is_listened` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`,`date`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT

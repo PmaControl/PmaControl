@@ -59,7 +59,6 @@ class Listener extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
 
             $this->updateDatabase(array($ob->id_mysql_server, $ob->id_ts_file, $ob->min_date));
-        
             $this->updateListener(array($ob->id_mysql_server, $ob->id_ts_file, $ob->min_date));
         }
 
@@ -125,6 +124,8 @@ class Listener extends Controller
         {
             $dbs[] = $ob2->schema_name;
         }
+
+        Debug::debug($dbs);
 
         $res = Extraction::display(array('schema_list'), array($id_mysql_server), array($date));
         $data = json_decode($this->extract($res)['schema_list'], true);

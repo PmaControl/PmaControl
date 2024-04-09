@@ -99,7 +99,7 @@ class Graphviz
         
         $return = '';
         // define color
-        $return = 'node[shape=none fontsize=8 fontname="arial" ranksep=0 splines=true overlap=true];'.PHP_EOL;
+        $return = "node[shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
         
         //
         $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
@@ -172,7 +172,7 @@ class Graphviz
         $ret = 'digraph structs {rankdir=LR; splines="compound"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
         $ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;
-        $ret .= 'node [shape=none  fontname="arial"];'.PHP_EOL;
+        $ret .= 'node [shape=none  fontname = "Arial"];'.PHP_EOL;
             //fwrite($fp, "nodesep=2;".PHP_EOL);
         return $ret;
     }

@@ -241,13 +241,10 @@ class Agent extends Controller {
 
             while ($ob = $db->sql_fetch_object($res)) {
 
-
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
                 $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
 
-               
-                
                 $pid = shell_exec($cmd);
                 $this->logger->debug("{pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
 
@@ -256,14 +253,14 @@ class Agent extends Controller {
 
             Debug::debug("refresh time : " . $refresh_time);
 
-
             shell_exec('date=$(date "+%Y-%m-%d %H:%M:%S") && echo "[${date}] $@" >> '.TMP.'log/run.'.$id.'.log');
 
             // in case of mysql gone away, like this daemon restart when mysql is back
             Sgbd::sql(DB_DEFAULT)->sql_close();
 
             if (empty($refresh_time)) {
-                $refresh_time = 60;
+                //$refresh_time = 60;
+                usleep(100);
             }
 
             sleep($refresh_time);

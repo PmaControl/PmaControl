@@ -3,14 +3,40 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-//use \Glial\Cli\Color;
-use \Glial\Security\Crypt\Crypt;
-use App\Library\Extraction;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
-use \App\Library\Mysql as Mysql2;
+
+
+/*
+
+
+
+WITH z as (select hostname, port, max(time_start_us) as time_start_us  from mysql_server_read_only_log group by hostname,port)
+SELECT a.* FROM mysql_server_read_only_log a INNER JOIN z ON a.hostname = z.hostname AND a.time_start_us = z.time_start_us;
+
+hostname,port, read_only, error
++-------------+------+------------------+-----------------+-----------+-------+
+| hostname    | port | time_start_us    | success_time_us | read_only | error |
++-------------+------+------------------+-----------------+-----------+-------+
+| 10.68.68.18 | 3306 | 1712519327567973 | 6710            | 0         | NULL  |
+| 10.68.68.19 | 3306 | 1712519327568169 | 6603            | 1         | NULL  |
+| 10.68.68.20 | 3306 | 1712519327568212 | 6532            | 1         | NULL  |
++-------------+------+------------------+-----------------+-----------+-------+
+
+
+
+
+
+metrics classique
+select * from stats.stats_memory_metrics;
+select * from global_variables;
+select * from stats_mysql_global;
+
+=> explode by server 
+select * from stats_mysql_connection_pool
+
+*/
 
 class ProxySQL extends Controller
 {
@@ -21,12 +47,20 @@ class ProxySQL extends Controller
     //var $database = array('main', )
     //var $exclude_table = array('reset');
 
-    public function main()
+    public function main($param)
     {
 
-        $db           = Sgbd::sql(DB_DEFAULT);
-        $this->title  = __("Hardware");
-        $this->ariane = " > ".$this->title;
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM `proxysql_server` ORDER BY display_name";
+        $res = $db->sql_query($sql);
+
+        $data = array();
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['proxysql'][] = $arr;
+        }
+        $this->set('data', $data);
     }
     /*
      * Add proxySQL (Admin interface)
@@ -36,9 +70,25 @@ class ProxySQL extends Controller
 
     public function add()
     {
-        $db           = Sgbd::sql(DB_DEFAULT);
-        $this->title  = __("Hardware");
-        $this->ariane = " > ".$this->title;
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            debug($_POST);
+
+            if (Mysql::test($_POST['proxysql_server']['hostname'],$_POST['proxysql_server']['port'], $_POST['proxysql_server']['login'], $_POST['proxysql_server']['password']))
+            {
+
+                debug('login ok');
+                debug($_POST);
+
+                $db->sql_save($_POST);
+            }
+
+
+        }
+
+        
     }
     /*
      * Test if it's ProxySQL Admin Module
@@ -254,6 +304,8 @@ class ProxySQL extends Controller
 
         $data = array();
         while ($arr  = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            
+            $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'] , $arr['password']);
             $data['proxysql'][] = $arr;
         }
 
@@ -274,5 +326,24 @@ class ProxySQL extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
 
         }
+    }
+
+
+    static function getServers($hostname, $port, $login , $password)
+    {
+        $link = mysqli_connect($hostname.":".$port, $login, trim($password));
+
+        $sql = "select * from runtime_mysql_servers;";
+        $res = mysqli_query($link, $sql);
+        
+        $ret = array();
+
+        while($arr = mysqli_fetch_array($res, MYSQLI_ASSOC)){
+            $ret[] = $arr;
+        }
+
+        mysqli_close($link);
+
+        return $ret;
     }
 }
