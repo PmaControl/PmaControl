@@ -51,7 +51,7 @@ foreach ($data['servers'] as $id_mysql_server => $gg) {
 
     $server = $gg[''];
 
-    if ($server['is_proxysql'] === "1")
+    if (!empty($server['is_proxysql']) && $server['is_proxysql'] === "1")
     {
         continue;
     }

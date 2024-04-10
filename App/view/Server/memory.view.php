@@ -119,6 +119,11 @@ if (!empty($data['variables'])) {
             continue;
         }
 
+        if (! isset($variable['query_cache_size']))
+        {
+            $variable['query_cache_size'] = 0;
+        }
+
         $variable['innodb_buffer_pool_size']         = $variable['innodb_buffer_pool_size'] ?? 0;
         $variable['innodb_additional_mem_pool_size'] = $variable['innodb_additional_mem_pool_size'] ?? 0;
         $variable['innodb_log_buffer_size']          = $variable['innodb_log_buffer_size'] ?? 0;

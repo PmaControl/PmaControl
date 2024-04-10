@@ -46,6 +46,9 @@ class Integrate extends Controller
 
     public function evaluate($param)
     {
+        $TIME = time();
+        
+        
         Debug::parseDebug($param);
         Debug::debug($param);
 
@@ -68,13 +71,10 @@ class Integrate extends Controller
 
         $files = glob(TMP . "tmp_file/" . $memory_file . "_*");
 
-
+        
         if (empty($files)) {
+            usleep(100);
             return true;
-        } else if (count($files) > 20) {
-            usleep(500);
-        } else {
-            sleep(1);
         }
 
         array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
@@ -96,14 +96,35 @@ class Integrate extends Controller
         }
 
         foreach ($files as $file) {
-            $file_parsed++;
+            $elems = explode('/', $file);
+            $file_name = end($elems);
 
+            $_elems = explode('_', $file_name);
+            $timestamp = end($_elems);
+
+            if ($TIME == $timestamp){
+                $this->logger->debug("##### We don't take this file :".$file_name. " => $TIME");
+                continue;
+            }
+
+            /*
+            $fp = fopen($file, 'r+');
+            if(!flock($fp, LOCK_EX)) {
+                $this->logger->critical("##### FILE ALREADY OPEN :".$file_name. " => $TIME");
+                continue;
+            }
+            fclose($fp);
+            */
+
+            $file_parsed++;
             Debug::debug($file, " [FILE] ");
 
             $storage = new StorageFile($file); // to export in config ?
             $data    = new SharedMemory($storage);
 
             $elems = $data->getData();
+
+            Debug::debug($elems,"data");
 
             foreach ($elems as $elem) {
                 foreach ($elem as $date => $server) {
@@ -523,6 +544,7 @@ class Integrate extends Controller
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
+        //usleep(500);
         $this->logger->info('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
         while ($ob = $db->sql_fetch_object($res)) {
             $this->evaluate(array($ob->file_name));
@@ -536,6 +558,10 @@ class Integrate extends Controller
 
     public function feedMysqlVariable($data)
     {
+
+        //to upgrade 
+        //        => SELECT if different update and then update
+
         $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
         Debug::sql($sql);
