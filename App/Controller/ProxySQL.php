@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use \App\Library\Extraction;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -23,9 +24,6 @@ hostname,port, read_only, error
 | 10.68.68.19 | 3306 | 1712519327568169 | 6603            | 1         | NULL  |
 | 10.68.68.20 | 3306 | 1712519327568212 | 6532            | 1         | NULL  |
 +-------------+------+------------------+-----------------+-----------+-------+
-
-
-
 
 
 metrics classique
@@ -78,17 +76,12 @@ class ProxySQL extends Controller
 
             if (Mysql::test($_POST['proxysql_server']['hostname'],$_POST['proxysql_server']['port'], $_POST['proxysql_server']['login'], $_POST['proxysql_server']['password']))
             {
-
                 debug('login ok');
                 debug($_POST);
 
                 $db->sql_save($_POST);
             }
-
-
         }
-
-        
     }
     /*
      * Test if it's ProxySQL Admin Module
@@ -306,7 +299,11 @@ class ProxySQL extends Controller
         while ($arr  = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             
             $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'] , $arr['password']);
+            $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
+            $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
+            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'];
             $data['proxysql'][] = $arr;
+
         }
 
 
@@ -345,5 +342,54 @@ class ProxySQL extends Controller
         mysqli_close($link);
 
         return $ret;
+    }
+
+
+    /*
+    USerd to link front end server 
+
+    */
+    public function associate($param)
+    {
+        Debug::parseDebug($param);
+        $id_proysql_server = (int) $param[0] ?? 0;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        if (! empty($id_proysql_server)) {
+            $sql = "SELECT * FROM `proxysql_server` WHERE `id`=".$id_proysql_server.";";
+        }
+        else {
+            $sql = "SELECT * FROM `proxysql_server` WHERE `id_mysql_server` IS NULL;";
+        }
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $proxy_admin = Sgbd::sql('proxysql_'.$ob->id);
+            $ip = $ob->hostname;
+
+            $sql2 = "SELECT * FROM `runtime_global_variables` where `variable_name` = 'mysql-interfaces';";
+            Debug::sql($sql2);
+            $res2 = $proxy_admin->sql_query($sql2);
+
+            while($ob2 = $proxy_admin->sql_fetch_object($res2)) {
+                $port = (int) explode(":", $ob2->variable_value)[1];
+            }
+
+            if (!empty($ip) && !empty($port))
+            {
+                $sql3 = "SELECT `id` FROM `mysql_server` WHERE `ip`='".$ip."' and `port`=".$port." ans is_proxy=1;";
+                Debug::sql($sql3);
+                $res3 = $db->sql_query($sql3);
+
+                while($ob3 = $db->sql_fetch_object($res3)) {
+                    $sql4 = "UPDATE `proxysql_server` SET `id_mysql_server`=".$ob3->id." WHERE `id`=".$ob->id.";";
+                    Debug::sql($sql4);
+                    $db->sql_query($sql4);
+                }
+            }
+        }
     }
 }

@@ -195,7 +195,6 @@ class Debug
             self::head();
 
             if (!empty($var)) {
-
                 if (IS_CLI) {
                     echo Color::getColoredString($var, "grey", "blue")." ";
                 } else {
@@ -210,7 +209,7 @@ class Debug
             } else {
                 $sql = str_replace("\n\n", "", $sql);
                 $sql = preg_replace("/ {2,}/", " ", $sql);
-                $sql = \SqlFormatter::format($sql);
+                $sql = \SqlFormatter::highlight($sql);
                 echo trim($sql)."\n";
             }
         }

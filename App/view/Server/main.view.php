@@ -236,8 +236,8 @@ if (!empty($data['servers'])) {
 
         echo '<td style="'.$style.'">';
 
-        if (!empty($extra['ping'])) {
-            echo Format::ping($extra['ping']);
+        if (!empty($extra['mysql_ping'])) {
+            echo Format::ping($extra['mysql_ping']);
         }
 
         echo '</td>';

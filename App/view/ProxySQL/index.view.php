@@ -1,9 +1,6 @@
 <?php
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
+use \App\Library\Display;
 
 
 //debug($data['proxysql']);
@@ -20,30 +17,94 @@ if ( ! empty($data['proxysql']))
     foreach ($data['proxysql'] as $proxysql) {
         echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
 
+
+        
+        echo '<div class="col-md-5">';
+
+
+
+        echo '<div class="row">';
         echo '<div class="col-md-1 text-center" style="display: flex; justify-content: center; align-items: center; ">';
-        echo '<img src="'.IMG.'icon/proxysql.png" height="96px" width="96px">';
+        echo '<img src="'.IMG.'icon/proxysql.png" height="48px" width="48px">';
         echo '</div>';
 
-        echo '<div class="col-md-2">';
-        echo '<b><a href="">'.$proxysql['hostname'].":".$proxysql['port']."</a></b>";
+        echo '<div class="col-md-5">';
+        echo 'ProxySQL Admin <b><a href="">'.$proxysql['hostname'].":".$proxysql['port']."</a></b>";
         echo '</div>';
 
-        echo '<div class="col-md-1">';
-        echo $proxysql['login'];
+        echo '<div class="col-md-5">';
+        echo "Login: ".$proxysql['login'];
+ 
+        echo " - Password : ".$proxysql['password'];
+        echo '</div>';
+        
+        echo '</div>';
+        echo '<div class="row">&nbsp;</div>';
+        echo '<div class="row">';
+        //boutton
+        
+        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
+
+        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-warning">'.__('Monitor').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Cluster').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Logs').'</a> ';
         echo '</div>';
 
-        echo '<div class="col-md-1">';
-        echo $proxysql['password'];
+        echo '<div class="row">&nbsp;</div>';
+        
+
+        echo '<div class="row">';
+
+        //frontend
+        echo '<div class="panel panel-primary">';
+        echo '<div class="panel-heading">';
+        echo '<h3 class="panel-title">'.__('Frontend').'</h3>';
+        echo '</div>';
+
+        echo '<table class="table table-condensed table-bordered table-striped" id="table">';
+        echo '<tr>';
+
+        echo '<th>'.__("Hostname").'</th>';
+        echo '<th>'.__("Status").'</th>';
+        echo '</tr>';
+
+        echo '<tr>';
+
+        echo '<td>'.Display::srv($proxysql['id_mysql_server']).'</td>';
+
+        if (empty($proxysql['mysql_available']))
+        {
+            echo '<td><big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big></td>';
+        }
+        elseif ($proxysql['mysql_available'] === "1"){
+            echo '<td><big><span class="label label-success">'.__("ONLINE").'</span></big></td>';
+        }
+
+        
+        echo '</tr>';
+
+        echo '</table>';
+        echo '</div>';
+
+        echo '</div>';
+
+
+
+
         echo '</div>';
 
         echo '<div class="col-md-7">';
 
 
-?>
-        <div class="panel panel-primary">
-    <div class="panel-heading">
-        <h3 class="panel-title"><?= __('Backend') ?></h3>
-    </div><?php
+
+
+        //backend
+        echo '<div class="panel panel-primary">';
+        echo '<div class="panel-heading">';
+        echo '<h3 class="panel-title">'.__('Backend').'</h3>';
+        echo '</div>';
+
         echo '<table class="table table-condensed table-bordered table-striped" id="table">';
         echo '<tr>';
         echo '<th>'.__("Hostgroup").'</th>';
@@ -60,12 +121,12 @@ if ( ! empty($data['proxysql']))
             
             switch($server['status'])
             {
-                case 'SHUNNED': $class='danger';$class='primary'; break;
+                case 'SHUNNED': $class='primary'; break;
                 case 'ONLINE': $class='success'; break;
+                case 'OFFLINE_HARD': $class='danger'; break;
             }
 
-
-            echo '<td><big><span class="label label-'.$class.'">'.$server['status'].'</span></big></td>';
+            echo '<td><big><span class="label label-'.$class.'">'.__($server['status']).'</span></big></td>';
             echo '</tr>';
         }
 
