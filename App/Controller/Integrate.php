@@ -95,7 +95,7 @@ class Integrate extends Controller
             $mysql_variable = array();
         }
 
-        foreach ($files as $file) {
+        foreach ($files as $id_file => $file) {
             $elems = explode('/', $file);
             $file_name = end($elems);
 
@@ -104,6 +104,7 @@ class Integrate extends Controller
 
             if ($TIME == $timestamp){
                 $this->logger->debug("##### We don't take this file :".$file_name. " => $TIME");
+                unset($files[$id_file]);
                 continue;
             }
 
@@ -290,6 +291,13 @@ class Integrate extends Controller
             }
         }
 
+        if (count($files) === 0)
+        {
+            usleep(300000);
+            $this->logger->debug("*********** No file to parse");
+            return true;
+        }
+
         if (count($variables_to_insert) > 0) {
 
             Debug::checkPoint("variables");
@@ -302,6 +310,8 @@ class Integrate extends Controller
             if (!empty($slave)) {
                 $this->insert_slave_value($slave);
             }
+
+            //$this->logger->debug("FILE : ".$this->memory_file);
 
             switch ($this->memory_file) {
                 case self::ANSWER:
@@ -488,6 +498,7 @@ class Integrate extends Controller
             }
         }
 
+        //probability to have at asame second ? => it's happened
         $sql2 = "INSERT INTO `ts_date_by_server` (`id_mysql_server`,`id_ts_file`, `date`) VALUES ";
         $sql4 = $sql2 . implode(",\n", $sql3) . ";";
 
@@ -564,6 +575,9 @@ class Integrate extends Controller
 
         $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
+        //$this->logger->debug("SQL : $sql");
+        
+
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -571,7 +585,7 @@ class Integrate extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
         }
-        $in_base[1]['jexistedansmesreve'] = "dream!";
+        //$in_base[1]['jexistedansmesreve'] = "dream!";
 
         foreach ($data as $id_mysql_server => $err) {
 
@@ -580,16 +594,27 @@ class Integrate extends Controller
                 continue;
             }
 
+            //move to special function
+
             //INSERT
             $insert[$id_mysql_server] = array_diff_key($data[$id_mysql_server], $in_base[$id_mysql_server]);
+
+            //$this->logger->debug("INSERT : ".print_r($insert[$id_mysql_server]));
 
             //DELETE
             $delete[$id_mysql_server] = array_diff_key($in_base[$id_mysql_server], $data[$id_mysql_server]);
 
             //UPDATE
-            $val_a[$id_mysql_server]  = array_diff($data[$id_mysql_server], $in_base[$id_mysql_server]);
-            $val_b[$id_mysql_server]  = array_diff($in_base[$id_mysql_server], $data[$id_mysql_server]);
+            $val_a[$id_mysql_server]  = array_diff_assoc($data[$id_mysql_server], $in_base[$id_mysql_server]);
+            //$this->logger->debug("val A : ".print_r($val_a[$id_mysql_server]));
+
+            $val_b[$id_mysql_server]  = array_diff_assoc($in_base[$id_mysql_server], $data[$id_mysql_server]);
+            //$this->logger->debug("val B : ".print_r($val_a[$id_mysql_server]));
+
+
             $update[$id_mysql_server] = array_intersect_key($val_a[$id_mysql_server], $val_b[$id_mysql_server]);
+
+            //$this->logger->notice("Variable has been updated : ".print_r($update[$id_mysql_server]));
         }
 
         //insert
@@ -605,6 +630,7 @@ class Integrate extends Controller
             if (!empty($elem_ins)) {
                 $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
                 Debug::sql($sql);
+                //$this->logger->debug("INSERT SQL : $sql");
                 $db->sql_query($sql);
             }
         }
@@ -621,6 +647,7 @@ class Integrate extends Controller
             if (!empty($elem_del)) {
                 $sql = "DELETE FROM global_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
                 Debug::sql($sql);
+                //$this->logger->debug("DELETE SQL : $sql");
                 $db->sql_query($sql);
             }
         }
@@ -633,12 +660,19 @@ class Integrate extends Controller
                 foreach ($variables as $variable => $value) {
                     $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
                 }
+                $var_to_update = array_keys($variables);
+                $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
             }
             if (!empty($elem_upt)) {
                 $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
                 Debug::sql($sql);
+                //$this->logger->debug("UPDATE SQL : $sql");
                 $db->sql_query($sql);
             }
         }
+        //end to move
+
+
+
     }
 }
