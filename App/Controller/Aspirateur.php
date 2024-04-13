@@ -275,20 +275,26 @@ class Aspirateur extends Controller
 
         /**** */
         //time server
-        $sql ="WITH a AS (
-            SELECT TIMESTAMPDIFF(SECOND, MIN(FIRST_SEEN), MAX(LAST_SEEN)) AS seconds_difference
-            FROM performance_schema.events_statements_summary_by_digest
-        )
-        SELECT SUM((AVG_TIMER_WAIT / 1000000000000) * COUNT_STAR) / (SELECT seconds_difference FROM a) AS time_in_seconds
-        FROM performance_schema.events_statements_summary_by_digest;";
 
-        $res = $mysql_tested->sql_query($sql);
-        while($ob = $mysql_tested->sql_fetch_object($res)){
-            $move_to_status['time_server'] = $ob->time_in_seconds;
+        /*
+        $this->logger->critical("version ". $var['variables']['version']);
+        if (version_compare($var['variables']['version'], '8', ">="))
+        {
+            $sql ="WITH a AS (
+                SELECT TIMESTAMPDIFF(SECOND, MIN(FIRST_SEEN), MAX(LAST_SEEN)) AS seconds_difference
+                FROM performance_schema.events_statements_summary_by_digest
+            )
+            SELECT SUM((AVG_TIMER_WAIT / 1000000000000) * COUNT_STAR) / (SELECT seconds_difference FROM a) AS time_in_seconds
+            FROM performance_schema.events_statements_summary_by_digest;";
+    
+            $res = $mysql_tested->sql_query($sql);
+            while($ob = $mysql_tested->sql_fetch_object($res)){
+                $move_to_status['time_server'] = $ob->time_in_seconds;
+            }
         }
-
-
         /****** */
+
+        
         $data = array();
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
