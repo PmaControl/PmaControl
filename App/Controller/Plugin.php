@@ -15,10 +15,13 @@ use \Glial\Sgbd\Sgbd;
 class Plugin extends Controller {
 
     public function index($param) {
-        $LOCALJSONFILE = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/plugin.json";
+        $LOCALJSONFILE = ROOT . "/plugins/plugin.json";
         $PMAPLUGINURL = "http://localhost/plugins/"; //Il faut mettre dans un fichier de conf
         $JSONURL = $PMAPLUGINURL . "extracted/plugin.json";
 
+        debug($LOCALJSONFILE);
+
+        /*
         if ((!file_exists($LOCALJSONFILE)) || (filectime($LOCALJSONFILE) < date_timestamp_get(date_create('-1 day')))) {
             if ($file = file_get_contents($JSONURL)) {
                 $Array = json_decode($file, true);
@@ -28,7 +31,17 @@ class Plugin extends Controller {
                 fwrite($fp, $file);
                 fclose($fp);
             }
+        }*/
+        if (file_exists($LOCALJSONFILE))
+        {
+            $file = file_get_contents($LOCALJSONFILE);
+            $plugins = json_decode($file, true);
+
+            debug($plugins);
+            $this->jsontodatabase($file);
+
         }
+
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -70,7 +83,7 @@ class Plugin extends Controller {
 
             foreach ($line as $key2 => $line2):
 
-                $date = DateTime::createFromFormat('d/m/Y', $line2['CreationDate']);
+                $date = \DateTime::createFromFormat('d/m/Y', $line2['CreationDate']);
 
                 $Query = "SELECT * FROM plugin_main WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                 $res = $db->sql_query($Query);

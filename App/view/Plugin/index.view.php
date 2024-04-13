@@ -47,9 +47,9 @@ if (!is_null($data))
             endforeach;
 
             foreach ($newdata as $key => $line):
-                $newArray[$key]=$newdata[$key];
-                $newArray[$key]["Version"]=$newdata2[$key]["Version"];
-                $newArray[$key]["OldVersion"]=$newdata2[$key]["OldVersion"];
+                $newArray[$key] = $newdata[$key];
+                $newArray[$key]["Version"] = $newdata2[$key]["Version"];
+                $newArray[$key]["OldVersion"] = $newdata2[$key]["OldVersion"];
                 
                 if (isset( $newdata2[$key]["CurrentVersion"]))
                 {

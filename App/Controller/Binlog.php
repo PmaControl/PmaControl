@@ -393,7 +393,7 @@ class Binlog extends Controller {
             INNER JOIN client b ON a.id_client = b.id
             INNER JOIN environment c ON a.id_environment = c.id
             LEFT JOIN binlog_max d on a.id = d.id_mysql_server
-            WHERE 1 " . self::getFilter() . "
+            WHERE 1 " . self::getFilter() . " AND a.is_proxy = 0
             ORDER BY display_name";
 
         $res = $db->sql_query($sql);
