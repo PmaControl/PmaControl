@@ -39,6 +39,21 @@ class Table
         {
             $db = Mysql::getDbLink($id_mysql_server);
 
+            //to prevent drop table after get FKs
+            
+            /*   => to move at start if drop table 
+            $sql = "SELECT * FROM information_schema.tables WHERE table_schema = '".$table_schema."' AND table_name = '".$table_name."';";
+            $res = $db->sql_query($sql);
+
+            $num = $db->sql_num_rows($res);
+
+            if ($num == "0")
+            {
+                self::$table[$id_mysql_server][$table_schema][$table_name];
+                return true;
+            }
+            */
+
             $sql = "DESCRIBE `".$table_schema."`.`".$table_name."`;";
             Debug::sql($sql);
 

@@ -51,7 +51,8 @@ class Control extends Controller
         // connect to ssh to sql server
         //$ssh->
         // or local
-        $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\'');
+        $size = trim(shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\''));
+        Debug::debug($size, 'Size on /srv/mysql/data');
 
         $percent = substr($size, 0, -1);
 
@@ -214,6 +215,9 @@ class Control extends Controller
 
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
+
+
+        Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
         if ($this->checkSize() > $this->percent_max_disk_used) {
