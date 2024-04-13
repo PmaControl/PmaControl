@@ -57,6 +57,7 @@ echo '<th>'.__("User").'</th>';
 echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
+echo '<th>'.__("Time server").'</th>';
 echo '<th>'."general_log".'</th>';
 echo '<th>'."P_S".'</th>';
 echo '<th>'.__("Date refresh").'</th>';
@@ -168,6 +169,18 @@ if (!empty($data['servers'])) {
 
 
         echo '</td>';
+        echo '<td style="'.$style.'">';
+        if (!empty($data['extra'][$server['id']]['']['time_server'])) {
+            echo $data['extra'][$server['id']]['']['time_server'];
+        }
+        echo '</td>';
+
+
+
+        
+
+
+
         echo '<td style="'.$style.'">';
 
         if (!empty($data['extra'][$server['id']]['']['general_log'])) {

@@ -96,12 +96,11 @@ class Dot3 extends Controller
 
 
         $dot3 = array();
-        $dot3['dot3']['information'] = json_encode($data);
         $dot3['dot3']['date_generated'] = date('Y-m-d H:i:s');
         $dot3['dot3']['information'] = json_encode($data);
-        $dot3['dot3']['information'] = json_encode($data);
-        $dot3['dot3']['information'] = json_encode($data);
-        $dot3['dot3']['information'] = json_encode($data);
+
+        $db->sql_save($dot3);
+
 
         return $data;
     }
