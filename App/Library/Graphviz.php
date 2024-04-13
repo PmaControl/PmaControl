@@ -162,11 +162,21 @@ class Graphviz
                 $def['Type'] = substr($def['Type'],0,self::MAX_LENGTH)."...";
             }
 
+            $us = "";
+            $ue = "";
+
+            if ($def['Key'] === "PRI")
+            {
+                $us = "<u>";
+                $ue = "</u>";
+            }
+
+
             $return .=
                 '<tr>'
-                .'<td '.$bgcolor.' PORT="a'.$line.'" align="left" title="'.$def['Field'].'"><font color ="'.$forground_color.'">'.$def['Field'].'</font></td>'
-                .'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$def['Type'].'</font></td>'
-                .'<td '.$bgcolor.' PORT="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$def['Key'].'&nbsp;</font></td>'
+                .'<td '.$bgcolor.' PORT="a'.$line.'" align="left" title="'.$def['Field'].'"><font color ="'.$forground_color.'">'.$us.''.$def['Field'].''.$ue.'</font></td>'
+                .'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
+                .'<td '.$bgcolor.' PORT="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Key'].''.$ue.'&nbsp;</font></td>'
                 .'</tr>'.PHP_EOL;
             $line++;
         }
