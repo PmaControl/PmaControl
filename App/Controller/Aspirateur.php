@@ -245,16 +245,18 @@ class Aspirateur extends Controller
 
         }
         finally{
-            $available = empty($error_ori) ? 1 : 0;
-            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
-            $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." ".$error_msg." - is_available : ".$available." - ping : ".round($ping,6));
+            // case for Proxy  and Galera Cluster
+            if (!empty($IS_PROXY)) {
+                $available = empty($error_ori) ? 1 : 0;
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+                $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." ".$error_msg." - is_available : ".$available." - ping : ".round($ping,6));
 
-            // VERY important else we got error and we kill the worker and have to restart with a new one
-            if ($available === 0) {
-                return false;
+                // VERY important else we got error and we kill the worker and have to restart with a new one
+                if ($available === 0) {
+                    return false;
+                }
             }
         }
-
 
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
         //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
@@ -271,6 +273,22 @@ class Aspirateur extends Controller
             }
         }
 
+        /**** */
+        //time server
+        $sql ="WITH a AS (
+            SELECT TIMESTAMPDIFF(SECOND, MIN(FIRST_SEEN), MAX(LAST_SEEN)) AS seconds_difference
+            FROM performance_schema.events_statements_summary_by_digest
+        )
+        SELECT SUM((AVG_TIMER_WAIT / 1000000000000) * COUNT_STAR) / (SELECT seconds_difference FROM a) AS time_in_seconds
+        FROM performance_schema.events_statements_summary_by_digest;";
+
+        $res = $mysql_tested->sql_query($sql);
+        while($ob = $mysql_tested->sql_fetch_object($res)){
+            $move_to_status['time_server'] = $ob->time_in_seconds;
+        }
+
+
+        /****** */
         $data = array();
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
@@ -289,7 +307,6 @@ class Aspirateur extends Controller
             $var_temp['variables']['port']            = $var['variables']['port'];
             $var_temp['variables']['version']         = $var['variables']['version'];
             $var_temp['variables']['version_comment'] = $var['variables']['version_comment'];
-
             unset($var);
 
             $var = $var_temp;
@@ -328,7 +345,6 @@ class Aspirateur extends Controller
           }
          */
 
-
         $date[date('Y-m-d H:i:s')][$id_mysql_server] = $data;
 
         if ($mysql_tested->is_connected === false) {
@@ -337,7 +353,6 @@ class Aspirateur extends Controller
         }
 
         $export_variables = $this->isModified($id_mysql_server, $var,  $this->lock_variable);
-
 
         Debug::debug($date, "answer");
 
@@ -868,7 +883,7 @@ class Aspirateur extends Controller
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
                 $this->logger->debug("Add id_mysql_server:".$server['id']." to the queue ($queue_key)");
-                usleep($delay);
+                //usleep($delay);
             } else {
                 $this->logger->warning("could not add message to queue ($queue_key)");
             }
@@ -1843,22 +1858,9 @@ GROUP BY C.ID, C.INFO;";
         if ($err !== NULL) {
             $error_msg = $err['message'];
         }
+        // save error_msg in proper way
 
-
-        if (!empty($error_msg)) {
-            echo $name_server." : ".$error_msg."\n";
-
-            $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "UPDATE `proxysql_server` SET `error` ='".$db->sql_real_escape_string($error_msg)."',
-                `date_refresh` = '".date("Y-m-d H:i:s")."',
-                    `is_available` = 0 WHERE id =".$id_server;
-            Debug::sql($sql);
-
-            $db->sql_query($sql);
-            $db->sql_close();
-
-            return false;
-        }
+ 
 
         $var['proxysql_main_var'] = $mysql_tested->getProxysqlVariables();
         $md5                      = md5(json_encode($var));

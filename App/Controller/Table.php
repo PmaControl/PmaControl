@@ -141,7 +141,7 @@ class Table extends Controller {
         if (!empty(self::$main_table['table_par_colonne']) && self::$main_table['table_par_colonne'] > 1 )
         {
             $cluster['color'] = Graphviz::getColor($table_name);
-            $cluster['bgcolor'] = "white";
+            $cluster['bgcolor'] = $this->diluerCouleur($cluster['color'], 85) ;
             $cluster['penwidth'] = "4";
             $cluster['tooltip'] = $table_schema.".".$table_name;
             
@@ -577,5 +577,27 @@ class Table extends Controller {
         //liste des tables d'un DB 
 
 
+    }
+
+    function diluerCouleur($hex, $percent) {
+        // Assurez-vous que le format hexadécimal est valide
+        if (strlen($hex) != 7 || $hex[0] != '#') {
+            return 'Format de couleur invalide.';
+        }
+    
+        // Convertir les composantes hexadécimales en valeurs décimales
+        $r = hexdec(substr($hex, 1, 2));
+        $g = hexdec(substr($hex, 3, 2));
+        $b = hexdec(substr($hex, 5, 2));
+    
+        // Calculer la nouvelle couleur en augmentant la luminosité
+        $nouveau_r = min(255, $r + (255 - $r) * $percent / 100);
+        $nouveau_g = min(255, $g + (255 - $g) * $percent / 100);
+        $nouveau_b = min(255, $b + (255 - $b) * $percent / 100);
+    
+        // Reconvertir les valeurs RGB en hexadécimal
+        $nouveau_hex = sprintf("#%02x%02x%02x", $nouveau_r, $nouveau_g, $nouveau_b);
+    
+        return $nouveau_hex;
     }
 }

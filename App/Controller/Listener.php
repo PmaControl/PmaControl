@@ -202,6 +202,83 @@ class Listener extends Controller
             }
         }
     }
+
+
+    public function test1($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+        $res = Extraction::display(array('schema_list'), array($id_mysql_server));
+        Debug::debug($res);
+    }
+
+    public function test2($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT 
+        a.id_mysql_server, 
+        a.id_ts_file, 
+        MIN(a.date) AS min_date, 
+        MAX(a.date) AS max_date, 
+        COUNT(*) AS cpt
+    FROM 
+        ts_date_by_server a
+    INNER JOIN (
+        SELECT id_mysql_server, id_ts_file, last_date_listener 
+        FROM ts_max_date 
+        WHERE id_ts_file = 9
+    ) b ON a.id_mysql_server = b.id_mysql_server AND a.id_ts_file = b.id_ts_file
+    WHERE 
+        a.date > b.last_date_listener
+    GROUP BY 
+        a.id_mysql_server,
+        a.id_ts_file;";
+
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            Debug::debug($arr,'RESULT');
+        }
+    }
+
+    public function test3($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql2 = "SELECT * FROM ts_max_date WHERE id_ts_file = 9 AND `id_mysql_server`=".$id_mysql_server.";";
+        Debug::sql($sql2);
+        $res2 = $db->sql_query($sql2);
+        while($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+        {
+            Debug::debug($arr);
+        }
+    }
+
+    public function test4($param)
+    {
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_mysql_server = $param[0];
+
+        $sql2 = "SELECT `schema_name` FROM `mysql_database` WHERE `id_mysql_server`=".$id_mysql_server.";";
+        Debug::sql($sql2);
+        $res2 = $db->sql_query($sql2);
+
+        $dbs = array();
+        while($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+        {
+            $dbs[] = $arr;
+        }
+
+        Debug::debug($dbs, "mysql_database");
+    }
 }
 
 /****

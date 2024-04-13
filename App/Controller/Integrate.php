@@ -79,7 +79,8 @@ class Integrate extends Controller
 
         array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
 
-        Debug::debug($files);
+        //$this->logger->emergency(print_r($files));
+        
 
         $variables           = $this->get_variable();
         $variables_to_insert = array();
@@ -102,12 +103,14 @@ class Integrate extends Controller
             $_elems = explode('_', $file_name);
             $timestamp = end($_elems);
 
-            if ($TIME == $timestamp){
+
+            $TIME2 = $TIME + 1; // to prevent some duplicate key maybe ?
+
+            if ($TIME == $timestamp || $TIME2 == $timestamp){
                 $this->logger->debug("##### We don't take this file :".$file_name. " => $TIME");
                 unset($files[$id_file]);
                 continue;
             }
-
             /*
             $fp = fopen($file, 'r+');
             if(!flock($fp, LOCK_EX)) {
