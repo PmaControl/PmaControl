@@ -90,10 +90,17 @@ class Graphviz
             $table_rows = $ob->table_rows;
         }
 
-        $number_rows = "~".number_format($table_rows, 0, ',', ' ');
-        if ($table_rows < self::MAX_ROWS_TO_REQUEST) {
-            $number_rows = number_format(Table::getCount($param), 0, ',', ' ');
+        if (isset($table_rows))
+        {
+            $number_rows = "~".number_format($table_rows, 0, ',', ' ');
+            if ($table_rows < self::MAX_ROWS_TO_REQUEST) {
+                $number_rows = number_format(Table::getCount($param), 0, ',', ' ');
+            }
         }
+        else{
+            $number_rows = "N/A";
+        }
+
 
         $definitions = Table::getTableDefinition(array($id_mysql_server, $table_schema, $table_name));
         
@@ -101,13 +108,29 @@ class Graphviz
         // define color
         $return = "node[shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
         
+
+        $forground_color = '#000000';
+        if (static::getBrightness($color) < 100) {
+            $forground_color = '#FFFFFF';
+        }
+
         //
         $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
         $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
         label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
-        $return .= '<tr><td PORT="title" colspan="3" bgcolor="#000000"  align="center"><font color="#ffffff">'.$table_name.'</font></td></tr>';
-        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
+        $return .= '<tr><td PORT="title" colspan="3" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
+
+        if (empty($engine))
+        {
+            //view
+            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
+        }
+        else
+        {
+            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
+        }
+        
         $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
 
         $return .=
