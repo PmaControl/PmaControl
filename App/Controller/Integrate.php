@@ -18,7 +18,7 @@ use \Monolog\Handler\StreamHandler;
 class Integrate extends Controller
 {
     use \App\Library\Filter;
-    const MAX_FILE_AT_ONCE = 20;
+    const MAX_FILE_AT_ONCE = 4;
 
     /* not used ? have to remove */
     const VARIABLES = "variable";
@@ -165,7 +165,6 @@ class Integrate extends Controller
                                                     continue;
                                                 }
 
-
                                                 // si les références n'existe pas on enregistre pas (ça évite les collisions et d'autres problèmes à gérer )
                                                 // et on est pas à un run prêt, le but est de rester performant et exhaustif
 
@@ -207,6 +206,11 @@ class Integrate extends Controller
                                                     }
 
                                                     if ($variables[$type_metrics][$slave_variable]['type'] == "DOUBLE") {
+
+                                                        if ($slave_value === "") {
+                                                            $slave_value = 0;
+                                                        }
+
                                                         $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
                                                             . '"' . $connection_name . '", '
                                                             . $variables[$type_metrics][$slave_variable]['id'] . ', "'
@@ -237,12 +241,14 @@ class Integrate extends Controller
                                                 } elseif ($value < 0) {
                                                     continue;
                                                 }
-                                            }
-
-                                            if ($variables[$type_metrics][$variable]['type'] == "TEXT") {
+                                            }elseif ($variables[$type_metrics][$variable]['type'] == "TEXT") {
                                                 $value = $db->sql_real_escape_string($value);
                                             }
-
+                                            elseif($variables[$type_metrics][$variable]['type'] == "DOUBLE") {
+                                                if ($value === ""){ //fix for slave_heartbeat_period with Percona 5.6
+                                                    $value = 0;
+                                                }
+                                            }
                                             $insert[$variables[$type_metrics][$variable]['type']][] = '(' . $id_server . ','
                                                 . $variables[$type_metrics][$variable]['id'] . ', "'
                                                 . $date . '", "'
@@ -257,11 +263,8 @@ class Integrate extends Controller
 
                                             if (empty($var_index[$type_metrics][$variable])) {
                                                 Debug::debug($insert, "val to insert in ts_variable");
-
                                                 $var_index[$type_metrics][$variable] = 1;
                                                 $variables_to_insert[]               = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
-
-
                                                 self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
                                             }
                                         }
@@ -282,7 +285,6 @@ class Integrate extends Controller
                 $this->logger->emergency('Two process in same time for integrate data, please remove one');
                 throw new \Exception("PMACTRL-647 : deux integrateur lancer en même temps (suprimer le pas bon)");
             }
-
 
             if ($file_parsed >= self::MAX_FILE_AT_ONCE) {
                 break;
@@ -307,22 +309,6 @@ class Integrate extends Controller
 
             if (!empty($slave)) {
                 $this->insert_slave_value($slave);
-            }
-
-            //$this->logger->debug("FILE : ".$this->memory_file);
-
-            switch ($this->memory_file) {
-                case self::ANSWER:
-                    //$this->putServerMySQLAvailable($id_servers);
-                    break;
-
-                case self::SYSTEM:
-                    //$this->putServerSshAvailable($id_servers);
-                    break;
-
-                case self::VARIABLES:
-                    $this->feedMysqlVariable($mysql_variable);
-                    break;
             }
         }
 
@@ -393,11 +379,7 @@ class Integrate extends Controller
 
     private function insert_variable($variables_to_insert)
     {
-        //Debug::debug($variables_to_insert, "dfgfgdg");
-        //Debug::debug($variables_to_insert);
         $db = Sgbd::sql(DB_DEFAULT);
-
-
 
         // insert IGNORE in case of first save have 2 slave
         $this->logger->warning("Insert new value :".json_encode($variables_to_insert));

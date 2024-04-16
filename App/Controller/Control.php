@@ -18,7 +18,7 @@ use \Glial\Sgbd\Sgbd;
 
 class Control extends Controller
 {
-    public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_proxysql");
+    public $tables                = array("ts_value_general", "ts_value_slave");
     public $ext                   = array("int", "double", "text");
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL");
@@ -26,13 +26,11 @@ class Control extends Controller
 //var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_value_proxysql" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
     private $engine               = "tokudb";
     private $engine_preference    = array("ROCKSDB");
-    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_proxysql" => "`server` varchar(64) NOT NULL,",
-        "ts_value_general" => "");
+    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     //when mysql reach 80% of disk we start to drop partition
     public $percent_max_disk_used = 80;
     //0 = keep all partitions,
@@ -340,7 +338,8 @@ PARTITION BY RANGE (to_days(`date`))
         $php = explode(" ", shell_exec("whereis php"))[1];
         $cmd = $php." ".GLIAL_INDEX." Daemon stopAll";
         Debug::debug($cmd);
-        //shell_exec($cmd);
+        shell_exec($cmd);
+        usleep(500);
 
         $this->dropTsTable();
         $this->createTsTable();
@@ -350,12 +349,12 @@ PARTITION BY RANGE (to_days(`date`))
         //drop lock sur
         $this->dropLock();
 
-        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        //Debug::debug($cmd);
-        //shell_exec($cmd);
+        $cmd = $php." ".GLIAL_INDEX." Daemon startAll";
+        Debug::debug($cmd);
+        shell_exec($cmd);
 
-        sleep(1);
-        $this->dropLock();
+        //sleep(1);
+        //$this->dropLock();
     }
 
     public function statistique($param = "")

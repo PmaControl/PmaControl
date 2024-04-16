@@ -13,6 +13,10 @@ use App\Library\Extraction2;
 use \App\Library\Debug;
 use \App\Library\Git;
 
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
+
 use \Glial\Sgbd\Sgbd;
 
 // ""	&#9635;   ▣
@@ -45,9 +49,17 @@ class Dot3 extends Controller
 
     static $config = array();
 
+    var $logger;
+
     public function before($param)
     {
         $this->loadConfigColor();
+
+        $monolog       = new Logger("Dot3");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
     }
 
     public function generateInformation($param)
@@ -57,10 +69,17 @@ class Dot3 extends Controller
         $date_request = $param[0] ?? "";
         $versioning = "";
         $versioning2 = "";
+
+        //to prevent id of daemon in comment
+        if (! is_a($date_request, 'DateTime')) {
+            $date_request ="";
+        }
+
         if ( ! empty($date_request))
         {
             $versioning = " WHERE '".$date_request."' between a.row_start and a.row_end ";
             $versioning2 = " WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
+            
             $date_request = array($date_request);
         }
 
@@ -101,8 +120,6 @@ class Dot3 extends Controller
         $data['servers'] = array_replace_recursive($all, $server_mysql);
 
         
-
-
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning;";
 
         $res = $db->sql_query($sql);
@@ -288,6 +305,10 @@ class Dot3 extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $id_dot3_information = $this->generateInformation($param);
+
+        $info = self::getInformation($id_dot3_information);
+        //TODO : add if date > now => return true to not was time to regenerate dot for nothing
+
         $groups = $this->getGroup(array($id_dot3_information));
 
         foreach($groups as $group)
@@ -693,7 +714,7 @@ class Dot3 extends Controller
         
         //Debug::sql($sql);
         $res = $db->sql_query($sql);
-        while($arr = $db->sql_fetch_array($res)) {
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['information'] = json_decode($arr['information'], true);
             self::$information[$arr['id']] = $arr;
@@ -843,6 +864,32 @@ class Dot3 extends Controller
         unlink($tmp_out);
 
         return $svg;
+    }
+
+
+    public function download($param)
+    {
+        $info = self::getInformation();
+        $data = json_encode($info);
+
+        $date = explode(' ',$info['date_inserted'])[0];
+
+        $filename = '/tmp/'.$date.'-'.$info['md5'].'.json';
+        file_put_contents($filename, $data);
+
+        
+        if (file_exists($filename)) {
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . basename($filename) . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($filename));
+            readfile($filename);
+            exit;
+        }
+
     }
 
 }

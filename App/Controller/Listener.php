@@ -31,7 +31,6 @@ class Listener extends Controller
         Debug::parseDebug($param);
 
         $id_ts_file = $param[0] ?? 9;
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql ="SELECT 
@@ -53,11 +52,9 @@ class Listener extends Controller
         a.id_mysql_server, 
         a.id_ts_file;";
 
-
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-
             $this->updateDatabase(array($ob->id_mysql_server, $ob->id_ts_file, $ob->min_date));
             $this->updateListener(array($ob->id_mysql_server, $ob->id_ts_file, $ob->min_date));
         }

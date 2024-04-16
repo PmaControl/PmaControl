@@ -55,7 +55,7 @@ use Glial\Html\Form\Form;
         <div class="row">
             <div class="col-md-4"><?= __("Query") ?></div>
             <div class="col-md-7"><?=
-                Form::input("cleaner_main", "query", array("class" => "form-control", "placeholder" => "(ETAT = 'PO' OR ETAT = 'QO') and DATE_PASSAGE <= DATE_ADD(now(), INTERVAL - 14 DAY)"))
+                Form::input("cleaner_main", "query", array("class" => "form-control", "placeholder" => "WHERE (ETAT = 'PO' OR ETAT = 'QO') and DATE_PASSAGE <= DATE_ADD(now(), INTERVAL - 14 DAY)"))
                 ?></div>
             <div class="col-md-1"></div>
         </div>

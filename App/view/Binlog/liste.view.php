@@ -46,7 +46,6 @@ use App\Library\Format;
         echo '<td>'.Display::srv($server['id_mysql_server']);
 
         //automatic purge
-
         if (!empty($server['size_max'])) {
             echo ' <span class="label label-warning">'.__("Automatic purge").'</span>';
         }
@@ -56,10 +55,6 @@ use App\Library\Format;
 
         if (!empty($server['binlog']['file_first'])) {
 
-
-            if (empty($server['binlog']['expire_logs_days'])) {
-                debug($server['binlog']);
-            }
             echo '<td>'.$server['binlog']['file_first'].'</td>';
             echo '<td>'.$server['binlog']['file_last'].'</td>';
             echo '<td>'.$server['binlog']['expire_logs_days'].'</td>';

@@ -370,9 +370,12 @@ class Graphviz
         $image_logo = strtolower($fork).'.svg';
 
         if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
-            $image_logo = 'proxysql.png';
+            $image_logo = 'proxysql.png';            
         }
 
+        if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+            $image_logo = 'galera.svg';
+        }
 
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
@@ -380,7 +383,7 @@ class Graphviz
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
         <tr><td port="target" bgcolor="'.$server['color'].'">
         
-        <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
+        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
         <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
