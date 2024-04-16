@@ -43,7 +43,7 @@ class Format
                 {
                     $name .= '<span class="geek">&#xF130;</span>';
                 }
-		$name .=  ' MariaDB';
+		        $name .=  ' MariaDB';
                 break;
 
             case 'percona':
@@ -53,6 +53,10 @@ class Format
                 }
 		$name .= ' Percona Server';
                 //$name = 'percona';
+                break;
+
+            case 'proxysql':
+                $name .= ' ProxySQL';
                 break;
 
             default:
@@ -92,10 +96,14 @@ class Format
             $fork = 'mysql';
         }
 
-
         $pos = strpos(strtolower($comment), "percona");
         if ($pos !== false) {
             $fork = "percona";
+        }
+
+        $pos = strpos(strtolower($comment), "proxysql");
+        if ($pos !== false) {
+            $fork = "proxysql";
         }
 
         return array('number'=>$number, 'fork'=> $fork);

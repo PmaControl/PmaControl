@@ -15,7 +15,7 @@ use App\Library\Mysql;
 use App\Library\Proxy;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
-
+use \App\Library\Extraction2;
 /*
  *  => systemctl is-active mysql
  *
@@ -122,6 +122,9 @@ class Aspirateur extends Controller
     var $lock_proxysql_var = TMP."lock/proxysql_var/{id_proxysql_server}.lock";
 
     var $lock_list_db = TMP."lock/list_db/{id_mysql_server}.md5";
+
+    var $lock_runtime_mysql_servers = TMP."lock/proxysql_runtime_server/{id_mysql_server}.md5";
+
 
     var $files             = array();
     public $variables         = array();
@@ -255,6 +258,7 @@ class Aspirateur extends Controller
                 if ($available === 0) {
                     return false;
                 }
+                //return true;
             }
         }
 
@@ -308,11 +312,11 @@ class Aspirateur extends Controller
                 $this->logger->notice("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
             }
 
+            $version = Extraction2::display(array("proxysql_main_var::admin-version"), array($id_mysql_server));
+            
             $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
-            $var_temp['variables']['hostname']        = $var['variables']['hostname'];
-            $var_temp['variables']['port']            = $var['variables']['port'];
-            $var_temp['variables']['version']         = $var['variables']['version'];
-            $var_temp['variables']['version_comment'] = $var['variables']['version_comment'];
+            $var_temp['variables']['version']         = $version[$id_mysql_server]['admin-version'];
+            $var_temp['variables']['version_comment'] = "ProxySQL";
             unset($var);
 
             $var = $var_temp;
@@ -374,6 +378,11 @@ class Aspirateur extends Controller
             $variables                                  = array();
             $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
             $this->shared['variable']->{$id_mysql_server}     = $variables;
+        }
+
+
+        if (!empty($IS_PROXY)) {
+            return true;
         }
 
         /*************************************** list Database  */
@@ -1013,8 +1022,8 @@ class Aspirateur extends Controller
                 if ($available === false) {
 
 
-                    $file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
-                    Debug::debug($file, "FILE");
+                    //$file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
+                    //Debug::debug($file, "FILE");
 
                     //remove pid of worker there
                     $double_buffer = TMP."lock/worker/".$ob2->pid.".pid";
@@ -1029,8 +1038,9 @@ class Aspirateur extends Controller
 
                         unlink($double_buffer);
                         if (file_exists($lock)) {
-                            $this->logger->notice("[WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
                             unlink($lock);
+                            $this->logger->notice("[WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
+                            
                         }
 
                         $this->logger->notice("[WORKER] removed worker with pid : ".$ob2->pid."");
@@ -1752,20 +1762,7 @@ GROUP BY C.ID, C.INFO;";
                 $time = microtime(true) - $server['microtime'];
                 $this->logger->warning("MySQL server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
 
-//special case for timeout 60 seconds, else we see working since ... and not the real error
-                $sql = "SELECT error,is_available from proxysql_server WHERE id = ".$server['id'].";";
-                $res = $db->sql_query($sql);
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    if ($ob->is_available != 0) {
-// UPDATE is_available X => YELLOW  (not answered)
-                        $sql = "UPDATE `proxysql_server` SET is_available = -1,
-                            `date_refresh` = '".date("Y-m-d H:i:s")."',
-                            `warning`= 'Worker still runnig since ".round($time, 2)." seconds' WHERE `id` =".$server['id'].";";
-                        echo \SqlFormatter::format($sql);
-                        $db->sql_query($sql);
-                    }
-                }
             } else {
 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker_proxysql/".$server['id'].".lock";
@@ -1780,7 +1777,7 @@ GROUP BY C.ID, C.INFO;";
 
         $this->view = false;
 
-        $sql = "select a.id,concat('proxysql_', a.id) as name
+        $sql = "select a.id,concat('proxysql_', a.id) as name, a.id_mysql_server
             from proxysql_server a
             INNER JOIN mysql_server z ON z.id = a.id_mysql_server
             INNER JOIN client b on z.id_client =b.id
@@ -1810,7 +1807,7 @@ GROUP BY C.ID, C.INFO;";
             $object       = new \stdclass;
             $object->name = $server['name'];
             $object->id   = $server['id'];
-
+            $object->id_mysql_server   = $server['id_mysql_server'];
 //try to add message to queue
             if (msg_send($queue, 1, $object)) {
 
@@ -1848,6 +1845,7 @@ GROUP BY C.ID, C.INFO;";
 
         $name_server = $param[0];
         $id_server   = $param[1];
+        $id_mysql_server = $param[2];
 
         $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_close();
@@ -1865,8 +1863,6 @@ GROUP BY C.ID, C.INFO;";
             $error_msg = $err['message'];
         }
         // save error_msg in proper way
-
- 
 
         $var['proxysql_main_var'] = $mysql_tested->getProxysqlVariables();
         $md5                      = md5(json_encode($var));
@@ -1892,16 +1888,36 @@ GROUP BY C.ID, C.INFO;";
             $export_variables = true;
         }
 
-        $export_variables = true;
+        //$export_variables = true;
 
         if ($export_variables) {
-            $this->allocate_shared_storage('proxysql');
+            $this->allocate_shared_storage('proxysql_main_var');
 
             Debug::debug($var, "SHOW GLOBAL VARIABLE;");
 
             $variables                                  = array();
-            $variables[date('Y-m-d H:i:s')][$id_server] = $var;
-            $this->shared['proxysql']->{$id_server}     = $variables;
+            $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
+            $this->shared['proxysql_main_var']->{$id_mysql_server}     = $variables;
+            $this->logger->warning("INSERTION DANS proxysql variables - id_mysql_server : ".$id_mysql_server);
+        }
+
+        /************************************** */
+        $sql = "select * from runtime_mysql_servers;";
+        $res = $mysql_tested->sql_query($sql);
+
+        $runtime_mysql_servers = array();
+        while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $runtime_mysql_servers[] = $arr; 
+        }
+
+        if ($this->isModified($id_server, $runtime_mysql_servers, $this->lock_runtime_mysql_servers) || true)
+        {
+            $this->allocate_shared_storage('proxysql_runtime_server');
+
+            $variables                                  = array();
+            $variables[date('Y-m-d H:i:s')][$id_mysql_server]['proxysql_runtime_server']['mysql_servers'] = json_encode($runtime_mysql_servers);
+            $this->shared['proxysql_runtime_server']->{$id_mysql_server}     = $variables;
         }
 
         $mysql_tested->sql_close();
@@ -1980,16 +1996,10 @@ GROUP BY C.ID, C.INFO;";
             fclose($fp2);
 
 //do your business logic here and process this message!
+            //$this->logger->critical("PROXYSQL ADMIN : ".$msg->id);
 
-            $this->tryProxySQLConnection(array($msg->name, $msg->id));
+            $this->tryProxySQLConnection(array($msg->name, $msg->id, $msg->id_mysql_server));
 
-            /*
-              if ($msg->id == "16") {
-              sleep(60);
-              }
-              /**
-             * test retard reponse mysql
-             */
             if (file_exists($lock_file)) {
                 unlink($lock_file);
             }

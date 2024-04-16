@@ -106,19 +106,14 @@ class Integrate extends Controller
 
             $TIME2 = $TIME + 1; // to prevent some duplicate key maybe ?
 
-            if ($TIME == $timestamp || $TIME2 == $timestamp){
+            //if ($TIME == $timestamp || $TIME2 == $timestamp){
+            if ($TIME == $timestamp){
                 $this->logger->debug("##### We don't take this file :".$file_name. " => $TIME");
                 unset($files[$id_file]);
                 continue;
             }
-            /*
-            $fp = fopen($file, 'r+');
-            if(!flock($fp, LOCK_EX)) {
-                $this->logger->critical("##### FILE ALREADY OPEN :".$file_name. " => $TIME");
-                continue;
-            }
-            fclose($fp);
-            */
+
+            //$this->logger->notice("We occupy with file ".$file);
 
             $file_parsed++;
             Debug::debug($file, " [FILE] ");
@@ -664,7 +659,10 @@ class Integrate extends Controller
                     $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
                 }
                 $var_to_update = array_keys($variables);
-                $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
+                if (count($var_to_update) > 0)
+                {
+                    $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
+                }
             }
             if (!empty($elem_upt)) {
                 $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";

@@ -117,23 +117,24 @@ class Listener extends Controller
         $date = $param[2];
 
         $sql2 = "SELECT schema_name FROM mysql_database WHERE id_mysql_server=".$id_mysql_server;
+        //Debug::debug($sql2, "")
         $res2 = $db->sql_query($sql2);
 
         $dbs = array();
-        while($ob2 = $db->sql_fetch_object($res2))
-        {
+        while($ob2 = $db->sql_fetch_object($res2))    {
             $dbs[] = $ob2->schema_name;
         }
 
-        Debug::debug($dbs);
+        Debug::debug($dbs, "DB in mysql_database");
 
         $res = Extraction::display(array('schema_list'), array($id_mysql_server), array($date));
         $data = json_decode($this->extract($res)['schema_list'], true);
 
         foreach($data as $elem) {
             $elem['id_mysql_server'] = $id_mysql_server;
-            $this->updateElem("mysql_database", $elem);
 
+            $this->updateElem("mysql_database", $elem);
+            Debug::debug($elem, "ELEM");
             if (in_array($elem['schema_name'], $dbs)){
                 unset($dbs[array_search($elem['schema_name'], $dbs)]);
             }
@@ -142,13 +143,12 @@ class Listener extends Controller
         if (count($dbs ) > 1 ) {
             $sql3 = "DELETE FROM mysql_database WHERE id_mysql_server = ".$id_mysql_server." 
             AND schema_name IN ('".implode("','",$dbs)."')";
+            Debug::sql($sql3);
             $db->sql_query($sql3);
         }
 
-
         Debug::debug($data, "RESULTAT");
         Debug::debug($dbs, "#################################");
-
     }
 
 
@@ -178,15 +178,15 @@ class Listener extends Controller
         $params = implode(' AND ', $arg);
 
         $sql ="SELECT count(1) as cpt FROM `".$table_name."` WHERE ".$params;
-
         Debug::debug($sql);
 
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
+            Debug::debug($ob->cpt , "CPT");
+            
             if ($ob->cpt == "0")
             {
-
                 $keys = array_keys($param);
                 $values = array_values($param);
                 
@@ -197,7 +197,7 @@ class Listener extends Controller
                 $param2 = "'".implode("','", $values)."'";
 
                 $sql = "REPLACE INTO `".$table_name."` (".$param1.") VALUES (".$param2.");";
-                Debug::debug($sql);
+                Debug::sql($sql);
                 $db->sql_query($sql);
             }
         }
@@ -240,22 +240,6 @@ class Listener extends Controller
         $res = $db->sql_query($sql);
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            Debug::debug($arr,'RESULT');
-        }
-    }
-
-    public function test3($param)
-    {
-        Debug::parseDebug($param);
-        $id_mysql_server = $param[0];
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql2 = "SELECT * FROM ts_max_date WHERE id_ts_file = 9 AND `id_mysql_server`=".$id_mysql_server.";";
-        Debug::sql($sql2);
-        $res2 = $db->sql_query($sql2);
-        while($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
-        {
             Debug::debug($arr);
         }
     }

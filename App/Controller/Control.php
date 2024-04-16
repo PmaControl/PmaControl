@@ -55,26 +55,6 @@ class Control extends Controller
         Debug::debug($size, 'Size on /srv/mysql/data');
 
         $percent = substr($size, 0, -1);
-
-        /*
-          $size = shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"');
-          Debug::debug($size);
-
-          $resultats = preg_replace('`([ ]{2,})`', ' ', $size);
-          Debug::debug($resultats);
-
-          $results = explode(' ', trim($resultats));
-
-          $data['size']      = $results['1'];
-          $data['used']      = $results['2'];
-          $data['available'] = $results['3'];
-
-          Debug::debug($data);
-
-          $percent = ceil($data['used'] / $data['size'] * 100);
-
-
-         */
         Debug::debug($percent);
 
         return $percent;
@@ -220,16 +200,18 @@ class Control extends Controller
         Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
-        if ($this->checkSize() > $this->percent_max_disk_used) {
+        $current_percent = $this->checkSize();
+        if ($current_percent > $this->percent_max_disk_used) {
+            $this->logger->notice('Usage of disk : '.$current_percent.' %');
             Debug::debug($partitions['min'], "Drop Partition");
 
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
                 //delete server_*
-                System::deleteFiles("server");
+                //System::deleteFiles("server");
 
                 //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
                 Sleep(5);
-
+                
                 $this->dropPartition(array($partitions['min']));
             }
         }
@@ -238,7 +220,7 @@ class Control extends Controller
 
         //On drop les partitions supérieur a X jours
         if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
-            System::deleteFiles("server");
+            //System::deleteFiles("server");
 
             //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
             Sleep(5);
@@ -281,7 +263,7 @@ class Control extends Controller
             $this->logger->info($sql);
         }
 
-        System::deleteFiles("server");
+        //System::deleteFiles("server");
     }
 
     public function createTsTable()
