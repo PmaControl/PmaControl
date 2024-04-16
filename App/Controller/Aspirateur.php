@@ -814,8 +814,6 @@ class Aspirateur extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($elems as $server) {
-
-
             //on verifie avec le double buffer qu'on est bien sur le même pid
             //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
@@ -823,31 +821,22 @@ class Aspirateur extends Controller
             // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
-
-                Debug::debug($server['pid'], "GOOD");
-
                 $mysql_servers[] = $server['id'];
-                //$list[] = Color::getColoredString("MySQL server with id : " . $server['id'] . " is late !!! pid : " . $server['pid'], "grey", "red");
-
                 $time = microtime(true) - $server['microtime'];
 
-                $msg = "Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid'];
-                $msg2 = "Worker still runnig - pid : ".$server['pid'];
-                $this->logger->warning("MySQL server with id : ".$server['id']." is late !!!  ".$msg);
-
+                if ($maxExecutionTime > $time) {
+                    $msg = "Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid'];
+                    $this->logger->warning("MySQL server with id : ".$server['id']." is late !!!  ".$msg);
+                }
             } else {
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/worker/".$server['id'].".lock";
                 if (file_exists($lock_file)) {
-                    $this->logger->notice('[addToQueueMySQL] the pid didn\'t exist anymore : "'.$lock_file.'", we deleted id !');
+                    $this->logger->notice('[addToQueueMySQL] the pid didn\'t exist anymore : "'.$lock_file.'", (id_mysql_server:'.$server['id'].') we deleted id !');
                     unlink($lock_file);
                 }
             }
         }
-
-//echo implode("\n", $list) . "\n";
-//Debug::debug($list, "list");
-
 
         $this->view = false;
 
@@ -898,14 +887,11 @@ class Aspirateur extends Controller
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
                 $this->logger->debug("Add id_mysql_server:".$server['id']." to the queue ($queue_key)");
-                //usleep($delay);
+                usleep($delay);
             } else {
                 $this->logger->warning("could not add message to queue ($queue_key)");
             }
         }
-
-//$stats = msg_stat_queue($queue);
-//debug($stats);
     }
 
     public function worker()
@@ -969,8 +955,6 @@ class Aspirateur extends Controller
                 unlink($lock_file);
             }
 
-            // on vide le pid 
-            //$waiting = __("Waiting...");
             file_put_contents($worker_pid,"Waiting...");
 
             //finally, reset our msg vars for when we loop and run again
@@ -1014,17 +998,13 @@ class Aspirateur extends Controller
             $nb_thread = 0;
             while ($ob2       = $db->sql_fetch_object($res2)) {
 
-
                 $available = System::isRunningPid($ob2->pid);
 
                 Debug::debug($available, "Result of pid : ".$ob2->pid);
 
                 if ($available === false) {
-
-
                     //$file = file_get_contents(TMP."log/worker_".$id_daemon_main."_".$ob2->id.".log");
                     //Debug::debug($file, "FILE");
-
                     //remove pid of worker there
                     $double_buffer = TMP."lock/worker/".$ob2->pid.".pid";
 
@@ -1042,7 +1022,6 @@ class Aspirateur extends Controller
                             $this->logger->notice("[WORKER] removed worker (lock) with id_mysql_server:".$id_mysql_server."");
                             
                         }
-
                         $this->logger->notice("[WORKER] removed worker with pid : ".$ob2->pid."");
                     }
 
@@ -1324,8 +1303,6 @@ class Aspirateur extends Controller
 
         $mysql_servers = array();
         foreach ($elems as $server) {
-
-
             //on verifie avec le double buffer qu'on est bien sur le même pid
             //et ce dernier est toujours sur le serveur MySQL qui pose problème
             $idmysqlserver = trim(file_get_contents(TMP."lock/".$worker_type."/".$server['pid'].".pid"));
@@ -1337,22 +1314,18 @@ class Aspirateur extends Controller
 
                 $mysql_servers[] = $server['id'];
                 $time            = microtime(true) - $server['microtime'];
-                $this->logger->warning("SSH server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
 
-                $id_mysql_server = Extraction::display(array("ssh_server::available"));
-                Debug::debug($id_mysql_server, "ssh available");
-
-                $this->logger->notice(json_encode($id_mysql_server));
-
+                if ($maxExecutionTime > $time){
+                    $this->logger->warning("SSH server with id : ".$server['id']." is late !!! Worker still runnig since ".round($time, 2)." seconds - pid : ".$server['pid']);
+                }
+                
             } else {
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/".$worker_type."/".$server['id'].".lock";
-
+                $this->logger->warning("Impossible to find worker ($worker_type) who was working on server : ".$server['id']);
                 unlink($lock_file);
             }
         }
-
-
 
         $this->view = false;
 
@@ -1373,14 +1346,10 @@ class Aspirateur extends Controller
             $server_list[] = $ob;
         }
 
-//Debug::debug($server_list, "Liste des serveurs monitoré");
-//to prevent any trouble with fork
-//$this->debugShowQueries();
+        $db->sql_close(); //to prevent any trouble with fork
 
-        $db->sql_close();
-
-// filename: add_to_queue.php
-//creating a queue requires we come up with an arbitrary number
+        // filename: add_to_queue.php
+        //creating a queue requires we come up with an arbitrary number
 
         foreach ($server_list as $server) {
 
@@ -1393,11 +1362,11 @@ class Aspirateur extends Controller
             if (msg_send($queue, 1, $object)) {
 
                 Debug::debug($server, "Ajout dans la file d'attente");
-//echo "added to queue  \n";
-// you can use the msg_stat_queue() function to see queue status
-//print_r(msg_stat_queue($queue));
+            //echo "added to queue  \n";
+            // you can use the msg_stat_queue() function to see queue status
+            //print_r(msg_stat_queue($queue));
             } else {
-                echo "could not add message to queue \n";
+                $this->logger->emergency("Impossible to add new message in queue : ".$queue);
             }
         }
     }

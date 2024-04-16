@@ -17,6 +17,11 @@ use App\Library\Display;
 use \Glial\Sgbd\Sgbd;
 use \Glial\I18n\I18n;
 
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
+
+
 class Binlog extends Controller {
 
     use \App\Library\Filter;
@@ -24,12 +29,20 @@ class Binlog extends Controller {
     CONST DELAIS_DE_RETENTION = 172800; //48 heures en secondes
     CONST DIRECTORY_BACKUP = '/data/backup/binlog';
 
+    var $logger;
+
     public function index() {
-
-
-
         $data = array();
         $this->set('data', $data);
+    }
+
+    public function before($param)
+    {
+        $monolog       = new Logger("Binlog");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
     }
 
     public function add() {
@@ -305,8 +318,6 @@ class Binlog extends Controller {
         }
     }
 
-
-
     public function purgeAll($param) {
         Debug::parseDebug($param);
 
@@ -371,6 +382,7 @@ class Binlog extends Controller {
                     $db_remote = Mysql::getDbLink($id_mysql_server);
                     $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
                     Debug::sql($sql);
+                    $this->logger->notice('We purged binary logs on id_mysql_server:'.$id_mysql_server.' "'.$sql.'"');
                     $db_remote->sql_query($sql);
                     break;
                 }
