@@ -107,7 +107,7 @@ class Docker extends Controller
         ORDER by a.name,  
         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tag, '.', 1), '.', -1) AS UNSIGNED) ASC,
         CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tag, '.', 2), '.', -1) AS UNSIGNED) ASC,
-        CAST(SUBSTRING_INDEX(tag, '.', -1) AS UNSIGNED) ASC; "
+        CAST(SUBSTRING_INDEX(tag, '.', -1) AS UNSIGNED) ASC; ";
 
 
         //derniere version
@@ -148,7 +148,7 @@ class Docker extends Controller
     {
 
 
-        // docker run --name mysql1 -e MYSQL_ROOT_PASSWORD=monpassword1 -p 54001:3306 -d mysql:5.7.44
+        // 
     }
 
 

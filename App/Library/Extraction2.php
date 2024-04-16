@@ -34,7 +34,7 @@ class Extraction2
           debug($date);
           /**** */
 
-          Debug::debug($date);
+        //Debug::debug($date);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -45,7 +45,7 @@ class Extraction2
 
         $variable = self::getIdVariable($var);
 
-        Debug::debug($variable);
+        //Debug::debug($variable);
 
         $extra_where = "";
         $INNER       = "";
@@ -191,7 +191,7 @@ class Extraction2
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
-        Debug::sql($sql3);
+        //Debug::sql($sql3);
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
@@ -261,6 +261,10 @@ class Extraction2
 
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['date']                                       = $ob->date;
+
+                    if (! isset($ob->value)) {
+                        $ob->value = "";
+                    }
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
                 }
             }
@@ -410,4 +414,6 @@ class Extraction2
 
         $res = self::extract($var, $server, $date);
     }
+
+    
 }

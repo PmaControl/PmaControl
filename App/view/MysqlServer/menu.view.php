@@ -22,6 +22,7 @@ $node = FactoryController::getRootNode();
 
 $menu= array();
 $menu['MysqlServer']['processlist'] = __('Processlist');
+$menu['Cluster']['svg'] = __('Cluster');
 $menu['MysqlDatabase']['mpd'] = __('Database');
 
 foreach($menu as $controller => $views)
