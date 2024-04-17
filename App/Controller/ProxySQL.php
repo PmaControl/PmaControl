@@ -40,6 +40,9 @@ class ProxySQL extends Controller
 {
 
     use \App\Library\Filter;
+
+    const DB_STATS = 'stats';
+
     var $clip = 0;
 
     //var $database = array('main', )
@@ -303,9 +306,7 @@ class ProxySQL extends Controller
             $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
             $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'];
             $data['proxysql'][] = $arr;
-
         }
-
 
         $this->set('data', $data);
     }
@@ -392,4 +393,154 @@ class ProxySQL extends Controller
             }
         }
     }
+
+
+    public function config($param)
+    {
+
+
+
+    }
+
+
+    public function statistic($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_proxysql = $param[0];
+        $db = Sgbd::sql("proxysql_".$id_proxysql);
+
+
+        $exclude_table = array('mysql_server_connect_log','mysql_server_ping_log','mysql_server_replication_lag_log');
+
+        $sql = "show tables in ".self::DB_STATS.";";
+        $res = $db->sql_query($sql);
+
+        $data['tables'] = array();
+        while($ob = $db->sql_fetch_object($res))
+        {
+            //we want escape reset table
+            if (substr($ob->tables,-6 ) === "_reset") {
+                continue;
+            }
+
+            if (in_array($ob->tables, $exclude_table)) {
+                continue;
+            }
+            
+            $sql2 = "SELECT * FROM `".self::DB_STATS."`.`".$ob->tables."`;";
+            Debug::sql($sql2);
+
+            $res2 = $db->sql_query($sql2);
+            while($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+            {
+                $data['tables'][$ob->tables][] = $arr;
+            }
+
+
+            if (empty($data['tables'][$ob->tables]))
+            {
+                $sql3 = "SHOW CREATE TABLE `".self::DB_STATS."`.`".$ob->tables."`;";
+                $res3 = $db->sql_query($sql3);
+                while($arr = $db->sql_fetch_array($res3, MYSQLI_ASSOC))
+                {
+                    $data['tables'][$ob->tables][] = $arr;
+                }
+            }
+        }
+        Debug::debug($data['tables']);
+        $this->set('data', $data);
+    }
+
+
+    public function getErrorConnect($param)
+    {
+        Debug::parseDebug($param);
+        
+        $id_proxysql_server = $param[0] ?? "";
+
+        if (empty($id_proxysql_server)) {
+            throw new \Exception('getErrorConnect should have id_proxysql_server in parameter');
+        }
+
+        $db = Sgbd::sql('proxysql_'.$id_proxysql_server);
+        /*
+
+        get all last error for each server in last : (can be 3 differents errors max by server)
+        - mysql_server_replication_lag_log
+        - mysql_server_connect_log
+        - mysql_server_ping_log
+        
+        +--------------+------+----------------------------------------------------------------------------------------------------+
+        | hostname     | port | error                                                                                              |
+        +--------------+------+----------------------------------------------------------------------------------------------------+
+        | 10.68.68.18  | 3306 | Access denied; you need (at least one of) the SUPER, SLAVE MONITOR privilege(s) for this operation |
+        | 10.68.68.20  | 3306 | Access denied; you need (at least one of) the SUPER, SLAVE MONITOR privilege(s) for this operation |
+        | 10.68.68.202 | 3306 | Access denied for user 'monitor'@'10.68.68.73' (using password: YES)                               |
+        +--------------+------+----------------------------------------------------------------------------------------------------+
+        3 rows in set (0,001 sec)
+        */
+
+        $sql = "WITH a as (SELECT hostname, port, MAX(time_start_us) AS max_time
+        FROM mysql_server_connect_log
+        GROUP BY hostname, port),
+        c as (SELECT hostname, port, MAX(time_start_us) AS max_time
+        FROM mysql_server_ping_log
+        GROUP BY hostname, port),
+        e as (SELECT hostname, port, MAX(time_start_us) AS max_time
+        FROM mysql_server_replication_lag_log
+        GROUP BY hostname, port)
+    SELECT b.hostname, b.port, b.connect_error as error FROM mysql_server_connect_log b 
+    INNER JOIN a ON a.hostname = b.hostname 
+    AND a.port = b.port 
+    AND a.max_time = b.time_start_us WHERE b.connect_error is not null
+    UNION
+    SELECT d.hostname, d.port, d.ping_error as error FROM mysql_server_ping_log d
+    INNER JOIN c ON c.hostname = d.hostname 
+    AND c.port = d.port 
+    AND c.max_time = d.time_start_us WHERE d.ping_error is not null
+    UNION
+    SELECT f.hostname, f.port, f.error as error FROM mysql_server_replication_lag_log f
+    INNER JOIN e ON e.hostname = f.hostname 
+    AND e.port = f.port 
+    AND e.max_time = f.time_start_us WHERE f.error is not null;";
+
+        $res = $db->sql_query($sql);
+
+        $table = array();
+        while($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
+        {
+            $table[] = $arr;
+        }
+
+        Debug::debug($table, "ProxySQL ERROR(S)");
+
+        return $table;
+    }
+
+
+
+    public function import($param)
+    {
+        Debug::parseDebug($param);
+        $id_proxysql_server = $param[0] ?? "";
+
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+        }
+
+        $db = Sgbd::sql('proxysql_'.$id_proxysql_server);
+
+        $import = array();
+        $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
+        $import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
+        //$import['uniq']['key1::key2::key3']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
+
+
+        $db->sql_close();
+
+        return $import;
+
+    }
+
 }

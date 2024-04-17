@@ -31,7 +31,7 @@ class Daemon extends Controller
             $this->di['js']->code_javascript('
             $(document).ready(function(){
                 function refresh(){
-                    var myURL = GLIAL_LINK+"worker/index"+"/ajax:true";
+                    var myURL = GLIAL_LINK+"daemon/worker"+"/ajax:true";
                     $("#worker-index").load(myURL);
                 }
 
@@ -240,5 +240,44 @@ class Daemon extends Controller
         $data['to_integrate'] = $total;
 
         Debug::debug($data);
+    }
+
+//deprecated
+    public function worker($param)
+    {
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $data['worker'] = array();
+
+        $sql2 = "SELECT b.*,a.name,a.worker_path  FROM daemon_main a
+            INNER JOIN daemon_worker b ON a.id = b.id_daemon_main
+            ORDER BY a.id, b.pid";
+        $res2 = $db->sql_query($sql2);
+        while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+
+            $pid_file        = TMP."lock/".$arr['worker_path']."/".$arr['pid'].".pid";
+            $arr['pid_file'] = $pid_file;
+
+            if (file_exists($pid_file)) {
+                $arr['id_proxysql'] = file_get_contents($pid_file);
+            } else {
+                $arr['id_proxysql'] = "...";
+            }
+
+            $log_file = TMP."log/worker_".$arr['id_daemon_main']."_".$arr['id_daemon_main'].".log";
+            if (file_exists($log_file)) {
+                $arr['log']      = $log_file;
+                $arr['filesize'] = filesize($log_file);
+            } else {
+                $arr['log']      = '';
+                $arr['filesize'] = 0;
+            }
+            $data['worker'][] = $arr;
+        }
+
+        $this->set('data', $data);
     }
 }

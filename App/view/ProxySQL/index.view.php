@@ -14,10 +14,10 @@ echo '</div>';
 
 if ( ! empty($data['proxysql']))
 {
-    foreach ($data['proxysql'] as $proxysql) {
+    foreach ($data['proxysql'] as $id_proxysql => $proxysql) {
         echo '<div class="row" style="font-size:14px; border:#666 1px solid; padding:10px; margin: 10px 5px 0 5px; border-radius: 3px;">';
 
-
+        $id_proxysql++;
         
         echo '<div class="col-md-5">';
 
@@ -45,7 +45,7 @@ if ( ! empty($data['proxysql']))
         
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
 
-        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/statistic/'.$id_proxysql.'" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-warning">'.__('Monitor').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Cluster').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Logs').'</a> ';

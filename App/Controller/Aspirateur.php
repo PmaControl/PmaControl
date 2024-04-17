@@ -1278,7 +1278,6 @@ class Aspirateur extends Controller
             }
         }
 
-
         $mysql_servers = array();
 
 //mémoire partagé
@@ -1295,7 +1294,6 @@ class Aspirateur extends Controller
             $data    = json_decode($json, true);
             $elems[] = $data;
         }
-
 
         Debug::debug($elems, "liste des serveur en retard !");
 
@@ -1323,7 +1321,10 @@ class Aspirateur extends Controller
                 //si pid n'existe plus alors on efface le fichier de lock
                 $lock_file = TMP."lock/".$worker_type."/".$server['id'].".lock";
                 $this->logger->warning("Impossible to find worker ($worker_type) who was working on server : ".$server['id']);
-                unlink($lock_file);
+                if (file_exists($lock_file)) {
+                    unlink($lock_file);
+                }
+                
             }
         }
 

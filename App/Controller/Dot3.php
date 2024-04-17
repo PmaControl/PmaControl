@@ -96,7 +96,8 @@ class Dot3 extends Controller
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql",
-                "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_server::mysql_servers"
+                "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_server::mysql_servers",
+                "auto_increment_increment", "auto_increment_offset"
             ),array() , $date_request);
 
         $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy

@@ -398,7 +398,7 @@ class Graphviz
         if (empty($server['is_proxysql']) )
         {
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].'</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="ro">'.__('Read only')." : ".$server['read_only'].'</td></tr>'.PHP_EOL;
             
