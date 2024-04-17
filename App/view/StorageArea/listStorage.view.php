@@ -89,6 +89,8 @@ foreach ($data['storage'] as $storage) {
 
     </div></div>
 
+
+    <!--
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title"><?= __("Local storage") ?></h3>
@@ -172,7 +174,7 @@ foreach ($data['storage2'] as $storage) {
         echo "</div></div>";
 
         $percent_backup = "66";
-
+        echo '-->';
         echo __('This part correspond to the part used by the backups on the partition :').'<div class="progress" style="margin-bottom:0; width:200px">
   <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: '.$percent_backup.'%">
     <span class="sr-only">20% Complete (warning)</span>

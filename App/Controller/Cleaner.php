@@ -112,7 +112,7 @@ class Cleaner extends Controller
         $sql2 = "SELECT a.date_start, a.time, b.`table` ,b.`row` as `row` FROM pmacli_drain_process a
             INNER JOIN pmacli_drain_item b ON b.id_pmacli_drain_process = a.id
             WHERE a.id_cleaner_main=".$data['id_cleaner']."  "
-            ."AND a.date_start >= date_add(now(),INTERVAL-1 HOUR);";
+            ."AND a.date_start >= date_add(now(),INTERVAL-1 DAY);";
 
         /*
          *         $sql2 = "SELECT a.date_start, a.time, b.`table` ,b.`row` as `row` FROM pmacli_drain_process a
@@ -255,6 +255,7 @@ var myChart = new Chart(ctx, {
         return $this->title;
     }
 
+    /*
     function getIdMysqlServer($name)
     {
 
@@ -270,7 +271,7 @@ var myChart = new Chart(ctx, {
         }
 
         return $id_mysql_server;
-    }
+    }*/
 
     function getMsgStartDaemon($ob)
     {
@@ -398,7 +399,7 @@ var myChart = new Chart(ctx, {
                 if (!empty($cleaner_main['cleaner_main']['id'])) {
 
 
-                    $sql = "SELECT * FROM cleaner_main WHERE id ".$id_cleaner_main;
+                    $sql = "SELECT * FROM cleaner_main WHERE id =".$id_cleaner_main;
                     $res = $db->sql_query($sql);
 
                     while ($ob = $db->sql_fetch_object($res)) {
@@ -418,7 +419,11 @@ var myChart = new Chart(ctx, {
                 $title = I18n::getTranslation(__("Success"));
                 set_flash("success", $title, $msg);
 
-                header('location: '.LINK."cleaner/index");
+                
+                if (! IS_CLI)
+                {
+                    header("location: ".LINK."cleaner/index");
+                }
                 exit;
                 //$this->exit();
             } else {
@@ -472,6 +477,10 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
+
+    /*
+        To replace with the one from common
+    */
     function getDatabaseByServer($param)
     {
 
@@ -637,7 +646,6 @@ var myChart = new Chart(ctx, {
                     $id_cleaner_foreign_key = $db->sql_save($ob_foreign_key);
                 }
 
-
                 if ($id_cleaner_foreign_key) {
                     header('location: '.LINK.'Cleaner/index/');
                 }
@@ -668,7 +676,6 @@ var myChart = new Chart(ctx, {
 
             $data['wait_time'][] = $tmp;
         }
-
 
         $this->set('data', $data);
     }
@@ -794,19 +801,20 @@ var myChart = new Chart(ctx, {
             Debug::debug("Execution time : ".round($time_end - $time_start, 2)." sec - rows deleted : ".$ret[$this->main_table]);
 
             Debug::debugShowTime();
-
-            //to prevent mysql gone away (if stay long time connected)
-            $default->sql_close();
-
             Debug::debugPurge();
 
             sleep($this->wait_time);
+
+            //to prevent mysql gone away (if stay long time connected)
+            $default->sql_close();
             usleep(700);
         } // end while
     }
 
     function start($param)
     {
+        
+        Debug::parseDebug($param);
 
         $id_cleaner        = $this->get_id_cleaner($param);
         $db                = Sgbd::sql(DB_DEFAULT);
@@ -830,7 +838,7 @@ var myChart = new Chart(ctx, {
 
             $php = explode(" ", shell_exec("whereis php"))[1];
 
-//todo add error flux in the log
+            //todo add error flux in the log
 
             $log_file = TMP."log/cleaner_".$ob->id.".log";
 
@@ -838,9 +846,9 @@ var myChart = new Chart(ctx, {
             $pid = intval(trim(shell_exec($cmd)));
 
             if (IS_CLI) {
-                $this->logger->info('[id:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' [SYSTEM]');
+                $this->logger->info('[id_cleaner_main:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '."by".' [SYSTEM]');
             } else {
-                $this->logger->info('[id:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' '
+                $this->logger->info('[id_cleaner_main:'.$ob->id.'][START][pid:'.getmypid().'] "'.$ob->libelle.'" '."by".' '
                     .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id.")");
             }
 
@@ -853,9 +861,9 @@ var myChart = new Chart(ctx, {
             header("location: ".LINK."cleaner/index");
         } else {
 
-            $this->logger->error('[id:'.$ob->id.'][ALREADY STARTED][pid:'.getmypid().'] "'.$ob->libelle.'" '.__("by").' [SYSTEM]');
+            $this->logger->error('[id:'.$ob->id.'][ALREADY STARTED][pid:'.getmypid().'] "'.$ob->libelle.'" '."by".' [SYSTEM]');
 
-            $msg   = I18n::getTranslation(__("Impossible to launch the cleaner with the id : ")."'".$id_cleaner."'"." (".__("Already running !").")");
+            $msg   = I18n::getTranslation(__("Impossible to launch the cleaner with the id : ")."'".$id_cleaner."'"." ("."Already running !)");
             $title = I18n::getTranslation(__("Error"));
             set_flash("caution", $title, $msg);
             header("location: ".LINK."cleaner/index");
@@ -884,7 +892,7 @@ var myChart = new Chart(ctx, {
         $ob = $db->sql_fetch_object($res);
 
         if ($this->isRunning($ob->pid) === true) {
-            $msg   = I18n::getTranslation(__("The cleaner with pid : '".$ob->pid."' successfully stopped "));
+            $msg   = I18n::getTranslation(__("The cleaner was successfully stopped "))."pid : ".$ob->pid;
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
@@ -917,7 +925,7 @@ var myChart = new Chart(ctx, {
             $res = $db->sql_query($sql);
 
             $this->log('debug', 'SQL', $sql);
-            $this->log('info', 'TRIED_KILL', $ob->libelle.'" CLEANER with pid ('.$ob->pid.') was killed');
+            $this->log('warning', 'TRIED_KILL', $ob->libelle.'" CLEANER with pid ('.$ob->pid.') was killed');
         } else {
 
 
@@ -926,7 +934,10 @@ var myChart = new Chart(ctx, {
             throw new \Exception('PMACTRL-875 : Impossible to stop cleaner with pid : "'.$ob->pid.'"');
         }
 
-        header("location: ".LINK."cleaner/index");
+        if (! IS_CLI)
+        {
+            header("location: ".LINK."cleaner/index");
+        }
     }
 
     public function restart($param)
@@ -1114,7 +1125,6 @@ var myChart = new Chart(ctx, {
 
     public function purge_clean_db($param = array())
     {
-
         Debug::parseDebug($param);
         $this->get_id_cleaner($param);
 
@@ -1122,7 +1132,6 @@ var myChart = new Chart(ctx, {
         $this->view        = false;
         $this->layout_name = false;
 
-        $db->sql_select_db($this->schema_main);
         $sql = "SELECT a.`cleaner_db`, a.`prefix`, b.`name` as nameserver,a.`id` as id_cleaner_main
             FROM `cleaner_main` a
                 INNER JOIN `mysql_server` b ON a.`id_mysql_server` = b.`id`
@@ -1134,7 +1143,7 @@ var myChart = new Chart(ctx, {
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $db_to_clean = Sgbd::sql($ob->nameserver);
+            $db_to_clean = Sgbd::sql($ob->nameserver,'purge');
             $db_to_clean->sql_select_db($ob->cleaner_db);
             $tables      = $db_to_clean->getListTable();
 
@@ -1166,10 +1175,10 @@ var myChart = new Chart(ctx, {
             case SIGTERM:
 
                 if (empty($this->di['auth'])) {
-                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '.__("by").' '
+                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '."by".' '
                         ."[SYSTEM]");
                 } else {
-                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '.__("by").' '
+                    $this->logger->warning('[id:'.$this->id_cleaner.'][SIGTERM][pid:'.getmypid().'] "'.$this->libelle.'" '."by".' '
                         .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id);
                 }
                 echo "Reçu le signe SIGTERM...\n";
@@ -1240,10 +1249,10 @@ var myChart = new Chart(ctx, {
 
     public function purge()
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
 
-// to not affect history server, read : https://mariadb.com/kb/en/mariadb/documentation/replication/standard-replication/selectively-skipping-replication-of-binlog-events/
+        // to not affect history server, read : https://mariadb.com/kb/en/mariadb/documentation/replication/standard-replication/selectively-skipping-replication-of-binlog-events/
         // only if MariaDB (need try purge on MySQL)
 
 
@@ -1305,7 +1314,6 @@ var myChart = new Chart(ctx, {
             $circular_field = "";
         }
 
-
         $loop = 1;
 
         $nb_loop = 1;
@@ -1316,8 +1324,6 @@ var myChart = new Chart(ctx, {
             } else {
                 $circular_data = "";
             }
-
-
 
             if ($nb_loop > 1 && $recursive === true) {
 
@@ -1342,23 +1348,19 @@ var myChart = new Chart(ctx, {
                 $sql       .= "('".implode("','", $arr)."'".$circular_data."),";
             }
 
-
-
-
-
             if ($have_data) {
 
                 $sql = rtrim($sql, ",");
 
                 Debug::debug($sql);
                 $db->sql_query($sql);
+
+                //Debug::debug($db->query, "BEFORE setAffectedRows");
                 $this->setAffectedRows($this->main_table);
 
                 if ($recursive === false) {
                     break;
                 }
-
-
 
                 //$this->exportToFile($this->main_table);
                 //
@@ -1382,12 +1384,13 @@ var myChart = new Chart(ctx, {
         $this->feedDeleteTableWithFk();
         $this->compareComStatus();
 
-//delete items
+        //delete items
         $temp = $this->rows_to_delete;
-//purge table with empty row
+        //purge table with empty row
 
         foreach ($temp as $key => $val) {
             if (empty($val)) {
+                Debug::debug($key, "purge table with empty row");
                 unset($this->rows_to_delete[$key]);
             }
         }
@@ -1398,17 +1401,20 @@ var myChart = new Chart(ctx, {
         if (!empty($this->rows_to_delete[$this->main_table])) {
 
 
+            Debug::debug($this->rows_to_delete[$this->main_table], "IF NOT EMPTY MAIN TABLE : ".$this->main_table);
             $this->delete_rows();
         }
 
         $this->end_loop();
+
+        Debug::debug($this->rows_to_delete, "DELETE");
 
         return $this->rows_to_delete;
     }
 
     public function createTemporaryTable($table)
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
 
         $fields = $db->getTypeOfPrimaryKey($table, $this->schema_to_purge);
@@ -1447,7 +1453,7 @@ var myChart = new Chart(ctx, {
     {
         Debug::checkPoint("FEED FROM FK");
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
 
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table));
@@ -1618,7 +1624,7 @@ var myChart = new Chart(ctx, {
 
     public function createAllTemporaryTable()
     {
-        $db     = Sgbd::sql($this->link_to_purge);
+        $db     = Sgbd::sql($this->link_to_purge,'purge');
         $tables = $this->getImpactedTable();
         $db->getTypeOfPrimaryKey($tables, $this->schema_to_purge);
 
@@ -1639,7 +1645,7 @@ var myChart = new Chart(ctx, {
     private function getRealForeignKeys()
     {
 //get list of FK and put in array
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
 //$db->sql_select_db($this->schema_to_purge);
 
@@ -1895,19 +1901,15 @@ var myChart = new Chart(ctx, {
             ksort($this->orderby);
         }
 
-
-
-
         return $this->orderby;
     }
 
     private function delete_rows()
     {
-
-
-
-        $db          = Sgbd::sql($this->link_to_purge);
+        
+        $db  = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
+
         $list_tables = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table, "DESC"));
 
         foreach ($list_tables as $levels) {
@@ -1929,8 +1931,6 @@ var myChart = new Chart(ctx, {
                     Debug::debug("SET FOREIGN_KEY_CHECKS=0;");
                 }
 
-
-
                 $circular = false;
 
                 $loop = 0;
@@ -1947,10 +1947,6 @@ var myChart = new Chart(ctx, {
 
                     $loop = $max;
                 }
-
-
-
-
 
                 $affected_rows = 0;
                 do {
@@ -1976,13 +1972,6 @@ var myChart = new Chart(ctx, {
                     Debug::debug("SET FOREIGN_KEY_CHECKS=1;");
                 }
 
-
-
-
-
-
-
-
                 Debug::debug($affected_rows, $table);
 
                 if ($affected_rows == "-1") {
@@ -1992,7 +1981,6 @@ var myChart = new Chart(ctx, {
                     throw new \Exception('PMACLI-666 : Foreign key error, have to update lib of cleaner or order of table set in param');
                 }
                 //} while ($affected_rows > 0);
-
 
                 $sql = "TRUNCATE TABLE `".$this->schema_delete."`.`".$this->prefix.$table."`;";
                 $db->sql_query($sql);
@@ -2004,7 +1992,7 @@ var myChart = new Chart(ctx, {
 
     private function setAffectedRows($table)
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
 
         if (empty($this->rows_to_delete[$table])) {
@@ -2067,7 +2055,7 @@ var myChart = new Chart(ctx, {
     {
         if (!empty($this->id_backup_storage_area)) {
 
-            $db = Sgbd::sql($this->link_to_purge);
+            $db = Sgbd::sql($this->link_to_purge, 'purge');
 
             $primary_keys = $this->getPrimaryKey($table, $this->schema_to_purge);
 
@@ -2077,7 +2065,7 @@ var myChart = new Chart(ctx, {
                 $circular = true;
                 $loop     = 0;
 
-// moyen d'enregistrer le nombre en cash au lieu de refaire une requette
+                // moyen d'enregistrer le nombre en cash au lieu de refaire une requette
                 $sql = "SELECT MAX(`".self::FIELD_LOOP."`) as max FROM `".$this->schema_delete."`.".$this->prefix.$table."";
                 $res = $db->sql_query($sql);
 
@@ -2168,13 +2156,12 @@ var myChart = new Chart(ctx, {
 
     private function get_rows($result)
     {
-
-        $db          = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $current_row = 0;
 
         $fields_cnt = $db->sql_num_fields($result);
 
-// Get field information
+        // Get field information
         $fields_meta = $db->getFieldsMeta($result);
 
         $field_flags = array();
@@ -2182,36 +2169,38 @@ var myChart = new Chart(ctx, {
             $field_flags[$j] = $db->fieldFlags($result, $j);
         }
 
+        $i = 0;
+
+        $insert_elem = array();
         while ($row = $db->sql_fetch_array($result, MYSQLI_NUM)) {
             $values = array();
-
-            $insert_elem = array();
+            $i++;
 
             for ($j = 0; $j < $fields_cnt; $j++) {
-// NULL
+                // NULL
                 if (!isset($row[$j]) || is_null($row[$j])) {
                     $values[] = 'NULL';
                 } elseif ($fields_meta[$j]->numeric && $fields_meta[$j]->type != 'timestamp' && !$fields_meta[$j]->blob) {
-// a number
-// timestamp is numeric on some MySQL 4.1, BLOBs are
-// sometimes numeric
+                    // a number
+                    // timestamp is numeric on some MySQL 4.1, BLOBs are
+                    // sometimes numeric
                     $values[] = $row[$j];
                 } elseif (stristr($field_flags[$j], 'BINARY') !== false && $this->sql_hex_for_binary) {
-// a true BLOB
-// - mysqldump only generates hex data when the --hex-blob
-//   option is used, for fields having the binary attribute
-//   no hex is generated
-// - a TEXT field returns type blob but a real blob
-//   returns also the 'binary' flag
-// empty blobs need to be different, but '0' is also empty
-// :-(
+                    // a true BLOB
+                    // - mysqldump only generates hex data when the --hex-blob
+                    //   option is used, for fields having the binary attribute
+                    //   no hex is generated
+                    // - a TEXT field returns type blob but a real blob
+                    //   returns also the 'binary' flag
+                    // empty blobs need to be different, but '0' is also empty
+                    // :-(
                     if (empty($row[$j]) && $row[$j] != '0') {
                         $values[] = '\'\'';
                     } else {
                         $values[] = '0x'.bin2hex($row[$j]);
                     }
                 } elseif ($fields_meta[$j]->type == 'bit') {
-// detection of 'bit' works only on mysqli extension
+                    // detection of 'bit' works only on mysqli extension
                     $values[] = "b'".$db->sql_real_escape_string(
                             $this->printableBitValue(
                                 $row[$j], $fields_meta[$j]->length
@@ -2219,7 +2208,7 @@ var myChart = new Chart(ctx, {
                         )
                         ."'";
                 } else {
-// something else -> treat as a string
+                    // something else -> treat as a string
                     $values[] = '\''.$db->sql_real_escape_string($row[$j]).'\'';
                 } // end if
             } // end for
@@ -2228,7 +2217,6 @@ var myChart = new Chart(ctx, {
         }
 
         $insert_line = implode(',', $insert_elem);
-
         return $insert_line;
     }
     /*
@@ -2290,8 +2278,13 @@ var myChart = new Chart(ctx, {
         $logger       = new Logger('cleaner');
         $file_log     = LOG_FILE;
         $handler      = new StreamHandler($file_log, Logger::DEBUG);
+        $handler2      = new StreamHandler(TMP.'log/cleaner.log', Logger::DEBUG);
+
         $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $handler2->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
+        $logger->pushHandler($handler2);
+        
         $this->logger = $logger;
 
         Debug::parseDebug($param);
@@ -2396,7 +2389,6 @@ var myChart = new Chart(ctx, {
     private function getIdStorageArea($id_cleaner)
     {
         $db = Sgbd::sql(DB_DEFAULT);
-        $db->sql_select_db($this->schema_main);
 
         $sql = "SELECT b.*, a.is_crypted FROM cleaner_main a
             INNER JOIN backup_storage_area b ON a.id_backup_storage_area = b.id
@@ -2414,7 +2406,7 @@ var myChart = new Chart(ctx, {
         $this->logger->info('[id:'.$this->id_cleaner.'][INIT][pid:'.getmypid().'] Init of cleaner');
         Debug::debug("REAL INIT !");
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
         $db->sql_select_db($this->schema_to_purge);
 
         $this->skipReplication($db);
@@ -2446,7 +2438,7 @@ var myChart = new Chart(ctx, {
     private function generateCreateTable()
     {
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
         $tables = $this->getImpactedTable();
 
@@ -2572,7 +2564,7 @@ var myChart = new Chart(ctx, {
 
         Debug::debug("Refresh GLOBAL STATUS");
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
         $this->com_status['Com_create_table'] = $db->getStatus("Com_create_table", true);
         $this->com_status['Com_alter_table']  = $db->getStatus("Com_alter_table");
@@ -2586,7 +2578,7 @@ var myChart = new Chart(ctx, {
 
     private function compareComStatus()
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
         $Coms = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
 
@@ -2628,10 +2620,10 @@ var myChart = new Chart(ctx, {
         $pid = getmypid();
 
         if (empty($this->di['auth'])) {
-            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '.__("by").' '
+            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '."by".' '
                 ."[SYSTEM]");
         } else {
-            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '.__("by").' '
+            $this->logger->info('[id:'.$this->id_cleaner.'][SIGHUP][pid:'.$pid.'] "'.$this->libelle.'" '."by".' '
                 .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id);
         }
 
@@ -2644,7 +2636,7 @@ var myChart = new Chart(ctx, {
 
     public function getPrimaryKey($table, $database)
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge, 'purge');
 
         if (empty($this->primary_key[$database][$table])) {
 
@@ -2668,9 +2660,11 @@ var myChart = new Chart(ctx, {
 
     public function end_loop()
     {
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge, 'purge');
 
+        //debug::debug($db->query);
         //Debug::showQueries();
+        $db->query = array();
         Debug::checkPoint("[DEBUG] Time to generate showQueries");
         $db->sql_close();
     }
@@ -2857,7 +2851,7 @@ var myChart = new Chart(ctx, {
         $sql         = "SELECT ".$primary_key." FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query']." LIMIT ".$data['limit'].";";
         $data['sql'] = \SqlFormatter::format($sql);
 
-        $db2 = Sgbd::sql($this->link_to_purge);
+        $db2 = Sgbd::sql($this->link_to_purge,'purge');
 
         $db_origin = $db->db;
         $db2->sql_select_db($data['database']);
@@ -2900,8 +2894,6 @@ var myChart = new Chart(ctx, {
 
         $data['estimation'] = floor($data['nb_line_to_purge'] / $data['limit']) * (5 + $data['wait_time_in_sec']);
 
-        // in case cleaner on Pmacontrol to switch back to DB of PmaControl
-        $db->sql_select_db($db_origin);
         $this->set('data', $data);
     }
 
@@ -2919,8 +2911,10 @@ var myChart = new Chart(ctx, {
             $filter = "| grep -F '[".$param[1]."]' ";
         }
 
+        $log_file = TMP.'log/cleaner.log';
 
-        $cmd = "cat ".LOG_FILE.' | tr -d \'\\000\' | grep -F \'cleaner.\' | grep -F \'[id:'.$id_cleaner."]' ".$filter."| tail -n 500";
+
+        $cmd = "cat ".$log_file.' | tr -d \'\\000\' | grep -F \'cleaner.\' | grep -F \'[id:'.$id_cleaner."]' ".$filter."| tail -n 500";
 
         //debug($cmd);
 
@@ -2950,6 +2944,8 @@ var myChart = new Chart(ctx, {
         $res = $db->sql_query($sql);
 
         $ob = $db->sql_fetch_object($res);
+
+
 
         $data['log']      = shell_exec("tail -n2000 ".$ob->log_file);
         $data['log_file'] = $ob->log_file;
@@ -2983,6 +2979,8 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
         $tab_line = explode("\n", trim($lines));
         $data     = array();
+
+
 
         foreach ($tab_line as $line) {
 
@@ -3080,9 +3078,9 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
 
         if (IS_CLI) {
-            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '.__("by").' [CLI]');
+            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '."by".' [CLI]');
         } else {
-            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '.__("by").' '
+            $this->logger->{$level}('[id:'.$this->id_cleaner.']['.$type.'][pid:'.getmypid().'] '.$msg.' '."by".' '
                 .$this->di['auth']->getUser()->firstname." ".$this->di['auth']->getUser()->name." (id:".$this->di['auth']->getUser()->id.")");
         }
     }
@@ -3197,20 +3195,17 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
             foreach ($arr as $table_ref) {
 
-
-
-                if (in_array($table, $fks[$table_ref])) {
-                    $fliped = array_flip($fks[$table_ref]);
-
-                    unset($fks[$table_ref][$fliped[$table]]);
-                    echo "DELETE $table -> $table_ref \n";
+                if (!empty($fks[$table_ref]))
+                {
+                    if (in_array($table, $fks[$table_ref])) {
+                        $fliped = array_flip($fks[$table_ref]);
+    
+                        unset($fks[$table_ref][$fliped[$table]]);
+                        echo "DELETE $table -> $table_ref \n";
+                    }
                 }
             }
         }
-
-
-
-
         //exit;
 
         return $fks;
@@ -3254,7 +3249,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
 
 
         if ($db->checkVersion(array("MariaDB" => "5.5.21"))) {
-
+            // https://mariadb.com/kb/en/selectively-skipping-replication-of-binlog-events/
             $sql = 'SET @@skip_replication = ON;';
             Debug::debug(Color::getColoredString($sql, "yellow"));
 
@@ -3492,7 +3487,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
          */
 
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
         $sql = "SELECT a.table_name, a.referenced_table_name,a.column_name, a.referenced_column_name
                 FROM `information_schema`.`KEY_COLUMN_USAGE` a
@@ -3554,7 +3549,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         foreach ($all as $table_name => $keys) {
             foreach ($keys as $referenced_table => $val) {
                 $drop_fk          = "";
-                $referenced_table = $referenced_table;
+                //$referenced_table = $referenced_table;
                 if ($val['percent'] < $all[$val['REFERENCED_TABLE_NAME']][$val['TABLE_NAME']]['percent']) {
                     $drop_fk = "DROP FK";
 
@@ -3567,26 +3562,20 @@ objDiv.scrollTop = objDiv.scrollHeight;
             }
         }
 
-
         //print_r($all);
         if (Debug::$debug) {
             echo $table->display();
         }
 
-        Debug::debug($to_drop);
+        Debug::debug($to_drop, "Table to drop");
 
-        $to_drop['equipement']   = array();
-        $to_drop['equipement'][] = "local";
-//
-//
+        //$to_drop['equipement']   = array();
+        //$to_drop['equipement'][] = "local";
+
 //        $to_drop['batiment'] = array();
 //        $to_drop['site'] = array();
 //        $to_drop['batiment'][] = "equipement";
 //        $to_drop['site'][] = "equipement";
-
-
-
-
         return $to_drop;
     }
 
@@ -3601,7 +3590,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $dblink = Sgbd::sql(DB_DEFAULT);
         $name   = Mysql::getDbLink($dblink, $id_mysql_server);
 
-        $db = Sgbd::sql($name);
+        $db = Sgbd::sql($name,'purge');
         $db->sql_select_db('test');
 
         $tables = array('batiment', 'equipement', 'escalier', 'etage', 'local', 'site');
@@ -3777,7 +3766,7 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
 
         $table->addHeader(array('Table', 'Count'));
 
-        $db = Sgbd::sql($this->link_to_purge);
+        $db = Sgbd::sql($this->link_to_purge,'purge');
 
         $sql = "select table_name, table_rows from information_schema.tables where table_schema ='".$this->schema_delete."'  order by table_name;";
 
@@ -3787,6 +3776,7 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         while ($ob     = $db->sql_fetch_object($res)) {
 
             $sql2 = "SELECT count(1) as cpt FROM `".$this->schema_delete."`.`".$ob->table_name."`";
+            Debug::debug($sql2);
             $res2 = $db->sql_query($sql2);
 
             while ($ob2 = $db->sql_fetch_object($res2)) {
@@ -3807,4 +3797,29 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
     {
 
     }
+
+
+
+    public function setDebug($param)
+    {
+        $id_cleaner_main = (int)$param[0] ?? "";
+
+        if (empty($id_cleaner_main)) {
+            throw new \Exception('This function take id_cleaner_main in parameter');
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM cleaner_main WHERE id=".$id_cleaner_main;
+        $res = $db->sql_query($sql);
+        while($ob = $db->sql_fetch_object($res))
+        {
+            shell_exec("kill -SIGUSR1 ".$ob->pid);
+        }
+
+        header("location: ".LINK."Cleaner/details/1");
+    
+    }
+
+
 }

@@ -74,5 +74,5 @@ if (empty($_GET['ajax'])) {
     echo '<a href="'.LINK.'Daemon/refresh" type="button" title="Use this if there are troubles after crash of server, can take several seconds" class="btn btn-warning" style="font-size:12px"> <span class="glyphicon glyphicon-refresh" aria-hidden="true" style="font-size:12px"></span> Refresh all</a>';
     echo '<br /><br />';
 
-    \Glial\Synapse\FactoryController::addNode("Worker", "index", array());
+    \Glial\Synapse\FactoryController::addNode("Daemon", "worker", array());
 }
