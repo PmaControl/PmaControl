@@ -10,6 +10,7 @@ use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use \App\Controller\Upgrade;
 
 class Install extends Controller
 {
@@ -831,7 +832,12 @@ if (! defined('WWW_ROOT'))
             unlink($filename);
         }
 
-        //load DB and compare => upgrade
+        $upgrade = new Upgrade();
+
+        $upgrade->updateConfig(array());
+
+
+        //load DB and compare => upgradet
     }
 
     public function update($param)
