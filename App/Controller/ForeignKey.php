@@ -64,13 +64,12 @@ class ForeignKey extends Controller
         $id_mysql_server = $param[0];
         $database = $param[0];
         
-        $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
         $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server.")
         and is_automatic = 1";
         //$sql = "TRUNCATE table foreign_key_virtual;";
-        $db->sql_query($sql);
+        $default->sql_query($sql);
 
         $databases = $this->getDatabase($param);
 
