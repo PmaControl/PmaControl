@@ -13,8 +13,7 @@ echo "<table class=\"table table-bordered table-striped\" width=\"100%\">";
     echo "<th>".__("Email")."</th>";
     echo "<th>".__("Rank")."</th>";
 
-    echo "<th>".__("Points")."</th>";
-    echo "<th>".__("Last online")."</th>";
+    //echo "<th>".__("Last online")."</th>";
     echo "<tr>";
 
 $i=0;
@@ -33,13 +32,10 @@ foreach($data['user'] as $line)
 	echo "<td><img class=\"country\" src=\"".IMG."country/type1/".strtolower($line['id_country']).".gif\" width=\"18\" height=\"12\" /> ".$line['libelle']."</td>";
 	echo "<td>".$line['firstname']." ".$line['name']."</td>";
 	echo "<td>".$line['email']."</td>";
-
-        echo "<td>";
-        echo Form::select("user_main", "id_group", $data['group'], $line['id_group'], array("class" => "form-control"),$line['id'] );
-        echo "</td>";
-	//echo "<td>".$line['rank']."</td>";
-	echo "<td>".$line['points']."</td>";
-	echo "<td>".$line['date_last_connected']."</td>";
+	echo "<td>";
+	echo Form::select("user_main", "id_group", $data['group'], $line['id_group'], array("class" => "form-control"),$line['id'] );
+	echo "</td>";
+	//echo "<td>".$line['date_last_connected']."</td>";
 	echo "<tr>";
 }
 

@@ -1,9 +1,9 @@
 digraph {
 	    rankdir=LR
-	    graph [fontname = "arial"];
-	    node [fontname = "arial"];
-	    edge [fontname = "arial"];
-	    node [shape=plaintext fontsize=8];
+	    graph [fontname = "helvetica"];
+	    node [fontname = "helvetica"];
+	    edge [fontname = "helvetica"];
+	    node [shape=plaintext fontsize=12];
 	    subgraph cluster_01 {
 	    label = "Replication : Legend";
 	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right" port="i1">Healty&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>

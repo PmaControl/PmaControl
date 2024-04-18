@@ -731,7 +731,7 @@ var myChart = new Chart(ctx, {
         while (true) {
 
             //export to archive controller ?
-            $this->pushArchive();
+            //$this->pushArchive();
 
             $date_start = date("Y-m-d H:i:s");
             $time_start = microtime(true);

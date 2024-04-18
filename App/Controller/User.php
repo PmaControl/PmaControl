@@ -32,14 +32,10 @@ class User extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT a.id, a.firstname, a.name, b.id_country, a.email,b.libelle, a.id_group, COUNT( d.point ) AS points, date_last_connected
+        $sql = "SELECT a.id, a.firstname, a.name, b.id_country, a.email,b.libelle, a.id_group, date_last_connected
 			FROM user_main a
 			INNER JOIN geolocalisation_city b ON b.id = a.id_geolocalisation_city
-			LEFT JOIN history_main c ON c.id_user_main = a.id
-			LEFT JOIN history_action d ON d.id = c.id_history_action
 			WHERE a.is_valid =  '1'
-			GROUP BY a.id, b.libelle
-			ORDER BY points DESC,  date_last_connected desc
 			LIMIT 100";
 
         $res = $db->sql_query($sql);

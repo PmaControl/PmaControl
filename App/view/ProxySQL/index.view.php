@@ -1,7 +1,7 @@
 <?php
 
 use \App\Library\Display;
-
+use \App\Library\Html;
 
 //debug($data['proxysql']);
 echo '<div class="row" style="padding:10px; margin: 5px;">';
@@ -20,8 +20,6 @@ if ( ! empty($data['proxysql']))
         $id_proxysql++;
         
         echo '<div class="col-md-5">';
-
-
 
         echo '<div class="row">';
         echo '<div class="col-md-1 text-center" style="display: flex; justify-content: center; align-items: center; ">';
@@ -56,40 +54,39 @@ if ( ! empty($data['proxysql']))
 
         echo '<div class="row">';
 
+
+
         //frontend
-        echo '<div class="panel panel-primary">';
-        echo '<div class="panel-heading">';
-        echo '<h3 class="panel-title">'.__('Frontend').'</h3>';
-        echo '</div>';
 
-        echo '<table class="table table-condensed table-bordered table-striped" id="table">';
-        echo '<tr>';
-
-        echo '<th>'.__("Hostname").'</th>';
-        echo '<th>'.__("Status").'</th>';
-        echo '</tr>';
-
-        echo '<tr>';
-
-        echo '<td>'.Display::srv($proxysql['id_mysql_server']).'</td>';
-
-        if (empty($proxysql['mysql_available']))
-        {
-            echo '<td><big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big></td>';
+        $thead = Html::thead(array(__("Hostname"), __("Status")));
+        if (empty($proxysql['mysql_available'])) {
+            $status = '<big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big>';
         }
         elseif ($proxysql['mysql_available'] === "1"){
-            echo '<td><big><span class="label label-success">'.__("ONLINE").'</span></big></td>';
+            $status = '<td><span class="label label-success">'.__("ONLINE").'</span></big>';
         }
 
-        
-        echo '</tr>';
+        $tbody = Html::tbody(array(Display::srv($proxysql['id_mysql_server']),$status));
+        $body = Html::table(
+            $thead,
+            $tbody
+        );
 
-        echo '</table>';
+        echo Html::box(__('Frontend'),$body );
+
+
+
+
+
+
         echo '</div>';
 
-        echo '</div>';
+        //error
+        /******************** */
 
 
+
+        /*********** */
 
 
         echo '</div>';

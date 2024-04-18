@@ -305,8 +305,16 @@ class ProxySQL extends Controller
             $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
             $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
             $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'];
+            
+            $arr['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
             $data['proxysql'][] = $arr;
+
+            
         }
+
+        
+        
+
 
         $this->set('data', $data);
     }
@@ -534,8 +542,7 @@ class ProxySQL extends Controller
         $import = array();
         $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         $import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
-        //$import['uniq']['key1::key2::key3']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
-
+        //$import['uniq']['key2::key3??']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
 
         $db->sql_close();
 

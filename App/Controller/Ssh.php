@@ -24,17 +24,10 @@ class Ssh extends Controller
 
     public function keys()
     {
-        
+        //https://guacamole.apache.org/releases/
+        //https://fr.linux-console.net/?p=9161
     }
-    /*
-     * (PmaControl 0.8)<br/>
-     * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
-     * @return boolean Success
-     * @package Controller
-     * @since 0.8 First time this was introduced.
-     * @description log error & start / stop daemon
-     * @access public
-     */
+
 
     public function before($param)
     {
