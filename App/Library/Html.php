@@ -39,7 +39,7 @@ class Html
 
     static function tbody(array $td)
     {
-        $html = "<tr><td>".implode("</td></td>",$td)."</td></tr>";
+        $html = "<tr><td>".implode("</td><td>",$td)."</td></tr>";
         return $html;
     }
 }
