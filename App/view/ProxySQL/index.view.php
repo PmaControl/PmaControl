@@ -52,18 +52,18 @@ if ( ! empty($data['proxysql']))
         echo '<div class="row">&nbsp;</div>';
         
 
-        echo '<div class="row">';
+        
 
 
 
         //frontend
-
+        echo '<div class="row">';
         $thead = Html::thead(array(__("Hostname"), __("Status")));
         if (empty($proxysql['mysql_available'])) {
             $status = '<big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big>';
         }
         elseif ($proxysql['mysql_available'] === "1"){
-            $status = '<td><span class="label label-success">'.__("ONLINE").'</span></big>';
+            $status = '<big><span class="label label-success">'.__("ONLINE").'</span></big>';
         }
 
         $tbody = Html::tbody(array(Display::srv($proxysql['id_mysql_server']),$status));
@@ -71,16 +71,31 @@ if ( ! empty($data['proxysql']))
             $thead,
             $tbody
         );
-
         echo Html::box(__('Frontend'),$body );
-
-
-
-
-
-
         echo '</div>';
 
+
+        
+
+
+
+        //Error
+        echo '<div class="row">';
+        $keys = array_keys(end($data['proxysql_error']));
+
+        $tbody = '';
+        foreach($data['proxysql_error'] as $line)
+        {
+            $tbody .= Html::tbody($line);
+        }
+
+        echo Html::box(__('Error'),
+            Html::table(
+                Html::thead($keys),
+                $tbody
+            )
+        );
+        echo '</div>';
         //error
         /******************** */
 
@@ -113,14 +128,14 @@ if ( ! empty($data['proxysql']))
         foreach($proxysql['servers'] as $server)
         {
             echo '<tr>';
-            echo '<td><a href="">'.$server['hostgroup_id'].'</a></td>';
+            echo '<td>'.$server['hostgroup_id'].'</td>';
             echo '<td><a href="">'.$server['hostname'].':'.$server['port'].'</a></td>';
             
             switch($server['status'])
             {
-                case 'SHUNNED': $class='primary'; break;
+                case 'SHUNNED': $class='danger'; break;
                 case 'ONLINE': $class='success'; break;
-                case 'OFFLINE_HARD': $class='danger'; break;
+                case 'OFFLINE_SOFT': $class='warning'; break;
             }
 
             echo '<td><big><span class="label label-'.$class.'">'.__($server['status']).'</span></big></td>';

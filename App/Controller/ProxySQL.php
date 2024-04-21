@@ -306,7 +306,7 @@ class ProxySQL extends Controller
             $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
             $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'];
             
-            $arr['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
+            $data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
             $data['proxysql'][] = $arr;
 
             
@@ -461,7 +461,7 @@ class ProxySQL extends Controller
     }
 
 
-    public function getErrorConnect($param)
+    static public function getErrorConnect($param)
     {
         Debug::parseDebug($param);
         
@@ -498,20 +498,22 @@ class ProxySQL extends Controller
         e as (SELECT hostname, port, MAX(time_start_us) AS max_time
         FROM mysql_server_replication_lag_log
         GROUP BY hostname, port)
-    SELECT b.hostname, b.port, b.connect_error as error FROM mysql_server_connect_log b 
+    SELECT b.hostname, b.port, b.connect_error as error, 'mysql_server_connect_log' as origin FROM mysql_server_connect_log b 
     INNER JOIN a ON a.hostname = b.hostname 
     AND a.port = b.port 
     AND a.max_time = b.time_start_us WHERE b.connect_error is not null
     UNION
-    SELECT d.hostname, d.port, d.ping_error as error FROM mysql_server_ping_log d
+    SELECT d.hostname, d.port, d.ping_error as error, 'mysql_server_ping_log' as origin FROM mysql_server_ping_log d
     INNER JOIN c ON c.hostname = d.hostname 
     AND c.port = d.port 
     AND c.max_time = d.time_start_us WHERE d.ping_error is not null
     UNION
-    SELECT f.hostname, f.port, f.error as error FROM mysql_server_replication_lag_log f
+    SELECT f.hostname, f.port, f.error as error, 'mysql_server_replication_lag_log' as origin FROM mysql_server_replication_lag_log f
     INNER JOIN e ON e.hostname = f.hostname 
-    AND e.port = f.port 
+    AND e.port = f.port AND f.error != 'Lost connection to server during query'
     AND e.max_time = f.time_start_us WHERE f.error is not null;";
+
+    //  f.error != 'Lost connection to server during query'  => in case of Master going off an error is keeped is query failed when trying to get slave status;
 
         $res = $db->sql_query($sql);
 
@@ -541,7 +543,7 @@ class ProxySQL extends Controller
 
         $import = array();
         $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
-        $import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
+        //$import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
         //$import['uniq']['key2::key3??']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
 
         $db->sql_close();

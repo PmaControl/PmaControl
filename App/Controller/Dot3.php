@@ -38,7 +38,6 @@ class Dot3 extends Controller
     use \App\Library\Filter;
     use \App\Library\Dot;
 
-
     static $information = array();
 
     // build link MasterSlave
@@ -54,7 +53,6 @@ class Dot3 extends Controller
     public function before($param)
     {
         $this->loadConfigColor();
-
         $monolog       = new Logger("Dot3");
         $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
@@ -97,7 +95,7 @@ class Dot3 extends Controller
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql",
                 "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_server::mysql_servers",
-                "auto_increment_increment", "auto_increment_offset"
+                "auto_increment_increment", "auto_increment_offset", "log_slave_updates"
             ),array() , $date_request);
 
         $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy
@@ -130,6 +128,40 @@ class Dot3 extends Controller
             //json decode in same time
             $data['servers'][$arr['id_mysql_server']]['mysql_servers'] = json_decode($data['servers'][$arr['id_mysql_server']]['mysql_servers'], true);
         }
+
+
+        //TO REMOVE justfor TEST proxysql
+
+        $servers = ProxySQL::getErrorConnect(array(1));
+        $ret = array();
+        foreach($servers as $server)
+        {
+            $ret[$server['hostname'].':'.$server['port']] = $server['error'];
+        }
+        $data['servers'][65]['proxy_connect_error'] = $ret;
+        //end
+
+
+        //to remove
+        
+        //stats_mysql_processlist
+
+
+
+        //end
+
+
+        $sql = "select * from mysql_database WHERE schema_name not in ('performance_schema','information_schema')";
+        $res = $db->sql_query($sql);
+        while($ob = $db->sql_fetch_object($res))
+        {
+            if (empty($data['servers'][$ob->id_mysql_server]['is_proxy']))
+            {
+                $data['servers'][$ob->id_mysql_server]['mysql_database'][] = $ob->schema_name;
+            }
+        }
+
+
 
         Debug::debug($data, "SERVER");
 
@@ -307,6 +339,9 @@ class Dot3 extends Controller
 
         $id_dot3_information = $this->generateInformation($param);
 
+
+        
+
         $info = self::getInformation($id_dot3_information);
         //TODO : add if date > now => return true to not was time to regenerate dot for nothing
 
@@ -322,6 +357,8 @@ class Dot3 extends Controller
             //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
             $this->linkHostGroup(array($id_dot3_information, $group));
             
+            
+
             $dot = $this->generateDot();
 
             $reference = md5(json_encode($group));
@@ -333,11 +370,18 @@ class Dot3 extends Controller
 
     public function saveGraph($id_dot3_information, $file_name, $dot, $group)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT, "RUN");
 
         $md5 = md5($dot);
         $dot3_graph = array();
         $commit = Git::getCurrentCommit();
+
+
+        $sql = "SET AUTOCOMMIT=0;";
+        $res = $db->sql_query($sql);
+        $sql = "BEGIN";
+        $res = $db->sql_query($sql);
+
 
 
         $sql = "SELECT id FROM dot3_graph WHERE md5 = '".$md5."'";
@@ -347,16 +391,22 @@ class Dot3 extends Controller
             $id_dot3_graph = $ob->id;
             
             $dot3_graph['dot3_graph']['id'] = $id_dot3_graph;
+            $this->logger->emergency("ID : ".$id_dot3_graph);
+        }
+        
+        
+
+        if (empty($id_dot3_graph))
+        {
+            $dot3_graph['dot3_graph']['filename'] = $file_name;
+            $dot3_graph['dot3_graph']['dot'] = $dot;
+            $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
+            $dot3_graph['dot3_graph']['md5'] = $md5;
+            $dot3_graph['dot3_graph']['version'] = $commit['version'];
+            $dot3_graph['dot3_graph']['commit'] = $commit['build'];
+            $id_dot3_graph = $db->sql_save($dot3_graph);
         }
 
-
-        $dot3_graph['dot3_graph']['filename'] = $file_name;
-        $dot3_graph['dot3_graph']['dot'] = $dot;
-        $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
-        $dot3_graph['dot3_graph']['md5'] = $md5;
-        $dot3_graph['dot3_graph']['version'] = $commit['version'];
-        $dot3_graph['dot3_graph']['commit'] = $commit['build'];
-        $id_dot3_graph = $db->sql_save($dot3_graph);
 
 
         $dot3_cluster = array();
@@ -384,6 +434,9 @@ class Dot3 extends Controller
             $db->sql_save($dot3_cluster__mysql_server);
         }
 
+        $sql = "COMMIT";
+       //$sql ="ROLLBACK";
+        $res = $db->sql_query($sql);
 
     }
 
@@ -400,7 +453,10 @@ class Dot3 extends Controller
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
         }  
+        $dot .= Graphviz::buildApp();
         $dot .= Graphviz::generateEnd();
+
+        
 //        Debug::debug($dot);
 
         return $dot;
@@ -504,7 +560,8 @@ class Dot3 extends Controller
                     && $slave['seconds_behind_master'] != "0")
                     {
                         $tmp = self::$config['REPLICATION_DELAY'];
-                        $tmp['tooltip'] = "DELAY : ".$slave['seconds_behind_master'].__("seconds");
+                        $tmp['tooltip'] = "DELAY : ".$slave['seconds_behind_master'].' '.__("seconds");
+                        $tmp['options']['label'] = $slave['seconds_behind_master'].' '.__("seconds");
                     }
                     //replication ERROR SQL
                     elseif(strtolower($slave['slave_io_running']) == 'yes' 
@@ -518,12 +575,14 @@ class Dot3 extends Controller
                     {
                         $tmp = self::$config['REPLICATION_ERROR_IO'];
                         $tmp['tooltip'] = "ERROR : ".$slave['last_io_errno'].":".$slave['last_io_error'];
+                        $tmp['options']['style'] = $tmp['style'];
                     }
                     elseif(strtolower($slave['slave_io_running']) == 'no' 
                     && strtolower($slave['slave_sql_running']) == 'no' )
                     {
                         $tmp = self::$config['REPLICATION_STOPPED'];
                         $tmp['tooltip'] = __("Replication stopped");
+                        $tmp['options']['style'] = $tmp['style'];
                     }
                     elseif(strtolower($slave['slave_io_running']) == 'no' 
                     && strtolower($slave['slave_sql_running']) == 'no' )
@@ -531,6 +590,14 @@ class Dot3 extends Controller
                         $tmp = self::$config['REPLICATION_ERROR_BOTH'];
                         $tmp['tooltip'] = "ERROR : ".$slave['last_sql_errno'].":".$slave['last_sql_error']
                         ." - ERROR : ".$slave['last_io_errno'].":".$slave['last_io_error'];
+                        $tmp['options']['style'] = $tmp['style'];
+                    }
+                    elseif(strtolower($slave['slave_io_running']) == 'connecting')
+                    {
+                        $tmp = self::$config['REPLICATION_ERROR_CONNECT'];
+                        $tmp['tooltip'] = "ERROR : "
+                        ." - ERROR : ".$slave['last_io_errno'].":".self::escapeTooltip($slave['last_io_error']);
+                        $tmp['options']['style'] = $tmp['style'];
                     }
                     else{
                         $tmp = self::$config['REPLICATION_BUG'];
@@ -541,6 +608,7 @@ class Dot3 extends Controller
                     if (empty($dot3_information['information']['servers'][$id_mysql_server]['mysql_available']))
                     {
                         $tmp = self::$config['REPLICATION_BLACKOUT'];
+                        $tmp['options']['style'] = $tmp['style'];
                         $tmp['tooltip'] = __("Server is offline");
                     }
                     
@@ -549,6 +617,7 @@ class Dot3 extends Controller
                         if (strtolower($slave['using_gtid']) != "no") {
                             $tmp['color'] = $tmp['color'].":#ffffff:".$tmp['color'];
                             $tmp['options']['penwidth'] = "2";
+                            $tmp['options']['style'] = $tmp['style'];
                         }
                     }
 
@@ -643,16 +712,55 @@ class Dot3 extends Controller
                 $i++;
 
                 $host = $hostgroup['hostname'].':'.$hostgroup['port'];
-                $id_mysql_server_target = self::findIdMysqlServer($host, $id_dot3_information);
 
                 $tmp = array();
-                $tmp = self::$config['PROXYSQL_'.$hostgroup['status']];
-                //$tmp['arrow'] = '"'.$id_mysql_server.':hg'.$i.'" -> "'.$id_mysql_server_target.':target"';
-                $tmp['arrow'] = ''.$id_mysql_server.':hg'.$i.' -> '.$id_mysql_server_target.':target';
                 
-                $tmp['tooltip'] = $hostgroup['status'];
-                $tmp['options']['dir'] = 'none';
+                $tmp = self::$config['PROXYSQL_'.$hostgroup['status']];
+                $tmp['tooltip'] = "STATUS : ".$hostgroup['status'];
+
+                foreach($server['proxy_connect_error'] as $hostname => $error)
+                {
+                    $extra = '';
+                    if ($hostname == $host)
+                    {
+                        
+                        if ($hostgroup['status'] == "ONLINE") {
+                            $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR CONFIG DETECTED : '.$error;
+                        }
+                        else {
+                            $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR : '.$error;
+                        }
+                        
+                        //
+                        break;
+                    }
+                }
+                
+                $id_mysql_server_target = self::findIdMysqlServer($host, $id_dot3_information);
+                //headlabel="*", taillabel="1"
+                
+                $port = crc32($hostgroup['hostgroup_id'].':'.$host);
+                
+                
+                //$tmp['arrow'] = '"'.$id_mysql_server.':hg'.$i.'" -> "'.
+                $id_mysql_server_target.':target"';
+                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':target';
+                $tmp['options']['dir'] = 'both';
                 $tmp['options']['style'] = $tmp['style'];
+                $tmp['options']['arrowtail']= 'crow';
+                $tmp['options']['arrowhead']= 'none';
+
+                
+                if ($hostgroup['status'] != "ONLINE")
+                {
+                    $tmp['options']['label'] = ucfirst(strtolower($hostgroup['status']));
+                    //$tmp['options']['tooltip'] = ucfirst(strtolower($hostgroup['status']));
+                    $tmp['options']['labeltooltip'] = __('The server was removed from the host group (id:'.$hostgroup['hostgroup_id'].') because he is offline or the delay of replication is more than 10 seconds as specified on mysql_servers.max_replication_lag in ProxYSQL');
+                    
+                    //$tmp['options']['headlabel'] = "sfhg";
+                    //$tmp['options']['taillabel'] = "sfhg";
+                }
+
                 
                 self::$build_ms[] = $tmp;
             }
@@ -665,7 +773,7 @@ class Dot3 extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM `architecture_legend` order by `order`;";
+        $sql = "SELECT * FROM `dot3_legend` order by `order`;";
         $res = $db->sql_query($sql);
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -675,10 +783,8 @@ class Dot3 extends Controller
     }
 
     private static function findIdMysqlServer($host, $id_dot3_information)
-    {
-        
+    {        
         $dot_information = self::getInformation($id_dot3_information);
-
 
         if (empty($dot_information['information']['mapping']))
         {
@@ -695,7 +801,6 @@ class Dot3 extends Controller
             die();
         }
     }
-
 
     private static function getInformation($id_dot3_information = '')
     {
@@ -891,6 +996,19 @@ class Dot3 extends Controller
             exit;
         }
 
+    }
+
+    public function app($param)
+    {
+
+        Graphviz::buildApp($param);
+    }
+
+    static public function escapeTooltip($string)
+    {
+        $string = str_replace('"',"‘", $string);
+
+        return $string;
     }
 
 }

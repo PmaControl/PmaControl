@@ -10,6 +10,7 @@ namespace App\Library;
 use \App\Library\Table;
 use \App\Library\Format;
 use \App\Controller\Dot3;
+use \Glial\Sgbd\Sgbd;
 
 use \Glial\Extract\Grabber;
 class Graphviz
@@ -72,6 +73,8 @@ class Graphviz
         static $table_count = 1;
 
         static $subgraph_number = 0;
+
+        static $edge = array();
 
     public static function generateTable(array $param, $underline =array())
     {
@@ -379,29 +382,82 @@ class Graphviz
 
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
-        $return .= 'tooltip="" 
+        $return .= 'tooltip="'.$server['display_name'].'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
         <tr><td port="target" bgcolor="'.$server['color'].'">
         
+
+
+        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
+
+
+
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
         <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
 
         
-        $return .= '<tr><td bgcolor="#eeeeee" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" align="left">'.$fork.' : '.$number.'</td></tr>';
-        $return .= '<tr><td bgcolor="lightgrey" align="left">'.$server['ip'].':'.$server['port'].'</td></tr>'.PHP_EOL;
+        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
+        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
+        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.$server['ip'].':'.$server['port'].'</td></tr>'.PHP_EOL;
 
-        $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
+        //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
         if (empty($server['is_proxysql']) )
         {
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].'</td></tr>'.PHP_EOL;
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="ro">'.__('Read only')." : ".$server['read_only'].'</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
+
+            $return .= '</table>'.PHP_EOL;
+    
+            $return .= '</td></tr><tr><td>';
+
+            
+            $return .= '<table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+            <tr>
+                <td align="left" bgcolor="grey">Schema</td>
+                <td bgcolor="grey">B</td>
+                <td bgcolor="grey">R</td>
+            </tr>'.PHP_EOL;
+            
+            foreach($server['mysql_database'] as $database)
+            {
+                $return .= '<tr>'.PHP_EOL;
+                $return .= '<td bgcolor="darkgrey" align="left">'.$database.'</td>'.PHP_EOL;
+                $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
+                $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
+                $return .= '</tr>'.PHP_EOL;
+
+                if ($database == "eshop")
+                {
+
+                    $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
+                    
+                }
+
+            }
+            $return .= '</table>'.PHP_EOL;
+            
+
+
+
+
+
+
+            $return .= '</td></tr>'.PHP_EOL;
+            $return .= '</table>'.PHP_EOL;
+
+
+            
+            $return .= '</td></tr></table>> ];'.PHP_EOL;
+
             //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Auto_increment')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
         }elseif ($server['is_proxysql'] == "1")
         {
@@ -417,19 +473,55 @@ class Graphviz
                 
                 if ($hostgroup != $link['hostgroup_id'])
                 {
-                    $return .= '<tr><td colspan="2" bgcolor="black" align="left"><font color="#ffffff">'.__('Host group').' : '.$link['hostgroup_id'].'</font></td></tr>'.PHP_EOL;
+                    $port = crc32($link['hostgroup_id'].'::');
+                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="grey" align="left"><font color="#000000">'.__('Host group').' : '.$link['hostgroup_id'].'</font></td></tr>'.PHP_EOL;
                 }
-                
+                //⛯ PmaControl
                 $hostgroup = $link['hostgroup_id'];
-                
-                
+                $forground_color = 'white';
+                //OVER RIDE STYLE
+                //⚙🔥
+
+                $extra = '';
                 $bgcolor = Dot3::$config['PROXYSQL_'.$link['status']]['color'];
+                $forground_color =Dot3::$config['PROXYSQL_'.$link['status']]['font'];
+                foreach($server['proxy_connect_error'] as $hostname => $error)
+                {
+                    $extra = '';
+                    if ($hostname == $link['hostname'].':'.$link['port'])
+                    {
+                        
+                        //$forground_color = 'black';
+                        //$bgcolor = 'darkgrey';
+                        if ($link['status'] == "ONLINE")
+                        {
+                            $bgcolor = Dot3::$config['PROXYSQL_CONFIG']['color'];
+                            $extra = ' ⚙🔥';
+                        }
+                        else{
+                            $extra = ' 🔥';
+                        }
+
+
+                        break;
+                    }
+                }
+
+                $port = crc32($link['hostgroup_id'].':'.$link['hostname'].':'.$link['port']);
+                
                 $return .= '<tr>';
-                $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left" port="hg'.$i.'">';
-                $return .= '<font color="'.$forground_color.'">'.$link['hostname'].':'.$link['port'].'</font>';
+                $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left" port="'.$port.'">';
+                $return .= '<font color="'.$forground_color.'">'.$link['hostname'].':'.$link['port'].''.$extra.'</font>';
                 $return .= '</td>';
                 $return .= '</tr>'.PHP_EOL;
             }
+            $return .= '</table>';
+            
+            
+            $return .= '</td></tr>'.PHP_EOL;
+            $return .= '</table>'.PHP_EOL;
+            
+            $return .= '</td></tr></table>> ];'.PHP_EOL;
         }
         
         
@@ -448,8 +540,106 @@ class Graphviz
 
         //databases
 
-        $return .= '</table></td></tr></table>> ];'.PHP_EOL;
 
+
+        return $return;
+    }
+
+
+    static function buildApp()
+    {
+        $db = Sgbd::sql('proxysql_1');
+
+        $sql ="select cli_host, srv_host,srv_port, hostgroup, user, count(1) as cpt, db as table_schema,sum(time_ms) as sum_time_ms  
+        from stats_mysql_processlist WHERE command != 'Sleep' and hostgroup!=-1 group
+        by cli_host,srv_host,srv_port,hostgroup, user, db ;";
+
+        $res = $db->sql_query($sql);
+
+        $data = array();
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data[$arr['cli_host']][$arr['user']][$arr['table_schema']] = $arr;
+        }   
+
+
+        krsort($data);
+
+        Debug::debug($data);
+
+        $APP = '';
+        foreach($data as $ip => $users)
+        {
+            self::$edge= array();
+
+            $lines = '<table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
+            $lines .=  '<tr><td width="150" bgcolor="grey" colspan="4"><font color="#ffffff"><b>'.'App ??'.'</b></font></td></tr>';
+            $lines .=  '<tr><td width="150" bgcolor="lightgrey" colspan="4">'.$ip.'</td></tr>';
+
+            $lines .= '<tr>';
+            $lines .= '<td bgcolor="grey">'.__("User").'</td>';
+            $lines .= '<td bgcolor="grey">'.__("Schema").'</td>';
+            $lines .= '<td bgcolor="grey">'.__("Con").'</td>';
+            $lines .= '<td bgcolor="grey">'.__("Ms").'</td>';
+            $lines .= '</tr>'.PHP_EOL;
+
+            foreach($users as $name_user => $dbs)
+            {
+                $nb_dbs = count($dbs);
+                $lines .=  '<tr><td bgcolor="darkgrey" align="left" rowspan="'.$nb_dbs.'">'.$name_user.'</td>';
+                $i = 0;
+
+                ksort($dbs);
+                foreach($dbs as $db_name => $elem)
+                {
+                    $i++;
+                    if ($i != 1) {
+                        $lines .= '<tr>';
+                    }
+                    $port_ori = crc32(json_encode($elem));
+                    $port_dest = crc32($elem['hostgroup'].':'.$elem['srv_host'].':'.$elem['srv_port']);
+
+
+                    $lines .= '<td bgcolor="darkgrey" align="left">'.$db_name.'</td>';
+                    $lines .= '<td bgcolor="darkgrey" align="right">'.$elem['cpt'].'</td>';
+                    $lines .= '<td bgcolor="darkgrey" align="right" port="'.$port_ori.'">'.$elem['sum_time_ms'].'</td>';
+                    $lines .= '</tr>'.PHP_EOL;
+
+                    
+                    self::$edge[] = crc32($ip).':'.$port_ori.' -> 65:'.$port_dest;
+                }
+            }
+            $lines .= '</table>'.PHP_EOL;
+            $APP .= self::buildBox($lines, crc32($ip), "", "All", "grey").PHP_EOL;
+
+
+            foreach(self::$edge as $edge)
+            {
+                $APP .= $edge.'[tooltip="OK" color="darkgrey" fontname="arial" fontsize=8 edgeURL="" arrowhead="none" penwidth="3" style="solid" arrowsize="1.5" ];'.PHP_EOL;
+            }
+        }
+
+
+
+
+        return $APP;
+    }
+
+    static function buildBox($body, $id_box, $link, $display_name, $box_color)
+    {
+
+        $return = PHP_EOL;
+        $return .= '  "'.$id_box.'"[ href="'.$link.'"';
+        $return .= 'tooltip="'.$display_name.'"
+        shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+        <tr><td port="target" bgcolor="'.$box_color.'">
+        
+        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>';
+
+        $return .= $body;
+        $return .= '</td></tr></table>'.PHP_EOL;
+        $return .= '</td></tr></table>> ];'.PHP_EOL;
+        
         return $return;
     }
 }

@@ -212,6 +212,40 @@ class Aspirateur extends Controller
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
             if (empty($IS_PROXY)) {
                 $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+                if ($available === 0) {
+                    //$mysql_tested->sql_close();
+                    return false;
+                }
+            }
+            else{
+                // need try one case if hostgroup 2 ok but hostgroup 1 ko
+                try{
+                    $sql ="BEGIN;";
+                    $mysql_tested->sql_query($sql);
+                    $sql ="COMMIT;";
+                    $mysql_tested->sql_query($sql);
+                }
+                catch(\Exception $e){
+                    $error_ori = $e->getMessage();
+                    preg_match('/ERROR:(.*)}/', $error_ori, $output_array);
+                    if (!empty($output_array[1])) {
+                        $error_filter = $output_array[1];
+                    }
+                    else {
+                        $error_filter =$error_ori;
+                    }
+                    $this->logger->emergency("[ERROR][WORKER:".$pid."] id_mysql_server:$id_mysql_server ==> $error_filter");
+                }
+                finally
+                {
+                    $available = empty($error_ori) ? 1 : 0;
+                    $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
+
+                    if ($available === 0) {
+                        $mysql_tested->sql_close();
+                        return false;
+                    }
+                }
             }
             
             $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
@@ -227,40 +261,8 @@ class Aspirateur extends Controller
 
         // traitement SHOW GLOBAL VARIABLES
 
-        //CASE ProxySQL (with one hostgroup DEAD)
-        try{
-            $var['variables'] = $mysql_tested->getVariables();
-        }
-        catch(\Exception $e){
-            $error_ori = $e->getMessage();
-            //$error_msg = "ERROR 9001 (HY000) at line 1: Max connect timeout reached while reaching hostgroup 1 after 10000ms";
-
-            $output_array = array();
-            preg_match('/ERROR:\s(.*)}/', $error_ori, $output_array);
-
-            if (!empty($output_array[1])) {
-                $error_msg = $output_array[1];
-            }
-            else{
-                $error_msg = $error_ori;
-            }
-            $this->logger->emergency("[ERROR] id_mysql_server:$id_mysql_server ==> $error_ori");
-
-        }
-        finally{
-            // case for Proxy  and Galera Cluster
-            if (!empty($IS_PROXY)) {
-                $available = empty($error_ori) ? 1 : 0;
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
-                $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." ".$error_msg." - is_available : ".$available." - ping : ".round($ping,6));
-
-                // VERY important else we got error and we kill the worker and have to restart with a new one
-                if ($available === 0) {
-                    return false;
-                }
-                //return true;
-            }
-        }
+        $var['variables'] = $mysql_tested->getVariables();
+   
 
         Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
         //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
@@ -485,8 +487,6 @@ class Aspirateur extends Controller
 
         while ($ob = $db->sql_fetch_object($res)) {
 
-
-          
             try{
                 $error_msg='';
                 $time_start = microtime(true);
@@ -505,7 +505,7 @@ class Aspirateur extends Controller
     
                 // VERY important else we got error and we kill the worker and have to restart with a new one
                 if ($available === 0) {
-                    return false;
+                    //return false;
                 }
             }
 
