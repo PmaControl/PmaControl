@@ -75,28 +75,27 @@ if ( ! empty($data['proxysql']))
         echo '</div>';
 
 
-        
-
-
-
-        //Error
-        echo '<div class="row">';
-        $keys = array_keys(end($data['proxysql_error']));
-
-        $tbody = '';
-        foreach($data['proxysql_error'] as $line)
+        if (!empty($data['proxysql_error']))
         {
-            $tbody .= Html::tbody($line);
+            echo '<div class="row">';
+            $keys = array_keys(end($data['proxysql_error']));
+
+            $tbody = '';
+            foreach($data['proxysql_error'] as $line)
+            {
+                $tbody .= Html::tbody($line);
+            }
+
+            echo Html::box(__('Error'),
+                Html::table(
+                    Html::thead($keys),
+                    $tbody
+                )
+            );
+            echo '</div>';
+            //error
         }
 
-        echo Html::box(__('Error'),
-            Html::table(
-                Html::thead($keys),
-                $tbody
-            )
-        );
-        echo '</div>';
-        //error
         /******************** */
 
 
