@@ -19,22 +19,23 @@ use \Glial\Sgbd\Sgbd;
 class Control extends Controller
 {
     public $tables                = array("ts_value_general", "ts_value_slave");
-    public $ext                   = array("int", "double", "text");
+    public $ext                   = array("int", "double", "text", "json");
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
-        "double" => "double NOT NULL", "text" => "text NOT NULL");
-    public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)", "ts_value_proxysql" => "PRIMARY KEY (`id`,`date`)");
-//var $primary_key = array("ts_value_general" => "PRIMARY KEY (`id`)", "ts_value_slave" => "PRIMARY KEY (`id`)");
+        "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
+    public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
     );
-    private $engine               = "tokudb";
+
+    //=> TODO a voir pour delete
+    private $engine               = "rocksdb";
     private $engine_preference    = array("ROCKSDB");
     public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     //when mysql reach 80% of disk we start to drop partition
     public $percent_max_disk_used = 80;
     //0 = keep all partitions,
-    public $partition_to_keep     = 0;
+    public $partition_to_keep     = 2;
 
     /*
      *
