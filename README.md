@@ -33,7 +33,7 @@ have a look on : https://github.com/Esysteme/Debian/blob/master/ubuntu_server.ba
 * **ext-ssh2** => used for monitoring system and backup
 * **ext-mysqlnd**
 * **ext-curl**
-* **MySQL 5.6** / Perconna Server 5.6 / MariaDB 10.x => to store statistique / link of backup
+* **MariaDB 10.11**
 * **graphviz** => make a graph about replication (include multi master and galera cluster)
 * **apache2** (with a2enmod php5 & **a2enmod rewrite**)
 * **postfix** to send mail
