@@ -60,7 +60,6 @@ plugin-load=ha_rocksdb
 
 ### Auto install
 
-
 * ./install
 
 ## You are ready !
