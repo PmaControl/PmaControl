@@ -48,7 +48,7 @@ class Slave extends Controller
           usort($data['slave'], 'invenDescSort');
          */
 
-        $data['info_server'] = Extraction::display(array("variables::hostname", "variables::is_proxysql", "mysql_server::available"));
+        $data['info_server'] = Extraction::display(array("variables::hostname", "variables::is_proxysql", "mysql_available"));
 
         
 

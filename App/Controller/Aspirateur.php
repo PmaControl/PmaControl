@@ -13,9 +13,11 @@ use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Proxy;
+use App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
+use \App\Library\Microsecond;
 /*
  *  => systemctl is-active mysql
  *
@@ -116,23 +118,14 @@ class Aspirateur extends Controller
 {
 
     use \App\Library\Filter;
+
+
+    //to delete
     var $shared            = array();
-    var $lock_variable     = TMP."lock/variable/{id_mysql_server}.md5";
-    var $lock_database     = TMP."lock/database/{id_mysql_server}.lock";
-    var $lock_proxysql_var = TMP."lock/proxysql_var/{id_proxysql_server}.lock";
-
-    var $lock_list_db = TMP."lock/list_db/{id_mysql_server}.md5";
-
-    var $lock_runtime_mysql_servers = TMP."lock/proxysql_runtime_server/{id_mysql_server}.md5";
-
-
-    var $files             = array();
-    public $variables         = array();
 
     static $timestamp_config_file = "";
 
-    static $md5_file = array(4 => TMP."lock/variable/{id_mysql_server}.md5", 9 => TMP."lock/list_db/{id_mysql_server}.md5");
-
+    static $file_created = array();
     //log with monolog
     var $logger;
 
@@ -173,7 +166,7 @@ class Aspirateur extends Controller
         $name_server = $param[0];
         $id_mysql_server   = $param[1];
 
-
+        Debug::checkPoint('Init');
         // To know if we use a proxy like PROXYSQL
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
@@ -185,15 +178,8 @@ class Aspirateur extends Controller
         $db->sql_close();
         //end of case of HA proxy
 
-        Debug::checkPoint('avant query');
+        Debug::checkPoint('After getting proxy');
         $pid = getmypid();
-
-        /* Only for testing for processing long time, don't think some got more than 999 999 mysql server :D */
-        if ($id_mysql_server === "999999") {
-            $wait_sec = 135;
-            $this->logger->notice('### WAIT '.$wait_sec.' sec for id_mysql_server='.$id_mysql_server);
-            sleep($wait_sec);
-        }
 
         $time_start   = microtime(true);
 
@@ -220,6 +206,7 @@ class Aspirateur extends Controller
             else{
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 try{
+                    $error_filter='';
                     $sql ="BEGIN;";
                     $mysql_tested->sql_query($sql);
                     $sql ="COMMIT;";
@@ -247,7 +234,7 @@ class Aspirateur extends Controller
                     }
                 }
             }
-            
+
             $this->logger->info("[WORKER:".$pid."] id_mysql_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
 
             // VERY important else we got error and we kill the worker and have to restart with a new one
@@ -255,55 +242,14 @@ class Aspirateur extends Controller
                 return false;
             }
         }
-        
-        //$res = $mysql_tested->sql_multi_query("SHOW /*!40003 GLOBAL*/ VARIABLES; SHOW /*!40003 GLOBAL*/ STATUS; SHOW SLAVE STATUS; SHOW MASTER STATUS;");
-        // SHOW /*!50000 ENGINE*/ INNODB STATUS
 
         // traitement SHOW GLOBAL VARIABLES
-
         $var['variables'] = $mysql_tested->getVariables();
-   
-
-        Debug::debug($var['variables']['is_proxysql'], "is_proxysql");
-        //shell_exec("echo 'is_proxy : ".json_encode($var['variables'])."' >> ".TMP."/proxysql");
-
-        //we delete variable who change each time and put in on status
-        $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
-
-        $move_to_status = array();
-        foreach($remove_var as $var_to_remove){
-            if (!empty($var['variables'][$var_to_remove])) {
-                
-                $move_to_status[$var_to_remove] = $var['variables'][$var_to_remove];
-                unset($var['variables'][$var_to_remove]);
-            }
-        }
-
-        /**** */
-        //time server
-
-        /*
-        $this->logger->critical("version ". $var['variables']['version']);
-        if (version_compare($var['variables']['version'], '8', ">="))
-        {
-            $sql ="WITH a AS (
-                SELECT TIMESTAMPDIFF(SECOND, MIN(FIRST_SEEN), MAX(LAST_SEEN)) AS seconds_difference
-                FROM performance_schema.events_statements_summary_by_digest
-            )
-            SELECT SUM((AVG_TIMER_WAIT / 1000000000000) * COUNT_STAR) / (SELECT seconds_difference FROM a) AS time_in_seconds
-            FROM performance_schema.events_statements_summary_by_digest;";
-    
-            $res = $mysql_tested->sql_query($sql);
-            while($ob = $mysql_tested->sql_fetch_object($res)){
-                $move_to_status['time_server'] = $ob->time_in_seconds;
-            }
-        }
-        /****** */
-
-        
-        $data = array();
+        Debug::checkPoint('After global variables');
 
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
+
+            $data = array();
             $db  = Sgbd::sql(DB_DEFAULT);
             $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
             $res = $db->sql_query($sql);
@@ -316,128 +262,105 @@ class Aspirateur extends Controller
 
             $version = Extraction2::display(array("proxysql_main_var::admin-version"), array($id_mysql_server));
             
+            $var_temp = array();
             $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
-            $var_temp['variables']['version']         = $version[$id_mysql_server]['admin-version'];
-            $var_temp['variables']['version_comment'] = "ProxySQL";
-            unset($var);
 
-            $var = $var_temp;
-        } else {
-
-            //get SHOW GLOBAL STATUS
-            Debug::debug("apres Variables");
-            $data['status'] = $mysql_tested->getStatus();
-            $data['status'] = array_merge($data['status'], $move_to_status);
-
-            Debug::debug("apres status");
-            $data['master'] = $mysql_tested->isMaster();
-            Debug::debug($data['master'], "STATUS");
-            Debug::debug("apres master");
-            $data['slave']  = $mysql_tested->isSlave();
-            Debug::debug("apres slave");
-
-            $data['locking'] = $this->getLockingQueries(array($id_mysql_server));
-
-            //SHOW SLAVE HOSTS; => add in glial
-            //$data['processlist'] = $mysql_tested->getProcesslist(1);
-
-            if ($var['variables']['log_bin'] === "ON") {
-                $data['binlog'] = $this->binaryLog(array($id_mysql_server));
+            if (! empty($version[$id_mysql_server]['admin-version']))
+            {
+                $version_proxysql = $version[$id_mysql_server]['admin-version'];
+            }
+            else{
+                $version_proxysql = "N/A";
             }
 
-            Debug::debug("apres la récupération de la liste des binlogs");
-            Debug::checkPoint('apres query');
-        }
-        /* mysql > 5.6
-          $sql = "SELECT `NAME`,`COUNT`,`TYPE` FROM `INFORMATION_SCHEMA`.`INNODB_METRICS` WHERE `STATUS` = 'enabled';";
-          $res = $mysql_tested->sql_query($sql);
+            $var_temp['variables']['version']         = $version_proxysql;
+            $var_temp['variables']['version_comment'] = "ProxySQL";
+            
+            $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            return true;
+        } 
 
-          while ($ob = $mysql_tested->sql_fetch_object($res)) {
-          $data['innodb'][$ob->NAME] = $ob->COUNT;
-          }
-         */
-
-        $date[date('Y-m-d H:i:s')][$id_mysql_server] = $data;
-
-        if ($mysql_tested->is_connected === false) {
-            $this->logger->emergency("PAS BON DU TOUT ! ask creator of PmaControl");
-            return false;
-        }
-
-        $export_variables = $this->isModified($id_mysql_server, $var,  $this->lock_variable);
-
-        Debug::debug($date, "answer");
-
-        //push data in memory
-        $this->allocate_shared_storage('answer');
-        $this->shared['answer']->{$id_mysql_server} = $date;
-
-        if ($export_variables) {
-            $this->allocate_shared_storage('variable');
-
-            Debug::debug($var, "SHOW GLOBAL VARIABLE;");
-
-            $variables                                  = array();
-            $variables[date('Y-m-d H:i:s')][$id_mysql_server] = $var;
-            $this->shared['variable']->{$id_mysql_server}     = $variables;
-        }
-
-
-        if (!empty($IS_PROXY)) {
+        if ($IS_PROXY)
+        {
             return true;
         }
 
-        /*************************************** list Database  */
-
-        $db_list = $this->getSchema($id_mysql_server);
-        if ($this->isModified($id_mysql_server, $db_list,  $this->lock_list_db) === true){
-
-            $this->logger->debug("we import DB to shared memory [id_mysql_server:".$id_mysql_server."]");
-
-            $this->allocate_shared_storage('list_db');
-            $export_list_db[date('Y-m-d H:i:s')][$id_mysql_server]['list_db']['schema_list']  = json_encode($db_list);
-            $this->shared['list_db']->{$id_mysql_server}     = $export_list_db;
+        //we delete variable who change each time and put in on status
+        $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
+        $data = array();
+        foreach($remove_var as $var_to_remove){
+            if (!empty($var['variables'][$var_to_remove])) {
+                
+                $data['gtid'][$var_to_remove] = $var['variables'][$var_to_remove];
+                
+                unset($var['variables'][$var_to_remove]);
+            }
         }
 
+
+        $this->exportData($id_mysql_server,"mysql_global_variable", $var);
+        $this->exportData($id_mysql_server,"mysql_variable_gtid", $data, false );
+
+
+
+        
+        
+
+
+
+        //get SHOW GLOBAL STATUS
+        Debug::debug("apres Variables");
+        
+        $data = array();
+        $data['status'] = $mysql_tested->getStatus();
+        
+        
+        $slave  = $mysql_tested->isSlave();
+        if (($slave) != 0) {
+            $data['slave'] = $slave;
+        }
+
+        $this->exportData($id_mysql_server, "mysql_global", $data, false);
+        
+        $data = array();
+        //$data['mysql_meta_data_lock']['meta_data_lock'] = $this->getLockingQueries(array($id_mysql_server));
+        //$this->exportData($id_mysql_server, "mysql_meta_data_lock", $data);
+
+
+        //SHOW SLAVE HOSTS; => add in glial
+        $data = array();
+        $data['mysql_processlist']['processlist'] = json_encode($mysql_tested->getProcesslist(0));
+        $this->exportData($id_mysql_server, "mysql_processlist", $data);
+
+
+        if ($var['variables']['log_bin'] === "ON") {
+            $data = array();
+            $data['mysql_binlog'] = $this->binaryLog(array($id_mysql_server));
+            $data['master_status'] = $mysql_tested->isMaster();
+            //Debug::debug($data);
+            $this->exportData($id_mysql_server, "mysql_binlog", $data);
+        }/*****/
+
+        Debug::debug("apres la récupération de la liste des binlogs");
+        Debug::checkPoint('apres query');
+    
+        if (time()%10 === 0)
+        {
+            $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
+            $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
+        }
+        
+        /*************************************** list Database  */
+        $data = array();
+        $data['mysql_database']['database'] = json_encode($this->getSchema($id_mysql_server));
+        $this->exportData($id_mysql_server, "mysql_schemata", $data);
         /*************************************** List table by DB  */
 
-
         //to know if we grab statistics on databases & tables
-
-        $lock_database = str_replace('{id_mysql_server}', $id_mysql_server, $this->lock_database);
-
-        Debug::debug($lock_database, "lock file database");
-
-        $get_databases = false;
-        if (file_exists($lock_database)) {
-            $date_last_run_db = file_get_contents($lock_database);
-            if ($date_last_run_db !== date('Y-m-d')) {
-                $get_databases = true;
-            }
-        } else {
-            //test if first run, if yes remove grabbing of databases because getting to much time
-            // test if last all 5 ts_dates before made it to grab data more faster
-
-            $get_databases = true;
-        }
-
-        Debug::debug($get_databases, "getDatabase");
-
-        if ($get_databases === true) {
-            $data_db = $this->getDatabase($mysql_tested);
-
-            if (!empty($data_db)) {
-                $this->allocate_shared_storage('database');
-
-                $dbs                           = array();
-                $dbs['databases']['databases'] = $data_db;
-
-                $databases                                  = array();
-                $databases[date('Y-m-d H:i:s')][$id_mysql_server] = $dbs;
-                $this->shared['database']->{$id_mysql_server}     = $databases;
-
-                file_put_contents($lock_database, date('Y-m-d'));
-            }
+        if (time() % 1 == 0) {
+            $data = array();
+            $data['mysql_table']['mysql_table'] = json_encode($this->getDatabase($mysql_tested));
+            $this->exportData($id_mysql_server, "mysql_table", $data);
         }
 
         /****************************************************************** */
@@ -445,26 +368,26 @@ class Aspirateur extends Controller
         $mysql_tested->sql_close();
 
         Debug::debugShowTime();
-        //ini_set("display_errors", $display_error);
 
         return true;
     }
 
-    public function allocate_shared_storage($name = 'answer')
+    public function allocate_shared_storage($name)
     {
-//storage shared
+        //storage shared
 
         Debug::debug($name, 'create file');
 
-        $shared_file = TMP.'tmp_file/'.$name.'_'.time();
+        $shared_file = EngineV4::PATH_PIVOT_FILE.time().EngineV4::SEPERATOR.$name;
         $storage             = new StorageFile($shared_file); // to export in config ?
-        $this->shared[$name] = new SharedMemory($storage);
+        $SHARED_MEMORY = new SharedMemory($storage);
 
         //to prevent error on fopen when executed in root and ww-data try to delete it
-        //TODO replace with 
-        if (file_exists($shared_file)) {
-            chown($shared_file,"www-data");
-        }
+        //TODO change with 
+        
+        static::$file_created[] = $shared_file;
+
+        return $SHARED_MEMORY;
     }
 
     public function trySshConnection($param)
@@ -756,6 +679,7 @@ class Aspirateur extends Controller
         $id_daemon = $param[0];
 
         if (empty($id_daemon)) {
+            trigger_error("PMATRL-347 : Arguement id_daemon missing", E_USER_ERROR);
             throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
         }
 
@@ -797,7 +721,7 @@ class Aspirateur extends Controller
         }
 
         $mysql_servers = array();
-        $lock_directory = TMP."lock/worker/*.lock";
+        $lock_directory = EngineV4::PATH_LOCK."worker_mysql*.lock";
 
         $elems = array();
         foreach (glob($lock_directory) as $filename) {
@@ -816,7 +740,10 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
             //on verifie avec le double buffer qu'on est bien sur le même pid
             //et ce dernier est toujours sur le serveur MySQL qui pose problème
-            $idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
+
+
+            //$idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
+            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid("worker_mysql", $server['pid'])));
 
             // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
@@ -830,7 +757,9 @@ class Aspirateur extends Controller
                 }
             } else {
                 //si pid n'existe plus alors on efface le fichier de lock
-                $lock_file = TMP."lock/worker/".$server['id'].".lock";
+                //$lock_file = TMP."lock/worker/".$server['id'].".lock";
+                $lock_file = EngineV4::getFileLock("worker_mysql", $server['id'] );
+                
                 if (file_exists($lock_file)) {
                     $this->logger->notice('[addToQueueMySQL] the pid didn\'t exist anymore : "'.$lock_file.'", (id_mysql_server:'.$server['id'].') we deleted id !');
                     unlink($lock_file);
@@ -842,14 +771,13 @@ class Aspirateur extends Controller
 
         $sql = "select a.id,a.name from mysql_server a
             INNER JOIN client b on a.id_client =b.id
-            INNER JOIN ts_max_date c on c.id_mysql_server = a.id AND id_ts_file=3
             WHERE a.is_monitored =1 and b.is_monitored=1";
 
         if (!empty($mysql_servers)) {
             $sql .= " AND a.id NOT IN (".implode(',', $mysql_servers).")";
         }
 
-        $sql .= " ORDER by c.date DESC;";
+        //$sql .= " ORDER by c.date DESC;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
@@ -873,7 +801,7 @@ class Aspirateur extends Controller
         // le but est de lisser le charge du serveur au maximum afin d'éviter l'effet dans de scie sur le CPU.
         $nb_server_to_monitor = count($server_list);
 
-        $delay = floor(1000000 * $refresh_time / 2 / $nb_server_to_monitor);
+        $delay = floor(1000000 * $refresh_time / 100 / $nb_server_to_monitor);
 
         $this->logger->debug("Delay : ".$delay."");
 
@@ -940,6 +868,9 @@ class Aspirateur extends Controller
             $lock_file = TMP."lock/worker/".$id_mysql_server.".lock";
             $worker_pid = TMP."lock/worker/".$pid.".pid";
 
+            $lock_file = EngineV4::getFileLock("worker_mysql",$id_mysql_server );
+            $worker_pid = EngineV4::getFilePid("worker_mysql",$pid );
+
             file_put_contents($lock_file, json_encode($data));
             file_put_contents($worker_pid,$id_mysql_server);
 
@@ -978,6 +909,7 @@ class Aspirateur extends Controller
         }
 
         if (empty($id_daemon_main)) {
+            trigger_error("PMATRL-586 : the first param should be and int matching daemon_main.id", E_USER_ERROR);
             throw new \Exception("PMATRL-586 : the first param should be and int matching daemon_main.id");
         }
 
@@ -1189,7 +1121,6 @@ class Aspirateur extends Controller
     public function binaryLog($param)
     {
         Debug::parseDebug($param);
-
         $id_mysql_server = $param[0];
 
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
@@ -1211,14 +1142,14 @@ class Aspirateur extends Controller
                         $sizes[] = $arr[1];
                     }
 
-                    $data['file_first'] = $files[0];
-                    $data['file_last']  = end($files);
-                    $data['files']      = json_encode($files);
-                    $data['sizes']      = json_encode($sizes);
-                    $data['total_size'] = array_sum($sizes);
-                    $data['nb_files']   = count($files);
+                    $data['binlog_file_first'] = $files[0];
+                    $data['binlog_file_last']  = end($files);
+                    $data['binlog_files']      = json_encode($files);
+                    $data['binlog_sizes']      = json_encode($sizes);
+                    $data['binlog_total_size'] = array_sum($sizes);
+                    $data['binlog_nb_files']   = count($files);
 
-                    Debug::debug($data);
+                    
                     return $data;
                 }
             }
@@ -1234,7 +1165,7 @@ class Aspirateur extends Controller
 
     public function addToQueueSsh($param)
     {
-        $worker_type = 'worker_ssh';
+        $worker_type = 'ssh';
 
 //$param[] = '--debug';
         Debug::parseDebug($param);
@@ -1242,6 +1173,7 @@ class Aspirateur extends Controller
         $id_daemon = $param[0];
 
         if (empty($id_daemon)) {
+            trigger_error("PMATRL-347 : Arguement id_daemon missing", E_USER_ERROR);
             throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
         }
 
@@ -1282,7 +1214,7 @@ class Aspirateur extends Controller
 
 //mémoire partagé
 
-        $lock_directory = TMP."lock/".$worker_type."/*.lock";
+        $lock_directory = EngineV4::FILE_LOCK.$worker_type."*.lock";
 
         $elems = array();
         foreach (glob($lock_directory) as $filename) {
@@ -1303,7 +1235,8 @@ class Aspirateur extends Controller
         foreach ($elems as $server) {
             //on verifie avec le double buffer qu'on est bien sur le même pid
             //et ce dernier est toujours sur le serveur MySQL qui pose problème
-            $idmysqlserver = trim(file_get_contents(TMP."lock/".$worker_type."/".$server['pid'].".pid"));
+
+            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid($worker_type,$server['pid'] )));
 
             // si le pid n'existe plus le fichier de temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
@@ -1456,27 +1389,27 @@ class Aspirateur extends Controller
 
         $db_number = $mysql_tested->sql_num_rows($res2);
 
-        if ($db_number > 500) {
+        if ($db_number > 100) {
             Debug::sql("Too much DBs");
             return false;
         }
 
+        // TEMPORARY => from MariaDB 10.3
+        if ($mysql_tested->checkVersion(array("MariaDB", "10.3"), array("Percona", "5.7"), array("MySQL", "5.7")))
+        {
+            $sql = "select TABLE_CATALOG , TABLE_SCHEMA , TABLE_NAME, TABLE_TYPE , ENGINE,  ROW_FORMAT,
+         TABLE_COLLATION, CREATE_OPTIONS, TABLE_COMMENT, TEMPORARY
+         from information_schema.TABLES";
+        }
+        else
+        {
+            $sql = "select TABLE_CATALOG , TABLE_SCHEMA , TABLE_NAME, TABLE_TYPE , ENGINE,  ROW_FORMAT,
+         TABLE_COLLATION, CREATE_OPTIONS, TABLE_COMMENT
+         from information_schema.TABLES";
+        }
+        
 
-        $sql = 'SELECT table_schema as `database`,
-        engine,
-        ROW_FORMAT as "row_format",
-        sum(`data_length`) as "size_data",
-        sum( `index_length` ) as "size_index",
-        sum( `data_free` ) as "size_free",
-        count(1) as `tables`,
-        sum(TABLE_ROWS) as `rows`,
-        GROUP_CONCAT(DISTINCT(TABLE_COLLATION)) as table_collation,
-        DEFAULT_CHARACTER_SET_NAME as "charset",
-        DEFAULT_COLLATION_NAME as "collation"
-        FROM information_schema.TABLES a
-        INNER JOIN information_schema.SCHEMATA b ON a.table_schema = b.SCHEMA_NAME
-        WHERE table_schema NOT IN ("information_schema", "performance_schema", "mysql") AND a.TABLE_TYPE = "BASE TABLE"
-        GROUP BY table_schema, engine, ROW_FORMAT, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME;';
+
 
         Debug::sql($sql);
 
@@ -1486,16 +1419,10 @@ class Aspirateur extends Controller
                 $dbs = array();
 
                 while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $dbs[$arr['database']]['charset']   = $arr['charset'];
-                    $dbs[$arr['database']]['collation'] = $arr['collation'];
-
-                    unset($arr['charset']);
-                    unset($arr['collation']);
-
-                    $dbs[$arr['database']]['engine'][$arr['engine']][$arr['row_format']] = $arr;
+                    $dbs[] = array_change_key_case($arr);
                 }
 
-                return json_encode($dbs);
+                return $dbs;
             }
         }
         return false;
@@ -1652,6 +1579,7 @@ GROUP BY C.ID, C.INFO;";
         $id_daemon = $param[0];
 
         if (empty($id_daemon)) {
+            trigger_error("PMATRL-347 : Arguement id_daemon missing", E_USER_ERROR);
             throw new \Exception('PMATRL-347 : Arguement id_daemon missing');
         }
 
@@ -1804,8 +1732,12 @@ GROUP BY C.ID, C.INFO;";
      * @description try to connect successfully on MySQL, if any one error in process even in PHP it throw a new Exception.
      * @access public
      */
+
+
+     /*
     public function tryProxySQLConnection($param)
     {
+        return true;
 
         $display_error = ini_get('display_errors');
         ini_set("display_errors", 0);
@@ -1852,6 +1784,8 @@ GROUP BY C.ID, C.INFO;";
                 $export_variables = true;
 
                 file_put_contents($file_md5, $md5);
+
+                $this->Chown($file_md5);
             }
         } else {
             file_put_contents($file_md5, $md5);
@@ -1871,7 +1805,7 @@ GROUP BY C.ID, C.INFO;";
             $this->logger->warning("INSERTION DANS proxysql variables - id_mysql_server : ".$id_mysql_server);
         }
 
-        /************************************** */
+
         $sql = "select * from runtime_mysql_servers;";
         $res = $mysql_tested->sql_query($sql);
 
@@ -1896,7 +1830,7 @@ GROUP BY C.ID, C.INFO;";
         ini_set("display_errors", $display_error);
 
         return true;
-    }
+    }*/
 
     public function testProxy($param)
     {
@@ -1999,16 +1933,9 @@ GROUP BY C.ID, C.INFO;";
 
         $service                              = array();
         $service[$type.'_server'][$type.'_available'] = $available;
-        $service[$type.'_server'][$type.'_ping']      = $ping;
+        $service[$type.'_server'][$type.'_ping']      = round($ping, 6);
         $service[$type.'_server'][$type.'_error']     = $error_msg;
-
-        $services                                  = array();
-        $services[date('Y-m-d H:i:s')][$id_mysql_server] = $service;
-
-        $this->allocate_shared_storage('service_'.$type);
-        $this->shared['service_'.$type]->{$id_mysql_server} = $services;
-
-        return $services;
+        $this->exportData($id_mysql_server,$type.'_server',$service,false);
     }
 
 
@@ -2032,14 +1959,13 @@ GROUP BY C.ID, C.INFO;";
         $schemas = array();
         if ($mysql_tested->testAccess()) {
 
-            $this->logger->debug("We import schema list from id_mysql_server : ".$id_mysql_server);
-            $sql = "SELECT SCHEMA_NAME as schema_name, DEFAULT_CHARACTER_SET_NAME as character_set_name, DEFAULT_COLLATION_NAME as collation_name  
-            FROM information_schema.schemata";
+            //$this->logger->debug("We import schema list from id_mysql_server : ".$id_mysql_server);
+            $sql = "SELECT * FROM information_schema.schemata";
 
             $res = $mysql_tested->sql_query($sql);
 
             while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $schemas[] = $arr;
+                $schemas[] = array_change_key_case($arr);
             }
         }
         
@@ -2051,45 +1977,6 @@ GROUP BY C.ID, C.INFO;";
 
     */
 
-    public function isModified($id_mysql_server, $var, $lock_file)
-    {
-        //return true;
-
-        $md5      = md5(json_encode($var));
-        $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, $lock_file);
-        $export = false;
-
-        Debug::debug($md5, "NEW MD5 $file_md5");
-
-        if (file_exists($file_md5)) {
-
-            $cmp_md5 = file_get_contents($file_md5);
-
-            Debug::debug($cmp_md5, "OLD MD5 $file_md5");
-
-            if ($cmp_md5 != $md5) {
-                $export = true;
-                $info = pathinfo($file_md5);
-                if (is_dir($info['dirname'])){
-                    file_put_contents($file_md5, $md5);
-                }
-                else {
-                    $this->logger->emergency('Cannot create directory : '.$info['dirname']);
-                }
-            }
-        } else {
-            /*
-              if (!is_writable(dirname($file_md5))) {
-              Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
-              } */
-
-            file_put_contents($file_md5, $md5);
-            $export = true;
-        }
-
-        return $export;
-
-    }
 
 
     // Dans le cas des worker pour eviter de les relancer on recharge la configuation des serveurs MySQL, lorsque un nouveau server est ajouté.
@@ -2113,15 +2000,7 @@ GROUP BY C.ID, C.INFO;";
         Debug::debug($ts, "timestamp");
     }
 
-    static function cleanMd5($tab_id_mysql_servers)
-    {
-        foreach($tab_id_mysql_servers as $id_mysql_server) {
-            $file_md5 = str_replace('{id_mysql_server}', $id_mysql_server, self::$md5_file[4]);
 
-            unlink($file_md5);
-        }
-
-    }
 
     public function testproxysql($param)
     {
@@ -2132,7 +2011,213 @@ GROUP BY C.ID, C.INFO;";
         Debug::parseDebug($param);
 
         //Mysql::test2("127.0.0.1", 6033, "stnduser", "stnduser");
+    }
+
+    /*
+    type => key/value, json 
+
+    */
+
+    
+    public function exportData($id_mysql_server, $ts_file, array $data, $check_data = true)
+    {
+        Debug::debug("exportData $id_mysql_server, $ts_file, ".count($data)."");
+
+        //better there than in integrate
+        $data = array_change_key_case($data);
+
+        if (! is_array($data)) {
+            trigger_error("PMATRL-347 : data must be an array", E_USER_ERROR);
+            throw new \Exception("data must be an array !");
+        }
+        
+        $import = true;
+        if ($check_data === true){
+            $import = false;
+            if (($this->isDataModified($id_mysql_server, $ts_file, $data) === true) ){
+                $import = true;
+            }
+        }
+
+        if ($import === true) {
+            //$this->logger->debug("[IMPORT] $ts_file we import DB to shared memory [id_mysql_server:".$id_mysql_server."]");
+            
+            //$ts_in_ms = Microsecond::timestamp();
+            $ts  = time();
+
+            $tmp[$ts][$id_mysql_server] = $data;
+
+            $memory = $this->allocate_shared_storage($ts_file);
+            $memory->{$id_mysql_server}     = $tmp;
+        }
+    }
 
 
+    public function isDataModified($id_mysql_server, $ts_file, $data)
+    {
+        self::isValidStruc($data);
+        $json = json_encode($data);
+        //return true;
+        $md5      = md5($json);
+
+        $file_md5 = EngineV4::getFileMd5($ts_file, $id_mysql_server);
+        
+        $export = false;
+
+        Debug::debug($md5, "NEW MD5 $file_md5");
+
+        if (file_exists($file_md5)) {
+            $cmp_md5 = file_get_contents($file_md5);
+            Debug::debug($cmp_md5, "OLD MD5 $file_md5");
+
+            if ($cmp_md5 != $md5) {
+                $export = true;
+
+                file_put_contents($file_md5, $md5);
+            }
+        } else {
+            if (!is_writable(dirname($file_md5))) {
+                Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+            } 
+            file_put_contents($file_md5, $md5);
+            $export = true;
+        }
+
+        return $export;
+    }
+
+
+    public function test2($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = 1;
+
+        $data['mysql_database'] = json_encode($this->getSchema($id_mysql_server));
+        $this->exportData($id_mysql_server, "mysql_schemata", $data);
+    }
+
+    public function import($param)
+    {
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        
+        $files = glob(EngineV4::PATH_PIVOT_FILE."*");
+
+        $list = array();
+        foreach($files as $file)
+        {
+            $file_name = pathinfo($file)['basename'];
+            Debug::debug($file_name, 'file name');
+
+            $ts_file = explode(EngineV4::SEPERATOR, $file_name)[1];
+
+            if (! isset($list[$ts_file])) {
+                $list[$ts_file] = 0;
+            }
+
+            $list[$ts_file]++;
+        }
+
+        foreach ($list as $ts_file => $val)
+        {
+            if ($val >= 4)
+            {
+                $sql = "INSERT IGNORE INTO ts_file (file_name) VALUES ('".$ts_file."')";
+                $db->sql_query($sql);
+
+                Mysql::addMaxDate();
+                \App\Controller\Control::updateLinkVariableServeur();
+            }
+        }
+
+        Debug::debug($list);
+    }
+
+    /*
+    only used for command line
+    */
+    function updateChown()
+    {
+        foreach(self::$file_created as $i => $shared_file) {
+            $this->Chown($shared_file);
+            unset(self::$file_created[$i]);
+        }
+    }
+
+    /*
+    only used for command line
+    the goal is to prevent file with root
+    */
+    function after($param)
+    {
+        $this->updateChown();
+    }
+
+    /*
+    to call at end of worker to prevent memory leak
+    */
+    function purge()
+    {
+        self::$file_created = array();
+    }
+
+    function Chown($shared_file)
+    {
+        if (file_exists($shared_file)) {
+
+            $user = "www-data";
+
+            chown($shared_file,$user); // get is redhat put apache
+            chgrp($shared_file,$user);
+        }
+    }
+
+    static function isValidStruc($array) {
+        // Vérifier si le tableau est un tableau à deux niveaux
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                // Parcourir le sous-tableau pour vérifier que toutes les valeurs sont des chaînes
+                foreach ($value as $subKey => $subValue) {
+                    if (is_array($subValue)) {
+                        if (isset($subValue['Seconds_Behind_Master'])){
+                            return true;
+                        }
+
+                        //Debug::debug($subValue, "NOT A STRING");
+                        trigger_error("PMATRL-478 : Wrong level of DATA (One rank of Array too much) check : $key", E_USER_ERROR);
+                        throw new \Exception("Wrong level of DATA (One rank of Array too much) check : $key");
+                    }
+                }
+            } else {
+                trigger_error("PMATRL-83 : Wrong level of DATA (One rank of Array missing) check : $key", E_USER_ERROR);
+                throw new \Exception("Wrong level of DATA (One rank of Array missing) check : $key");
+            }
+        }
+        return true; // Tout est vérifié, retourner true
+    }
+
+
+    public function getInnodbMetrics($name_server)
+    {
+        //to be friendly with all version, we take all, value who not move will be not imported anymore that's all
+        $db = Sgbd::sql($name_server);
+        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`INNODB_METRICS`;";
+        $res = $db->sql_query($sql);
+
+        $data = array();
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            
+            if (empty($arr['ENABLED'])) {
+                continue;
+            }
+
+            $arr = array_change_key_case($arr);
+            $key = $arr['name'];
+            unset($arr['name']);
+
+            $data[$key] = json_encode($arr);
+        }
+        return $data;
     }
 }

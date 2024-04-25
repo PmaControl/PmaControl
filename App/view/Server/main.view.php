@@ -2,17 +2,17 @@
 
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
+use \Glial\Synapse\FactoryController;
 use App\Library\Format;
 
 if (empty($_GET['ajax'])){
     echo '<div class="well">';
-    \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
+    FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '</div>';
     echo '<div id="servermain">';
 }
 
 $converter = new AnsiToHtmlConverter();
-
 
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
@@ -20,29 +20,6 @@ echo '<tr>';
 echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("ID").'</th>';
 echo '<th>'.__("Available").'</th>';
-
-/*
-  echo '<th>';
-  ?>
-  <div class="form-group">
-  <div class="checkbox checbox-switch switch-success">
-  <label>
-  <?php
-  $computed = array("class" => "form-control", "type" => "checkbox", "title" => "Monitored");
-  echo Form::input("check", "all", $computed);
-  ?>
-  <span></span>
-  <b>Monitored</b>
-  </label>
-  </div>
-  </div>
-
-  <?php
-  //<input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'
-
-  echo '</th>';
- *
- */
 echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
 echo '<th>'.__("Name").'</th>';
@@ -167,18 +144,12 @@ if (!empty($data['servers'])) {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
         }
 
-
         echo '</td>';
         echo '<td style="'.$style.'">';
         if (!empty($data['extra'][$server['id']]['']['time_server'])) {
             echo $data['extra'][$server['id']]['']['time_server'];
         }
         echo '</td>';
-
-
-
-        
-
 
 
         echo '<td style="'.$style.'">';
@@ -260,20 +231,26 @@ if (!empty($data['servers'])) {
             echo $extra['mysql_error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
         }
 
+        //debug($data['last_date'][$server['id']]);
         $data['last_date'][$server['id']]['date'] = $data['last_date'][$server['id']]['date'] ?? "";
 
         $date1   = strtotime($data['last_date'][$server['id']]['date']);
+
+        //debug($date1);
+
         $date2   = time();
         $subTime = intval($date2 - $date1);
 
 
-	$d = $subTime / (60 * 60 * 24);
-	$h = intval(((int)$subTime / (60 * 60))) % 24;
-	$m = (int)($subTime / 60) % 60;
+        $d = $subTime / (60 * 60 * 24);
+        $h = intval(((int)$subTime / (60 * 60))) % 24;
+        $m = (int)($subTime / 60) % 60;
 
+    //debug($data['processing']);
 
         if (!empty($data['processing'][$server['id']])) {
-            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds").'</span>';
+            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds")
+            .' - pid : '.$data['processing'][$server['id']]['pid'].'</span>';
         }
 
 

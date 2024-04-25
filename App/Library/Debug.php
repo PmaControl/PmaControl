@@ -189,7 +189,7 @@ class Debug
         }
     }
 
-    static function sql($sql, $var = "")
+    static function sql(string $sql, $var = "")
     {
         if (self::$debug) {
             self::head();
@@ -227,7 +227,7 @@ class Debug
     static function warning($string, $var = "")
     {
         //self::head();
-        self::debug($string, $var, "black", "grey");
+        self::debug($string, $var, "black", "yellow");
 
     }
 

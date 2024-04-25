@@ -64,7 +64,7 @@ class Mysql
     {
 
 
-        self::addMaxDate(array($id_mysql_server));
+        self::addMaxDate();
         self::generateMySQLConfig();
 
 //stopAll daemon
@@ -115,8 +115,8 @@ class Mysql
         }
     }
     /*
-     * first param : id_mysql_server (coma separated)
-     *
+     * first param : id_mysql_server (coma separated) => obsolete no need param anymore
+     *  
      *
      */
 
@@ -124,48 +124,17 @@ class Mysql
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = empty($param[0]) ? 0 : $param[0];
-
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql1 = "SELECT 7, b.id as id_mysql_server, a.id as id_ts_file FROM ts_file a, mysql_server b ";
-        if (!empty($id_mysql_server)) {
-            $sql1 .= "WHERE b.id IN (".$id_mysql_server.") ";
-        }
-        $sql1 .= "order by b.id, a.id;";
+        $sql = "INSERT IGNORE INTO `ts_max_date` ( `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`)
+        SELECT a.id as id_mysql_server,now(), now(),now(),now(),now(), b.id as id_ts_file 
+        from mysql_server a
+        INNER JOIN ts_file b 
+        LEFT JOIN ts_max_date c ON a.id = c.id_mysql_server AND b.id = c.id_ts_file 
+        WHERE c.id IS NULL";
 
-        Debug::sql($sql1);
+        $db->sql_query($sql);
 
-        $res1 = $db->sql_query($sql1);
-
-        $sql2 = "SELECT id_mysql_server,id_ts_file  FROM `ts_max_date`";
-        
-        if (!empty($id_mysql_server)) {
-            $sql2 .= "WHERE id_mysql_server IN (".$id_mysql_server.") ";
-        }
-        
-        Debug::sql($sql2);
-        $res2 = $db->sql_query($sql2);
-
-        $couple_server_file = array();
-        while ($ob2 = $db->sql_fetch_object($res2)) {
-            $couple_server_file[$ob2->id_mysql_server][$ob2->id_ts_file] = 1;
-        }    
-
-        while ($ob1 = $db->sql_fetch_object($res1)) {
-            if (empty($couple_server_file[$ob1->id_mysql_server][$ob1->id_ts_file])) {
-
-                $sql3 = "INSERT IGNORE INTO `ts_max_date` (`id_daemon_main`, `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`) "
-                    ."SELECT 7,".$ob1->id_mysql_server.", now(), now(),now(),now(),now(), ".$ob1->id_ts_file." from mysql_server";
-       
-                if (!empty($id_mysql_server)) {
-                    $sql3 .= " WHERE id IN (".$id_mysql_server.") ";
-                }
-                
-                Debug::sql($sql3);
-                $db->sql_query($sql3);
-            }
-        }
     }
 
     static public function getMaster($id_mysql_server, $connection_name = '')
@@ -194,7 +163,7 @@ class Mysql
         return 0;
     }
 
-    static public function getDbLink($id_mysql_server)
+    static public function getDbLink($id_mysql_server, $name ='1')
     {
         if (!is_int(intval($id_mysql_server))) {
             throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
@@ -206,7 +175,7 @@ class Mysql
         $res = $dblink->sql_query($sql);
 
         while ($ob = $dblink->sql_fetch_object($res)) {
-            return Sgbd::sql($ob->name);
+            return Sgbd::sql($ob->name, $name);
         }
 
         throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");

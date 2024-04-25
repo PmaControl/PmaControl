@@ -6,8 +6,12 @@ use \Glial\Synapse\Controller;
 //use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
+use App\Library\Extraction2;
+
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use \App\Library\EngineV4;
+
 use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
@@ -223,6 +227,7 @@ class Server extends Controller
                 new Clipboard(".copy-button");
             })();');
     
+            
             $this->di['js']->code_javascript('
             $(document).ready(function()
             {
@@ -230,6 +235,25 @@ class Server extends Controller
                 {
                     var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
                     $("#servermain").load(myURL);
+                    (function() {
+
+                        //duplicate :/
+                        new Clipboard(".copy-button");
+
+                        $(".general_log").change(function () {
+                            id_mysql_server = $(this).attr("data-id");
+                            url = GLIAL_LINK + "server/toggleGeneralLog/" + id_mysql_server;
+                        
+                            if (this.checked) {
+                                $.get(url + "/true/");
+                            } else
+                            {
+                                $.get(url + "/false/");
+                            }
+                        });
+                    })();
+
+
                 }
     
                 var intervalId = window.setInterval(function(){
@@ -237,7 +261,7 @@ class Server extends Controller
                     refresh()  
                   }, 1000);
     
-            });');
+            });'); /***/
         }
 
         $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
@@ -255,15 +279,12 @@ class Server extends Controller
             $servers[]         = $arr['id'];
         }
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_server::ping","mysql_ping","time_server",
+        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server",
          "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
 
-        $sql               = "SELECT * FROM ts_max_date WHERE id_ts_file = 3";
-        $res               = $db->sql_query($sql);
-        $data['last_date'] = array();
-        while ($arr               = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['last_date'][$arr['id_mysql_server']] = $arr;
-        }
+        //debug($data['extra']);
+
+        $data['last_date'] = Extraction2::display(array("mysql_server::"));
 
         // get Tag
         $sql          = "SELECT * FROM link__mysql_server__tag a
@@ -275,6 +296,9 @@ class Server extends Controller
         }
 
         $data['processing'] = $this->getDaemonRunning(array());
+
+
+        //debug($data);
 
         $this->set('data', $data);
     }
@@ -501,8 +525,12 @@ class Server extends Controller
             if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])
             ) {
                 
+                
+                $gg = Extraction::extract(array("version"), array(1));
+
                 $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), str_replace("-"," ",$_GET['ts_variable']['date']));
 
+                //debug($res);
                 /*
                   $sql = "SELECT * FROM status_value_int a
                   WHERE a.id_mysql_server = " . $_GET['mysql_server']['id'] . "
@@ -519,7 +547,6 @@ class Server extends Controller
                         $data['graph'][] = $arr;
                     }
                 }
-
 
                 $dates = [];
                 $val   = [];
@@ -1088,10 +1115,15 @@ var myChart = new Chart(ctx, {
         echo json_encode($data);
     }
 
+    /*
+        To move in Worker 
+    */
+
     public function getDaemonRunning($param)
     {
         Debug::parseDebug($param);
-        $lock_directory = TMP."lock/worker/*.lock";
+        $lock_directory = EngineV4::PATH_LOCK."*.".EngineV4::EXT_LOCK;
+
         $elems          = array();
         foreach (glob($lock_directory) as $filename) {
 
@@ -1106,8 +1138,6 @@ var myChart = new Chart(ctx, {
                 }
             }
         }
-
-        Debug::debug($elems);
 
         return $elems;
     }
