@@ -399,8 +399,8 @@ class Binlog extends Controller {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files",
-                    "variables::expire_logs_days"));
+        $result = Extraction::display(array("mysql_binlog::binlog_file_first", "mysql_binlog::binlog_file_last", "mysql_binlog::binlog_files",
+         "mysql_binlog::binlog_sizes", "mysql_binlog::binlog_total_size", "mysql_binlog::binlog_nb_files", "variables::expire_logs_days"));
 
         $sql = "SELECT a.*, b.libelle as organization,c.*, d.*, a.id as id_mysql_server
             FROM mysql_server a
@@ -409,6 +409,8 @@ class Binlog extends Controller {
             LEFT JOIN binlog_max d on a.id = d.id_mysql_server
             WHERE 1 " . self::getFilter() . " AND a.is_proxy = 0
             ORDER BY display_name";
+
+
 
         $res = $db->sql_query($sql);
 
@@ -419,21 +421,19 @@ class Binlog extends Controller {
 
             if (!empty($result[$arr['id_mysql_server']][''])) {
 
-                $arr['binlog'] = $result[$arr['id_mysql_server']][''];
-                Debug::debug($arr['binlog']);
+                $arr['mysql_binlog'] = $result[$arr['id_mysql_server']][''];
+                Debug::debug($arr['mysql_binlog']);
             }
 
             $data['server'][] = $arr;
-
-            $arr['binlog']['total_size'] = $arr['binlog']['total_size'] ?? 0;
-
-            if (!empty($arr['binlog'])) {
-                if ($arr['binlog']['total_size'] > $data['max_size']) {
-                    $data['max_size'] = $arr['binlog']['total_size'];
+            $arr['mysql_binlog']['total_size'] = $arr['mysql_binlog']['total_size'] ?? 0;
+        
+            if (!empty($arr['mysql_binlog']['binlog_total_size'])) {
+                if ($arr['mysql_binlog']['binlog_total_size'] > $data['max_size']) {
+                    $data['max_size'] = $arr['mysql_binlog']['binlog_total_size'];
                 }
             }
         }
-        //Debug::debug($data);
 
         $this->set('data', $data);
     }

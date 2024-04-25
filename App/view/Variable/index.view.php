@@ -32,14 +32,19 @@ if (!empty($_GET['id_mysql_server'])) {
     }
 
     echo '<a href="'.LINK.'variable/index/id_mysql_server:/variable:'.$_GET['variable'].'" class="btn btn-warning active">Filter: '.Display::srv($_GET['id_mysql_server'], true).'</a>';
+    
 }
 echo ' ';
 
 if (! empty($_GET['variable'])) {
     echo '<a href="'.LINK.'variable/index/variable:" class="btn btn-warning active">Filter: '.$_GET['variable'].'</a>';
+    echo '<br><br>';
+}
+elseif(!empty($_GET['id_mysql_server'])) {
+    echo '<br><br>';
 }
 
-echo '<br><br>';
+
 echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 echo '<tr>';
 echo '<th>'.__('Top').'</th>';
@@ -53,6 +58,12 @@ echo '</tr>';
 $i = 0;
 foreach ($data['variable'] as $elem) {
     $i++;
+
+    if (strlen($elem['value']) > 100)
+    {
+        $elem['value'] = substr($elem['value'], 0,100).'...';
+    }
+
 
     echo '<tr>';
     echo '<td>'.$i.'</td>';

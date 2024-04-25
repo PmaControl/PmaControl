@@ -53,23 +53,23 @@ use App\Library\Format;
         echo '</td>';
         echo '<td>'.__('Tags').'</td>';
 
-        if (!empty($server['binlog']['file_first'])) {
+        if (!empty($server['mysql_binlog']['binlog_file_first'])) {
 
-            echo '<td>'.$server['binlog']['file_first'].'</td>';
-            echo '<td>'.$server['binlog']['file_last'].'</td>';
-            echo '<td>'.$server['binlog']['expire_logs_days'].'</td>';
-            echo '<td>'.$server['binlog']['nb_files'].'</td>';
-            echo '<td>'.Format::bytes($server['binlog']['total_size']).'</td>';
+            echo '<td>'.$server['mysql_binlog']['binlog_file_first'].'</td>';
+            echo '<td>'.$server['mysql_binlog']['binlog_file_last'].'</td>';
+            echo '<td>'.$server['mysql_binlog']['expire_logs_days'].'</td>';
+            echo '<td>'.$server['mysql_binlog']['binlog_nb_files'].'</td>';
+            echo '<td>'.Format::bytes($server['mysql_binlog']['binlog_total_size']).'</td>';
 
-            $percent = round($server['binlog']['total_size'] / $data['max_size'] * 100, 2);
-            $total   += $server['binlog']['total_size'];
+            $percent = round($server['mysql_binlog']['binlog_total_size'] / $data['max_size'] * 100, 2);
+            $total   += $server['mysql_binlog']['binlog_total_size'];
 
             echo '<td>';
             ?>
 
             <div class="progress" style="margin-bottom:0">
                 <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?= $percent ?>%">
-                    <span style="color:#000000;"><?= Format::bytes($server['binlog']['total_size']) ?></span>
+                    <span style="color:#000000;"><?= Format::bytes($server['mysql_binlog']['binlog_total_size']) ?></span>
                     <span class="sr-only"><?= $percent ?>% Complete</span>
                 </div>
             </div>
