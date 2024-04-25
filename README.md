@@ -71,8 +71,6 @@ plugin-load=ha_rocksdb
 
 ## Screenshots
 
-
-
 ## To develop
 
 `git config --global --add merge.ff false`
