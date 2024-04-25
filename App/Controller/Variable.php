@@ -25,16 +25,11 @@ class Variable extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $testArray = Extraction2::display(array("variables::is_proxysql"));
+        //$testArray = Extraction2::display(array("variables::is_proxysql"));
 
         // on retire les PROXY
         $servers = array();
-        foreach ($testArray as $id_mysql_server => $data) {
-            if ($data['is_proxysql'] === '0') {
-                $servers[] = $id_mysql_server;
-            }
-        }
-        $list_server = implode(',', $servers);
+        $list_server = "SELECT distinct ID FROM mysql_server WHERE is_proxy=0";
 
         if (!empty($_GET['id_mysql_server'])) {
             $list_server = intval($_GET['id_mysql_server']);

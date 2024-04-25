@@ -12,7 +12,6 @@ class Available
         if (empty(self::$mysql_available))
         {
             $servers = Extraction::display(array(self::MYSQL_AVAILABLE));
-
             foreach($servers as $id_server => $server){
                 if ($server[''][self::MYSQL_AVAILABLE] === "1"){
                     self::$mysql_available[] = $id_server;
@@ -22,7 +21,12 @@ class Available
 
         if ($id_mysql_server === 0){
             //add fake id=0 to prevent no one server available
-            $list = "0,".implode(',' ,self::$mysql_available);
+            if (count(self::$mysql_available) === 0) {
+                $list = "0";
+            }
+            else {
+                $list = implode(',' ,self::$mysql_available);
+            }
             return $list;
         }
         else{

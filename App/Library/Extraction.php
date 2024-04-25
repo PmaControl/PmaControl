@@ -138,7 +138,7 @@ class Extraction
             //$sql3 .= "ORDER by date";
         }
 
-        //Debug::debug($sql3);
+        Debug::debug($sql3);
         //echo \SqlFormatter::format($sql3) . "\n";
 
 
@@ -170,7 +170,6 @@ class Extraction
                 $sql3 .= " order by `std` desc;";
             }
         }
-
 
         if (empty($sql3)) {
             return false;
@@ -220,6 +219,9 @@ class Extraction
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         $db = Sgbd::sql(DB_DEFAULT);
+
+
+        self::isExist($var);
 
         //return(array());
         if (! is_array($var))
@@ -379,5 +381,45 @@ class Extraction
 
 
         $res = self::extract($var, $server, $date, $range, $graph);
+    }
+
+
+    static public function isExist($var)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        return true;
+        foreach ($var as $val) {
+            $split = explode("::", $val);
+
+            if (count($split) === 2) {
+
+                $name = $split[1];
+                $from = $split[0];
+
+                if (empty($name)) {
+                    $sql = "SELECT count(1) as cpt FROM ts_variable where `from` = '".strtolower($from)."'";
+                } else {
+
+                    $sql = "SELECT count(1) as cpt FROM ts_variable where `from` = '".strtolower($from)."' and `name` = '".strtolower($name)."'";
+                }
+            } else {
+
+                $name   = $split[0];
+                $sql = "SELECT count(1) as cpt FROM ts_variable where `name` = '".strtolower($name)."'";
+            }
+
+            $res = $db->sql_query($sql);
+
+            while($ob = $db->sql_fetch_object($res))
+            {
+                if ($ob->cpt === "0") {
+                    throw new \Exception("Error Processing Request with Extract value not found : ($val)", 1);
+                    
+                }elseif ($ob->cpt === "2") {
+                    throw new \Exception("Error Processing Request with Extract value found * 2 : ($val)", 1);
+                }
+            }
+        }
     }
 }

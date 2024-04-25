@@ -7,8 +7,10 @@
 
 namespace App\Controller;
 
+use App\Library\EngineV4;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \App\Library\Microsecond;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
@@ -144,7 +146,7 @@ class Daemon extends Controller
         Debug::debug($cmd);
         $pid = shell_exec($cmd);
 
-        $this->purgeLock(array());
+        //$this->purgeLock(array());
 
         $cmd = $php." ".GLIAL_INDEX." control service".$debug;
         Debug::debug($cmd);
@@ -166,6 +168,8 @@ class Daemon extends Controller
         }
     }
 
+
+    /*
     public function purgeLock($param)
     {
         Debug::parseDebug($param);
@@ -191,7 +195,7 @@ class Daemon extends Controller
                 }
             }
         }
-    }
+    }*/
 
     public function getStatitics($param = array())
     {
@@ -258,7 +262,8 @@ class Daemon extends Controller
         $res2 = $db->sql_query($sql2);
         while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
 
-            $pid_file        = TMP."lock/".$arr['worker_path']."/".$arr['pid'].".pid";
+            $pid_file        = EngineV4::getFilePid("worker_mysql",$arr['pid'] );
+     
             $arr['pid_file'] = $pid_file;
 
             if (file_exists($pid_file)) {
@@ -267,14 +272,7 @@ class Daemon extends Controller
                 $arr['id_proxysql'] = "...";
             }
 
-            $log_file = TMP."log/worker_".$arr['id_daemon_main']."_".$arr['id_daemon_main'].".log";
-            if (file_exists($log_file)) {
-                $arr['log']      = $log_file;
-                $arr['filesize'] = filesize($log_file);
-            } else {
-                $arr['log']      = '';
-                $arr['filesize'] = 0;
-            }
+
             $data['worker'][] = $arr;
         }
 

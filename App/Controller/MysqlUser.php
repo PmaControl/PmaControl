@@ -258,6 +258,12 @@ class MysqlUser extends Controller
         while ($ob   = $db->sql_fetch_object($res)) {
             $link = Mysql::getDbLink($ob->id);
 
+
+            /*
+            if ($this->checkVersion(array('MySQL' => '8.0'))) {
+                continue; //no need for mysql 8.0
+            }*/
+
             $sql2 = "SELECT user as User, host as Host, password as Password,Super_priv,plugin as Plugin  from mysql.user ORDER BY user, host, password";
             $res2 = $link->sql_query($sql2);
 

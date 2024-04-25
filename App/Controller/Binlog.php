@@ -344,7 +344,7 @@ class Binlog extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT *
+        $sql = "SELECT d.*
             FROM mysql_server a
             INNER JOIN binlog_max d on a.id = d.id_mysql_server WHERE a.id = " . $id_mysql_server;
 
@@ -353,11 +353,13 @@ class Binlog extends Controller {
         //only one server at once
         while ($ob = $db->sql_fetch_object($res)) {
 
-            $result = Extraction::display(array("binlog::file_first", "binlog::file_last", "binlog::files", "binlog::sizes", "binlog::total_size", "binlog::nb_files"),
-                            array($id_mysql_server));
+            $result = Extraction::display(array("mysql_binlog::binlog_file_first", "mysql_binlog::binlog_file_last", "mysql_binlog::binlog_files",
+             "mysql_binlog::binlog_sizes", "mysql_binlog::binlog_total_size", "mysql_binlog::binlog_nb_files"),array($ob->id_mysql_server));
 
-            $binarylogs = $result[$id_mysql_server][''];
-            $bin_logs = array_combine(json_decode($binarylogs['files'], true), json_decode($binarylogs['sizes'], true));
+            Debug::debug($result);
+                        
+            $binarylogs = $result[$ob->id_mysql_server][''];
+            $bin_logs = array_combine(json_decode($binarylogs['binlog_files'], true), json_decode($binarylogs['binlog_sizes'], true));
 
             Debug::debug($binarylogs);
 
@@ -379,10 +381,10 @@ class Binlog extends Controller {
 
                 if ($total_size > $ob->size_max) {
                     
-                    $db_remote = Mysql::getDbLink($id_mysql_server);
+                    $db_remote = Mysql::getDbLink($ob->id_mysql_server);
                     $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
                     Debug::sql($sql);
-                    $this->logger->notice('We purged binary logs on id_mysql_server:'.$id_mysql_server.' "'.$sql.'"');
+                    $this->logger->notice('We purged binary logs on id_mysql_server:'.$ob->id_mysql_server.' "'.$sql.'"');
                     $db_remote->sql_query($sql);
                     break;
                 }

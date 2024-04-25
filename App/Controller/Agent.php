@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\EngineV4;
 use \Glial\Synapse\Controller;
 use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
@@ -10,7 +11,8 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
-use App\Library\Mysql;
+use \App\Library\Mysql;
+use \App\Library\Microsecond;
 use \App\Library\System;
 use \Glial\Sgbd\Sgbd;
 
@@ -36,7 +38,7 @@ class Agent extends Controller {
 
     public function before($param) {
         $logger = new Logger("Agent");
-        $handler = new StreamHandler(LOG_FILE, Logger::WARNING);
+        $handler = new StreamHandler(LOG_FILE, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
@@ -139,7 +141,7 @@ class Agent extends Controller {
         $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
         $res = $db->sql_query($sql);
 
-        $this->logger->emergency($sql);
+        $this->logger->notice($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
             $msg = I18n::getTranslation(__("Impossible to find the daemon")." (id=" . $id_daemon . ")");
@@ -171,6 +173,9 @@ class Agent extends Controller {
                 $this->logger->info('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
             }
 
+            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
+            $db->sql_query($sql);
+
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
             $title = I18n::getTranslation(__("Daemon (id=" . $id_daemon . ") was already stopped or in error"));
             set_flash("caution", $title, $msg);
@@ -199,6 +204,7 @@ class Agent extends Controller {
         }
     }
 
+    
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -230,9 +236,11 @@ class Agent extends Controller {
             shell_exec($cmd);
         }
 
+        $interval = 1;
+        $nextRuntime = microtime(true) + $interval;
+
         $id_loop = 0;
         while (true) {
-
             $id_loop++;
 
             $db = Sgbd::sql(DB_DEFAULT);
@@ -242,29 +250,40 @@ class Agent extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                //$cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " " . $debug . " >> " . $this->log_file . " & echo $!";
                 $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
 
                 $pid = shell_exec($cmd);
                 $this->logger->debug("{pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
 
                 $refresh_time = $ob->refresh_time;
+                $id_daemon_main = $ob->id;
             }
-
-            Debug::debug("refresh time : " . $refresh_time);
-
-            shell_exec('date=$(date "+%Y-%m-%d %H:%M:%S") && echo "[${date}] $@" >> '.TMP.'log/run.'.$id.'.log');
 
             // in case of mysql gone away, like this daemon restart when mysql is back
             Sgbd::sql(DB_DEFAULT)->sql_close();
+            
+            $timeToWait = $nextRuntime - microtime(true);
+            
 
-            if (empty($refresh_time)) {
-                //$refresh_time = 60;
-                usleep(100);
-            }
+            //if ($id_daemon_main != 7)
+            //{
+                if ($timeToWait > 0) {
+                    usleep((int)($timeToWait * 1000000));  // Attendre le reste de la seconde en microsecondes
+                }
+                $nextRuntime += $interval;
 
-            sleep($refresh_time);
+                //$this->logger->emergency("refresh time : ".Microsecond::date());
 
+                //temps additionel 
+                $refresh_time = 0;
+                $refresh_time = $refresh_time - 1;
+                if ($refresh_time < 0) {
+                    $refresh_time = 0;
+                }
+
+                sleep($refresh_time);
+            //}
+            
             //to prevent mysql gone away or everything else in long process
             $db->sql_close();
         }
@@ -513,7 +532,7 @@ class Agent extends Controller {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $ob->id . " >> " . TMP . $ob->log_file . " & echo $!";
+                $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $ob->id . " >> " . TMP . "worker.log" . " & echo $!";
                 $pid = shell_exec($cmd);
 
                 $sql = "UPDATE daemon_main SET pid=" . $pid . " WHERE id=" . $ob->id;
@@ -521,6 +540,21 @@ class Agent extends Controller {
 
                 $this->logger->warning(Color::getColoredString('Daemon ' . $ob->name
                                 . ' with pid (' . $ob->pid . ') was down, crontab restart it with pid : ' . $pid, "black", "yellow"));
+
+
+                // we should delete file pid there
+            }
+        }
+
+
+        //to move to worker
+        $pid_to_check = glob(EngineV4::PATH_LOCK."*\.".EngineV4::EXT_PID);
+        foreach($pid_to_check as $filname)
+        {
+            $pid = EngineV4::getId($filname);
+
+            if (!System::isRunningPid($pid)) {
+                unlink($filname);
             }
         }
     }

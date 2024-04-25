@@ -8,7 +8,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Mysql;
-use \App\Library\System;
+use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 
 /*
@@ -262,6 +262,9 @@ class Control extends Controller
             $this->logger->info($sql);
         }
 
+        $this->truncateTsVariable();
+        $this->truncateTsMaxDate();
+        $this->truncateTsFile();
         //System::deleteFiles("server");
     }
 
@@ -340,19 +343,24 @@ PARTITION BY RANGE (to_days(`date`))
         $cmd = $php." ".GLIAL_INDEX." Daemon stopAll";
         Debug::debug($cmd);
         shell_exec($cmd);
+
         usleep(500);
 
         $this->dropTsTable();
+
         $this->createTsTable();
 
-        Mysql::onAddMysqlServer();
-
         //drop lock sur
-        $this->dropLock();
+        Mysql::onAddMysqlServer();
+        $this->dropAllFile();
 
-        $cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        Debug::debug($cmd);
-        shell_exec($cmd);
+        
+
+        
+        
+        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
+        //Debug::debug($cmd);
+        //shell_exec($cmd);
 
         //sleep(1);
         //$this->dropLock();
@@ -368,7 +376,7 @@ PARTITION BY RANGE (to_days(`date`))
 
         $sql = "SELECT `TABLE_NAME`,`PARTITION_NAME`,`SUBPARTITION_NAME` ,`TABLE_ROWS` FROM information_schema.partitions
             where table_name IN ('".implode("','", $combi)."') AND `PARTITION_NAME` IS NOT NULL;";
-
+            
         Debug::sql($sql);
     }
 
@@ -385,7 +393,7 @@ PARTITION BY RANGE (to_days(`date`))
         return $part;
     }
 
-    public function updateLinkVariableServeur()
+    static public function updateLinkVariableServeur()
     {
 
         Debug::debug("UPDATE link__ts_variable__mysql_server");
@@ -393,14 +401,15 @@ PARTITION BY RANGE (to_days(`date`))
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server;";
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $this->updateLinkServeur(array($ob->id));
+            self::updateLinkServeur(array($ob->id));
         }
     }
 
-    public function updateLinkServeur($param)
+    static public function updateLinkServeur($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -410,7 +419,7 @@ PARTITION BY RANGE (to_days(`date`))
 
 
         $sql = "SELECT id_ts_variable FROM link__ts_variable__mysql_server where id_mysql_server =".$id_mysql_server;
-
+        Debug::sql($sql);
 //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -432,7 +441,7 @@ PARTITION BY RANGE (to_days(`date`))
             WHERE a.id_mysql_server=".$id_mysql_server." AND a.id_ts_file=4
                 )
             ";
-            
+            Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         $link2 = array();
@@ -447,14 +456,14 @@ PARTITION BY RANGE (to_days(`date`))
         if (count($to_create) > 0) {
             $sql = "INSERT INTO link__ts_variable__mysql_server (`id_mysql_server`,`id_ts_variable`)
             VALUES (".$id_mysql_server.",".implode("),(".$id_mysql_server.",", $to_create).")";
-
+            Debug::sql($sql);
             $db->sql_query($sql);
         }
 
         if (count($to_delete) > 0) {
             $sql = "DELETE FROM link__ts_variable__mysql_server
             WHERE `id_mysql_server`=".$id_mysql_server." AND id_ts_variable IN (".implode(",", $to_delete).")";
-
+            Debug::sql($sql);
             $db->sql_query($sql);
         }
     }
@@ -465,24 +474,39 @@ PARTITION BY RANGE (to_days(`date`))
         Mysql::generateMySQLConfig($db);
     }
 
-    public function dropLock($param = "")
+    private function dropFile($diretory)
     {
         Debug::parseDebug($param);
 
         // drop variables
 
-        $scanned_directory = array_diff(scandir(TMP."lock/"), array('..', '.'));
-        Debug::debug($scanned_directory);
+        //$scanned_directory = array_diff(scandir($diretory), array('..', '.'));
+        //Debug::debug($scanned_directory);
 
         //$scanned_directory[]= TMP . "tmp_file/";
 
-        foreach ($scanned_directory as $file_to_drop) {
-            foreach (glob(TMP."lock/".$file_to_drop."/*") as $filename) {
+        foreach(glob($diretory."*") as $filename) {
+            if (! is_dir($filename))
+            {
                 Debug::debug($filename, "file deleted");
                 unlink($filename);
             }
         }
     }
+    
+
+
+    public function dropAllFile($param = "")
+    {
+        Debug::parseDebug($param);
+
+        // drop variables
+        $directories = array(EngineV4::PATH_LOCK, EngineV4::PATH_MD5, EngineV4::PATH_PIVOT_FILE);
+        foreach($directories as $directory) {
+            $this->dropFile($directory);
+        }
+    }
+
     /*
      * Rafraichie les variables qui ont été dropé avec la partition
      *
@@ -495,8 +519,8 @@ PARTITION BY RANGE (to_days(`date`))
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "WITH `z` as (select `id` from `ts_variable` where `name` = 'version')
-SELECT `a`.`id_mysql_server`, a.date, a.date_p4 FROM `ts_max_date` `a`
+        $sql = "WITH `z` as (select `id` from `ts_variable` where `name` = 'version' and `from`='variables')
+SELECT `a`.`id_mysql_server`, b.file_name,a.date, a.date_p4 FROM `ts_max_date` `a`
 INNER JOIN `ts_file` `b` ON `a`.`id_ts_file` = `b`.`id`
 LEFT JOIN `ts_value_general_text` c ON c.date = a.date_p4 AND a.id_mysql_server = c.id_mysql_server AND c.id_ts_variable = (SELECT id from z)
 WHERE b.file_name = 'variable' and  c.id is null;";
@@ -505,8 +529,8 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            $file = TMP."lock/variable/".$ob->id_mysql_server.".md5";
-
+            $file = EngineV4::getFileMd5($ob->file_name, $ob->id_mysql_server);
+            
             if (file_exists($file)) {
                 unlink($file);
                 Debug::debug("Drop du fichier de variable pour le serveur : ".$ob->id_mysql_server);
@@ -561,5 +585,31 @@ WHERE b.file_name = 'variable' and  c.id is null;";
         $cmd2 = "apt install mariadb-plugin-rocksdb";
         Debug::debug($cmd2);
         shell_exec($cmd2);
+    }
+
+
+    public function truncateTsVariable()
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "TRUNCATE TABLE `ts_variable`";
+
+        $db->sql_query($sql);
+    }
+
+
+    public function truncateTsMaxDate()
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "TRUNCATE TABLE `ts_max_date`";
+
+        $db->sql_query($sql);
+    }
+
+    public function truncateTsFile()
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $sql = "DELETE FROM `ts_file`;";
+
+        $db->sql_query($sql);
     }
 }
