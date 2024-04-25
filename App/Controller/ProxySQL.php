@@ -304,17 +304,11 @@ class ProxySQL extends Controller
             $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'] , $arr['password']);
             $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
             $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
-            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'];
+            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
             
             $data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
             $data['proxysql'][] = $arr;
-
-            
         }
-
-        
-        
-
 
         $this->set('data', $data);
     }

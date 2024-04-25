@@ -22,7 +22,8 @@ use \Monolog\Handler\StreamHandler;
 class Integrate extends Controller
 {
     use \App\Library\Filter;
-    const MAX_FILE_AT_ONCE = 15;
+    const MAX_FILE_AT_ONCE = 20;
+    //advice *2 of or result from select count(1) from ts_file;
 
     const VARIABLES = "mysql_global_variable";
 
@@ -43,7 +44,6 @@ class Integrate extends Controller
         $monolog->pushHandler($handler);
         $this->logger = $monolog;
     }
-
 
     public function getIdTsFile($ts_file)
     {
@@ -424,9 +424,6 @@ class Integrate extends Controller
         // insert IGNORE in case of first save have 2 slave
         //$this->logger->warning("Insert new value :".json_encode($variables_to_insert));
 
-
-
-
         $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
         $res = $db->sql_query($sql);
 
@@ -459,17 +456,6 @@ class Integrate extends Controller
         }
     }
 
-
-    /*
-    public function reset()
-    {
-        $this->view = false;
-        $db         = Sgbd::sql(DB_DEFAULT);
-
-        foreach (array('int', 'double', 'text') as $type) {
-            $db->sql_query("TRUNCATE TABLE `ts_value_general_" . strtolower($type) . "`;");
-        }
-    }*/
 
     private function insert_slave_value($values, $val = "slave")
     {
@@ -716,6 +702,11 @@ class Integrate extends Controller
 
     // move to other place ?
     static function isJson($string) {
+        
+        if ($string == "NULL") {
+            return false;
+        }
+
         if (is_array($string))
         {
             Debug::debug($string);
