@@ -22,7 +22,7 @@ use \Monolog\Handler\StreamHandler;
 class Integrate extends Controller
 {
     use \App\Library\Filter;
-    const MAX_FILE_AT_ONCE = 20;
+    const MAX_FILE_AT_ONCE = 10;
     //advice *2 of or result from select count(1) from ts_file;
 
     const VARIABLES = "mysql_global_variable";
@@ -156,12 +156,12 @@ class Integrate extends Controller
                         if (! empty($all_metrics)){
                             foreach ($all_metrics as $type_metrics => $metrics) {
 
-                                Debug::warning("*** ts_file:$date > id_mysql_server:$id_server > from:$type_metrics  ***");
+                                Debug::debug("*** ts_file:$date > id_mysql_server:$id_server > from:$type_metrics  ***");
 
                                 if (is_array($metrics)) {
                                     $metrics = array_change_key_case($metrics);
 
-                                    //Debug::debug($metrics,"metrics");
+                                    Debug::debug($metrics,"metrics");
 
                                     foreach ($metrics as $variable => $value) {
 
@@ -283,7 +283,7 @@ class Integrate extends Controller
                                                     . $date . '", "'
                                                     . $value . '")';
 
-                                                    //Debug::debug($insert, "INSERTTTTTTTTTTTTTTTTTTT");
+                                                    Debug::debug($insert, "INSERTTTTTTTTTTTTTTTTTTT");
                                             } else {
                                                 //if empty we connot detemine type
                                                 if ($value === "-1" || $value === "") {
@@ -296,7 +296,7 @@ class Integrate extends Controller
                                                 Debug::debug($this->getTypeOfData($value), "TYPE : $variable");
 
                                                 if (empty($var_index[$type_metrics][$variable])) {
-                                                    //Debug::debug($insert, "val to insert in ts_variable");
+                                                    Debug::debug($insert, "val to insert in ts_variable");
                                                     $var_index[$type_metrics][$variable] = 1;
                                                     $variables_to_insert[]               = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
                                                     self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
@@ -388,6 +388,8 @@ class Integrate extends Controller
 
     static private function getTypeOfData($value)
     {
+        Debug::debug($value, "VALUE");
+
         $val = 3;
         $is_numeric = is_numeric($value);
 
@@ -448,9 +450,19 @@ class Integrate extends Controller
         Debug::checkPoint("start save");
 
         foreach ($values as $type => $elems) {
+
+            $time_start = microtime(true);
+
             $sql = "INSERT INTO `ts_value_general_" . strtolower($type) . "` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES " . implode(",", $elems) . ";";
             //Debug::debug(count($elems), "type : $type");
             $db->sql_query($sql);
+
+            
+
+            $time_end = microtime(true);
+            $time = $time_end - $time_start;
+
+            Debug::debug("[ts_value_general_". strtolower($type) . "] (count : ".count($elems).") insert in $time seconds");
 
             Debug::checkPoint("saved " . $type . " elems : " . count($elems));
         }
@@ -471,10 +483,20 @@ class Integrate extends Controller
 
         foreach ($values as $type => $elems) {
 
+            $time_start = microtime(true);
+
             $sql = "INSERT INTO `ts_value_" . $val . "_" . strtolower($type) . "` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES " . implode(",\n", $elems) . ";";
 
             //Debug::sql($sql);
+
+            
             $gg = $db->sql_query($sql);
+
+            $time_end = microtime(true);
+            $time = $time_end - $time_start;
+
+            Debug::debug("[ts_value_" . $val . "_" . strtolower($type) . "] insert in $time seconds");
+
             /*
               if (!$gg) {
               debug($db->sql_error());
@@ -579,126 +601,11 @@ class Integrate extends Controller
     public function integrateAll($param)
     {
         Debug::parseDebug($param);
-
         $this->logger->info('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
-        
         $this->evaluate($param);
-        
         $this->logger->info('[END] IntegrateAll '.date('Y-m-d H:i:s'));
     }
 
-
-
-    // deport to listener
-
-    public function feedMysqlVariable($data)
-    {
-
-        //to upgrade 
-        //        => SELECT if different update and then update
-
-        $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
-        //$this->logger->debug("SQL : $sql");
-        
-
-        Debug::sql($sql);
-        $res = $db->sql_query($sql);
-
-        $in_base = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
-        }
-        //$in_base[1]['jexistedansmesreve'] = "dream!";
-
-        foreach ($data as $id_mysql_server => $err) {
-
-            if (empty($in_base[$id_mysql_server])) {
-                $insert[$id_mysql_server] = $data[$id_mysql_server];
-                continue;
-            }
-
-            //move to special function
-
-            //INSERT
-            $insert[$id_mysql_server] = array_diff_key($data[$id_mysql_server], $in_base[$id_mysql_server]);
-
-            //$this->logger->debug("INSERT : ".print_r($insert[$id_mysql_server]));
-
-            //DELETE
-            $delete[$id_mysql_server] = array_diff_key($in_base[$id_mysql_server], $data[$id_mysql_server]);
-
-            //UPDATE
-            $val_a[$id_mysql_server]  = array_diff_assoc($data[$id_mysql_server], $in_base[$id_mysql_server]);
-            //$this->logger->debug("val A : ".print_r($val_a[$id_mysql_server]));
-
-            $val_b[$id_mysql_server]  = array_diff_assoc($in_base[$id_mysql_server], $data[$id_mysql_server]);
-            //$this->logger->debug("val B : ".print_r($val_a[$id_mysql_server]));
-
-
-            $update[$id_mysql_server] = array_intersect_key($val_a[$id_mysql_server], $val_b[$id_mysql_server]);
-
-            //$this->logger->notice("Variable has been updated : ".print_r($update[$id_mysql_server]));
-        }
-
-        //insert
-        if (!empty($insert) && count($insert) > 0) {
-            Debug::debug($insert);
-            $elem_ins = array();
-            foreach ($insert as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_ins[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
-                }
-            }
-
-            if (!empty($elem_ins)) {
-                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
-                Debug::sql($sql);
-                //$this->logger->debug("INSERT SQL : $sql");
-                $db->sql_query($sql);
-            }
-        }
-
-        //delete
-        if (!empty($delete) && count($delete) > 0) {
-            Debug::debug($delete);
-            $elem_del = array();
-            foreach ($delete as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_del[] = 'SELECT id FROM global_variable WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
-                }
-            }
-            if (!empty($elem_del)) {
-                $sql = "DELETE FROM global_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
-                Debug::sql($sql);
-                //$this->logger->debug("DELETE SQL : $sql");
-                $db->sql_query($sql);
-            }
-        }
-
-        //update
-        if (!empty($update) && count($update) > 0) {
-            Debug::debug($update);
-            $elem_upt = array();
-            foreach ($update as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
-                }
-                $var_to_update = array_keys($variables);
-                if (count($var_to_update) > 0)
-                {
-                    $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
-                }
-            }
-            if (!empty($elem_upt)) {
-                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
-                Debug::sql($sql);
-                //$this->logger->debug("UPDATE SQL : $sql");
-                $db->sql_query($sql);
-            }
-        }
-        //end to move
-    }
 
     // move to other place ?
     static function isJson($string) {

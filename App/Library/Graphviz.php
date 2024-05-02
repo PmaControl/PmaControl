@@ -208,7 +208,7 @@ class Graphviz
 
     static public function generateStart($param=array())
     {
-        $ret = 'digraph structs {rankdir=LR;  splines="compound"; fontname="arial" '.PHP_EOL; 
+        $ret = 'digraph structs {rankdir=LR;  splines="compound"; margin="0.104,0"; fontname="arial" '.PHP_EOL; 
         //$ret = 'digraph structs {rankdir=LR; layout="sfdp"; splines="ortho"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
         //$ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;
@@ -467,7 +467,7 @@ class Graphviz
             //exit;
             $hostgroup = 0;
             $i = 0;
-            foreach($server['mysql_servers'] as $link)
+            foreach($server['proxysql_runtime_mysql_servers'] as $link)
             {
                 $i++;
                 

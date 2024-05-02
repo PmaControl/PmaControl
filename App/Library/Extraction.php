@@ -138,7 +138,7 @@ class Extraction
             //$sql3 .= "ORDER by date";
         }
 
-        Debug::debug($sql3);
+        //Debug::debug($sql3);
         //echo \SqlFormatter::format($sql3) . "\n";
 
 
@@ -289,7 +289,7 @@ class Extraction
 
         $sql = implode(' UNION ALL ', $sqls);
 
-        Debug::debug($sql);
+        //Debug::debug($sql);
 
         $res = $db->sql_query($sql);
 
@@ -303,7 +303,7 @@ class Extraction
             //$radical                              = $ob->radical;
         }
 
-        Debug::debug($variable);
+        //Debug::debug($variable);
 
         return $variable;
     }

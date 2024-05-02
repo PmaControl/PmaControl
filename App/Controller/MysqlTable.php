@@ -34,7 +34,6 @@ class MysqlTable extends Controller
             $_GET['id_mysql_database']['id'] = $ob->id;
         }
 
-
         $this->di['js']->code_javascript('
         $("#mysql_table-id").change(function () {
             data = $("#mysql_table-id option:selected").text();
@@ -47,8 +46,6 @@ class MysqlTable extends Controller
 
             window.location.href=newPath;
         });');
-
-
 
         $data['param'] = $param;
         $this->set('param', $param);

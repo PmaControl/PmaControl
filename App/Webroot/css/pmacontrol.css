@@ -1509,6 +1509,23 @@ g.edge{
     background-repeat: repeat;
 }
 
+.navbar3 {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    padding: 55px 40px;
+    text-decoration: none;
+    background: linear-gradient(236.58deg, rgb(255, 146, 100) -4.19%, rgb(255, 72, 127) 2.7%, rgb(225, 61, 252) 13.86%, rgb(160, 77, 243) 22.94%, rgb(120, 58, 250) 31.2%, rgb(75, 38, 225) 38.48%, rgb(34, 0, 170) 56.54%, rgb(5, 0, 70) 74.02%);
+    box-shadow: rgba(236, 66, 162, 0.5) 0px 10px 20px;
+    border-radius: 10px;
+}
+
+
 /*
 .mpd{
 background-color: #3c3c3c;

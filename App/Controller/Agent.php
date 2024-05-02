@@ -3,10 +3,12 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
-use \Glial\Synapse\Controller;
+
 use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
+use \Glial\Synapse\FactoryController;
+use \Glial\Synapse\Controller;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -38,7 +40,7 @@ class Agent extends Controller {
 
     public function before($param) {
         $logger = new Logger("Agent");
-        $handler = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler = new StreamHandler(LOG_FILE, Logger::WARNING);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
@@ -243,6 +245,12 @@ class Agent extends Controller {
         while (true) {
             $id_loop++;
 
+
+
+            $time_start = microtime(true);
+
+
+
             $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM daemon_main where id=" . $id;
             $res = $db->sql_query($sql);
@@ -250,40 +258,44 @@ class Agent extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->id . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
+                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
+
+                //FactoryController::addNode($ob->class, $ob->method, explode(',',$ob->params));
+                //$pid=43563456375635673;
 
                 $pid = shell_exec($cmd);
-                $this->logger->debug("{pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
+                $this->logger->debug("[".Microsecond::date()."] {pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
 
-                $refresh_time = $ob->refresh_time;
-                $id_daemon_main = $ob->id;
+                $refresh_time = (int) $ob->refresh_time;
             }
 
             // in case of mysql gone away, like this daemon restart when mysql is back
             Sgbd::sql(DB_DEFAULT)->sql_close();
             
             $timeToWait = $nextRuntime - microtime(true);
-            
 
-            //if ($id_daemon_main != 7)
-            //{
-                if ($timeToWait > 0) {
-                    usleep((int)($timeToWait * 1000000));  // Attendre le reste de la seconde en microsecondes
-                }
-                $nextRuntime += $interval;
 
-                //$this->logger->emergency("refresh time : ".Microsecond::date());
+            $time_end = microtime(true);
+            $time = $time_end - $time_start;
 
-                //temps additionel 
-                $refresh_time = 0;
-                $refresh_time = $refresh_time - 1;
-                if ($refresh_time < 0) {
-                    $refresh_time = 0;
-                }
+            $this->logger->debug("[Daemon : $id] made run in $time seconds");
 
-                sleep($refresh_time);
-            //}
-            
+            if ($time > 1 && $id == 7)
+            {
+                $this->logger->warning("[Daemon : $id] made run in $time seconds, mabe increase value between 2 run of fetching data, if happen too often");
+                $timeToWait = 0;
+            }
+
+
+            if ($timeToWait > 0) {
+                usleep((int)($timeToWait * 1000000));  // Attendre le reste de la seconde en microsecondes
+            }
+            $nextRuntime += $refresh_time;
+
+            $refresh_time--;
+
+
+
             //to prevent mysql gone away or everything else in long process
             $db->sql_close();
         }
@@ -384,83 +396,90 @@ class Agent extends Controller {
 
 
 
-    public function logs() {
+    public function logs($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
+        $id_daemon = $param[0] ?? "SELECT min(id) FROM `daemon_main`;"; //7 => integrate/integrateAll
+
         // update param for the daemon
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            if (!empty($_POST['daemon_main']['refresh_time']) && !empty($_POST['daemon_main']['thread_concurency']) && !empty($_POST['daemon_main']['max_delay'])) {
-                $table = [];
-                $table['daemon_main'] = $_POST['daemon_main'];
-                $table['daemon_main']['id'] = 1;
-                $gg = $db->sql_save($table);
-
-                if (!$gg) {
-                    set_flash("error", "Error", "Impossible to update the params of Daemon");
-                } else {
-                    set_flash("success", "Success", "The params of Daemon has been updated");
-                }
-                header("location: " . LINK . "Server/listing/logs");
-            }
-        }
-
+        $this->di['js']->code_javascript('$("#data_log").css("max-height", $(window).height()-200);');
         $this->di['js']->code_javascript("var objDiv = document.getElementById('data_log'); objDiv.scrollTop = objDiv.scrollHeight;");
+        
 
 
-        $sql = "SELECT * FROM `daemon_main` WHERE id =1";
+        $data = array();
+
+        $sql = "SELECT * FROM `daemon_main` WHERE id in ($id_daemon)";
         $res = $db->sql_query($sql);
-        $ob = $db->sql_fetch_object($res);
+        while($ob = $db->sql_fetch_object($res))
+        {
 
-        $data['log_file'] = TMP . $ob->log_file;
+            $data['log_file'] = TMP ."log/glial.log";
 
-        $data['log'] = __("Log file doens't exist yet !");
+            //debug($data);
 
-        if (file_exists($data['log_file'])) {
+            $data['log'] = __("Log file doens't exist yet !");
+    
+            if (file_exists($data['log_file'])) {
+    
+                //$ob->log_file = escapeshellarg($ob->log_file); // for the security concious (should be everyone!)
+                //$data['log'] = `tail -n 10000 $ob->log_file`;
+                //full php implementation
+                
+            
+                
+                $data['log'] = $this->tailCustom($data['log_file'], 100);
+            }
+    
 
-            //$ob->log_file = escapeshellarg($ob->log_file); // for the security concious (should be everyone!)
-            //$data['log'] = `tail -n 10000 $ob->log_file`;
-            //full php implementation
-            $data['log'] = $this->tailCustom($data['log_file'], 100);
+            /*
+            $_GET['daemon_main']['thread_concurency'] = $ob->thread_concurency;
+    
+
+
+            $data['thread'] = array();
+            for ($i = 1; $i <= 128; $i++) {
+                $tmp = [];
+    
+                $tmp['id'] = $i;
+                $tmp['libelle'] = $i;
+    
+                $data['thread_concurency'][] = $tmp;
+            }
+    
+            $_GET['daemon_main']['refresh_time'] = $ob->refresh_time;
+    
+            $data['thread'] = array();
+            for ($i = 1; $i <= 60; $i++) {
+                $tmp = [];
+    
+                $tmp['id'] = $i;
+                $tmp['libelle'] = $i;
+    
+                $data['refresh_time'][] = $tmp;
+            }
+    
+            $_GET['daemon_main']['max_delay'] = $ob->max_delay;
+    
+            $data['thread'] = array();
+            for ($i = 1; $i <= 60; $i++) {
+                $tmp = [];
+    
+                $tmp['id'] = $i;
+                $tmp['libelle'] = $i;
+    
+                $data['max_delay'][] = $tmp;
+            }
+            /******/
+
+            //debug($data);
+            //$data[''] = ;
+
+
         }
 
-        $_GET['daemon_main']['thread_concurency'] = $ob->thread_concurency;
-
-        $data['thread'] = array();
-        for ($i = 1; $i <= 128; $i++) {
-            $tmp = [];
-
-            $tmp['id'] = $i;
-            $tmp['libelle'] = $i;
-
-            $data['thread_concurency'][] = $tmp;
-        }
-
-        $_GET['daemon_main']['refresh_time'] = $ob->refresh_time;
-
-        $data['thread'] = array();
-        for ($i = 1; $i <= 60; $i++) {
-            $tmp = [];
-
-            $tmp['id'] = $i;
-            $tmp['libelle'] = $i;
-
-            $data['refresh_time'][] = $tmp;
-        }
-
-        $_GET['daemon_main']['max_delay'] = $ob->max_delay;
-
-        $data['thread'] = array();
-        for ($i = 1; $i <= 60; $i++) {
-            $tmp = [];
-
-            $tmp['id'] = $i;
-            $tmp['libelle'] = $i;
-
-            $data['max_delay'][] = $tmp;
-        }
-        //$data[''] = ;
+        
 
         $this->set('data', $data);
     }
@@ -523,7 +542,7 @@ class Agent extends Controller {
 
         $this->view = false;
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id, name, pid, log_file FROM daemon_main WHERE pid != 0";
+        $sql = "SELECT id, name, pid FROM daemon_main WHERE pid != 0";
 
         $res = $db->sql_query($sql);
 
