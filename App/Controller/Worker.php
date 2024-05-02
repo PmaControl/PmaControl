@@ -296,7 +296,7 @@ class Worker extends Controller
         Debug::debug($WORKER_QUEUE->nb_worker, "\$ob->nb_worker");
 
 
-        $this->logger->notice("[WORKER] $WORKER_QUEUE->nb_worker > $nb_thread");
+        //$this->logger->notice("[WORKER] $WORKER_QUEUE->nb_worker > $nb_thread");
 
         if ($WORKER_QUEUE->nb_worker > $nb_thread) {
             $tocreate = $WORKER_QUEUE->nb_worker - $nb_thread;
@@ -449,7 +449,7 @@ class Worker extends Controller
 
         $db  = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM worker_queue WHERE id=".$id_worker_queue.";";
-        $this->logger->warning("SQL : ".$sql);
+        //$this->logger->warning("SQL : ".$sql);
 
         $res = $db->sql_query($sql);
 

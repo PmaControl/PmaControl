@@ -1489,11 +1489,12 @@ tr.graph-underline td {
 
 
 g.node{
-    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.5));
+    
 }
 
 g.node:hover{
-    filter: drop-shadow(5px 5px 10px rgba(0,0,0, 0.9));
+    filter: drop-shadow(4px 4px 8px rgba(0,0,0, 0.9));
 }
 g.node a:hover{
     text-decoration: none;
@@ -1502,27 +1503,43 @@ g.edge{
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
 
+/*
 #clust12 > polygon{
     filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
     background-image: url('../image/main/bg.png');
     background-color: #eee;
     background-repeat: repeat;
+}*/
+
+
+.bench{
+    border: #AAAAAA 1px solid;
+    padding:5px;
+    margin-bottom:20px;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+    background:#F5F5F5;
+}
+.bench:hover{
+    border: #999999 1px solid;
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.6));
+    background:#FFFFFF;
 }
 
-.navbar3 {
+
+
+.grapfh {
     color: white;
-    display: flex;
-    flex-direction: column;
+    /* display: flex; */
+    /* flex-direction: column; */
     gap: 16px;
-    -webkit-box-align: center;
-    align-items: center;
-    -webkit-box-pack: center;
-    justify-content: center;
-    padding: 55px 40px;
+    /* -webkit-box-align: center;*/
+    /* align-items: center; */
+    /* -webkit-box-pack: center; */
+    /* justify-content: center; */
     text-decoration: none;
     background: linear-gradient(236.58deg, rgb(255, 146, 100) -4.19%, rgb(255, 72, 127) 2.7%, rgb(225, 61, 252) 13.86%, rgb(160, 77, 243) 22.94%, rgb(120, 58, 250) 31.2%, rgb(75, 38, 225) 38.48%, rgb(34, 0, 170) 56.54%, rgb(5, 0, 70) 74.02%);
     box-shadow: rgba(236, 66, 162, 0.5) 0px 10px 20px;
-    border-radius: 10px;
+    /* border-radius: 10px;*/
 }
 
 

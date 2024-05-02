@@ -342,6 +342,8 @@ class Extraction2
         return $variable;
     }
 
+
+    /*
     static function count_recursive($array)
     {
         if (!is_array($array)) {
@@ -356,26 +358,19 @@ class Extraction2
         return $count;
     }
 
-    static public function graph($var, $server, $range)
-    {
-        $res   = self::extract($var, $server, $date  = "", $range, true);
-        $graph = array();
-        while ($ar    = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $graph[$ar['id_mysql_server']] = $ar;
-        }
 
-        return $graph;
-    }
 
     static public function setOption($var, $val)
     {
         self::$$var = $val;
-    }
+    } */
     /*
      * Cette fonction prend comme paramètres la sortie de la fonction
      * Extraction::display(array("databases::databases"));
      */
 
+
+     /*
     static public function getSizeByEngine($data)
     {
         $res = array();
@@ -417,13 +412,8 @@ class Extraction2
 
         return $res;
     }
+    */
 
-    static public function getLastValue($var, $server)
-    {
-
-
-        $res = self::extract($var, $server, $date);
-    }
 
     
 }

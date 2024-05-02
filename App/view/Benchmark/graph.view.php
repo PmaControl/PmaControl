@@ -35,28 +35,28 @@ if (!empty($data['select_bench'])) {
     ?>
     <div class="row">
         <div class="col-md-6">
-            <canvas id="graph1" class="graph" width="550" heigth="400"></canvas>
+            <canvas id="graph1" class="graph bench" width="550" heigth="400"></canvas>
         </div>
         <div class="col-md-6">
-            <canvas id="graph2" class="graph" width="550" heigth="400"></canvas>
+            <canvas id="graph2" class="graph bench" width="550" heigth="400"></canvas>
         </div>
     </div>
     <div id="charts">
         <div class="row">
             <div class="col-md-6">
-                <canvas id="graph4" class="graph" width="550" heigth="400"></canvas>
+                <canvas id="graph4" class="graph bench" width="550" heigth="400"></canvas>
             </div>
             <div class="col-md-6">
-                <canvas id="graph3" class="graph" width="550" heigth="400"></canvas>
+                <canvas id="graph3" class="graph bench" width="550" heigth="400"></canvas>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6">
-                <canvas id="graph5" class="graph" width="550" heigth="400"></canvas>
+                <canvas id="graph5" class="graph bench" width="550" heigth="400"></canvas>
             </div>
             <div class="col-md-6">
-                <canvas id="graph6" class="graph" width="550" heigth="400"></canvas>
+                <canvas id="graph6" class="graph bench" width="550" heigth="400"></canvas>
             </div>
         </div>
     </div>

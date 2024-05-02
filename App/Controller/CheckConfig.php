@@ -68,7 +68,23 @@ class CheckConfig extends Controller
                 $res = $db->sql_query($sql);
 
                 $is_available = 0;
-                $available = Extraction::display(array("mysql_available"), array($_GET['mysql_server']['id']));
+                
+                //debug($_GET['mysql_cluster']);
+                //debug($_GET['mysql_server']);
+
+                if (! empty( $_GET['mysql_cluster']['id'])) {
+                    $mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
+                }
+
+                if (! empty( $_GET['mysql_server']['id'])) {
+                    $mysql_servers =explode(",",$_GET['mysql_server']['id']);
+                }
+
+                
+                $available = Extraction::display(array("mysql_available"), $mysql_servers);
+                
+               //$available = Extraction::display(array("mysql_available"), array($_GET['mysql_server']['id']));
+                
                 $is_available = end($available)['']['mysql_available'];
 
                 $server_note_available = array();

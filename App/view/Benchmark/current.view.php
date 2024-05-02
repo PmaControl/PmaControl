@@ -31,7 +31,7 @@ foreach ($data['current'] as $line) {
 
     $class = "";
     if ($line['status'] === "RUNNING") {
-        $class = 'class="progress-bar-striped" style="background:#ccc;  border-bottom:#333 1px solid"';
+        $class = 'class="progress-bar-striped" style="background:rgb(51, 122, 183); color:#fff;  border-bottom:#333 1px solid"';
     } elseif ($line['status'] === "NOT STARTED") {
         $class = 'class="progress-bar-striped" style="background:#ddd;  border-bottom:#999 1px solid"';
     }
@@ -66,14 +66,11 @@ foreach ($data['current'] as $line) {
     if ($line['status'] === "RUNNING") {
 
         echo ' ';
-
         if (!empty($data['running'][$line['id_benchmark_main']])) {
 
             $nb_thread = explode(',', $line['threads']);
             $last      = $data['running'][$line['id_benchmark_main']];
             $percent   = round($last / count($nb_thread) * 100, 2);
-
-
 
             echo ' ('.$percent.'%)';
         } else {
