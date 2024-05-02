@@ -47,7 +47,7 @@ class Docker extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM docker_software ORDER by name";
+        $sql = "SELECT * FROM docker_software WHERE display_name ='ProxySQL' ORDER by name DESC";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res))
@@ -66,6 +66,9 @@ class Docker extends Controller
                 {
                     echo $ob->name." : $tag\n";
 
+                    $sql = "SELECT * FROM docker_image WHERE id_docker_software=".$ob->id." AND ";
+
+
                     $sql = "INSERT IGNORE INTO docker_image (`id_docker_software`, `tag`) VALUES (".$ob->id.", '".$tag."');";
                     $db->sql_query($sql);
                 }
@@ -82,7 +85,7 @@ class Docker extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.name, b.tag FROM docker_software a
-        INNER JOIN docker_image b ON a.id=b.id_docker_software ORDER by a.name, b.tag";
+        INNER JOIN docker_image b ON a.id=b.id_docker_software ORDER by a.name DESC, b.tag";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res))
@@ -112,12 +115,16 @@ class Docker extends Controller
 
         //derniere version
         $sql = "SELECT 
-        a.name,
+        a.display_name, a.name,b.tag,a.color, a.background,
         CONCAT(
           SUBSTRING_INDEX(SUBSTRING_INDEX(tag, '.', 2), '.', -2), 
           '.', 
           MAX(CAST(SUBSTRING_INDEX(tag, '.', -1) AS UNSIGNED))
-        ) AS latest_patch
+        ) AS latest_version, 
+        SUBSTRING_INDEX(SUBSTRING_INDEX(tag, '.', 2), '.', -2) as main,
+        
+        GROUP_concat(tag) as all_version
+
         FROM docker_software a
         INNER JOIN docker_image b ON a.id=b.id_docker_software 
       GROUP BY 
@@ -131,13 +138,19 @@ class Docker extends Controller
 
         $res = $db->sql_query($sql);
 
-        while ($ob = $db->sql_fetch_object($res))
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
         {
-            $ret = shell_exec("docker image pull ".$ob->name.":".$ob->tag);
-            echo $ret."\n";
-            
+            $data['image'][] = $arr;
         }
 
+        $sql = "SELECT name, tag, sha256 FROM docker_software a
+        INNER JOIN docker_image b ON a.id=b.id_docker_software";
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['tag'][strtolower($arr['name'])][$arr['tag']] = $arr['sha256'];
+        }
 
         $this->set('data', $data);
 
@@ -151,5 +164,42 @@ class Docker extends Controller
         // 
     }
 
+
+    public function linkTagAndImage($param)
+    {
+        
+        Debug::parseDebug($param);
+    
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $ls = "docker image ls";
+
+
+        $result = shell_exec($ls);
+
+        $lines = explode("\n", $result);
+
+        Debug::debug($lines);
+
+        foreach($lines as $input_line )
+        {
+            $output_array = array();
+            preg_match('/(\S+)\s+(\d+\.\d+\.\d+)\s+([a-z0-9]{12}).*\s+(\d+[KGMB]{2})$/', $input_line, $output_array);
+
+            Debug::debug($output_array);
+
+            if (count($output_array) > 0)
+            {
+
+                $sql ="UPDATE docker_image a
+                INNER JOIN docker_software b ON a.id_docker_software = b.id SET sha256='".$output_array[3]."', size='".$output_array[4]."' 
+                WHERE b.name='".$output_array[1]."' AND a.tag='".$output_array[2]."'";
+
+                Debug::sql($sql);
+
+                $db->sql_query($sql);
+            }
+        }
+    }
 
 }

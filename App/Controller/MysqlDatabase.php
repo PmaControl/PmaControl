@@ -81,7 +81,25 @@ class MysqlDatabase extends Controller
     {
         $data['param'] = $param;
 
-        $_GET['mysql_server']['id'] = $param[0];
+        $_GET['mysql_server']['id'] = $param[0] ?? 1;
+
+        $database = $param[1] ?? "";
+
+
+
+        if (empty($database))
+        {
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            $sql = "SELECT id_mysql_server,schema_name FROM mysql_database WHERE id_mysql_server = '".$_GET['mysql_server']['id']. "'
+            AND schema_name NOT in ('information_schema','performance_schema')";
+            $res = $db->sql_query($sql);
+
+            while($ob = $db->sql_fetch_object($res)) {
+                header("location: ".LINK."MysqlDatabase/mpd/".$ob->id_mysql_server."/".$ob->schema_name."/");
+                exit;
+            }
+        }
 
         $this->set('data', $data);
         $this->set('param', $param);

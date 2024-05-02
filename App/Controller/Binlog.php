@@ -357,8 +357,21 @@ class Binlog extends Controller {
              "mysql_binlog::binlog_sizes", "mysql_binlog::binlog_total_size", "mysql_binlog::binlog_nb_files"),array($ob->id_mysql_server));
 
             Debug::debug($result);
-                        
+
+            if (empty($result[$ob->id_mysql_server]['']))
+            {
+                break;
+            }
+
             $binarylogs = $result[$ob->id_mysql_server][''];
+
+            if (empty($binarylogs['binlog_files'])) {
+                break;
+            }
+            if (empty($binarylogs['binlog_sizes'])){
+                break;
+            }
+
             $bin_logs = array_combine(json_decode($binarylogs['binlog_files'], true), json_decode($binarylogs['binlog_sizes'], true));
 
             Debug::debug($binarylogs);

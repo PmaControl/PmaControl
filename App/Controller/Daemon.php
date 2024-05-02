@@ -16,7 +16,6 @@ use \Glial\Sgbd\Sgbd;
 
 class Daemon extends Controller
 {
-    private $daemon = array(7, 9, 11, 12, 5, 13, 14);
 
     public function index($param)
     {
@@ -33,7 +32,7 @@ class Daemon extends Controller
             $this->di['js']->code_javascript('
             $(document).ready(function(){
                 function refresh(){
-                    var myURL = GLIAL_LINK+"daemon/worker"+"/ajax:true";
+                    var myURL = GLIAL_LINK+"worker/list"+"/ajax:true";
                     $("#worker-index").load(myURL);
                 }
 
@@ -76,10 +75,22 @@ class Daemon extends Controller
     {
 
         if ($commande == "start") {
-            $this->daemon = array_reverse($this->daemon);
+            $order = "ASC";
+        }
+        else{
+            $order = "DESC";
         }
 
-        foreach ($this->daemon as $id_daemon) {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM daemon_main ORDER BY id $order";
+        $res = $db->sql_query($sql);
+
+        $daemon = array();
+        while($ob = $db->sql_fetch_object($res)) {
+            $daemon[] = $ob->id;
+        }
+
+        foreach ($daemon as $id_daemon) {
             $php = explode(" ", shell_exec("whereis php"))[1];
             $cmd = $php." ".GLIAL_INDEX." Agent ".$commande." ".$id_daemon;
             Debug::debug($cmd);
@@ -88,7 +99,7 @@ class Daemon extends Controller
 
         if ($commande === "stop") {
             $php = explode(" ", shell_exec("whereis php"))[1];
-            $cmd = $php." ".GLIAL_INDEX." Aspirateur killAllWorker";
+            $cmd = $php." ".GLIAL_INDEX." Worker killAll";
             Debug::debug($cmd);
             $pid = shell_exec($cmd);
 
@@ -246,36 +257,4 @@ class Daemon extends Controller
         Debug::debug($data);
     }
 
-//deprecated
-    public function worker($param)
-    {
-        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
-            $this->layout_name = false;
-        }
-
-        $db = Sgbd::sql(DB_DEFAULT);
-        $data['worker'] = array();
-
-        $sql2 = "SELECT b.*,a.name,a.worker_path  FROM daemon_main a
-            INNER JOIN daemon_worker b ON a.id = b.id_daemon_main
-            ORDER BY a.id, b.pid";
-        $res2 = $db->sql_query($sql2);
-        while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-
-            $pid_file        = EngineV4::getFilePid("worker_mysql",$arr['pid'] );
-     
-            $arr['pid_file'] = $pid_file;
-
-            if (file_exists($pid_file)) {
-                $arr['id_proxysql'] = file_get_contents($pid_file);
-            } else {
-                $arr['id_proxysql'] = "...";
-            }
-
-
-            $data['worker'][] = $arr;
-        }
-
-        $this->set('data', $data);
-    }
 }

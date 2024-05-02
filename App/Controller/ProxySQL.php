@@ -313,20 +313,7 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
-    public function createTable($param)
-    {
-        Debug::parseDebug($param);
 
-        $id_proxysql_server = $param[0];
-
-        $sql = "SHOW TABLES like 'main%';";
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-
-        }
-    }
 
 
     static function getServers($hostname, $port, $login , $password)
@@ -534,11 +521,30 @@ class ProxySQL extends Controller
         }
 
         $db = Sgbd::sql('proxysql_'.$id_proxysql_server);
+        $default = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM proxysql_server WHERE id=".$id_proxysql_server;
+        $res = $default->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $id_mysql_server = $ob->id_mysql_server;
+        }
+
+
+
 
         $import = array();
         $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         //$import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
         //$import['uniq']['key2::key3??']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
+
+
+
+
+
+
+
 
         $db->sql_close();
 

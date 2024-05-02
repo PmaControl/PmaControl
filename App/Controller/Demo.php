@@ -315,8 +315,7 @@ class Demo extends Controller {
         return implode($pass); //turn the array into a string
     }
 
-
-    public function Install($param)
+    public function install($param)
     {
         Debug::parseDebug($param);
         $pair = $this->generatePair();

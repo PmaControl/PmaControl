@@ -227,7 +227,6 @@ class Server extends Controller
                 new Clipboard(".copy-button");
             })();');
     
-            
             $this->di['js']->code_javascript('
             $(document).ready(function()
             {
@@ -262,6 +261,7 @@ class Server extends Controller
                   }, 1000);
     
             });'); /***/
+
         }
 
         $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
@@ -269,7 +269,7 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
+                 ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
 
         $res = $db->sql_query($sql);
 
@@ -280,7 +280,7 @@ class Server extends Controller
         }
 
         $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server",
-         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only"));
+         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_µs_95"));
 
         //debug($data['extra']);
 
@@ -288,7 +288,7 @@ class Server extends Controller
 
         // get Tag
         $sql          = "SELECT * FROM link__mysql_server__tag a
-            INNER JOIN tag b ON b.id =a.id_tag";
+            INNER JOIN tag b ON b.id =a.id_tag ORDER BY b.name";
         $res          = $db->sql_query($sql);
         $data['tags'] = array();
         while ($arr          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {

@@ -70,7 +70,33 @@ class Format
         return $name." ".$number;
     }
 
-    static public function ping($microtime, $precision = 2)
+
+    static function getLogo($fork)
+    {
+
+        switch($fork)
+        {
+
+            case 'mysql':
+                $logo = '<span class="geek">&#xF137;</span>';
+                break;
+
+            case 'mariadb':
+                $logo = '<span class="geek">&#xF130;</span>';
+                break;
+            case 'percona':
+                $logo = '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
+                break;
+
+            case 'proxysql':
+                $logo = '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+                break;
+        }
+
+        return $logo;
+    }
+
+    static public function ping($microtime, $precision = 3)
     {
         $units = array('ms', 's');
 

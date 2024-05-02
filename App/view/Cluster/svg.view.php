@@ -45,7 +45,7 @@ elseif (! empty($_GET['ajax']))
 }
 else {
     echo '<div style="margin:20px;" class="alert alert-info" role="alert">';
-    echo __("This cluster does not seem to be part of a cluster if the latter were to be part of it you can download the json with the link below");
+    echo __("This server does not seem to be part of a cluster if the latter were to be part of it you can download the json with the link below");
     echo '<br /><br /><a href="'.LINK.'dot3/download/" class="btn btn-primary" role="button"></span> '
     .__("Download").' <span class="glyphicon glyphicon-download-alt"></span></a><br /><br />';
     echo __("Then you can post your file at this address for debug :")

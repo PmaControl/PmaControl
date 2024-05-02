@@ -9,6 +9,7 @@ namespace App\Controller;
 
 use App\Library\Graphviz;
 use \Glial\Synapse\Controller;
+use App\Library\Extraction;
 use App\Library\Extraction2;
 use \App\Library\Debug;
 use \App\Library\Git;
@@ -85,7 +86,6 @@ class Dot3 extends Controller
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
-
         // "status::wsrep_cluster_status"  => not exist anymore ?
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
@@ -97,9 +97,12 @@ class Dot3 extends Controller
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql",
-                "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_server::mysql_servers",
+                "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_mysql_servers",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates"
             ),array() , $date_request);
+
+
+
 
         $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy
                 FROM mysql_server a ".$versioning."
@@ -123,18 +126,19 @@ class Dot3 extends Controller
 
         
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning;";
+        Debug::debug($sql);
 
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][$arr['id_mysql_server']] = array_merge($arr, $data['servers'][$arr['id_mysql_server']]);
 
             //json decode in same time
-            $data['servers'][$arr['id_mysql_server']]['mysql_servers'] = json_decode($data['servers'][$arr['id_mysql_server']]['mysql_servers'], true);
+            //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
+            //exit;
+            //$data['servers'][$arr['id_mysql_server']]['mysql_servers'] = json_decode($data['servers'][$arr['id_mysql_server']]['mysql_servers'], true);
         }
 
-
-        //TO REMOVE justfor TEST proxysql
-
+        //TO REMOVE just for TEST proxysql
         $servers = ProxySQL::getErrorConnect(array(1));
         $ret = array();
         foreach($servers as $server)
@@ -146,11 +150,7 @@ class Dot3 extends Controller
 
 
         //to remove
-        
         //stats_mysql_processlist
-
-
-
         //end
 
 
@@ -164,9 +164,7 @@ class Dot3 extends Controller
             }
         }
 
-
-
-        Debug::debug($data, "SERVER");
+        //Debug::debug($data, "SERVER");
 
         //insert to DB
         $data_for_md5 = $data;
@@ -219,9 +217,14 @@ class Dot3 extends Controller
             }
 
             foreach($server['@slave']  as $slave) {
+
                 $tmp_group[$id_group] = array();
+                //Debug::debug($slave, "SLAVE");
+                
                 $tmp_group[$id_group][] = $server['id_mysql_server'];
                 $master = $slave['master_host'].":" .$slave['master_port'];
+
+                //Debug::debug($master, "master");
 
                 if (! empty($information['mapping'][$master])) {
                     $tmp_group[$id_group][] = $information['mapping'][$master];
@@ -229,10 +232,16 @@ class Dot3 extends Controller
                 else {
                     echo "This master was not found : ".$master."\n";
                 }
-                
                 $id_group++;
+                
             }   
+            
+
         }
+
+        Debug::debug($tmp_group, "MASTER SLAVE");
+
+
         return $tmp_group;
     }
 
@@ -241,23 +250,24 @@ class Dot3 extends Controller
     {
         $tmp_group = array();
 
+
+        //Debug::debug($information['servers'][65]);
+        
         foreach($information['servers'] as $id_mysql_server => $server)
         {
-            if ($server['is_proxysql'] != "1")
-            {
+            if ($server['is_proxysql'] != "1") {
                 continue;
             }
 
-
-            $tmp_group[$id_mysql_server] = array();
             $tmp_group[$id_mysql_server][] = $id_mysql_server;
-            
-            foreach($server['mysql_servers'] as $proxysql)
-            {
-                $server = $proxysql['hostname'].':'.$proxysql['port'];
 
-                $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
-                //Debug::debug($server, 'server');
+            foreach($server['proxysql_runtime_mysql_servers'] as $backend) {
+                $server = $backend['hostname'].':'.$backend['port'];
+                if (!empty($information['mapping'][$server]))
+                {
+                    $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+                }
+                
             }
         }
 
@@ -516,6 +526,9 @@ class Dot3 extends Controller
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql));
 
+
+        Debug::debug($group, "GROUP");
+        //die();
         return $group;
     }
 
@@ -711,7 +724,7 @@ class Dot3 extends Controller
             }
 
             $i = 0;
-            foreach($server['mysql_servers'] as $hostgroup) {
+            foreach($server['proxysql_runtime_mysql_servers'] as $hostgroup) {
                 $i++;
 
                 $host = $hostgroup['hostname'].':'.$hostgroup['port'];
@@ -798,7 +811,7 @@ class Dot3 extends Controller
             return  $dot_information['information']['mapping'][$host];
         }
         else {
-            Debug::debug($dot_information, "mapping");
+            //Debug::debug($dot_information, "mapping");
             // create box => autodetect
             echo "This master was not found : ".$host."\n";
             die();
@@ -886,6 +899,7 @@ class Dot3 extends Controller
 
         $legend = 'digraph {
 	    rankdir=LR
+        margin="0.104,0";
 	    graph [fontname = "arial"];
 	    node [fontname = "arial"];
 	    edge [fontname = "arial"];

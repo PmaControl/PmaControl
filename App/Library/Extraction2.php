@@ -114,9 +114,9 @@ class Extraction2
                 //Debug::debug($radical);
 
                 if ($radical == "slave") {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date`";
+                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
 
                     if ($graph === true) {
 //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
@@ -192,6 +192,8 @@ class Extraction2
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
         //Debug::sql($sql3);
+
+        
         $res2 = $db->sql_query($sql3);
 
         if ($db->sql_num_rows($res2) === 0) {
@@ -243,9 +245,13 @@ class Extraction2
 
             if ($range) {
                 if ($ob->connection_name === "N/A") {
+                    $ob->value = trim($ob->value);
+                    if ($ob->type == "json") {
+                        $ob->value = json_decode($ob->value, true);
+                    }
                     $table[$ob->id_mysql_server][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
                     $table[$ob->id_mysql_server][$ob->date]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                    $table[$ob->id_mysql_server][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
                 } else {
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
@@ -254,9 +260,13 @@ class Extraction2
             } else {
                 if ($ob->connection_name === "N/A") {
 
+                    $ob->value = trim($ob->value);
+                    if ($ob->type == "json") {
+                        $ob->value = json_decode($ob->value, true);
+                    }
                     $table[$ob->id_mysql_server]['id_mysql_server']                            = $ob->id_mysql_server;
                     $table[$ob->id_mysql_server]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                    $table[$ob->id_mysql_server][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
                 } else {
 
                     $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;

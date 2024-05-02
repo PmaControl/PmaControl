@@ -1241,7 +1241,18 @@ END;";
 
         Debug::parseDebug($param);
 
-        $data['database'] = Extraction::display(array("databases::databases", "variables::is_proxysql"));
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT b.*,a.display_name FROM mysql_server a
+        INNER JOIN mysql_database b ON a.id = b.id_mysql_server WHERE is_proxy = 0;";
+
+        $res = $db->sql_query($sql);
+
+        $data['database'] = array();
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['database'][] = $arr;
+        }
 
         $this->set("data", $data);
     }

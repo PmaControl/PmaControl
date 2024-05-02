@@ -33,9 +33,12 @@ class Control extends Controller
     private $engine_preference    = array("ROCKSDB");
     public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
     //when mysql reach 80% of disk we start to drop partition
-    public $percent_max_disk_used = 80;
+    const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
-    public $partition_to_keep     = 2;
+    public $partition_to_keep     = 90;
+
+
+    private $logger;
 
     /*
      *
@@ -46,7 +49,6 @@ class Control extends Controller
     {
         $db      = Sgbd::sql(DB_DEFAULT);
         $datadir = $db->getVariables("datadir");
-
         // connect to ssh to sql server
         //$ssh->
         // or local
@@ -61,9 +63,9 @@ class Control extends Controller
 
     public function before($param = "")
     {
-        $logger       = new Logger($this->getClass());
+        $logger       = new Logger("Control");
         $file_log     = LOG_FILE;
-        $handler      = new StreamHandler($file_log, Logger::DEBUG);
+        $handler      = new StreamHandler($file_log, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $logger->pushHandler($handler);
         $this->logger = $logger;
@@ -82,7 +84,6 @@ class Control extends Controller
         while ($ob              = $db->sql_fetch_object($res)) {
             $engine_possible[] = $ob->ENGINE;
         }
-
 
         foreach ($this->engine_preference as $engine) {
             if (in_array($engine, $engine_possible)) {
@@ -128,6 +129,9 @@ class Control extends Controller
     {
         $partition_number = $param[0];
         $db               = Sgbd::sql(DB_DEFAULT);
+
+
+        $this->logger->warning("We gonna drop the partition : $partition_number");
 
         $combi = $this->makeCombinaison();
 
@@ -191,25 +195,28 @@ class Control extends Controller
 
     public function service($param = "")
     {
-
         Debug::parseDebug($param);
         $partitions = $this->getMinMaxPartition();
-
 
         Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
         $current_percent = $this->checkSize();
-        if ($current_percent > $this->percent_max_disk_used) {
+
+        if ($current_percent > self::PERCENT_MAX_DISK_USED) {
             $this->logger->notice('Usage of disk : '.$current_percent.' %');
             Debug::debug($partitions['min'], "Drop Partition");
 
+            Debug::debug("if more than 2 partitions we gonna drop one");
             if (count($partitions['other']) > 2) {   //minimum we let two partitions
+                
+                $this->logger->warning('We will drop partition in 10sec : '.$partitions['min']." (size on disk $current_percent% > ".self::PERCENT_MAX_DISK_USED."%)");
                 //delete server_*
                 //System::deleteFiles("server");
+                $this->refreshVariable($param);
 
                 //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
-                Sleep(5);
+                Sleep(10);
                 
                 $this->dropPartition(array($partitions['min']));
             }
@@ -220,9 +227,10 @@ class Control extends Controller
         //On drop les partitions supérieur a X jours
         if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
             //System::deleteFiles("server");
-
+            $this->logger->warning("Max partition to keep reeched : ".$this->partition_to_keep);
+                
             //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
-            Sleep(5);
+            Sleep(10);
 
             $this->dropPartition(array($partitions['min']));
         }
@@ -242,7 +250,6 @@ class Control extends Controller
             }
         }
 
-        $this->updateLinkVariableServeur();
         $this->refreshVariable(array());
     }
 
@@ -354,10 +361,6 @@ PARTITION BY RANGE (to_days(`date`))
         Mysql::onAddMysqlServer();
         $this->dropAllFile();
 
-        
-
-        
-        
         //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
         //Debug::debug($cmd);
         //shell_exec($cmd);
@@ -393,6 +396,12 @@ PARTITION BY RANGE (to_days(`date`))
         return $part;
     }
 
+
+    /*
+    * deprecated
+    */
+
+    /*
     static public function updateLinkVariableServeur()
     {
 
@@ -409,6 +418,12 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
+    /*
+    * deprecated
+    */
+
+
+    /*
     static public function updateLinkServeur($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -466,7 +481,7 @@ PARTITION BY RANGE (to_days(`date`))
             Debug::sql($sql);
             $db->sql_query($sql);
         }
-    }
+    }*/
 
     public function updateConfig()
     {
@@ -477,13 +492,6 @@ PARTITION BY RANGE (to_days(`date`))
     private function dropFile($diretory)
     {
         Debug::parseDebug($param);
-
-        // drop variables
-
-        //$scanned_directory = array_diff(scandir($diretory), array('..', '.'));
-        //Debug::debug($scanned_directory);
-
-        //$scanned_directory[]= TMP . "tmp_file/";
 
         foreach(glob($diretory."*") as $filename) {
             if (! is_dir($filename))
@@ -519,11 +527,11 @@ PARTITION BY RANGE (to_days(`date`))
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "WITH `z` as (select `id` from `ts_variable` where `name` = 'version' and `from`='variables')
+        $sql = "WITH `z` as (select `id`,id_ts_file from `ts_variable` where `name` = 'version' and `from`='variables')
 SELECT `a`.`id_mysql_server`, b.file_name,a.date, a.date_p4 FROM `ts_max_date` `a`
 INNER JOIN `ts_file` `b` ON `a`.`id_ts_file` = `b`.`id`
 LEFT JOIN `ts_value_general_text` c ON c.date = a.date_p4 AND a.id_mysql_server = c.id_mysql_server AND c.id_ts_variable = (SELECT id from z)
-WHERE b.file_name = 'variable' and  c.id is null;";
+WHERE b.id in (select id_ts_file from z) AND c.id is null;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);

@@ -38,6 +38,8 @@ class Table
         if (empty(self::$table[$id_mysql_server][$table_schema][$table_name]))
         {
             $db = Mysql::getDbLink($id_mysql_server, "REMOTE");
+            $default = Sgbd::sql(DB_DEFAULT);
+
 
             //to prevent drop table after get FKs
             
@@ -54,22 +56,25 @@ class Table
             }
             */
 
-
             $db->sql_select_db($table_schema);
-            if (! $db->getListTable($table_name))
+            $ret = $db->getListTable($table_name);
+
+            if (! $ret)
             {
                 $sql = "DELETE FROM foreign_key_virtual WHERE (constraint_schema = '".$table_schema."' AND constraint_table = '".$table_name."')
                 OR (referenced_schema = '".$table_schema."' AND referenced_table = '".$table_name."')";
-                $db->sql_query($sql);
-
+                $default->sql_query($sql);
 
                 $sql = "DELETE FROM foreign_key_real WHERE (constraint_schema = '".$table_schema."' AND constraint_table = '".$table_name."')
                 OR (referenced_schema = '".$table_schema."' AND referenced_table = '".$table_name."')";
-                $db->sql_query($sql);
+                $default->sql_query($sql);
 
                 //detroy link 
-            }
 
+
+            }
+            
+            
             $sql = "DESCRIBE `".$table_schema."`.`".$table_name."`;";
             Debug::sql($sql);
 
@@ -80,6 +85,7 @@ class Table
             }
             
             Debug::debug(self::$table[$id_mysql_server][$table_schema][$table_name], "Table $table_schema.$table_name");
+        
         }
 
         return self::$table[$id_mysql_server][$table_schema][$table_name];

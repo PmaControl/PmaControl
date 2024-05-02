@@ -48,7 +48,7 @@ class MysqlServer extends Controller
             var intervalId = window.setInterval(function(){
                 // call your function here
                 refresh()  
-              }, 1000);
+              }, 500);
 
         })');
 
@@ -111,4 +111,7 @@ class MysqlServer extends Controller
         $this->set('data', $data);
 
     }
+
+
+
 }
