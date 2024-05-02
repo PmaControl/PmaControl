@@ -77,13 +77,11 @@ class CheckConfig extends Controller
                 }
 
                 if (! empty( $_GET['mysql_server']['id'])) {
-                    $mysql_servers =explode(",",$_GET['mysql_server']['id']);
+                    $mysql_servers = explode(",",$_GET['mysql_server']['id']);
                 }
 
                 
                 $available = Extraction::display(array("mysql_available"), $mysql_servers);
-                
-               //$available = Extraction::display(array("mysql_available"), array($_GET['mysql_server']['id']));
                 
                 $is_available = end($available)['']['mysql_available'];
 
@@ -227,10 +225,24 @@ class CheckConfig extends Controller
         }
 
         //generate liste of cluster (for select)
+        /*
         $sql = "select group_concat(a.id_mysql_server) as id_mysql_servers, group_concat(b.display_name) as display_name
             from link__architecture__mysql_server a
             INNER JOIN mysql_server b ON a.id_mysql_server= b.id
             group by id_architecture having count(1) > 1;";
+        */
+
+
+
+        //le max(id)-1 c'est dégeu mais on peut se retrouver pile dans la génération d'un nouveau graphe et ne pas avoir l'ensembre des clsuter 
+        $sql = "SELECT group_concat(b.id_mysql_server) as id_mysql_servers, group_concat(c.display_name) as display_name
+        FROM dot3_cluster a 
+        INNER JOIN dot3_cluster__mysql_server b ON b.id_dot3_cluster = a.id
+        INNER JOIN mysql_server c ON c.id = b.id_mysql_server
+        WHERE a.id_dot3_information 
+        IN (SELECT id_dot3_information FROM dot3_cluster WHERE id in (select max(id)-1 from dot3_cluster))
+        GROUP BY a.id_dot3_graph;";
+
 
         $res = $db->sql_query($sql);
 
@@ -241,6 +253,8 @@ class CheckConfig extends Controller
             $libelle                 = array();
 
             foreach ($id_mysql_server_splited as $id_mysql_server) {
+                $pretty_server = str_replace('"', "'", $id_mysql_server);
+                
                 $pretty_server = str_replace('"', "'", \App\Library\Display::srv($id_mysql_server));
                 $libelle[]     = strip_tags($pretty_server, '<span><small>');
             }
