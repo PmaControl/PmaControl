@@ -17,7 +17,6 @@ echo "<br />";
 
 $filename = $data['graph'];
 ?>
-
 <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title">
@@ -34,7 +33,6 @@ $filename = $data['graph'];
                 </h3>
         </div>
         <div class="mpd">
-
 
         <?php
 

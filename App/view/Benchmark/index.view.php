@@ -12,7 +12,7 @@ unset($data['menu']['logs']);
 
 foreach ($data['menu'] as $key => $elem) {
     if ($_GET['path'] == $elem['path']) {
-        $color = "btn-primary";
+        $color = "btn-default active";
     } else {
         $color = "btn-default";
     }

@@ -179,6 +179,9 @@ class Dot3 extends Controller
         $json = json_encode($data);
         $md5 = md5(json_encode($data_for_md5));
 
+
+        $this->logger->warning("MD5 : $md5");
+
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
         
@@ -199,6 +202,8 @@ class Dot3 extends Controller
             $dot3['dot3_information']['commit'] = $commit['build'];
             $id_dot3_information =  $db->sql_save($dot3);
         }
+
+        $this->logger->warning("id_dot3_information : $id_dot3_information");
 
         return $id_dot3_information;
     }
@@ -235,8 +240,6 @@ class Dot3 extends Controller
                 $id_group++;
                 
             }   
-            
-
         }
 
         Debug::debug($tmp_group, "MASTER SLAVE");
@@ -395,7 +398,7 @@ class Dot3 extends Controller
         $sql = "BEGIN";
         $res = $db->sql_query($sql);
 
-
+        $this->logger->warning("MD5 (DOT) : $md5");
 
         $sql = "SELECT id FROM dot3_graph WHERE md5 = '".$md5."'";
         $res = $db->sql_query($sql);
@@ -631,7 +634,7 @@ class Dot3 extends Controller
                     $tmp['options']['penwidth'] = "3";
                     if (!empty($slave['using_gtid'])) {
                         if (strtolower($slave['using_gtid']) != "no") {
-                            $tmp['color'] = $tmp['color'].":#ffffff:".$tmp['color'];
+                            $tmp['color'] = $tmp['color'].":#FFFFFF:".$tmp['color'];
                             $tmp['options']['penwidth'] = "2";
                             $tmp['options']['style'] = $tmp['style'];
                         }
@@ -899,12 +902,12 @@ class Dot3 extends Controller
 
         $legend = 'digraph {
 	    rankdir=LR
-        margin="0.104,0";
 	    graph [fontname = "arial"];
 	    node [fontname = "arial"];
 	    edge [fontname = "arial"];
 	    node [shape=plaintext fontsize=8];
 	    subgraph cluster_01 {
+        bgcolor="#ffffff"
 	    label = "Replication : Legend";
 	    key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">';
 
@@ -956,39 +959,17 @@ class Dot3 extends Controller
 
         file_put_contents(TMP . "/legend", $legend);
 
-        $data['legend'] = $this->getRenderer($legend);
+
+        $file_name = Graphviz::generateDot("legend", $legend);
+        $data['legend'] = file_get_contents($file_name);
+
+
+        
 
         $this->set('data', $data);
 
         //https://dreampuf.github.io/GraphvizOnline/
     }
-
-
-    public function getRenderer($dot)
-    {
-        $file_id = uniqid();
-
-        $tmp_in  = "/tmp/dot_" . $file_id . ".dot";
-        $tmp_out = "/tmp/svg_" . $file_id . ".svg";
-
-        file_put_contents($tmp_in, $dot);
-
-        $cmd = "dot " . $tmp_in . " -Tsvg -o " . $tmp_out . " 2>&1";
-
-        $ret = shell_exec($cmd);
-
-        if (!empty($ret)) {
-            throw new \Exception('PMACTRL-842 : Dot2/getRenderer ' . trim($ret), 70);
-        }
-
-        $svg = file_get_contents($tmp_out);
-
-        unlink($tmp_in);
-        unlink($tmp_out);
-
-        return $svg;
-    }
-
 
     public function download($param)
     {
@@ -1021,11 +1002,43 @@ class Dot3 extends Controller
         Graphviz::buildApp($param);
     }
 
+    /*****
+     * case for Last_IO_Error, double quote not supported by graphviz, and connect escape to put in tooltip
+     * error connecting to master 'replic...... '127.0.0.1' (111 "Connection refused")
+     * 
+     */
     static public function escapeTooltip($string)
     {
         $string = str_replace('"',"‘", $string);
-
         return $string;
+    }
+
+
+    public function purgeAll($param)
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE dot3_cluster__mysql_server";
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE dot3_information_extra";
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE dot3_cluster;";
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE dot3_graph";
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE dot3_information";
+        $db->sql_query($sql);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        $db->sql_query($sql);
     }
 
 }

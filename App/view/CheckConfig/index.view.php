@@ -102,7 +102,14 @@ echo '</div>';
 
 echo '</div>';
 
-
+function isFloat($value)
+{
+    // test before => must be numeric first
+    if (strstr($value, ".")) {
+        return true;
+    }
+    return ((int) $value != $value); // problem avec PHP_INT_MAX
+}
 
 if (!empty($data['index'])) {
 
@@ -176,20 +183,9 @@ if (!empty($data['index'])) {
             foreach ($data['mysql_server'] as $id_mysql_server => $title) {
 
                 if (isset($data['resultat'][$id_mysql_server][$index])) {
-
-
                     $var_long = $data['resultat'][$id_mysql_server][$index];
-
-
-
-                    if (strlen($var_long) > $length) {
-
-
-                        $var = substr($var_long, 0, $length)."...";
-                    } else {
-                        $var = $var_long;
-//$var_long =
-                    }
+                    $var = $var_long;
+              
                 } else {
                     $var      = "<b>N/A</b>";
                     $var_long = "N/A";

@@ -2,11 +2,16 @@
 
 namespace App\Controller;
 
+use \App\Library\Debug;
+
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Color;
-use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
+
+use \Monolog\Logger;
+use \Monolog\Formatter\LineFormatter;
+use \Monolog\Handler\StreamHandler;
 
 class Benchmark extends Controller
 {
@@ -22,6 +27,7 @@ class Benchmark extends Controller
     var $debug = false;
     var $count = 1;
 
+    var $logger;
     /*
      * @brand-primary: darken(#428bca, 6.5%); // #337ab7
       @brand-success: #5cb85c;
@@ -33,6 +39,19 @@ class Benchmark extends Controller
         "132,186,91", "211,94,96", "128,133,133", "144,103,167", "171,104,87", "204,194,16");
 
     //var $colors = array(self::COLOR_BLUE, self::COLOR_RED, self::COLOR_YELLOW, self::COLOR_GREEN, self::COLOR_GREY);
+
+
+    public function before($param)
+    {
+        
+        $monolog       = new Logger("Benchmark");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
+
+
 
     public function run($param)
     {
@@ -71,8 +90,13 @@ class Benchmark extends Controller
             $sql = "CREATE DATABASE sbtest;";
             $server->sql_query($sql);
 
+            
+
+
             $data['sysbench'] = $this->getSysbenchVersion();
             Debug::debug($data['sysbench'], "Version sysbench");
+
+            
 
             if (version_compare($data['sysbench'], '0.5', "=")) {
 
@@ -96,6 +120,8 @@ class Benchmark extends Controller
 --table-size=10000 \
 '.$directory_lua.$ob->mode.' prepare';
             }
+
+            $this->logger->notice("prepare : ".str_replace("\\", "",$prepare));
 
             Debug::debug($prepare, "PREPARE");
 
@@ -152,6 +178,9 @@ class Benchmark extends Controller
                         Debug::debug($data['sysbench'], "Version of sysbench not supported");
                     }
 
+                    $this->logger->notice("RUNNING : ".str_replace("\\", "",$cmd));
+
+
                     Debug::debug(Color::getColoredString($cmd, "yellow"));
 
                     $input_lines = shell_exec($cmd);
@@ -174,7 +203,8 @@ class Benchmark extends Controller
                       `reponse_min` = '".$this->getReponseTimeMin($input_lines)."',
                       `reponse_max` = '".$this->getReponseTimeMax($input_lines)."',
                       `reponse_avg` = '".$this->getReponseTimeAvg($input_lines)."',
-                      `reponse_percentile95` = '".$this->getReponseTime95percent($input_lines)."';";
+                      `reponse_percentile95` = '".$this->getReponseTime95percent($input_lines)."',
+                      `result`= '".$db->sql_real_escape_string($input_lines)."';";
 
                     Debug::sql($sql);
 
@@ -484,13 +514,13 @@ Threads fairness:
         $data['menu']['current']['icone'] = '<i class="fa fa-refresh fa-spin" aria-hidden="true"></i>';
         $data['menu']['current']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/current';
 
-        $data['menu']['config']['name']  = __('Configuration');
-        $data['menu']['config']['icone'] = '<i class="fa fa-wrench" aria-hidden="true"></i>';
-        $data['menu']['config']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/config';
+        //$data['menu']['config']['name']  = __('Configuration');
+        //$data['menu']['config']['icone'] = '<i class="fa fa-wrench" aria-hidden="true"></i>';
+        //$data['menu']['config']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/config';
 
-        $data['menu']['script']['name']  = __('Scripts');
-        $data['menu']['script']['icone'] = '<i class="fa fa-gears" aria-hidden="true"></i>';
-        $data['menu']['script']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/script';
+        //$data['menu']['script']['name']  = __('Scripts');
+        //$data['menu']['script']['icone'] = '<i class="fa fa-gears" aria-hidden="true"></i>';
+        //$data['menu']['script']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/script';
 
         $data['menu']['graph']['name']  = __('Graphs');
         $data['menu']['graph']['icone'] = '<i class="fa fa-area-chart" aria-hidden="true"></i>';
@@ -617,8 +647,9 @@ Threads fairness:
             GROUP_CONCAT(a.error) as `error`,
             GROUP_CONCAT(ROUND(`read`/(`read`+`write`)*100,2)) as `ratio`
             FROM benchmark_run a
-            where `id_benchmark_main` in (".$id_to_take.") GROUP BY id_benchmark_main;";
-
+            WHERE `id_benchmark_main` in (".$id_to_take.") 
+            GROUP BY id_benchmark_main;";
+            
         $res = $db->sql_query($sql);
 
         $threads      = [];
@@ -730,6 +761,10 @@ Threads fairness:
                     foreach ($_POST['benchmark_main']['mode'] as $mode) {
                         foreach ($_POST['mysql_server']['id'] as $id_mysql_server) {
 
+                            if (empty($id_mysql_server)) {
+                                continue;
+                            }
+
                             $sql = "INSERT INTO benchmark_main
                             SET id_mysql_server = '".$id_mysql_server."',
                             id_user_main = '".$this->di['auth']->getuser()->id."',
@@ -772,7 +807,9 @@ Threads fairness:
                             $cmd = $php." ".GLIAL_INDEX." Benchmark queue >> /tmp/queue & echo $!";
 
                             $pid = 0;
-                            $pid = shell_exec($cmd);
+                            $pid = trim(shell_exec($cmd));
+
+                            $this->logger->warning("STARTED QUEUE : $pid");
 
                             $sql = "UPDATE `benchmark_config` SET pid = '".$pid."' WHERE id = 1";
                             $db->sql_query($sql);
@@ -1098,6 +1135,7 @@ Threads fairness:
     }
 
 
+    /*
     public function script($param)
     {
         Debug::parseDebug($param);
@@ -1111,7 +1149,7 @@ Threads fairness:
         }
 
         $this->set('data', $data);
-    }
+    }*/
 
     public function getLua()
     {
