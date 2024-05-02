@@ -262,10 +262,7 @@ class Worker extends Controller
                 //remove pid of worker there
                 $double_buffer = EngineV4::getFilePid($ob2->name, $ob2->id);
                 
-
-
                 //$double_buffer = TMP."lock/worker/".$ob2->pid.".pid";
-                
                 
                 //on a joute le worker avant de purger le fichier de l'ancien, afin d'aviter : PHP Warning:  file_get_contents 
                 //$this->addWorker(array($ob2->id, $id_worker_queue, $debug));
