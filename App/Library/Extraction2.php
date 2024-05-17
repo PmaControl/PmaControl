@@ -191,6 +191,8 @@ class Extraction2
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
 
+
+        //echo \SqlFormatter::format($sql3)."\n";
         //Debug::sql($sql3);
 
         

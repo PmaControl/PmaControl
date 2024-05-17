@@ -27,6 +27,7 @@ use \Glial\Sgbd\Sgbd;
 //"◇"	&#9671;	&#x25C7;
 //"◈"	&#9672;	&#x25C8;
 // Joining: receiving State Transfer   => IST change color
+//GRANT SELECT, RELOAD, PROCESS, SUPER ON *.* TO 'xxxx'@'192.168.1.150';
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
@@ -891,7 +892,7 @@ class Dot3 extends Controller
 
     public function legend()
     {
-        $sql = "SELECT * FROM `architecture_legend` WHERE `type`= 'REPLICATION' order by `order`;";
+        $sql = "SELECT * FROM `dot3_legend` WHERE `type`= 'REPLICATION' order by `order`;";
         $db  = Sgbd::sql(DB_DEFAULT);
         $res = $db->sql_query($sql);
 
@@ -943,7 +944,8 @@ class Dot3 extends Controller
             $i++;
         }
 
-        $edge['color'] = "#000000";
+        $edge['color'] = "grey";
+        $edge['style'] = "filed";
 
         $legend .= 'key:i' . $i . ':e -> key2:i' . $i . ':w [color="' . $edge['color'] . ':#ffffff:' . $edge['color'] . '" arrowsize="1.5" style=' . $edge['style'] . ',penwidth="2"]' . "\n";
         $i++;
