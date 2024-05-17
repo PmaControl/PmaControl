@@ -90,7 +90,7 @@ class Benchmark extends Controller
             $sql = "CREATE DATABASE sbtest;";
             $server->sql_query($sql);
 
-            
+
 
 
             $data['sysbench'] = $this->getSysbenchVersion();
@@ -169,7 +169,6 @@ class Benchmark extends Controller
 --tables='.$ob->tables_count.' \
 --table-size=10000 \
 --threads='.$thread.' \
---time=0 \
 --events=0 \
 --time='.$ob->max_time.' \
 '.$directory_lua.$ob->mode.' run';

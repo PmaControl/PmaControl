@@ -577,7 +577,7 @@ class User extends Controller {
         $data = array();
         $data['user_main_login']['id_user_main'] = $id_user;
         $data['user_main_login']['date'] = date("Y-m-d H:i:s");
-        $data['user_main_login']['ip'] = $_SERVER['REMOTE_ADDR'];
+        $data['user_main_login']['ip'] = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
         $data['user_main_login']['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
         $data['user_main_login']['is_logged'] = (int) $success;
 
