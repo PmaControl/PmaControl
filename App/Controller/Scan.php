@@ -11,6 +11,11 @@ use \Glial\Sgbd\Sgbd;
  * to parse result of nmap
  */
 
+
+// arp-scan -l
+
+
+
 class Scan extends Controller {
 
     public $data = array();

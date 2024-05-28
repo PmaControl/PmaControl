@@ -72,10 +72,21 @@ if (!empty($data['servers'])) {
         }
 
         // cas des warning
-        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (!empty($extra['mysql_available']) )
+        {
+            if ($extra['mysql_available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+                $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
+            //$style = 'gg';
+            }
+        }
+
+        if (!empty($extra['wsrep_cluster_status']) && $extra['wsrep_on'] === "ON" && $extra['wsrep_cluster_status'] !== "Primary") {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
+            $error_extra = "Galera node is ".$extra['wsrep_cluster_status'];
         }
+
+
 
         // acknoledge GREEN
         if ($server['is_acknowledged'] !== "0") {
@@ -267,6 +278,13 @@ if (!empty($data['servers'])) {
         if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2") {
             echo '&nbsp;'.$server['warning'];
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
+        }
+
+
+        if (! empty($error_extra))
+        {
+            echo $error_extra;
+            unset($error_extra);
         }
 
         echo '</td>';

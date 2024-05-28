@@ -20,7 +20,7 @@ class Export extends Controller
     var $table_with_data        = array("translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country");
     var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file",
-        "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "dot3_legend",
+        "group", "environment", "daemon_main", "version", "sharding", "ts_variable", "dot3_legend","worker_queue",
         "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial", "benchmark_config");
     var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
