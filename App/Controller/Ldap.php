@@ -17,6 +17,8 @@ class Ldap extends Controller
     public $method_administration = array('Ldap', "roles");
     public $without_quote         = array('LDAP_CHECK', 'LDAP_PORT');
 
+    public $logger;
+
     const LDAP_CONFIG = ROOT."/configuration/ldap.config.php";
 
     /*
