@@ -251,7 +251,7 @@ if [ $? != 0 ]; then
 fi
 
 mkdir -p vendor/esysteme/mysql-sys/gen
-chown $user. -R vendor/esysteme/mysql-sys/gen
+chown $user:$user -R vendor/esysteme/mysql-sys/gen
 
 chown $user:$user -R .
 
