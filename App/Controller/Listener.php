@@ -17,6 +17,8 @@ use \App\Library\Extraction2;
 
 class Listener extends Controller
 {
+    var $logger;
+
 
     public function before($param)
     {
