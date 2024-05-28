@@ -27,6 +27,8 @@ class Worker extends Controller
 
     static $timestamp_config_file = "";
 
+    var $logger;
+
     public function before($param)
     {
         $monolog       = new Logger("Worker");
