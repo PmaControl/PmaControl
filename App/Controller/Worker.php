@@ -570,6 +570,11 @@ class Worker extends Controller
         // le but est de lisser le charge du serveur au maximum afin d'éviter l'effet dans de scie sur le CPU.
         $nb_server_to_monitor = count($server_list);
 
+        if ($nb_server_to_monitor < 1)
+        {
+            $nb_server_to_monitor = 1;
+        }
+
         $delay = floor(1000000 * $refresh_time / 10 / $nb_server_to_monitor);
 
         $this->logger->debug("Delay : ".$delay."");
