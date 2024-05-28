@@ -127,7 +127,7 @@ class Mysqlsys extends Controller {
 
                 Crypt::$key = CRYPT_KEY;
 
-                $cmd = "mysql -h " . $ob->ip . " -u " . $ob->login . " -P " . $ob->port . " -p" . Crypt::decrypt($ob->passwd) . " < " . $data['file_name'] . " 2>&1";
+                $cmd = "mysql -h " . $ob->ip . " -u " . $ob->login . " -P " . $ob->port . " -p'" . Crypt::decrypt($ob->passwd) . "' < " . $data['file_name'] . " 2>&1";
                 $ret = shell_exec($cmd);
 
                 if (!empty($ret)) {
