@@ -1,8 +1,9 @@
--- MariaDB dump 10.19  Distrib 10.11.7-MariaDB, for debian-linux-gnu (x86_64)
+/*!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.7-MariaDB-1:10.11.7+maria~ubu2204-log
+-- Server version	10.11.8-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162855,11 +162856,12 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.11.7-MariaDB, for debian-linux-gnu (x86_64)
+/*!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.7-MariaDB-1:10.11.7+maria~ubu2204-log
+-- Server version	10.11.8-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162968,15 +162970,15 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',320578,1,1,1,'Integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',320585,1,1,1,'Listener','checkAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',320597,1,1,10,'Dot3','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',320609,71,1,5,'Binlog','purgeAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',320622,127,1,5,'Log','rotate','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',320635,1,1,5,'Worker','addToQueue','1',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',320648,1,1,5,'Worker','addToQueue','3',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',320661,1,1,5,'Worker','addToQueue','2',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',320674,7,1,5,'Worker','checkAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',3766055,1,1,1,'Integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',3766062,1,1,1,'Listener','checkAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',3766074,1,1,10,'Dot3','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',3766087,71,1,5,'Binlog','purgeAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',3766100,127,1,5,'Log','rotate','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',3766115,1,1,5,'Worker','addToQueue','1',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',3766139,1,1,5,'Worker','addToQueue','3',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',12349,1,1,5,'Worker','addToQueue','2',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',3766167,7,1,5,'Worker','checkAll','',0,0,'',0,'','','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163745,6 +163747,12 @@ INSERT INTO `translation_glial` VALUES (269,'96e525ac34168ce6a2fcd12e30c4224895a
 INSERT INTO `translation_glial` VALUES (270,'5e35a6f5cda22375197beb00972874e88ee9b44c','Worker','en','App/Library/Ariane.php',42,'2024-05-15 01:13:10');
 INSERT INTO `translation_glial` VALUES (271,'d0061b0cbab5c01d2ddb609a6374c98007b7333e','The daemon (id=16) with pid : \'400219\' successfully stopped','en','App/Controller/Agent.php',160,'2024-05-15 01:17:58');
 INSERT INTO `translation_glial` VALUES (272,'375bde5be1d85170cb369e729e48884659d528e0','The daemon (id=14) with pid : \'400195\' successfully stopped','en','App/Controller/Agent.php',160,'2024-05-15 01:17:58');
+INSERT INTO `translation_glial` VALUES (273,'8bca5aad0ab7e764fba067952a1110491aa99b0a','Cleaner\'s name','en','App/view/Cleaner/add.view.php',18,'2024-05-17 19:10:47');
+INSERT INTO `translation_glial` VALUES (274,'1e7ea91d19047940045584aa42a659d3f56d9e3a','Install it !','en','App/view/Mysqlsys/install.view.php',33,'2024-05-23 13:08:28');
+INSERT INTO `translation_glial` VALUES (275,'9d6b051a3fa96cef3e0fd76f74a780f10e58e771','Saturday','en','App/view/Variable/index.view.php',74,'2024-06-04 00:56:52');
+INSERT INTO `translation_glial` VALUES (276,'dc069965a3f7a7dd29d4ee508b02758ebdc38014','Friday','en','App/view/Variable/index.view.php',74,'2024-06-04 00:56:52');
+INSERT INTO `translation_glial` VALUES (277,'56d2c456134a604e69558b196d77bd4f4065b371','Monday','en','App/view/Variable/index.view.php',74,'2024-06-04 00:56:52');
+INSERT INTO `translation_glial` VALUES (278,'598146fb19660a632caa8643f6eac37598c9be98','Wednesday','en','App/view/Variable/index.view.php',74,'2024-06-04 00:56:53');
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168290,6 +168298,37 @@ INSERT INTO `ts_variable` VALUES (2328,150,'mysql_error','TEXT','mysql_server','
 INSERT INTO `ts_variable` VALUES (2329,155,'proxysql_runtime_mysql_servers','JSON','proxysql_runtime_mysql_servers','general',1,1);
 INSERT INTO `ts_variable` VALUES (2330,146,'deprecated_use_i_s_processlist_count','INT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (2331,146,'deprecated_use_i_s_processlist_last_timestamp','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2332,147,'innodb_snapshot_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2333,147,'innodb_log_spin_wait_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2334,147,'named_pipe','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2335,147,'thread_pool_min_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2336,147,'thread_pool_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2337,153,'buffer_index_pages_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (2338,153,'buffer_non_index_pages_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (2339,147,'engine_condition_pushdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2340,147,'have_csv','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2341,147,'have_innodb','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2342,147,'have_ndbcluster','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2343,147,'have_partitioning','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2344,147,'innodb_data_home_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2345,147,'log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2346,147,'log_slow_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2347,147,'rpl_recovery_rank','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2348,147,'shared_memory','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2349,147,'shared_memory_base_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2350,147,'sql_big_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2351,147,'sql_low_priority_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2352,147,'sql_max_join_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2353,146,'innodb_page_compression_trim_sect512','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2354,146,'innodb_page_compression_trim_sect1024','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2355,146,'innodb_page_compression_trim_sect2048','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2356,146,'innodb_page_compression_trim_sect4096','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2357,146,'innodb_page_compression_trim_sect8192','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2358,146,'innodb_page_compression_trim_sect16384','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2359,146,'innodb_page_compression_trim_sect32768','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2360,146,'innodb_num_page_compressed_trim_op_saved','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2361,147,'aria_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2362,147,'innodb_simulate_comp_failures','INT','variables','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168332,6 +168371,41 @@ INSERT INTO `version` VALUES (38,'2024-04-11 15:12:46','v3.0.18','f5e2c9cd767875
 INSERT INTO `version` VALUES (39,'2024-04-26 00:02:31','v3.0.41','851236dfa00eba88479cabee3a99a02b37b82044','fixed view of binlog and same for variable');
 /*!40000 ALTER TABLE `version` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `worker_queue`
+--
+
+DROP TABLE IF EXISTS `worker_queue`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `worker_queue` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `table` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT ' List of id to check',
+  `name` varchar(64) NOT NULL,
+  `nb_worker` int(11) NOT NULL COMMENT 'Nombre de worker en parallèle',
+  `interval` int(11) NOT NULL COMMENT 'In second',
+  `timeout` int(11) NOT NULL COMMENT 'Max delay before kill in sec',
+  `queue_number` int(11) NOT NULL,
+  `worker_class` varchar(64) NOT NULL,
+  `worker_method` varchar(64) NOT NULL,
+  `max_execution_time` int(11) NOT NULL,
+  `query` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `worker_queue`
+--
+
+LOCK TABLES `worker_queue` WRITE;
+/*!40000 ALTER TABLE `worker_queue` DISABLE KEYS */;
+INSERT INTO `worker_queue` VALUES (1,'mysql_server','worker_mysql',20,1,10,21671,'Aspirateur','tryMysqlConnection',15,'select a.id,a.name from mysql_server a             INNER JOIN client b on a.id_client =b.id             WHERE a.is_monitored =1 and b.is_monitored=1');
+INSERT INTO `worker_queue` VALUES (2,'ssh_server','worker_ssh',10,1,10,34572,'Aspirateur','trySshConnection',15,'select \'ssh\' as name, min(a.id) as id from mysql_server a INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server group by ip, ssh_port;');
+INSERT INTO `worker_queue` VALUES (3,'proxysql_server','worker_proxysql',5,1,2,4582,'Aspirateur','tryProxySqlConnection',15,'select CONCAT(\'proxysql_\',id)as name , id from proxysql_server;');
+/*!40000 ALTER TABLE `worker_queue` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -168343,11 +168417,12 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
--- MariaDB dump 10.19  Distrib 10.11.7-MariaDB, for debian-linux-gnu (x86_64)
+/*!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.7-MariaDB-1:10.11.7+maria~ubu2204-log
+-- Server version	10.11.8-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -169688,6 +169763,49 @@ CREATE TABLE `proxysql_server` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `recover_page`
+--
+
+DROP TABLE IF EXISTS `recover_page`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `recover_page` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_recover_table` int(11) NOT NULL,
+  `page_name` int(11) NOT NULL,
+  `success` int(11) NOT NULL,
+  `records_expected` int(11) NOT NULL,
+  `records_dumped` int(11) NOT NULL,
+  `records_lost` char(11) NOT NULL,
+  `query` text NOT NULL,
+  `count_after` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_recover_table_2` (`id_recover_table`,`page_name`),
+  KEY `id_recover_table` (`id_recover_table`),
+  CONSTRAINT `recover_page_ibfk_1` FOREIGN KEY (`id_recover_table`) REFERENCES `recover_table` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `recover_table`
+--
+
+DROP TABLE IF EXISTS `recover_table`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `recover_table` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `table_schema` varchar(64) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `tablespace` int(11) NOT NULL DEFAULT 0,
+  `undrop` int(11) NOT NULL DEFAULT 0,
+  `rows` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `table_schema` (`table_schema`,`table_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `scan`
 --
 
@@ -169932,29 +170050,6 @@ CREATE TABLE `webservice_user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user` (`user`,`host`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `worker_queue`
---
-
-DROP TABLE IF EXISTS `worker_queue`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `worker_queue` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `table` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT ' List of id to check',
-  `name` varchar(64) NOT NULL,
-  `nb_worker` int(11) NOT NULL COMMENT 'Nombre de worker en parallèle',
-  `interval` int(11) NOT NULL COMMENT 'In second',
-  `timeout` int(11) NOT NULL COMMENT 'Max delay before kill in sec',
-  `queue_number` int(11) NOT NULL,
-  `worker_class` varchar(64) NOT NULL,
-  `worker_method` varchar(64) NOT NULL,
-  `max_execution_time` int(11) NOT NULL,
-  `query` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
