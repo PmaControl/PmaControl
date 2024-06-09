@@ -116,7 +116,7 @@ class Index extends Controller {
                     Debug::debug($total_size, "TOTAL SIZE");
 
 
-                    $sql4 = "INSERT INTO `index_stats` VALUES(NULL,".$ob->id.",0, '".$ob->schema_name."','".$table."', '".$ob3->INDEX_NAME."', '".$ob3->COLUMNS."',
+                    $sql4 = "INSERT INTO `index_stats` VALUES(NULL,".$ob->id_mysql_server.", ".$ob->id.",0, '".$ob->schema_name."','".$table."', '".$ob3->INDEX_NAME."', '".$ob3->COLUMNS."',
                      '".$ob3->CARDINALITY."', '".$ob3->DATA_TYPE."', '".$ob3->CHARACTER_MAXIMUM_LENGTH."', ".$ob3->INDEX_SIZE_BYTES.", ".$total_size.", 
                      $redundant_indexes, $unused_indexes );";
 
