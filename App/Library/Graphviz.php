@@ -96,6 +96,40 @@ class Graphviz
             $table_rows = $ob->table_rows;
         }
 
+
+        $sql2 = "SELECT  COLUMN_NAME as colone, count(1) as cpt, group_concat(SEQ_IN_INDEX) as seq
+        FROM information_schema.STATISTICS 
+        WHERE TABLE_SCHEMA = '".$table_schema."' AND TABLE_NAME = '".$table_name."'  group by COLUMN_NAME;";
+
+        $res2 = $db->sql_query($sql2);
+
+        $INDEX = array();
+        while($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $INDEX[$arr2['colone']]['count'] = $arr2['cpt'];
+            $INDEX[$arr2['colone']]['seq'] = $arr2['seq'];
+        }
+
+        $sql3 = "SELECT * FROM index_stats WHERE table_schema='".$table_schema."' AND table_name = '".$table_name."'";
+
+        $CARD = array();
+        $res3 = $db->sql_query($sql3);
+        while($ob3 = $db->sql_fetch_object($res3, MYSQLI_ASSOC)) {
+
+            $total_size_index = self::format($ob3->size_for_table);
+
+            if (empty($total_size_index)) {
+                $total_size_index = "0";
+            }
+
+            $tmp = array();
+            $tmp['columns'] = $ob3->columns;
+            $tmp['size'] = $total_size_index;
+            $tmp['R'] = $ob3->is_redundant;
+            $tmp['U'] = $ob3->is_unused;
+
+            $CARD[] = $tmp;
+        }
+
         if (isset($table_rows))
         {
             $number_rows = "~".number_format($table_rows, 0, ',', ' ');
@@ -106,7 +140,6 @@ class Graphviz
         else{
             $number_rows = "N/A";
         }
-
 
         $definitions = Table::getTableDefinition(array($id_mysql_server, $table_schema, $table_name));
         
@@ -127,8 +160,7 @@ class Graphviz
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
         $return .= '<tr><td PORT="title" colspan="3" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
 
-        if (empty($engine))
-        {
+        if (empty($engine)) {
             //view
             $return .= '<tr><td colspan="3" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
         }
@@ -171,12 +203,22 @@ class Graphviz
             $us = "";
             $ue = "";
 
-            if ($def['Key'] === "PRI")
-            {
+            if ($def['Key'] === "PRI") {
                 $us = "<u>";
                 $ue = "</u>";
             }
 
+            if (empty($def['Key'])) {
+                if (! empty($INDEX[$def['Field']]))
+                {
+                    $def['Key'] = "IDX (".$INDEX[$def['Field']]['seq'].")";
+                }
+            }
+            else{
+                if (! empty($INDEX[$def['Field']])) {
+                    $def['Key'] = $def['Key']." (".$INDEX[$def['Field']]['seq'].")";
+                }
+            }
 
             $return .=
                 '<tr>'
@@ -187,7 +229,47 @@ class Graphviz
             $line++;
         }
 
-        $return .= '</table></td></tr></table>> ];'.PHP_EOL;
+
+
+        $bgindex = 'bgcolor="#bbbbbb"';
+        $forground_color = '#000000';
+
+        $return .= '<tr>'
+        .'<td '.$bgindex.' colspan="2" align="center"><font color ="'.$forground_color.'"><b>'.__('Index').'</b></font></td>'
+        .'<td '.$bgindex.' align="center"><font color ="'.$forground_color.'"><b>'.__('Size').'</b></font></td>'
+        .'</tr>'.PHP_EOL;
+
+        $bgindex = 'bgcolor="#dddddd"';
+
+        foreach($CARD as $elem)
+        {
+            $b1 = "";
+            $b2 = "";
+
+            $extra = '';
+            if (!empty($elem['R'])) {
+                $extra .= 'R';
+            }
+            if (!empty($elem['U'])){
+                $extra .= 'U';
+            }
+            if (! empty($extra))
+            {
+                $extra = '('.$extra.') ';
+                $b1 = "<b>";
+                $b2 = "</b>";
+            }
+
+
+            $return .= '<tr>'
+            .'<td '.$bgindex.' colspan="2" align="left"><font color ="'.$forground_color.'">'.$extra.''.$elem['columns'].'</font></td>'
+            .'<td '.$bgindex.' align="right"><font color ="'.$forground_color.'">'.$b1.$elem['size'].$b2.'</font></td>'
+            .'</tr>'.PHP_EOL;
+
+        }
+
+        $return .= '</table>';
+        $return .= '</td></tr></table>> ];'.PHP_EOL;
 
         return $return;
     }
@@ -548,6 +630,8 @@ class Graphviz
 
     static function buildApp()
     {
+
+        //TO DO
         $db = Sgbd::sql('proxysql_1');
 
         $sql ="select cli_host, srv_host,srv_port, hostgroup, user, count(1) as cpt, db as table_schema,sum(time_ms) as sum_time_ms  
@@ -641,5 +725,19 @@ class Graphviz
         $return .= '</td></tr></table>> ];'.PHP_EOL;
         
         return $return;
+    }
+
+
+    static function format($bytes, $decimals = 2)
+    {
+        // && $bytes != 0
+        if (empty($bytes)) {
+            return "";
+        }
+        $sz = ' KMGTP';
+
+        $factor = (int) floor(log($bytes) / log(1024));
+
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 }

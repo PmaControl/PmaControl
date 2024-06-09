@@ -92,8 +92,6 @@ class Table extends Controller {
         find all path
         */
 
-
-
         //refresh foreign key
         //Tablelib::importRealForeignKey($param);
 
