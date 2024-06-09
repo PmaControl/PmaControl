@@ -82,7 +82,9 @@ class Graphviz
         $table_schema = $param[1];
         $table_name = $param[2];
         $color = $param[3] ?? self::getColor($table_name);
-        $db = Mysql::getDbLink($id_mysql_server);
+
+        $db2 = Sgbd::sql(DB_DEFAULT);
+        $db = Mysql::getDbLink($id_mysql_server, "EXPORT");
 
         $sql = "SELECT ROW_FORMAT as row_format, ENGINE as engine, TABLE_ROWS as table_rows
         FROM `INFORMATION_SCHEMA`.`TABLES` 
@@ -109,11 +111,11 @@ class Graphviz
             $INDEX[$arr2['colone']]['seq'] = $arr2['seq'];
         }
 
-        $sql3 = "SELECT * FROM index_stats WHERE table_schema='".$table_schema."' AND table_name = '".$table_name."'";
+        $sql3 = "SELECT * FROM index_stats WHERE id_mysql_server = ".$id_mysql_server." AND table_schema='".$table_schema."' AND table_name = '".$table_name."'";
 
         $CARD = array();
-        $res3 = $db->sql_query($sql3);
-        while($ob3 = $db->sql_fetch_object($res3, MYSQLI_ASSOC)) {
+        $res3 = $db2->sql_query($sql3);
+        while($ob3 = $db2->sql_fetch_object($res3, MYSQLI_ASSOC)) {
 
             $total_size_index = self::format($ob3->size_for_table);
 
