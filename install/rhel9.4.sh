@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 
@@ -79,7 +79,7 @@ mysql -e  "INSTALL SONAME 'ha_rocksdb'"
 #a2enconf php8.2-fpm
 #a2enmod rewrite
 
-dnf -y install httpd php php-fpm 
+#dnf -y install httpd php php-fpm 
 
 tee -a /etc/httpd/conf.modules.d/00-proxy_fcgi.conf <<EOL
 LoadModule proxy_module modules/mod_proxy.so
