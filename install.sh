@@ -128,9 +128,9 @@ EOF
 #cat /proc/sys/vm/swappiness
 # add pmacontrol user and crontab
 
-case "$DISTRIB" in
+case "$dist" in
       Debian*) user="www-data" ;;
-      Redhat*) user="apache" ;;
+      Redhat* | rhel*) user="apache" ;;
       *)       user="www-data" ;;
 esac
 
@@ -168,6 +168,8 @@ else
 fi
 
 if [ -f "$CONFIG_FILE" ]; then
+
+    echo "install from config file"
 
 	php App/Webroot/index.php install webroot $CONFIG_FILE
 	if [ $? != 0 ]; then
@@ -210,6 +212,8 @@ if [ -f "$CONFIG_FILE" ]; then
 	#fi
 
 else
+    echo "install not from config file"
+    
 	php App/Webroot/index.php install index
 	if [ $? != 0 ]; then
 	    exit 1
