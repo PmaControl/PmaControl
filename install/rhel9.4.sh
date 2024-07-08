@@ -18,9 +18,9 @@ dnf -y install bind-utils
 
 
 cd /tmp
-#git clone https://github.com/PmaControl/Toolkit.git
+git clone https://github.com/Volodymyr7771/Toolkit2.git
 
-#cd Toolkit
+cd Toolkit
 chmod +x install-mariadb-v2.sh
 
 
