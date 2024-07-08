@@ -151,6 +151,8 @@ echo '# crontab for pmacontrol' > mycron
 
 pmacontrol_path=`pwd`
 
+echo $pmacontrol_path 
+
 echo "* * * * * cd $pmacontrol_path && ./glial agent check_daemon" >> mycron
 echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
 #install new cron file
@@ -165,6 +167,7 @@ if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
 else
     composer -V foo >/dev/null 2>&1 || { echo >&2 "PmaControl require composer but it's not installed.  Aborting."; echo "To install composer : ";echo ""; echo "        curl -sS https://getcomposer.org/installer | php";  echo "        \$ mv composer.phar /usr/local/bin/composer"; echo ""; exit 1;}
     composer install
+    echo "Composer Installed !"
 fi
 
 if [ -f "$CONFIG_FILE" ]; then
