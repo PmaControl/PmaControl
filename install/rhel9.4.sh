@@ -236,8 +236,9 @@ EOF
 
 chmod +x install.sh
 
-
+echo "Start install PmaControl"
 ./install.sh -c /tmp/config.json
+echo "Finish install PmaControl"
 
 #cd /srv/www/pmacontrol
 echo "Save these credentials"
