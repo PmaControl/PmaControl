@@ -18,7 +18,7 @@ dnf -y install bind-utils
 
 
 cd /tmp
-git clone https://github.com/Volodymyr7771/Toolkit2.git
+git clone https://github.com/Volodymyr7771/Toolkit.git
 
 cd Toolkit
 chmod +x install-mariadb-v2.sh
