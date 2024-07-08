@@ -149,9 +149,11 @@ ssh -T git@github.com
 ret=$(echo $?)
 
 if [[ $ret -eq 1 ]]; then
-  git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+  #git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+  git clone git@github.com:Volodymyr7771/PmaControl.git pmacontrol
 else
-  git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+  #git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+  git clone https://github.com/Volodymyr7771/PmaControl.git pmacontrol
 fi
 
 cd pmacontrol
@@ -234,7 +236,6 @@ EOF
 
 chmod +x install.sh
 
-cd /tmp
 
 ./install.sh -c /tmp/config.json
 
