@@ -234,11 +234,11 @@ EOF
 
 chmod +x install.sh
 
-cd /tmp
+#cd /tmp
 
 ./install.sh -c /tmp/config.json
 
-cd /srv/www/pmacontrol
+#cd /srv/www/pmacontrol
 echo "Save these credentials"
 echo "#########################################################"
 echo "# Account MySQL
