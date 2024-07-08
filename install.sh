@@ -50,7 +50,7 @@ dist=`egrep '^ID=' /etc/os-release | awk -F '=' '{print $2}'i | sed 's/"//g'`
 DIOK="OK"
 case "$dist" in
   Ubuntu* | Debian*) DISTRIB="Debian" ;;
-  redhat* | centos*) DISTRIB="RedHat" ;;
+  redhat* | centos* | rhel*) DISTRIB="RedHat" ;;
   *)       
         DISTRIB=$dist
         DIOK="KO"
@@ -128,7 +128,7 @@ EOF
 #cat /proc/sys/vm/swappiness
 # add pmacontrol user and crontab
 
-case "$dist" in
+case "$DISTRIB" in
       Debian*) user="www-data" ;;
       Redhat*) user="apache" ;;
       *)       user="www-data" ;;
