@@ -390,7 +390,7 @@ class Common extends Controller
 
     function getTsVariables($param = array())
     {
-
+        
 
         if (!empty($param[0])) {
             $data['table'] = $param[0];
@@ -415,6 +415,9 @@ class Common extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+
+
+
         $sql = "SELECT * FROM ts_variable order by `from`, `name`;";
 
         $res = $db->sql_query($sql);
@@ -427,17 +430,70 @@ class Common extends Controller
             $tmp['libelle'] = $ob->from.'::'.$ob->name."";
 
             $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
-
             $data['variable'][] = $tmp;
         }
 
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+        $this->set('data', $data);
+    }
 
 
+
+    public function getTsVariableJson($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
 
+        $data['options'] = array();
+
+        if (!empty($param[0])) {
+            $data['table'] = $param[0];
+        } else {
+            $data['table'] = "ts_variable";
+        }
+
+        if (!empty($param[1])) {
+            $data['field'] = $param[1];
+        } else {
+            $data['field'] = "id";
+        }
+
+        $options = array();
+        if (!empty($param[2])) {
+
+            $options = (array) $param[2];
+        }
+
+        $data['options'] = $options;
+
+
+
+
+        $sql = "SELECT * from ts_variable WHERE type ='JSON';";
+
+        $res = $db->sql_query($sql);
+
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $tmp = array();
+            $tmp['id'] = $ob->id;
+            $tmp['libelle'] = $ob->from."::".$ob->name;
+            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
+
+            $data['variable'][] = $tmp;
+
+        }
+
+
         $this->set('data', $data);
+
+
     }
+
+
+
 
     function getTagByServer($param)
     {

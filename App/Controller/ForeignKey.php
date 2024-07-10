@@ -908,4 +908,12 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+    public function custom($param)
+    {
+        Debug::parseDebug($param);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
+    }
+
 }
