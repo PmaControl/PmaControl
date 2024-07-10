@@ -14,6 +14,9 @@ use \Glial\Synapse\FactoryController;
 
   $menu['MysqlDatabase']['foreignKey'] = 'FK Virtual';
   $menu['ForeignKey']['real'] = 'FK Real';
+  $menu['ForeignKey']['custom'] = 'FK Custom';
+  $menu['ForeignKey']['blacklist'] = 'FK blacklist';
+
   //$menu['ForeignKey']['proposal'] = 'FK Proposal';
   //$menu['ForeignKey']['blackList'] = 'FK Black list';
   //$menu['ForeignKey']['prefix'] = 'Prefix';

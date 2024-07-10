@@ -12,6 +12,15 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Controller\Upgrade;
 
+
+/****
+ * userstat=ON
+performance_schema=ON
+performance-schema-instrument='statement/%=ON'
+performance-schema-consumer-statements-digest=ON
+innodb_monitor_enable=all
+
+ */
 class Install extends Controller
 {
     var $link; /* link mysql server */
