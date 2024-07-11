@@ -843,7 +843,7 @@ if (! defined('WWW_ROOT'))
 
         $upgrade = new Upgrade();
 
-        $upgrade->updateConfig(array());
+        $upgrade->updateConfig(array("foo" => "bar", "bar" => "foo",));
 
 
         //load DB and compare => upgradet
