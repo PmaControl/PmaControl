@@ -763,7 +763,7 @@ if (! defined('CRYPT_KEY'))
 
         $error = array();
 
-        $ret = true; //$this->testIpPort($config['mysql']['ip'], $config['mysql']['port']);
+        $ret = $this->testIpPort($config['mysql']['ip'], $config['mysql']['port']);
 
         if ($ret !== true) {
             throw new \Exception($ret['errstr']." (".$ret['errno'].")");
