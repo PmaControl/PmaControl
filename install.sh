@@ -165,6 +165,7 @@ rm mycron
 if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
    echo "Glial Installed !"
 else
+    echo "File /vendor/glial/glial/Glial/Bootstrap.php doesn't exist!"
     composer -V foo >/dev/null 2>&1 || { echo >&2 "PmaControl require composer but it's not installed.  Aborting."; echo "To install composer : ";echo ""; echo "        curl -sS https://getcomposer.org/installer | php";  echo "        \$ mv composer.phar /usr/local/bin/composer"; echo ""; exit 1;}
     composer install
     echo "Composer Installed !"
