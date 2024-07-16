@@ -162,7 +162,7 @@ rm mycron
 
 #check composer && composer install
 
-if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
+if test -f /srv/www/pmacontrol/vendor/glial/glial/Glial/Bootstrap.php; then
    echo "Glial Installed !"
 else
     echo "File /vendor/glial/glial/Glial/Bootstrap.php doesn't exist!"
