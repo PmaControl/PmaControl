@@ -175,6 +175,8 @@ if [ -f "$CONFIG_FILE" ]; then
 
     echo "install from config file"
 
+    echo "Config file is -  $CONFIG_FILE "
+
 	php App/Webroot/index.php install webroot $CONFIG_FILE
 	if [ $? != 0 ]; then
 	    exit 1
