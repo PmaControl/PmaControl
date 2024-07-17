@@ -820,7 +820,7 @@ if (! defined('CRYPT_KEY'))
 
 if (! defined('WWW_ROOT'))
 {
-    define('WWW_ROOT', \" ".$config['webroot']."\");
+    define('WWW_ROOT', \" ".$config["webroot"]."\");
 }";
             file_put_contents("configuration/webroot.config.php", $webroot);
         }
