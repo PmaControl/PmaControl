@@ -807,6 +807,7 @@ if (! defined('CRYPT_KEY'))
 
 
             $config = $this->parseConfig($filename);
+            shell_exec("echo - ".$config['webroot']." ");
 
             $webroot = "<?php
 
