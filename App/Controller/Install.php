@@ -637,7 +637,7 @@ if (! defined('CRYPT_KEY'))
     {
         //debug($configFile);
 
-        $config = json_decode(file_get_contents($configFile), true);
+        $config = json_decode(file_get_contents("$configFile"), true);
         //$config = Yaml::parse(file_get_contents($configFile));
         //$config = yaml_parse_file($configFile);
         //debug($config);
