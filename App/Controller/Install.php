@@ -762,7 +762,7 @@ if (! defined('CRYPT_KEY'))
     {
 
         $error = array();
-        $this->cmd(" echo 1","echo ".$config['mysql']['ip']." with ".$config['mysql']['port']." ");
+        $this->cmd(" echo 1".$config['mysql']['ip']."","echo ".$config['mysql']['ip']." with ".$config['mysql']['port']." ");
 
         $ret = $this->testIpPort($config['mysql']['ip'], $config['mysql']['port']);
 
