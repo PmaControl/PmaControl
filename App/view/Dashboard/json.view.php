@@ -1,4 +1,6 @@
-
+<?php
+use Glial\Html\Form\Form;
+?>
 <form method="post">
 <?php
 
@@ -20,7 +22,7 @@ echo '</div>';
 <div class="col-md-2">
   <div class="form-group required">
     <div class="input-group datepick">
-      <input type="text" class="form-control required" name="frmSaveOffice_startdt" id="frmSaveOffice_startdt" required readonly>
+      <input type="text" class="form-control required" name="date[date]" id="frmSaveOffice_startdt" required readonly>
       <div class="input-group-addon">
         <span class="glyphicon glyphicon-calendar"></span>
       </div>
@@ -30,7 +32,7 @@ echo '</div>';
 
 <div class="col-md-2">
   <div class='input-group date' id='datetimepicker3'>
-      <input type='text' class="form-control" />
+      <input name="date[time]" type='text' class="form-control" />
       <span class="input-group-addon">
       <span class="glyphicon glyphicon-time"></span>
       </span>
