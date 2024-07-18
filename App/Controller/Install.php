@@ -637,7 +637,7 @@ if (! defined('CRYPT_KEY'))
     {
         //debug($configFile);
 
-        $config = json_decode(file_get_contents("$configFile"), true);
+        $config = json_decode(file_get_contents($configFile), true);
         //$config = Yaml::parse(file_get_contents($configFile));
         //$config = yaml_parse_file($configFile);
         //debug($config);
@@ -762,7 +762,6 @@ if (! defined('CRYPT_KEY'))
     {
 
         $error = array();
-        $this->cmd(" echo 1".$config['mysql']['ip']."","echo ".$config['mysql']['ip']." with ".$config['mysql']['port']." ");
 
         $ret = $this->testIpPort($config['mysql']['ip'], $config['mysql']['port']);
 
@@ -820,7 +819,7 @@ if (! defined('CRYPT_KEY'))
 
 if (! defined('WWW_ROOT'))
 {
-    define('WWW_ROOT', \" ".$config["webroot"]."\");
+    define('WWW_ROOT', \"".$config['webroot']."\");
 }";
             file_put_contents("configuration/webroot.config.php", $webroot);
         }
@@ -844,7 +843,7 @@ if (! defined('WWW_ROOT'))
 
         $upgrade = new Upgrade();
 
-        $upgrade->updateConfig(array("foo" => "bar", "bar" => "foo",));
+        $upgrade->updateConfig(array());
 
 
         //load DB and compare => upgradet
