@@ -240,6 +240,13 @@ echo "Start install PmaControl"
 ./install.sh -c /tmp/config.json
 echo "Finish install PmaControl"
 
+# Set the correct SELinux context
+chcon -R --type=httpd_sys_content_t /srv/www/pmacontrol
+chcon -R --type=httpd_sys_rw_content_t /srv/www/pmacontrol
+
+sleep 1
+service httpd restart
+
 #cd /srv/www/pmacontrol
 echo "Save these credentials"
 echo "#########################################################"
