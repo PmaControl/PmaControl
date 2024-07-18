@@ -18,7 +18,11 @@ dnf -y install bind-utils
 
 
 cd /tmp
-git clone https://github.com/Volodymyr7771/Toolkit.git
+
+git clone https://github.com/PmaControl/Toolkit.git
+#git clone https://github.com/Volodymyr7771/Toolkit.git
+
+
 
 cd Toolkit
 chmod +x install-mariadb-v2.sh
@@ -149,11 +153,11 @@ ssh -T git@github.com
 ret=$(echo $?)
 
 if [[ $ret -eq 1 ]]; then
-  #git clone git@github.com:PmaControl/PmaControl.git pmacontrol
-  git clone git@github.com:Volodymyr7771/PmaControl.git pmacontrol
+  git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+  #git clone git@github.com:Volodymyr7771/PmaControl.git pmacontrol
 else
-  #git clone https://github.com/PmaControl/PmaControl.git pmacontrol
-  git clone https://github.com/Volodymyr7771/PmaControl.git pmacontrol
+  git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+  #git clone https://github.com/Volodymyr7771/PmaControl.git pmacontrol
 fi
 
 cd pmacontrol
