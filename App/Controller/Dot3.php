@@ -102,9 +102,6 @@ class Dot3 extends Controller
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates"
             ),array() , $date_request);
 
-
-
-
         $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy
                 FROM mysql_server a ".$versioning."
                 UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy  
@@ -148,8 +145,6 @@ class Dot3 extends Controller
         }
         $data['servers'][65]['proxy_connect_error'] = $ret;
         //end
-
-
         //to remove
         //stats_mysql_processlist
         //end
@@ -185,6 +180,8 @@ class Dot3 extends Controller
 
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
+
+        Debug::debug($dot3_information, 'Dot_information');
         
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
@@ -249,12 +246,9 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
-
     public function generateGroupProxySQL($information)
     {
         $tmp_group = array();
-
-
         //Debug::debug($information['servers'][65]);
         
         foreach($information['servers'] as $id_mysql_server => $server)
@@ -271,7 +265,6 @@ class Dot3 extends Controller
                 {
                     $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
                 }
-                
             }
         }
 
@@ -364,6 +357,8 @@ class Dot3 extends Controller
 
         $groups = $this->getGroup(array($id_dot3_information));
 
+        Debug::debug($groups, "List of group ");
+
         foreach($groups as $group)
         {
             self::$build_ms = array();
@@ -423,8 +418,6 @@ class Dot3 extends Controller
             $dot3_graph['dot3_graph']['commit'] = $commit['build'];
             $id_dot3_graph = $db->sql_save($dot3_graph);
         }
-
-
 
         $dot3_cluster = array();
         $sql = "SELECT id FROM dot3_cluster WHERE id_dot3_graph = ".$id_dot3_graph." AND id_dot3_information = ".$id_dot3_information."";

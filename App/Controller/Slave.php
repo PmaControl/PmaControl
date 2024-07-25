@@ -238,7 +238,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $array_date = date_parse_from_format($date_format, $date);
 
-        $more_days = -7;
+        $more_days = -1;
         $next_date = date(
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
@@ -251,12 +251,21 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $data['graph'][$slave['day']] = $slave;
         }
 
+        $sql = "WITH LastCluster AS (
+        SELECT id_dot3_cluster
+        FROM dot3_cluster__mysql_server
+        WHERE id_mysql_server = ".$id_mysql_server."
+        ORDER BY date_inserted DESC
+        LIMIT 1
+        )
+        SELECT id_mysql_server
+        FROM dot3_cluster__mysql_server
+        WHERE id_dot3_cluster = (SELECT id_dot3_cluster FROM LastCluster);";
         
 
+
 //change master
-        $sql = "SELECT a.id_mysql_server FROM link__architecture__mysql_server a
-          INNER JOIN link__architecture__mysql_server b ON a.id_architecture = b.id_architecture
-          WHERE b.id_mysql_server=".$id_mysql_server." and a.id_mysql_server != ".$id_mysql_server.";";
+
 
         $res = $db->sql_query($sql);
 

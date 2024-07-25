@@ -22,7 +22,8 @@ echo '</div>';
 <div class="col-md-2">
   <div class="form-group required">
     <div class="input-group datepick">
-      <input type="text" class="form-control required" name="date[date]" id="frmSaveOffice_startdt" required readonly>
+      <?php echo Form::input("date", "date", array("class"=>"form-control required","readonly"=>"readonly", "placeholder" => date("Y-m-d"))); ?>
+      <!--<input type="text" class="form-control required" name="date[date]" id="frmSaveOffice_startdt" required readonly>-->
       <div class="input-group-addon">
         <span class="glyphicon glyphicon-calendar"></span>
       </div>
@@ -32,7 +33,9 @@ echo '</div>';
 
 <div class="col-md-2">
   <div class='input-group date' id='datetimepicker3'>
-      <input name="date[time]" type='text' class="form-control" />
+  <?php echo Form::input("date", "time", array("class"=>"form-control required", "placeholder" => date("H:i:s"))); ?>
+      <!--<input name="date[time]" type='text' class="form-control" />-->
+
       <span class="input-group-addon">
       <span class="glyphicon glyphicon-time"></span>
       </span>
@@ -45,3 +48,66 @@ echo '</div>';
 
 </div>
 </form>
+
+
+
+
+<?php 
+
+
+//debug($data);
+
+echo '<table class="table table-condensed table-bordered table-striped" id="table">';
+
+
+
+foreach($data['json'] as $key => $arr)
+{
+  if (empty($arr['value']))
+  {
+    continue;
+  }
+
+
+  $count = count($arr['value']);
+  $keys = array_keys($arr['value']);
+  $values = array_values($arr['value']);
+
+
+
+  echo '<tr>';
+  echo '<th colspan="'.$count.'">';
+  echo $arr['date'];
+  echo '</th>';
+  echo '</tr>';
+
+  echo '<tr>';
+
+  foreach($keys as $key)
+  {
+    echo '<th>';
+    echo $key;
+    echo '</th>';
+  
+  }
+  echo '</tr>';
+
+
+  echo '<tr>';
+  foreach($values as $value)
+  {
+    if (!empty($value) && mb_strlen($value) > 1000)
+    {
+      $value = substr($value, 0,1000). '...';
+    }
+
+    echo '<td>';
+    echo $value;
+    echo '</td>';
+  
+  }
+  echo '</tr>';
+
+} 
+
+echo '</table>';
