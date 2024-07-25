@@ -442,8 +442,6 @@ class Graphviz
         $return = "node[shape=none fontsize=8 ranksep=10 splines=true overlap=true];".PHP_EOL;
         //$return = "node[shape=plaintext fontsize=8];".PHP_EOL;
         
-
-
         $format = Format::getMySQLNumVersion($server['version'], $server['version_comment']);
 
         $fork = $format['fork'];
@@ -470,11 +468,7 @@ class Graphviz
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
         <tr><td port="target" bgcolor="'.$server['color'].'">
         
-
-
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
-
-
 
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
@@ -529,12 +523,6 @@ class Graphviz
             }
             $return .= '</table>'.PHP_EOL;
             
-
-
-
-
-
-
             $return .= '</td></tr>'.PHP_EOL;
             $return .= '</table>'.PHP_EOL;
 
@@ -546,7 +534,6 @@ class Graphviz
         }elseif ($server['is_proxysql'] == "1")
         {
             
-
             //Debug::debug($server);
             //exit;
             $hostgroup = 0;
@@ -620,12 +607,8 @@ class Graphviz
         
         $line = 1;
         */
-        
-
+    
         //databases
-
-
-
         return $return;
     }
 
@@ -741,5 +724,28 @@ class Graphviz
         $factor = (int) floor(log($bytes) / log(1024));
 
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    }
+
+
+
+
+    static function startCluster($cluster_name, $type='galera', $nodes=array() )
+    {
+        if (! in_array($type, array('galera','groupe', 'xdb', 'ndb')))
+        {
+            throw new \Exception('Impossible to find this cluster');
+        }
+
+
+        $return = "subgraph cluster_cluster_cats {".PHP_EOL;
+
+    }
+
+
+    static function endClsuter()
+    {
+
+
+
     }
 }
