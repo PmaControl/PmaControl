@@ -1,9 +1,9 @@
-/*!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.9-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.8-MariaDB-ubu2204-log
+-- Server version	10.11.9-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162856,12 +162856,12 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
-/*!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.9-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.8-MariaDB-ubu2204-log
+-- Server version	10.11.9-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162970,15 +162970,15 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',9821,1,1,1,'Integrate','integrateAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',9829,1,1,1,'Listener','checkAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',9840,1,1,10,'Dot3','run','',1,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',9852,71,1,5,'Binlog','purgeAll','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',9865,127,1,5,'Log','rotate','',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',9878,1,1,5,'Worker','addToQueue','1',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',9896,1,1,5,'Worker','addToQueue','3',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',9917,1,1,5,'Worker','addToQueue','2',0,0,'',0,'','','','');
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',9934,7,1,5,'Worker','checkAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',0,1,1,1,'Integrate','integrateAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',0,1,1,1,'Listener','checkAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',0,1,1,10,'Dot3','run','',1,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',0,71,1,5,'Binlog','purgeAll','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',0,127,1,5,'Log','rotate','',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',0,1,1,5,'Worker','addToQueue','1',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',0,1,1,5,'Worker','addToQueue','3',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',0,1,1,5,'Worker','addToQueue','2',0,0,'',0,'','','','');
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',0,7,1,5,'Worker','checkAll','',0,0,'',0,'','','','');
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163419,6 +163419,32 @@ INSERT INTO `menu_group` VALUES (4,'Admin Menu');
 UNLOCK TABLES;
 
 --
+-- Table structure for table `mysqlsys_config_export`
+--
+
+DROP TABLE IF EXISTS `mysqlsys_config_export`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mysqlsys_config_export` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `rapport` varchar(64) NOT NULL,
+  `select` varchar(800) NOT NULL,
+  `limit` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mysqlsys_config_export`
+--
+
+LOCK TABLES `mysqlsys_config_export` WRITE;
+/*!40000 ALTER TABLE `mysqlsys_config_export` DISABLE KEYS */;
+INSERT INTO `mysqlsys_config_export` VALUES (1,'statement_analysis','query, db, full_scan, exec_count, total_latency, max_latency, avg_latency, rows_sent_avg, rows_examined_avg',20);
+/*!40000 ALTER TABLE `mysqlsys_config_export` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sharding`
 --
 
@@ -163816,6 +163842,7 @@ INSERT INTO `translation_glial` VALUES (306,'0f87c27576acddee6a94c4bb5e71d1f3347
 INSERT INTO `translation_glial` VALUES (307,'3558893d26ab1f0072858f710b18d03f3f785b88','SHUNNED','en','App/view/ProxySQL/index.view.php',140,'2024-07-25 20:52:44');
 INSERT INTO `translation_glial` VALUES (308,'278056444041087fa24850c2f29595f3264bcccb','Impossible to find the cleaner with the pid :','en','App/Controller/Cleaner.php',910,'2024-07-25 20:59:56');
 INSERT INTO `translation_glial` VALUES (309,'2d1de675767252e63a50216dee395b7d5fd250ff','Cleaner was already stopped or in error','en','App/Controller/Cleaner.php',911,'2024-07-25 20:59:56');
+INSERT INTO `translation_glial` VALUES (310,'8376112f0718cf322769823a2fe3a7aff99bef78','Label','en','App/view/Environment/index.view.php',12,'2024-07-30 11:27:43');
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168344,12 +168371,12 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed
-/*!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.8-MariaDB, for debian-linux-gnu (x86_64)
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.9-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.8-MariaDB-ubu2204-log
+-- Server version	10.11.9-MariaDB-ubu2204-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -168943,8 +168970,8 @@ CREATE TABLE `dot3_graph` (
   `version` varchar(10) NOT NULL,
   `commit` char(40) NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
-  `height` int(11) NOT NULL,
-  `width` int(11) NOT NULL,
+  `height` int(11) NOT NULL DEFAULT 0,
+  `width` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
