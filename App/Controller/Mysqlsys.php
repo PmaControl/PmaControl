@@ -247,16 +247,16 @@ class Mysqlsys extends Controller {
         $id_mysql_server = $param[0];
         $rapport = $param[1];
 
-        $db = Mysql::getDbLink($id_mysql_server);
+        $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
 
 
         $def = Sgbd::sql(DB_DEFAULT);
         $sql2 = "SELECT * FROM mysqlsys_config_export WHERE rapport ='".$rapport."'";
-        $res2 = $db->sql_query($sql2);
+        $res2 = $def->sql_query($sql2);
         
         $select = '*';
         $limit =20;
-        while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+        while ($arr = $def->sql_fetch_array($res2, MYSQLI_ASSOC))
         {
             $select = $arr['select'];
             $limit = $arr['limit'];
