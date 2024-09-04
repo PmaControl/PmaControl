@@ -7,6 +7,8 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Mysql;
+use App\Library\Debug;
+
 
 class Mysqlsys extends Controller {
 
@@ -234,6 +236,48 @@ class Mysqlsys extends Controller {
                 header("HTTP/1.0 503 Internal Server Error");
             }
         }
+    }
+
+
+    public function export($param)
+    {
+        //$this->view = true;
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $rapport = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+
+        $def = Sgbd::sql(DB_DEFAULT);
+        $sql2 = "SELECT * FROM mysqlsys_config_export WHERE rapport ='".$rapport."'";
+        $res2 = $db->sql_query($sql2);
+        
+        $select = '*';
+        $limit =20;
+        while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
+        {
+            $select = $arr['select'];
+            $limit = $arr['limit'];
+        }
+
+
+
+
+        $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` LIMIT ".$limit;
+        $res = $db->sql_query($sql);
+
+        $data['export'] = array();
+        while ($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
+        {
+            $data['export'][] = $arr;
+        }
+
+        //Debug::debug($data['export']);
+
+        $this->set('data', $data);/***/
+
     }
 
 }

@@ -155,6 +155,10 @@ if (!empty($_GET['mysql_server']['id'])) {
                         //print_r($val);
                     }
                     echo "</table>";
+
+                    echo '<a href="'.LINK.'mysqlsys/export/'.$_GET['mysql_server']['id'].'/'.$_GET['mysqlsys'].'" class="btn btn-primary active" role="button">Export Dokuwiki</a>';
+
+                    
                 } else {
                     echo "<b>No data</b>";
                 }

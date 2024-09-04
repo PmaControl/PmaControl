@@ -70,9 +70,9 @@ class Dashboard extends Controller
             //$tmp['value'] = 'fg';
 
             if ($_GET['ts_variable']['id'] == "1496")
+            {
             
-            
-            $queries =  json_decode($arr['value'], true);   
+                $queries =  json_decode($arr['value'], true);   
                 if (!empty($queries['queries'][0]))
                 {
                     $tmp['value'] = json_decode($queries['queries'][0], true);

@@ -324,15 +324,20 @@ class Graphviz
     static public function generateDot($reference, $graph)
     {
         $type = "svg";
+        $type2 = "png";
 
         $dot_file = TMP."dot/".$reference.".dot";
         $file_name = TMP."dot/".$reference.".".$type;
+        $file_name2 = TMP."dot/".$reference.".".$type2;
 
         file_put_contents($dot_file, $graph);
 
         $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
         //debug($dot);
         exec($dot);
+
+        $dot2 = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.'';
+        exec($dot2);
 
         //post treatment SVG
         self::removeBackground($file_name);
@@ -441,6 +446,8 @@ class Graphviz
         //shape=plaintext
         $return = "node[shape=none fontsize=8 ranksep=10 splines=true overlap=true];".PHP_EOL;
         //$return = "node[shape=plaintext fontsize=8];".PHP_EOL;
+
+        Debug::debug($server, "DEBUG TO REMOVE");
         
         $format = Format::getMySQLNumVersion($server['version'], $server['version_comment']);
 

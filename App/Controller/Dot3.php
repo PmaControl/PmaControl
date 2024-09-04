@@ -253,17 +253,25 @@ class Dot3 extends Controller
         
         foreach($information['servers'] as $id_mysql_server => $server)
         {
-            if ($server['is_proxysql'] != "1") {
+
+            Debug::debug($server, "SERVER is_proxy_SQL");
+
+
+
+            if ( ! empty($server['is_proxysql']) && $server['is_proxysql'] != "1") {
                 continue;
             }
 
             $tmp_group[$id_mysql_server][] = $id_mysql_server;
 
-            foreach($server['proxysql_runtime_mysql_servers'] as $backend) {
-                $server = $backend['hostname'].':'.$backend['port'];
-                if (!empty($information['mapping'][$server]))
-                {
-                    $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+            if (! empty($server['proxysql_runtime_mysql_servers']))
+            {
+                foreach($server['proxysql_runtime_mysql_servers'] as $backend) {
+                    $server = $backend['hostname'].':'.$backend['port'];
+                    if (!empty($information['mapping'][$server]))
+                    {
+                        $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+                    }
                 }
             }
         }
@@ -347,12 +355,15 @@ class Dot3 extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_dot3_information = $this->generateInformation($param);
 
+
+
+        //$id_dot3_information = $this->generateInformation($param);
+        
+        $id_dot3_information = 2356819;
+        $info = self::getInformation($id_dot3_information);
 
         
-
-        $info = self::getInformation($id_dot3_information);
         //TODO : add if date > now => return true to not was time to regenerate dot for nothing
 
         $groups = $this->getGroup(array($id_dot3_information));
@@ -370,11 +381,12 @@ class Dot3 extends Controller
             $this->linkHostGroup(array($id_dot3_information, $group));
             
             
-
             $dot = $this->generateDot();
 
             $reference = md5(json_encode($group));
             $file_name = Graphviz::generateDot($reference, $dot);
+
+
 
             $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
         }
@@ -410,12 +422,22 @@ class Dot3 extends Controller
 
         if (empty($id_dot3_graph))
         {
+
+            $images = getimagesize(str_replace(".svg",".png",$file_name));
+
+            $width= $images[0];
+            $height= $images[1];
+
             $dot3_graph['dot3_graph']['filename'] = $file_name;
             $dot3_graph['dot3_graph']['dot'] = $dot;
             $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
             $dot3_graph['dot3_graph']['md5'] = $md5;
             $dot3_graph['dot3_graph']['version'] = $commit['version'];
             $dot3_graph['dot3_graph']['commit'] = $commit['build'];
+
+            $dot3_graph['dot3_graph']['width'] = $width;
+            $dot3_graph['dot3_graph']['commit'] = $height;
+
             $id_dot3_graph = $db->sql_save($dot3_graph);
         }
 
@@ -425,7 +447,7 @@ class Dot3 extends Controller
         while($ob = $db->sql_fetch_object($res))
         {
             $id_dot3_graph = $ob->id;
-            
+            Debug::debug($id_dot3_graph, "id_dot3_graph");
             $dot3_cluster['dot3_cluster']['id'] = $id_dot3_graph;
         }
 
@@ -536,7 +558,6 @@ class Dot3 extends Controller
         $group = $param[1];
 
         $dot3_information = self::getInformation($id_dot3_information);
-
 
         foreach($group as $id_mysql_server)
         {
@@ -716,6 +737,13 @@ class Dot3 extends Controller
 
         foreach(self::$build_server as $id_mysql_server => $server)
         {
+
+            if (empty($server['is_proxysql']))
+            {
+                continue;
+            }
+
+
             if (empty($server['is_proxysql']) && $server['is_proxysql'] != "1") {
                 continue;
             }
@@ -831,7 +859,7 @@ class Dot3 extends Controller
 
         $sql = "SELECT * FROM `dot3_information` where `id` in (".$id_dot3_information.");";
         
-        //Debug::sql($sql);
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
@@ -1034,6 +1062,26 @@ class Dot3 extends Controller
 
         $sql ="SET FOREIGN_KEY_CHECKS=1;";
         $db->sql_query($sql);
+    }
+
+
+    public function show($param)
+    {
+
+        $id_dot3_information = 2356819;
+
+
+
+        $this->run($id_dot3_information);
+
+
+
+
+
+
+
+
+
     }
 
 }

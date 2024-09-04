@@ -41,7 +41,6 @@ FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
 JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information;";
 
-
         //@TODO c.height > 8   => to fix on register table architecture on Dot
 
         /*         * *
@@ -50,12 +49,12 @@ JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_infor
           INNER JOIN architecture c ON c.id = b.id_architecture
           WHERE 1 GROUP BY c.id
          */
-            
-
-
+        
         $data['graphs'] = $db->sql_fetch_yield($sql);
 
-
         $this->set('data', $data);
+
+
+        debug($data);
     }
 }
