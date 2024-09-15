@@ -83,6 +83,10 @@ a2enconf php8.2-fpm
 a2enmod rewrite
 
 
+sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/fpm/php.ini
+sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/apache2/php.ini
+sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/cli/php.ini
+
 sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
 
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
