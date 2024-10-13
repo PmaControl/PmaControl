@@ -55,6 +55,9 @@ class Index extends Controller {
                         
                         SUM(
                             CASE 
+                                WHEN c.DATA_TYPE = 'tinyint' THEN 1
+                                WHEN c.DATA_TYPE = 'smallint' THEN 2
+                                WHEN c.DATA_TYPE = 'mediumint' THEN 3
                                 WHEN c.DATA_TYPE = 'int' THEN 4
                                 WHEN c.DATA_TYPE = 'bigint' THEN 8
                                 WHEN c.DATA_TYPE = 'float' THEN 4

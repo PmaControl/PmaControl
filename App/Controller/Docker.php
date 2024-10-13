@@ -43,22 +43,29 @@ class Docker extends Controller
 
     public function getTag($param)
     {
-        Debug::parseDebug($param);
+        Debug::parseDebug(param: $param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM docker_software WHERE display_name ='ProxySQL' ORDER by name DESC";
+
+        $sql = "SELECT * FROM docker_software ORDER by name DESC";
         $res = $db->sql_query($sql);
 
-        while ($ob = $db->sql_fetch_object($res))
+        while ($elem = $db->sql_fetch_object($res))
         {
+            $ob = $elem;
+
             $cmd = "skopeo inspect docker://".$ob->name." | jq '.RepoTags'";
+            Debug::debug($cmd, "cmd");
             $json = trim(shell_exec($cmd));
 
             $tags = json_decode($json);
 
+            Debug::debug(string: $ob, var: "Elems");
+
             foreach($tags as $tag)
             {
+                $ob = $elem;
                 //echo "$tag \n";
                 preg_match('/^(\d+\.\d+\.\d+)$/', $tag, $output_array);
 
@@ -66,11 +73,17 @@ class Docker extends Controller
                 {
                     echo $ob->name." : $tag\n";
 
-                    $sql = "SELECT * FROM docker_image WHERE id_docker_software=".$ob->id." AND ";
+                    $sql = "SELECT count(1) as cpt FROM docker_image WHERE id_docker_software=".$ob->id." AND tag =  '".$tag."'";
+                    $res = $db->sql_query($sql);
 
-
-                    $sql = "INSERT IGNORE INTO docker_image (`id_docker_software`, `tag`) VALUES (".$ob->id.", '".$tag."');";
-                    $db->sql_query($sql);
+                    while($ob = $db->sql_fetch_object($res))
+                    {
+                        if ($ob->cpt === 0)
+                        {
+                            $sql = "INSERT INTO docker_image (`id_docker_software`, `tag`) VALUES (".$ob->id.", '".$tag."');";
+                            $db->sql_query($sql);
+                        }
+                    }
                 }
             }
         }

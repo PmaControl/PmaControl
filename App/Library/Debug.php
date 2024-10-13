@@ -148,7 +148,7 @@ class Debug
         self::$display_sql = false;
     }
 
-    static function debug($string, $var = "", $font_color="grey", $background_color="blue")
+    static function debug(mixed $string, $var = "", $font_color="grey", $background_color="blue")
     {
         if (self::$debug) {
 
