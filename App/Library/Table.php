@@ -81,10 +81,12 @@ class Table
 
             while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
-                /*
+                //$arr['Type'] = htmlentities($arr['Type'], ENT_QUOTES, 'ISO-8859-1');
+                // $arr['Type'] = html_entity_decode(htmlentities($arr['Type'], ENT_QUOTES, 'ISO-8859-1'), ENT_QUOTES , 'UTF-8');
+                
                 if (substr($arr['Type'], 0, 4) === "enum") {
                     $arr['Type'] = "enum('...";  // to prevent problems with encoding
-                }*/
+                }/******/
 
                 self::$table[$id_mysql_server][$table_schema][$table_name][] = $arr;
             }
