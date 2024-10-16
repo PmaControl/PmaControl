@@ -92,7 +92,7 @@ class Index extends Controller {
                 while ($ob3 = $db2->sql_fetch_object($res3))
                 {
 
-                    Debug::debug($ob3, "stats");
+                    Debug::debug(string: $ob3, "stats");
                     $sql5 ="SELECT table_rows as cpt FROM information_schema.tables WHERE table_schema = '".$ob->schema_name."' AND table_name = '".$table."'";
                     $res5 = $db2->sql_query($sql5);
                     while ($ob5 = $db2->sql_fetch_object($res5)) {
@@ -185,5 +185,22 @@ class Index extends Controller {
     }
 
 
+    public function dashboard($param)
+    {
+        $data['dashboard'] = array();
 
+        $db = Sgbd::getDbLink(DB_DEFAULT);
+        $sql = "select table_schema, table_name, count(1), sum(size_for_table)/1024/1024 as size from index_stats where (is_redundant=1 OR is_unused=1) and id_mysql_server = 2 group by table_schema, table_
+        name order by 4 desc limit 20;";
+
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
+        {
+            $data['dashboard'][] = $arr;
+        }
+
+        $this->set('data',$data);
+    }
 }
+
