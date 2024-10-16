@@ -98,7 +98,6 @@ class Graphviz
             $table_rows = $ob->table_rows;
         }
 
-
         $sql2 = "SELECT  COLUMN_NAME as colone, count(1) as cpt, group_concat(SEQ_IN_INDEX) as seq
         FROM information_schema.STATISTICS 
         WHERE TABLE_SCHEMA = '".$table_schema."' AND TABLE_NAME = '".$table_name."'  group by COLUMN_NAME;";

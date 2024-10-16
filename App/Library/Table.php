@@ -74,13 +74,18 @@ class Table
 
             }
             
-            
             $sql = "DESCRIBE `".$table_schema."`.`".$table_name."`;";
             Debug::sql($sql);
 
             $res = $db->sql_query($sql);
 
             while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+                /*
+                if (substr($arr['Type'], 0, 4) === "enum") {
+                    $arr['Type'] = "enum('...";  // to prevent problems with encoding
+                }*/
+
                 self::$table[$id_mysql_server][$table_schema][$table_name][] = $arr;
             }
             
@@ -225,5 +230,6 @@ class Table
         return $table_list;
 
     }
+
 
 }
