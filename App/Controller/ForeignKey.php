@@ -521,7 +521,6 @@ class ForeignKey extends Controller
         return $resultat;
     }
 
-
     /*
     get all id from column name except from primary key
     */
@@ -559,8 +558,6 @@ class ForeignKey extends Controller
 
         return $resultat;
     }
-
-
 
     public function createVirtualForeignKey($param)
     {
@@ -730,10 +727,12 @@ class ForeignKey extends Controller
         $db = Mysql::getDbLink($id_mysql_server);
         $default = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
+        $sql = "SELECT CONSTRAINT_NAME as constraint_name,  CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
             ." REFERENCED_TABLE_SCHEMA as referenced_schema, REFERENCED_TABLE_NAME as referenced_table,REFERENCED_COLUMN_NAME as referenced_column"
             ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
             ."WHERE `REFERENCED_TABLE_NAME` IS NOT NULL ";
+
+        Debug::sql($sql);
 
         if ($database !== false)
         {
@@ -766,11 +765,7 @@ class ForeignKey extends Controller
 
     public function menu($param)
     {
-
         $data = array();
-
-
-
 
         $data['param'] = $param;
         $this->set('data', $data);
