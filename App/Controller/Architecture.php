@@ -22,10 +22,6 @@ class Architecture extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
-
-
         $sql = "SELECT c.id,c.display,c.height,c.`date`, b.id_architecture FROM mysql_server a
             INNER JOIN link__architecture__mysql_server b ON a.id = b.id_mysql_server
             INNER JOIN architecture c ON c.id = b.id_architecture

@@ -24,6 +24,11 @@
 define('IS_CLI', PHP_SAPI === 'cli');
 
 
+mb_internal_encoding("UTF-8");
+// Définit l'encodage de sortie en UTF-8
+mb_http_output("UTF-8");
+ini_set('default_charset', 'UTF-8');
+
 if (!IS_CLI) {
     //include ("exception.php");
     $ScreenError = 1;

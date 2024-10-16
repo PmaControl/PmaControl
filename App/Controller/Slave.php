@@ -274,8 +274,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $data['mysql_server_specify'][] = $ob->id_mysql_server;
         }
 
-
-
 // find master
         $_GET['mysql_server']['id'] = Mysql::getMaster($id_mysql_server, $replication_name);
 
