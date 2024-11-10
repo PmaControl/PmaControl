@@ -46,7 +46,7 @@
 
 <h3><?= __('Credits') ?></h3>
 <ul>
-    <li>Stéphane SVAROQUIE</li>
+    <li>Stéphane VAROQUIE</li>
     <li>Mark LEITH</li>
     <li>Serge FREZEFOND</li>
     <li>Olivier DAISINI</li>

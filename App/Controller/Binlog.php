@@ -145,6 +145,8 @@ class Binlog extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+
+        // need to select only Available server
         $sql = "SELECT a.*, b.libelle as organization,c.*, a.id as id_mysql_server, d.*
             FROM mysql_server a
             INNER JOIN client b ON a.id_client = b.id

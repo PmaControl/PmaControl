@@ -67,11 +67,21 @@
                             <p>
                                 ';
 
-            echo ' LanguageDocumentation
-English
- Theme:
-darkwolf
-';
+            echo 'Language ';
+
+            echo '
+            <select name="lang" class="form-select autosubmit w-auto" lang="en" dir="ltr" id="languageSelect">
+
+            <option value="en">English</option>
+            <option value="fr" selected="">Français - French</option>
+            <option value="ru">Русский - Russian</option>
+           
+
+                                                
+        </select>';
+
+
+
             //echo $item['class'].", ".$item['method'];
             echo '  </p>
                         </div>
