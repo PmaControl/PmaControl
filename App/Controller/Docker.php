@@ -98,7 +98,7 @@ class Docker extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.name, b.tag FROM docker_software a
-        INNER JOIN docker_image b ON a.id=b.id_docker_software ORDER by a.name DESC, b.tag";
+        INNER JOIN docker_image b ON a.id=b.id_docker_software WHERE b.sha256 != '' ORDER by a.name DESC, b.tag";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res))
