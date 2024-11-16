@@ -51,9 +51,9 @@ class Docker extends Controller
         $sql = "SELECT * FROM docker_software ORDER by name DESC";
         $res = $db->sql_query($sql);
 
-        while ($elem = $db->sql_fetch_object($res))
+        while ($ob = $db->sql_fetch_object($res))
         {
-            $ob = $elem;
+          
 
             $cmd = "skopeo inspect docker://".$ob->name." | jq '.RepoTags'";
             Debug::debug($cmd, "cmd");
@@ -65,7 +65,7 @@ class Docker extends Controller
 
             foreach($tags as $tag)
             {
-                $ob = $elem;
+               
                 //echo "$tag \n";
                 preg_match('/^(\d+\.\d+\.\d+)$/', $tag, $output_array);
 
@@ -73,14 +73,16 @@ class Docker extends Controller
                 {
                     echo $ob->name." : $tag\n";
 
-                    $sql = "SELECT count(1) as cpt FROM docker_image WHERE id_docker_software=".$ob->id." AND tag =  '".$tag."'";
-                    $res = $db->sql_query($sql);
+                    $sql2 = "SELECT count(1) as cpt FROM docker_image WHERE id_docker_software=".$ob->id." AND tag =  '".$tag."'";
+                    Debug::sql($sql2);
+                    $res2 = $db->sql_query($sql2);
 
-                    while($ob = $db->sql_fetch_object($res))
+                    while($ob2 = $db->sql_fetch_object($res2))
                     {
-                        if ($ob->cpt === 0)
+                        if ($ob2->cpt == "0")
                         {
                             $sql = "INSERT INTO docker_image (`id_docker_software`, `tag`) VALUES (".$ob->id.", '".$tag."');";
+                            Debug::sql($sql);
                             $db->sql_query($sql);
                         }
                     }

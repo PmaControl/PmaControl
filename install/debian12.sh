@@ -35,6 +35,9 @@ apt-get -y install php8.2 apache2 graphviz php8.2-mysql php8.2-ldap php-json php
 
 apt-get -y install mariadb-plugin-rocksdb 
 
+#for docker
+apt-get -y install jq skopeo
+
 apt-get -y install logrotate
 
 cat > /etc/logrotate.d/pmacontrol << EOF

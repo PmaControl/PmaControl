@@ -618,7 +618,7 @@ class Graphviz
         return $return;
     }
 
-
+/*
     static function buildApp()
     {
 
@@ -698,7 +698,7 @@ class Graphviz
 
 
         return $APP;
-    }
+    }*/
 
     static function buildBox($body, $id_box, $link, $display_name, $box_color)
     {

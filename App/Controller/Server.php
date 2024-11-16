@@ -230,6 +230,9 @@ class Server extends Controller
             $this->di['js']->code_javascript('
             $(document).ready(function()
             {
+                var intervalId;
+                var refreshInterval = 1000; // Intervalle par défaut de 3 secondes
+
                 function refresh()
                 {
                     var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
@@ -254,11 +257,24 @@ class Server extends Controller
 
 
                 }
+
+                function setRefreshInterval(newInterval) {
+                    refreshInterval = newInterval;
+                    clearInterval(intervalId);
+                    intervalId = setInterval(refresh, refreshInterval);
+                }
+
+                function stopRefresh() {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
     
-                var intervalId = window.setInterval(function(){
-                    // call your function here
-                    refresh()  
-                  }, 1000);
+                intervalId = setInterval(refresh, refreshInterval);
+
+                // Rendre les fonctions accessibles globalement
+                window.setRefreshInterval = setRefreshInterval;
+                window.stopRefresh = stopRefresh;
+
     
             });'); /***/
 
@@ -277,6 +293,9 @@ class Server extends Controller
         while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr;
             $servers[]         = $arr['id'];
+
+
+            
         }
 
         $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server","wsrep_cluster_status",
