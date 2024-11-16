@@ -9,12 +9,29 @@ if (empty($_GET['ajax'])){
     echo '<div class="well">';
     FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '</div>';
+
+
+
+
+    echo __("Refresh each :")."&nbsp;";
+    echo '<a onclick="setRefreshInterval(1000)" type="button" class="btn btn-primary">1 sec</a>';
+    echo ' <a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
+    echo ' <a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
+    echo ' <a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
+    echo ' <a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a><br /><br />';
+
+
+
     echo '<div id="servermain">';
 }
 
 $converter = new AnsiToHtmlConverter();
 
-echo '<table class="table table-condensed table-bordered table-striped" id="table">';
+
+
+
+
+echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';
 
 echo '<th>'.__("Top").'</th>';
@@ -85,8 +102,6 @@ if (!empty($data['servers'])) {
             //$style = 'gg';
             $error_extra = "Galera node is ".$extra['wsrep_cluster_status'];
         }
-
-
 
         // acknoledge GREEN
         if ($server['is_acknowledged'] !== "0") {

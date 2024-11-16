@@ -137,6 +137,8 @@ class Dot3 extends Controller
         }
 
         //TO REMOVE just for TEST proxysql
+
+        /*
         $servers = ProxySQL::getErrorConnect(array(1));
         $ret = array();
         foreach($servers as $server)
@@ -144,6 +146,8 @@ class Dot3 extends Controller
             $ret[$server['hostname'].':'.$server['port']] = $server['error'];
         }
         $data['servers'][65]['proxy_connect_error'] = $ret;
+        */
+        
         //end
         //to remove
         //stats_mysql_processlist
@@ -358,9 +362,9 @@ class Dot3 extends Controller
 
 
 
-        //$id_dot3_information = $this->generateInformation($param);
+        $id_dot3_information = $this->generateInformation($param);
         
-        $id_dot3_information = 2356819;
+        //$id_dot3_information = 2356819;
         $info = self::getInformation($id_dot3_information);
 
         
@@ -485,7 +489,7 @@ class Dot3 extends Controller
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
         }  
-        $dot .= Graphviz::buildApp();
+        //$dot .= Graphviz::buildApp();
         $dot .= Graphviz::generateEnd();
 
         
@@ -888,8 +892,6 @@ class Dot3 extends Controller
         }
     }
 
-
-
     /*
     TO MOVE
     */
@@ -1022,7 +1024,7 @@ class Dot3 extends Controller
     public function app($param)
     {
 
-        Graphviz::buildApp($param);
+        //Graphviz::buildApp($param);
     }
 
     /*****

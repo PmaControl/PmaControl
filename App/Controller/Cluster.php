@@ -13,7 +13,7 @@ use \Monolog\Handler\StreamHandler;
 class Cluster extends Controller
 {
 
-    var $looger;
+    var $logger;
 
     public function before($param)
     {

@@ -16,6 +16,7 @@ trait Galera {
     var $galera_cluster = array();
     var $servers = array();
     var $graph_arbitrator = array(); // containt all id of arbitrator
+    var $maping_master = array(); 
 
     public function getGaleraCluster($param) {
 

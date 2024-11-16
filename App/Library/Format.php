@@ -96,7 +96,7 @@ class Format
         return $logo;
     }
 
-    static public function ping($microtime, $precision = 3)
+    static public function ping($microtime, $precision = 2)
     {
         $units = array('ms', 's');
 

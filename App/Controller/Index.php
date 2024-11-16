@@ -92,7 +92,7 @@ class Index extends Controller {
                 while ($ob3 = $db2->sql_fetch_object($res3))
                 {
 
-                    Debug::debug( $ob3, "stats");
+                    //Debug::debug(string: $ob3, "stats");
                     $sql5 ="SELECT table_rows as cpt FROM information_schema.tables WHERE table_schema = '".$ob->schema_name."' AND table_name = '".$table."'";
                     $res5 = $db2->sql_query($sql5);
                     while ($ob5 = $db2->sql_fetch_object($res5)) {

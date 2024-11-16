@@ -279,8 +279,24 @@ class Demo extends Controller {
 
             if ($arr2['Connection_name'] === "$channel"){
                 $db_slave->sql_query("STOP SLAVE '".$channel."';");
+                $db_slave->sql_query("RESET SLAVE ALL '".$channel."';");
             }
         }
+
+        //mysql
+        $sql5 = "SELECT COUNT(*) AS channel_exists FROM mysql.slave_master_info WHERE Channel_name = '".$channel."';";
+
+
+        //mariadb 
+        $sql5 = "SHOW ALL SLAVES STATUS";
+        $res5 = $db_slave->sql_query($sql5);
+
+        while ($ob5 = $db_slave->sql_fetch_object($res5))
+        {
+            Debug::debug($ob5,"Channel Name");
+        }
+
+
 
         $sql3 = "CHANGE MASTER '".$channel."' TO MASTER_HOST='".$mysql_server[$id_mysql_server__master]['ip']."', 
         MASTER_PORT=".$mysql_server[$id_mysql_server__master]['port'].", 
@@ -293,6 +309,11 @@ class Demo extends Controller {
 
 
         $db_slave->sql_query($sql3);
+
+        $sql4 = "CHANGE MASTER '".$channel."' TO master_use_gtid=slave_pos;";
+
+        $db_slave->sql_query($sql4);
+
 
         $db_slave->sql_query("START SLAVE '".$channel."';");
 
@@ -347,6 +368,30 @@ class Demo extends Controller {
         $id_docker_server = $param[0];
         $port = $param[1];
         $mariadb_version = $param[2];
+
+    }
+
+    public function dropDemo($param)
+    {
+        Debug::parseDebug($param);
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.* FROM mysql_server a 
+        INNER JOIN `link__mysql_server__tag` b ON a.id = b.id_mysql_server
+        INNER JOIN tag c ON b.id_tag = c.id
+        WHERE c.name in ('mariadb', 'docker')
+        GROUP BY a.id having count(1) = 2;";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $sql = "DELETE FROM mysql_server WHERE id = ".$ob->id.";";
+            Debug::sql($sql);
+            $db->sql_query($sql);
+            
+        }
 
     }
 
