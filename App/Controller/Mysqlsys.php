@@ -255,7 +255,7 @@ class Mysqlsys extends Controller {
         $res2 = $def->sql_query($sql2);
         
         $select = '*';
-        $limit =20;
+        $limit =50;
         while ($arr = $def->sql_fetch_array($res2, MYSQLI_ASSOC))
         {
             $select = $arr['select'];
