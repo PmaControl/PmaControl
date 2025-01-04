@@ -42,6 +42,9 @@ ORDER BY  dg.height DESC, dg.width DESC
 ;";
 
 
+
+        $data['graphs'] = array();
+
         Debug::debug($sql);
         //@TODO c.height > 8   => to fix on register table architecture on Dot
 
