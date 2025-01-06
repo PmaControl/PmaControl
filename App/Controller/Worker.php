@@ -84,7 +84,7 @@ class Worker extends Controller
             $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
             //do your business logic here and process this message!
-            FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id));
+            FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
             //$this->tryMysqlConnection(array($msg->name, $msg->id));
             
             // if mysql connection is down, the worker will be down too and we have to restart one
@@ -161,7 +161,6 @@ class Worker extends Controller
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){
             $data['worker'][] = $arr;
         } 
-
 
         $this->set('data',$data);
 
@@ -450,7 +449,8 @@ class Worker extends Controller
         }
 
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM worker_queue WHERE id=".$id_worker_queue.";";
+        $sql = "SELECT * FROM worker_queue a
+        INNER JOIN daemon_main b ON a.id_daemon_main = b.id WHERE a.id=".$id_worker_queue.";";
         //$this->logger->warning("SQL : ".$sql);
 
         $res = $db->sql_query($sql);
@@ -458,7 +458,7 @@ class Worker extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $queue_key        = intval($ob->queue_number);
             $maxExecutionTime = $ob->max_execution_time;
-            $refresh_time = $ob->interval;
+            $refresh_time = $ob->refresh_time;
             $main_query = $ob->query;
             $name = $ob->name;
         }
@@ -575,17 +575,21 @@ class Worker extends Controller
             $nb_server_to_monitor = 1;
         }
 
-        $delay = floor(1000000 * $refresh_time / 10 / $nb_server_to_monitor);
+        //le but est de lisser la charge sur la totallité du créneau entre 2 run (ca ne change rien si c'est sur une seconde)
+        $delay = floor(1000000 * $refresh_time / $nb_server_to_monitor - 100);
 
         $this->logger->debug("Delay : ".$delay."");
 
         foreach ($server_list as $server) {
 
-            // Create dummy message object
-            $object       = new \stdclass;
-            $object->name = $server['name'];
-            $object->id   = $server['id'];
+            $server['refresh_time'] = $refresh_time;
 
+            // Create dummy message object
+            $object          = new \stdclass;
+            $object->name    = $server['name'];
+            $object->id      = $server['id'];
+            $object->refresh = $server['refresh_time'];
+            
             //try to add message to queue
             if (msg_send($queue, 1, $object)) {
 
@@ -595,9 +599,67 @@ class Worker extends Controller
                 $this->logger->warning("could not add message to queue ($queue_key)");
             }
         }
-
-
-        
     }
 
+
+    public function update()
+    {
+
+        $this->view        = false;
+        $this->layout_name = false;
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            $sql = "UPDATE worker_queue SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            $db->sql_query($sql);
+
+            if ($db->sql_affected_rows() === 1) {
+                echo "OK";
+            } else {
+                header("HTTP/1.0 503 Internal Server Error");
+            }
+        }
+    }
+
+    public function dropAllQueue($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM worker_queue ORDER BY id";
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            Debug::debug("Queue number : (".$ob->name.") ".$ob->queue_number);
+
+            if (msg_queue_exists($ob->queue_number))
+            {
+                Debug::debug("This queue exist !");
+
+                $queue         = msg_get_queue($ob->queue_number);
+                $number_of_msg = msg_stat_queue($queue)['msg_qnum'];
+
+                Debug::debug("Number of Msg waiting : $number_of_msg ");
+                
+                msg_remove_queue($queue);
+
+                Debug::debug("This queue has been destroyed !");
+                Debug::debug("--------------------");
+            }
+        }
+    }
+
+
+    public function file($param)
+    {
+
+        $data['ls'] = "";
+        
+        $data['ls'] = shell_exec("ls -lh ". TMP."tmp_file");
+
+        $this->set('data', $data);
+    }
 }

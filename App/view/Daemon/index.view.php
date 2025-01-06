@@ -73,5 +73,17 @@ if (empty($_GET['ajax'])) {
     FactoryController::addNode("Worker", "index", array());
 
 
+    echo '<div class="row">';
+    echo '<div class="col-md-6">';
     FactoryController::addNode("Worker", "list", array());
+    echo '</div>';
+
+    echo '<div class="col-md-6">';
+    FactoryController::addNode("Worker", "file", array());
+    echo '</div>';
+
+    echo '</div>';
+
+
+    FactoryController::addNode("Listener", "status", array());
 }

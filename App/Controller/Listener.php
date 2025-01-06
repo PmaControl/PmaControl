@@ -33,7 +33,6 @@ class Listener extends Controller
     {
         Debug::parseDebug($param);
 
-
         $this->check(array());
     }
 
@@ -45,6 +44,7 @@ class Listener extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql ="SELECT id_ts_file, id_mysql_server from ts_max_date where last_date_listener != date;";
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
@@ -438,10 +438,91 @@ class Listener extends Controller
 
     public function resetAll($param)
     {
+        Debug::parseDebug($parma);
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "UPDATE ts_max_date SET last_date_listener=date";
+        debug::sql($sql);
         $db->sql_query($sql);
+    }
+
+    /* le but de cette fonction est de checker le status des listener pour vérifier que tout ce comporte correctement. */
+
+    public function index()
+    {
+        
+
+
+
+    }
+
+    public function status($param)
+    {
+  
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="select b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
+        from ts_max_date a 
+        inner join mysql_server b on a.id_mysql_server = b.id 
+        INNER JOIN ts_file c on c.id = a.id_ts_file 
+        order by 5 desc, display_name, file_name;";
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        $data['listener'] = array();
+
+        while ($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
+        {
+            $data['listener'][] = $arr;
+        }
+        $cmd = "cd ".TMP.'md5 && find . -type f ! -name ".*" -printf "%M %u %g %TY-%Tm-%Td %TH:%TM:%TS %p\n" | sed \'s/\.[0-9]*//\'';
+
+        Debug::debug($cmd);
+        $text = shell_exec($cmd );
+
+        $data['md5'] = $this->splitAndFormat($text);
+        Debug::debug($data);
+
+        $this->set('data', $data);
+
+    }
+
+
+    function splitAndFormat($text)
+    {
+        $data = array();
+
+        $text = trim($text);
+
+        $lines = explode("\n", $text);
+
+        foreach($lines as $line)
+        {
+            $elems = explode(" ",$line );
+
+            $get = explode("/" , $elems[5]);
+            $parts = explode("::", $get[1]);
+
+            $id_mysql_server = explode(".",$parts[1])[0];
+            $file_name = $parts[0];
+
+            $elem = array();
+            $elem['chmod'] = $elems[0];
+            $elem['owner'] = $elems[1];
+            $elem['group'] = $elems[2];
+            $elem['datetime'] = $elems[3]." ".$elems[4];
+            $elem['file_name'] = $file_name;
+            $elem['id_mysql_server'] = $id_mysql_server;
+            $data[$id_mysql_server][$file_name] = $elem;
+        }
+
+        Debug::debug($data);
+
+        return $data;
     }
 
 

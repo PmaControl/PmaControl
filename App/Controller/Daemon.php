@@ -47,12 +47,6 @@ class Daemon extends Controller
 
         $data['daemon'] = [];
         while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            if ($arr['queue_number'] !== "0") {
-                $queue         = msg_get_queue($arr['queue_number']);
-                $arr['nb_msg'] = msg_stat_queue($queue)['msg_qnum'];
-            } else {
-                $arr['nb_msg'] = "N/A";
-            }
             $data['daemon'][] = $arr;
         }
 
@@ -256,5 +250,8 @@ class Daemon extends Controller
 
         Debug::debug($data);
     }
+
+
+
 
 }

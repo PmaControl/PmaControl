@@ -1041,28 +1041,36 @@ class Dot3 extends Controller
 
     public function purgeAll($param)
     {
+        Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="TRUNCATE TABLE dot3_cluster__mysql_server";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="TRUNCATE TABLE dot3_information_extra";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="TRUNCATE TABLE dot3_cluster;";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="TRUNCATE TABLE dot3_graph";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="TRUNCATE TABLE dot3_information";
+        Debug::sql($sql);
         $db->sql_query($sql);
 
         $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        Debug::sql($sql);
         $db->sql_query($sql);
     }
 
