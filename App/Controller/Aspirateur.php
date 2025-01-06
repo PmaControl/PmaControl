@@ -165,6 +165,7 @@ class Aspirateur extends Controller
 
         $name_server = $param[0];
         $id_mysql_server   = $param[1];
+        $refresh = $param[2];
 
         Debug::checkPoint('Init');
         // To know if we use a proxy like PROXYSQL
@@ -333,7 +334,7 @@ class Aspirateur extends Controller
 
 
 
-        if ((time()+$id_mysql_server)%10 === 0)
+        if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
             if ($var['variables']['log_bin'] === "ON") {
                 $data = array();
@@ -347,14 +348,14 @@ class Aspirateur extends Controller
         Debug::debug("apres la récupération de la liste des binlogs");
         Debug::checkPoint('apres query');
     
-        if ((time()+$id_mysql_server)%10 === 0)
+        if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
             $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
             $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
         }
 
 
-        if ((time()+$id_mysql_server)%60 === 0)
+        if ((time()+$id_mysql_server)%(60*$refresh) < $refresh)
         {
             $data['mysql_latency'] = $this->getMysqlLatencyByQuery($name_server);
             $this->exportData($id_mysql_server, "mysql_statistics", $data);
@@ -362,7 +363,7 @@ class Aspirateur extends Controller
 
         /*************************************** list Database  */
 
-        if ((time()+$id_mysql_server)%10 === 0)
+        if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
             $data = array();
             $data['mysql_database']['database'] = json_encode($this->getSchema($id_mysql_server));
@@ -371,7 +372,7 @@ class Aspirateur extends Controller
         /*************************************** List table by DB  */
 
         //to know if we grab statistics on databases & tables
-        if ((time()+$id_mysql_server)%3600 ==0) {
+        if ((time()+$id_mysql_server)%(3600*$refresh) < $refresh) {
             $data = array();
             $data['mysql_table']['mysql_table'] = json_encode($this->getDatabase($mysql_tested));
             $this->exportData($id_mysql_server, "mysql_table", $data);

@@ -508,25 +508,34 @@ class Graphviz
                 <td bgcolor="grey">R</td>
             </tr>'.PHP_EOL;
             
-            foreach($server['mysql_database'] as $database)
+
+            if (! empty($server['mysql_database']))
             {
-                $return .= '<tr>'.PHP_EOL;
-                $return .= '<td bgcolor="darkgrey" align="left">'.$database.'</td>'.PHP_EOL;
-                $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
-                $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
-                $return .= '</tr>'.PHP_EOL;
-
-                if ($database == "eshop")
+                foreach($server['mysql_database'] as $database)
                 {
+                    $return .= '<tr>'.PHP_EOL;
+                    $return .= '<td bgcolor="darkgrey" align="left">'.$database.'</td>'.PHP_EOL;
+                    $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
+                    $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
+                    $return .= '</tr>'.PHP_EOL;
 
-                    $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
-                    $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
-                    $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
-                    $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
-                    
+                    if ($database == "eshop")
+                    {
+
+                        $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
+                        $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
+                        $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
+                        $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
+                        
+                    }
+
                 }
-
             }
+            else
+            {
+                
+            }
+
             $return .= '</table>'.PHP_EOL;
             
             $return .= '</td></tr>'.PHP_EOL;

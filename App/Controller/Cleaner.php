@@ -2869,11 +2869,24 @@ var myChart = new Chart(ctx, {
         }
 
 
-        $sql = "SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query'];
+        $sql = "explain SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query'];
 
+        $data['nb_line_to_purge'] = 0;
         $res = $db2->sql_query($sql);
         while ($ob  = $db2->sql_fetch_object($res)) {
-            $data['nb_line_to_purge'] = $ob->cpt;
+            
+            if ($ob->rows > $data['nb_line_to_purge']) {
+                $data['nb_line_to_purge'] = $ob->rows;
+            }
+        }
+
+        if ($data['nb_line_to_purge'] < 100000)
+        {
+            $sql = "explain SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query'];
+            $res = $db2->sql_query($sql);
+            while ($ob  = $db2->sql_fetch_object($res)) {
+                $data['nb_line_to_purge'] = $ob->rows;
+            }
         }
 
         $sql = "SELECT TABLE_ROWS FROM `information_schema`.`tables` WHERE table_name = '".$data['main_table']."' and table_schema = '".$data['database']."'";
