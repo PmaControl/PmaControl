@@ -408,7 +408,10 @@ class Aspirateur extends Controller
     public function trySshConnection($param)
     {
         $this->view      = false;
-        $id_mysql_server = $param[0];
+        
+        $name_server = $param[0];
+        $id_mysql_server   = $param[1];
+        $refresh = $param[2];
 
         Debug::parseDebug($param);
 
@@ -424,6 +427,8 @@ class Aspirateur extends Controller
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
+
+            $id_mysql_server = $ob->id;
 
             try{
                 $error_msg='';
@@ -445,38 +450,35 @@ class Aspirateur extends Controller
                 if ($available === 0) {
                     //return false;
                 }
+
+
             }
 
+            $ssh_available = 0;
+
             if ($ssh !== false) {
-//Debug::debug($data);
+                $ssh_available = 1;
+   
+                $stats['ssh_stats']    = $this->getStats($ssh);
+                $hardware['ssh_hardware'] = $this->getHardware($ssh);
 
-                $stats    = $this->getStats($ssh);
-                $hardware = $this->getHardware($ssh);
-
-//liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
+                //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
                 $ssh->disconnect();
                 unset($ssh);
 
-                $id   = $ob->id;
-                $date = array();
+                
+                $this->exportData($id_mysql_server, "ssh_hardware", $hardware,true);
+                $this->exportData($id_mysql_server, "ssh_stats", $stats, false);
 
-                $this->allocate_shared_storage('ssh_stats');
-                $date[date('Y-m-d H:i:s')][$ob->id]['ssh_server']         = $stats;
-                $date[date('Y-m-d H:i:s')][$ob->id]['ssh_server']['ping'] = $ping;
-
-//$this->shared->$id                           = $date;
-                $this->shared['ssh_stats']->{$id_mysql_server} = $date;
-
-                $this->allocate_shared_storage('hardware');
-                $date[date('Y-m-d H:i:s')][$ob->id]['hardware'] = $hardware;
-
-                $this->shared['hardware']->{$id_mysql_server} = $date;
-
-                Debug::debug($date);
             } else {
                 Debug::debug("Can't connect to ssh");
-//error connection ssh
+                //error connection ssh
             }
+
+            
+            $ret['ssh_server']['ssh_available'] = $ssh_available;
+            $ret['ssh_server']['ping'] = $ping;
+            $this->exportData($id_mysql_server, "ssh_server", $ret, false);
         }
 
 
@@ -1235,13 +1237,11 @@ GROUP BY C.ID, C.INFO;";
         FROM  `performance_schema`.`events_statements_summary_by_digest`;";
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            
             $data['query_latency_avg'] = $arr['time_average'];
         }
 
         return $data;
     }
-
 
     public function getInnodbMetrics($name_server)
     {

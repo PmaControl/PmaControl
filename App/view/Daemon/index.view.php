@@ -9,6 +9,7 @@ use \Glial\Synapse\FactoryController;
 
 echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';
+echo '<th>'.__("ID").'</th>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>'.'PID'.'</th>';
 echo '<th>'.__('Date').'</th>';
@@ -24,7 +25,7 @@ echo '</tr>';
 foreach ($data['daemon'] as $daemon) {
 
     echo '<tr class="alternate">';
-
+    echo '<td>'.$daemon['id'].'</td>';
     echo '<td>'.$daemon['name'].'</td>';
     echo '<td>'.$daemon['pid'].'</td>';
     echo '<td>'.$daemon['date'].'</td>';
@@ -73,12 +74,12 @@ if (empty($_GET['ajax'])) {
     FactoryController::addNode("Worker", "index", array());
 
 
-    echo '<div class="row">';
-    echo '<div class="col-md-6">';
+    echo '<div class="row" style="height: 100%;">';
+    echo '<div class="col-md-6" style="height: 100%;">';
     FactoryController::addNode("Worker", "list", array());
     echo '</div>';
 
-    echo '<div class="col-md-6">';
+    echo '<div class="col-md-6" style="height:100%;">';
     FactoryController::addNode("Worker", "file", array());
     echo '</div>';
 
