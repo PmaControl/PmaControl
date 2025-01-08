@@ -202,7 +202,7 @@ class Worker extends Controller
     {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM worker_queue WHERE id in (1,3)";
+        $sql = "SELECT * FROM worker_queue";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
