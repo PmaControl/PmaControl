@@ -16,6 +16,8 @@ apt install -y tig
 apt install -y curl
 apt-get install -y net-tools
 apt install -y dnsutils
+apt install -y skopeo
+apt install y jq
 
 cd /tmp
 git clone https://github.com/PmaControl/Toolkit.git
