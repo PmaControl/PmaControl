@@ -50,7 +50,7 @@ dist=`egrep '^ID=' /etc/os-release | awk -F '=' '{print $2}'i | sed 's/"//g'`
 DIOK="OK"
 case "$dist" in
   Ubuntu* | Debian*) DISTRIB="Debian" ;;
-  redhat* | centos*) DISTRIB="RedHat" ;;
+  redhat* | centos* | rhel*) DISTRIB="RedHat" ;;
   *)       
         DISTRIB=$dist
         DIOK="KO"
@@ -130,7 +130,7 @@ EOF
 
 case "$dist" in
       Debian*) user="www-data" ;;
-      Redhat*) user="apache" ;;
+      Redhat* | rhel*) user="apache" ;;
       *)       user="www-data" ;;
 esac
 
@@ -151,6 +151,8 @@ echo '# crontab for pmacontrol' > mycron
 
 pmacontrol_path=`pwd`
 
+echo $pmacontrol_path 
+
 echo "* * * * * cd $pmacontrol_path && ./glial agent check_daemon" >> mycron
 echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
 #install new cron file
@@ -163,11 +165,17 @@ rm mycron
 if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
    echo "Glial Installed !"
 else
+    echo "File /vendor/glial/glial/Glial/Bootstrap.php doesn't exist!"
     composer -V foo >/dev/null 2>&1 || { echo >&2 "PmaControl require composer but it's not installed.  Aborting."; echo "To install composer : ";echo ""; echo "        curl -sS https://getcomposer.org/installer | php";  echo "        \$ mv composer.phar /usr/local/bin/composer"; echo ""; exit 1;}
     composer install
+    echo "Composer Installed !"
 fi
 
 if [ -f "$CONFIG_FILE" ]; then
+
+    echo "install from config file"
+
+    echo "Config file is -  $CONFIG_FILE "
 
 	php App/Webroot/index.php install webroot $CONFIG_FILE
 	if [ $? != 0 ]; then
@@ -210,6 +218,8 @@ if [ -f "$CONFIG_FILE" ]; then
 	#fi
 
 else
+    echo "install not from config file"
+    
 	php App/Webroot/index.php install index
 	if [ $? != 0 ]; then
 	    exit 1
