@@ -99,11 +99,13 @@ if [[ $DEV_MOD -eq 1 ]]; then
     if [[ $ret -eq 1 ]]; then
       git clone git@github.com:PmaControl/PmaControl.git pmacontrol
     else
-      sudo -u www-data git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+      git clone https://github.com/PmaControl/PmaControl.git pmacontrol
     fi
 else
-    sudo -u www-data git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+    git clone https://github.com/PmaControl/PmaControl.git pmacontrol
 fi
+
+chwon www-data:www-data -R /srv/www/pmacontrol
 
 cd pmacontrol
 
