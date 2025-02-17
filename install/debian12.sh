@@ -1,6 +1,29 @@
 #!/bin/bash
+set +x
+set -euo pipefail
 
+DEV_MOD=0
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+
+while getopts 'p:d' flag; do
+  case "${flag}" in
+    h)
+        echo "auto install mariadb"
+        echo "example : ./install -d"
+        echo " "
+        echo "options:"
+        echo "-d                      developmenet mode, we may ask you questions"
+        echo "-p                      specify password for MariaDB (dba)"
+        exit 0
+    ;;
+
+    p) DBA_PASSWORD="${OPTARG}" ;;
+    d) DEV_MOD="1"   ;;
+    *) echo "Unexpected option ${flag}" 
+	exit 0
+    ;;
+  esac
+done
 
 apt-get update
 apt-get -y upgrade
@@ -10,11 +33,12 @@ apt-get -y install curl
 apt-get -y install bc
 apt-get -y install wget
 apt install -y gnupg
-apt-get install -y wget gnupg2 lsb-release
+apt install -y wget 
+apt install -y gnupg2 
 apt install -y git 
 apt install -y tig
 apt install -y curl
-apt-get install -y net-tools
+apt install -y net-tools
 apt install -y dnsutils
 apt install -y sysbench
 apt install -y skopeo
@@ -39,8 +63,8 @@ apt-get -y install mariadb-plugin-rocksdb
 
 #for docker
 apt-get -y install jq skopeo
-
 apt-get -y install logrotate
+
 
 cat > /etc/logrotate.d/pmacontrol << EOF
 {
@@ -72,21 +96,16 @@ cat > /etc/logrotate.d/pmacontrol << EOF
 
 EOF
 
-
-
-
 #apt-get install beanstalkd
 
 service mysql restart
 
 mysql -e  "INSTALL SONAME 'ha_rocksdb'"
 
-
 a2enmod proxy_fcgi setenvif
 a2enconf php8.2-fpm
 
 a2enmod rewrite
-
 
 sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/fpm/php.ini
 sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/apache2/php.ini
@@ -108,21 +127,26 @@ apt-get install -y composer
 
 cd /srv/www/
 
-
-ssh -T git@github.com
-ret=$(echo $?)
-
-if [[ $ret -eq 1 ]]; then
-  git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+if [[ $DEV_MOD -eq 1 ]]; then
+    ssh -T git@github.com
+    ret=$(echo $?)
+    
+    if [[ $ret -eq 1 ]]; then
+      git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+    else
+      
+    fi
 else
-  git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+    git clone https://github.com/PmaControl/PmaControl.git pmacontrol
 fi
 
 cd pmacontrol
 
 #git pull origin develop
-git config core.fileMode false
 
+if [[ $DEV_MOD -eq 1 ]]; then
+    git config core.fileMode false
+fi
 
 #export COMPOSER_ALLOW_SUPERUSER=1
 #composer install -n
