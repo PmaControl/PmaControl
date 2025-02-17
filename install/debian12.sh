@@ -105,7 +105,7 @@ else
     git clone https://github.com/PmaControl/PmaControl.git pmacontrol
 fi
 
-chwon www-data:www-data -R /srv/www/pmacontrol
+chown www-data:www-data -R /srv/www/pmacontrol
 
 cd pmacontrol
 
