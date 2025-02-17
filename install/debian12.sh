@@ -115,8 +115,8 @@ if [[ $DEV_MOD -eq 1 ]]; then
     git config core.fileMode false
 fi
 
-curl -sS https://getcomposer.org/installer | php
-mv composer.phar /usr/local/bin/composer
+#curl -sS https://getcomposer.org/installer | php
+#mv composer.phar /usr/local/bin/composer
 
 #export COMPOSER_ALLOW_SUPERUSER=1
 sudo -u www-data composer install
