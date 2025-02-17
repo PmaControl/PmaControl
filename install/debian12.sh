@@ -43,6 +43,7 @@ apt install -y dnsutils
 apt install -y sysbench
 apt install -y skopeo
 apt install -y jq
+apt install -y sudo
 
 cd /tmp
 git clone https://github.com/PmaControl/Toolkit.git
@@ -98,10 +99,10 @@ if [[ $DEV_MOD -eq 1 ]]; then
     if [[ $ret -eq 1 ]]; then
       git clone git@github.com:PmaControl/PmaControl.git pmacontrol
     else
-      git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+      sudo -u www-data git clone https://github.com/PmaControl/PmaControl.git pmacontrol
     fi
 else
-    git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+    sudo -u www-data git clone https://github.com/PmaControl/PmaControl.git pmacontrol
 fi
 
 cd pmacontrol
@@ -116,9 +117,8 @@ curl -sS https://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 
 #export COMPOSER_ALLOW_SUPERUSER=1
-su - www-data
-composer install
-exit
+sudo -u www-data composer install
+
 
 service apache2 restart
 
