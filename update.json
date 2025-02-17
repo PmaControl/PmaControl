@@ -1,0 +1,5 @@
+    "scripts": {
+        "post-update-cmd": [
+          "php ./glial install updateVersion"
+        ]
+    },
