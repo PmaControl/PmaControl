@@ -50,12 +50,9 @@ git clone https://github.com/PmaControl/Toolkit.git
 cd Toolkit
 chmod +x install-mariadb.sh
 
-
 curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.11"
 
-
 ./install-mariadb.sh -v 10.11 -p $password -d /srv/mysql -r
-
 
 apt-get -y install php8.2 apache2 graphviz php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
 
@@ -63,40 +60,7 @@ apt-get -y install mariadb-plugin-rocksdb
 
 #for docker
 apt-get -y install jq skopeo
-apt-get -y install logrotate
 
-
-cat > /etc/logrotate.d/pmacontrol << EOF
-{
-    /srv/www/pmacontrol/tmp/log/glial.log {
-            daily
-            missingok
-            rotate 7
-            notifempty
-            create 0640 www-data www-data
-            sharedscripts
-    }
-    /srv/www/pmacontrol/tmp/log/sql.log {
-            daily
-            missingok
-            rotate 7
-            notifempty
-            create 0640 www-data www-data
-            sharedscripts
-    }
-    /srv/www/pmacontrol/tmp/log/error_php.log {
-            daily
-            missingok
-            rotate 7
-            notifempty
-            create 0640 www-data www-data
-            sharedscripts
-    }
-}
-
-EOF
-
-#apt-get install beanstalkd
 
 service mysql restart
 
