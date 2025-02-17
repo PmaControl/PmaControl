@@ -77,9 +77,7 @@ sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/apache2
 sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/cli/php.ini
 
 sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
-
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
-
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
 
 mkdir -p /srv/www/
@@ -106,6 +104,8 @@ else
 fi
 
 chown www-data:www-data -R /srv/www/pmacontrol
+chown www-data:www-data -R /var/www
+
 
 cd pmacontrol
 
