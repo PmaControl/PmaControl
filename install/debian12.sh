@@ -129,7 +129,7 @@ cd /srv/www/
 
 if [[ $DEV_MOD -eq 1 ]]; then
     ssh -T git@github.com
-    ret=$(echo $?)
+    ret=$?
     
     if [[ $ret -eq 1 ]]; then
       git clone git@github.com:PmaControl/PmaControl.git pmacontrol
