@@ -163,7 +163,7 @@ class Alias extends Controller
 
                 $alias_found               = array();
                 $alias_found[$id]['_HOST'] = $host;
-                $alias_found[$id]['_PORT'] = $host;
+                $alias_found[$id]['_PORT'] = $port;
                 $alias_found[$id]['_FROM'] = __FUNCTION__;
 
                 return $alias_found;
@@ -212,5 +212,24 @@ class Alias extends Controller
         }
 
         return false;
+    }
+
+
+    public function addHostname($param)
+    {
+        $this->view = false;
+
+        Debug::debug($param);
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id, hostname, port FROM mysql_server";
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $sql2 = "INSERT IGNORE alias_dns (id_mysql_server, dns, port) VALUES (".$ob->id.",'".$ob->hostname."', ".$ob->port.");";
+            Debug::sql($sql);
+            $db->sql_query($sql2);
+        }
     }
 }

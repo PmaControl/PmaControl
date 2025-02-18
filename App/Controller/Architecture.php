@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use \App\Library\Json;
 
 use App\Library\Debug;
 //require ROOT."/application/library/Filter.php";
@@ -63,6 +64,24 @@ ORDER BY  dg.height DESC, dg.width DESC
 
         $this->set('data', $data);
 
+
+    }
+
+    public function view($param)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+
+            debug($_POST);
+            debug($_FILES);
+            
+            if (!empty($_FILES['import']['tmp_name']['file'])) {
+                $file     = $_FILES['export']['tmp_name']['file'];
+            }
+
+            //debug(json_decode($json,JSON_PRETTY_PRINT));
+
+            //$data = Json::isJson($json);
+        }
 
     }
 }

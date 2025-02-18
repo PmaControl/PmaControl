@@ -5,10 +5,6 @@ use \Glial\Synapse\FactoryController;
 FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-style" => "btn-primary", "data-width" => "auto","all_selectable"=> "true")));
 ?>
 
-
-
-
-
 <div class="btn-group">
 
   <!--<button type="button" class="btn btn-primary">Cluster</button>

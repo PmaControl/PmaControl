@@ -114,6 +114,27 @@ WHERE
 //require ROOT."/application/library/Filter.php";
 //https://blog.programster.org/php-multithreading-pool-example
 
+/*
+
+DEBUG :
+
+delte md5 before or not ?
+pmacontrol Aspirateur tryMysqlConnection name server_6788e895e8bf2 11 1 --debug
+pmacontrol Integrate IntegrateAll --debug
+pmacontrol Listener checkAll --debug
+*/
+
+
+/*
+UPDATE `ts_variable` AS tv
+JOIN `ts_type_override` AS tovr
+ON tv.`name` = tovr.`name` AND tv.`from` = tovr.`from`
+SET 
+    tv.`type` = tovr.`type`,
+    tv.`is_derived` = tovr.`is_derived`,
+    tv.`is_dynamic` = tovr.`is_dynamic`;
+*/
+
 class Aspirateur extends Controller
 {
 
@@ -322,10 +343,13 @@ class Aspirateur extends Controller
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
         
-        $data = array();
-        //$data['mysql_meta_data_lock']['meta_data_lock'] = $this->getLockingQueries(array($id_mysql_server));
-        //$this->exportData($id_mysql_server, "mysql_meta_data_lock", $data);
-
+        /*
+        if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
+        {
+            $data = array();
+            $data['mysql_meta_data_lock']['meta_data_lock'] = $this->getLockingQueries(array($id_mysql_server));
+            $this->exportData($id_mysql_server, "mysql_meta_data_lock", $data);
+        }*/
 
         //SHOW SLAVE HOSTS; => add in glial
         $data = array();
@@ -355,7 +379,7 @@ class Aspirateur extends Controller
         }
 
 
-        if ((time()+$id_mysql_server)%(60*$refresh) < $refresh)
+        if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
         {
             $data['mysql_latency'] = $this->getMysqlLatencyByQuery($name_server);
             $this->exportData($id_mysql_server, "mysql_statistics", $data);
@@ -379,6 +403,17 @@ class Aspirateur extends Controller
         }
 
         /****************************************************************** */
+
+        $data = array();
+        $elems = $this->getElemFromTable(array($id_mysql_server, "sys", "innodb_lock_waits"));
+        if ($elems != false )
+        {
+            $data['sys']['innodb_lock_waits'] = json_encode($elems);
+            $this->exportData($id_mysql_server, "sys__innodb_lock_waits", $data);
+        }
+
+        /****************************************************************** */
+
 
         $mysql_tested->sql_close();
 
@@ -430,6 +465,7 @@ class Aspirateur extends Controller
 
             $id_mysql_server = $ob->id;
 
+            $ssh = false;
             try{
                 $error_msg='';
                 $time_start = microtime(true);
@@ -450,13 +486,11 @@ class Aspirateur extends Controller
                 if ($available === 0) {
                     //return false;
                 }
-
-
             }
 
             $ssh_available = 0;
 
-            if ($ssh !== false) {
+            if (!empty($ssh) && $ssh !== false ) {
                 $ssh_available = 1;
    
                 $stats['ssh_stats']    = $this->getStats($ssh);
@@ -466,15 +500,16 @@ class Aspirateur extends Controller
                 $ssh->disconnect();
                 unset($ssh);
 
-                
-                $this->exportData($id_mysql_server, "ssh_hardware", $hardware,true);
+                Debug::debug($stats);
+                Debug::debug($hardware);
+
+                $this->exportData($id_mysql_server, "ssh_hardware", $hardware);
                 $this->exportData($id_mysql_server, "ssh_stats", $stats, false);
 
             } else {
                 Debug::debug("Can't connect to ssh");
                 //error connection ssh
             }
-
             
             $ret['ssh_server']['ssh_available'] = $ssh_available;
             $ret['ssh_server']['ping'] = $ping;
@@ -488,8 +523,10 @@ class Aspirateur extends Controller
     private function getHardware($ssh)
     {
 
-//$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
-        $hardware['cpu_thread_count'] = trim($ssh->exec("cat /proc/cpuinfo | grep processor | wc -l"));
+        //$hardware['memory']           = $ssh->exec("grep MemTotal /proc/meminfo | awk '{print $2}'") or die("error");
+        //$hardware['cpu_thread_count'] = trim($ssh->exec("cat /proc/cpuinfo | grep processor | wc -l"));
+        $hardware['cpu_thread_count'] = trim($ssh->exec("nproc"));
+        
 
         $brut_memory = $ssh->exec("cat /proc/meminfo | grep MemTotal");
         preg_match("/[0-9]+/", $brut_memory, $memory);
@@ -553,6 +590,10 @@ class Aspirateur extends Controller
                         break;
                     case "10": $codename = "Buster";
                         break;
+                    case "11": $codename = "Bookworm";
+                        break;
+                    case "12": $codename = "Bullseye";
+                        break;
                 }
 
                 $os = trim("Debian GNU/Linux ".$version." (".$codename.")");
@@ -563,10 +604,15 @@ class Aspirateur extends Controller
         $hardware['os']           = trim($os);
         $hardware['codename']     = trim($codename);
         $hardware['product_name'] = trim($ssh->exec("sudo dmidecode -s system-product-name 2> /dev/null"));
+        if (empty($hardware['product_name']))
+        {
+            $hardware['product_name'] = trim($ssh->exec("dmidecode -s system-product-name 2> /dev/null"));
+        }
+
         $hardware['arch']         = trim($ssh->exec("uname -m"));
         $hardware['kernel']       = trim($ssh->exec("uname -r"));
         $hardware['hostname']     = trim($ssh->exec("hostname"));
-        $hardware['swapiness']    = $ssh->exec("cat /proc/sys/vm/swappiness");
+        $hardware['swapiness']    = trim($ssh->exec("cat /proc/sys/vm/swappiness"));
 
         return $hardware;
     }
@@ -629,8 +675,8 @@ class Aspirateur extends Controller
 
             $elems = preg_split('/\s+/', $line);
 
-//debug($elems);
-//system + user + idle
+            //debug($elems);
+            //system + user + idle
             if ($i === 0) {
                 $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
             } else {
@@ -655,8 +701,7 @@ class Aspirateur extends Controller
           $stats[$title] = $elems[$i];
           $i++;
           }
-         */
-
+        */
 
         /*
           $tmp_mem = trim($ssh->exec("ps aux | grep 'mysqld ' | grep -v grep | awk '{print $5,$6}'"));
@@ -668,13 +713,14 @@ class Aspirateur extends Controller
           $stats['mysqld_mem_virtual'] = $mysql[0];
          */
 
+        $cmd_ipv4 = "ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}'";
+
+
+        $cmd_ipv6 = "ip -6 addr show | grep -oP '(?<=inet6\s)[a-fA-F0-9:]+'";
+
 
 //ifconfig
 
-        /*
-         * SELECT sum( data_length + index_length) / 1024 / 1024 " Taille en Mo" FROM information_schema.TABLES WHERE table_schema = "WORDPRESS" GROUP BY table_schema;
-         *
-         */
 
         return $stats;
     }
@@ -1158,19 +1204,22 @@ GROUP BY C.ID, C.INFO;";
     */
     function after($param)
     {
-        $this->updateChown();
+        // need test if root
+        //$this->updateChown();
     }
 
     /*
     to call at end of worker to prevent memory leak
     */
-    function purge()
+    public function purge()
     {
         self::$file_created = array();
     }
 
-    function Chown($shared_file)
+    public function Chown($shared_file)
     {
+        sleep(1);
+
         if (file_exists($shared_file)) {
 
             $user = "www-data";
@@ -1207,8 +1256,13 @@ GROUP BY C.ID, C.INFO;";
 
     public function getMysqlLatencyByQuery($name_server)
     {
-        //to be friendly with all version, we take all, value who not move will be not imported anymore that's all
+        
+
         $db = Sgbd::sql($name_server);
+        
+        $data = array();
+        /*
+        //to be friendly with all version, we take all, value who not move will be not imported anymore that's all
         $sql = "SELECT `s2`.`avg_us` AS `avg_us` 
         from (
             (select count(0) AS `cnt`,round(`performance_schema`.`events_statements_summary_by_digest`.`AVG_TIMER_WAIT` / 1000000,0) AS `avg_us` 
@@ -1231,14 +1285,51 @@ GROUP BY C.ID, C.INFO;";
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             
             $data['query_latency_µs_95'] =  $arr['avg_us'];
-        }
+        }*/
 
-        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,1) as time_average 
-        FROM  `performance_schema`.`events_statements_summary_by_digest`;";
+        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        FROM  `performance_schema`.`events_statements_summary_by_digest`
+        WHERE LAST_SEEN > (NOW() - INTERVAL 1 MINUTE);";
+
+
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['query_latency_avg'] = $arr['time_average'];
+            $data['query_latency_1m'] = $arr['time_average'];
         }
+
+
+        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        FROM  `performance_schema`.`events_statements_summary_by_digest`
+        WHERE LAST_SEEN > (NOW() - INTERVAL 10 MINUTE);";
+
+
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['query_latency_10m'] = $arr['time_average'];
+        }
+
+
+        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        FROM  `performance_schema`.`events_statements_summary_by_digest`
+        WHERE LAST_SEEN > (NOW() - INTERVAL 1 HOUR);";
+
+
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['query_latency_1h'] = $arr['time_average'];
+        }
+
+
+        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        FROM  `performance_schema`.`events_statements_summary_by_digest`
+        WHERE LAST_SEEN > (NOW() - INTERVAL 24 HOUR);";
+
+
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['query_latency_24h'] = $arr['time_average'];
+        }
+
 
         return $data;
     }
@@ -1325,6 +1416,50 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+    public function getElemFromTable($param)
+    {
+        Debug::parseDebug($param);
 
-    
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+        $table = $param[2];
+        $where = $param[3];
+
+        
+        //$this->logger->emergency($table." id_mysql_server:$id_mysql_server");
+
+        if ($id_mysql_server == (int)$id_mysql_server){
+            $mysql_tested = Mysql::getDbLink($id_mysql_server);
+        }
+        else {
+            $mysql_tested = Sgbd::sql($id_mysql_server);
+        }
+
+        // a regarder dans le cashe avant
+        $sql = "SELECT count(1) AS cpt
+        FROM information_schema.tables 
+        WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."';";
+
+        $res = $mysql_tested->sql_query($sql);
+        $data = array();
+
+        while($ob = $mysql_tested->sql_fetch_object($res))
+        {
+            if ($ob->cpt === "1")
+            {
+                $table_elems = array();
+                $sql2 ="SELECT * FROM `".$database."`.`".$table."`;";
+                $res2 = $mysql_tested->sql_query($sql2);
+                while ($ob2 = $mysql_tested->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                    $table_elems[] = $ob2;
+                }
+
+                $data = $table_elems;
+                return $data;
+            }
+        }
+        //$this->logger->emergency($table." id_mysql_server:".print_r($data));
+        Debug::debug($data);
+        return false;
+    }
 }

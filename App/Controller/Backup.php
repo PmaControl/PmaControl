@@ -36,6 +36,8 @@ class Backup extends Controller
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
 
+
+    // START TRANSACTION WITH CONSISTENT SNAPSHOT
 //droit minima pour backup : GRANT SELECT, RELOAD, LOCK TABLES, EXECUTE, REPLICATION CLIENT, SHOW VIEW, EVENT, TRIGGER
 //ON *.* TO 'backup'@'%' IDENTIFIED BY PASSWORD '*';
 

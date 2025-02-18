@@ -3,9 +3,9 @@
 
 use \Glial\Synapse\FactoryController;
 
- if (empty($_GET['ajax'])) {
+if (empty($_GET['ajax'])) {
     echo '<div id="daemon-index">';
- }
+}
 
 echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';

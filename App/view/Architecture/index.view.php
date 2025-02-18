@@ -11,12 +11,10 @@ echo '</div>';
 <div class="panel panel-primary">
             <div class="panel-heading">
                 <h3 class="panel-title">
-
                     <?= __("Topology") ?>
                     </h3>
             </div>
             <div class="mpd">
-
 <?php
 
 
@@ -54,3 +52,4 @@ if (!empty($data['graphs'])
 }
 
 echo '</div>'; //end mpd
+

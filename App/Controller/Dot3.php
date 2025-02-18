@@ -67,8 +67,8 @@ class Dot3 extends Controller
 	    Debug::parseDebug($param);
 
         $date_request = $param[0] ?? "";
-        $versioning = "";
-        $versioning2 = "";
+        $versioning = "WHERE 1=1 ";
+        $versioning2 = "WHERE 1=1 ";
 
         //to prevent id of daemon in comment
         if (! is_a($date_request, 'DateTime')) {
@@ -77,8 +77,8 @@ class Dot3 extends Controller
 
         if ( ! empty($date_request))
         {
-            $versioning = " WHERE '".$date_request."' between a.row_start and a.row_end ";
-            $versioning2 = " WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
+            $versioning = "WHERE '".$date_request."' between a.row_start and a.row_end ";
+            $versioning2 = "WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
             
             $date_request = array($date_request);
         }
@@ -91,7 +91,7 @@ class Dot3 extends Controller
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
-                "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment",
+                "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
@@ -123,7 +123,7 @@ class Dot3 extends Controller
         $data['servers'] = array_replace_recursive($all, $server_mysql);
 
         
-        $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning;";
+        $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning AND a.id_mysql_server IS NOT NULL;";
         Debug::debug($sql);
 
         $res = $db->sql_query($sql);
@@ -294,8 +294,8 @@ class Dot3 extends Controller
             $id_group++;
             //$tmp_group[$idproxy] = array();
             if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
-                $servers = $this->getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
-                $servers2 = $this->getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
+                $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
+                $servers2 = self::getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
 
                 foreach($servers as $ip_port)
                 {
@@ -326,7 +326,7 @@ class Dot3 extends Controller
         a bouger dans App\Lib\Galera
     */
 
-    public function getIdMysqlServerFromGalera($cluster_address)
+    static function getIdMysqlServerFromGalera($cluster_address)
     {
         $addresses = str_replace('gcomm://', '', $cluster_address);
         $addressList = explode(',', $addresses);
@@ -385,12 +385,10 @@ class Dot3 extends Controller
             $this->linkHostGroup(array($id_dot3_information, $group));
             
             
-            $dot = $this->generateDot();
+            $dot = $this->writeDot();
 
             $reference = md5(json_encode($group));
             $file_name = Graphviz::generateDot($reference, $dot);
-
-
 
             $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
         }
@@ -451,7 +449,7 @@ class Dot3 extends Controller
         while($ob = $db->sql_fetch_object($res))
         {
             $id_dot3_graph = $ob->id;
-            Debug::debug($id_dot3_graph, "id_dot3_graph");
+            //Debug::debug($id_dot3_graph, "id_dot3_graph");
             $dot3_cluster['dot3_cluster']['id'] = $id_dot3_graph;
         }
 
@@ -476,7 +474,7 @@ class Dot3 extends Controller
 
     }
 
-    public function generateDot()
+    public function writeDot()
     {
         
         $dot = '';
@@ -491,9 +489,6 @@ class Dot3 extends Controller
         }  
         //$dot .= Graphviz::buildApp();
         $dot .= Graphviz::generateEnd();
-
-        
-//        Debug::debug($dot);
 
         return $dot;
 
@@ -544,6 +539,9 @@ class Dot3 extends Controller
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
+        Debug::debug($galera, "GALERA");
+
+
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
 
@@ -698,6 +696,11 @@ class Dot3 extends Controller
             {
                 $tmp = self::$config['NODE_BUSY'];
             }
+
+            // ADD there color for Galera Cluster
+
+
+            // Add there color for INNODB Clsuter
 
             $tmp = array_merge($tmp, $server);
 
@@ -1021,11 +1024,7 @@ class Dot3 extends Controller
 
     }
 
-    public function app($param)
-    {
 
-        //Graphviz::buildApp($param);
-    }
 
     /*****
      * case for Last_IO_Error, double quote not supported by graphviz, and connect escape to put in tooltip
@@ -1074,6 +1073,7 @@ class Dot3 extends Controller
         $db->sql_query($sql);
     }
 
+    // for DEBUG ONLY
 
     public function show($param)
     {
@@ -1085,12 +1085,11 @@ class Dot3 extends Controller
         $this->run($id_dot3_information);
 
 
+    }
 
 
-
-
-
-
+    public function buildGaleraCluster($param)
+    {
 
     }
 

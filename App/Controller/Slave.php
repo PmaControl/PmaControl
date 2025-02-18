@@ -36,6 +36,9 @@ class Slave extends Controller
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "slave::last_sql_error", "slave::last_sql_errno"));
 
+
+                die();
+
         /* besoin de testé avec les thread (trouver autre chose)
           //order by master host
           function invenDescSort($item1, $item2)

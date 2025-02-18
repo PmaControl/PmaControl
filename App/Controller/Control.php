@@ -251,6 +251,8 @@ class Control extends Controller
         }
 
         $this->refreshVariable(array());
+
+        $this->delMd5File($param);
     }
 
     public function dropTsTable($param = array())
@@ -533,5 +535,17 @@ WHERE b.id in (select id_ts_file from z) AND c.id is null;";
         $sql = "DELETE FROM `ts_file`;";
 
         $db->sql_query($sql);
+    }
+
+    public function delMd5File($param)
+    {
+        Debug::parseDebug($param);
+
+        $directory = TMP."md5/";
+        $cmd = 'find "'.$directory.'" -type f -mmin +60 -exec rm -f {} \;';
+
+        Debug::debug($cmd);
+
+        shell_exec($cmd);
     }
 }
