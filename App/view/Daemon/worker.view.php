@@ -13,6 +13,7 @@ echo '<th>'.__('Date').'</th>';
 echo '<th>'.__("Working on").'</th>';
 echo '</tr>';
 
+
 foreach ($data['worker'] as $worker) {
 
     echo '<tr>';

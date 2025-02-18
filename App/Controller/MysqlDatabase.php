@@ -85,8 +85,6 @@ class MysqlDatabase extends Controller
 
         $database = $param[1] ?? "";
 
-
-
         if (empty($database))
         {
             $db = Sgbd::sql(DB_DEFAULT);

@@ -10,8 +10,16 @@ use \Glial\Sgbd\Sgbd;
 
 
 /*
+❌
+ⓘ
+🛈
+✅
+፨
+⚠ⓘ
 
-
+UPDATE global_variables SET variable_value='admin:password;radmin:radmin' WHERE variable_name='admin-admin_credentials';
+LOAD ADMIN VARIABLES TO RUNTIME;
+SAVE ADMIN VARIABLES TO DISK;
 
 WITH z as (select hostname, port, max(time_start_us) as time_start_us  from mysql_server_read_only_log group by hostname,port)
 SELECT a.* FROM mysql_server_read_only_log a INNER JOIN z ON a.hostname = z.hostname AND a.time_start_us = z.time_start_us;
@@ -77,8 +85,17 @@ class ProxySQL extends Controller
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             debug($_POST);
 
-            if (Mysql::test($_POST['proxysql_server']['hostname'],$_POST['proxysql_server']['port'], $_POST['proxysql_server']['login'], $_POST['proxysql_server']['password']))
+            if (Mysql::test($_POST['proxysql_server']['hostname'],$_POST['proxysql_server']['port'], $_POST['proxysql_server']['login'], $_POST['proxysql_server']['password'], "main"))
             {
+
+                $param = array();
+                $param[0] = $_POST['proxysql_server']['hostname'];
+                $param[1] = $_POST['proxysql_server']['port'];
+                $param[2] = $_POST['proxysql_server']['login'];
+                $param[3] = $_POST['proxysql_server']['password'];
+                
+                $this->addProxyAdmin($param);
+
                 debug('login ok');
                 debug($_POST);
 
@@ -166,6 +183,8 @@ class ProxySQL extends Controller
 
             Debug::debug($variable, "VARIABLE");
 
+
+            
             // test if cluster proxySQL
             $sql2 = "select * from runtime_proxysql_servers;";
             $res2 = $proxy_admin->sql_query($sql2);
@@ -181,12 +200,12 @@ class ProxySQL extends Controller
                 Debug::debug($config[$proxysql_admin]['hostname'], "TO COMPARE");
 
                 $table                                     = array();
-                $table['proxysql_main']['id_mysql_server'] = 0;
-                $table['proxysql_main']['hostname']        = $arr2['hostname'];
-                $table['proxysql_main']['port']            = $config[$proxysql_admin]['port'];
-                $table['proxysql_main']['login']           = $config[$proxysql_admin]['user'];
-                $table['proxysql_main']['password']        = $config[$proxysql_admin]['password'];
-                $table['proxysql_main']['date_inserted']   = date('Y-m-d H:i:s');
+                $table['proxysql_server']['id_mysql_server'] = 0;
+                $table['proxysql_server']['hostname']        = $arr2['hostname'];
+                $table['proxysql_server']['port']            = $config[$proxysql_admin]['port'];
+                $table['proxysql_server']['login']           = $config[$proxysql_admin]['user'];
+                $table['proxysql_server']['password']        = $config[$proxysql_admin]['password'];
+                $table['proxysql_server']['date_inserted']   = date('Y-m-d H:i:s');
 
                 $proxysql_to_add[] = $table;
 
@@ -244,7 +263,6 @@ class ProxySQL extends Controller
 
             foreach ($server_mysql as $server) {
 
-
                 Debug::debug($server['mysql_server'], "mysql server");
 
                 Mysql::testMySQL(array($server['mysql_server']['hostname'], $server['mysql_server']['port'], $server['mysql_server']['login'], $server['mysql_server']['password']));
@@ -301,9 +319,16 @@ class ProxySQL extends Controller
         $data = array();
         while ($arr  = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             
+            $arr['servers'] = array();
             $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'] , $arr['password']);
-            $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
-            $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
+
+            if (! empty($arr['id_mysql_server']))
+            {
+                $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
+                $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
+                
+            }
+
             $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
             
             $data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
@@ -383,13 +408,6 @@ class ProxySQL extends Controller
         }
     }
 
-
-    public function config($param)
-    {
-
-
-
-    }
 
 
     public function statistic($param)
@@ -531,25 +549,78 @@ class ProxySQL extends Controller
             $id_mysql_server = $ob->id_mysql_server;
         }
 
-
-
-
         $import = array();
         $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         //$import['pair']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
         //$import['uniq']['key2::key3??']['proxysql_stats_mysql_global'] = $this->getErrorConnect($param);
 
-
-
-
-
-
-
-
         $db->sql_close();
 
         return $import;
 
+    }
+
+    public function auto($param)
+    {
+
+        Debug::parseDebug($param);
+        $id_proxysql_server = $param[0] ?? "";
+
+    }
+
+
+    public function config($param)
+    {
+        Debug::parseDebug($param);
+        $id_proxysql_server = $param[0] ?? "";
+
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+        }
+
+        $data = array();
+        $db = Sgbd::sql('proxysql_'.$id_proxysql_server);
+
+        $sqls = array();
+        //admin_variables
+        $sqls[] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name LIKE 'admin%' ORDER BY variable_name ASC;";
+        //mysql_variables
+        $sqls[] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name NOT LIKE 'admin%' ORDER BY variable_name ASC;";
+        $sqls[] = "SELECT * FROM {PREFIX}mysql_query_rules ORDER BY rule_id ASC;";
+        
+        $sqls[] = "SELECT * FROM {PREFIX}mysql_servers ORDER BY hostgroup_id, hostname, port;";
+        $sqls[] = "SELECT * FROM {PREFIX}mysql_users ORDER BY default_hostgroup, username ASC;";
+        $sqls[] = "SELECT * FROM {PREFIX}proxysql_servers ORDER BY hostname ASC, port ASC;";
+
+
+        $data['table'] = array();
+
+        foreach($sqls as $sql)
+        {
+            $prefix = array('', 'runtime_');
+            foreach($prefix as $opt)
+            {
+                $sql_finale = str_replace('{PREFIX}', $opt, $sql);
+                $output_array = array();
+                preg_match('/FROM\s+(\S+)/', $sql_finale, $output_array);
+
+                $table_name = $output_array[1];
+
+                if ($opt === '')
+                {
+                    $data['table'][] = $table_name;
+                }
+
+                $res = $db->sql_query($sql_finale);
+
+                while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+                {
+                    $data['tables'][$table_name][] = $arr;
+                }
+            }
+        }
+
+        $this->set('data', $data);
     }
 
 }

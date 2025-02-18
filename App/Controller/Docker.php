@@ -49,6 +49,7 @@ class Docker extends Controller
 
 
         $sql = "SELECT * FROM docker_software ORDER by name DESC";
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res))

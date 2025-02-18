@@ -25,6 +25,7 @@ class Format
 
         $fork = $format['fork'];
         $number = $format['number'];
+        $enter = $format['enterprise'];
 
         $name = '';
         $logo = true;
@@ -44,6 +45,11 @@ class Format
                     $name .= '<span class="geek">&#xF130;</span>';
                 }
 		        $name .=  ' MariaDB';
+                if ($enter === true)
+                {
+                    $name .= ' (Enterprise)';
+                }
+
                 break;
 
             case 'percona':
@@ -114,9 +120,18 @@ class Format
 
     static public function getMySQLNumVersion($version, $comment)
     {
+        //10.6.19-15-MariaDB-enterprise-log
+        // need make test with that
+        $enterprise = false;
+
         if (strpos($version, "-")) {
             $number = explode("-", $version)[0];
             $fork   = explode("-", $version)[1];
+            
+            if (preg_match('/^-?\d+$/', $fork)) {
+                $fork   = explode("-", $version)[2];
+                $enterprise = true;
+            }
         } else {
             $number = $version;
             $fork = 'mysql';
@@ -132,6 +147,6 @@ class Format
             $fork = "proxysql";
         }
 
-        return array('number'=>$number, 'fork'=> $fork);
+        return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);
     }
 }

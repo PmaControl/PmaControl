@@ -13,7 +13,7 @@ function generateDokuwikiTable($data) {
     foreach ($data as $id => $row) {
         $output .= "| $id ";
         foreach ($columns as $col) {
-            $output .= "| " . $row[$col] . " ";
+            $output .= "| ". htmlentities("<nowiki>"). $row[$col] . htmlentities("</nowiki>"). "</nowiki> ";
         }
         $output .= "|\n";
     }

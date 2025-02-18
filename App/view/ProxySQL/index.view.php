@@ -12,6 +12,7 @@ echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-success">'.__(
 echo '</div>';
 echo '</div>';
 
+
 if ( ! empty($data['proxysql']))
 {
     foreach ($data['proxysql'] as $id_proxysql => $proxysql) {
@@ -40,40 +41,37 @@ if ( ! empty($data['proxysql']))
         echo '<div class="row">&nbsp;</div>';
         echo '<div class="row">';
         //boutton
-        
-        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
-
-        echo '<a href="'.LINK.'ProxySQL/statistic/'.$id_proxysql.'" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
-        echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-warning">'.__('Monitor').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/auto/'.$proxysql['id'].'" type="button" class="btn btn-default">'.__('Auto config').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/config/'.$proxysql['id'].'" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/statistic/'.$proxysql['id'].'" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/monitor/'.$proxysql['id'].'" type="button" class="btn btn-warning">'.__('Monitor').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Cluster').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Logs').'</a> ';
         echo '</div>';
-
         echo '<div class="row">&nbsp;</div>';
         
 
-        
-
-
-
         //frontend
-        echo '<div class="row">';
-        $thead = Html::thead(array(__("Hostname"), __("Status")));
-        if (empty($proxysql['mysql_available'])) {
-            $status = '<big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big>';
-        }
-        elseif ($proxysql['mysql_available'] === "1"){
-            $status = '<big><span class="label label-success">'.__("ONLINE").'</span></big>';
-        }
 
-        $tbody = Html::tbody(array(Display::srv($proxysql['id_mysql_server']),$status));
-        $body = Html::table(
-            $thead,
-            $tbody
-        );
-        echo Html::box(__('Frontend'),$body );
-        echo '</div>';
+        if (! empty($proxysql['id_mysql_server']))
+        {
+            echo '<div class="row">';
+            $thead = Html::thead(array(__("Hostname"), __("Status")));
+            if (empty($proxysql['mysql_available'])) {
+                $status = '<big><span class="label label-danger">'.$proxysql['mysql_error'].'</span></big>';
+            }
+            elseif ($proxysql['mysql_available'] === "1"){
+                $status = '<big><span class="label label-success">'.__("ONLINE").'</span></big>';
+            }
 
+            $tbody = Html::tbody(array(Display::srv($proxysql['id_mysql_server']),$status));
+            $body = Html::table(
+                $thead,
+                $tbody
+            );
+            echo Html::box(__('Frontend'),$body );
+            echo '</div>';
+        }
 
         if (!empty($data['proxysql_error']))
         {

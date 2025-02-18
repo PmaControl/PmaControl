@@ -1,11 +1,21 @@
 <?php 
 
-if (empty($_GET['ajax'])){
+
+
+if (empty($_GET['ajax'])) {
+
+    echo '
+    <div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title">'.__('List of workers').'</h3>
+    </div>';
+  
     echo '<div id="worker-index">';
-}
+  }
+  
 
 
-echo '<table class="table table-condensed table-bordered table-striped">';
+echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px">';
 
 echo '<tr>';
 echo '<th>'.__("Top").'</th>';
@@ -30,5 +40,6 @@ foreach ($data['worker'] as $worker) {
 echo '</table>';
 
 if (empty($_GET['ajax'])){
+    echo '</div>';
     echo '</div>';
 }

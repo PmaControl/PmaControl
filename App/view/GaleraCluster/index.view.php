@@ -21,6 +21,7 @@ echo '<th>' . __('Hostname') . '</th>';
 echo '<th>' . __('IP') . '</th>';
 
 echo '<th>' . __('Version') . '</th>';
+echo '<th>' . __('Segment') . '</th>';
 echo '<th>' . __('Date') . '</th>';
 echo '<th>' . __('Time zone') . '</th>';
 echo '<th>' . __('Cluster_status') . '</th>';
@@ -28,16 +29,12 @@ echo '<th>' . __('Local state') . '</th>';
 echo '<th>' . __('Desync') . '</th>';
 echo '</tr>';
 
-
+//debug($data['galera']);
 $i = 1;
 foreach ($data['galera'] as $cluster_name => $galera) {
 
-
-
     $j = 0;
     foreach ($galera as $node) {
-
-
         if ($j === 0) {
             
             $rowspan = count($galera);
@@ -49,9 +46,7 @@ foreach ($data['galera'] as $cluster_name => $galera) {
             echo '</tr>';
         }
 
-
         $j++;
-
 
         if (!empty($node['hostname'])) {
             echo '<tr>';
@@ -63,10 +58,17 @@ foreach ($data['galera'] as $cluster_name => $galera) {
             else {
                 $class = "remove";
             }
-            
+
             echo '<td><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> ' . $node['hostname'] . '</td>';
             echo '<td>' . $node['ip'] . ':' . $node['port'] . '</td>';
             echo '<td>' . $node['version'] . '</td>';
+
+            $segment = '';
+            if (isset($data['segment'][$node['id_mysql_server']])) {
+                $segment = $data['segment'][$node['id_mysql_server']]; 
+            }
+
+            echo '<td>' . $segment . '</td>';
             echo '<td>' . $node['date'] . '</td>';
             echo '<td>' . $node['system_time_zone'] . '</td>';
             echo '<td>' . $node['wsrep_cluster_status'] . '</td>';
@@ -76,7 +78,7 @@ foreach ($data['galera'] as $cluster_name => $galera) {
         }
         else
         {
-                        echo '<tr>';
+            echo '<tr>';
             echo '<td>' . $j . '</td>';
 
             echo '<td><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> ' . "Arbitrator" . '</td>';
@@ -86,8 +88,6 @@ foreach ($data['galera'] as $cluster_name => $galera) {
             echo '</tr>';
         }
 
-
-        
     }
 
     $i++;

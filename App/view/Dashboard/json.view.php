@@ -4,6 +4,9 @@ use Glial\Html\Form\Form;
 <form method="post">
 <?php
 
+//debug($data);
+
+
 echo '<div class="row">';
 echo '<div class="col-md-6">';
 
@@ -49,65 +52,67 @@ echo '</div>';
 </div>
 </form>
 
-
-
-
 <?php 
 
-
-//debug($data);
-
-echo '<table class="table table-condensed table-bordered table-striped" id="table">';
-
-
-
-foreach($data['json'] as $key => $arr)
+foreach($data['json'] as $elem)
 {
-  if (empty($arr['value']))
-  {
-    continue;
-  }
+
+  //debug($elem);
+  echo $elem['date'];
+  echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 
-  $count = count($arr['value']);
-  $keys = array_keys($arr['value']);
-  $values = array_values($arr['value']);
+    // Générer la table HTML
+    echo "<thead><tr>";
 
-
-
-  echo '<tr>';
-  echo '<th colspan="'.$count.'">';
-  echo $arr['date'];
-  echo '</th>';
-  echo '</tr>';
-
-  echo '<tr>';
-
-  foreach($keys as $key)
-  {
-    echo '<th>';
-    echo $key;
-    echo '</th>';
-  
-  }
-  echo '</tr>';
-
-
-  echo '<tr>';
-  foreach($values as $value)
-  {
-    if (!empty($value) && mb_strlen($value) > 1000)
-    {
-      $value = substr($value, 0,1000). '...';
+    // Afficher les en-têtes dynamiquement
+    $headers = array_keys($elem['value'][0]); // Récupère les clés du premier élément
+    echo "<th>#</th>";
+    foreach ($headers as $header) {
+        echo "<th>" . htmlspecialchars($header) . "</th>";
     }
 
-    echo '<td>';
-    echo $value;
-    echo '</td>';
-  
-  }
-  echo '</tr>';
+    echo "</tr></thead><tbody>";
 
-} 
+    // Afficher les lignes de données
 
-echo '</table>';
+
+    if (!empty($elem['value'][0]['TIME_MS']))
+    {
+      usort($elem['value'], function ($a, $b) {
+        return $b['TIME_MS'] <=> $a['TIME_MS']; // Tri décroissant
+      });
+    }
+
+    //debug($elem['value'] );
+    $i=0;
+    foreach ($elem['value'] as $row) {
+      $i++;
+      if (!empty($row['INFO_BINARY']))
+      {
+        unset($row['INFO_BINARY']);
+      }
+
+        echo "<tr>";
+        echo "<td>".$i."</td>";
+        foreach ($headers as $header) {
+            $value = isset($row[$header]) ? $row[$header] : ''; // Gérer les valeurs nulles
+
+            if ($header == 'INFO') {
+              if (mb_strlen($value)  > 64)
+              {
+                $value = substr($value,0,64);
+              }
+            }
+
+
+
+            echo "<td>" . $value . "</td>";
+        }
+        echo "</tr>";
+    }
+
+    echo "</tbody>";
+    echo '</table>';
+}
+

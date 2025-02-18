@@ -22,6 +22,8 @@ class Ssh extends Controller
     const KEY_WORKER_ASSOCIATE = 435665;
     const NB_WORKER            = 10;
 
+    public $logger;
+
     public function keys()
     {
         //https://guacamole.apache.org/releases/

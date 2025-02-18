@@ -18,6 +18,16 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+/*
+UPDATE performance_schema.setup_instruments
+   SET ENABLED = 'YES', TIMED = 'YES'
+   WHERE NAME LIKE 'statement/sql/select';
+
+UPDATE performance_schema.setup_consumers
+   SET ENABLED = 'YES' WHERE NAME IN ('events_statements_history', 'events_statements_current');
+
+
+*/
 
 class Server extends Controller
 {
@@ -43,17 +53,17 @@ class Server extends Controller
         $this->title  = __("Hardware");
         $this->ariane = " > ".$this->title;
 
-        $data['hardware'] = Extraction::display(array("hardware::cpu_thread_count",
-                "hardware::cpu_frequency",
-                "hardware::memory",
-                "hardware::distributor",
-                "hardware::os",
-                "hardware::codename",
-                "hardware::product_name",
-                "hardware::arch",
-                "hardware::kernel",
-                "hardware::hostname",
-                "hardware::swapiness"
+        $data['hardware'] = Extraction::display(array("ssh_hardware::cpu_thread_count",
+                "ssh_hardware::cpu_frequency",
+                "ssh_hardware::memory",
+                "ssh_hardware::distributor",
+                "ssh_hardware::os",
+                "ssh_hardware::codename",
+                "ssh_hardware::product_name",
+                "ssh_hardware::arch",
+                "ssh_hardware::kernel",
+                "ssh_hardware::hostname",
+                "ssh_hardware::swapiness"
         ));
 
         $data['service_ssh'] = Extraction::display(array("ssh_available"));
@@ -299,9 +309,9 @@ class Server extends Controller
         }
 
         $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server","wsrep_cluster_status",
-         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_µs_95"));
+         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
 
-        //debug($data['extra']);
+    
 
         $data['last_date'] = Extraction2::display(array("mysql_server::"));
 
@@ -1160,4 +1170,19 @@ var myChart = new Chart(ctx, {
 
         return $elems;
     }
+
+    public function retract($param)
+    {
+        $this->view = false;
+
+        $id_server = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "UPDATE mysql_server set is_acknowledged='0' WHERE id=".$id_server.";";
+        $db->sql_query($sql);
+
+        header("location: ".LINK.$this->getClass()."/main/");
+    }
+    
 }

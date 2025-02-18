@@ -446,15 +446,22 @@ class Graphviz
         $return = "node[shape=none fontsize=8 ranksep=10 splines=true overlap=true];".PHP_EOL;
         //$return = "node[shape=plaintext fontsize=8];".PHP_EOL;
 
-        Debug::debug($server, "DEBUG TO REMOVE");
+        //Debug::debug($server, "DEBUG TO REMOVE");
         
         $format = Format::getMySQLNumVersion($server['version'], $server['version_comment']);
 
         $fork = $format['fork'];
         $number = $format['number'];
 
+        //to move in dot3
+        if (!empty($server['wsrep_cluster_status']) && strtolower($server['wsrep_cluster_status']) === "non-primary")
+        {
+            $server['color'] = "#FFFF00"; // import this from legend
+        }
+
+
         $forground_color = '#000000';
-        if (static::getBrightness($server['color']) < 100) {
+        if (static::getBrightness($server['color']) < 128) {
             $forground_color = '#FFFFFF';
         }
 
@@ -468,6 +475,7 @@ class Graphviz
             $image_logo = 'galera.svg';
         }
 
+        
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
         $return .= 'tooltip="'.$server['display_name'].'"
@@ -478,7 +486,7 @@ class Graphviz
 
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
+        <font color="'.$forground_color.'"><b>'.$server['display_name']."-3-".static::getBrightness($server['color']).'</b></font></td></tr>';
 
 
         
@@ -521,14 +529,11 @@ class Graphviz
 
                     if ($database == "eshop")
                     {
-
                         $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
-                        
                     }
-
                 }
             }
             else

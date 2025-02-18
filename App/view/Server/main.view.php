@@ -10,15 +10,13 @@ if (empty($_GET['ajax'])){
     FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '</div>';
 
-
-
-
     echo __("Refresh each :")."&nbsp;";
+    echo '<div class="btn-group">';
     echo '<a onclick="setRefreshInterval(1000)" type="button" class="btn btn-primary">1 sec</a>';
-    echo ' <a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
-    echo ' <a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
-    echo ' <a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
-    echo ' <a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a><br /><br />';
+    echo '<a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
+    echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
+    echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
+    echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a></div><br /><br />';
 
 
 
@@ -26,9 +24,6 @@ if (empty($_GET['ajax'])){
 }
 
 $converter = new AnsiToHtmlConverter();
-
-
-
 
 
 echo '<table class="table table-condensed table-bordered table-striped">';
@@ -70,22 +65,16 @@ if (!empty($data['servers'])) {
 
         $style = "";
 
+        $IS_AVAILABLE = true;
+        $IS_ACKNOWLEDGE = false;
+
+
         $extra = array();
         if (!empty($data['extra'][$server['id']][''])) {
             $extra = $data['extra'][$server['id']][''];
         }
         else{
             $style = 'background-color:rgb(150, 150, 150, 0.7); color:#ffffff';
-        }
-
-        //$style = 'background-color:#EEE; color:#000';
-        // cas des erreur
-        if (empty($extra['mysql_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
-            
-            if (empty($style))
-            {
-                $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
-            }
         }
 
         // cas des warning
@@ -97,15 +86,24 @@ if (!empty($data['servers'])) {
             }
         }
 
-        if (!empty($extra['wsrep_cluster_status']) && $extra['wsrep_on'] === "ON" && $extra['wsrep_cluster_status'] !== "Primary") {
+        //node non primary
+        if (!empty($extra['wsrep_on']) && !empty($extra['wsrep_cluster_status']) && $extra['wsrep_on'] === "ON" && $extra['wsrep_cluster_status'] !== "Primary") {
             $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
-            //$style = 'gg';
             $error_extra = "Galera node is ".$extra['wsrep_cluster_status'];
+        }
+
+
+        //$style = 'background-color:#EEE; color:#000';
+        // cas des erreur
+        if (empty($extra['mysql_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+            $IS_AVAILABLE = false;
+            $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
         }
 
         // acknoledge GREEN
         if ($server['is_acknowledged'] !== "0") {
             $style = 'background-color:rgb(92, 184, 92, 0.7); color:#666666';
+            $IS_ACKNOWLEDGE = true;
         }
 
         // serveur non monitoré   BLUE
@@ -172,8 +170,8 @@ if (!empty($data['servers'])) {
 
         echo '</td>';
         echo '<td style="'.$style.'">';
-        if (!empty($data['extra'][$server['id']]['']['query_latency_µs_95'])) {
-            echo round($data['extra'][$server['id']]['']['query_latency_µs_95']/1000, 3)." ms";
+        if (!empty($data['extra'][$server['id']]['']['query_latency_1m'])) {
+            echo round($data['extra'][$server['id']]['']['query_latency_1m'], 3)." µs";
         }
         echo '</td>';
 
@@ -296,11 +294,18 @@ if (!empty($data['servers'])) {
         }
 
 
-        if (! empty($error_extra))
+        if ($IS_AVAILABLE === true)
         {
-            echo $error_extra;
-            unset($error_extra);
+            if (! empty($error_extra))
+            {
+                echo $error_extra;
+                
+                if ($extra['wsrep_cluster_status'] !== "Primary") {
+                    echo ' <a href="'.LINK.'GaleraCluster/setNodeAsPrimary/'.$server['id'].'" type="submit" class="btn btn-danger btn-xs"><span class=" glyphicon glyphicon-play" aria-hidden="true"></span> SET PRIMARY</button>';
+                }
+            }
         }
+        unset($error_extra);
 
         echo '</td>';
         echo '<td style="'.$style.'">';
@@ -308,6 +313,12 @@ if (!empty($data['servers'])) {
         if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
+
+        if ($IS_ACKNOWLEDGE === true) {
+            echo '<a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
+        }
+
+
         echo '</td>';
         echo '</tr>';
     }
@@ -318,6 +329,3 @@ echo '</table>';
 if (empty($_GET['ajax'])){
     echo '</div>';
 }
-
-
-

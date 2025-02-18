@@ -1776,11 +1776,8 @@ var myChart = new Chart(ctx, {
                 }
             }
 
-            //debug($array);
-
-            $i    = 0;
+            $i = 0;
             while ($last = count($array) != 0) {
-
                 //echo "level " . $i . PHP_EOL;
                 $temp = $array;
 
@@ -1800,9 +1797,7 @@ var myChart = new Chart(ctx, {
 
                 $temp = $array;
 
-// retirer les tableaux vides, et remplissage avec clefs
-
-
+                // retirer les tableaux vides, et remplissage avec clefs
                 Debug::debug($temp, 'temp');
 
                 foreach ($temp as $key => $tmp) {

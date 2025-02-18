@@ -27,7 +27,7 @@ class Agent extends Controller {
     var $logger;
     var $log_file = LOG_FILE;
     var $loop = 0;
-
+    
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>

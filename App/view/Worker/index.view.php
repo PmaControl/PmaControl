@@ -2,11 +2,20 @@
 
 use \Glial\Synapse\FactoryController;
 
-if (empty($_GET['ajax'])) {
-    echo '<div id="daemon-index">';
- }
 
-echo '<table class="table table-condensed table-bordered table-striped">';
+ if (empty($_GET['ajax'])) {
+
+  echo '
+  <div class="panel panel-primary">
+  <div class="panel-heading">
+      <h3 class="panel-title">'.__('List of queue').'</h3>
+  </div>';
+
+  echo '<div id="daemon-index">';
+}
+
+
+echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px">';
 echo '<tr>';
 echo '<th>'.__("Name").'</th>';
 
@@ -42,3 +51,10 @@ foreach ($data['worker'] as $daemon) {
     echo '</tr>';
 }
 echo '</table>';
+
+
+if (empty($_GET['ajax'])) {
+
+  echo '</div>';
+  echo '</div>';
+}

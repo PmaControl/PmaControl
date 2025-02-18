@@ -938,7 +938,13 @@ END;";
             $remote->sql_select_db($database);
             $tables = $remote->getListTable()['table'];
 
+            //UPGRADE PIXI
+            $sql2    = "SET SQL_LOG_BIN=0;";
+            $remote->sql_query($sql2);
+
             foreach ($tables as $table) {
+                // upgrade
+                
                 $sql    = "ANALYZE TABLE `".$database."`.`".$table."`;";
                 $sqls[] = "<li>".$sql."</li>";
                 Debug::debug($sql);

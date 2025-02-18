@@ -43,7 +43,7 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="SELECT id_ts_file, id_mysql_server from ts_max_date where last_date_listener != date;";
+        $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) from ts_max_date where last_date_listener != date ORDER BY 3 DESC;";
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -163,9 +163,39 @@ class Listener extends Controller
             $dbs[] = $ob2->schema_name;
         }
 
-        $res = Extraction::display(array('mysql_database::database'), array($param['id_mysql_server']), array($param['min_date']));
-        
-        Debug::debug($res, 'dgrqdgrdg');
+        Debug::debug($param);
+
+        $from = 'mysql_database';
+        $name = 'database';
+
+        $res = Extraction::display(array($from.'::'.$name), array($param['id_mysql_server']), array($param['min_date']));
+
+        // if we cannot find last entry we order delete of MD5 and simple return
+
+        if (empty($res))
+        {
+            $sql = "select * from ts_variable where name ='".$name."' and `from`='".$from."';";
+
+            $res123 = $db->sql_query($sql);
+
+            while($ob = $db->sql_fetch_object($res123))
+            {
+                $id_ts_file= $ob->id_ts_file;
+            }
+
+            $purge[$id_ts_file] = array();
+            $purge[$id_ts_file][] = $param['id_mysql_server'];
+                                                        
+            EngineV4::cleanMd5($purge);
+
+            // write something to log
+            return;
+        }
+
+
+
+
+
         $data = json_decode($this->extract($res)['database'], true);
 
         Debug::debug($res, "DATABASE ***************************");
@@ -318,9 +348,16 @@ class Listener extends Controller
     //after upgrading mysql_global_variable
     public function afterUpdateVariable($param)
     {
+        Debug::debug($param);
         $extract = Extraction::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
-        $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']][''];
+        
+        if (! empty($extract))
+        {
+            Debug::debug($extract, "EXTRACT");
+            $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']][''];
 
+        }
+        
         if (!empty($data[$param['id_mysql_server']]['date']))
         {
             unset($data[$param['id_mysql_server']]['date']);
@@ -330,108 +367,114 @@ class Listener extends Controller
         //to upgrade 
         //        => SELECT if different update and then update
 
-        $db  = Sgbd::sql(DB_DEFAULT);
+
+        if (! empty($data))
+        {
+
+            $db  = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
-        //$this->logger->debug("SQL : $sql");
-        
-        Debug::sql($sql);
-        $res = $db->sql_query($sql);
+            $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
+            //$this->logger->debug("SQL : $sql");
+            
+            Debug::sql($sql);
+            $res = $db->sql_query($sql);
 
-        $in_base = array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
-        }
-        //$in_base[1]['jexistedansmesreve'] = "dream!";
+            $in_base = array();
+            while ($ob = $db->sql_fetch_object($res)) {
+                $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
+            }
+            //$in_base[1]['jexistedansmesreve'] = "dream!";
 
-        foreach ($data as $id_mysql_server => $err) {
+            foreach ($data as $id_mysql_server => $err) {
 
-            if (empty($in_base[$id_mysql_server])) {
-                $insert[$id_mysql_server] = $data[$id_mysql_server];
-                continue;
+                if (empty($in_base[$id_mysql_server])) {
+                    $insert[$id_mysql_server] = $data[$id_mysql_server];
+                    continue;
+                }
+
+                //move to special function
+
+                //INSERT
+                $insert[$id_mysql_server] = array_diff_key($data[$id_mysql_server], $in_base[$id_mysql_server]);
+
+                //$this->logger->debug("INSERT : ".print_r($insert[$id_mysql_server]));
+
+                //DELETE
+                $delete[$id_mysql_server] = array_diff_key($in_base[$id_mysql_server], $data[$id_mysql_server]);
+
+                //UPDATE
+                $val_a[$id_mysql_server]  = array_diff_assoc($data[$id_mysql_server], $in_base[$id_mysql_server]);
+                //$this->logger->debug("val A : ".print_r($val_a[$id_mysql_server]));
+
+                $val_b[$id_mysql_server]  = array_diff_assoc($in_base[$id_mysql_server], $data[$id_mysql_server]);
+                //$this->logger->debug("val B : ".print_r($val_a[$id_mysql_server]));
+
+
+                $update[$id_mysql_server] = array_intersect_key($val_a[$id_mysql_server], $val_b[$id_mysql_server]);
+
+                //$this->logger->notice("Variable has been updated : ".print_r($update[$id_mysql_server]));
             }
 
-            //move to special function
+            //insert
+            if (!empty($insert) && count($insert) > 0) {
+                Debug::debug($insert, "TO INSERT");
+                $elem_ins = array();
+                foreach ($insert as $id_mysql_server => $variables) {
+                    foreach ($variables as $variable => $value) {
+                        $elem_ins[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
+                    }
+                }
 
-            //INSERT
-            $insert[$id_mysql_server] = array_diff_key($data[$id_mysql_server], $in_base[$id_mysql_server]);
-
-            //$this->logger->debug("INSERT : ".print_r($insert[$id_mysql_server]));
-
-            //DELETE
-            $delete[$id_mysql_server] = array_diff_key($in_base[$id_mysql_server], $data[$id_mysql_server]);
-
-            //UPDATE
-            $val_a[$id_mysql_server]  = array_diff_assoc($data[$id_mysql_server], $in_base[$id_mysql_server]);
-            //$this->logger->debug("val A : ".print_r($val_a[$id_mysql_server]));
-
-            $val_b[$id_mysql_server]  = array_diff_assoc($in_base[$id_mysql_server], $data[$id_mysql_server]);
-            //$this->logger->debug("val B : ".print_r($val_a[$id_mysql_server]));
-
-
-            $update[$id_mysql_server] = array_intersect_key($val_a[$id_mysql_server], $val_b[$id_mysql_server]);
-
-            //$this->logger->notice("Variable has been updated : ".print_r($update[$id_mysql_server]));
-        }
-
-        //insert
-        if (!empty($insert) && count($insert) > 0) {
-            Debug::debug($insert, "TO INSERT");
-            $elem_ins = array();
-            foreach ($insert as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_ins[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
+                if (!empty($elem_ins)) {
+                    $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
+                    Debug::sql($sql);
+                    //$this->logger->debug("INSERT SQL : $sql");
+                    $db->sql_query($sql);
                 }
             }
 
-            if (!empty($elem_ins)) {
-                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
-                Debug::sql($sql);
-                //$this->logger->debug("INSERT SQL : $sql");
-                $db->sql_query($sql);
+            //delete
+            if (!empty($delete) && count($delete) > 0) {
+                Debug::debug($delete, "TO DELETE");
+                $elem_del = array();
+                foreach ($delete as $id_mysql_server => $variables) {
+                    foreach ($variables as $variable => $value) {
+                        $elem_del[] = 'SELECT id FROM global_variable WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
+                    }
+                }
+                if (!empty($elem_del)) {
+                    $sql = "DELETE FROM global_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
+                    Debug::sql($sql);
+                    //$this->logger->debug("DELETE SQL : $sql");
+                    $db->sql_query($sql);
+                }
             }
-        }
 
-        //delete
-        if (!empty($delete) && count($delete) > 0) {
-            Debug::debug($delete, "TO DELETE");
-            $elem_del = array();
-            foreach ($delete as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_del[] = 'SELECT id FROM global_variable WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
+            //update
+            if (!empty($update) && count($update) > 0) {
+                Debug::debug($update, "TO UPDATE");
+                $elem_upt = array();
+                foreach ($update as $id_mysql_server => $variables) {
+                    foreach ($variables as $variable => $value) {
+                        $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
+                    }
+                    $var_to_update = array_keys($variables);
+                    if (count($var_to_update) > 0)
+                    {
+                        $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
+                    }
+                }
+                if (!empty($elem_upt)) {
+                    $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
+                    Debug::sql($sql);
+                    //$this->logger->debug("UPDATE SQL : $sql");
+                    $db->sql_query($sql);
                 }
             }
-            if (!empty($elem_del)) {
-                $sql = "DELETE FROM global_variable WHERE id IN (" . implode(" UNION ", $elem_del) . ");";
-                Debug::sql($sql);
-                //$this->logger->debug("DELETE SQL : $sql");
-                $db->sql_query($sql);
-            }
-        }
+            //end to move
 
-        //update
-        if (!empty($update) && count($update) > 0) {
-            Debug::debug($update, "TO UPDATE");
-            $elem_upt = array();
-            foreach ($update as $id_mysql_server => $variables) {
-                foreach ($variables as $variable => $value) {
-                    $elem_upt[] = '(' . $id_mysql_server . ',"' . $variable . '", "' . $db->sql_real_escape_string($value) . '")';
-                }
-                $var_to_update = array_keys($variables);
-                if (count($var_to_update) > 0)
-                {
-                    $this->logger->notice("Variables to update (id_mysql_server: $id_mysql_server) : ".implode(',', $var_to_update));
-                }
-            }
-            if (!empty($elem_upt)) {
-                $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_upt) . " ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);";
-                Debug::sql($sql);
-                //$this->logger->debug("UPDATE SQL : $sql");
-                $db->sql_query($sql);
-            }
         }
-        //end to move
     }
 
 
@@ -464,7 +507,7 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="select b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
+        $sql ="select b.id as id_mysql_server, b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
         from ts_max_date a 
         inner join mysql_server b on a.id_mysql_server = b.id 
         INNER JOIN ts_file c on c.id = a.id_ts_file 

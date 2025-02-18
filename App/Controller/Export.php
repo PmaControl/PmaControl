@@ -21,7 +21,8 @@ class Export extends Controller
         "geolocalisation_continent", "geolocalisation_country");
     var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file","ts_variable","tag", "mysqlsys_config_export",
         "group", "environment", "daemon_main", "sharding", "ts_variable", "dot3_legend","worker_queue","docker_software",
-        "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial", "benchmark_config");
+        "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial", "benchmark_config",
+    "ts_type_override");
     var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
     function generateDump($param)

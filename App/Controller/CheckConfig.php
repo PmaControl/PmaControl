@@ -111,6 +111,9 @@ class CheckConfig extends Controller
                 //$id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
                 $data['show'] = false;
 
+
+                //debug($id_mysql_servers);
+
                 foreach ($id_mysql_servers as $id_server) {
 
                     $step1 = false;
@@ -144,9 +147,12 @@ class CheckConfig extends Controller
                     //in case server is not available we looking for in cache
                     if (in_array($id_mysql_server, $server_note_available) || ($alone === true && $step1 === false)) {
 
-                        //debug("cache");
+                        
+                        $sql = "SELECT variable_name as Variable_name, value as Value 
+                        FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
 
-                        $res = $db->sql_query("SELECT variable_name as Variable_name, value as Value FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;");
+                        $res = $db->sql_query($sql);
+                        //debug($sql);
                         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
                             $tmp                  = array();
@@ -154,7 +160,11 @@ class CheckConfig extends Controller
                             $tmp['Value']         = $arr['Value'];
                             $elems[]              = $tmp;
                         }
+
+                        //debug($elems);
                     }
+
+
 
                     //$id_number = 1;
                     //$resultat =$this->fetchData($elems, $id_mysql_server, $id_number);
@@ -199,7 +209,7 @@ class CheckConfig extends Controller
                                     $resultat[$id_server][$arr['Variable_name']."<i>__".$sous_variable."</i>"] = $sous_value;
                                 }
                             } else {
-                                $resultat[$id_server][$arr['Variable_name']] = (int)$arr['Value'];
+                                $resultat[$id_server][$arr['Variable_name']] = $arr['Value'];
                                 $data['show']                                = true;
                             }
                         } else {
@@ -221,6 +231,8 @@ class CheckConfig extends Controller
                 //sort($data['index']);
 
                 $data['resultat'] = $resultat;
+
+                //debug($data);
             }
         }
 

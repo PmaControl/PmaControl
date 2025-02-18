@@ -13,6 +13,7 @@ use App\Library\Tag;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
+use App\Controller\Dot3;
 
 class Mysql
 {
@@ -1006,5 +1007,33 @@ END IF;";
         } else {
             return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
+    }
+
+
+    static function getIdMySQLFromGalera($wsrep_incoming_addresses)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $data = Dot3::getIdMysqlServerFromGalera($wsrep_incoming_addresses);
+
+
+        foreach($data as $server)
+        {
+  
+            $elems = explode(':', $server);
+            $tabl_sql[] = "(SELECT id FROM mysql_server WHERE ip='".$elems[0]."' and port =".$elems[1].")";
+        }
+
+        $sql = implode( " UNION ", $tabl_sql);
+
+
+        $ids = array();
+        $res = $db->sql_query($sql);
+        while($ob = $db->sql_fetch_object($res)) {
+            $ids[] = $ob->id;
+        }
+
+        return $ids;
+
     }
 }
