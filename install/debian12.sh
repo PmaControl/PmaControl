@@ -55,7 +55,10 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 
 ./install-mariadb.sh -v 10.11 -p $password -d /srv/mysql -r
 
-apt-get -y install php8.2 apache2 graphviz php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
+apt-get -y install php8.2 apache2 php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
+apt -y install graphviz
+apt -y install libcairo2
+
 
 apt-get -y install mariadb-plugin-rocksdb 
 
