@@ -162962,15 +162962,15 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',0,1,1,'Integrate','integrateAll','',0);
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',0,1,1,'Listener','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',3993641,1,1,'Integrate','integrateAll','',0);
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',3993648,1,1,'Listener','checkAll','',0);
 INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',0,5,10,'Dot3','run','',0);
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',0,71,5,'Binlog','purgeAll','',0);
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',0,127,5,'Log','rotate','',0);
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',0,5,5,'Worker','addToQueue','1',0);
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',3993670,71,5,'Binlog','purgeAll','',0);
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',3993679,127,5,'Log','rotate','',0);
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',3993692,5,5,'Worker','addToQueue','1',0);
 INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',0,5,5,'Worker','addToQueue','3',0);
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',0,5,5,'Worker','addToQueue','2',0);
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',0,7,5,'Worker','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',3993704,5,5,'Worker','addToQueue','2',0);
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',3993719,7,5,'Worker','checkAll','',0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163079,19 +163079,19 @@ INSERT INTO `dot3_legend` VALUES (14,'NODE_ERROR','Out of order','#ffffff','#FF5
 INSERT INTO `dot3_legend` VALUES (15,'NODE_BUSY','Going down','#ffffff','brown','brown','dashed',3,'NODE','');
 INSERT INTO `dot3_legend` VALUES (16,'NODE_NOT_PRIMARY','Node probably desynced','#ffffff','Orange','Orange','solid',10,'NODE','');
 INSERT INTO `dot3_legend` VALUES (17,'NODE_DONOR','Node donnor','#ffffff','#00FF00','#00FF00','solid',11,'NODE','');
-INSERT INTO `dot3_legend` VALUES (18,'NODE_DONOR_DESYNCED','Node donor desynced','#ffffff','#e3ea12','#e3ea12','solid',11,'NODE','');
+INSERT INTO `dot3_legend` VALUES (18,'NODE_DONOR_DESYNCED','Node donor desynced','#ffffff','#337AB7','#337AB7','solid',11,'NODE','');
 INSERT INTO `dot3_legend` VALUES (19,'NODE_MANUAL_DESYNC','node desync manually','#ffffff','#0000ff','#0000ff','solid',12,'NODE','');
 INSERT INTO `dot3_legend` VALUES (20,'NODE_JOINER','node joining cluster','#ffffff','#000000','#000000','dashed',15,'NODE','');
 INSERT INTO `dot3_legend` VALUES (21,'GALERA_AVAILABLE','galera all ok','#ffffff','#008000','#008000','filled',1,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (22,'GALERA_DEGRADED','','#ffffff','#e3ea12','#e3ea12','filled',2,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (23,'GALERA_WARNING','N*2  node should be N*2+1','#ffffff','orange','orange','filled',3,'GALERA','');
-INSERT INTO `dot3_legend` VALUES (24,'GALERA_CRITICAL','only 2 node','#ffffff','#FF0000','#FF0000','filled',4,'GALERA','');
+INSERT INTO `dot3_legend` VALUES (24,'GALERA_CRITICAL','only 2 node','#ffffff','#008000','#008000','filled',4,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (25,'GALERA_EMERGENCY','only one node in galera','#ffffff','#FF0000','#FF0000','dashed',5,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (26,'GALERA_OUTOFORDER','galera HS','#ffffff','#FF0000','#000000','filled',6,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (27,'REPLICATION_BLACKOUT','Out of order','#ffffff','#000000','#000000','dashed',15,'REPLICATION','');
 INSERT INTO `dot3_legend` VALUES (28,'SEGMENT_OK','segment ok','#ffffff','#008000','#008000','dashed',1,'SEGMENT','');
-INSERT INTO `dot3_legend` VALUES (29,'SEGMENT_KO','segment out of order','#ffffff','#FF0000','#FF0000','dashed',2,'SEGMENT','');
-INSERT INTO `dot3_legend` VALUES (32,'SEGMENT_PARTIAL','un neud est hs','#ffffff','#FFA500','#FFA500','dashed',3,'SEGMENT','');
+INSERT INTO `dot3_legend` VALUES (29,'SEGMENT_KO','segment out of order','#ffffff','#FF0000','#FF5733','dashed',2,'SEGMENT','');
+INSERT INTO `dot3_legend` VALUES (32,'SEGMENT_PARTIAL','un neud est hs','#ffffff','#f8b400','#f8b400','dashed',3,'SEGMENT','');
 INSERT INTO `dot3_legend` VALUES (33,'NODE_INITIALIZED','Node initialized','#ffffff','#7FFF00','#7FFF00','solid',16,'NODE','');
 INSERT INTO `dot3_legend` VALUES (34,'NODE_WAITING','Waiting for SST','#ffffff','#00008B','#00008B','dashed',17,'NODE','');
 INSERT INTO `dot3_legend` VALUES (35,'NODE_RECEIVE_IST','Node receiving Incremental State Transfert','#ffffff','#ec971f','#ec971f','filled',5,'NODE','');
