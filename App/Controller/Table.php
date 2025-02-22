@@ -195,10 +195,8 @@ class Table extends Controller {
             $pos1 = Tablelib::findFieldPosition(array($id_mysql_server, $table_schema , $last_colone[$middle], $field1));
             $pos2 = self::$tables['table'][$indice_1]['column'][$field1]['target_position'];
 
-
             //debug(self::$main_table);
             //debug(self::$tables);
-
 
             $tmp = array();
             $tmp['constraint_table'] = $table_name;
@@ -298,8 +296,6 @@ class Table extends Controller {
             self::$tables['table'][$referenced]['color'] = Graphviz::getColor($referenced);
             self::$tables['table'][$referenced]['column'][$arr['referenced_column']]['color'] = Graphviz::getColor($arr['referenced_table']);
             self::$tables['table'][$referenced]['column'][$arr['referenced_column']]['position'] = Tablelib::findFieldPosition($options_2);
-
-        
 
             self::$tables['tables'][$arr['id_mysql_server']][$arr['constraint_schema']][$arr['constraint_table']]['field'][$arr['constraint_column']]['color'] = Graphviz::getColor($arr['referenced_table']);
             self::$tables['tables'][$arr['id_mysql_server__link']][$arr['referenced_schema']][$arr['referenced_table']]['field'][$arr['referenced_column']]['color'] = Graphviz::getColor($arr['referenced_table']);
@@ -404,7 +400,6 @@ class Table extends Controller {
                     break;
                 }
             }
-
 
             if (self::$main_table['nb_column_left'] === self::MAX_COLUMN)
             {
@@ -577,6 +572,8 @@ class Table extends Controller {
 
     }
 
+
+    // to remove and replace with the one from Graphiz
     function diluerCouleur($hex, $percent) {
         // Assurez-vous que le format hexadécimal est valide
         if (strlen($hex) != 7 || $hex[0] != '#') {

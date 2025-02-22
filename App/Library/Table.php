@@ -40,7 +40,6 @@ class Table
             $db = Mysql::getDbLink($id_mysql_server, "REMOTE");
             $default = Sgbd::sql(DB_DEFAULT);
 
-
             //to prevent drop table after get FKs
             
             /*   => to move at start if drop table 
@@ -70,8 +69,6 @@ class Table
                 $default->sql_query($sql);
 
                 //detroy link 
-
-
             }
             
             $sql = "DESCRIBE `".$table_schema."`.`".$table_name."`;";
@@ -92,7 +89,6 @@ class Table
             }
             
             Debug::debug(self::$table[$id_mysql_server][$table_schema][$table_name], "Table $table_schema.$table_name");
-        
         }
 
         return self::$table[$id_mysql_server][$table_schema][$table_name];
@@ -128,7 +124,6 @@ class Table
         return count($def);
     }
 
-
     static public function getCount($param)
     {
         Debug::parseDebug($param);
@@ -161,10 +156,8 @@ class Table
         $table_name = $param[2];
     }
 
-
     static public function importRealForeignKey($param)
     {
-
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
@@ -208,7 +201,6 @@ class Table
         }
     }
 
-
     static public function getTableWithFk($param)
     {
         $id_mysql_server = $param[0];
@@ -230,8 +222,5 @@ class Table
         }
 
         return $table_list;
-
     }
-
-
 }

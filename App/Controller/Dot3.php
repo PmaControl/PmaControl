@@ -48,7 +48,11 @@ class Dot3 extends Controller
     // build server
     static $build_server = array();
 
+    static $build_galera = array();
+
     static $config = array();
+
+    static $galera = array();
 
     var $logger;
 
@@ -97,18 +101,18 @@ class Dot3 extends Controller
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql",
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
                 "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_mysql_servers",
-                "auto_increment_increment", "auto_increment_offset", "log_slave_updates"
+                "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),array() , $date_request);
 
-        $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy
+        $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
                 FROM mysql_server a ".$versioning."
-                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy  
+                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
                 from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
                 ".$versioning2.";";
 
-        //Debug::sql($sql);
+        Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -153,7 +157,6 @@ class Dot3 extends Controller
         //stats_mysql_processlist
         //end
 
-
         $sql = "select * from mysql_database WHERE schema_name not in ('performance_schema','information_schema')";
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
@@ -185,7 +188,7 @@ class Dot3 extends Controller
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
 
-        Debug::debug($dot3_information, 'Dot_information');
+        //Debug::debug($dot3_information, 'Dot_information');
         
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
@@ -246,7 +249,6 @@ class Dot3 extends Controller
 
         Debug::debug($tmp_group, "MASTER SLAVE");
 
-
         return $tmp_group;
     }
 
@@ -257,10 +259,7 @@ class Dot3 extends Controller
         
         foreach($information['servers'] as $id_mysql_server => $server)
         {
-
-            Debug::debug($server, "SERVER is_proxy_SQL");
-
-
+            //Debug::debug($server, "SERVER is_proxy_SQL");
 
             if ( ! empty($server['is_proxysql']) && $server['is_proxysql'] != "1") {
                 continue;
@@ -288,10 +287,10 @@ class Dot3 extends Controller
     {
         $tmp_group = array();
 
-        $id_group = 0;
+        //$id_group = 0;  // replaced by $server['id_mysql_server'] for test
         foreach($information['servers'] as $id_mysql_server => $server)
         {
-            $id_group++;
+            //$id_group++;
             //$tmp_group[$idproxy] = array();
             if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
                 $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
@@ -300,22 +299,30 @@ class Dot3 extends Controller
                 foreach($servers as $ip_port)
                 {
                     if (!empty($information['mapping'][$ip_port])) {
-                        $tmp_group[$id_group][] = $information['mapping'][$ip_port];
+                        $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
                     }
                     else {
                         //autodetect autoadd Mysql::autodetect($server['id_mysql_server'], $ip_port);
                     }
                 }
-                $id_group++;
+                //$id_group++;
                 foreach($servers2 as $ip_port)
                 {
                     if (!empty($information['mapping'][$ip_port])) {
-                        $tmp_group[$id_group][] = $information['mapping'][$ip_port];
+                        $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
                     }
                     else {
                         //autodetect autoadd Mysql::autodetect($server['id_mysql_server'], $ip_port);
                     }
                 }
+
+                //self::$galera[$id_mysql_server] 
+            }
+
+            if (! empty($tmp_group[$server['id_mysql_server']])) {
+                $tmp_group[$server['id_mysql_server']] = array_unique($tmp_group[$server['id_mysql_server']]);
+                self::$galera[$server['id_mysql_server']] = $tmp_group[$server['id_mysql_server']];
+                //Debug::debug(self::$galera);
             }
         }
         return $tmp_group;
@@ -349,8 +356,18 @@ class Dot3 extends Controller
             // Ajouter au tableau de résultat
             $resultArray[$key + 1] = "$ip:$port";
         }
+        //Debug::debug($resultArray);
 
         return $resultArray;
+    }
+
+
+    public function test2($param)
+    {
+        Debug::parseDebug($param);
+
+        self::getIdMysqlServerFromGalera("gcomm://PIXID-MDB-MASTER1,PIXID-MDB-MASTER2,PIXID-MDB-MASTER3,PIXID-MDB-MASTER4");
+
     }
 
 
@@ -359,32 +376,39 @@ class Dot3 extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-
-
-
         $id_dot3_information = $this->generateInformation($param);
         
         //$id_dot3_information = 2356819;
         $info = self::getInformation($id_dot3_information);
 
-        
         //TODO : add if date > now => return true to not was time to regenerate dot for nothing
 
         $groups = $this->getGroup(array($id_dot3_information));
 
-        Debug::debug($groups, "List of group ");
+        //Debug::debug($groups, "List of group ");
 
         foreach($groups as $group)
         {
+            self::$build_galera = array();
             self::$build_ms = array();
             self::$build_server = array();
 
-            $this->buildLink(array($id_dot3_information, $group));
+            //Debug::debug($group);
+            
+
+            //Debug::debug(self::$build_galera);
+
             $this->buildServer(array($id_dot3_information, $group));
+
+            // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
+            $this->buildGaleraCluster(array($id_dot3_information, $group));
+
+            $this->buildLink(array($id_dot3_information, $group));
+            //Debug::debug($group, "GROUP");
+
             //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
             $this->linkHostGroup(array($id_dot3_information, $group));
-            
-            
+
             $dot = $this->writeDot();
 
             $reference = md5(json_encode($group));
@@ -401,7 +425,6 @@ class Dot3 extends Controller
         $md5 = md5($dot);
         $dot3_graph = array();
         $commit = Git::getCurrentCommit();
-
 
         $sql = "SET AUTOCOMMIT=0;";
         $res = $db->sql_query($sql);
@@ -420,11 +443,8 @@ class Dot3 extends Controller
             $this->logger->emergency("ID : ".$id_dot3_graph);
         }
         
-        
-
         if (empty($id_dot3_graph))
         {
-
             $images = getimagesize(str_replace(".svg",".png",$file_name));
 
             $width= $images[0];
@@ -438,7 +458,7 @@ class Dot3 extends Controller
             $dot3_graph['dot3_graph']['commit'] = $commit['build'];
 
             $dot3_graph['dot3_graph']['width'] = $width;
-            $dot3_graph['dot3_graph']['commit'] = $height;
+            $dot3_graph['dot3_graph']['height'] = $height;
 
             $id_dot3_graph = $db->sql_save($dot3_graph);
         }
@@ -458,7 +478,6 @@ class Dot3 extends Controller
 
         $id_dot3_cluster = $db->sql_save($dot3_cluster);
 
-
         foreach($group as $id_mysql_server)
         {
             $dot3_cluster__mysql_server = array();
@@ -471,18 +490,20 @@ class Dot3 extends Controller
         $sql = "COMMIT";
        //$sql ="ROLLBACK";
         $res = $db->sql_query($sql);
-
     }
 
     public function writeDot()
     {
-        
         $dot = '';
         $dot .= Graphviz::generateStart();
 
         foreach(self::$build_server as $server) {
+
+            //Debug::debug($server);
             $dot .= Graphviz::generateServer($server);
-        }   
+        }
+
+        $dot .= Graphviz::generateGalera(self::$build_galera);
     
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
@@ -520,39 +541,31 @@ class Dot3 extends Controller
             if (is_scalar($v)) {
                 $lst[] = $v;
             } elseif (is_array($v)) {
-                $lst = array_merge($lst, $this->array_values_recursive($v)
-                );
+                $lst = array_merge($lst, $this->array_values_recursive($v));
             }
         }
         return $lst;
     }
 
-
-
     public function getGroup($param)
     {
         Debug::parseDebug($param);
 
-
         $id_dot3_information = $param[0];
-        
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
-        Debug::debug($galera, "GALERA");
-
+        //Debug::debug($galera, "GALERA");
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql));
 
-
-        Debug::debug($group, "GROUP");
+        //Debug::debug($group, "GROUP");
         //die();
         return $group;
     }
-
 
     public function buildLink($param)
     {
@@ -693,7 +706,7 @@ class Dot3 extends Controller
                 $tmp['error'] = $server['mysql_error'];
             }
             else
-            {
+            { // il faudrait ajouter si ok et +1 minute sans monitoring (avec le serveur le récent)
                 $tmp = self::$config['NODE_BUSY'];
             }
 
@@ -740,16 +753,12 @@ class Dot3 extends Controller
         $group = $param[1];
         $dot3_information = self::getInformation($id_dot3_information);
 
-        
-
         foreach(self::$build_server as $id_mysql_server => $server)
         {
-
             if (empty($server['is_proxysql']))
             {
                 continue;
             }
-
 
             if (empty($server['is_proxysql']) && $server['is_proxysql'] != "1") {
                 continue;
@@ -789,7 +798,6 @@ class Dot3 extends Controller
                 
                 $port = crc32($hostgroup['hostgroup_id'].':'.$host);
                 
-                
                 //$tmp['arrow'] = '"'.$id_mysql_server.':hg'.$i.'" -> "'.
                 $id_mysql_server_target.':target"';
                 $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':target';
@@ -798,7 +806,6 @@ class Dot3 extends Controller
                 $tmp['options']['arrowtail']= 'crow';
                 $tmp['options']['arrowhead']= 'none';
 
-                
                 if ($hostgroup['status'] != "ONLINE")
                 {
                     $tmp['options']['label'] = ucfirst(strtolower($hostgroup['status']));
@@ -809,7 +816,6 @@ class Dot3 extends Controller
                     //$tmp['options']['taillabel'] = "sfhg";
                 }
 
-                
                 self::$build_ms[] = $tmp;
             }
         }
@@ -825,7 +831,6 @@ class Dot3 extends Controller
         $res = $db->sql_query($sql);
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-
             self::$config[$arr['const']] = $arr;
         }
     }
@@ -1077,20 +1082,155 @@ class Dot3 extends Controller
 
     public function show($param)
     {
-
         $id_dot3_information = 2356819;
 
-
-
         $this->run($id_dot3_information);
-
-
     }
-
 
     public function buildGaleraCluster($param)
     {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
 
+        //c'est dégeu mais j'ai pas d'autres idées sur le moment
+        $galera = $this->array_merge_group(array_merge(self::$galera));
+        
+        
+        //Debug::debug($group);
+
+        $filteredClusters = array();
+
+        foreach ($galera as $id => $cluster) {
+            // Si tous les éléments du cluster sont dans le groupe (différence vide)
+            if (empty(array_diff($cluster, $group))) {
+                // Pour éliminer les doublons, on trie le cluster
+
+
+
+                
+                // if we have exact same clsuter with same IP / and Cluster_name we use wsrep_cluster_state_uuid if available
+                $cluster_uuid =  array(); 
+                foreach($cluster as $id_mysql_server)
+                {
+                    if (isset($dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid']))
+                    {
+                        $server_uuid = $dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid'];
+                        $cluster_uuid[$server_uuid][] = $id_mysql_server;
+                    }
+                }
+
+                switch(count($cluster_uuid))
+                {
+                    case 0: //for old version of Galera Cluster
+                        //need imporvement to fix in case of 2 old cluster and iterate from node list and remove each node until the list will be empty
+                        //now i don't think we will go new technology with docker and k8s associated with MariaDB 5.5 or 10.0 but it's can happen
+
+                        //il faudrait extraire les id_mysql__server 
+                        $sorted = $cluster;
+                        sort($sorted);
+                        // Crée une clé unique basée sur les membres triés
+                        $key = implode('-', $sorted);
+
+                        $filteredClusters[$key] = $sorted;
+                    break;
+
+                    default:
+
+                        foreach($cluster_uuid as $server_uuid => $sub_cluster)  {
+                            $filteredClusters[$server_uuid] = $sub_cluster;
+                        }
+                    break;
+                }
+                //Debug::debug($filteredClusters);
+            }
+        }
+
+        //Debug::debug($filteredClusters);
+        foreach($filteredClusters as $id_cluster => $cluster)
+        {
+            $server = $dot3_information['information']['servers'];
+
+            self::$build_galera[$id_cluster]["name"] = $server[$cluster[0]]['wsrep_cluster_name'];;
+            self::$build_galera[$id_cluster]["id_cluster"] = $id_cluster;
+
+            $available = 0;
+            $total_node = 0;
+            $sst_method = array();
+            $version = array();
+            foreach($cluster as $id_mysql_server)
+            {
+                $elems = $server[$id_mysql_server];
+                $segment = self::extractProviderOption($elems['wsrep_provider_options'], "gmcast.segment" );
+
+                Debug::debug($elems);
+
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['status'] = $elems['wsrep_cluster_status'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['state'] = $elems['wsrep_local_state_comment'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['desync'] = $elems['wsrep_desync'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $elems['mysql_available'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['sst_method'] = $elems['wsrep_sst_method'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $elems['wsrep_provider_version'];
+
+                $output_array = array();
+                preg_match('/\((\w+)\)/', $elems['wsrep_provider_version'], $output_array);
+
+
+                $sst_method[] = $elems['wsrep_sst_method'];
+                if (!empty($output_array[1])) {
+                    $version[] = $output_array[1];
+                }
+                else {
+                    //throw exception and log
+                }
+
+                // test case
+                if ($elems['mysql_available'] === "1"){
+                    $available++;
+                }
+                $total_node++;
+            }
+
+            self::$build_galera[$id_cluster]["members"] = $total_node;
+            self::$build_galera[$id_cluster]["sst_method"] = implode(",",array_unique($sst_method));
+            self::$build_galera[$id_cluster]["wsrep_provider_version"] = implode(",",array_unique($version));
+            
+
+            self::$build_galera[$id_cluster]["node_available"] = $available;
+
+            if ($available === 0) {
+                self::$build_galera[$id_cluster]['config'] = 'GALERA_OUTOFORDER';
+            }else if ($available === 1) {
+                self::$build_galera[$id_cluster]['config'] = 'GALERA_EMERGENCY';
+            }else if($available === 2) {
+                self::$build_galera[$id_cluster]['config'] = 'GALERA_CRITICAL';
+            }else if($available % 2 === 0) {
+                self::$build_galera[$id_cluster]['config'] = 'GALERA_NOTICE';
+            }else if ($available % 2 === 1){
+                self::$build_galera[$id_cluster]['config'] = 'GALERA_AVAILABLE';
+            }
+
+            Debug::debug($available);
+
+        }
+
+        //Debug::debug(self::$build_galera);
+        //Debug::debug(($dot3_information));
+    }
+
+    //move to lib/Galera.php
+    static public function extractProviderOption($wsrep_provider_options, $variable)
+    {
+        preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
+
+        if (isset($output_array[1])) {
+            return $output_array[1];
+        } else {
+            // il faudrait prevoir un mode stric afin de catch tous les problemes
+            //throw new \Exception("Impossible to find : ".$variable." in (".$wsrep_provider_options.")");
+            return 0;
+            
+        }
     }
 
 }

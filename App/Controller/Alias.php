@@ -54,7 +54,6 @@ class Alias extends Controller
      */
     public function updateAlias($param)
     {
-
         $this->view = false;
 
         Debug::parseDebug($param);
@@ -64,7 +63,6 @@ class Alias extends Controller
 
         Debug::debug($host, "HOST");
         
-
         $alias_to_add = array();
 
         foreach ($host as $key => $elem) {
@@ -98,6 +96,9 @@ class Alias extends Controller
                 }
             }
         }
+
+        $this->addHostname($param);
+        $this->addAliasFromHostname($param);
 
         if (!IS_CLI) {
             header("location: ".LINK."alias/index");
@@ -222,14 +223,56 @@ class Alias extends Controller
         Debug::debug($param);
         
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id, hostname, port FROM mysql_server";
+        $sql = "INSERT INTO alias_dns (id_mysql_server, dns, port)
+        SELECT ms.id, ms.hostname, ms.port
+        FROM mysql_server ms
+        LEFT JOIN alias_dns ad 
+            ON ms.hostname = ad.dns AND ms.port = ad.port
+        WHERE ad.dns IS NULL;";
 
-        $res = $db->sql_query($sql);
-        while ($ob = $db->sql_fetch_object($res))
+        $db->sql_query($sql);
+
+    }
+
+    public function addAliasFromHostname($param)
+    {
+        $this->view = false;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        Debug::parseDebug($param);
+        $hostnames = $this->getExtraction(array("variables::hostname","variables::port", "variables::is_proxysql" ));
+
+        foreach($hostnames as $hostname)
         {
-            $sql2 = "INSERT IGNORE alias_dns (id_mysql_server, dns, port) VALUES (".$ob->id.",'".$ob->hostname."', ".$ob->port.");";
-            Debug::sql($sql);
-            $db->sql_query($sql2);
+            if (!empty($hostname['is_proxysql']) && $hostname['is_proxysql'] === "1") {
+                continue;
+            }
+
+            $sql = "SELECT id,id_mysql_server from alias_dns WHERE dns='".$hostname['_HOST']."' and port =".$hostname['_PORT'].";";
+            
+            $res = $db->sql_query($sql);
+
+            if ( $db->sql_num_rows($res) > 0) {
+            
+                while( $ob = $db->sql_fetch_object($res) )  {
+
+                    Debug::debug($ob);
+
+                    if ($ob->id_mysql_server != $hostname['id_mysql_server'])
+                    {
+                        $sql2 = "UPDATE alias_dns SET id_mysql_server=".$hostname['id_mysql_server']." dns='".$hostname['_HOST']."' and port =".$hostname['_PORT']." WHERE id=".$ob->id.";";
+                        Debug::sql($sql2);
+                        $db->sql_query($sql2);
+                    }
+                }
+            }
+            else {
+                $sql3 = "INSERT INTO alias_dns (id_mysql_server,dns,port) VALUES (".$hostname['id_mysql_server'].",'".$hostname['_HOST']."' ,".$hostname['_PORT'].");";
+                Debug::sql($sql3);
+                $db->sql_query($sql3);
+            }
         }
+        Debug::debug($hostname);
     }
 }
