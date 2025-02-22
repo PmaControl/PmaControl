@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Extraction2;
 use App\Library\Graphviz;
 use Glial\Synapse\Controller;
 use Glial\Synapse\FactoryController;
@@ -21,13 +22,14 @@ class Index extends Controller {
 */
     public function buildCash($param)
     {
-
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "TRUNCATE TABLE `index_stats`";
         $db->sql_query($sql);
         
+        $servers = Extraction2::display(array("mysql_available"));
+        //Debug::debug($servers);
 
         $sql = "SELECT * FROM mysql_database where schema_name NOT IN ('mysql', 'information_schema', 'performance_schema') ;";
         Debug::sql($sql);
@@ -35,6 +37,11 @@ class Index extends Controller {
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
+            // to prevent mysql server who are not available right now
+            if (empty($servers[$ob->id_mysql_server]['mysql_available'])){
+                continue;
+            }
+
             $db2 = Mysql::getDbLink($ob->id_mysql_server, "IMPORT");
             $db2->sql_select_db($ob->schema_name);
 
@@ -116,14 +123,14 @@ class Index extends Controller {
                     $redundant_indexes = $this->IsRedundantIndexes($ob->id_mysql_server,$ob->schema_name, $table, $ob3->INDEX_NAME );
                     $unused_indexes = $this->IsUnusedIndexes($ob->id_mysql_server,$ob->schema_name, $table, $ob3->INDEX_NAME);
 
-                    Debug::debug($total_size, "TOTAL SIZE");
+                    //Debug::debug($total_size, "TOTAL SIZE");
 
 
                     $sql4 = "INSERT INTO `index_stats` VALUES(NULL,".$ob->id_mysql_server.", ".$ob->id.",0, '".$ob->schema_name."','".$table."', '".$ob3->INDEX_NAME."', '".$ob3->COLUMNS."',
                      '".$ob3->CARDINALITY."', '".$ob3->DATA_TYPE."', '".$ob3->CHARACTER_MAXIMUM_LENGTH."', ".$ob3->INDEX_SIZE_BYTES.", ".$total_size.", 
                      $redundant_indexes, $unused_indexes );";
 
-                    Debug::sql($sql4);
+                    //Debug::sql($sql4);
 
                     $db->sql_query($sql4);
                 }

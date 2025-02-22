@@ -86,6 +86,7 @@ class Graphviz
         $db2 = Sgbd::sql(DB_DEFAULT);
         $db = Mysql::getDbLink($id_mysql_server, "EXPORT");
 
+        // a déplacer dans la partie App
         $sql = "SELECT ROW_FORMAT as row_format, ENGINE as engine, TABLE_ROWS as table_rows
         FROM `INFORMATION_SCHEMA`.`TABLES` 
         WHERE TABLE_SCHEMA ='".$table_schema."' AND TABLE_NAME = '".$table_name."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED')";
@@ -98,6 +99,7 @@ class Graphviz
             $table_rows = $ob->table_rows;
         }
 
+        // idem
         $sql2 = "SELECT  COLUMN_NAME as colone, count(1) as cpt, group_concat(SEQ_IN_INDEX) as seq
         FROM information_schema.STATISTICS 
         WHERE TABLE_SCHEMA = '".$table_schema."' AND TABLE_NAME = '".$table_name."'  group by COLUMN_NAME;";
@@ -291,12 +293,14 @@ class Graphviz
 
     static public function generateStart($param=array())
     {
-        $ret = 'digraph structs {rankdir=LR;  splines="compound"; margin="0.104,0"; fontname="arial" '.PHP_EOL; 
+        //margin="0.104,0.0'.$rand.'";
+        $ret = 'digraph structs {rankdir=LR;  splines="compound";  fontname="arial" '.PHP_EOL; 
         //$ret = 'digraph structs {rankdir=LR; layout="sfdp"; splines="ortho"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
         //$ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;
         $ret .= 'node [shape=none  fontname = "Arial"];'.PHP_EOL;
             //fwrite($fp, "nodesep=2;".PHP_EOL);
+
         return $ret;
     }
     
@@ -371,7 +375,7 @@ class Graphviz
         $c_r = hexdec(substr($hex, 0, 2));
         $c_g = hexdec(substr($hex, 2, 2));
         $c_b = hexdec(substr($hex, 4, 2));
-       
+        
         return (($c_r * 299) + ($c_g * 587) + ($c_b * 114)) / 1000;
     }
 
@@ -385,6 +389,16 @@ class Graphviz
         file_put_contents($file_name, $svg);
     }
 
+    /**
+     * Remplace les liens d'images dans un fichier SVG.
+     *
+     * Cette fonction lit un fichier SVG, remplace les chemins d'images générés 
+     * par Dot par de nouveaux chemins d'images, puis réécrit le fichier SVG 
+     * avec les modifications.
+     *
+     * @param string $file_name Le chemin du fichier SVG à modifier.
+     * @return void
+     */
 
     static public function replaceLinkImg($file_name)
     {
@@ -472,9 +486,9 @@ class Graphviz
         }
 
         if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
-            $image_logo = 'galera.svg';
+            //$image_logo = 'galera.svg';
         }
-
+        
         
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
@@ -486,29 +500,53 @@ class Graphviz
 
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"><b>'.$server['display_name']."-3-".static::getBrightness($server['color']).'</b></font></td></tr>';
+        <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
-
-        
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.$server['ip'].':'.$server['port'].'</td></tr>'.PHP_EOL;
+
+        $nat = '';
+        if ($server['port_real'] != $server['port']){
+            $nat = ' <b>(NAT)</b>';
+        }
+
+        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.$server['ip_real'].':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
         if (empty($server['is_proxysql']) )
         {
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
+            if ($server['time_zone'] === "SYSTEM") {
+                $time_zone = $server['time_zone']. " (".$server['system_time_zone'].")";
+            }
+
+            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].'</td></tr>'.PHP_EOL;
+
+            $debug = '';
+
+            //force le refresh du DOT
+            if (Debug::$debug === true) {
+                $rand = rand(1,100);
+                $debug  = ' (Debug : '.$rand.')';
+            }
+
+            
+            $ROW = '';
+            if (strtolower($server['binlog_format'])=== "row")
+            {
+                $ROW = "(".$server['binlog_row_image'].")";
+            }
+
+            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
-
             $return .= '</table>'.PHP_EOL;
-    
-            $return .= '</td></tr><tr><td>';
-
+            $return .= '</td></tr>'.PHP_EOL;
             
+
+            /*
+            $return .= '<tr><td>';
             $return .= '<table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
             <tr>
                 <td align="left" bgcolor="grey">Schema</td>
@@ -516,7 +554,6 @@ class Graphviz
                 <td bgcolor="grey">R</td>
             </tr>'.PHP_EOL;
             
-
             if (! empty($server['mysql_database']))
             {
                 foreach($server['mysql_database'] as $database)
@@ -542,12 +579,12 @@ class Graphviz
             }
 
             $return .= '</table>'.PHP_EOL;
-            
             $return .= '</td></tr>'.PHP_EOL;
+            */
+
+
             $return .= '</table>'.PHP_EOL;
 
-
-            
             $return .= '</td></tr></table>> ];'.PHP_EOL;
 
             //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Auto_increment')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
@@ -592,7 +629,6 @@ class Graphviz
                         else{
                             $extra = ' 🔥';
                         }
-
 
                         break;
                     }
@@ -708,9 +744,6 @@ class Graphviz
             }
         }
 
-
-
-
         return $APP;
     }*/
 
@@ -722,7 +755,6 @@ class Graphviz
         $return .= 'tooltip="'.$display_name.'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
         <tr><td port="target" bgcolor="'.$box_color.'">
-        
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>';
 
         $return .= $body;
@@ -746,26 +778,143 @@ class Graphviz
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
-
-
-
-    static function startCluster($cluster_name, $type='galera', $nodes=array() )
+    static function startCluster($type, $elems )
     {
-        if (! in_array($type, array('galera','groupe', 'xdb', 'ndb')))
+        $crc32 = crc32(json_encode($elems));
+
+        if (! in_array($type, array('galera','segment', 'group', 'xdb', 'ndb')))
         {
             throw new \Exception('Impossible to find this cluster');
         }
 
+        $return = PHP_EOL;
+        $return .= "subgraph cluster_cluster_".$crc32." {".PHP_EOL;
+        //$return .= 'label = <<b>Galera : '.$cluster_name.'</b>>;'.PHP_EOL;
 
-        $return = "subgraph cluster_cluster_cats {".PHP_EOL;
 
+        $return .= "penwidth = 4;".PHP_EOL;
+        $return .= 'fontname = "Arial";'.PHP_EOL;
+        $return .= 'fontsize=8;'.PHP_EOL;
+        
+        
+        
+        return $return;
     }
 
 
-    static function endClsuter()
+    static function endCluster()
     {
+        $return = "}".PHP_EOL;
+        return $return;
+    }
+
+    static function generateGalera($all_galera)
+    {
+        ///Debug::debug($all_galera);
+        $return = '';
+
+        foreach($all_galera as $galera)
+        {
+            // need to know availibility of all node
+
+            Debug::debug($galera);
+            //start cluster
+            $return .= self::startCluster( "galera", $galera );
+            
+            $image_server  = ROOT."/App/Webroot/image/dot/";
+
+            $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <tr><td port="target" bgcolor="'.'#000000'.'">
+            
+            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
+    
+            <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
+            $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.'#000000'.'">
+            <font color="'.'#FFFFFF'.'"><b>'.$galera['name'].'</b></font></td></tr>';
+
+            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server."galera.svg".'" /></td>
+            <td bgcolor="lightgrey" width="100" align="left">'.'Nodes available'.' : <b>'.$galera['node_available'].'/'.$galera['members'].'</b> - '.$galera['wsrep_provider_version'].'</td></tr>';
+            $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.'wsrep_sst_method'.' : '.$galera['sst_method'].'</td></tr>'.PHP_EOL;
+
+            $return .= "</table>";
+            $return .= "</td></tr></table>";
+            $return .= "</td></tr></table>>";
+
+            $return .= 'tooltip = "Galera : '.$galera['name'].'";'.PHP_EOL;
+            $return .= "rank = same;".PHP_EOL;
+            $return .= "penwidth = 4;".PHP_EOL;
 
 
+            Debug::debug($galera['config']);
+            
+            $background = self::diluerCouleur(Dot3::$config[$galera['config']]['color'], 60);
+            
 
+            $return .= 'color = "'.Dot3::$config[$galera['config']]['color'].'";'.PHP_EOL; // Bordure verte
+            $return .= "style = filled;".PHP_EOL; // Active le remplissage
+            $return .= 'fillcolor = "'.$background.'"'.PHP_EOL; // Fond blanc
+            $return .= 'href = "'.LINK.'GaleraCluster/view/'.$galera['id_cluster'].'";'.PHP_EOL;
+
+            //$return .= 'ranksep = "1"'.PHP_EOL; 
+            //$return .= 'nodesep = "1"'.PHP_EOL; 
+
+
+            $display_segment = false;
+            if (count($galera['node']) == 2) {
+                $display_segment = true;
+            }
+
+            ksort($galera['node']);
+
+            foreach($galera['node'] as $segment => $nodes)
+            {
+                if ($display_segment === true){
+                    $return .= self::startCluster( "segment", $nodes );
+                    $return .= "style = dashed;".PHP_EOL;
+                    $return .= 'label = "segment : '.$segment.'"'.PHP_EOL;
+                    $return .= 'tooltip = "Segment number : '.$segment.'"'.PHP_EOL; // pourquoi ca n'est pas pris en compte ???
+                    $return .= 'label = "Segment number : '.$segment.'"'.PHP_EOL;
+                    
+                    $return .= 'href = "'.LINK.'GaleraCluster/view/'.$galera['id_cluster'].'";'.PHP_EOL;
+                }
+
+                foreach($nodes as $id_mysql_server => $node ) {
+                    $return .= $id_mysql_server.";".PHP_EOL;
+                }
+
+                if ($display_segment === true){
+                    $return .= self::endCluster();
+                }
+            }
+            //Debug::debug($galera);
+
+
+            //end cluster
+            $return .= self::endCluster();
+        }
+
+        return $return;
+    }
+
+    static public function diluerCouleur($hex, $percent) {
+        // Assurez-vous que le format hexadécimal est valide
+        if (strlen($hex) != 7 || $hex[0] != '#') {
+            return 'Format de couleur invalide.';
+        }
+    
+        // Convertir les composantes hexadécimales en valeurs décimales
+        $r = hexdec(substr($hex, 1, 2));
+        $g = hexdec(substr($hex, 3, 2));
+        $b = hexdec(substr($hex, 5, 2));
+    
+        // Calculer la nouvelle couleur en augmentant la luminosité
+        $nouveau_r = min(255, $r + (255 - $r) * $percent / 100);
+        $nouveau_g = min(255, $g + (255 - $g) * $percent / 100);
+        $nouveau_b = min(255, $b + (255 - $b) * $percent / 100);
+    
+        // Reconvertir les valeurs RGB en hexadécimal
+        $nouveau_hex = sprintf("#%02x%02x%02x", $nouveau_r, $nouveau_g, $nouveau_b);
+    
+        return $nouveau_hex;
     }
 }

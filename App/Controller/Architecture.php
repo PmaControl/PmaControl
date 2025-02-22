@@ -35,11 +35,11 @@ class Architecture extends Controller
     SELECT MAX(id_dot3_information) AS max_id_dot3_information
     FROM dot3_cluster
 )
-SELECT dg.*
+SELECT dg.*, (dg.height * dg.width) as area
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
 JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information
-ORDER BY  dg.height DESC, dg.width DESC
+ORDER BY  area DESC
 ;";
 
 

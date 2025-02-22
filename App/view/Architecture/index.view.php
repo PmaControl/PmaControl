@@ -11,13 +11,12 @@ echo '</div>';
 <div class="panel panel-primary">
             <div class="panel-heading">
                 <h3 class="panel-title">
-                    <?= __("Topology") ?>
+                    <?= __("Topology") ?> <a style="float:right" href="<?= LINK ?>dot3/download/" class="btn btn-success btn-xs" role="button"> Download JSON for debug <span class="glyphicon glyphicon-download-alt"></span></a>
+                    
                     </h3>
             </div>
             <div class="mpd">
 <?php
-
-
 
 echo '<div style="float:right; border:#000 0px solid">';
 \Glial\Synapse\FactoryController::addNode("Dot2", "legend", array());
