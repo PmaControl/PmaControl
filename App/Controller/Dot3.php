@@ -93,12 +93,12 @@ class Dot3 extends Controller
 
         // "status::wsrep_cluster_status"  => not exist anymore ?
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone", "variables::wsrep_desync", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
+                "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
-                "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
+                "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
@@ -112,8 +112,6 @@ class Dot3 extends Controller
                 from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
                 ".$versioning2.";";
 
-        Debug::sql($sql);
-
         $res = $db->sql_query($sql);
 
         $server_mysql = array();
@@ -126,7 +124,6 @@ class Dot3 extends Controller
         }
         $data['servers'] = array_replace_recursive($all, $server_mysql);
 
-        
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning AND a.id_mysql_server IS NOT NULL;";
         Debug::debug($sql);
 
@@ -1093,6 +1090,8 @@ class Dot3 extends Controller
         $group = $param[1];
         $dot3_information = self::getInformation($id_dot3_information);
 
+        //Debug::debug($dot3_information);
+
         //c'est dégeu mais j'ai pas d'autres idées sur le moment
         $galera = $this->array_merge_group(array_merge(self::$galera));
         
@@ -1158,31 +1157,64 @@ class Dot3 extends Controller
             $total_node = 0;
             $sst_method = array();
             $version = array();
+            $build = array();
+            $wsrep_slave_threads = array();
+
             foreach($cluster as $id_mysql_server)
             {
                 $elems = $server[$id_mysql_server];
                 $segment = self::extractProviderOption($elems['wsrep_provider_options'], "gmcast.segment" );
 
-                Debug::debug($elems);
-
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['status'] = $elems['wsrep_cluster_status'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['state'] = $elems['wsrep_local_state_comment'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['desync'] = $elems['wsrep_desync'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_cluster_status'] = $elems['wsrep_cluster_status'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_local_state_comment'] = $elems['wsrep_local_state_comment'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_desync'] = $elems['wsrep_desync'];
                 self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $elems['mysql_available'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['sst_method'] = $elems['wsrep_sst_method'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_sst_method'] = $elems['wsrep_sst_method'];
                 self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $elems['wsrep_provider_version'];
+                
+                if (! isset(self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'])) {
+                    self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] = 0;
+                }
+
+                if ($elems['mysql_available'] == "1" && !empty($elems['wsrep_desync']) && strtolower($elems['wsrep_desync']) === "on") {
+
+                    self::setThemeToServer('NODE_DONOR_DESYNCED', $id_mysql_server);
+                }
+
+                self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += $elems['mysql_available'];
+
+                $wsrep_slave_threads[] = $elems['wsrep_slave_threads'];
+                $sst_method[] = $elems['wsrep_sst_method'];
 
                 $output_array = array();
-                preg_match('/\((\w+)\)/', $elems['wsrep_provider_version'], $output_array);
-
-
-                $sst_method[] = $elems['wsrep_sst_method'];
+                preg_match('/\d+\.(\d+)\./', $elems['wsrep_provider_version'], $output_array);
                 if (!empty($output_array[1])) {
                     $version[] = $output_array[1];
+                    
+                    
                 }
                 else {
                     //throw exception and log
                 }
+
+                $output_array = array();
+                preg_match('/\((\w+)\)/', $elems['wsrep_provider_version'], $output_array);
+                if (!empty($output_array[1])) {
+                    
+                    $build[] = $output_array[1];
+                    
+                }
+                else {
+                    //throw exception and log
+                }
+
+                
+
+                
+                
+
+                
+
 
                 // test case
                 if ($elems['mysql_available'] === "1"){
@@ -1191,10 +1223,32 @@ class Dot3 extends Controller
                 $total_node++;
             }
 
+            foreach(self::$build_galera[$id_cluster]["segment"] as $id_segment => $segment)
+            {
+                $total_node_insegment = count(self::$build_galera[$id_cluster]["node"][$id_segment]);
+
+                //Debug::debug($total_node_insegment,"SDSHSRTHSRTHTRHSRTH");
+
+                switch ($segment['nb_available']) {
+
+                    case 0:
+                        self::$build_galera[$id_cluster]["segment"][$id_segment]['theme'] = 'SEGMENT_KO';
+                        break;
+                    case $total_node_insegment:
+                        self::$build_galera[$id_cluster]["segment"][$id_segment]['theme'] = 'SEGMENT_OK';
+                        break;
+                    default:
+                        self::$build_galera[$id_cluster]["segment"][$id_segment]['theme'] = 'SEGMENT_PARTIAL';
+                        break;
+                }
+            }
+
             self::$build_galera[$id_cluster]["members"] = $total_node;
             self::$build_galera[$id_cluster]["sst_method"] = implode(",",array_unique($sst_method));
-            self::$build_galera[$id_cluster]["wsrep_provider_version"] = implode(",",array_unique($version));
-            
+            self::$build_galera[$id_cluster]["wsrep_provider_version"] = implode(",",array_unique($build));
+            self::$build_galera[$id_cluster]["galera_version"] = implode(",",array_unique($version));
+            self::$build_galera[$id_cluster]["wsrep_slave_threads"] = implode(",",array_unique($wsrep_slave_threads));
+
 
             self::$build_galera[$id_cluster]["node_available"] = $available;
 
@@ -1210,7 +1264,7 @@ class Dot3 extends Controller
                 self::$build_galera[$id_cluster]['config'] = 'GALERA_AVAILABLE';
             }
 
-            Debug::debug($available);
+            //Debug::debug($available);
 
         }
 
@@ -1231,6 +1285,31 @@ class Dot3 extends Controller
             return 0;
             
         }
+    }
+
+    static function setThemeToServer($theme, $id_mysql_server)
+    {
+        if (empty(self::$config[$theme])) {
+            // error
+            THROW new \Exception("Impossible to find theme : $theme");
+        }
+
+        if (empty(self::$build_server[$id_mysql_server])) {
+            THROW new \Exception("Impossible to find id_mysql_server : $id_mysql_server");
+        }
+
+
+        
+
+        $tmp = self::$config[$theme];
+
+        Debug::debug($tmp, "COLOR");
+
+        $tmp2 = array_merge( self::$build_server[$id_mysql_server], $tmp);
+        self::$build_server[$id_mysql_server] = $tmp2;
+
+        Debug::debug($tmp2, "COLOR_GOOD");
+
     }
 
 }

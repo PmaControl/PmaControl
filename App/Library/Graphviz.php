@@ -541,6 +541,45 @@ class Graphviz
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
+
+            //A déplacer dans DOT quoi que ?
+            if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+                if ($server['wsrep_local_state_comment'] != "Synced") {
+
+                        if ($server['wsrep_local_state'] === "2") { // Donnor / desync
+
+                            if ($server['wsrep_desync'] === "ON"){
+                                $server['wsrep_local_state_comment'] = "Desynced - Desync : ".$server['wsrep_desync'];
+                            }
+                            else{
+                                $server['wsrep_local_state_comment'] = "Donor - Desync : ".$server['wsrep_desync'];
+                            }
+                        }
+
+                    $comment = "<b>".trim($server['wsrep_local_state_comment'])."</b>";
+                }
+                else
+                {
+                    $comment = $server['wsrep_local_state_comment'];
+                }
+
+                if ($server['wsrep_cluster_status'] !== "Primary")
+                {
+                    $server['wsrep_cluster_status'] = "<b>".trim($server['wsrep_cluster_status'])."</b>";
+                }
+
+
+                if ($server['mysql_available'] === "0") {
+                    $status = '<b>Offline</b>';
+                }
+                else {
+                    $status = $server['wsrep_cluster_status'].' ('.$comment.')';
+                }
+
+                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
+            }
+            
+            
             $return .= '</table>'.PHP_EOL;
             $return .= '</td></tr>'.PHP_EOL;
             
@@ -817,7 +856,7 @@ class Graphviz
         {
             // need to know availibility of all node
 
-            Debug::debug($galera);
+            //Debug::debug($galera);
             //start cluster
             $return .= self::startCluster( "galera", $galera );
             
@@ -834,7 +873,10 @@ class Graphviz
 
             $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server."galera.svg".'" /></td>
             <td bgcolor="lightgrey" width="100" align="left">'.'Nodes available'.' : <b>'.$galera['node_available'].'/'.$galera['members'].'</b> - '.$galera['wsrep_provider_version'].'</td></tr>';
-            $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.'wsrep_sst_method'.' : '.$galera['sst_method'].'</td></tr>'.PHP_EOL;
+            $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.'Galera Version : '.$galera['galera_version'].' - Worker : '.$galera['wsrep_slave_threads'].'</td></tr>'.PHP_EOL;
+
+
+            $return .= '<tr><td bgcolor="lightgrey" align="left" colspan="2">wsrep_sst_method'.' : '.$galera['sst_method'].'</td></tr>";'.PHP_EOL;
 
             $return .= "</table>";
             $return .= "</td></tr></table>";
@@ -845,14 +887,14 @@ class Graphviz
             $return .= "penwidth = 4;".PHP_EOL;
 
 
-            Debug::debug($galera['config']);
+            //Debug::debug($galera['config']);
             
-            $background = self::diluerCouleur(Dot3::$config[$galera['config']]['color'], 60);
+            $background = self::diluerCouleur(Dot3::$config[$galera['config']]['color'], 90);
             
 
             $return .= 'color = "'.Dot3::$config[$galera['config']]['color'].'";'.PHP_EOL; // Bordure verte
             $return .= "style = filled;".PHP_EOL; // Active le remplissage
-            $return .= 'fillcolor = "'.$background.'"'.PHP_EOL; // Fond blanc
+            $return .= 'fillcolor = "'.$background.'"'.PHP_EOL; 
             $return .= 'href = "'.LINK.'GaleraCluster/view/'.$galera['id_cluster'].'";'.PHP_EOL;
 
             //$return .= 'ranksep = "1"'.PHP_EOL; 
@@ -868,23 +910,34 @@ class Graphviz
 
             foreach($galera['node'] as $segment => $nodes)
             {
-                if ($display_segment === true){
+
+
+                //if ($display_segment === true){
                     $return .= self::startCluster( "segment", $nodes );
+                    
+                    $theme = $galera['segment'][$segment]['theme'];
+                    $color = Dot3::$config[$theme]['color'];
+                    $background = self::diluerCouleur($color, 60);
+
+                    $return .= 'color = "'.$color.'";'.PHP_EOL; 
+
+                    
+                    
                     $return .= "style = dashed;".PHP_EOL;
-                    $return .= 'label = "segment : '.$segment.'"'.PHP_EOL;
                     $return .= 'tooltip = "Segment number : '.$segment.'"'.PHP_EOL; // pourquoi ca n'est pas pris en compte ???
                     $return .= 'label = "Segment number : '.$segment.'"'.PHP_EOL;
+                    $return .= 'fillcolor = "'.$background.'"'.PHP_EOL; 
                     
                     $return .= 'href = "'.LINK.'GaleraCluster/view/'.$galera['id_cluster'].'";'.PHP_EOL;
-                }
+                //}
 
                 foreach($nodes as $id_mysql_server => $node ) {
                     $return .= $id_mysql_server.";".PHP_EOL;
                 }
 
-                if ($display_segment === true){
+                //if ($display_segment === true){
                     $return .= self::endCluster();
-                }
+                //}
             }
             //Debug::debug($galera);
 
