@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Controller\ProxySQL;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
@@ -149,6 +150,8 @@ class Aspirateur extends Controller
     static $file_created = array();
     //log with monolog
     var $logger;
+    //store if table exist or not to prevent ask each time
+    static $cache = array();
 
     /*
      * (PmaControl 0.8)<br/>
@@ -1071,7 +1074,6 @@ GROUP BY C.ID, C.INFO;";
 
     /*
     type => key/value, json 
-
     */
 
     
@@ -1360,6 +1362,9 @@ GROUP BY C.ID, C.INFO;";
     {
         Debug::parseDebug($param);
         $this->view = false;
+
+        
+        $this->logger->notice("##################".json_encode($param));
         
         $name_server = $param[0];
         $id_proxysql_server   = $param[1];
@@ -1378,26 +1383,179 @@ GROUP BY C.ID, C.INFO;";
         while($ob = $db->sql_fetch_object($res))
         {
             $id_mysql_server = $ob->id_mysql_server;
+            $ip_proxysql_server = $ob->hostname;
         }
         /*********************** */
+        
+        // cas ou on a pas de SERVER mysql associé on force l'auto dsicovery
+        //$id_mysql_server
 
-        if ((time()+$id_mysql_server)%1 === 0)
+        if (empty($id_mysql_server))
         {
-            $data = array();
-            $data['proxysql_runtime_mysql_servers']['proxysql_runtime_mysql_servers'] = json_encode($this->getRuntimeMysqlServer(array($name_server)));
-            $this->exportData($id_mysql_server, "proxysql_runtime_mysql_servers", $data, false);
+            //auto discovery mysql to add server to mysql_server
+            $sql = "SELECT * FROM global_variables WHERE variable_name IN ('mysql-monitor_username', 'mysql-monitor_password', 'mysql-interfaces');";
+            $res = $db->sql_query($sql);
+            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+            {
+                Debug::debug($arr, "global variable PROXYSQL");
+                
+                switch($arr['variable_name'])
+                {
+                    case 'mysql-interfaces':
+                        $port = explode(":",$arr['variable_value'])[1];
+                        break;
+
+                    case 'mysql-monitor_username':
+                        $user = $arr['variable_value'];
+                        break;
+
+                    case 'mysql-monitor_password':
+                        $password = $arr['variable_value'];
+                        break;
+                   }
+            }
+
+            try {
+                $ret = Mysql::testMySQL(array($ip_proxysql_server,$port,$user, $password  ));
+
+            }
+            catch(\Exception $e) {
+
+
+                Debug::debug($e->getMessage(), "dfgdgf");
+                
+                $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+                $res = $db->sql_query($sql);
+                Debug::sql($sql);
+
+                while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+                {
+                    Debug::debug($arr, "list of mysql_server");
+
+                    $mysql_server_hostname = $arr['hostname'];
+                    $mysql_server_port = $arr['port'];
+                    $hostgroup_id = $arr['hostgroup_id'];
+
+                    $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
+
+                    $mysql_to_link = Sgbd::sql($name_server);
+
+                    $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
+                    $res3 = $mysql_to_link->sql_query($sql3);
+                    while ($ob = $mysql_to_link->sql_fetch_object($res3)){
+                        Debug::debug($ob, "password");
+                        // il faut recupérer le bon
+                        $password_hash = $ob->password;
+                    }
+                
+                    $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
+                    Debug::sql($sql2);
+                    $res2 = $db->sql_query($sql2);
+
+                    while($ob2 = $db->sql_fetch_object($res2))
+                    {
+                        //il faut stocker memory somewhere 
+                        // made update
+                        // restore it
+
+                        //uniquement si l'user n'est pas presént pour eviter des effet de bord
+                        if ($ob2->cpt == "0") {
+
+                            $sql5 = "LOAD MYSQL USERS FROM DISK;";
+                            Debug::sql($sql5);
+                            $db->sql_query($sql5);
+
+                            $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
+                            VALUES ('".$user."','".$password_hash."',".$hostgroup_id.",'mysql');";
+                            Debug::sql($sql4);
+                            $db->sql_query($sql4);
+
+                            $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
+                            Debug::sql($sql6);
+                            $db->sql_query($sql6);
+
+
+                            //try connection
+                            $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
+
+                            if ($ret === true)
+                            {
+                                $data = array();
+
+                                $data['fqdn'] = $mysql_server_hostname;
+                                $data['login'] = $user;
+                                $data['password']= $password;
+                                $data['port'] = $port;
+                                
+                                
+                                Mysql::addMysqlServer($data );
+                                
+
+
+                                $sql7 = "SAVE MYSQL USERS TO DISK;";
+                                $db->sql_query($sql7);
+
+                                ProxySQL::associate(array($id_proxysql_server ));
+                            }
+                        }
+                    }
+                }
+            }
+
+            ProxySQL::associate(array($id_proxysql_server ));
         }
 
-       // $import = array();
-       // $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
+        if (!empty($id_mysql_server))
+        {
+            
+            /******************** */
+            if ((time()+$id_mysql_server)%1 === 0)
+            {
+                $data = array();
+                Debug::debug($name_server);
+                $data['proxysql_runtime_mysql_servers']['proxysql_runtime_mysql_servers'] 
+                = json_encode($this->getElemFromTable(array($name_server, "main","runtime_mysql_servers")));
+                Debug::debug($data);
+                $this->exportData($id_mysql_server, "proxysql_runtime_mysql_servers", $data, true);
+            }
 
 
-       $default->sql_close();
+            if ((time()+$id_mysql_server)%1 === 0)
+            {
+                $data = array();
+                Debug::debug($name_server);
+                $data['proxysql']['runtime_mysql_galera_hostgroups'] 
+                = json_encode($this->getElemFromTable(array($name_server, "main","runtime_mysql_galera_hostgroups")));
+
+
+                Debug::debug($data);
+                $this->exportData($id_mysql_server, "proxysql_configuration", $data, true);
+            }
+
+
+            if ((time()+$id_mysql_server)%1 === 0)
+            {
+                $data = array();
+                Debug::debug($name_server);
+                $data['proxysql_connect_error']['proxysql_connect_error'] 
+                = json_encode(ProxySQL::getErrorConnect(array($id_proxysql_server)));
+                Debug::debug($data);
+                $this->exportData($id_mysql_server, "proxysql_connect_error", $data, false);
+            }
+
+
+            /**** */
+
+        // $import = array();
+        // $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
+        }
+
+        $default->sql_close();
         $db->sql_close();
 
     }
 
-
+/*
     public function getRuntimeMysqlServer($param)
     {
         $name_connection = $param[0];
@@ -1415,6 +1573,7 @@ GROUP BY C.ID, C.INFO;";
         return $runtime_mysql_servers;
     }
 
+*/
 
     public function getElemFromTable($param)
     {
@@ -1423,11 +1582,33 @@ GROUP BY C.ID, C.INFO;";
         $id_mysql_server = $param[0];
         $database = $param[1];
         $table = $param[2];
-        $where = $param[3];
-
         
-        //$this->logger->emergency($table." id_mysql_server:$id_mysql_server");
+        $pos = strpos($id_mysql_server, "proxysql_");
 
+        $table_exist = false;
+        if ($pos === false) {
+
+
+            $table_exist = $this->getTableExist($id_mysql_server, $database, $table);
+        }
+        else {
+            //cas proxysql
+            $this->getTableFromProxySQL($id_mysql_server);
+            if (!empty(self::$cache[$id_mysql_server][$database][$table])) {
+                $table_exist = self::$cache[$id_mysql_server][$database][$table];
+            }
+        }
+
+        if ($table_exist) {
+            return $this->getTableElems($id_mysql_server, $database, $table);
+        }
+        
+        return false;
+    }
+
+
+    private function getTableElems($id_mysql_server, $database, $table)
+    {
         if ($id_mysql_server == (int)$id_mysql_server){
             $mysql_tested = Mysql::getDbLink($id_mysql_server);
         }
@@ -1435,7 +1616,27 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
-        // a regarder dans le cashe avant
+        $table_elems = array();
+        $sql2 ="SELECT * FROM `".$database."`.`".$table."`;";
+        $res2 = $mysql_tested->sql_query($sql2);
+        while ($ob2 = $mysql_tested->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $table_elems[] = $ob2;
+        }
+
+        $data = $table_elems;
+        return $data;
+    }
+
+
+    private function getTableExist($id_mysql_server, $database, $table)
+    {
+        //better with cache =)
+        if (isset(self::$cache[$id_mysql_server][$database][$table])){
+            return self::$cache[$id_mysql_server][$database][$table];
+        }
+
+        $mysql_tested = ($id_mysql_server == (int) $id_mysql_server) ? Mysql::getDbLink($id_mysql_server) : Sgbd::sql($id_mysql_server);
+
         $sql = "SELECT count(1) AS cpt
         FROM information_schema.tables 
         WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."';";
@@ -1443,23 +1644,41 @@ GROUP BY C.ID, C.INFO;";
         $res = $mysql_tested->sql_query($sql);
         $data = array();
 
-        while($ob = $mysql_tested->sql_fetch_object($res))
-        {
-            if ($ob->cpt === "1")
-            {
-                $table_elems = array();
-                $sql2 ="SELECT * FROM `".$database."`.`".$table."`;";
-                $res2 = $mysql_tested->sql_query($sql2);
-                while ($ob2 = $mysql_tested->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-                    $table_elems[] = $ob2;
-                }
-
-                $data = $table_elems;
-                return $data;
+        while($ob = $mysql_tested->sql_fetch_object($res)) {
+            if ($ob->cpt === "1") {
+                self::$cache[$id_mysql_server][$database][$table] = true;
+                return true;
             }
         }
-        //$this->logger->emergency($table." id_mysql_server:".print_r($data));
-        Debug::debug($data);
+
+        self::$cache[$id_mysql_server][$database][$table] = false;
         return false;
+    }
+
+
+    private function getTableFromProxySQL($id_proxysql)
+    {
+        $mysql_tested = Sgbd::sql($id_proxysql);
+
+        if (isset(self::$cache[$id_proxysql])) {
+            return true;
+        }
+
+        $cache = array();
+
+        $sql = "SHOW DATABASES";
+        $res = $mysql_tested->sql_query($sql);
+
+        while($ob = $mysql_tested->sql_fetch_object($res))
+        {
+            
+            $sql2 ="SHOW TABLES in `".$ob->name."`";
+            $res2 = $mysql_tested->sql_query($sql2);
+            while($ob2 = $mysql_tested->sql_fetch_object($res2))
+            {
+                self::$cache[$id_proxysql][$ob->name][$ob2->tables] = true;
+            }
+
+        }
     }
 }

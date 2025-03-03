@@ -217,7 +217,8 @@ class Mysql
         $server['mysql_server']['id_client'] = self::selectOrInsert($data['organization'] ?? "none", "client", "libelle");
 
         $server['mysql_server']['id_environment']      = self::selectOrInsert($data['environment'], "environment", "libelle",
-                array("key" => strtolower(str_replace(' ', '', $data['environment'])), "class" => "info", "letter" => substr(strtoupper($data['environment']),
+                array("key" => strtolower(str_replace(' ', '', $data['environment'])),
+                 "class" => "info", "letter" => substr(strtoupper($data['environment']),
                         0, 1)));
         $server['mysql_server']['name']                = "server_".uniqid();
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'],
@@ -1035,5 +1036,56 @@ END IF;";
 
         return $ids;
 
+    }
+
+
+    static function getIdMysqlServerFromIpPort($ip , $port)
+    {
+        // with cache ?
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.id as id_mysql_server, a.ip, a.port as virtual_port, a.display_name, a.is_proxy, a.ip as ip_real, a.port as port_real
+        FROM mysql_server a 
+        WHERE ip = '".$ip."' AND port='".$port."'
+        UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
+        from alias_dns b 
+        INNER JOIN mysql_server c ON b.id_mysql_server =c.id
+        WHERE b.dns = '".$ip."' AND b.port='".$port."'";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            $id = $ob->id_mysql_server;
+            return $id;
+        }
+
+        return false;
+    }
+    
+
+    static function getNameMysqlServerFromIpPort($ip , $port)
+    {
+        // with cache ?
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.name, a.id as id_mysql_server, a.ip, a.port as virtual_port, a.display_name, a.is_proxy, a.ip as ip_real, a.port as port_real
+        FROM mysql_server a 
+        WHERE ip = '".$ip."' AND port='".$port."'
+        UNION select c.name, b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
+        from alias_dns b 
+        INNER JOIN mysql_server c ON b.id_mysql_server =c.id
+        WHERE b.dns = '".$ip."' AND b.port='".$port."';";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            return $ob->name;
+        }
+
+        return false;
     }
 }

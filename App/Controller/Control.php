@@ -196,6 +196,7 @@ class Control extends Controller
     public function service($param = "")
     {
         Debug::parseDebug($param);
+
         $partitions = $this->getMinMaxPartition();
 
         Debug::debug($partitions, "Partition  min & max");
@@ -410,15 +411,16 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::parseDebug($param);
 
         foreach(glob($diretory."*") as $filename) {
-            if (! is_dir($filename))
-            {
+            if (! is_dir($filename)) {
+                if ($filename == ".gitignore") {
+                    continue;
+                }
+
                 Debug::debug($filename, "file deleted");
                 unlink($filename);
             }
         }
     }
-    
-
 
     public function dropAllFile($param = "")
     {
@@ -456,6 +458,11 @@ WHERE b.id in (select id_ts_file from z) AND c.id is null;";
             $file = EngineV4::getFileMd5($ob->file_name, $ob->id_mysql_server);
             
             if (file_exists($file)) {
+
+                if ($file == ".gitignore") {
+                    continue;
+                }
+
                 unlink($file);
                 Debug::debug("Drop du fichier de variable pour le serveur : ".$ob->id_mysql_server);
             }
@@ -542,7 +549,10 @@ WHERE b.id in (select id_ts_file from z) AND c.id is null;";
         Debug::parseDebug($param);
 
         $directory = TMP."md5/";
-        $cmd = 'find "'.$directory.'" -type f -mmin +60 -exec rm -f {} \;';
+
+        //   delete md5 more than 1 day
+        $cmd = 'find "'.$directory.'" -type f -mtime +0 ! -name ".gitignore" -delete';
+        //$cmd = 'find "'.$directory.'" -type f -mmin +60 -exec rm -f {} \;';
 
         Debug::debug($cmd);
 
