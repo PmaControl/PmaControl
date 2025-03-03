@@ -40,6 +40,9 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use Glial\Synapse\Glial;
 
+$TIME_START = microtime(true);
+
+
 require ROOT.DS.'vendor/autoload.php';
 
 if (!IS_CLI) {
@@ -118,10 +121,15 @@ if (!IS_CLI) {
 I18n::SetDefault("en");
 I18n::SetSavePath(TMP."translations");
 
+/*** Case MySQL offline */
+
+
+
 // uniquement si la base courante est présente dans la configuration
 if (Sgbd::ifExit(DB_DEFAULT)) {
     I18n::injectDb(Sgbd::sql(DB_DEFAULT));
 }
+
 
 if (empty($_SESSION['language'])) {
     $_SESSION['language'] = "en";
@@ -241,7 +249,7 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {
 
 echo $html;
 
-/*
+
 $i = 10;
 
 (DEBUG) ? $_DEBUG->save("Layout loaded") : "";
@@ -249,10 +257,39 @@ $i = 10;
 if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
     echo "<hr />";
 
+    $time_end = microtime(true);
+    $execution_time = $time_end - $TIME_START;
+
     echo "Temps d'exéution de la page : " . round($execution_time, 5) . " seconds";
-    echo "<br />Nombre de requette : " . $_DB->sql(DB_DEFAULT)->get_count_query();
+    echo "<br />Nombre de requette : " . Sgbd::sql(DB_DEFAULT)->get_count_query();
     $file_list = get_included_files();
     echo "<br />Nombre de fichier loaded : <b>" . count($file_list) . "</b><br />";
+
+
+    $queries = Sgbd::sql(DB_DEFAULT)->getQuery();
+
+    echo '<table class="display-tab table table-condensed" width="100%">';
+    echo '<tr>';
+    echo '<th>Query</th>';
+    echo '<th>time</th>';
+    echo '<th>File</th>';
+    echo '<th>Line</th>';
+    echo '<th>Rows</th>';
+    echo '<th>Last_is</th>';
+    echo '</tr>';
+    foreach($queries as $query)
+    {
+        echo '<tr>';
+        echo '<td>'.SqlFormatter::highlight($query['query']).'</td>';
+        echo '<td>'.$query['time'].'</td>';
+        echo '<td>'.$query['file'].'</td>';
+        echo '<td>'.$query['line'].'</td>';
+        echo '<td>'.$query['rows'].'</td>';
+        echo '<td>'.$query['last_id'].'</td>';
+        echo '</tr>';
+    }
+    echo '</table>';
+
     debug($file_list);
 
     $_DEBUG->print_table();
@@ -264,19 +301,20 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
 
     //debug(get_declared_classes());
 
-    echo "SESSION";
+    echo "SESSION ";
     debug($_SESSION);
-    echo "GET";
+    echo "GET ";
     debug($_GET);
-    echo "POST";
+    echo "POST ";
     debug($_POST);
-    echo "COOKIE";
+    echo "COOKIE ";
     debug($_COOKIE);
-    echo "REQUEST";
+    echo "REQUEST ";
     debug($_REQUEST);
+    echo "SERVER ";
     debug($_SERVER);
 
-    debug($_SITE);
+    //debug($_SITE);
 
 
     echo "CONSTANTES : <br />";
@@ -295,4 +333,4 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
     }
 }
     
-*/
+

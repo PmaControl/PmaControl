@@ -173,35 +173,6 @@ class Daemon extends Controller
         }
     }
 
-
-    /*
-    public function purgeLock($param)
-    {
-        Debug::parseDebug($param);
-
-        $directories = array(TMP."lock/variable", TMP."lock/worker", TMP."lock/worker_ssh", TMP.'lock/worker_proxysql', TMP.'lock/list_db');
-
-        Debug::debug($directories);
-
-        foreach ($directories as $directory) {
-            if (is_dir($directory)) {
-                $dh = opendir($directory);
-                if ($dh) {
-                    while (($file = readdir($dh)) !== false) {
-                        if (substr($file, 0, 1) == '.') {
-                            continue;
-                        }
-
-                        unlink($directory."/".$file);
-
-                        Debug::debug($directory."/".$file, "file deleted");
-                    }
-                    closedir($dh);
-                }
-            }
-        }
-    }*/
-
     public function getStatitics($param = array())
     {
 

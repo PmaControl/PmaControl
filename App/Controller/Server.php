@@ -78,7 +78,7 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
 
-         WHERE 1 ".self::getFilter()."
+         WHERE 1=1 ".self::getFilter()."
              AND a.id in (".implode(",", $id_mysql_servers).")
          order by `name`;";
 
@@ -295,7 +295,8 @@ class Server extends Controller
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE 1 ".self::getFilter()."
-                 ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
+                 ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, 
+                 FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
 
         $res = $db->sql_query($sql);
 
@@ -304,8 +305,6 @@ class Server extends Controller
             $data['servers'][] = $arr;
             $servers[]         = $arr['id'];
 
-
-            
         }
 
         $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server","wsrep_cluster_status",
