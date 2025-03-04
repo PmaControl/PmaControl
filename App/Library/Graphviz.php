@@ -503,7 +503,7 @@ class Graphviz
         <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
+        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'3</td></tr>';
 
         $nat = '';
         if ($server['port_real'] != $server['port']){
@@ -539,6 +539,9 @@ class Graphviz
             }
 
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
+            
+            
+            
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
 
@@ -634,14 +637,27 @@ class Graphviz
             //exit;
             $hostgroup = 0;
             $i = 0;
-            foreach($server['proxysql_runtime_mysql_servers'] as $link)
+
+            $correspondance_hg = Dot3::getHostGroup($server['mysql_galera_hostgroups']);
+            
+            if (isset($server['mysql_galera_hostgroups'][0]['max_writers'])){
+                $max_writer = $server['mysql_galera_hostgroups'][0]['max_writers'];
+            }
+
+            foreach($server['mysql_servers'] as $link)
             {
                 $i++;
                 
                 if ($hostgroup != $link['hostgroup_id'])
                 {
+                    $max = "";
+                    if ($correspondance_hg[$link['hostgroup_id']] === "writer")
+                    {
+                        $max = " (max : ". $max_writer.")";
+                    }
+
                     $port = crc32($link['hostgroup_id'].'::');
-                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="grey" align="left"><font color="#000000">'.__('Host group').' : '.$link['hostgroup_id'].'</font></td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="#aaaaaa" align="left"><font color="#000000">'.__('Host group').' : <b>'.$correspondance_hg[$link['hostgroup_id']].'</b> '.$max.'</font></td></tr>'.PHP_EOL;
                 }
                 //⛯ PmaControl
                 $hostgroup = $link['hostgroup_id'];
@@ -652,24 +668,27 @@ class Graphviz
                 $extra = '';
                 $bgcolor = Dot3::$config['PROXYSQL_'.$link['status']]['color'];
                 $forground_color =Dot3::$config['PROXYSQL_'.$link['status']]['font'];
-                foreach($server['proxy_connect_error'] as $hostname => $error)
-                {
-                    $extra = '';
-                    if ($hostname == $link['hostname'].':'.$link['port'])
-                    {
-                        
-                        //$forground_color = 'black';
-                        //$bgcolor = 'darkgrey';
-                        if ($link['status'] == "ONLINE")
-                        {
-                            $bgcolor = Dot3::$config['PROXYSQL_CONFIG']['color'];
-                            $extra = ' ⚙🔥';
-                        }
-                        else{
-                            $extra = ' 🔥';
-                        }
 
-                        break;
+                if (! empty($server['proxy_connect_error'])) {
+                    foreach($server['proxy_connect_error'] as $hostname => $error)
+                    {
+                        $extra = '';
+                        if ($hostname == $link['hostname'].':'.$link['port'])
+                        {
+                            
+                            //$forground_color = 'black';
+                            //$bgcolor = 'darkgrey';
+                            if ($link['status'] == "ONLINE")
+                            {
+                                $bgcolor = Dot3::$config['PROXYSQL_CONFIG']['color'];
+                                $extra = ' ⚙🔥';
+                            }
+                            else{
+                                $extra = ' 🔥';
+                            }
+
+                            break;
+                        }
                     }
                 }
 

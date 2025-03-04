@@ -307,7 +307,7 @@ class Server extends Controller
 
         }
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "hostname", "mysql_ping","time_server","wsrep_cluster_status",
+        $data['extra'] = Extraction::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status",
          "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
 
     

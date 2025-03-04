@@ -270,6 +270,7 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
 
     echo '<table class="display-tab table table-condensed" width="100%">';
     echo '<tr>';
+    echo '<th>Cumulate</th>';
     echo '<th>Query</th>';
     echo '<th>time</th>';
     echo '<th>File</th>';
@@ -280,6 +281,8 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
     foreach($queries as $query)
     {
         echo '<tr>';
+        
+        echo '<td>'.$query['cumulate'].'</td>';
         echo '<td>'.SqlFormatter::highlight($query['query']).'</td>';
         echo '<td>'.$query['time'].'</td>';
         echo '<td>'.$query['file'].'</td>';

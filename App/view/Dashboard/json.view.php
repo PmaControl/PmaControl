@@ -8,7 +8,7 @@ use Glial\Html\Form\Form;
 
 
 echo '<div class="row">';
-echo '<div class="col-md-6">';
+echo '<div class="col-md-7">';
 
 echo __("Server : ");
 echo ' ';
@@ -35,7 +35,7 @@ echo '</div>';
 </div>
 
 <div class="col-md-2">
-  <div class='input-group date' id='datetimepicker3'>
+  <div class='input-group date'>
   <?php echo Form::input("date", "time", array("class"=>"form-control required", "placeholder" => date("H:i:s"))); ?>
       <!--<input name="date[time]" type='text' class="form-control" />-->
 
@@ -52,18 +52,28 @@ echo '</div>';
 </div>
 </form>
 
-<?php 
-
+<?php
+$i = 0;
 foreach($data['json'] as $elem)
 {
+  $i++;
+  echo '<div class="panel panel-primary" >';
+    echo '<div class="panel-heading">';
+        echo '<h3 class="panel-title">';
+        echo "#".$i." - ". $elem['date'];
+          
+        echo '</h3>';
+  echo '</div>';
+  echo '<div class="mpd">';
 
+  
   //debug($elem);
-  echo $elem['date'];
+
   echo '<table class="table table-condensed table-bordered table-striped" id="table">';
 
 
     // Générer la table HTML
-    echo "<thead><tr>";
+    echo "<tr>";
 
     // Afficher les en-têtes dynamiquement
     $headers = array_keys($elem['value'][0]); // Récupère les clés du premier élément
@@ -72,14 +82,14 @@ foreach($data['json'] as $elem)
         echo "<th>" . htmlspecialchars($header) . "</th>";
     }
 
-    echo "</tr></thead><tbody>";
+    echo "</tr>";
 
     // Afficher les lignes de données
 
 
     if (!empty($elem['value'][0]['TIME_MS']))
     {
-      usort($elem['value'], function ($a, $b) {
+      \usort($elem['value'], function ($a, $b) {
         return $b['TIME_MS'] <=> $a['TIME_MS']; // Tri décroissant
       });
     }
@@ -112,7 +122,9 @@ foreach($data['json'] as $elem)
         echo "</tr>";
     }
 
-    echo "</tbody>";
     echo '</table>';
+
+  echo '</div>';
+  echo '</div>';
 }
 

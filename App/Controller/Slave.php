@@ -37,7 +37,7 @@ class Slave extends Controller
                 "slave::last_sql_error", "slave::last_sql_errno"));
 
 
-                die();
+                
 
         /* besoin de testé avec les thread (trouver autre chose)
           //order by master host
@@ -241,7 +241,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $array_date = date_parse_from_format($date_format, $date);
 
-        $more_days = -1;
+        $more_days = -5;
         $next_date = date(
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );

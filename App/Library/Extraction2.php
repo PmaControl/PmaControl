@@ -428,6 +428,11 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
 
     static public function getPartition(array $ids_variable)
     {
+
+        if (count($ids_variable) === 0){
+            return;
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         $list_id_variable = implode(",",$ids_variable);

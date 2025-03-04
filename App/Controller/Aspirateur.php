@@ -138,16 +138,10 @@ SET
 
 class Aspirateur extends Controller
 {
-
-    use \App\Library\Filter;
-
-
-    //to delete
-    var $shared            = array();
+    //use \App\Library\Filter;
 
     static $timestamp_config_file = "";
 
-    static $file_created = array();
     //log with monolog
     var $logger;
     //store if table exist or not to prevent ask each time
@@ -285,6 +279,7 @@ class Aspirateur extends Controller
                 $this->logger->notice("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
             }
 
+            // TO DO => fix with new name of array
             $version = Extraction2::display(array("proxysql_main_var::admin-version"), array($id_mysql_server));
             
             $var_temp = array();
@@ -377,15 +372,32 @@ class Aspirateur extends Controller
     
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
+            $data = array();
             $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
             $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
         }
 
 
-        if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
-        {
-            $data['mysql_latency'] = $this->getMysqlLatencyByQuery($name_server);
-            $this->exportData($id_mysql_server, "mysql_statistics", $data);
+        // if performance_schema == ON
+        if ($var['variables']['performance_schema'] == "ON") {
+            if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
+            {
+                $data = array();
+                $data['mysql_latency'] = $this->getMysqlLatencyByQuery($name_server);
+
+                Debug::debug($data);
+                $this->exportData($id_mysql_server, "mysql_statistics", $data);
+            }
+
+            if ($id_mysql_server == "1")
+            {
+                $data = array();
+                $data['performance_schema']['ps_memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
+
+                Debug::debug($data);
+
+                $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
+            }
         }
 
         /*************************************** list Database  */
@@ -428,18 +440,11 @@ class Aspirateur extends Controller
     public function allocate_shared_storage($name)
     {
         //storage shared
-
         Debug::debug($name, 'create file');
 
         $shared_file = EngineV4::PATH_PIVOT_FILE.time().EngineV4::SEPERATOR.$name;
         $storage             = new StorageFile($shared_file); // to export in config ?
         $SHARED_MEMORY = new SharedMemory($storage);
-
-        //to prevent error on fopen when executed in root and ww-data try to delete it
-        //TODO change with 
-        
-        static::$file_created[] = $shared_file;
-
         return $SHARED_MEMORY;
     }
 
@@ -496,8 +501,13 @@ class Aspirateur extends Controller
             if (!empty($ssh) && $ssh !== false ) {
                 $ssh_available = 1;
    
+
+
+
                 $stats['ssh_stats']    = $this->getStats($ssh);
                 $hardware['ssh_hardware'] = $this->getHardware($ssh);
+
+
 
                 //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
                 $ssh->disconnect();
@@ -508,6 +518,13 @@ class Aspirateur extends Controller
 
                 $this->exportData($id_mysql_server, "ssh_hardware", $hardware);
                 $this->exportData($id_mysql_server, "ssh_stats", $stats, false);
+
+
+
+
+
+
+
 
             } else {
                 Debug::debug("Can't connect to ssh");
@@ -624,9 +641,11 @@ class Aspirateur extends Controller
     {
         $stats = array();
 
+        
+// récupération de l'uptime et du load average
+/*
         $uptime = $ssh->exec("uptime");
 
-// récupération de l'uptime et du load average
         $output_array = array();
         preg_match("/averages?:\s*([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)[\s|\.\,]\s+([0-9]+[\.|\,][0-9]+)/", $uptime, $output_array);
 
@@ -635,7 +654,6 @@ class Aspirateur extends Controller
             $stats['load_average_5_min']  = str_replace(',', '.', $output_array[2]);
             $stats['load_average_15_min'] = str_replace(',', '.', $output_array[3]);
         }
-
         preg_match("/([0-9]+)\s+user/", $uptime, $output_array);
         if (!empty($output_array[1])) {
             $stats['user_connected'] = $output_array[1];
@@ -644,8 +662,17 @@ class Aspirateur extends Controller
         preg_match("/up\s+([0-9]+\s[a-z]+),/", $uptime, $output_array);
         if (!empty($output_array[1])) {
             $stats['uptime'] = $output_array[1];
-        }
+        }    
+        
+        /**************** */
+        //uptime v2
 
+        $load_average = explode(" ",trim($ssh->exec("cat /proc/loadavg")));
+
+        $stats['load_average_1_min']  = $load_average[0];
+        $stats['load_average_5_min']  = $load_average[1];
+        $stats['load_average_15_min'] = $load_average[2];
+        
         $membrut = trim($ssh->exec("free -b"));
         $stats   = $this->getSwap($membrut);
 
@@ -688,6 +715,49 @@ class Aspirateur extends Controller
             $i++;
         }
         $stats['cpu_detail'] = json_encode($cpu);
+
+
+
+        // memory mysql or mariadb
+        
+        $result = $ssh->exec("ps -eo comm,rss --no-headers");
+
+        if (!empty($result)) {
+            $result = trim($result);
+        }
+
+        //Debug::debug($result, "RESULT");
+
+        $memories = explode("\n", $result);
+
+        $totalMemory = 0;
+        foreach ($memories as $line) {
+            list($cmd, $rss) = preg_split('/\s+/', trim($line), 2);
+            $rss = (int) $rss;
+        
+            if (empty($rss)){
+                continue;
+            }
+        
+            if (!isset($processes[$cmd])) {
+                $processes[$cmd] = 0;
+            }
+        
+            $processes[$cmd] += $rss;
+            $totalMemory += $rss;
+        }
+
+        arsort($processes);
+
+        $stats['memory_mysqld'] = 0;
+        if (! empty($processes["mariadbd"])) {
+            $stats['memory_mysqld'] = $processes["mariadbd"];
+        }else if (! empty($processes["mysqld"])) {
+            $stats['memory_mysqld'] = $processes["mysqld"];
+        }
+
+        $stats['memory_detail_kb'] = json_encode($processes);
+
 
         /* io wait */
 
@@ -1192,13 +1262,15 @@ GROUP BY C.ID, C.INFO;";
     /*
     only used for command line
     */
+
+    /* deprecated
     function updateChown()
     {
         foreach(self::$file_created as $i => $shared_file) {
             $this->Chown($shared_file);
             unset(self::$file_created[$i]);
         }
-    }
+    }*/
 
     /*
     only used for command line
@@ -1207,17 +1279,34 @@ GROUP BY C.ID, C.INFO;";
     function after($param)
     {
         // need test if root
-        //$this->updateChown();
+        //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
+        if (posix_geteuid() === 0) {
+
+            Debug::debug("Time to wait all PIVOT_FILE to be created to change chown because we are root");
+            sleep(1);
+            //case debian
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PID);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_LOCK);
+            
+            //case redhat like
+        }
+
     }
 
     /*
+    deprecated
     to call at end of worker to prevent memory leak
-    */
+    
     public function purge()
     {
         self::$file_created = array();
     }
+    /***** */
 
+
+    /* deprecated
     public function Chown($shared_file)
     {
         sleep(1);
@@ -1230,6 +1319,7 @@ GROUP BY C.ID, C.INFO;";
             chgrp($shared_file,$user);
         }
     }
+    /******** */
 
     static function isValidStruc($array) {
         // Vérifier si le tableau est un tableau à deux niveaux
@@ -1490,8 +1580,6 @@ GROUP BY C.ID, C.INFO;";
                                 
                                 Mysql::addMysqlServer($data );
                                 
-
-
                                 $sql7 = "SAVE MYSQL USERS TO DISK;";
                                 $db->sql_query($sql7);
 
@@ -1507,31 +1595,34 @@ GROUP BY C.ID, C.INFO;";
 
         if (!empty($id_mysql_server))
         {
+
+            $sql = "show tables like 'runtime%';";
+            $res = $db->sql_query($sql);
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+            {
+                $table_name = $arr['tables'];
+
+                
+                Debug::debug($table_name, "TABLE NAME");
+
+                $short_name = str_replace('runtime_', '', $table_name);
+
+                $export = $this->getElemFromTable(array($name_server, "main", $table_name));
+
+                if (count($export) > 0)
+                {
+                    $data = array();
+                    $data['proxysql_runtime'][$short_name] = json_encode($export);
+
+                    Debug::debug($data['proxysql_runtime'][$short_name], $table_name);
+                    echo "###############\n";
+
+                    $this->exportData($id_mysql_server, "proxysql_".$table_name, $data, true);
+                }
+                
+            }
+
             
-            /******************** */
-            if ((time()+$id_mysql_server)%1 === 0)
-            {
-                $data = array();
-                Debug::debug($name_server);
-                $data['proxysql_runtime_mysql_servers']['proxysql_runtime_mysql_servers'] 
-                = json_encode($this->getElemFromTable(array($name_server, "main","runtime_mysql_servers")));
-                Debug::debug($data);
-                $this->exportData($id_mysql_server, "proxysql_runtime_mysql_servers", $data, true);
-            }
-
-
-            if ((time()+$id_mysql_server)%1 === 0)
-            {
-                $data = array();
-                Debug::debug($name_server);
-                $data['proxysql']['runtime_mysql_galera_hostgroups'] 
-                = json_encode($this->getElemFromTable(array($name_server, "main","runtime_mysql_galera_hostgroups")));
-
-
-                Debug::debug($data);
-                $this->exportData($id_mysql_server, "proxysql_configuration", $data, true);
-            }
-
 
             if ((time()+$id_mysql_server)%1 === 0)
             {
@@ -1543,9 +1634,7 @@ GROUP BY C.ID, C.INFO;";
                 $this->exportData($id_mysql_server, "proxysql_connect_error", $data, false);
             }
 
-
             /**** */
-
         // $import = array();
         // $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         }
@@ -1680,5 +1769,29 @@ GROUP BY C.ID, C.INFO;";
             }
 
         }
+    }
+
+
+    public function getPsMemory($id_mysql_server)
+    {
+        if ($id_mysql_server == (int)$id_mysql_server){
+            $mysql_tested = Mysql::getDbLink($id_mysql_server);
+        }
+        else {
+            $mysql_tested = Sgbd::sql($id_mysql_server);
+        }
+
+        $table_elems = array();
+        $sql ="SELECT event_name, sum_number_of_bytes_alloc, high_number_of_bytes_used
+        FROM performance_schema.memory_summary_global_by_event_name 
+        WHERE current_count_used > 0 order by 2 desc;";
+        $res = $mysql_tested->sql_query($sql);
+        while ($ob = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $table_elems[] = $ob;
+        }
+
+        return $table_elems;
+
+
     }
 }
