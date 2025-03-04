@@ -102,7 +102,8 @@ class Dot3 extends Controller
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
-                "proxysql_main_var::mysql-interfaces", "proxysql_main_var::admin-version", "proxysql_runtime_mysql_servers",
+                "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
+                "proxysql_connect_error::proxysql_connect_error",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),array() , $date_request);
 
@@ -124,12 +125,25 @@ class Dot3 extends Controller
         }
         $data['servers'] = array_replace_recursive($all, $server_mysql);
 
+
+        // ca sert a rien en fait car on recupère les élements du serveur mysql_server associé
+        // just interessant pour faire des traitements spécifique
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning AND a.id_mysql_server IS NOT NULL;";
         Debug::debug($sql);
 
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][$arr['id_mysql_server']] = array_merge($arr, $data['servers'][$arr['id_mysql_server']]);
+
+            if (! empty($data['servers'][$arr['id_mysql_server']]['global_variables']))
+            {
+                $data['servers'][$arr['id_mysql_server']]['global_variables'] = $this->reOrderVariable($data['servers'][$arr['id_mysql_server']]['global_variables']);
+
+
+                $data['servers'][$arr['id_mysql_server']]['version'] = $data['servers'][$arr['id_mysql_server']]['global_variables']['admin-version'];
+                $data['servers'][$arr['id_mysql_server']]['version_comment'] = "ProxySQL"; 
+
+            }
 
             //json decode in same time
             //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
@@ -185,7 +199,7 @@ class Dot3 extends Controller
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
 
-        //Debug::debug($dot3_information, 'Dot_information');
+        Debug::debug($dot3_information, 'Dot_information');
         
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
@@ -194,14 +208,10 @@ class Dot3 extends Controller
 
         if ($previous_md5 != $md5)
         {
-            $commit = Git::getCurrentCommit();
-
             $dot3 = array();
             $dot3['dot3_information']['date_generated'] = date('Y-m-d H:i:s');
             $dot3['dot3_information']['information'] = $json;
             $dot3['dot3_information']['md5'] = $md5;
-            $dot3['dot3_information']['version'] = $commit['version'];
-            $dot3['dot3_information']['commit'] = $commit['build'];
             $id_dot3_information =  $db->sql_save($dot3);
         }
 
@@ -264,9 +274,9 @@ class Dot3 extends Controller
 
             $tmp_group[$id_mysql_server][] = $id_mysql_server;
 
-            if (! empty($server['proxysql_runtime_mysql_servers']))
+            if (! empty($server['mysql_servers']))
             {
-                foreach($server['proxysql_runtime_mysql_servers'] as $backend) {
+                foreach($server['mysql_servers'] as $backend) {
                     $server = $backend['hostname'].':'.$backend['port'];
                     if (!empty($information['mapping'][$server]))
                     {
@@ -364,7 +374,6 @@ class Dot3 extends Controller
         Debug::parseDebug($param);
 
         self::getIdMysqlServerFromGalera("gcomm://PIXID-MDB-MASTER1,PIXID-MDB-MASTER2,PIXID-MDB-MASTER3,PIXID-MDB-MASTER4");
-
     }
 
 
@@ -392,7 +401,6 @@ class Dot3 extends Controller
 
             //Debug::debug($group);
             
-
             //Debug::debug(self::$build_galera);
 
             $this->buildServer(array($id_dot3_information, $group));
@@ -421,7 +429,6 @@ class Dot3 extends Controller
 
         $md5 = md5($dot);
         $dot3_graph = array();
-        $commit = Git::getCurrentCommit();
 
         $sql = "SET AUTOCOMMIT=0;";
         $res = $db->sql_query($sql);
@@ -451,12 +458,8 @@ class Dot3 extends Controller
             $dot3_graph['dot3_graph']['dot'] = $dot;
             $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
             $dot3_graph['dot3_graph']['md5'] = $md5;
-            $dot3_graph['dot3_graph']['version'] = $commit['version'];
-            $dot3_graph['dot3_graph']['commit'] = $commit['build'];
-
             $dot3_graph['dot3_graph']['width'] = $width;
             $dot3_graph['dot3_graph']['height'] = $height;
-
             $id_dot3_graph = $db->sql_save($dot3_graph);
         }
 
@@ -762,7 +765,7 @@ class Dot3 extends Controller
             }
 
             $i = 0;
-            foreach($server['proxysql_runtime_mysql_servers'] as $hostgroup) {
+            foreach($server['mysql_servers'] as $hostgroup) {
                 $i++;
 
                 $host = $hostgroup['hostname'].':'.$hostgroup['port'];
@@ -772,21 +775,22 @@ class Dot3 extends Controller
                 $tmp = self::$config['PROXYSQL_'.$hostgroup['status']];
                 $tmp['tooltip'] = "STATUS : ".$hostgroup['status'];
 
-                foreach($server['proxy_connect_error'] as $hostname => $error)
-                {
-                    $extra = '';
-                    if ($hostname == $host)
-                    {
-                        
-                        if ($hostgroup['status'] == "ONLINE") {
-                            $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR CONFIG DETECTED : '.$error;
+                if (! empty($server['proxy_connect_error'])){
+                    foreach($server['proxy_connect_error'] as $hostname => $error){
+                        $extra = '';
+                        if ($hostname == $host)
+                        {
+                            
+                            if ($hostgroup['status'] == "ONLINE") {
+                                $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR CONFIG DETECTED : '.$error;
+                            }
+                            else {
+                                $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR : '.$error;
+                            }
+                            
+                            //
+                            break;
                         }
-                        else {
-                            $tmp['tooltip'] = $tmp['tooltip'].' -  ERROR : '.$error;
-                        }
-                        
-                        //
-                        break;
                     }
                 }
                 
@@ -1310,6 +1314,52 @@ class Dot3 extends Controller
 
         Debug::debug($tmp2, "COLOR_GOOD");
 
+    }
+
+    static public function reOrderVariable($variables, $filter = true)
+    {
+        $var_to_keep = array("mysql-interfaces", "admin-version");
+
+
+        $data = array();
+        foreach($variables as $variable)
+        {
+            if (count($variable) == 2)
+            {
+                $key = current($variable);
+                $value = next($variable);
+                
+                if ($filter ===  true )
+                {
+                    if (! in_array($key, $var_to_keep))
+                    {
+                        continue;
+                    }
+                }
+                $data[$key] = $value;
+            }
+        }
+
+        Debug::debug($data, "NEW VERSION");
+        
+        return $data;
+    }
+
+
+    static public function getHostGroup($hostgroups)
+    {
+        $data = array();
+
+        foreach($hostgroups as $hostgroup) {
+            foreach($hostgroup as $key => $id_hostgroup) {
+                if (strpos($key, "_hostgroup") !== false) {
+                    $data[$id_hostgroup] = str_replace('_hostgroup', '', $key);
+                }
+            }
+        }
+        Debug::debug($data, "HOSTGROUP FLIP");
+
+        return $data;
     }
 
 }

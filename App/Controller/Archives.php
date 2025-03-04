@@ -26,6 +26,8 @@ class Archives extends Controller
     var $id_archive_load = 0;
     var $user            = array();
 
+    var $logger;
+
     public function index($param)
     {
 

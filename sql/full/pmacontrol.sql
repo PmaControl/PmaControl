@@ -162962,15 +162962,15 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',3993641,1,1,'Integrate','integrateAll','',0);
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',3993648,1,1,'Listener','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',968275,1,1,'Integrate','integrateAll','',0);
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',968287,1,1,'Listener','checkAll','',0);
 INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',0,5,10,'Dot3','run','',0);
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',3993670,71,5,'Binlog','purgeAll','',0);
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',3993679,127,5,'Log','rotate','',0);
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',3993692,5,5,'Worker','addToQueue','1',0);
-INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',0,5,5,'Worker','addToQueue','3',0);
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',3993704,5,5,'Worker','addToQueue','2',0);
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',3993719,7,5,'Worker','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',968311,71,5,'Binlog','purgeAll','',0);
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',968323,127,5,'Log','rotate','',0);
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',968335,10,5,'Worker','addToQueue','1',0);
+INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',968347,10,5,'Worker','addToQueue','3',0);
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',968359,10,5,'Worker','addToQueue','2',0);
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',968371,7,5,'Worker','checkAll','',0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163134,6 +163134,7 @@ INSERT INTO `environment` VALUES (3,'Recipe','recette','default','R');
 INSERT INTO `environment` VALUES (4,'Integration','integration','info','I');
 INSERT INTO `environment` VALUES (5,'Developpement','dev','success','D');
 INSERT INTO `environment` VALUES (6,'Test','test','primary','T');
+INSERT INTO `environment` VALUES (7,'','','info','');
 /*!40000 ALTER TABLE `environment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163372,7 +163373,7 @@ INSERT INTO `menu` VALUES (162,126,160,161,0,'<span class=\"glyphicon glyphicon-
 INSERT INTO `menu` VALUES (163,123,146,147,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a client','{LINK}client/add','client','add',0,1,'');
 INSERT INTO `menu` VALUES (164,138,174,175,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
 INSERT INTO `menu` VALUES (165,138,176,177,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,108,109,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Job','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (166,92,108,109,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Jobs','{LINK}job/index','job','index',0,1,'');
 INSERT INTO `menu` VALUES (167,148,56,57,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
 INSERT INTO `menu` VALUES (168,145,182,183,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
 INSERT INTO `menu` VALUES (169,124,150,151,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
@@ -166062,6 +166063,8 @@ INSERT INTO `ts_file` VALUES (232,'mysql_meta_data_lock',1);
 INSERT INTO `ts_file` VALUES (233,'innodb_lock_waits',1);
 INSERT INTO `ts_file` VALUES (234,'host_summary',1);
 INSERT INTO `ts_file` VALUES (235,'sys__innodb_lock_waits',1);
+INSERT INTO `ts_file` VALUES (236,'proxysql_connect_error',1);
+INSERT INTO `ts_file` VALUES (237,'proxysql_configuration',1);
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166122,6 +166125,7 @@ CREATE TABLE `ts_variable` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`,`from`),
   KEY `ts_variable_ibfk_1` (`id_ts_file`),
+  KEY `from` (`from`),
   CONSTRAINT `ts_variable_ibfk_1` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -167759,6 +167763,75 @@ INSERT INTO `ts_variable` VALUES (1629,218,'wsrep_protocol_application','INT','s
 INSERT INTO `ts_variable` VALUES (1630,218,'wsrep_protocol_replicator','INT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (1631,218,'wsrep_protocol_gcs','INT','status','general',1,1);
 INSERT INTO `ts_variable` VALUES (1632,218,'wsrep_','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (1633,236,'proxysql_connect_error','JSON','proxysql_connect_error','general',1,1);
+INSERT INTO `ts_variable` VALUES (1634,218,'connection_name','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1635,218,'slave_sql_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1636,218,'slave_io_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1637,218,'master_host','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1638,218,'master_user','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1639,218,'master_port','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1640,218,'connect_retry','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1641,218,'master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1642,218,'read_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1643,218,'relay_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1644,218,'relay_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1645,218,'relay_master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1646,218,'slave_io_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1647,218,'slave_sql_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1648,218,'replicate_do_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1649,218,'replicate_ignore_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1650,218,'replicate_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1651,218,'replicate_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1652,218,'replicate_wild_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1653,218,'replicate_wild_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1654,218,'last_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1655,218,'last_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1656,218,'skip_counter','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1657,218,'exec_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1658,218,'relay_log_space','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1659,218,'until_condition','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1660,218,'until_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1661,218,'until_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1662,218,'master_ssl_allowed','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1663,218,'master_ssl_ca_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1664,218,'master_ssl_ca_path','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1665,218,'master_ssl_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1666,218,'master_ssl_cipher','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1667,218,'master_ssl_key','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1668,218,'seconds_behind_master','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1669,218,'master_ssl_verify_server_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1670,218,'last_io_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1671,218,'last_io_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1672,218,'last_sql_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1673,218,'last_sql_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1674,218,'replicate_ignore_server_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1675,218,'master_server_id','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1676,218,'master_ssl_crl','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1677,218,'master_ssl_crlpath','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1678,218,'using_gtid','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1679,218,'gtid_io_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1680,218,'replicate_do_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1681,218,'replicate_ignore_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1682,218,'parallel_mode','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1683,218,'sql_delay','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1684,218,'sql_remaining_delay','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1685,218,'slave_sql_running_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1686,218,'slave_ddl_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1687,218,'slave_non_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1688,218,'slave_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1689,218,'retried_transactions','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1690,218,'max_relay_log_size','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1691,218,'executed_log_entries','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1692,218,'slave_received_heartbeats','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1693,218,'slave_heartbeat_period','DOUBLE','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1694,218,'gtid_slave_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1695,218,'master_last_event_time','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1696,218,'slave_last_event_time','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1697,218,'master_slave_time_diff','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (1698,219,'replicate_ignore_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (1700,237,'runtime_mysql_galera_hostgroups','JSON','proxysql','general',1,1);
+INSERT INTO `ts_variable` VALUES (1701,225,'memory_mysqld','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (1702,225,'memory_detail_kb','JSON','ssh_stats','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -167794,7 +167867,7 @@ CREATE TABLE `worker_queue` (
 LOCK TABLES `worker_queue` WRITE;
 /*!40000 ALTER TABLE `worker_queue` DISABLE KEYS */;
 INSERT INTO `worker_queue` VALUES (1,20,'mysql_server','worker_mysql',22,10,1234567,'Aspirateur','tryMysqlConnection',15,'select a.id,a.name from mysql_server a             INNER JOIN client b on a.id_client =b.id             WHERE a.is_monitored =1 and b.is_monitored=1');
-INSERT INTO `worker_queue` VALUES (2,22,'ssh_server','worker_ssh',22,10,34572,'Aspirateur','trySshConnection',15,'select \'ssh\' as name, min(a.id) as id from mysql_server a INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server group by ip, ssh_port;');
+INSERT INTO `worker_queue` VALUES (2,22,'ssh_server','worker_ssh',22,10,34572,'Aspirateur','trySshConnection',15,'select \'ssh\' as name, min(a.id) as id from mysql_server a \nINNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server \nINNER JOIN client c on a.id_client =c.id\nWHERE a.is_monitored =1 and c.is_monitored=1\ngroup by ip, ssh_port;');
 INSERT INTO `worker_queue` VALUES (3,21,'proxysql_server','worker_proxysql',2,2,4582,'Aspirateur','tryProxySqlConnection',15,'select CONCAT(\'proxysql_\',id)as name , id from proxysql_server;');
 /*!40000 ALTER TABLE `worker_queue` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -168403,12 +168476,11 @@ CREATE TABLE `dot3_graph` (
   `dot` text NOT NULL,
   `svg` mediumtext NOT NULL,
   `md5` char(32) NOT NULL,
-  `version` varchar(10) NOT NULL,
-  `commit` char(40) NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   `height` int(11) NOT NULL DEFAULT 0,
   `width` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `md5` (`md5`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -168425,8 +168497,6 @@ CREATE TABLE `dot3_information` (
   `information` mediumtext NOT NULL,
   `md5` char(32) NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
-  `version` char(10) NOT NULL,
-  `commit` char(40) NOT NULL,
   `is_svg_generated` int(11) NOT NULL DEFAULT 0 COMMENT 'if yes value is equal to id',
   PRIMARY KEY (`id`),
   KEY `is_svg_generated` (`is_svg_generated`)
@@ -168450,6 +168520,26 @@ CREATE TABLE `dot3_information_extra` (
   PRIMARY KEY (`id`),
   KEY `id_dot3_information` (`id_dot3_information`),
   CONSTRAINT `dot3_information_extra_ibfk_1` FOREIGN KEY (`id_dot3_information`) REFERENCES `dot3_information` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `event_main`
+--
+
+DROP TABLE IF EXISTS `event_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `event_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_event_type` int(11) NOT NULL,
+  `id_mysql_server` int(11) DEFAULT NULL,
+  `id_proxysql_server` int(11) DEFAULT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  `level` enum('DEBUG','INFO','NOTICE','WARNING','ERROR','EMERGENCY''') NOT NULL,
+  `message` text NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -169181,7 +169271,8 @@ CREATE TABLE `proxysql_server` (
   `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
+  CONSTRAINT `proxysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -169353,7 +169444,6 @@ CREATE TABLE `ts_max_date` (
   UNIQUE KEY `id_mysql_server_2` (`id_mysql_server`,`id_ts_file`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`),
   UNIQUE KEY `date` (`date`,`id_ts_file`,`id_mysql_server`),
-  UNIQUE KEY `id_mysql_server_3` (`id_mysql_server`,`id_ts_file`,`date`,`last_date_listener`),
   KEY `id_ts_file` (`id_ts_file`),
   KEY `id_mysql_server_4` (`id_mysql_server`,`date`),
   CONSTRAINT `ts_max_date_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,

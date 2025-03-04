@@ -45,6 +45,10 @@ apt install -y skopeo
 apt install -y jq
 apt install -y sudo
 
+sysctl vm.swappiness=1
+grep -qxF "vm.swappiness=1" /etc/sysctl.conf || echo "vm.swappiness=1" | tee -a /etc/sysctl.conf
+
+
 cd /tmp
 git clone https://github.com/PmaControl/Toolkit.git
 

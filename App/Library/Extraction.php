@@ -9,6 +9,10 @@
  * https://nagix.github.io/chartjs-plugin-datasource/
  * https://www.npmjs.com/package/chartjs-plugin-datasource-prometheus
 
+// pour rocksDB => a tester
+Tester avec optimizer_switch='index_condition_pushdown=off' pour comparer les performances.
+
+ 
  *
  * vertical line
  * https://jsfiddle.net/pu68rhLd/7/
@@ -46,11 +50,16 @@ class Extraction
 
         $extra_where = "";
         $INNER       = "";
+
+        $PARTITION = "";
+
         if (empty($date)) {
 
             $INNER = " \nINNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
             $INNER .= " \nINNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
+            
+            
             //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
         } else {
 
@@ -69,7 +78,17 @@ class Extraction
                 }
             } else {
                 $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
-                $extra_where .= " AND a.`date` <= now() ";
+                //$extra_where .= " AND a.`date` <= now() ";
+
+                //prefetch partition
+                $sql = "WITH RECURSIVE dates AS (
+                    SELECT DATE_SUB(NOW(), INTERVAL 1 ".$date.") AS dt
+                    UNION ALL
+                    SELECT DATE_ADD(dt, INTERVAL 1 DAY)
+                    FROM dates
+                    WHERE DATE_ADD(dt, INTERVAL 1 DAY) <= NOW()
+                  )
+                  select group_concat(part) from (SELECT concat('p',to_days(dt)+1) as part FROM dates) t;";
             }
 
             $extra_where .= " AND a.`date` <= now() ";
@@ -115,9 +134,13 @@ class Extraction
 
                 foreach ($tab_ids as $id_ts_variable) {
 
+                    if (empty($date)) {
+                        $PARTITION = "PARTITION (".self::$partition[$id_ts_variable].")";
+                    }
+
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                     $sql4 = "(SELECT ".$fields
-                    ."\n  FROM `ts_value_".$radical."_".$type."` PARTITION (".self::$partition[$id_ts_variable].") a "
+                    ."\n  FROM `ts_value_".$radical."_".$type."` ".$PARTITION." a "
                         .$INNER." \n  WHERE id_ts_variable = ".$id_ts_variable."";
 
                     if ($server !== "ALL") {
