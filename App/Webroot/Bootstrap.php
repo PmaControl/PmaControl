@@ -227,7 +227,6 @@ if (IS_CLI) {
     } else {
         if (strtolower($_SYSTEM['controller']) === "errorweb") {
             Throw new \Exception('GLI-404 : Impossible to connect to page 404, by security we broken loop');
-            exit;
         }
 
         set_flash("error", __("Error 404"),
@@ -254,7 +253,7 @@ $i = 10;
 
 (DEBUG) ? $_DEBUG->save("Layout loaded") : "";
 
-if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
+if ((DEBUG && (!IS_CLI) && (!IS_AJAX)) && empty($_GET['ajax'])) {//ENVIRONEMENT
     echo "<hr />";
 
     $time_end = microtime(true);
@@ -264,10 +263,21 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
     echo "<br />Nombre de requette : " . Sgbd::sql(DB_DEFAULT)->get_count_query();
     $file_list = get_included_files();
     echo "<br />Nombre de fichier loaded : <b>" . count($file_list) . "</b><br />";
+    
+    
+
 
 
     $queries = Sgbd::sql(DB_DEFAULT)->getQuery();
+    
+    $maxTimeEntry = array_reduce($queries, function ($carry, $item) {
+        return ($carry === null || $item["time"] > $carry["time"]) ? $item : $carry;
+    });
 
+    $maxtime = $maxTimeEntry['time'];
+    
+    
+    //debug($queries);    
     echo '<table class="display-tab table table-condensed" width="100%">';
     echo '<tr>';
     echo '<th>Cumulate</th>';
@@ -278,12 +288,27 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {//ENVIRONEMENT
     echo '<th>Rows</th>';
     echo '<th>Last_is</th>';
     echo '</tr>';
+
+
+    
+
+
     foreach($queries as $query)
     {
+        $percent = round($query['time'] / $maxtime * 100);
+
+
         echo '<tr>';
         
         echo '<td>'.$query['cumulate'].'</td>';
-        echo '<td>'.SqlFormatter::highlight($query['query']).'</td>';
+        echo '<td>'.SqlFormatter::highlight($query['query']).'<b>';
+        
+        echo '<div class="glial-progress-bar">
+        <div class="glial-progress" style="width: '.$percent.'%;"></div>
+        </div>';
+
+
+        echo '</td>';
         echo '<td>'.$query['time'].'</td>';
         echo '<td>'.$query['file'].'</td>';
         echo '<td>'.$query['line'].'</td>';

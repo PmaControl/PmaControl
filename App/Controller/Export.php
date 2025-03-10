@@ -15,6 +15,10 @@ use \App\Library\Mysql;
 use \App\Library\Json;
 use \Glial\Sgbd\Sgbd;
 
+/*
+for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
+*/
+
 class Export extends Controller
 {
     var $table_with_data        = array("translation_main", "geolocalisation_city",

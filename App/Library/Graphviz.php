@@ -503,7 +503,7 @@ class Graphviz
         <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'3</td></tr>';
+        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
 
         $nat = '';
         if ($server['port_real'] != $server['port']){

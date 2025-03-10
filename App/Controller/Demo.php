@@ -150,7 +150,7 @@ class Demo extends Controller {
         Debug::parseDebug($param);
 
         $data   = $this->AssociateServerByLevel();
-        $levels = array_reverse($data['bylevel'], true);
+        $levels = array_reverse(array: $data['bylevel'], preserve_keys: true);
         $master_slave = array();
 
         foreach($levels as $key1 => $lvl)
@@ -239,6 +239,7 @@ class Demo extends Controller {
     {
         Debug::parseDebug($param);
 
+        Debug::debug($param, "PARAMS");
         $id_mysql_server__master = $param[0];
         $id_mysql_server__slave  = $param[1];
         $db = Sgbd::sql(DB_DEFAULT);
@@ -248,6 +249,21 @@ class Demo extends Controller {
 
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){
             $mysql_server[$arr['id']] = $arr;
+        }
+
+        if ($mysql_server[$id_mysql_server__master]['ip'] === "127.0.0.1")
+        {
+            $cmd = "ip -4 addr show | awk '/inet / {print $2}' | cut -d/ -f1 | grep -vE '^(127\.0\.0\.1|172\.17\.)'";
+            $ipv4_master = explode("\n",trim(shell_exec($cmd)))[0];
+            
+            Debug::debug($ipv4_master, "IPV4 master");
+
+            if (filter_var($ipv4_master, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ) {
+                $mysql_server[$id_mysql_server__master]['ip'] = $ipv4_master;
+            }
+            else {
+                throw new \Exception("the slave Docker cannot access to master with IP 127.0.0.1, and impossible to get one alias or an other one");
+            }            
         }
 
         $db_master = Sgbd::sql($mysql_server[$id_mysql_server__master]['name']);
@@ -262,13 +278,20 @@ class Demo extends Controller {
 
         $channel = "slave".$id_mysql_server__master."_".$id_mysql_server__slave;
         $mysql_user = "replication_".$id_mysql_server__master."_".$id_mysql_server__slave;
-        $mysql_password = $this->randomPassword();
+        $mysql_password2 = $this->randomPassword();
+
+        $mysql_user = "replication";
+        $mysql_password2 = "replication";
+
+
         $ip_slave = $mysql_server[$id_mysql_server__slave]['ip'];
         $port_slave = $mysql_server[$id_mysql_server__slave]['port'];
         $login_slave = $mysql_server[$id_mysql_server__slave]['login'];
         $password_slave = Chiffrement::decrypt($mysql_server[$id_mysql_server__slave]['passwd']);
 
-        $sql = "GRANT ALL ON *.* TO '$mysql_user'@'%' IDENTIFIED BY '$mysql_password';";
+        $sql = "GRANT ALL ON *.* TO '$mysql_user'@'%' IDENTIFIED BY '$mysql_password2';";
+
+        Debug::sql($sql);
         $db_master->sql_query($sql);
 
         Debug::debug($FILE, "FILE");
@@ -278,8 +301,12 @@ class Demo extends Controller {
         while($arr2 = $db_slave->sql_fetch_array($res2, MYSQLI_ASSOC)){
 
             if ($arr2['Connection_name'] === "$channel"){
+                $sql = "STOP SLAVE '".$channel."';";
+                Debug::sql($sql);
                 $db_slave->sql_query("STOP SLAVE '".$channel."';");
-                $db_slave->sql_query("RESET SLAVE ALL '".$channel."';");
+                $sql = "RESET SLAVE ALL '".$channel."';";
+                Debug::sql($sql);
+                $db_slave->sql_query("RESET SLAVE '".$channel."' ALL;");
             }
         }
 
@@ -293,30 +320,52 @@ class Demo extends Controller {
 
         while ($ob5 = $db_slave->sql_fetch_object($res5))
         {
-            Debug::debug($ob5,"Channel Name");
+            //Debug::debug($ob5,"Channel Name");
         }
 
+        Debug::debug($mysql_user, "MASTER_USER");
 
-
-        $sql3 = "CHANGE MASTER '".$channel."' TO MASTER_HOST='".$mysql_server[$id_mysql_server__master]['ip']."', 
+        $sql3 = "CHANGE MASTER '".$channel."' TO 
+        MASTER_HOST='".$mysql_server[$id_mysql_server__master]['ip']."', 
         MASTER_PORT=".$mysql_server[$id_mysql_server__master]['port'].", 
         MASTER_USER='".$mysql_user."', 
-        MASTER_PASSWORD='".$mysql_password."', 
+        MASTER_PASSWORD='".$mysql_password2."', 
         MASTER_LOG_FILE='".$FILE."',
         MASTER_LOG_POS=".$POSITION.";";
 
+        Debug::debug("mysql -h $ip_slave -P ".$mysql_server[$id_mysql_server__master]['port'].""
+        ." -u $mysql_user -p$mysql_password2", 'STRING MYSQL MASTER (user replicate)');
+        
+        
         Debug::debug("mysql -h $ip_slave -P $port_slave -u $login_slave -p$password_slave", 'STRING MYSQL');
 
-
+        Debug::sql($sql3, "THE CHANNEL !");
         $db_slave->sql_query($sql3);
+
+
+/*************** */
+
+/*
+        $db_slave->sql_query("START SLAVE '".$channel."';");
+        $res2 = $db_slave->sql_query("SHOW SLAVE '".$channel."' STATUS");
+
+        while($arr2 = $db_slave->sql_fetch_array($res2, MYSQLI_ASSOC)){
+            Debug::debug($arr2, "show slave status");
+        }
+
+        $db_slave->sql_query("STOP SLAVE '".$channel."';");
+        */
+
+
+
+/*************** */
+
 
         $sql4 = "CHANGE MASTER '".$channel."' TO master_use_gtid=slave_pos;";
 
         $db_slave->sql_query($sql4);
 
-
         $db_slave->sql_query("START SLAVE '".$channel."';");
-
 
         $res2 = $db_slave->sql_query("SHOW SLAVE '".$channel."' STATUS");
 

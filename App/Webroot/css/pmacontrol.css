@@ -1542,8 +1542,157 @@ g.edge{
     /* border-radius: 10px;*/
 }
 
+.arrow-container {
+    position: relative;
+    height: 34px;
+    
+}
+
+.arrow-left, .arrow-right, .arrow-left-tail, .arrow-right-tail, .arrow-gg {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    background-color: rgb(64,64,64);
+}
+
+.arrow-left {
+    left: 0;
+    border-width: 17px 17px 17px 0;
+}
+
+.arrow-left-tail {
+    right: 0;
+    border-width: 17px 17px 17px 0;
+}
+
+.arrow-right {
+    right: 0;
+    border-width: 17px 0 17px 17px;
+}
+.arrow-right-tail {
+    left: 0;
+    border-width: 17px 0 17px 17px;
+}
+
+.arrow-gg {
+    left: 0;
+    border-width: 17px 17px 17px 17px;
+    
+} 
+.box {
+    border: 2px solid #0d6efd;
+    padding: 38px 0px;
+    text-align: center;
+    border-radius: 10px;
+    background-color: #000;
+    font-weight: bold;
+    font-size:20px;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+}
+.table tr:nth-child(odd) td{
+    background-color: #fff;
+  }
+  .table tr:nth-child(even) td {
+    background-color: #efefef;
+  }
+
+  .table tr:hover td {
+    background-color: #aaa4ce;
+    border:#000 1px 1px;
+  }
+
+  .bbcode_quote {
+	position: relative; 
+	padding: 1rem 1.2rem;
+	border: none;
+	width: 80%;  /* create space for the quotes */
+	color: #000;
+	margin: 1rem auto 2rem;
+	background:
+	linear-gradient(to right, #426c8c 4px, transparent 4px) 0 100%,
+	linear-gradient(to left, #426c8c 4px, transparent 4px) 100% 0,
+	linear-gradient(to bottom, #426c8c 4px, transparent 4px) 100% 0,
+	linear-gradient(to top, #426c8c 4px, transparent 4px) 0 100%;
+	background-repeat: no-repeat;
+	background-size: 20px 20px;
+}
+
+
+
+.bbcode_quote .message {
+	background: repeating-linear-gradient(45deg, transparent, transparent 10px, #f8f8f8 10px, #f8f8f8 20px);
+}
+
+.bbcode_quote:before, .bbcode_quote:after {
+	position: absolute;
+	color: #426c8c;
+	font-size: 34px;
+}
+
+.bbcode_quote:before {
+	content: "«";
+	top: 15px;
+	margin-right: -20px;
+	right: 100%;
+}
+
+.bbcode_quote:after {
+	content: "»";
+	margin-left: -20px;
+	left: 100%;  
+	top: auto;
+	bottom: 0px;
+}
+
+.glial-progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #eee;
+    border:#000 1px solid;
+    overflow: hidden;
+    position: relative;
+}
+
+.glial-progress {
+    height: 100%;
+    background: #7F7FFF;
+    width: 75%; /* Exemple: 75% d'utilisation de la mémoire */
+    transition: width 0.5s ease-in-out;
+}
+.glial-progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    line-height: 8px;
+}
 
 /*
+
+<div class="bbcode_container">
+	<div class="bbcode_quote">
+		<div class="quote_container">
+			<div class="bbcode_quote_container"></div>
+			
+				<div class="bbcode_postedby">
+					<img src="https://forum.developpez.be/images/misc/quote_icon.png" alt="Citation"> Envoyé par <strong>Taylor Otwell, créateur de Laravel</strong>
+					
+				</div>
+				<div class="message"><br><br>En tant que créateur de Laravel, c’est un grand plaisir de poursuivre le développement d’un framework plébiscité par autant de développeurs et d’entreprises dans le monde. La mission de Laravel a toujours été d’aider les équipes à produire des applications bien conçues et entièrement opérationnelles plus rapidement et en toute confiance. Je suis fier et honoré de voir les solutions incroyables que notre communauté crée chaque jour et d’avoir pu contribuer à leur succès.</div>
+			
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
 .mpd{
 background-color: #3c3c3c;
 background-image: linear-gradient(45deg,rgba(0,0,0,.06) 25%,transparent 0),linear-gradient(-45deg,rgba(0,0,0,.06) 25%,transparent 0),linear-gradient(45deg,transparent 75%,rgba(0,0,0,.06) 0),linear-gradient(-45deg,transparent 75%,rgba(0,0,0,.06) 0);

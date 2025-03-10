@@ -20,6 +20,12 @@ use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use \App\Library\Microsecond;
 /*
+
+https://www.phpclasses.org/package/12231-PHP-Display-bar-charts-in-CLI-console-from-datasets.html
+=> add CLI graph to see current step*
+https://github.com/nunomaduro/termwind
+
+
  *  => systemctl is-active mysql
  *
  * MySQL [(none)]> select @@version_comment limit 1;
@@ -147,6 +153,9 @@ class Aspirateur extends Controller
     //store if table exist or not to prevent ask each time
     static $cache = array();
 
+
+    static $primary_key = array();
+
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -164,6 +173,12 @@ class Aspirateur extends Controller
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
         $this->logger = $monolog;
+
+
+        self::$primary_key['main']['global_variables']['pk'] = "variable_name";
+        self::$primary_key['main']['global_variables']['val'] = "variable_value";
+        self::$primary_key['main']['runtime_global_variables']['pk'] = "variable_name";
+        self::$primary_key['main']['runtime_global_variables']['val'] = "variable_value";
     }
 
     /**
@@ -787,6 +802,8 @@ class Aspirateur extends Controller
          */
 
         $cmd_ipv4 = "ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}'";
+        //sans docker
+        $cmd_ipv4 = "ip -4 addr show | awk '/inet / {print $2}' | cut -d/ -f1 | grep -vE '^(127\.0\.0\.1|172\.17\.)'";
 
 
         $cmd_ipv6 = "ip -6 addr show | grep -oP '(?<=inet6\s)[a-fA-F0-9:]+'";
@@ -1222,6 +1239,8 @@ GROUP BY C.ID, C.INFO;";
         $this->exportData($id_mysql_server, "mysql_schemata", $data);
     }
 
+
+    /*
     public function import($param)
     {
         Debug::parseDebug($param);
@@ -1257,7 +1276,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
         Debug::debug($list);
-    }
+    }*/
 
     /*
     only used for command line
@@ -1294,32 +1313,6 @@ GROUP BY C.ID, C.INFO;";
         }
 
     }
-
-    /*
-    deprecated
-    to call at end of worker to prevent memory leak
-    
-    public function purge()
-    {
-        self::$file_created = array();
-    }
-    /***** */
-
-
-    /* deprecated
-    public function Chown($shared_file)
-    {
-        sleep(1);
-
-        if (file_exists($shared_file)) {
-
-            $user = "www-data";
-
-            chown($shared_file,$user); // get is redhat put apache
-            chgrp($shared_file,$user);
-        }
-    }
-    /******** */
 
     static function isValidStruc($array) {
         // Vérifier si le tableau est un tableau à deux niveaux
@@ -1458,7 +1451,7 @@ GROUP BY C.ID, C.INFO;";
         
         $name_server = $param[0];
         $id_proxysql_server   = $param[1];
-        $id_mysql_server_server = $param[2] ?? "";
+        $id_mysql_server = $param[2] ?? "";
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__function__.' should have id_proxysql_server in parameter');
@@ -1466,137 +1459,146 @@ GROUP BY C.ID, C.INFO;";
 
         $db = Sgbd::sql($name_server);
 
-        /* get id_mysql_server associed to the front_end */
-        $default = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM proxysql_server WHERE id=".$id_proxysql_server;
-        $res = $default->sql_query($sql);
-        while($ob = $db->sql_fetch_object($res))
-        {
-            $id_mysql_server = $ob->id_mysql_server;
-            $ip_proxysql_server = $ob->hostname;
-        }
-        /*********************** */
-        
-        // cas ou on a pas de SERVER mysql associé on force l'auto dsicovery
-        //$id_mysql_server
 
         if (empty($id_mysql_server))
         {
-            //auto discovery mysql to add server to mysql_server
-            $sql = "SELECT * FROM global_variables WHERE variable_name IN ('mysql-monitor_username', 'mysql-monitor_password', 'mysql-interfaces');";
-            $res = $db->sql_query($sql);
-            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+
+            /* get id_mysql_server associed to the front_end */
+            $default = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT * FROM proxysql_server WHERE id=".$id_proxysql_server;
+            $res = $default->sql_query($sql);
+            while($ob = $db->sql_fetch_object($res))
             {
-                Debug::debug($arr, "global variable PROXYSQL");
-                
-                switch($arr['variable_name'])
-                {
-                    case 'mysql-interfaces':
-                        $port = explode(":",$arr['variable_value'])[1];
-                        break;
-
-                    case 'mysql-monitor_username':
-                        $user = $arr['variable_value'];
-                        break;
-
-                    case 'mysql-monitor_password':
-                        $password = $arr['variable_value'];
-                        break;
-                   }
+                $id_mysql_server = $ob->id_mysql_server;
+                $ip_proxysql_server = $ob->hostname;
             }
 
-            try {
-                $ret = Mysql::testMySQL(array($ip_proxysql_server,$port,$user, $password  ));
+            $default->sql_close();
+            /*********************** */
+            
+            // cas ou on a pas de SERVER mysql associé on force l'auto dsicovery
+            //$id_mysql_server
 
-            }
-            catch(\Exception $e) {
-
-
-                Debug::debug($e->getMessage(), "dfgdgf");
-                
-                $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+            if (empty($id_mysql_server))
+            {
+                //auto discovery mysql to add server to mysql_server
+                $sql = "SELECT * FROM global_variables WHERE variable_name IN ('mysql-monitor_username', 'mysql-monitor_password', 'mysql-interfaces');";
                 $res = $db->sql_query($sql);
-                Debug::sql($sql);
-
                 while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
                 {
-                    Debug::debug($arr, "list of mysql_server");
-
-                    $mysql_server_hostname = $arr['hostname'];
-                    $mysql_server_port = $arr['port'];
-                    $hostgroup_id = $arr['hostgroup_id'];
-
-                    $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
-
-                    $mysql_to_link = Sgbd::sql($name_server);
-
-                    $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
-                    $res3 = $mysql_to_link->sql_query($sql3);
-                    while ($ob = $mysql_to_link->sql_fetch_object($res3)){
-                        Debug::debug($ob, "password");
-                        // il faut recupérer le bon
-                        $password_hash = $ob->password;
-                    }
-                
-                    $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
-                    Debug::sql($sql2);
-                    $res2 = $db->sql_query($sql2);
-
-                    while($ob2 = $db->sql_fetch_object($res2))
+                    Debug::debug($arr, "global variable PROXYSQL");
+                    
+                    switch($arr['variable_name'])
                     {
-                        //il faut stocker memory somewhere 
-                        // made update
-                        // restore it
+                        case 'mysql-interfaces':
+                            $port = explode(":",$arr['variable_value'])[1];
+                            break;
 
-                        //uniquement si l'user n'est pas presént pour eviter des effet de bord
-                        if ($ob2->cpt == "0") {
+                        case 'mysql-monitor_username':
+                            $user = $arr['variable_value'];
+                            break;
 
-                            $sql5 = "LOAD MYSQL USERS FROM DISK;";
-                            Debug::sql($sql5);
-                            $db->sql_query($sql5);
+                        case 'mysql-monitor_password':
+                            $password = $arr['variable_value'];
+                            break;
+                    }
+                }
 
-                            $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
-                            VALUES ('".$user."','".$password_hash."',".$hostgroup_id.",'mysql');";
-                            Debug::sql($sql4);
-                            $db->sql_query($sql4);
+                try {
+                    $ret = Mysql::testMySQL(array($ip_proxysql_server,$port,$user, $password  ));
 
-                            $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
-                            Debug::sql($sql6);
-                            $db->sql_query($sql6);
+                }
+                catch(\Exception $e) {
 
 
-                            //try connection
-                            $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
+                    Debug::debug($e->getMessage(), "dfgdgf");
+                    
+                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+                    $res = $db->sql_query($sql);
+                    Debug::sql($sql);
 
-                            if ($ret === true)
-                            {
-                                $data = array();
+                    while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+                    {
+                        Debug::debug($arr, "list of mysql_server");
 
-                                $data['fqdn'] = $mysql_server_hostname;
-                                $data['login'] = $user;
-                                $data['password']= $password;
-                                $data['port'] = $port;
-                                
-                                
-                                Mysql::addMysqlServer($data );
-                                
-                                $sql7 = "SAVE MYSQL USERS TO DISK;";
-                                $db->sql_query($sql7);
+                        $mysql_server_hostname = $arr['hostname'];
+                        $mysql_server_port = $arr['port'];
+                        $hostgroup_id = $arr['hostgroup_id'];
 
-                                ProxySQL::associate(array($id_proxysql_server ));
+                        $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
+
+                        $mysql_to_link = Sgbd::sql($name_server);
+
+                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
+                        $res3 = $mysql_to_link->sql_query($sql3);
+                        while ($ob = $mysql_to_link->sql_fetch_object($res3)){
+                            Debug::debug($ob, "password");
+                            // il faut recupérer le bon
+                            $password_hash = $ob->password;
+                        }
+                    
+                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
+                        Debug::sql($sql2);
+                        $res2 = $db->sql_query($sql2);
+
+                        while($ob2 = $db->sql_fetch_object($res2))
+                        {
+                            //il faut stocker memory somewhere 
+                            // made update
+                            // restore it
+
+                            //uniquement si l'user n'est pas presént pour eviter des effet de bord
+                            if ($ob2->cpt == "0") {
+
+                                $sql5 = "LOAD MYSQL USERS FROM DISK;";
+                                Debug::sql($sql5);
+                                $db->sql_query($sql5);
+
+                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
+                                VALUES ('".$user."','".$password_hash."',".$hostgroup_id.",'mysql');";
+                                Debug::sql($sql4);
+                                $db->sql_query($sql4);
+
+                                $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
+                                Debug::sql($sql6);
+                                $db->sql_query($sql6);
+
+
+                                //try connection
+                                $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
+
+                                if ($ret === true)
+                                {
+                                    $data = array();
+
+                                    $data['fqdn'] = $mysql_server_hostname;
+                                    $data['login'] = $user;
+                                    $data['password']= $password;
+                                    $data['port'] = $port;
+                                    
+                                    
+                                    Mysql::addMysqlServer($data );
+                                    
+                                    $sql7 = "SAVE MYSQL USERS TO DISK;";
+                                    $db->sql_query($sql7);
+
+                                    ProxySQL::associate(array($id_proxysql_server ));
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            ProxySQL::associate(array($id_proxysql_server ));
+                ProxySQL::associate(array($id_proxysql_server ));
+            }
         }
+
 
         if (!empty($id_mysql_server))
         {
 
             $sql = "show tables like 'runtime%';";
+            Debug::sql($sql);
             $res = $db->sql_query($sql);
             while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
             {
@@ -1612,10 +1614,10 @@ GROUP BY C.ID, C.INFO;";
                 if (count($export) > 0)
                 {
                     $data = array();
-                    $data['proxysql_runtime'][$short_name] = json_encode($export);
+                    $data['proxysql_runtime'][$short_name] = json_encode($export, JSON_PRETTY_PRINT);
 
                     Debug::debug($data['proxysql_runtime'][$short_name], $table_name);
-                    echo "###############\n";
+                    
 
                     $this->exportData($id_mysql_server, "proxysql_".$table_name, $data, true);
                 }
@@ -1639,7 +1641,7 @@ GROUP BY C.ID, C.INFO;";
         // $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         }
 
-        $default->sql_close();
+        
         $db->sql_close();
 
     }
@@ -1705,11 +1707,30 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
+
+        if (isset(self::$primary_key[$database][$table]))
+        {
+
+            Debug::debug(self::$primary_key, "TABLE PRIMARY");
+            $field_name = self::$primary_key[$database][$table]['pk'];
+            $value = self::$primary_key[$database][$table]['val'];
+        }
+        else
+        {
+            $field_name ='';
+        }
+
         $table_elems = array();
         $sql2 ="SELECT * FROM `".$database."`.`".$table."`;";
         $res2 = $mysql_tested->sql_query($sql2);
         while ($ob2 = $mysql_tested->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-            $table_elems[] = $ob2;
+
+            if (empty($field_name)) {
+                $table_elems[] = $ob2;
+            }
+            else {
+                $table_elems[$ob2[$field_name]] = $ob2[$value];
+            }
         }
 
         $data = $table_elems;

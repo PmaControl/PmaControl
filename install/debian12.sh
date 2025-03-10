@@ -4,21 +4,24 @@ set -euo pipefail
 
 DEV_MOD=0
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 
-while getopts 'p:d' flag; do
+
+while getopts 'hp:v:d' flag; do
   case "${flag}" in
     h)
-        echo "auto install mariadb"
-        echo "example : ./install -d"
-        echo " "
+
         echo "options:"
-        echo "-d                      developmenet mode, we may ask you questions"
-        echo "-p                      specify password for MariaDB (dba)"
+        echo "-d                      devlopment mode, we may ask you questions"
+        echo "-p                      specify password for PmaControl (admin)"
+        echo "-v                      specify version of MariaDB"
         exit 0
     ;;
 
-    p) DBA_PASSWORD="${OPTARG}" ;;
+    p) pwd_admin="${OPTARG}" ;;
     d) DEV_MOD="1"   ;;
+    v) VERSION_MARIADB="${OPTARG}" ;;
     *) echo "Unexpected option ${flag}" 
 	exit 0
     ;;
@@ -55,20 +58,15 @@ git clone https://github.com/PmaControl/Toolkit.git
 cd Toolkit
 chmod +x install-mariadb.sh
 
-curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.11"
+curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-$VERSION_MARIADB"
 
-./install-mariadb.sh -v 10.11 -p $password -d /srv/mysql -r
+./install-mariadb.sh -v "$VERSION_MARIADB" -p "$password" -d /srv/mysql -r
 
 apt-get -y install php8.2 apache2 php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
 apt -y install graphviz
 apt -y install libcairo2
 
-
 apt-get -y install mariadb-plugin-rocksdb 
-
-#for docker
-apt-get -y install jq skopeo
-
 
 service mysql restart
 
@@ -89,9 +87,6 @@ awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf >
 
 mkdir -p /srv/www/
 cd /srv/www/
-
-#curl -sS https://getcomposer.org/installer | php --
-#mv composer.phar /usr/local/bin/composer
 
 apt-get install -y composer
 
@@ -132,9 +127,9 @@ sudo -u www-data composer install
 service apache2 restart
 
 
-pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+
 sleep 1
-pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+
 
 
 mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
@@ -204,11 +199,11 @@ chmod +x install.sh
 
 echo "Save these credentials"
 echo "#########################################################"
-echo "# Account MySQL
+echo "# Account MySQL"
 echo "Login : pmacontrol"
 echo "Password : ${pwd_pmacontrol}"
 echo "#########################################################"
-echo "# Account SuperAdmin on PmaControl
+echo "# Account SuperAdmin on PmaControl"
 echo "Login : admin"
 echo "Password : ${pwd_admin}"
 echo "#########################################################"

@@ -52,18 +52,18 @@ echo "<div>";
 
 for ($i = 0; $i < $nb; $i++) {
 
-    if ($data['alpha'] == $var{$i} || ($data['alpha'] == "1" && $i == 0)) {
+    if ($data['alpha'] == $var[$i] || ($data['alpha'] == "1" && $i == 0)) {
         $class = "primary";
     } else {
         $class = "default";
     }
 
-    $tmp = $var{$i};
+    $tmp = $var[$i];
 
     if ($tmp == "#") {
         $tmp = 1;
     }
-    echo ' <a class="btn btn-'.$class.'" href="'.LINK.'translation/admin_translation/type:'.$data['type'].'/alpha:'.$tmp.'/from:'.$data['from'].'/to:'.$data['to'].'">'.$var{$i}.'</a>';
+    echo ' <a class="btn btn-'.$class.'" href="'.LINK.'translation/admin_translation/type:'.$data['type'].'/alpha:'.$tmp.'/from:'.$data['from'].'/to:'.$data['to'].'">'.$var[$i].'</a>';
 
 //  btBlueTest
 }
