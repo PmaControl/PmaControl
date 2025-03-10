@@ -54,6 +54,8 @@ class Dot3 extends Controller
 
     static $galera = array();
 
+    static $rank_same = array();
+
     var $logger;
 
     public function before($param)
@@ -71,8 +73,9 @@ class Dot3 extends Controller
 	    Debug::parseDebug($param);
 
         $date_request = $param[0] ?? "";
-        $versioning = "WHERE 1=1 ";
-        $versioning2 = "WHERE 1=1 ";
+        $versioning = " WHERE 1=1 ";
+        $versioning2 = "  ";
+        $versioning3 = "  ";
 
         //to prevent id of daemon in comment
         if (! is_a($date_request, 'DateTime')) {
@@ -83,7 +86,7 @@ class Dot3 extends Controller
         {
             $versioning = "WHERE '".$date_request."' between a.row_start and a.row_end ";
             $versioning2 = "WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
-            
+            $versioning3 = "WHERE '".$date_request."' between d.row_start and d.row_end ";
             $date_request = array($date_request);
         }
 
@@ -103,15 +106,18 @@ class Dot3 extends Controller
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
-                "proxysql_connect_error::proxysql_connect_error",
+                "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),array() , $date_request);
 
         $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
                 FROM mysql_server a ".$versioning."
                 UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
-                from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id
-                ".$versioning2.";";
+                from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id ".$versioning2."
+                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1,d.hostname, d.port FROM proxysql_server d
+                ".$versioning3.";";
+
+        Debug::sql($sql, "GET SERVER LIST");
 
         $res = $db->sql_query($sql);
 
@@ -137,9 +143,9 @@ class Dot3 extends Controller
 
             if (! empty($data['servers'][$arr['id_mysql_server']]['global_variables']))
             {
-                $data['servers'][$arr['id_mysql_server']]['global_variables'] = $this->reOrderVariable($data['servers'][$arr['id_mysql_server']]['global_variables']);
-
-
+                //data['servers'][$arr['id_mysql_server']]['global_variables'] = 
+                //$this->reOrderVariable($data['servers'][$arr['id_mysql_server']]['global_variables']);
+                
                 $data['servers'][$arr['id_mysql_server']]['version'] = $data['servers'][$arr['id_mysql_server']]['global_variables']['admin-version'];
                 $data['servers'][$arr['id_mysql_server']]['version_comment'] = "ProxySQL"; 
 
@@ -411,6 +417,8 @@ class Dot3 extends Controller
             $this->buildLink(array($id_dot3_information, $group));
             //Debug::debug($group, "GROUP");
 
+            $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+
             //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
             $this->linkHostGroup(array($id_dot3_information, $group));
 
@@ -508,6 +516,12 @@ class Dot3 extends Controller
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
         }  
+
+        foreach(self::$rank_same as $same)
+        {
+            $dot .= $same;
+        }
+
         //$dot .= Graphviz::buildApp();
         $dot .= Graphviz::generateEnd();
 
@@ -815,9 +829,25 @@ class Dot3 extends Controller
                     
                     //$tmp['options']['headlabel'] = "sfhg";
                     //$tmp['options']['taillabel'] = "sfhg";
+
+                    if (in_array($hostgroup['hostgroup_id'], array(1)))
+                    {
+                        continue;
+                    }
+                    
                 }
 
-                self::$build_ms[] = $tmp;
+                if (in_array($hostgroup['hostgroup_id'], array(1,2)))
+                {
+                    if (in_array($hostgroup['hostgroup_id'], array(2)))
+                    {
+                        $tmp['options']['style'] = "dashed";
+                    }
+
+
+                    self::$build_ms[] = $tmp;
+                }
+                
             }
         }
 
@@ -905,7 +935,7 @@ class Dot3 extends Controller
     TO MOVE
     */
 
-    function obfuscateIP($ip) {
+    static function obfuscateIP($ip) {
         $segments = explode('.', $ip);
         $obfuscatedSegments = [];
     
@@ -914,7 +944,7 @@ class Dot3 extends Controller
     
         foreach ($segments as $index => $segment) {
             // Appliquer le décalage, s'assurer que le résultat reste dans la plage 0-255
-            $newSegment = ($segment + $offsets[$index]) % 256;
+            $newSegment = ($segment + $offsets[$index]) % 255;
             $obfuscatedSegments[] = $newSegment;
         }
     
@@ -1320,6 +1350,7 @@ class Dot3 extends Controller
     {
         $var_to_keep = array("mysql-interfaces", "admin-version");
 
+        Debug::debug($variables, "VARIABLE PROXY");
 
         $data = array();
         foreach($variables as $variable)
@@ -1360,6 +1391,56 @@ class Dot3 extends Controller
         Debug::debug($data, "HOSTGROUP FLIP");
 
         return $data;
+    }
+
+
+    public function buildLinkBetweenProxySQL($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach($group as $id_mysql_server)
+        {
+            if (! empty($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers']) && !empty($dot3_information['information']['servers'][$id_mysql_server]['is_proxy']))
+            {
+                $same = array();
+
+
+                foreach($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers'] as $proxysql_servers)
+                {
+                    $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
+                    $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+
+                    $same[] = $id_master.":target";
+                    if ($id_mysql_server == $id_master) {
+                        continue;
+                    }
+                    
+
+                    $tmp = self::$config['REPLICATION_OK'];
+                    $tmp['tooltip'] = "OK--- $id_master -> $id_mysql_server";
+
+                    $tmp['options']['arrowsize'] = "1.5";
+                    
+                    $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
+
+                    
+                    self::$build_ms[] = $tmp;
+
+                    //Debug::debug($id_master ,"ID PROXYSQL");
+                }
+                
+                if (count($same) >= 2){
+                    self::$rank_same[] = "{ rank=same;".implode("; ", $same).";}\n";
+                }
+                
+            }
+        }
+
+
+
     }
 
 }
