@@ -1451,7 +1451,7 @@ GROUP BY C.ID, C.INFO;";
         
         $name_server = $param[0];
         $id_proxysql_server   = $param[1];
-        $id_mysql_server = $param[2] ?? "";
+        $refresh = $param[2] ?? "";
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__function__.' should have id_proxysql_server in parameter');

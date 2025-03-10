@@ -363,7 +363,7 @@ class Graphviz
         }
 
         $return .= '];'.PHP_EOL;
-        
+
         return $return;
     }
 
@@ -510,7 +510,7 @@ class Graphviz
             $nat = ' <b>(NAT)</b>';
         }
 
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.$server['ip_real'].':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
+        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.Dot3::obfuscateIP($server['ip_real']).':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
