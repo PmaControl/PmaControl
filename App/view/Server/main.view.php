@@ -17,9 +17,7 @@ if (empty($_GET['ajax'])){
     echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
     echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
     echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a></div><br /><br />';
-
-
-
+    
     echo '<div id="servermain">';
 }
 
@@ -68,27 +66,33 @@ if (!empty($data['servers'])) {
         $IS_AVAILABLE = true;
         $IS_ACKNOWLEDGE = false;
 
+        if ($i % 2 === 1){
+            $intensity = "0.7";
+        }
+        else{
+            $intensity = "0.6";
+        }
 
         $extra = array();
         if (!empty($data['extra'][$server['id']][''])) {
             $extra = $data['extra'][$server['id']][''];
         }
         else{
-            $style = 'background-color:rgb(150, 150, 150, 0.7); color:#ffffff';
+            $style = 'background-color:rgb(150, 150, 150, '.$intensity.'); color:#ffffff';
         }
 
         // cas des warning
         if (!empty($extra['mysql_available']) )
         {
             if ($extra['mysql_available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
-                $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
+                $style = 'background-color:rgb(240, 202, 78,'.$intensity.'); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
             }
         }
 
         //node non primary
         if (!empty($extra['wsrep_on']) && !empty($extra['wsrep_cluster_status']) && $extra['wsrep_on'] === "ON" && $extra['wsrep_cluster_status'] !== "Primary") {
-            $style = 'background-color:rgb(240, 202, 78, 0.7); color:#000000'; //f0ad4e   FCF8E3
+            $style = 'background-color:rgb(240, 202, 78, '.$intensity.'); color:#000000'; //f0ad4e   FCF8E3
             $error_extra = "Galera node is ".$extra['wsrep_cluster_status'];
         }
 
@@ -97,18 +101,18 @@ if (!empty($data['servers'])) {
         // cas des erreur
         if (empty($extra['mysql_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
             $IS_AVAILABLE = false;
-            $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
+            $style = 'background-color:rgb(217, 83, 79,'.$intensity.'); color:#000';
         }
 
         // acknoledge GREEN
         if ($server['is_acknowledged'] !== "0") {
-            $style = 'background-color:rgb(92, 184, 92, 0.7); color:#666666';
+            $style = 'background-color:rgb(92, 184, 92, '.$intensity.'); color:#666666';
             $IS_ACKNOWLEDGE = true;
         }
 
         // serveur non monitoré   BLUE
         if (empty($server['is_monitored']) || empty($server['client_monitored'])) {
-            $style = 'background-color:rgb(91, 192, 222, 0.7);  color:#666666';
+            $style = 'background-color:rgb(91, 192, 222, '.$intensity.');  color:#666666';
         }
 
         $alternate = 'alternate';
@@ -153,7 +157,7 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
         echo '<td style="'.$style.'" title="">';
 
-        \Glial\Synapse\FactoryController::addNode("Server", "passwd", array($server['passwd']));
+        FactoryController::addNode("Server", "passwd", array($server['passwd']));
 
         echo '</td>';
         echo '<td style="'.$style.'">';

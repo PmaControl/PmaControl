@@ -57,26 +57,24 @@ class Listener extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="SELECT 
+        $sql = "SELECT 
         a.id_mysql_server, 
         a.id_ts_file, 
         MIN(a.date) AS min_date, 
         MAX(a.date) AS max_date, 
-        COUNT(*) AS cpt,
-        file_name as ts_file
-    FROM 
-        `ts_date_by_server` a
-    INNER JOIN (
-        SELECT id_mysql_server, id_ts_file, last_date_listener 
-        FROM `ts_max_date` x
-        WHERE x.id_ts_file=".$id_ts_file." AND `last_date_listener` != `date`
-        AND x.id_mysql_server = ".$id_mysql_server."
-    ) `b` ON a.id_mysql_server = b.id_mysql_server AND a.id_ts_file = b.id_ts_file
-    INNER JOIN `ts_file` c ON c.id = a.id_ts_file
-    WHERE 
-        a.date > b.last_date_listener
-        and a.id_mysql_server = ".$id_mysql_server."
-        GROUP BY id_mysql_server,id_ts_file";
+        COUNT(*) AS cpt, 
+        c.file_name AS ts_file
+        FROM ts_date_by_server a
+        INNER JOIN ts_file c ON c.id = a.id_ts_file
+        WHERE a.id_mysql_server = ".$id_mysql_server." 
+        AND a.id_ts_file = ".$id_ts_file."
+        AND a.date > (SELECT last_date_listener 
+        FROM ts_max_date 
+        WHERE id_ts_file = ".$id_ts_file." 
+            AND id_mysql_server = ".$id_mysql_server." 
+            AND last_date_listener != date LIMIT 1)
+        GROUP BY a.id_mysql_server, a.id_ts_file;";
+
 
         Debug::sql($sql);
 

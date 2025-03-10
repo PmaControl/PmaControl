@@ -18,7 +18,7 @@ use \App\Library\Display;
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="<?= LINK ?>home/index" style="color:#fff"><span><img style="float:left" width="20px" height="20px" src="<?=IMG ?>icon/pmacontrol_b.svg">&nbsp;<?= SITE_NAME ?> <span class="badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7" title="<?= SITE_LAST_UPDATE ?>"><?= SITE_VERSION ?> (<?= SITE_LAST_UPDATE ?>)</span></a>
+                    <a class="navbar-brand" href="<?= LINK ?>home/index" style="color:#fff"><span><img style="float:left" width="20px" height="20px" src="<?=IMG ?>icon/pmacontrol_b.svg">&nbsp;<?= SITE_NAME ?> <span class="badge badge-info" style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7" title="<?= SITE_LAST_UPDATE ?>">v<?= SITE_VERSION ?></span></a>
                 </div>
                 <?php
             endif;

@@ -42,7 +42,7 @@ if ( ! empty($data['proxysql']))
         echo '<div class="row">';
         //boutton
         echo '<a href="'.LINK.'ProxySQL/auto/'.$proxysql['id'].'" type="button" class="btn btn-default">'.__('Auto config').'</a> ';
-        echo '<a href="'.LINK.'ProxySQL/config/'.$proxysql['id'].'" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
+        echo '<a href="'.LINK.'ProxySQL/config/'.$proxysql['id'].'/MYSQL_SERVERS" type="button" class="btn btn-danger">'.__('Configuration').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/statistic/'.$proxysql['id'].'" type="button" class="btn btn-success">'.__('Statistics').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/monitor/'.$proxysql['id'].'" type="button" class="btn btn-warning">'.__('Monitor').'</a> ';
         echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-primary">'.__('Cluster').'</a> ';

@@ -400,12 +400,6 @@ PARTITION BY RANGE (to_days(`date`))
     }
 
 
-    public function updateConfig()
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
-        Mysql::generateMySQLConfig($db);
-    }
-
     private function dropFile($diretory)
     {
         Debug::parseDebug($param);

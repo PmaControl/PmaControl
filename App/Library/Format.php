@@ -134,17 +134,17 @@ class Format
             }
         } else {
             $number = $version;
-            $fork = 'mysql';
+            $fork = 'MySQL';
         }
 
         $pos = strpos(strtolower($comment), "percona");
         if ($pos !== false) {
-            $fork = "percona";
+            $fork = "Percona";
         }
 
         $pos = strpos(strtolower($comment), "proxysql");
         if ($pos !== false) {
-            $fork = "proxysql";
+            $fork = "ProxySQL";
         }
 
         return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);

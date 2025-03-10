@@ -53,14 +53,14 @@ echo '</div>';
 </form>
 
 <?php
-$i = 0;
+$j = 0;
 foreach($data['json'] as $elem)
 {
-  $i++;
-  echo '<div class="panel panel-primary" >';
+  $j++;
+  echo '<div class="panel panel-primary" style="margin-bottom:5px">';
     echo '<div class="panel-heading">';
         echo '<h3 class="panel-title">';
-        echo "#".$i." - ". $elem['date'];
+        echo "#".$j." - ". $elem['date'];
           
         echo '</h3>';
   echo '</div>';
@@ -69,7 +69,7 @@ foreach($data['json'] as $elem)
   
   //debug($elem);
 
-  echo '<table class="table table-condensed table-bordered table-striped" id="table">';
+  echo '<table class="table table-condensed table-bordered table-striped" id="table" style="margin-bottom:0px">';
 
 
     // Générer la table HTML
@@ -108,15 +108,18 @@ foreach($data['json'] as $elem)
         foreach ($headers as $header) {
             $value = isset($row[$header]) ? $row[$header] : ''; // Gérer les valeurs nulles
 
+            /*
             if ($header == 'INFO') {
               if (mb_strlen($value)  > 64)
               {
                 $value = substr($value,0,64);
               }
+            }*/
+
+            if ($header == 'waiting_query' || $header == 'blocking_query') {
+              $value = str_replace('<pre', '<pre style="max-width:300px"', \SqlFormatter::format($value));
             }
-
-
-
+            
             echo "<td>" . $value . "</td>";
         }
         echo "</tr>";

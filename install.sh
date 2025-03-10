@@ -45,7 +45,7 @@ fi
 
 #Check distribution GNU / Linux
 
-dist=`egrep '^ID=' /etc/os-release | awk -F '=' '{print $2}'i | sed 's/"//g'`
+dist=$(egrep '^ID=' /etc/os-release | awk -F '=' '{print $2}'i | sed 's/"//g')
 
 DIOK="OK"
 case "$dist" in
@@ -59,7 +59,7 @@ esac
 
 if [ "$DIOK" != "OK" ]
 then
-    dist=`lsb_release -is`
+    dist=$(lsb_release -is)
 
     DIOK="OK"
 
@@ -85,8 +85,8 @@ fi
 # TODO
 
 
-workFolder=$(readlink -f $(dirname $0))
-path=`echo $workFolder | awk -F"/" ' { print $(NF) } '`
+workFolder=$(readlink -f "$(dirname $0)")
+path=$(echo $workFolder | awk -F"/" ' { print $(NF) } ')
 
 cp -a config_sample/*.config.php configuration/
 cp -a config_sample/*.ini.php configuration/
@@ -123,9 +123,7 @@ if (! defined('WWW_ROOT'))
 }
 EOF
 
-#echo 'vm.swappiness = 1' >> /etc/sysctl.conf
-#sysctl -p
-#cat /proc/sys/vm/swappiness
+
 # add pmacontrol user and crontab
 
 case "$dist" in
@@ -149,7 +147,7 @@ find data/ -type f -exec chmod 0644 {} \;
 echo '# crontab for pmacontrol' > mycron
 #echo new cron into cron file
 
-pmacontrol_path=`pwd`
+pmacontrol_path=$(pwd)
 
 echo "* * * * * cd $pmacontrol_path && ./glial agent check_daemon" >> mycron
 echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
@@ -157,6 +155,10 @@ echo "05 */4 * * * cd $pmacontrol_path && ./glial control service" >> mycron
 crontab -u $user mycron
 rm mycron
 
+echo "* * * * * cd $pmacontrol_path/script && ./monitor_mysql.sh" >> rootcron
+#install new cron file
+crontab -u root rootcron
+rm rootcron
 
 #check composer && composer install
 
@@ -169,32 +171,32 @@ fi
 
 if [ -f "$CONFIG_FILE" ]; then
 
-	php App/Webroot/index.php install webroot $CONFIG_FILE
+	php App/Webroot/index.php install webroot "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	    exit 1
 	fi
 
-	php App/Webroot/index.php install index $CONFIG_FILE
+	php App/Webroot/index.php install index "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	    exit 2
 	fi
 
-	php App/Webroot/index.php install createOrganisation $CONFIG_FILE
+	php App/Webroot/index.php install createOrganisation "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	    exit 3
 	fi
 
-	php App/Webroot/index.php install createAdmin $CONFIG_FILE
+	php App/Webroot/index.php install createAdmin "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	   exit 4
 	fi
 
-	php App/Webroot/index.php ldap updateFromInstall $CONFIG_FILE
+	php App/Webroot/index.php ldap updateFromInstall "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	   exit 5
 	fi
 
-	php App/Webroot/index.php webservice addAccount $CONFIG_FILE
+	php App/Webroot/index.php webservice addAccount "$CONFIG_FILE"
 	if [ $? != 0 ]; then
 	   exit 6
 	fi
@@ -258,11 +260,8 @@ chown $user:$user -R .
 
 if [ -f "$CONFIG_FILE" ]; then
         echo "Change chown and chmod for $CONFIG_FILE"
-        chown root:root $CONFIG_FILE
-        chmod 600 $CONFIG_FILE
+        chown root:root "$CONFIG_FILE"
+        chmod 600 "$CONFIG_FILE"
 fi
-
-
-
 
 chmod 600 configuration/crypt.config.php

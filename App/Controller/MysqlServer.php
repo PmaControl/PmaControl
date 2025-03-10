@@ -83,8 +83,7 @@ class MysqlServer extends Controller
                     IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
                     IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
                     IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
-                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time,
-                    $id_mysql_server AS id_mysql_server
+                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
                 FROM
                     performance_schema.threads t
                     LEFT JOIN information_schema.innodb_trx tx ON trx_mysql_thread_id = t.processlist_id
@@ -139,8 +138,7 @@ class MysqlServer extends Controller
                     IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
                     IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
                     IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
-                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time,
-                    $id_mysql_server AS id_mysql_server
+                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
                 FROM information_schema.processlist p
                 LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
                 WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
@@ -185,19 +183,33 @@ class MysqlServer extends Controller
         $this->di['js']->code_javascript('
         $(document).ready(function()
         {
+            var intervalId;
+            var refreshInterval = 1000; // Intervalle par défaut de 1 secondes
+
             function refresh()
             {
                 var myURL = GLIAL_LINK+GLIAL_URL+"ajax:true";
                 $("#processlist").load(myURL);
             }
 
-            var intervalId = window.setInterval(function(){
-                // call your function here
-                refresh()  
-              }, '.$time.');
+            function setRefreshInterval(newInterval) {
+                refreshInterval = newInterval;
+                clearInterval(intervalId);
+                intervalId = setInterval(refresh, refreshInterval);
+            }
+
+            function stopRefresh() {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            intervalId = setInterval(refresh, refreshInterval);
+
+            // Rendre les fonctions accessibles globalement
+            window.setRefreshInterval = setRefreshInterval;
+            window.stopRefresh = stopRefresh;
 
         })');
-        
 
         $this->set('param', $param);
         $this->set('data', $data);

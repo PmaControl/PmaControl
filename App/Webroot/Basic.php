@@ -29,7 +29,7 @@ define('YEAR', 31536000);
  * @link http://book.cakephp.org/view/1190/Basic-Debugging
  * @link http://book.cakephp.org/view/1128/debug
  */
-function debug($var = false, $showHtml = false, $showFrom = true)
+function debug($var, $showHtml = false, $showFrom = true)
 {
     
     if (IS_CLI) {
@@ -294,8 +294,10 @@ function error_msg($table, $field)
 
 
     if (!empty($_SESSION['ERROR'][$table][$field])) {
+
+        //unset($_SESSION['ERROR'][$table][$field]);
         return "<span class=\"error\">" . $_SESSION['ERROR'][$table][$field] . "</span>";
 
-        unset($_SESSION['ERROR'][$table][$field]);
+
     }
 }

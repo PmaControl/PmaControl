@@ -32,7 +32,20 @@ if (empty($_GET['ajax'])){
 
     ?>
     <div>
-    <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", $param); ?></div>
+    <div style="float:left; padding-right:10px;">
+        <?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", $param); ?>
+        <?php
+
+
+echo __("Refresh each :")."&nbsp;";
+echo '<div class="btn-group">';
+echo '<a onclick="setRefreshInterval(1000)" type="button" class="btn btn-primary">1 sec</a>';
+echo '<a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
+echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
+echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
+echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a></div><br /><br />';
+?>
+    </div>
     </div>
     <div style="clear:both"></div>
     <br />
@@ -78,6 +91,7 @@ foreach($data['processlist'] as $line){
     echo '<td>';
     if (! empty($line['query']))
     {
+        //echo $line['query'];
         echo htmlentities(substr($line['query'], 0, 2048));
     }
     echo '</td>';
