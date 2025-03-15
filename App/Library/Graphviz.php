@@ -524,6 +524,7 @@ class Graphviz
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
 
             $debug = '';
+            Debug::$debug = true;
 
             //force le refresh du DOT
             if (Debug::$debug === true) {
@@ -868,7 +869,7 @@ class Graphviz
 
     static function generateGalera($all_galera)
     {
-        ///Debug::debug($all_galera);
+        Debug::debug($all_galera, "ALL GALERA");
         $return = '';
 
         foreach($all_galera as $galera)
@@ -946,6 +947,9 @@ class Graphviz
                     $return .= 'tooltip = "Segment number : '.$segment.'"'.PHP_EOL; // pourquoi ca n'est pas pris en compte ???
                     $return .= 'label = "Segment number : '.$segment.'"'.PHP_EOL;
                     $return .= 'fillcolor = "'.$background.'"'.PHP_EOL; 
+
+                    $return .= 'ordering="out";'.PHP_EOL; 
+                    
                     
                     $return .= 'href = "'.LINK.'GaleraCluster/view/'.$galera['id_cluster'].'";'.PHP_EOL;
                 //}
@@ -953,6 +957,8 @@ class Graphviz
                 foreach($nodes as $id_mysql_server => $node ) {
                     $return .= $id_mysql_server.";".PHP_EOL;
                 }
+
+                Debug::debug($nodes, "NODES");
 
                 //if ($display_segment === true){
                     $return .= self::endCluster();

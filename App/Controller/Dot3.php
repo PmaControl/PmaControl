@@ -842,6 +842,7 @@ class Dot3 extends Controller
                     if (in_array($hostgroup['hostgroup_id'], array(2)))
                     {
                         $tmp['options']['style'] = "dashed";
+                        $tmp['options']['color'] = "#32CD32";
                     }
 
 

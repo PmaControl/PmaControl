@@ -141,6 +141,8 @@ if (!empty($data['variables'])) {
             + $variable['thread_stack'] + $variable['binlog_cache_size']
             );
 
+            //debug($variable['memory_total']);
+
         if (empty($variable['memory_total'])) {
             $mem_kb = 'N/A';
             $style  = '';

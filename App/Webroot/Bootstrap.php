@@ -301,7 +301,7 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX)) && empty($_GET['ajax'])) {//ENVIRONEMENT
         echo '<tr>';
         
         echo '<td>'.$query['cumulate'].'</td>';
-        echo '<td>'.SqlFormatter::highlight($query['query']).'<b>';
+        echo '<td style="max-width:1200px; overflow:auto">'.SqlFormatter::highlight($query['query']).'<b>';
         
         echo '<div class="glial-progress-bar">
         <div class="glial-progress" style="width: '.$percent.'%;"></div>

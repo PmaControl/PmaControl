@@ -16,7 +16,7 @@
         }
 
         echo '<a href="'.$elem['url'].'" type="button" class="btn '.$color.'" style="font-size:12px" '.$disable.'>'
-        .' '.$elem['icone'].' '.__($elem['name']).' ('.$elem['count'].')</a>';
+        .' '.$elem['icone'].' '.$elem['name'].' ('.$elem['count'].')</a>';
     }
     echo '</div>';
     ?>
