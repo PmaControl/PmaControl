@@ -251,7 +251,7 @@ class MysqlUser extends Controller
 
         $id_mysql_available = Available::getMySQL();
 
-        $sql = "SELECT * FROM mysql_server WHERE id in (".$id_mysql_available.")";
+        $sql = "SELECT * FROM mysql_server WHERE id in (".$id_mysql_available.") AND is_proxy = 0";
         $res = $db->sql_query($sql);
 
         $data = array();

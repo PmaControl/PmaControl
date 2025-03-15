@@ -283,7 +283,7 @@ class Translation extends Controller
 
         $sql = "SELECT a.`key`, a.`text`, a.`language` from translation_glial a
 LEFT JOIN translation_google b ON a.`key` = b.`key`
-WHERE b.`key` IS NULL
+WHERE b.`key` IS NULL and a.text NOT LIKE 'The daemon%'
 GROUP by a.`text`, a.`language`;";
 
         Debug::sql($sql);

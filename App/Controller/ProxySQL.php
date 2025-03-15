@@ -789,7 +789,7 @@ class ProxySQL extends Controller
         $id_proxysql_server = $param[0] ?? "";
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM proxysql_server a";
+        $sql = "SELECT * FROM proxysql_server a ORDER BY display_name";
         $res = $db->sql_query($sql);
 
         $data = array();
@@ -813,9 +813,9 @@ class ProxySQL extends Controller
             }else
             {
                 $global_variable = Extraction2::display(array("proxysql_runtime::global_variables"), array($ob['id_mysql_server']));
-                $elems = Dot3::reOrderVariable($global_variable[$ob['id_mysql_server']]['global_variables']);
-                Debug::debug($elems, "ELEM");
-                $data['proxysql'][$ob['id']]['version'] = explode("-",$elems['admin-version'])[0];
+
+                $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
+                $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
             }
         }
 

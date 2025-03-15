@@ -22,6 +22,8 @@ class Mysql
     static $mysql_server         = array();
     static $mysql_server_by_host = array();
 
+    static $db_link = array();
+
     static function exportAllUser($db_link)
     {
         $sql1 = "select user as user, host as host from mysql.user;";
@@ -164,22 +166,31 @@ class Mysql
         return 0;
     }
 
+    //deprecated
     static public function getDbLink($id_mysql_server, $name ='1')
     {
         if (!is_int(intval($id_mysql_server))) {
             throw new \Exception("PMACTRL-855 : first parameter, id_mysql_server should be an int (".$id_mysql_server.") !");
         }
 
-        $dblink = Sgbd::sql(DB_DEFAULT);
+        if (empty(self::$db_link[$id_mysql_server]))
+        {
+            $dblink = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT name from mysql_server where id=".$id_mysql_server.";";
-        $res = $dblink->sql_query($sql);
+            $sql = "SELECT id,name from mysql_server;";
+            $res = $dblink->sql_query($sql);
 
-        while ($ob = $dblink->sql_fetch_object($res)) {
-            return Sgbd::sql($ob->name, $name);
+            while ($ob = $dblink->sql_fetch_object($res)) {
+                self::$db_link[$ob->id] = $ob->name;
+            }
         }
 
-        throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
+        if (empty(self::$db_link[$id_mysql_server])) {
+            throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
+        }
+        else {
+            return Sgbd::sql(self::$db_link[$id_mysql_server], $name);
+        }
     }
 
     static function addMysqlServer($data)
