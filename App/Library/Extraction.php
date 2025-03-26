@@ -479,4 +479,6 @@ class Extraction
             self::$partition[$ob->ts_variable_id] = $ob->partition_day;
         }
     }
+
+
 }

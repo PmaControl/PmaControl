@@ -38,12 +38,9 @@ class MysqlServer extends Controller
             $this->layout_name = false;
         }
 
-
-
         $id_mysql_servers = array();
         $id_mysql_servers[] = $id_mysql_server;
         $nb_server =1;
-
 
         /* case for GALERA to merge serveur
         $data = Extraction::display(array("variables::performance_schema", "wsrep_incoming_addresses"));
@@ -53,8 +50,7 @@ class MysqlServer extends Controller
             $wsrep_incoming_addresses = $data[$id_mysql_server]['']['wsrep_incoming_addresses'];
             $id_mysql_servers = Mysql::getIdMySQLFromGalera($wsrep_incoming_addresses);
 
-            $nb_server = count($id_mysql_servers);
-            
+            $nb_server = count($id_mysql_servers);            
         }*/
 
         //test if performance_schema activated or not

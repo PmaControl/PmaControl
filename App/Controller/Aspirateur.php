@@ -366,7 +366,7 @@ class Aspirateur extends Controller
 
         //SHOW SLAVE HOSTS; => add in glial
         $data = array();
-        $data['mysql_processlist']['processlist'] = json_encode($mysql_tested->getProcesslist(0));
+        $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested));
         $this->exportData($id_mysql_server, "mysql_processlist", $data);
 
 
@@ -1814,5 +1814,104 @@ GROUP BY C.ID, C.INFO;";
         return $table_elems;
 
 
+    }
+
+
+    public function getDigest($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        // to put in function i think
+        if ($id_mysql_server == (int)$id_mysql_server){
+            $mysql_tested = Mysql::getDbLink($id_mysql_server);
+        }
+        else {
+            $mysql_tested = Sgbd::sql($id_mysql_server);
+        }
+
+        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest";
+        //." WHERE LAST_SEEN > '2025-03-16 19:22:09';";
+
+        Debug::sql($sql);
+
+        $res = $mysql_tested->sql_query($sql);
+        $i = 0;
+
+        $data = [];
+        $data['fields'] = [];
+        while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {  
+            $i++;
+            if ($i === 1) {
+                $data['fields'] = array_keys($arr);
+            }
+
+            $data['data'][$arr['DIGEST']] = array_values($arr);
+        }
+
+        /*
+        $json =  json_encode($data);
+        echo $json;
+
+        $sql = "INSERT INTO gg7 (id_mysql_server, id_ts_variable,date,value) 
+        VALUES (".$id_mysql_server.",2, now(), '".$mysql_tested->sql_real_escape_string($json)."' )";
+
+        Debug::sql ($sql);
+
+        $mysql_tested->sql_query($sql);
+        */
+
+        return $data;
+
+    }
+
+
+    public function getProcesslist($db_link)
+    {
+        $time = 0;
+
+        if ($db_link->checkVersion(array('MySQL' => '5.1', 'Percona Server' => '5.1', 'MariaDB' => '5.1'))) {
+            $time = intval($time);
+
+            if ($db_link->checkVersion(array('MySQL' => '8.0')))
+            {
+                $sql  = "SELECT p.*,
+                IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
+                IFNULL(t.trx_state, '')               AS trx_state,
+                IFNULL(t.trx_operation_state, '')     AS trx_operation_state,
+                IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
+                IFNULL(t.trx_rows_modified, '0')      AS trx_rows_modified,
+                IFNULL(t.trx_concurrency_tickets, '') AS trx_concurrency_tickets,
+                IFNULL(TIMESTAMPDIFF(SECOND, t.trx_started, NOW()), '') AS trx_time
+                FROM performance_schema.processlist p
+                LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
+                WHERE p.command NOT IN ('Sleep', 'Binlog Dump')
+                AND p.user NOT IN ('system user', 'event_scheduler') AND TIME > ".$time;
+            }
+            else
+            {
+                $sql  = "SELECT p.*,
+                IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
+                IFNULL(t.trx_state, '')               AS trx_state,
+                IFNULL(t.trx_operation_state, '')     AS trx_operation_state,
+                IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
+                IFNULL(t.trx_rows_modified, '0')      AS trx_rows_modified,
+                IFNULL(t.trx_concurrency_tickets, '') AS trx_concurrency_tickets,
+                IFNULL(TIMESTAMPDIFF(SECOND, t.trx_started, NOW()), '') AS trx_time
+                FROM information_schema.processlist p
+                LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
+                WHERE p.command NOT IN ('Sleep', 'Binlog Dump')
+                AND p.user NOT IN ('system user', 'event_scheduler') AND TIME > ".$time;
+            }
+
+            $res  = $db_link->sql_query($sql);
+            $ret  = array();
+            while ($data = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $ret[] = $data;
+            }
+
+            return $ret;
+        }
     }
 }

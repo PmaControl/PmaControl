@@ -309,13 +309,13 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
                 $from = $split[0];
 
                 if (empty($name)) {
+                    // get partition in this case
                     $sqls[] = "(SELECT * FROM ts_variable where `from` = '".strtolower($from)."')";
                 } else {
 
                     $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' AND `from` = '".strtolower($from)."' LIMIT 1)";
                 }
             } else {
-
                 $name   = $split[0];
                 $sqls[] = "(SELECT * FROM ts_variable where `name` = '".strtolower($name)."' LIMIT 1)";
             }
@@ -330,11 +330,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         $variable = array();
         $ids_variables = array();
         
-
         while ($ob       = $db->sql_fetch_object($res)) {
-
-            
-
             if (! in_array($ob->id_ts_file, self::$ts_file ))
             {
                 self::$ts_file[] = $ob->id_ts_file;
@@ -453,6 +449,26 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         while ($ob = $db->sql_fetch_object($res)){
             self::$partition[$ob->ts_variable_id] = $ob->partition_day;
         }
+    }
+
+
+    static public function getPartitionFrom($param)
+    {
+        $id_mysql_server = $param[0];
+        $from  = $param[1];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SELECT id_ts_file, `from`, count(1) FROM ts_variable GROUP BY id_ts_file, `from`;";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)){
+            self::$partition[$ob->ts_variable_id] = $ob->partition_day;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
     }
 
     

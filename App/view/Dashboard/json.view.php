@@ -119,8 +119,15 @@ foreach($data['json'] as $elem)
             if ($header == 'waiting_query' || $header == 'blocking_query') {
               $value = str_replace('<pre', '<pre style="max-width:300px"', \SqlFormatter::format($value));
             }
+
+            $td = '';
+            if ($header == "INFO")
+            {
+              $td = 'style="min-width:1000px"';
+            }
+
             
-            echo "<td>" . $value . "</td>";
+            echo "<td $td>" . $value . "</td>";
         }
         echo "</tr>";
     }

@@ -23,6 +23,10 @@ class Control extends Controller
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
+
+    public $primary_key_v2           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)");
+
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
