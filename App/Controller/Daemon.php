@@ -19,10 +19,8 @@ class Daemon extends Controller
 
     public function index($param)
     {
-
         $db = Sgbd::sql(DB_DEFAULT);
         
-
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
             $this->layout_name = false;
         }

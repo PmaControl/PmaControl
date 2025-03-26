@@ -37,13 +37,35 @@ class Dashboard extends Controller
                  format: 'hh:mm:ss'
              });
         });");
- 
+
+        $now = date("Y-m-d H:i:s");
+        $hourAgo = date("H:i:s", strtotime("-1 hour", strtotime($now)));
+
+        $split_get = explode("/", $_GET["url"]);
+
+        $time = "";
+        if (count($split_get)> 4 )
+        {
+            $time = $split_get[4];
+        }
+
+        $output_array = [];
+        preg_match('/^\d{2}\:\d{2}\:\d{2}$/', $time, $output_array);
+
+
+        if (!empty($output_array[0])){
+            $_GET['date']['time'] = $output_array[0];
+        }
+        else{
+            $_GET['date']['time'] = $hourAgo;
+        }
+
         $_GET['mysql_server']['id'] = $param[0] ?? 1;
-        $_GET['ts_variable']['id'] = $param[1]  ?? 148;
-        $_GET['date']['date'] = $param[2] ?? '';
-        $_GET['date']['time'] = $param[3] ?? '';
-        $limit = $param[4] ?? 10;
+        $_GET['ts_variable']['id'] = $param[1]  ?? 1323;  // better to map processlist there, the id can change and will change
+        $_GET['date']['date'] = $param[2] ?? date('Y-m-d');
         
+        $limit = $param[4] ?? 100;
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] === "POST")
@@ -63,7 +85,6 @@ class Dashboard extends Controller
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
         {
             //debug(json_encode(json_decode($arr['value'], true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));   
-            //debug($arr);
 
             $tmp = array();
             $tmp['date'] = $arr['date'];

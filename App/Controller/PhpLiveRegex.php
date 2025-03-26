@@ -47,6 +47,8 @@ class PhpLiveRegex extends Controller
 
     public function pregView($regex, $options, $replace, $data)
     {
+        // to prevent debug, fucking our json
+        $_GET['ajax'] = true;
 
         $preg['preg_match']['cmd']     = "preg_match('/".htmlentities(str_replace("'", "\'", $regex))."/".$options."', \$input_line, \$output_array);";
         $preg['preg_match_all']['cmd'] = "preg_match_all('/".htmlentities(str_replace("'", "\'", $regex))."/".$options."', \$input_line, \$output_array);";

@@ -644,6 +644,16 @@ class ProxySQL extends Controller
     {
         $data = array();
 
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js'));
+
+
+        $this->di['js']->code_javascript('
+        $.fn.editable.defaults.mode = "inline";
+
+        $(document).ready(function () {
+            $(".line-edit").editable();
+        });');
+
         Debug::parseDebug($param);
         $id_proxysql_server = $param[0] ?? "";
 
@@ -800,8 +810,7 @@ class ProxySQL extends Controller
 
             $data['proxysql'][$ob['id']] = $ob;
 
-            if ($ob['id_mysql_server'] == "")
-            {
+            if ($ob['id_mysql_server'] == "") {
                 $proxy = Sgbd::sql("proxysql_".$ob['id']);
                 $sql2 = "SELECT * FROM global_variables WHERE variable_name ='admin-version';";
                 $res2 = $proxy->sql_query($sql2);
@@ -810,8 +819,7 @@ class ProxySQL extends Controller
                     Debug::debug($ob2);
                     $data['proxysql'][$ob['id']]['version'] = explode("-", $ob2->variable_value)[0];
                 }
-            }else
-            {
+            } else {
                 $global_variable = Extraction2::display(array("proxysql_runtime::global_variables"), array($ob['id_mysql_server']));
 
                 $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
@@ -895,5 +903,38 @@ class ProxySQL extends Controller
             }
         }
         
+    }
+
+
+    public function updateField($param)
+    {
+
+        ini_set('display_errors','Off');    
+
+        $id_proxysql_server = $param[0];
+        $table = $param[1];
+
+        $this->view        = false;
+        $this->layout_name = false;
+        $_GET['ajax'] = true;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        try{
+            $sql = "UPDATE menu SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            $db->sql_query($sql);
+    
+            if ($db->sql_affected_rows() === 1) {
+                
+                header("HTTP/1.1 200 OK");
+                exit;
+                
+            } else {
+                header("HTTP/1.0 503 Internal Server Error");
+            }
+        }
+        catch(\Exception $e){
+            header("HTTP/1.0 503 Internal Server Error");
+        }
     }
 }

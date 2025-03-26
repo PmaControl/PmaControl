@@ -347,6 +347,7 @@ class Listener extends Controller
     public function afterUpdateVariable($param)
     {
         Debug::debug($param);
+
         $extract = Extraction::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
         
         if (! empty($extract))
@@ -567,6 +568,16 @@ class Listener extends Controller
     }
 
 
+    public function test5( $param )
+    {
+        Debug::parseDebug($param);
+
+        $gg = Extraction2::display(array("variables::"), array(1,2));
+
+
+        Debug::debug($gg);
+
+    }
 }
 
 /****

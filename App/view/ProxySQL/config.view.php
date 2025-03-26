@@ -109,7 +109,8 @@ foreach ($data['table'] as $table_name)
       {
           echo '<tr>';
           foreach($line as $field => $elem) {
-              echo '<td>'.$elem.'</td>'; 
+            echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$field .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$table_name.'" data-title="Enter value">';
+            echo $elem.'</td>'; 
           }
           echo '</tr>';
       }
