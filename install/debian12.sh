@@ -6,7 +6,7 @@ DEV_MOD=0
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-
+VERSION_MARIADB="10.11"
 
 while getopts 'hp:v:d' flag; do
   case "${flag}" in
