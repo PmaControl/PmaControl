@@ -108,25 +108,18 @@ class Install extends Controller
 
         if (!empty($filename) && file_exists($filename)) {
 
-            try
-            {
+            try {
                 $config = $this->parseConfig($filename);
             }
-            catch (\Exception $e)
-            {
-                echo $e->getMessage();
-                throw new \Exception("PARSER PROBLEM");
+            catch (\Exception $e) {
+                trigger_error("Problem with Json parser (".$e->getMessage().")", E_USER_ERROR);
             }
-            
 
-            try
-            {
+            try{
                 $server = $this->configMySQL($config);
             }
-            catch (\Exception $e)
-            {
-                echo $e->getMessage();
-                throw new \Exception("configMySQL PROBLEM");
+            catch (\Exception $e){
+                trigger_error("Config problem with db.config.ini.php (".$e->getMessage().")", E_USER_ERROR);
             }
 
             
