@@ -96,7 +96,7 @@ class Install extends Controller
     public function index($param = array())
     {
         $this->view = false;
-
+        throw new \Exception("OK PROBLEM 3");
         echo "\n";
         echo SITE_LOGO;
         echo Color::getColoredString(SITE_NAME, "green")." version ".Color::getColoredString(SITE_VERSION, "yellow")." (".SITE_LAST_UPDATE.")\n";
