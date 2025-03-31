@@ -659,7 +659,8 @@ if (! defined('CRYPT_KEY'))
 
         $fp = @fsockopen($hostname, $port, $errno, $errstr, 30);
         if (!$fp) {
-            trigger_error("problem fsockopen", E_USER_ERROR);
+            trigger_error("problem fsockopen $hostname:$port - $errstr($errno)", E_USER_ERROR);
+            
             $ret['errno']  = $errno;
             $ret['errstr'] = $errstr;
 
