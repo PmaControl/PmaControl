@@ -96,7 +96,7 @@ class Install extends Controller
     public function index($param = array())
     {
         $this->view = false;
-        throw new \Exception("OK PROBLEM 3");
+        
         echo "\n";
         echo SITE_LOGO;
         echo Color::getColoredString(SITE_NAME, "green")." version ".Color::getColoredString(SITE_VERSION, "yellow")." (".SITE_LAST_UPDATE.")\n";
@@ -105,8 +105,6 @@ class Install extends Controller
         $this->generate_key();
 
         $filename = $param[0] ?? "";
-
-        throw new \Exception("OK PROBLEM");
 
         if (!empty($filename) && file_exists($filename)) {
 
