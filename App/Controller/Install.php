@@ -103,7 +103,6 @@ class Install extends Controller
         echo "Powered by Glial (https://github.com/Glial/Glial)\n";
 
         $this->generate_key();
-
         $filename = $param[0] ?? "";
 
         if (!empty($filename) && file_exists($filename)) {
@@ -121,7 +120,6 @@ class Install extends Controller
             catch (\Exception $e){
                 trigger_error("Config problem with db.config.ini.php (".$e->getMessage().")", E_USER_ERROR);
             }
-
             
         } else {
             $this->cadre("Select MySQL server for PmaControl");
@@ -661,7 +659,7 @@ if (! defined('CRYPT_KEY'))
 
         $fp = @fsockopen($hostname, $port, $errno, $errstr, 30);
         if (!$fp) {
-
+            trigger_error("problem fsockopen", E_USER_ERROR);
             $ret['errno']  = $errno;
             $ret['errstr'] = $errstr;
 
