@@ -45,6 +45,7 @@ class Extraction2
         if (empty($server)) {
             $server = self::getServerList();
         }
+        Debug::debug($server, "SERVER LIST");
 
         $variable = self::getIdVariable($var);
 
@@ -72,7 +73,8 @@ class Extraction2
                     // certainement avec un windows function
 
                     $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) as date from ts_date_by_server 
-                    where date < '".$date[0]."' 
+                    where date = '".$date[0]."' 
+                    AND id_mysql_server IN (".implode(",", $server ).")
                     AND id_ts_file in (".implode(",", self::$ts_file ).")
                     group by 1,2;";
 
@@ -296,7 +298,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         $sqls = array();
 
         if (!is_array($var)) {
-            throw new \Exception("PMACTRL-548 : ".__FILE__."/".__FUNCTION__." : arg \$var must be an array !", 548);
+            throw new \Exception("PMACTRL-548 : ".__FILE__."/".__FUNCTION__." : arg $var must be an array !", 548);
         }
 
         foreach ($var as $val) {
@@ -465,9 +467,61 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         while ($ob = $db->sql_fetch_object($res)){
             self::$partition[$ob->ts_variable_id] = $ob->partition_day;
         }
+    }
+
+
+    static public function getPartitionFromDate($date)
+    {
+        //$date = $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        $sql = "SELECT to_days('$date')+1 AS `partition`;";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)){
+            return "p{$ob->partition}";
+        }
+    }
+
+
+    // trick to optimze query when 1 server with one date !
+
+    public static function getQuery($param)
+    {
+        $variables = $param[0];
+        $id_mysql_server = $param[1];
+        $date = $param[2];
+        
+
+        $id_ts_variables = self::getIdVariable($variables);
+
+        Debug::debug($id_ts_variables);
+
+        $partition = self::getPartitionFromDate($date);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `from`, `radical`, group_concat(id) as id_ts_variable FROM ts_variable WHERE id in (".$id_ts_variables.") GROUP BY 1,2;";
+
+        $res = $db->sql_query($sql);
+
+        $sql4= array();
+        while ($ob = $db->sql_fetch_object($res)) {
+            //debug($radical);
+            if ($ob->radical == "slave") {
+                $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+            } else {
+                $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+            }
+            $sql2[] = "(SELECT ".$fields." FROM `ts_value_".$ob->radical."_".$ob->type."` PARTITION (".$partition.") a 
+                  WHERE a.id_ts_variable = ".$ob->id_ts_variable." AND a.id_mysql_server = ".$id_mysql_server.") AND date= '".$date."' ";
+        }
+
+        $sql3 = implode (" UNION ALL " ,$sql2);
+
+        Debug::sql($sql3);
+
+        return $sql3;
 
     }
 

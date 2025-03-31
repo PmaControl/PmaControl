@@ -25,13 +25,13 @@ class Index extends Controller {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "TRUNCATE TABLE `index_stats`";
-        $db->sql_query($sql);
+        //$sql = "TRUNCATE TABLE `index_stats`";
+        //$db->sql_query($sql);
         
         $servers = Extraction2::display(array("mysql_available"));
         //Debug::debug($servers);
 
-        $sql = "SELECT * FROM mysql_database where schema_name NOT IN ('mysql', 'information_schema', 'performance_schema') ;";
+        $sql = "SELECT * FROM mysql_database where id_mysql_server = 1 and schema_name NOT IN ('mysql', 'information_schema', 'performance_schema') ;";
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
@@ -126,7 +126,7 @@ class Index extends Controller {
                     //Debug::debug($total_size, "TOTAL SIZE");
 
 
-                    $sql4 = "INSERT INTO `index_stats` VALUES(NULL,".$ob->id_mysql_server.", ".$ob->id.",0, '".$ob->schema_name."','".$table."', '".$ob3->INDEX_NAME."', '".$ob3->COLUMNS."',
+                    $sql4 = "REPLACE INTO `index_stats` VALUES(NULL,".$ob->id_mysql_server.", ".$ob->id.",0, '".$ob->schema_name."','".$table."', '".$ob3->INDEX_NAME."', '".$ob3->COLUMNS."',
                      '".$ob3->CARDINALITY."', '".$ob3->DATA_TYPE."', '".$ob3->CHARACTER_MAXIMUM_LENGTH."', ".$ob3->INDEX_SIZE_BYTES.", ".$total_size.", 
                      $redundant_indexes, $unused_indexes );";
 

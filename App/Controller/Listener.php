@@ -346,14 +346,28 @@ class Listener extends Controller
     //after upgrading mysql_global_variable
     public function afterUpdateVariable($param)
     {
+        Debug::parseDebug($param);
+
+
+        if (!empty($param[0])) {
+            $param['id_mysql_server'] = $param[0];
+        }
+
+        if (!empty($param[1])) {
+            $param['min_date'] = $param[1];
+        }
+
+
+
+
         Debug::debug($param);
 
-        $extract = Extraction::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
+        $extract = Extraction2::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
         
         if (! empty($extract))
         {
-            Debug::debug($extract, "EXTRACT");
-            $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']][''];
+            //Debug::debug($extract, "EXTRACT");
+            $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']];
 
         }
         
@@ -374,8 +388,6 @@ class Listener extends Controller
 
 
             $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
-            //$this->logger->debug("SQL : $sql");
-            
             Debug::sql($sql);
             $res = $db->sql_query($sql);
 
@@ -384,6 +396,7 @@ class Listener extends Controller
                 $in_base[$ob->id_mysql_server][$ob->variable_name] = $ob->value;
             }
             //$in_base[1]['jexistedansmesreve'] = "dream!";
+            Debug::debug("OK !");
 
             foreach ($data as $id_mysql_server => $err) {
 
@@ -572,8 +585,8 @@ class Listener extends Controller
     {
         Debug::parseDebug($param);
 
-        $gg = Extraction2::display(array("variables::"), array(1,2));
-
+        //$gg = Extraction::display(array("variables::"), array(1), array("2025-03-29 20:40:20"));
+        $gg = Extraction2::getQuery(array(array("variables::"), 1, "2025-03-29 20:40:20"));
 
         Debug::debug($gg);
 

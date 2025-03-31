@@ -108,7 +108,7 @@ class Install extends Controller
 
         if (!empty($filename) && file_exists($filename)) {
 
-
+            
             $config = $this->parseConfig($filename);
 
             $server = $this->configMySQL($config);

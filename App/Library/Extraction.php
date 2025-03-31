@@ -72,6 +72,14 @@ class Extraction
                     $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
                 } else {
 
+                    $partitions = array();
+                    foreach($date as $date_1)
+                    {
+                        $partitions[] = Extraction2::getPartitionFromDate($date_1);
+                    }
+                    $PARTITION = "PARTITION (".implode(",",$partitions).")";
+
+    
                     //still used ?
                     $all_date    = implode('","', $date);
                     $extra_where = " AND a.`date` IN ('".$all_date."') ";
