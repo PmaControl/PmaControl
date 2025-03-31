@@ -108,10 +108,28 @@ class Install extends Controller
 
         if (!empty($filename) && file_exists($filename)) {
 
+            try
+            {
+                $config = $this->parseConfig($filename);
+            }
+            catch (\Exception $e)
+            {
+                echo $e->getMessage();
+                throw new \Exception("PARSER PROBLEM");
+            }
             
-            $config = $this->parseConfig($filename);
 
-            $server = $this->configMySQL($config);
+            try
+            {
+                $server = $this->configMySQL($config);
+            }
+            catch (\Exception $e)
+            {
+                echo $e->getMessage();
+                throw new \Exception("configMySQL PROBLEM");
+            }
+
+            
         } else {
             $this->cadre("Select MySQL server for PmaControl");
             $server = $this->testMysqlServer();
