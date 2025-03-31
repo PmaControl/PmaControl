@@ -106,6 +106,8 @@ class Install extends Controller
 
         $filename = $param[0] ?? "";
 
+        throw new \Exception("OK PROBLEM");
+
         if (!empty($filename) && file_exists($filename)) {
 
             try
