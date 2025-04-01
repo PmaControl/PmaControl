@@ -140,12 +140,18 @@ class Extraction2
 
                 foreach ($tab_ids as $id_ts_variable) {
 
-// meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
-                    $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` PARTITION (".self::$partition[$id_ts_variable].") a "
-                        .$INNER."
+                // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
+                $filter_partition = "";
+                if ($id_mysql_server != implode(",", $server )) {
+                    $filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
+                }
+                    
 
+
+                $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` $filter_partition a "
+                .$INNER."
                 WHERE id_ts_variable = ".$id_ts_variable."
-                   AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
+                AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
 
                     $sql2[] = $sql4;
                 }
@@ -344,7 +350,6 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
 
             $ids_variables[] = $ob->id;
         }
-
 
         self::getPartition($ids_variables);
 
