@@ -206,6 +206,8 @@ class Control extends Controller
         Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
+
+        /*
         $current_percent = $this->checkSize();
 
         if ($current_percent > self::PERCENT_MAX_DISK_USED) {
@@ -225,7 +227,7 @@ class Control extends Controller
                 
                 $this->dropPartition(array($partitions['min']));
             }
-        }
+        }*/
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
