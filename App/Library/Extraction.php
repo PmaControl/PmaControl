@@ -78,7 +78,7 @@ class Extraction
                         $partitions[] = Extraction2::getPartitionFromDate($date_1);
                     }
                     $PARTITION = "PARTITION (".implode(",",$partitions).")";
-
+                    $PARTITION = '';
     
                     //still used ?
                     $all_date    = implode('","', $date);
