@@ -777,14 +777,12 @@ if (! defined('CRYPT_KEY'))
 
         if ($ret !== true) {
             throw new \Exception($ret['errstr']." (".$ret['errno'].")");
-            exit(1);
         }
         $this->cmd("echo 1", "MySQL server : ".$config['mysql']['ip'].":".$config['mysql']['port']." available");
 
         $this->testMySQL($config['mysql']['ip'], $config['mysql']['port'], $config['mysql']['user'], $config['mysql']['password']);
         if ($ret !== true) {
             throw new \Exception($ret);
-            exit(2);
         }
 
         $this->testVectorDB();
@@ -793,7 +791,6 @@ if (! defined('CRYPT_KEY'))
         $ret = $this->testDatabase($config['mysql']['database']);
         if ($ret !== true) {
             throw new \Exception($ret);
-            exit(5);
         }
 
         $this->createDatabase($config['mysql']['database']);
