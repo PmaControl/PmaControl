@@ -145,6 +145,7 @@ class Extraction
                     if (empty($date)) {
                         $PARTITION = "PARTITION (".self::$partition[$id_ts_variable].")";
                     }
+                    $PARTITION = '';
 
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                     $sql4 = "(SELECT ".$fields
