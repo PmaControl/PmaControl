@@ -143,7 +143,7 @@ class Extraction
                 foreach ($tab_ids as $id_ts_variable) {
 
                     if (empty($date)) {
-                        $PARTITION = "PARTITION (".self::$partition[$id_ts_variable].")";
+                        //$PARTITION = "PARTITION (".self::$partition[$id_ts_variable].")";
                     }
                     $PARTITION = '';
 
