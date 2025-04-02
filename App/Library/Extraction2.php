@@ -142,7 +142,7 @@ class Extraction2
 
                 // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                 $filter_partition = "";
-                if ($id_mysql_server != implode(",", $server )) {
+                if (implode(",", $server ) != "-999") {
                     //$filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
                 }
                     
