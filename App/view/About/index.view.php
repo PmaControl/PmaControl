@@ -51,4 +51,5 @@
     <li>Serge FREZEFOND</li>
     <li>Olivier DAISINI</li>
     <li>Dimitri KRAVTCHUK</li>
+    <li>Philippe BEAUMONT</li>
 </ul>

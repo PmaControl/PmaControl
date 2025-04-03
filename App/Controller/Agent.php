@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\EngineV4;
 
+use Exception;
 use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
@@ -376,7 +377,7 @@ class Agent extends Controller {
             if (!$id_mysql_server = $db->sql_save($data)) {
                 debug($data);
                 debug($db->sql_error());
-                exit;
+                //throw new Exception(''. $db->sql_error());
             } else {
 
                 //$this->OnAddServer(array($id_mysql_server));

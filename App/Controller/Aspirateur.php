@@ -847,7 +847,7 @@ class Aspirateur extends Controller
                     $data['binlog_total_size'] = array_sum($sizes);
                     $data['binlog_nb_files']   = count($files);
 
-                    
+                    Debug::debug($data);
                     return $data;
                 }
             }
