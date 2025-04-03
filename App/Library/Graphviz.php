@@ -516,6 +516,8 @@ class Graphviz
 
         if (empty($server['is_proxysql']) )
         {
+
+            $time_zone = $server['time_zone'];
             if ($server['time_zone'] === "SYSTEM") {
                 $time_zone = $server['time_zone']. " (".$server['system_time_zone'].")";
             }
