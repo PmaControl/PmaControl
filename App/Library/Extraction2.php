@@ -49,7 +49,7 @@ class Extraction2
 
         $variable = self::getIdVariable($var);
 
-        Debug::debug($variable);
+        //Debug::debug($variable);
 
         $extra_where = "";
         $INNER       = "";
@@ -456,6 +456,8 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         while ($ob = $db->sql_fetch_object($res)){
             self::$partition[$ob->ts_variable_id] = $ob->partition_day;
         }
+
+        return self::$partition;
     }
 
 

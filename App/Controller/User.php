@@ -256,13 +256,6 @@ class User extends Controller {
                 $error = $db->sql_error();
                 $_SESSION['ERROR'] = $error;
 
-
-                debug($error);
-                exit;
-
-
-
-
                 $title = I18n::getTranslation(__("Registration error"));
                 $msg = I18n::getTranslation(__("One or more problem came when you try to register your account, please verify your informations"));
 
@@ -273,8 +266,6 @@ class User extends Controller {
 
                 $ret = array();
 
-
-
                 foreach ($_POST['user_main'] as $var => $val) {
                     $ret[] = "user_main:" . $var . ":" . urlencode(html_entity_decode($val));
                 }
@@ -284,7 +275,6 @@ class User extends Controller {
                 header("location: " . LINK . "user/register/" . $param);
                 exit;
             } else {
-
 
 
                 $subject = __("Confirm your registration on ") . SITE_NAME;

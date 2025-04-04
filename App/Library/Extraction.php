@@ -30,9 +30,6 @@ class Extraction
     static $server     = array();
     static $groupbyday = false;
 
-
-    static $partition = array();
-
     static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
 
@@ -58,11 +55,8 @@ class Extraction
             $INNER = " \nINNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
             $INNER .= " \nINNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
-            
-            
             //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
         } else {
-
 
             if (is_array($date)) {
                 if ($range) {
@@ -73,12 +67,15 @@ class Extraction
                 } else {
 
                     $partitions = array();
-                    foreach($date as $date_1)
-                    {
+                    
+                    foreach($date as $date_1) {
                         $partitions[] = Extraction2::getPartitionFromDate($date_1);
                     }
-                    $PARTITION = "PARTITION (".implode(",",$partitions).")";
+                    
                     $PARTITION = '';
+                    if (count($partitions ) > 0) {
+                        $PARTITION = "PARTITION (".implode(",",$partitions).")";
+                    }
     
                     //still used ?
                     $all_date    = implode('","', $date);
@@ -117,9 +114,7 @@ class Extraction
         foreach ($variable as $radical => $data_type) {
             foreach ($data_type as $type => $tab_ids) {
 
-
                 //debug($radical);
-
                 if ($radical == "slave") {
                     $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                 } else {
@@ -142,10 +137,14 @@ class Extraction
 
                 foreach ($tab_ids as $id_ts_variable) {
 
-                    if (empty($date)) {
-                        //$PARTITION = "PARTITION (".self::$partition[$id_ts_variable].")";
-                    }
                     $PARTITION = '';
+                    if (empty($date)) {
+                        if (! empty(Extraction2::$partition[$id_ts_variable]))
+                        {
+                            $PARTITION = "PARTITION (".Extraction2::$partition[$id_ts_variable].")";
+                        }
+                    }
+                    
 
                     // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
                     $sql4 = "(SELECT ".$fields
@@ -227,8 +226,6 @@ class Extraction
 
     static private function getServerList()
     {
-
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty(self::$server)) {
@@ -329,7 +326,6 @@ class Extraction
 
         $res = $db->sql_query($sql);
 
-        
         //echo \SqlFormatter::format($sql) . "\n";
         $from     = array();
         $variable = array();
@@ -343,8 +339,7 @@ class Extraction
             $ids_variables[] = $ob->id;
         }
 
-        self::getPartition($ids_variables);
-        //Debug::debug($variable);
+        Extraction2::getPartition($ids_variables);
 
         return $variable;
     }
@@ -463,31 +458,4 @@ class Extraction
             }
         }
     }
-
-
-    static public function getPartition(array $ids_variable)
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $list_id_variable = implode(",",$ids_variable);
-
-        // array_sub 
-        // Only request missing id
-
-        $sql = "SELECT 
-        c.id AS ts_variable_id,
-        group_concat(distinct concat('p',TO_DAYS(b.date) + 1)) AS partition_day
-        FROM ts_max_date b
-        JOIN ts_variable c ON b.id_ts_file = c.id_ts_file
-        WHERE c.id in (".$list_id_variable.")
-        GROUP BY c.id;";
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)){
-            self::$partition[$ob->ts_variable_id] = $ob->partition_day;
-        }
-    }
-
-
 }
