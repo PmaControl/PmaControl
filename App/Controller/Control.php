@@ -320,11 +320,10 @@ class Control extends Controller
                 $table_name = $table."_".$ext;
 
                 $sql = "CREATE TABLE `".$table_name."` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT ,
+  `date` datetime NOT NULL,
   `id_mysql_server` int(11) NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
   ".$this->extra_field[$table]."
-  `date` datetime NOT NULL,
   `value` ".$this->field_value[$ext].",
   ".$this->primary_key[$table]."
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1
