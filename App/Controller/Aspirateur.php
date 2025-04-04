@@ -432,6 +432,31 @@ class Aspirateur extends Controller
             $this->exportData($id_mysql_server, "mysql_table", $data);
         }
 
+        /******************************************** plugin */
+
+        if ((time()+$id_mysql_server)%(3600*$refresh) < $refresh) {
+
+            $data = array();
+            $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "plugins"));
+            if ($elems != false )
+            {
+                $data['information_schema']['plugins'] = json_encode($elems);
+                $this->exportData($id_mysql_server, "information_schema__plugins", $data);
+            }
+        }
+
+
+        /****************************************************************** */
+
+
+        $data = array();
+        $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "metadata_lock_info"));
+        if ($elems != false )
+        {
+            $data['information_schema']['metadata_lock_info'] = json_encode($elems);
+            $this->exportData($id_mysql_server, "information_schema__metadata_lock_info", $data);
+        }
+
         /****************************************************************** */
 
         $data = array();
@@ -1765,7 +1790,6 @@ GROUP BY C.ID, C.INFO;";
         return false;
     }
 
-
     private function getTableFromProxySQL($id_proxysql)
     {
         $mysql_tested = Sgbd::sql($id_proxysql);
@@ -1791,7 +1815,7 @@ GROUP BY C.ID, C.INFO;";
 
         }
     }
-
+    
 
     public function getPsMemory($id_mysql_server)
     {

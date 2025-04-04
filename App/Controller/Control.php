@@ -7,6 +7,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
+use \App\Library\Extraction2;
 use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
@@ -49,18 +50,42 @@ class Control extends Controller
      * return space used on partition where is datadir of MySQL / MariaDB
      */
 
-    private function checkSize()
+    public function checkSize($param)
     {
-        $db      = Sgbd::sql(DB_DEFAULT);
-        $datadir = $db->getVariables("datadir");
-        // connect to ssh to sql server
-        //$ssh->
-        // or local
-        $size = trim(shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\''));
-        Debug::debug($size, 'Size on /srv/mysql/data');
+        Debug::parseDebug($param);
 
-        $percent = substr($size, 0, -1);
+        $db      = Sgbd::sql(DB_DEFAULT);
+        
+        $id_mysql_server = 1;
+        $val = Extraction2::display(array("information_schema::disks", "variables::datadir"), array($id_mysql_server));
+
+        $data = $val[$id_mysql_server];
+        $datadir = $data['datadir'];
+
+        // Recherche du disque dont le 'Path' correspond le plus précisément à datadir
+        $closestDisk = null;
+        $maxPrefixLength = 0;
+        
+        foreach ($data['disks'] as $disk) {
+            $path = $disk['Path'];
+            // Vérifie si datadir commence par ce path
+            if (strpos($datadir, $path) === 0) {
+                $len = strlen($path);
+                // On garde le path le plus long (donc le plus spécifique)
+                if ($len > $maxPrefixLength) {
+                    $maxPrefixLength = $len;
+                    $closestDisk = $disk;
+                }
+            }
+        }
+
+        $percent = round($closestDisk['Used']/ $closestDisk['Total'] * 100);
         Debug::debug($percent);
+
+        //$size = trim(shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\''));
+        //Debug::debug($size, 'Size on /srv/mysql/data');
+        //$percent = substr($size, 0, -1);
+        //Debug::debug($percent);
 
         return $percent;
     }
@@ -207,8 +232,8 @@ class Control extends Controller
 
         //we drop oldest parttion if free space is low
 
-        /*
-        $current_percent = $this->checkSize();
+        
+        $current_percent = $this->checkSize(array());
 
         if ($current_percent > self::PERCENT_MAX_DISK_USED) {
             $this->logger->notice('Usage of disk : '.$current_percent.' %');
@@ -227,7 +252,7 @@ class Control extends Controller
                 
                 $this->dropPartition(array($partitions['min']));
             }
-        }*/
+        }
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
