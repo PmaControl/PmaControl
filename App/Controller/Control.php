@@ -321,8 +321,8 @@ class Control extends Controller
 
                 $sql = "CREATE TABLE `".$table_name."` (
   `date` datetime NOT NULL,
-  `id_mysql_server` int(11) NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
   ".$this->extra_field[$table]."
   `value` ".$this->field_value[$ext].",
   ".$this->primary_key[$table]."
