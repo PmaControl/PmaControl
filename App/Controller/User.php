@@ -212,9 +212,11 @@ class User extends Controller {
 
         $sql = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
         $res = $db->sql_query($sql);
-        $this->data['geolocalisation_country'] = $db->sql_to_array($res);
 
-        $this->set('data', $this->data);
+        $data = array();
+        $data['geolocalisation_country'] = $db->sql_to_array($res);
+
+        $this->set('data', $data);
 
         if (!empty($_POST['user_main'])) {
 
