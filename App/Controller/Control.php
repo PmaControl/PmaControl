@@ -65,6 +65,13 @@ class Control extends Controller
         // Recherche du disque dont le 'Path' correspond le plus précisément à datadir
         $closestDisk = null;
         $maxPrefixLength = 0;
+
+
+        //hack
+        if (empty($data['disks']))
+        {
+            return 10;
+        }
         
         foreach ($data['disks'] as $disk) {
             $path = $disk['Path'];

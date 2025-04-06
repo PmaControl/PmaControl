@@ -12,11 +12,12 @@ use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Extraction2;
 use \App\Library\Debug;
-use \App\Library\Git;
+use App\Library\Country;
 
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+
 
 use \Glial\Sgbd\Sgbd;
 
@@ -1443,5 +1444,12 @@ class Dot3 extends Controller
 
 
     }
+
+    public function testflag()
+    {
+
+        echo Country::getFlag("FR");
+    }
+
 
 }
