@@ -480,7 +480,7 @@ PARTITION BY RANGE (to_days(`date`))
 SELECT `a`.`id_mysql_server`, b.file_name,a.date, a.date_p4 FROM `ts_max_date` `a`
 INNER JOIN `ts_file` `b` ON `a`.`id_ts_file` = `b`.`id`
 LEFT JOIN `ts_value_general_text` c ON c.date = a.date_p4 AND a.id_mysql_server = c.id_mysql_server AND c.id_ts_variable = (SELECT id from z)
-WHERE b.id in (select id_ts_file from z) AND c.id is null;";
+WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
