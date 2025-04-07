@@ -28,6 +28,7 @@ class About extends Controller
        $data["global_time_zone"] = $this->getResult("SELECT @@global.time_zone;");
        $data["system_time_zone"] = $this->getResult("SELECT @@global.system_time_zone;");
        $data["now"] = $this->getResult("SELECT NOW();");
+       $data['date_php'] = date('Y-m-d H:i:s');
 
         $this->set('data', $data);
     }
