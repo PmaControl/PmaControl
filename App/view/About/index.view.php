@@ -34,7 +34,10 @@
         <?= __('forked from') ?> <a href="https://github.com/mysql/mysql-sys">mysql/mysql-sys</a>)</li>
     <li><?= __('Kernel :') ?> <b><?= $data['kernel'] ?></b></li>
     <li>GNU/Linux: <b><?= $data['os'] ?></b></li>
-
+    <li>Time zone: (session)<b> <?= $data['time_zone'] ?></b></li>
+    <li>Time zone: (global)<b> <?= $data['global_time_zone'] ?></b></li>
+    <li>System time zone :<b> <?= $data['system_time_zone'] ?></b></li>
+    <li>now() :<b> <?= $data['now'] ?></b></li>
 </ul>
 
 <h3><?= __('Powered by') ?></h3>
