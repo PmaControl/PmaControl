@@ -685,7 +685,7 @@ var myChart = new Chart(ctx, {
                 distribution: "linear",
                 time: {
 
-                    max: new Date("'.$data['date_max'].'"),   /* date(Y-m-d H:i:s) => problem with timezone why ? */
+                    max: new Date("'.$data['date_max'].'"),   /* date(Y-m-d H:i:s) : '.date("Y-m-d H:i:s").' => problem with timezone why ? */
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
           minute: "dddd YYYY-MM-DD, HH:mm"
