@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
 
 class About extends Controller
 {
@@ -23,7 +24,23 @@ class About extends Controller
         $data['build']    = shell_exec("git rev-parse HEAD");
         //$data['mysql'] = shell_exec("mysql --version");
 
+       $data["time_zone"] = $this->getResult("SELECT @@session.time_zone;");
+       $data["global_time_zone"] = $this->getResult("SELECT @@global.time_zone;");
+       $data["system_time_zone"] = $this->getResult("SELECT @@global.system_time_zone;");
+       $data["now"] = $this->getResult("SELECT NOW();");
 
         $this->set('data', $data);
+    }
+
+    public function getResult(string $sql)
+    {
+        $db= Sgbd::sql(DB_DEFAULT);
+        
+        $res = $db->sql_query($db->sql_real_escape_string($sql));
+
+        while($arr = $db->sql_fetch_array($res,MYSQLI_NUM)) {
+            return $arr[0];
+        }
+
     }
 }
