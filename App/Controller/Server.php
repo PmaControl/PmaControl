@@ -559,6 +559,13 @@ class Server extends Controller
 
                 $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), str_replace("-"," ",$_GET['ts_variable']['date']));
 
+
+                $data['date_max'] = date('Y-m-d H:i:s');
+                $res10 = $db->sql_query("SELECT NOW() as maintenant;");
+                while($ob = $db->sql_fetch_object($res10)) {
+                    $data['date_max'] = $ob->maintenant;
+                }
+
                 //debug($res);
                 /*
                   $sql = "SELECT * FROM status_value_int a
@@ -570,8 +577,6 @@ class Server extends Controller
 
                 $data['graph'] = array();
                 if ($res !== false) {
-
-
                     while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                         $data['graph'][] = $arr;
                     }
@@ -607,7 +612,6 @@ class Server extends Controller
 
                             $datetime1 = strtotime($old_date);
                             $datetime2 = strtotime($value['date']);
-
                             $secs = $datetime2 - $datetime1; // == <seconds between the two times>
 //echo $datetime1. ' '.$datetime2 . ' : '. $secs." ".$value['value'] ." - ". $old_value." => ".($value['value']- $old_value)/ $secs."<br>";
                             //to prevent divide by zero
@@ -628,10 +632,7 @@ class Server extends Controller
                             $val = $value['value'];
                         }
 
-
-
                         $point[] = "{ x: new Date('".$value['date']."'), y: ".$val."}";
-
                         $dates[] = $value['date'];
 
                         $old_date  = $value['date'];
@@ -639,14 +640,12 @@ class Server extends Controller
                     }
                 }
 
-
 //$point2[] = "{ x: new Date('2017-10-28 00:38:34'), y: 50}";
 //$point2[] = "{ x: new Date('2017-10-28 00:37:34'), y: 40}";
 //$date = implode('","', $dates);
 //$vals = implode(',', $val);
                 $points = implode(',', $point);
 //$points2 = implode(',', $point2);
-
 
                 $this->di['js']->code_javascript('
 var ctx = document.getElementById("myChart").getContext("2d");
@@ -686,7 +685,7 @@ var myChart = new Chart(ctx, {
                 distribution: "linear",
                 time: {
 
-                    max: new Date("'.date('Y-m-d H:i:s').'"),
+                    max: new Date("'.$data['date_max'].'"),   /* date(Y-m-d H:i:s) => problem with timezone why ? */
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
           minute: "dddd YYYY-MM-DD, HH:mm"
