@@ -29,13 +29,17 @@ class Extraction2
 
     static $partition = array();
 
-    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
+    static public function extract($var = array(), $server = array(),mixed $date = "", $range = false, $graph = false)
     {
         /*
           debug($var);
           debug($server);
           debug($date);
           /**** */
+
+          Debug::debug($var);
+          Debug::debug($server);
+          Debug::debug($date);
 
         //Debug::debug($date);
 
@@ -47,153 +51,164 @@ class Extraction2
         }
         Debug::debug($server, "SERVER LIST");
 
-        $variable = self::getIdVariable($var);
-
         //Debug::debug($variable);
 
-        $extra_where = "";
-        $INNER       = "";
-        if (empty($date)) {
 
-            $INNER = "\n INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
-            $INNER .= "\n INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
-            //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
+        if (! empty($date) && $range == false 
+        && count($server) == 1 
+        && count($date) == 1){
+            $server = implode(',',$server);
+            $date  = implode(',', $date);
+
+            $sql3 = self::getQuery(array($var, $server, $date));
         } else {
 
-            if (is_array($date)) {
-                if ($range) {
-                    $date_min = $date[0];
-                    $date_max = $date[1];
+            $extra_where = "";
+            $INNER       = "";
+            if (empty($date)) {
 
-                    $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
-                } else {
+                $INNER = "\n INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
+                $INNER .= "\n INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
 
-                    // il y aurait moyen de faire mieux pour récupérer uniquement les bonnes dates 
-                    // certainement avec un windows function
-
-                    $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) as date from ts_date_by_server 
-                    where date = '".$date[0]."' 
-                    AND id_mysql_server IN (".implode(",", $server ).")
-                    AND id_ts_file in (".implode(",", self::$ts_file ).")
-                    group by 1,2;";
-
-                    Debug::sql($sql_get_mindate, "GET MINDATE");
-
-                    $res2 = $db->sql_query($sql_get_mindate);
-
-                    $dates = array();
-                    while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
-                    {
-                        $dates[] = $arr['date'];                        
-                    }        
-
-                    $all_date    = implode("','", $dates);
-                    $extra_where = " AND a.`date` IN ('".$all_date."') ";
-
-                }
+                //$extra_where = " AND a.`date` > date_sub(now(), INTERVAL 1 DAY) ";
             } else {
-                $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
+
+                if (is_array($date)) {
+                    if ($range) {
+                        $date_min = $date[0];
+                        $date_max = $date[1];
+
+                        $extra_where = " AND a.`date` BETWEEN '".$date_min."' AND '".$date_max."' ";
+                    } else {
+
+                        // il y aurait moyen de faire mieux pour récupérer uniquement les bonnes dates 
+                        // certainement avec un windows function
+
+                        $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) as date from ts_date_by_server 
+                        where date = '".$date[0]."' 
+                        AND id_mysql_server IN (".implode(",", $server ).")
+                        AND id_ts_file in (".implode(",", self::$ts_file ).")
+                        group by 1,2;";
+
+                        Debug::sql($sql_get_mindate, "GET MINDATE");
+
+                        $res2 = $db->sql_query($sql_get_mindate);
+
+                        $dates = array();
+                        while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+                            $dates[] = $arr['date'];                        
+                        }        
+
+                        $all_date    = implode("','", $dates);
+                        $extra_where = " AND a.`date` IN ('".$all_date."') ";
+
+                    }
+                } else {
+                    $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
+                    $extra_where .= " AND a.`date` <= now() ";
+                }
+
                 $extra_where .= " AND a.`date` <= now() ";
+
+                //$extra_where .= " GROUP BY id_mysql_server, id_ts_variable, date(a.`date`), hour(a.`date`)";
+                //$extra_where .= ", minute(a.`date`)";
+
+                $INNER = "\n INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` ";
+                $INNER .= "\n INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
             }
 
-            $extra_where .= " AND a.`date` <= now() ";
+            //Debug::debug($var, "VAR");
 
-//$extra_where .= " GROUP BY id_mysql_server, id_ts_variable, date(a.`date`), hour(a.`date`)";
-//$extra_where .= ", minute(a.`date`)";
+            $sql2     = array();
+            $WINDOW   = "";
 
-            $INNER = "\n INNER JOIN `ts_date_by_server` b on a.`date` = b.`date` AND a.`id_mysql_server` = b.`id_mysql_server` ";
-            $INNER .= "\n INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
-        }
+            $variable = self::getIdVariable($var);
+            //Debug::debug($variable);
 
-        //Debug::debug($var, "VAR");
+            foreach ($variable as $radical => $data_type) {
+                foreach ($data_type as $type => $tab_ids) {
 
-        $sql2     = array();
-        $WINDOW   = "";
+                    //Debug::debug($radical);
 
-        //Debug::debug($variable);
-
-        foreach ($variable as $radical => $data_type) {
-            foreach ($data_type as $type => $tab_ids) {
-
-                //Debug::debug($radical);
-
-                if ($radical == "slave") {
-                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-                } else {
-                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
-
-                    if ($graph === true) {
-//$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
-//$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
-                        $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
-
-                        $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
-//$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
+                    if ($radical == "slave") {
+                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
                     } else {
-                        $fields .= ", a.`value` as value ";
+                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
+
+                        if ($graph === true) {
+                            //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
+                            //$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
+                            $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
+
+                            $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
+                            //$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
+                        } else {
+                            $fields .= ", a.`value` as value ";
+                        }
+
+                        //a.`value`";
+                        // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
                     }
 
-//a.`value`";
-// $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
+                    foreach ($tab_ids as $id_ts_variable) {
+
+                        // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec 
+                        // => ce qui n'est plus le cas avec 7 Milliards d'enregistremenets avec une date specifique
+                        // permet d'avoir toutes les données 
+                        $filter_partition = "";
+                        if (implode(",", $server ) != "-999") {
+                            $filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
+                        }
+                            
+
+
+                        $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` $filter_partition a "
+                        .$INNER."
+                        WHERE id_ts_variable = ".$id_ts_variable."
+                        AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
+
+                        $sql2[] = $sql4;
+                    }
+                
+
+
                 }
 
-                foreach ($tab_ids as $id_ts_variable) {
+                $sql3 = implode(" \nUNION ALL\n ", $sql2);
 
-                // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec
-                $filter_partition = "";
-                if (implode(",", $server ) != "-999") {
-                    //$filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
+                if ($graph === true) {
+
+                    $sql3 = "WITH t as ($sql3)
+                        SELECT t.id_mysql_server,
+                        id_ts_variable,";
+
+                    if (self::$groupbyday) {
+                        $sql3 .= " date(t.`date`) as day, ";
+                    }
+
+
+                    $sql3 .= "
+                        connection_name,
+                        group_concat(concat('{x:new Date(\'',t.`date`, '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
+                        round(min(t.`value`),2) as `min`,
+                        round(max(t.`value`),2) as `max`,
+                        round(avg(t.`value`),2) as `avg`,
+                        round(std(t.`value`),2) as `std`
+                    FROM t GROUP BY id_mysql_server, id_ts_variable ";
+
+                    //$sql3 .= ", date(t.`date`), hour(t.`date`), minute(t.`date`)";
+
+                    if (self::$groupbyday) {
+                        $sql3 .= " ,date(t.`date`) ";
+                    } else {
+                        $sql3 .= " order by `std` desc;";
+                    }
                 }
-                    
 
-
-                $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` $filter_partition a "
-                .$INNER."
-                WHERE id_ts_variable = ".$id_ts_variable."
-                AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
-
-                    $sql2[] = $sql4;
-                }
             }
         }
 
-        $sql3 = implode(" \nUNION ALL\n ", $sql2);
-
-        if ($graph === true) {
-
-        } else {
-
-        }
-
-        if ($graph === true) {
-
-            $sql3 = "WITH t as ($sql3)
-                SELECT t.id_mysql_server,
-                id_ts_variable,";
-
-            if (self::$groupbyday) {
-                $sql3 .= " date(t.`date`) as day, ";
-            }
-
-
-            $sql3 .= "
-    connection_name,
-    group_concat(concat('{x:new Date(\'',t.`date`, '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
-    round(min(t.`value`),2) as `min`,
-    round(max(t.`value`),2) as `max`,
-    round(avg(t.`value`),2) as `avg`,
-    round(std(t.`value`),2) as `std`
-FROM t GROUP BY id_mysql_server, id_ts_variable ";
-
-//$sql3 .= ", date(t.`date`), hour(t.`date`), minute(t.`date`)";
-
-            if (self::$groupbyday) {
-                $sql3 .= " ,date(t.`date`) ";
-            } else {
-                $sql3 .= " order by `std` desc;";
-            }
-        }
 
         if (empty($sql3)) {
             return false;
@@ -206,6 +221,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         //echo \SqlFormatter::format($sql3)."\n";
         //Debug::sql($sql3);
 
+
         
         $res2 = $db->sql_query($sql3);
 
@@ -216,7 +232,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         return $res2;
     }
 
-    static private function getServerList()
+    static function getServerList()
     {
 
 
@@ -247,6 +263,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         $db = Sgbd::sql(DB_DEFAULT);
         $res = self::extract($var, $server, $date, $range, $graph);
 
+
         $table = array();
 
         if ($res === false) {
@@ -254,6 +271,7 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         }
 
         while ($ob = $db->sql_fetch_object($res)) {
+            //Debug::debug($ob);
             //Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
 
             if ($range) {
@@ -500,17 +518,44 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
         $id_mysql_server = $param[1];
         $date = $param[2];
         
-
         $id_ts_variables = self::getIdVariable($variables);
-
         Debug::debug($id_ts_variables);
 
         $partition = self::getPartitionFromDate($date);
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT `from`, `radical`, group_concat(id) as id_ts_variable FROM ts_variable WHERE id in (".$id_ts_variables.") GROUP BY 1,2;";
+        $sql2 = [];
 
-        $res = $db->sql_query($sql);
+        foreach ($id_ts_variables as $radical => $data_type) {
+            foreach ($data_type as $type => $tab_ids) {
+                //Debug::debug($radical);
+                if ($radical == "slave") {
+                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+                } else {
+                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date`, a.value ";
+                }
+
+                $id_ts_variable = implode(',',$tab_ids);
+
+                $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` PARTITION(`".$partition."`) a "
+                ." WHERE id_ts_variable IN (".$id_ts_variable.")
+                AND a.id_mysql_server = ".$id_mysql_server." AND a.`date` = '".$date."' ) ";
+
+                $sql2[] = $sql4;
+                
+            }
+        }
+
+        $sql3 = implode(" \nUNION ALL\n ", $sql2);
+
+
+        //$db = Sgbd::sql(DB_DEFAULT);
+        //$res = $db->sql_query($sql3);
+
+        Debug::sql($sql3);
+        
+        //$sql = "SELECT `from`, `radical`, group_concat(id) as id_ts_variable FROM ts_variable WHERE id in (".$id_ts_variables.") GROUP BY 1,2;";
+
+            /*
 
         $sql4= array();
         while ($ob = $db->sql_fetch_object($res)) {
@@ -524,9 +569,9 @@ FROM t GROUP BY id_mysql_server, id_ts_variable ";
                   WHERE a.id_ts_variable = ".$ob->id_ts_variable." AND a.id_mysql_server = ".$id_mysql_server.") AND date= '".$date."' ";
         }
 
-        $sql3 = implode (" UNION ALL " ,$sql2);
+        $sql3 = implode (" UNION ALL " ,$sql2);*/
 
-        Debug::sql($sql3);
+        
 
         return $sql3;
 

@@ -20,8 +20,12 @@
 <h3><?= __('Product') ?></h3>
 <ul>
     <li><?= __('Product Version:') ?> <b><?= SITE_NAME ?> <?= SITE_VERSION ?></b> (Build <?= $data['build'] ?>)</li>
+    <?php
+    /*
     <li><?= __('Lisense:') ?> <b><a href="http://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL v3</a></b></li>
     <li><?= __('Made in') ?> <b>🇫🇷 <?= __('FRANCE') ?></b></li>
+    */
+    ?>
 </ul>
 
 <h3><?= __('Dependencies') ?></h3>
