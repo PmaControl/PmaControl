@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Extraction;
+use App\Library\Extraction2;
 use App\Library\Mysql;
 use Glial\Security\Crypt\Crypt;
 use App\Library\Display;
@@ -131,7 +132,6 @@ class Binlog extends Controller {
             $data['max_binlog_size'] = $ob->value;
         }
 
-
         if (!empty($data['max_binlog_size'])) {
             echo $data['max_binlog_size'];
         } else {
@@ -165,22 +165,13 @@ class Binlog extends Controller {
         $all_id_mysql_server = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
-
             $all_id_mysql_server[] = $arr['id_mysql_server'];
 
-            $db_remote = Mysql::getDbLink($arr['id_mysql_server']);
+            $binlog_files = Extraction2::display(array("mysql_binlog::binlog_files"), array($arr['id_mysql_server']));
+            $data['extra'][$arr['id_mysql_server']]['binary_logs']['file'] = $binlog_files[$arr['id_mysql_server']]['binlog_files'];
 
-            $res2 = $db_remote->sql_query("show binary logs;");
-
-            while ($arr2 = $db_remote->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-
-
-
-
-                $data['extra'][$arr['id_mysql_server']]['binary_logs']['file'][] = $arr2['Log_name'];
-                $data['extra'][$arr['id_mysql_server']]['binary_logs']['size'][] = $arr2['File_size'];
-            }
-
+            $binlog_sizes = Extraction2::display(array("mysql_binlog::binlog_sizes"), array($arr['id_mysql_server']));
+            $data['extra'][$arr['id_mysql_server']]['binary_logs']['size'] = $binlog_sizes[$arr['id_mysql_server']]['binlog_sizes'];
 
             $mysql_server[] = $arr['id_mysql_server'];
 

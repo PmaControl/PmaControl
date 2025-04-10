@@ -307,10 +307,8 @@ class Server extends Controller
 
         }
 
-        $data['extra'] = Extraction::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status",
+        $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status",
          "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
-
-    
 
         $data['last_date'] = Extraction2::display(array("mysql_server::"));
 
@@ -517,13 +515,15 @@ class Server extends Controller
             }
 
             // get variable available
-            $sql            = "SELECT name FROM ts_variable WHERE `type` in('INT','DOUBLE') order by name ASC";
+            $sql            = "SELECT name,`from` FROM ts_variable 
+            WHERE `type` in('INT','DOUBLE') AND `from` NOT IN ('variables', 'slave')
+            order by `from`,name ASC";
             $res            = $db->sql_query($sql);
             $data['status'] = array();
             while ($ob             = $db->sql_fetch_object($res)) {
                 $tmp              = [];
                 $tmp['id']        = $ob->name;
-                $tmp['libelle']   = $ob->name;
+                $tmp['libelle']   = '<i style="color:#bbbbbb">'.$ob->from ."</i> ". $ob->name;
                 $data['status'][] = $tmp;
             }
 

@@ -74,8 +74,8 @@ if (!empty($data['servers'])) {
         }
 
         $extra = array();
-        if (!empty($data['extra'][$server['id']][''])) {
-            $extra = $data['extra'][$server['id']][''];
+        if (!empty($data['extra'][$server['id']])) {
+            $extra = $data['extra'][$server['id']];
         }
         else{
             $style = 'background-color:rgb(150, 150, 150, '.$intensity.'); color:#ffffff';
@@ -148,7 +148,7 @@ if (!empty($data['servers'])) {
 
         echo '<td style="'.$style.'">'.$server['ip'];
 
-        if (!empty($extra['read_only']) && $data['extra'][$server['id']]['']['read_only'] === "ON") {
+        if (!empty($extra['read_only']) && $extra['read_only'] === "ON") {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }
 
@@ -162,32 +162,32 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
-        $is_proxysql = (empty($data['extra'][$server['id']]['']['is_proxysql'])) ? 0 : $data['extra'][$server['id']]['']['is_proxysql'];
+        $is_proxysql = (empty($extra['is_proxysql'])) ? 0 : $extra['is_proxysql'];
 
-        if (!empty($data['extra'][$server['id']]['']['version'])) {
-            echo Format::mysqlVersion($data['extra'][$server['id']]['']['version'], $data['extra'][$server['id']]['']['version_comment'], $is_proxysql);
+        if (!empty($extra['version'])) {
+            echo Format::mysqlVersion($extra['version'], $extra['version_comment'], $is_proxysql);
         }
 
-        if (!empty($data['extra'][$server['id']]['']['wsrep_on']) && $data['extra'][$server['id']]['']['wsrep_on'] === "ON") {
+        if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON") {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
         }
 
         echo '</td>';
         echo '<td style="'.$style.'">';
-        if (!empty($data['extra'][$server['id']]['']['query_latency_1m'])) {
-            echo round($data['extra'][$server['id']]['']['query_latency_1m'], 3)." µs";
+        if (!empty($extra['query_latency_1m'])) {
+            echo round($extra['query_latency_1m'], 3)." µs";
         }
         echo '</td>';
 
 
         echo '<td style="'.$style.'">';
 
-        if (!empty($data['extra'][$server['id']]['']['general_log'])) {
+        if (!empty($extra['general_log'])) {
 
 
             $checked = array();
 
-            if ($data['extra'][$server['id']]['']['general_log'] === "ON") {
+            if ($extra['general_log'] === "ON") {
                 $checked = array("checked" => "checked");
             }
             ?>
@@ -211,7 +211,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
 
         echo '<td style="'.$style.'">';
-        //echo $data['extra'][$server['id']]['']['performance_schema'];
+        //echo $extra['performance_schema'];
 
         if (!empty($extra['performance_schema'])) {
 

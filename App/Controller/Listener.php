@@ -40,7 +40,6 @@ class Listener extends Controller
     {
         Debug::parseDebug($param);
 
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) from ts_max_date where last_date_listener != date ORDER BY 3 DESC;";
@@ -585,8 +584,8 @@ class Listener extends Controller
     {
         Debug::parseDebug($param);
 
-        //$gg = Extraction::display(array("variables::"), array(1), array("2025-03-29 20:40:20"));
-        $gg = Extraction2::getQuery(array(array("variables::"), 1, "2025-03-29 20:40:20"));
+        $gg = Extraction2::display(array("variables::"), array(1), array("2025-03-29 20:40:20"));
+        //$gg = Extraction2::getQuery(array(array("variables::"), 1, "2025-03-29 20:40:20"));
 
         Debug::debug($gg);
 
