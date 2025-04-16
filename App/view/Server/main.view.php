@@ -29,7 +29,7 @@ echo '<tr>';
 
 echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("ID").'</th>';
-echo '<th>'.__("Available").'</th>';
+//echo '<th>'.__("Available").'</th>';
 echo '<th>'.__("Client").'</th>';
 echo '<th>'.__("Environment").'</th>';
 echo '<th>'.__("Name").'</th>';
@@ -38,8 +38,8 @@ echo '<th>';
 echo __('Tags');
 
 echo '</th>';
-echo '<th>'.__("IP").'</th>';
-echo '<th>'.__("Port").'</th>';
+echo '<th>'.__("IP").':'.__("Port").'</th>';
+//echo '<th>'.__("Port").'</th>';
 echo '<th>'.__("User").'</th>';
 echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
@@ -51,7 +51,7 @@ echo '<th>'.__("Date refresh").'</th>';
 echo '<th>'.__("Ping").'</th>';
 
 echo '<th style="max-width:400px">'.__("Error").'</th>';
-echo '<th>'.__("Acknowledge").'</th>';
+//echo '<th>'.__("Acknowledge").'</th>';
 echo '</tr>';
 
 $i = 0;
@@ -125,9 +125,9 @@ if (!empty($data['servers'])) {
         echo '<tr class="'.$alternate.'">';
         echo '<td style="'.$style.'">'.$i.'</td>';
         echo '<td style="'.$style.'">'.$server['id'].'</td>';
-        echo '<td style="'.$style.'">';
-        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
-        echo '</td>';
+        //echo '<td style="'.$style.'">';
+        //echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
+        //echo '</td>';
 
         echo '<td style="'.$style.'">'.$server['client'].'</td>';
         echo '<td style="'.$style.'">';
@@ -135,6 +135,8 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1-hour/ts_variable:derivate:1">';
 
+        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
+        
         echo $server['display_name'];
         echo '</a></td>';
         echo '<td style="'.$style.'">';
@@ -146,14 +148,16 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="'.$style.'">'.$server['ip'];
+        echo '<td style="'.$style.'">'.$server['ip'].":".$server['port'];
+
+
 
         if (!empty($extra['read_only']) && $extra['read_only'] === "ON") {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }
 
         echo '</td>';
-        echo '<td style="'.$style.'">'.$server['port'].'</td>';
+        //echo '<td style="'.$style.'">'.$server['port'].'</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
         echo '<td style="'.$style.'" title="">';
 
@@ -297,11 +301,11 @@ if (!empty($data['servers'])) {
             echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
         }
 
-
         if ($IS_AVAILABLE === true)
         {
             if (! empty($error_extra))
             {
+                echo "<br />";
                 echo $error_extra;
                 
                 if ($extra['wsrep_cluster_status'] !== "Primary") {
@@ -311,9 +315,19 @@ if (!empty($data['servers'])) {
         }
         unset($error_extra);
 
-        echo '</td>';
-        echo '<td style="'.$style.'">';
+        if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+            echo ' <a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
+        }
 
+        if ($IS_ACKNOWLEDGE === true) {
+            echo ' <a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
+        }
+
+
+        echo '</td>';
+
+        /*
+        echo '<td style="'.$style.'">';
         if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
@@ -321,9 +335,7 @@ if (!empty($data['servers'])) {
         if ($IS_ACKNOWLEDGE === true) {
             echo '<a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
         }
-
-
-        echo '</td>';
+        echo '</td>'; */
         echo '</tr>';
     }
 }

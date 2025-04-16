@@ -47,13 +47,18 @@ class Listener extends Controller
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
-            $this->getUpdateToDo($ob->id_mysql_server,$ob->id_ts_file);
+            $this->getUpdateToDo(array($ob->id_mysql_server,$ob->id_ts_file));
         }
     }
 
 
-    public function getUpdateTodo($id_mysql_server, $id_ts_file)
+    public function getUpdateTodo($param)
     {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $id_ts_file = $param[1];
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT 
@@ -97,6 +102,10 @@ class Listener extends Controller
 
             case EngineV4::FILE_MYSQL_VARIABLE:
                 $this->afterUpdateVariable($arr);
+                break;
+
+            case "ps_events_statements_summary_by_digest":
+                $this->collectQuery($arr);
                 break;
 
             default:
@@ -590,6 +599,173 @@ class Listener extends Controller
         Debug::debug($gg);
 
     }
+
+
+    /*
+    ps_events_statements_summary_by_digest
+    */
+    public function collectQuery($param)
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        Debug::debug($param,"ICI");
+
+        $id_mysql_server = $param['id_mysql_server'];
+        $date= $param['min_date'];
+
+        $queries = Extraction2::display(array("performance_schema::events_statements_summary_by_digest"), 
+        array($id_mysql_server), array($date));
+
+        //Debug::debug($queries, "query");
+
+        $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
+        
+
+        $id_query = $this->insertNewQuery($param);
+
+        $register = $this->selectIdfromDigest(array($id_query));
+        
+        $i = 0;
+
+
+        $SQL = [];
+        foreach($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'] as $query)
+        {
+            $i++;
+            Debug::debug($query);
+
+            $data_lower = array_change_key_case($query, CASE_LOWER);
+
+            $id_mysql_query = $register[$data_lower['digest']];
+            
+            $result = array_filter($data_lower, function($value, $key) {
+                return (strpos($key, 'sum') === 0 || strpos($key, 'count_star') === 0);
+            }, ARRAY_FILTER_USE_BOTH);
+
+            $result['id_mysql_query'] = $id_mysql_query;
+            $result['id_mysql_server'] = $id_mysql_server;
+            //$result['date'] = $date;
+
+            if ($i ===1) {
+                $keys = array_keys($result);
+            }
+
+            $val = array_values($result);
+            Debug::debug($result);
+
+            $SQL[] = "('".$date."' ,".implode(",", $val).")";
+        }
+
+        $fields  = 'INSERT INTO ts_mysql_query (`date`, `'. implode('`,`', $keys).'`) VALUES ';
+
+        $sql = $fields.implode(",",$SQL).";";
+        $db->sql_query($sql);
+
+        Debug::debug($sql);
+
+    }
+
+
+
+    public function insertNewQuery($param)
+    {
+        $id_mysql_server = $param['id_mysql_server'];
+        $date= $param['min_date'];
+        $queries = $param['queries'];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $id_query = $this->getDigestFromDate(array($id_mysql_server, $date));
+
+        $nb_id = count($id_query);
+
+        $list = implode("','", $id_query);
+
+        $sql2 = "SELECT count(1) as cpt FROM mysql_query WHERE digest_mariadb IN ('".$list."')";
+        Debug::sql($sql2);
+        $res2 = $db->sql_query($sql2);
+
+
+        $register = $this->selectIdfromDigest(array($id_query));
+        $keys = array_keys($register);
+
+        while ($ob2 = $db->sql_fetch_object($res2))
+        {
+            if ($nb_id > $ob2->cpt)
+            {
+                foreach($queries as $query)
+                {
+                    if (in_array($query['DIGEST'], $keys)) {
+                        continue;
+                    }
+
+                    $sql3 = "INSERT IGNORE INTO mysql_query (digest_mariadb, query_mariadb,digest_mysql,query_mysql)
+                    VALUES ('".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."',
+                    '".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."')";
+                    Debug::sql($sql3);
+                    $db->sql_query($sql3);
+                }
+            }
+        }
+
+        return $id_query;
+    }
+
+    public function selectIdfromDigest($param)
+    {
+        Debug::parseDebug($param);
+
+
+        $id_query = $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $list = implode("','", $id_query);
+
+        $sql = "SELECT id, digest_mariadb FROM mysql_query WHERE digest_mariadb IN ('".$list."');";
+        $res = $db->sql_query($sql);
+
+        $data = [];
+        while ($ob = $db->sql_fetch_object($res)) {
+            $data[$ob->digest_mariadb] = $ob->id;
+        }
+
+        Debug::debug($data);
+
+        return $data;
+    }
+
+
+    public function getDigestFromDate($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+        $date= $param[1];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT JSON_KEYS(value, '$.data') AS digests, date FROM ts_value_general_json 
+        WHERE id_mysql_server = ".$id_mysql_server." 
+        AND id_ts_variable IN (SELECT id from ts_variable WHERE name = 'events_statements_summary_by_digest') 
+        AND  date = '".$date."' LIMIT 1";
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res)) {
+            $data = json_decode($ob->digests);
+        }
+
+        Debug::debug($data);
+
+        return $data;
+
+    }
+
+
+
 }
 
 /****
@@ -609,4 +785,17 @@ count(1)
 from `ts_date_by_server` a 
 WHERE a.date > (select b.date_previous_execution from listener b where id_ts_file = 9) and a.id_ts_file = 9
 GROUP BY id_mysql_server, id_ts_file
+*/
+
+
+
+/*
+
+UPDATE performance_schema.setup_consumers 
+SET enabled = 'YES' 
+WHERE name IN ('events_statements_history', 'events_statements_history_long');
+
+
+UPDATE performance_schema.setup_instruments SET enabled = 'YES', timed = 'YES' WHERE name LIKE 'statement/%';
+
 */

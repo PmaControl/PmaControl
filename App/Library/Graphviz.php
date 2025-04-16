@@ -9,7 +9,7 @@ namespace App\Library;
 
 use \App\Library\Table;
 use \App\Library\Format;
-use \App\Library\Country;
+use \App\Library\Ofuscate;
 use \App\Controller\Dot3;
 use \Glial\Sgbd\Sgbd;
 
@@ -501,7 +501,7 @@ class Graphviz
 
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"> <b>'.Country::getFlag('RU').' '.$server['display_name'].'</b></font></td></tr>';
+        <font color="'.$forground_color.'"> <b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
@@ -512,7 +512,7 @@ class Graphviz
         }
 
         //country there
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.Dot3::obfuscateIP($server['ip_real']).':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
+        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.Ofuscate::ip($server['ip_real']).':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
@@ -528,7 +528,7 @@ class Graphviz
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
 
             $debug = '';
-            Debug::$debug = false;
+            Debug::$debug = true;
 
             //force le refresh du DOT
             if (Debug::$debug === true) {

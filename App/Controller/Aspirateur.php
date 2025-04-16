@@ -407,11 +407,21 @@ class Aspirateur extends Controller
             if ($id_mysql_server == "1")
             {
                 $data = array();
-                $data['performance_schema']['ps_memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
-
+                $data['performance_schema']['memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
                 Debug::debug($data);
-
                 $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
+
+
+            }
+
+
+            /* get DIGEST */
+            $digest = $this->getDigest(array($id_mysql_server));
+            if (count($digest['data']) > 0)
+            {
+                $data = array();
+                $data['performance_schema']['events_statements_summary_by_digest'] = json_encode($digest);
+                $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data);
             }
         }
 
@@ -1855,23 +1865,38 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
-        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest";
-        //." WHERE LAST_SEEN > '2025-03-16 19:22:09';";
+        $db = Sgbd::sql(DB_DEFAULT,"MAIN");
 
+        $sql ="SELECT `date` from ts_max_date a 
+        INNER JOIN ts_file b ON a.id_ts_file = b.id 
+        where b.file_name ='ps_events_statements_summary_by_digest' 
+        and id_mysql_server=".$id_mysql_server.";";
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            $date_last = $ob->date;
+        }
+
+        $db->sql_close();
+       
+        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > '".$date_last."';";
+         
         Debug::sql($sql);
 
         $res = $mysql_tested->sql_query($sql);
         $i = 0;
 
         $data = [];
-        $data['fields'] = [];
+        //$data['fields'] = [];
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {  
             $i++;
+            /*
             if ($i === 1) {
-                $data['fields'] = array_keys($arr);
-            }
+                $data['fields'] = self::array_values_to_lowercase(array_keys($arr));
+            }*/
 
-            $data['data'][$arr['DIGEST']] = array_values($arr);
+            //$data['data'][$arr['DIGEST']] = array_values($arr);
+            $data['data'][$arr['DIGEST']] = $arr;
         }
 
         /*
@@ -1885,6 +1910,7 @@ GROUP BY C.ID, C.INFO;";
 
         $mysql_tested->sql_query($sql);
         */
+        Debug::debug(count($data['data']));
 
         return $data;
 
@@ -1938,4 +1964,12 @@ GROUP BY C.ID, C.INFO;";
             return $ret;
         }
     }
+
+
+    static function array_values_to_lowercase(array $array): array {
+        return array_map(function($value) {
+            return is_string($value) ? strtolower($value) : $value;
+        }, $array);
+    }
+
 }
