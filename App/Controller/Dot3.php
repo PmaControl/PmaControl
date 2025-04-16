@@ -937,22 +937,7 @@ class Dot3 extends Controller
     TO MOVE
     */
 
-    static function obfuscateIP($ip) {
-        $segments = explode('.', $ip);
-        $obfuscatedSegments = [];
-    
-        // Définir un décalage fixe pour chaque segment de l'IP
-        $offsets = [24, 100, 56, 78]; // Ces valeurs peuvent être ajustées selon les besoins
-    
-        foreach ($segments as $index => $segment) {
-            // Appliquer le décalage, s'assurer que le résultat reste dans la plage 0-255
-            $newSegment = ($segment + $offsets[$index]) % 255;
-            $obfuscatedSegments[] = $newSegment;
-        }
-    
-        // Reconstruire l'IP obfusquée
-        return implode('.', $obfuscatedSegments);
-    }
+
 
     public function legend()
     {
