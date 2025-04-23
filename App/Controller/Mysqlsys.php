@@ -92,7 +92,7 @@ class Mysqlsys extends Controller {
 //$remote->sql_query($sql);
 //fin patch
 
-                    $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 2000";
+                    $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 100";
                     $data['table'] = $remote->sql_fetch_yield($sql);
                     $data['name_table'] = $_GET['mysqlsys'];
                 }
