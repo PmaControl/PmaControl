@@ -162962,15 +162962,15 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',2575359,1,1,'Integrate','integrateAll','',0);
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',2575366,1,1,'Listener','checkAll','',0);
-INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',2575373,10,10,'Dot3','run','',0);
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',2391983,71,5,'Binlog','purgeAll','',0);
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',1462,127,5,'Log','rotate','',0);
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',2575400,10,5,'Worker','addToQueue','1',0);
-INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',2575408,10,5,'Worker','addToQueue','3',0);
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',2575417,10,5,'Worker','addToQueue','2',0);
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',2575429,7,5,'Worker','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1651046,1,1,'Integrate','integrateAll','',0);
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',1651058,1,1,'Listener','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',1651070,10,10,'Dot3','run','',0);
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',1651082,71,5,'Binlog','purgeAll','',0);
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',1651094,127,5,'Log','rotate','',0);
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',1651106,10,5,'Worker','addToQueue','1',0);
+INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',1651132,10,5,'Worker','addToQueue','3',0);
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',1651174,10,5,'Worker','addToQueue','2',0);
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',1651208,7,5,'Worker','checkAll','',0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164052,6 +164052,9 @@ INSERT INTO `translation_glial` VALUES (486,'27d62ea60906680257d16a35503a1b32bcc
 INSERT INTO `translation_glial` VALUES (487,'3b08785cedd37ae0f0db85ea8957f397051d941b','Day of week','en','App/view/Backup/settings.view.php',43,'2025-03-19 21:16:58');
 INSERT INTO `translation_glial` VALUES (488,'89881a45b91c6bd544cd7d5ccd156e03e7b5947e','Add a backup','en','App/view/Backup/settings.view.php',137,'2025-03-19 21:16:58');
 INSERT INTO `translation_glial` VALUES (489,'6239993296bcd0d11bea17dc8fe7d17bcce69ba6','MaxScale','en','App/view/Menu/show.view.php',105,'2025-04-05 15:02:04');
+INSERT INTO `translation_glial` VALUES (490,'797d0cf99993c051b425a9e48052d6d47f596aac','Identity','fr','App/view/User/register.view.php',20,'2025-04-11 11:49:13');
+INSERT INTO `translation_glial` VALUES (491,'bc694d18bf4afd54dd8516f56bc6b4555037d69f','The daemon (id=14) with pid : \'458741\' successfully stopped','en','App/Controller/Agent.php',161,'2025-04-14 19:21:52');
+INSERT INTO `translation_glial` VALUES (492,'77a68bb440ac31fc07638fdd8b15cb6b17007315','The daemon (id=14) with pid : \'373768\' successfully stopped','en','App/Controller/Agent.php',161,'2025-04-15 19:51:23');
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168727,6 +168730,7 @@ INSERT INTO `ts_file` VALUES (256,'proxysql_runtime_scheduler',1);
 INSERT INTO `ts_file` VALUES (257,'information_schema__plugins',1);
 INSERT INTO `ts_file` VALUES (258,'information_schema__disks',1);
 INSERT INTO `ts_file` VALUES (259,'information_schema__metadata_lock_info',1);
+INSERT INTO `ts_file` VALUES (260,'ps_events_statements_summary_by_digest',1);
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171042,6 +171046,8 @@ INSERT INTO `ts_variable` VALUES (2268,219,'show_compatibility_56','TEXT','varia
 INSERT INTO `ts_variable` VALUES (2269,257,'plugins','JSON','information_schema','general',1,1);
 INSERT INTO `ts_variable` VALUES (2271,258,'disks','JSON','information_schema','general',1,1);
 INSERT INTO `ts_variable` VALUES (2273,259,'metadata_lock_info','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (2274,260,'events_statements_summary_by_digest','JSON','performance_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (2275,238,'memory_summary_global_by_event_name','JSON','performance_schema','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171887,8 +171893,8 @@ CREATE TABLE `foreign_key_virtual` (
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `constraint_schema` (`constraint_schema`,`constraint_table`,`constraint_column`),
   KEY `referenced_schema` (`referenced_schema`,`referenced_table`,`referenced_column`),
-  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172714,9 +172720,49 @@ CREATE TABLE `ts_max_date` (
   UNIQUE KEY `date` (`date`,`id_ts_file`,`id_mysql_server`),
   KEY `id_ts_file` (`id_ts_file`),
   KEY `id_mysql_server_4` (`id_mysql_server`,`date`),
+  KEY `date_2` (`date`,`last_date_listener`),
   CONSTRAINT `ts_max_date_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ts_max_date_ibfk_3` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ts_mysql_query`
+--
+
+DROP TABLE IF EXISTS `ts_mysql_query`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ts_mysql_query` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_query` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `count_star` bigint(20) NOT NULL,
+  `sum_timer_wait` bigint(20) NOT NULL,
+  `sum_lock_time` bigint(20) NOT NULL,
+  `sum_errors` int(11) NOT NULL,
+  `sum_warnings` int(11) NOT NULL,
+  `sum_rows_affected` int(11) NOT NULL,
+  `sum_rows_sent` int(11) NOT NULL,
+  `sum_rows_examined` int(11) NOT NULL,
+  `sum_created_tmp_disk_tables` int(11) NOT NULL,
+  `sum_created_tmp_tables` int(11) NOT NULL,
+  `sum_select_full_join` int(11) NOT NULL,
+  `sum_select_full_range_join` int(11) NOT NULL,
+  `sum_select_range` int(11) NOT NULL,
+  `sum_select_range_check` int(11) NOT NULL,
+  `sum_select_scan` int(11) NOT NULL,
+  `sum_sort_merge_passes` int(11) NOT NULL,
+  `sum_sort_range` int(11) NOT NULL,
+  `sum_sort_rows` int(11) NOT NULL,
+  `sum_sort_scan` int(11) NOT NULL,
+  `sum_no_index_used` int(11) NOT NULL,
+  `sum_no_good_index_used` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_query_2` (`id_mysql_query`,`date`,`id_mysql_server`),
+  KEY `id_mysql_query` (`id_mysql_query`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

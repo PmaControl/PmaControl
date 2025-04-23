@@ -36,6 +36,12 @@ class Pmm extends Controller
 
         }
 
+        /*
+        pmm-admin add mysql --environment=test --custom-labels='source=slowlog' --username=root --password=password 
+        --tls --tls-skip-verify --tls-ca=pathtoca.pem --tls-cert=pathtocert.pem --tls-key=pathtocertkey.pem 
+        --query-source=slowlog MySQLSlowLog localhost:3306
+
+        */
     }
 
 }

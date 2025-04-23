@@ -19,7 +19,7 @@ if ! systemctl is-active --quiet "$SERVICE"; then
     echo "$(date): Le service $SERVICE n'est pas actif. Tentative de redémarrage." | tee -a "$MONITOR_LOG"
     
     #drop du cache system
-    sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
+    sync; echo 3 | tee /proc/sys/vm/drop_caches
     systemctl restart "$SERVICE"
     #service "$SERVICE" start
     #sleep 5
