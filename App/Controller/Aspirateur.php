@@ -26,6 +26,56 @@ https://www.phpclasses.org/package/12231-PHP-Display-bar-charts-in-CLI-console-f
 https://github.com/nunomaduro/termwind
 
 
+
+SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) 
+FROM `information_schema` . `events` WHERE DEFINER = ? AND ( `EVENT_SCHEMA` != ? OR ( `EVENT_SCHEMA` = ? AND `EVENT_NAME` NOT IN (...) ) )
+
+*************************** 1. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT ? 
+*************************** 2. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `information_schema` . `PLUGINS` WHERE `PLUGIN_NAME` = ? 
+*************************** 3. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `information_schema` . `TABLES` WHERE `TABLE_SCHEMA` = ? AND TABLE_NAME = ? 
+*************************** 4. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT VALUE FROM `mysql` . `rds_heartbeat2` 
+*************************** 5. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT NOW ( ) - INTERVAL `variable_value` SQL_TSI_SECOND `MySQL_Started` FROM `information_schema` . `global_status` WHERE `variable_name` = ? 
+*************************** 6. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `mysql` . `rds_replication_status` WHERE ACTION LIKE ? 
+*************************** 7. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `mysql` . `rds_history` WHERE ACTION = ? ORDER BY `action_timestamp` LIMIT ? 
+*************************** 8. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `mysql` . `rds_replication_status` WHERE MASTER_HOST IS NOT NULL AND MASTER_PORT IS NOT NULL ORDER BY `action_timestamp` LIMIT ? 
+*************************** 9. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR FLUSH LOGS 
+*************************** 10. row ***************************
+query_mariadb: SET MAX_STATEMENT_TIME = ? 
+*************************** 11. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR INSERT INTO `mysql` . `rds_heartbeat2` ( ID , VALUE ) VALUES (...) ON DUPLICATE KEY UPDATE VALUE = ? 
+*************************** 12. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR COMMIT 
+*************************** 13. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR USE MYSQL 
+*************************** 14. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT NAME , VALUE FROM `mysql` . `rds_configuration` 
+*************************** 15. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR PURGE BINARY LOGS TO ? 
+*************************** 16. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT `info` FROM `information_schema` . `processlist` WHERE SYSTEM_USER = ? AND HOST LIKE ? 
+*************************** 17. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `information_schema` . `routines` WHERE `ROUTINE_SCHEMA` != ? AND DEFINER = ? 
+*************************** 18. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `information_schema` . `global_variables` WHERE `variable_name` = ? AND `variable_value` != ? AND ( SELECT `variable_value` FROM `information_schema` . `global_variables` WHERE `variable_name` = ? ) NOT IN (...) 
+*************************** 19. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT COUNT ( * ) FROM `information_schema` . `events` WHERE DEFINER = ? AND ( `EVENT_SCHEMA` != ? OR ( `EVENT_SCHEMA` = ? AND `EVENT_NAME` NOT IN (...) ) ) 
+*************************** 20. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT `lower` ( `plugin_name` ) FROM `information_schema` . `plugins` 
+*************************** 21. row ***************************
+query_mariadb: SET STATEMENT MAX_STATEMENT_TIME = ? FOR SELECT `mysql` . `rds_version` ( )
+
+
+
+
  *  => systemctl is-active mysql
  *
  * MySQL [(none)]> select @@version_comment limit 1;
