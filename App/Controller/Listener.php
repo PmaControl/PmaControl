@@ -621,13 +621,10 @@ class Listener extends Controller
 
         $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
         
-
         $id_query = $this->insertNewQuery($param);
-
         $register = $this->selectIdfromDigest(array($id_query));
         
         $i = 0;
-
 
         $SQL = [];
         foreach($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'] as $query)
@@ -637,6 +634,11 @@ class Listener extends Controller
 
             $data_lower = array_change_key_case($query, CASE_LOWER);
 
+
+            //SCHEMA_NAME
+
+            $id_mysql_database = $this->getIdDatabase(array($id_mysql_server, $data_lower['schema_name']));
+
             $id_mysql_query = $register[$data_lower['digest']];
             
             $result = array_filter($data_lower, function($value, $key) {
@@ -645,6 +647,8 @@ class Listener extends Controller
 
             $result['id_mysql_query'] = $id_mysql_query;
             $result['id_mysql_server'] = $id_mysql_server;
+            $result['id_mysql_database'] = $id_mysql_database;
+            
             //$result['date'] = $date;
 
             if ($i ===1) {
@@ -663,10 +667,7 @@ class Listener extends Controller
         $db->sql_query($sql);
 
         Debug::debug($sql);
-
     }
-
-
 
     public function insertNewQuery($param)
     {
@@ -736,7 +737,6 @@ class Listener extends Controller
         return $data;
     }
 
-
     public function getDigestFromDate($param)
     {
         Debug::parseDebug($param);
@@ -761,6 +761,30 @@ class Listener extends Controller
         Debug::debug($data);
 
         return $data;
+
+    }
+
+
+    public function getIdDatabase($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+        $database = $param[1];
+
+        if (empty($database)){
+            return NULL;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT id from mysql_database where id_mysql_server=1 and schema_name='".$database."';";
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            Debug::debug($ob->id, "id_mysql_database");
+            return $ob->id;
+        }
 
     }
 
