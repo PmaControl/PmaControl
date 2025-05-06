@@ -39,6 +39,25 @@ class StatementAnalysis extends Controller
             UNIQUE KEY `id_mysql_query_2` (`id_mysql_query`,`date`,`id_mysql_server`),
             KEY `id_mysql_query` (`id_mysql_query`)
           ) ENGINE=ROCKSDB AUTO_INCREMENT=1889875 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+
+
+          SELECT t.*
+  FROM ts_mysql_query AS t
+  JOIN (
+         SELECT
+           id_mysql_query,
+           MAX(date) AS max_date
+         FROM ts_mysql_query
+         WHERE id_mysql_server = 1
+         GROUP BY id_mysql_query
+       ) AS m
+    ON t.id_mysql_query   = m.id_mysql_query
+   AND t.date             = m.max_date
+   AND t.id_mysql_server  = 1
+   ORDER BY sum_timer_wait DESC;
+
+
     */
     
     public function index($param)
