@@ -160,9 +160,7 @@ class Extraction2
                         if (implode(",", $server ) != "-999") {
                             $filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
                         }
-                            
-
-
+                        
                         $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` $filter_partition a "
                         .$INNER."
                         WHERE id_ts_variable = ".$id_ts_variable."
@@ -458,6 +456,8 @@ class Extraction2
 
         $list_id_variable = implode(",",$ids_variable);
 
+
+        $max_date = self::getLastPartition();
         // array_sub 
         // Only request missing id
 
@@ -467,6 +467,7 @@ class Extraction2
         FROM ts_max_date b
         JOIN ts_variable c ON b.id_ts_file = c.id_ts_file
         WHERE c.id in (".$list_id_variable.")
+        AND date > '".$max_date."'
         GROUP BY c.id;";
 
         $res = $db->sql_query($sql);
@@ -577,5 +578,21 @@ class Extraction2
 
     }
 
-    
+    static public function getLastPartition()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT FROM_DAYS(CAST(SUBSTRING(MIN(PARTITION_NAME), 2) AS UNSIGNED) - 1) AS partition_date
+        FROM information_schema.partitions
+        WHERE TABLE_NAME = 'ts_value_general_int' AND table_schema=database();";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $date = $ob->partition_date;
+        }
+
+        return $date;
+    }
 }

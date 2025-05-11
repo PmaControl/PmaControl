@@ -639,6 +639,11 @@ class Listener extends Controller
 
             $id_mysql_database = $this->getIdDatabase(array($id_mysql_server, $data_lower['schema_name']));
 
+            if (empty($id_mysql_database))
+            {
+                continue;
+            }
+
             $id_mysql_query = $register[$data_lower['digest']];
             
             $result = array_filter($data_lower, function($value, $key) {
@@ -772,7 +777,7 @@ class Listener extends Controller
         $database = $param[1];
 
         if (empty($database)){
-            return NULL;
+            return "0";
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
