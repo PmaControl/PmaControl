@@ -180,7 +180,7 @@ if (!empty($_GET['mysql_server']['id'])) {
         echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
-        echo "InnoDB must be activated to install or use MySQL-sys<br />";
+        echo __("InnoDB must be activated to install for use MySQL-sys<br />");
         echo '</div>';
     } else {
 

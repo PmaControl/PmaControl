@@ -466,6 +466,8 @@ class Aspirateur extends Controller
 
 
             /* get DIGEST */
+
+            /*
             $digest = $this->getDigest(array($id_mysql_server));
             if (count($digest['data']) > 0)
             {
@@ -473,6 +475,7 @@ class Aspirateur extends Controller
                 $data['performance_schema']['events_statements_summary_by_digest'] = json_encode($digest);
                 $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data);
             }
+                */
         }
 
         /*************************************** list Database  */
