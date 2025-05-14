@@ -202,7 +202,7 @@ class Mysqlsys extends Controller {
 
 
 // get server available
-        $sql = "SELECT name FROM mysql_server a WHERE error = '' " . self::getFilter() . " AND id=" . $id_mysql_server;
+        $sql = "SELECT name FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
