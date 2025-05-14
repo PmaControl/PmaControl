@@ -18,6 +18,9 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+
+
+use GeoIp2\Database\Reader;
 /*
 UPDATE performance_schema.setup_instruments
    SET ENABLED = 'YES', TIMED = 'YES'
@@ -1182,6 +1185,18 @@ var myChart = new Chart(ctx, {
         $db->sql_query($sql);
 
         header("location: ".LINK.$this->getClass()."/main/");
+    }
+
+
+    public function getFlag($param)
+    {
+        $reader = new Reader('/path/to/maxmind-database.mmdb');
+
+        $record = $reader->city('128.101.101.101');
+
+        print($record->country->isoCode);
+
+
     }
     
 }

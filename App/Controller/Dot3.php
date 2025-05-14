@@ -1394,7 +1394,6 @@ class Dot3 extends Controller
             {
                 $same = array();
 
-
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers'] as $proxysql_servers)
                 {
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
@@ -1405,7 +1404,6 @@ class Dot3 extends Controller
                         continue;
                     }
                     
-
                     $tmp = self::$config['REPLICATION_OK'];
                     $tmp['tooltip'] = "OK--- $id_master -> $id_mysql_server";
 
@@ -1413,7 +1411,6 @@ class Dot3 extends Controller
                     
                     $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
 
-                    
                     self::$build_ms[] = $tmp;
 
                     //Debug::debug($id_master ,"ID PROXYSQL");

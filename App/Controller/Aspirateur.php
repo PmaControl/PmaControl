@@ -273,6 +273,7 @@ class Aspirateur extends Controller
         }
         catch(\Exception $e){
             $error_msg = $e->getMessage();
+            Debug::debug($error_msg, "Error_MSG");
             $this->logger->emergency($error_msg." id_mysql_server:$id_mysql_server");
         }
         finally{

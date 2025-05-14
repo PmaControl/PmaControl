@@ -7,7 +7,7 @@ class Ofuscate
 
     static function ip($ip) {
 
-
+        return $ip;
         /*
         if (true !== filter_var($ip, FILTER_VALIDATE_IP)) {
             return $ip;

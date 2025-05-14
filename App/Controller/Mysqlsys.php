@@ -119,6 +119,8 @@ class Mysqlsys extends Controller {
         $data = [];
         while ($ob = $db->sql_fetch_object($res)) {
             $cmd = 'cd ' . ROOT . '/vendor/esysteme/mysql-sys ';
+
+            
             $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\'' . $ob->login . '\'@\'localhost\'" 2>&1';
             $ret = shell_exec($cmd);
 
