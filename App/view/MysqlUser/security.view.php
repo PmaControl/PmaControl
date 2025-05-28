@@ -6,6 +6,8 @@
  */
 ?>
 
+<p><a class="btn btn-primary showdiff" role="button"><?= __('Show only security issue') ?></a></p>
+
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title"><?= __('Accounts') ?></h3>
@@ -24,6 +26,7 @@
         </tr>
         <?php
         $account_without_password = 0;
+        $account_with_unsecure_plugin = 0;
 
         $i = 0;
         foreach ($data as $id => $servers) {
@@ -31,23 +34,37 @@
 
                 $i++;
                 $style = '';
+                $hide = ' class="to_hide"';
+
                 if (empty($account['Password']) && $account['Plugin'] !== "unix_socket") {
                     $style = 'background-color:rgb(217, 83, 79,0.7); color:#000';
                     $account_without_password++;
+                    $hide = '';
                 }
 
+                if ($account['Plugin'] === "mysql_old_password")
+                {
+                    $style = 'background-color:rgb(0,0,0,0.7); color:#fff';
+                    $account_with_unsecure_plugin++;
+                    $hide = '';
+                }
 
                 if ((empty($account['Password'])  && $account['User'] === "mariadb.sys" && $account['Host'] === "localhost" ))
                 {
                     $style = '';
                     $account_without_password--;
+                    $hide = ' class="to_hide"';
                 }
-                
 
+                /* to debug 
+                if ($account['User']  === "pmacontrol")
+                {
+                    $style = 'background-color:rgb(0,0,0,0.7); color:#fff';
+                    $hide = '';
+                }
+                /**** */
 
-
-
-                echo '<tr>';
+                echo '<tr'.$hide.'>';
                 echo '<td style="'.$style.'">'.$i."</td>";
                 echo '<td style="'.$style.'">'.$servers['display_name']."</td>";
                 echo '<td style="'.$style.'">'.$servers['ip']."</td>";
@@ -60,9 +77,7 @@
                 echo '</tr>';
             }
 
-            echo '<tr>';
-            echo '<td colspan="7" style="border-bottom:1px solid #333"></td>';
-            echo '</tr>';
+
         }
         ?>
 
@@ -70,4 +85,5 @@
 </div>
 
 <?php
-echo __('Number of account without password:').$account_without_password;
+echo __('Number of account without password:').$account_without_password . "<br>";
+echo __('Number of account with unsecure plugin:').$account_with_unsecure_plugin;

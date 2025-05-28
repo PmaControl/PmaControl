@@ -461,9 +461,7 @@ AND b.id NOT IN (select id from z)";
             $cmd = "kill ".$pid;
             shell_exec($cmd);
         }
-
-
-
+        
         if (!IS_CLI) {
             header("location: ".LINK.$this->getClass()."/index");
         }
@@ -479,11 +477,8 @@ AND b.id NOT IN (select id from z)";
             $where = " WHERE id = ".$id_ssh_key;
         }
 
-
         $sql = "SELECT * FROM `ssh_key`".$where;
-
         $res = $db->sql_query($sql);
-
 
         $key = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
