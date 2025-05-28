@@ -32,11 +32,9 @@ class CheckConfig extends Controller
             $(\'[data-toggle="tooltip"]\').tooltip();
        ');
 
-
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (!empty($_POST['mysql_cluster']['id'])) {
@@ -99,7 +97,6 @@ class CheckConfig extends Controller
                 }
 
                 $resultat = array();
-
                 $alone = false;
 
                 if (count($id_mysql_servers) === 1 && !in_array($id_mysql_servers[0], $server_note_available)) {
@@ -111,9 +108,7 @@ class CheckConfig extends Controller
                 //$id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
                 $data['show'] = false;
 
-
                 //debug($id_mysql_servers);
-
                 foreach ($id_mysql_servers as $id_server) {
 
                     $step1 = false;
@@ -147,7 +142,6 @@ class CheckConfig extends Controller
                     //in case server is not available we looking for in cache
                     if (in_array($id_mysql_server, $server_note_available) || ($alone === true && $step1 === false)) {
 
-                        
                         $sql = "SELECT variable_name as Variable_name, value as Value 
                         FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
 
@@ -163,8 +157,6 @@ class CheckConfig extends Controller
 
                         //debug($elems);
                     }
-
-
 
                     //$id_number = 1;
                     //$resultat =$this->fetchData($elems, $id_mysql_server, $id_number);
@@ -244,8 +236,6 @@ class CheckConfig extends Controller
             group by id_architecture having count(1) > 1;";
         */
 
-
-
         //le max(id)-1 c'est dégeu mais on peut se retrouver pile dans la génération d'un nouveau graphe et ne pas avoir l'ensembre des clsuter 
         $sql = "SELECT group_concat(b.id_mysql_server) as id_mysql_servers, group_concat(c.display_name) as display_name
         FROM dot3_cluster a 
@@ -254,7 +244,6 @@ class CheckConfig extends Controller
         WHERE a.id_dot3_information 
         IN (SELECT id_dot3_information FROM dot3_cluster WHERE id in (select max(id)-1 from dot3_cluster))
         GROUP BY a.id_dot3_graph;";
-
 
         $res = $db->sql_query($sql);
 

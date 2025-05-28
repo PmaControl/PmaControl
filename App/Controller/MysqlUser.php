@@ -249,6 +249,13 @@ class MysqlUser extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        $this->di['js']->code_javascript('
+            $( ".showdiff" ).click(function() {
+                $(".to_hide").toggleClass("hide")
+            });
+       ');
+
+
         $id_mysql_available = Available::getMySQL();
 
         $sql = "SELECT * FROM mysql_server WHERE id in (".$id_mysql_available.") AND is_proxy = 0";
