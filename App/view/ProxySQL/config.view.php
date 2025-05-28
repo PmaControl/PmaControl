@@ -3,6 +3,10 @@
 
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
+
+$table_name = str_replace('_', ' ', $data['current']);
+$extra = $data['menu'][$table_name];
+
 echo '&nbsp;&nbsp;&nbsp;'; 
 echo '<div class="btn-group" role="group" aria-label="Default button group">';
 
@@ -82,16 +86,21 @@ echo "<br>";
 
 foreach ($data['table'] as $table_name)
 {
-
     echo '<div class="row">';
     echo '<div class="col-md-6">';
     
-
     echo '<div class="panel panel-primary" style="overflow:auto">';
     echo '<div class="panel-heading">';
-    echo '<h3 class="panel-title">'.$table_name.' 
-    <a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addline/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
-    <span class="glyphicon glyphicon-plus"></span> Add a line</a></h3>';
+    echo '<h3 class="panel-title">'.$table_name.' ';
+
+    if (! isset($extra['insert_or_delete']))
+    {
+      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addline/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
+      <span class="glyphicon glyphicon-plus"></span> Add a line</a>';
+    }
+    
+    
+    echo '</h3>';
     echo '</div>';
 
     if (count($data['tables'][$table_name]) > 0)
@@ -103,27 +112,49 @@ foreach ($data['table'] as $table_name)
       foreach($keys as $key) {
           echo '<th>'.$key.'</th>';
       }
+          if (! isset($extra['insert_or_delete']))
+          {
+            echo '<th>'.__("Delete").'</th>';
+          }
+
       echo '</tr>';
 
       foreach($data['tables'][$table_name] as $line)
       {
           echo '<tr>';
           foreach($line as $field => $elem) {
-            echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$field .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$table_name.'" data-title="Enter value">';
-            echo $elem.'</td>'; 
+
+            $pk_table = [];
+            foreach($data['primary_key'] as $pk)
+            {
+                $pk_table[] = "$pk = '".$line[$pk]."'";
+            }
+            $full_pk = implode (' AND ', $pk_table);
+
+            if (in_array($field , $data['primary_key']))
+            {
+              echo '<td style="color:#777777;">'.$elem.'</td>'; 
+            }
+            else {
+              echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$full_pk .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name.'" data-title="Enter value">';
+              echo $elem.'</td>'; 
+            }
           }
+
+          if (! isset($extra['insert_or_delete']))
+          {
+            echo '<td style="padding:2px;"><a class="btn-xs btn btn-danger" href="'.LINK.'ProxySQL/deleteLine/'.$data['id_proxysql_server'].'/'.$table_name.'/'.base64_encode($full_pk).'/">'.__('Delete').'</a></td>';
+          }
+          
           echo '</tr>';
       }
       echo '</table>';
     }
-
     
     echo '</div>';
-  
 
     echo '</div>';
     echo '<div class="col-md-6">';
-    
 
     echo '<div class="panel panel-primary" style="overflow:auto;">';
     echo '<div class="panel-heading">';

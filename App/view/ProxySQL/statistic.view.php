@@ -1,5 +1,9 @@
 <?php
 
+\Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
+
+echo "<br><br>";
+
 foreach($data['tables'] as $table_name => $table)
 {
     echo '<div class="panel panel-primary">';
@@ -20,8 +24,6 @@ foreach($data['tables'] as $table_name => $table)
     {
         echo '<tr>';
         foreach($line as $field => $elem) {
-
-
             if ($field === "Create Table")
             {
                 echo '<td>'.\SqlFormatter::format($elem).'</td>';

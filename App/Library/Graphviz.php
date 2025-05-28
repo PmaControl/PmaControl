@@ -528,7 +528,7 @@ class Graphviz
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
 
             $debug = '';
-            Debug::$debug = true;
+            //Debug::$debug = true;
 
             //force le refresh du DOT
             if (Debug::$debug === true) {

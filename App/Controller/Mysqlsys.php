@@ -91,8 +91,13 @@ class Mysqlsys extends Controller {
 //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
 //$remote->sql_query($sql);
 //fin patch
-
-                    $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 100";
+                    if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
+                        $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                    }
+                    else {
+                        $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                    }
+                    
                     $data['table'] = $remote->sql_fetch_yield($sql);
                     $data['name_table'] = $_GET['mysqlsys'];
                 }
