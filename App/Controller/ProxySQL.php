@@ -67,6 +67,15 @@ class ProxySQL extends Controller
     static $proxysql_server = array();
 
 
+    public function before($param)
+    {
+        $monolog       = new Logger("ProxySQL");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
+
 
 
     public function main($param)
@@ -345,6 +354,7 @@ class ProxySQL extends Controller
             $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'], $arr['password']);
 
             if (!empty($arr['id_mysql_server'])) {
+                
                 $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
                 $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
 
@@ -493,8 +503,11 @@ class ProxySQL extends Controller
     public function statistic($param)
     {
         Debug::parseDebug($param);
-
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+        
         $id_proxysql = $param[0];
+        $data['id_proxysql_server'] = $id_proxysql;
         $db = Sgbd::sql("proxysql_" . $id_proxysql);
 
         $exclude_table = array('mysql_server_connect_log', 'mysql_server_ping_log', 'mysql_server_replication_lag_log');
@@ -637,6 +650,11 @@ class ProxySQL extends Controller
         Debug::parseDebug($param);
         $id_proxysql_server = $param[0] ?? "";
 
+        $data = [];
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+
+        $this->set('data', $data);
     }
 
 
@@ -657,6 +675,7 @@ class ProxySQL extends Controller
         Debug::parseDebug($param);
         $id_proxysql_server = $param[0] ?? "";
 
+        $param['menu_current'] = __FUNCTION__;
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
         $data['current'] = $param[1] ?? "MYSQL SERVERS";
@@ -712,7 +731,7 @@ class ProxySQL extends Controller
             }
 
             //get Primary Key for update
-            $sql2 = "SELECT name FROM pragma_table_info('runtime_mysql_servers') WHERE pk > 0;";
+            $sql2 = "SELECT name FROM pragma_table_info('".$table_name."') WHERE pk > 0;";
             $res2 = $db->sql_query($sql2);
             $data['primary_key'] = array();
             while ($ob = $db->sql_fetch_object($res2, MYSQLI_ASSOC)) {
@@ -724,21 +743,6 @@ class ProxySQL extends Controller
 
         $this->set('data', $data);
     }
-
-
-    public function before($param)
-    {
-        $monolog = new Logger("ProxySQL");
-        $handler = new StreamHandler(LOG_FILE, Logger::NOTICE);
-        $handler->setFormatter(new LineFormatter(null, null, false, true));
-        $monolog->pushHandler($handler);
-        $this->logger = $monolog;
-        self::$log = $monolog;
-
-
-
-    }
-
 
     public function update($param)
     {
@@ -806,6 +810,29 @@ class ProxySQL extends Controller
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
 
+
+        //menu
+        
+        $data['menu']['auto']['title'] =  __('Auto config');
+        $data['menu']['auto']['link'] = LINK.'ProxySQL/auto/'.$data['id_proxysql_server'];
+        
+        $data['menu']['config']['title'] =  __('Configuration');
+        $data['menu']['config']['link'] = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/MYSQL_SERVERS';
+
+
+        $data['menu']['statistic']['title'] =  __('Statistics');
+        $data['menu']['statistic']['link'] = LINK.'ProxySQL/statistic/'.$data['id_proxysql_server'];
+
+        $data['menu']['monitor']['title'] =  __('Monitor');
+        $data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
+
+        $data['menu']['cluster']['title'] =  __('Cluster');
+        $data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
+
+        $data['menu']['log']['title'] =  __('Logs');
+        $data['menu']['log']['link'] = LINK.'ProxySQL/log/'.$data['id_proxysql_server'];
+
+
         while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $data['proxysql'][$ob['id']] = $ob;
@@ -826,6 +853,8 @@ class ProxySQL extends Controller
                 $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
             }
         }
+
+    
 
         Debug::debug($data);
 
@@ -916,25 +945,101 @@ class ProxySQL extends Controller
 
         $this->view        = false;
         $this->layout_name = false;
-        $_GET['ajax'] = true;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
+        
         try{
-            $sql = "UPDATE menu SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+
+            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
+            $sql = "UPDATE `".$table."` SET `".$_POST['name']."` = '".$_POST['value']."' WHERE ".$_POST['pk'].";";
+
+            $this->logger->emergency($sql." [id_proxysql_server:$id_proxysql_server]");
             $db->sql_query($sql);
     
-            if ($db->sql_affected_rows() === 1) {
+            if ($db->sql_affected_rows() == 1) {
                 
                 header("HTTP/1.1 200 OK");
                 exit;
                 
             } else {
-                header("HTTP/1.0 503 Internal Server Error");
+                header("HTTP/1.0 504 Internal Server Error");
             }
         }
         catch(\Exception $e){
             header("HTTP/1.0 503 Internal Server Error");
         }
     }
+
+    public function deleteLine($param)
+    {
+        $id_proxysql_server = $param[0];
+        $table = $param[1];
+        $where = base64_decode($param[2]);
+
+        $this->view        = false;
+        $this->layout_name = false;
+ 
+        $_GET['ajax'] = true;
+
+        try{
+
+        
+
+            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+
+            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
+            $sql = "DELETE FROM `".$table."` WHERE ".$where.";";
+
+            $this->logger->emergency($sql." DELETE");
+            $db->sql_query($sql);
+    
+            if ($db->sql_affected_rows() == 1) {
+
+                set_flash( "success", "Title", "INfo");
+                header("location: " . $_SERVER['HTTP_REFERER']);
+                
+            } else {
+                set_flash( "warning", "Title", "INfo");
+                header("location: " . $_SERVER['HTTP_REFERER']);
+                
+            }
+        }
+        catch(\Exception $e){
+            set_flash( "error", "Title", "INfo");
+            header("location: " . $_SERVER['HTTP_REFERER']);
+        }
+
+    }
+
+    public function monitor($param)
+    {
+
+        $data = [];
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+
+        $this->set('data', $data);
+    }
+
+    public function cluster($param)
+    {
+
+        $data = [];
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+
+        $this->set('data', $data);
+    }
+
+
+    public function log($param)
+    {
+
+        $data = [];
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+
+        $this->set('data', $data);
+    }
+
 }

@@ -135,7 +135,7 @@ if ( ! empty($data['proxysql']))
                 case 'OFFLINE_SOFT': $class='warning'; break;
             }
 
-            echo '<td><big><span class="label label-'.$class.'">'.__($server['status']).'</span></big></td>';
+            echo '<td style="padding:1px 5px"><big><span class="label label-'.$class.'">'.__($server['status']).'</span></big></td>';
             echo '</tr>';
         }
 

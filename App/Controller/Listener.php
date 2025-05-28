@@ -19,6 +19,7 @@ class Listener extends Controller
 {
     var $logger;
 
+    static $database = array();
 
     public function before($param)
     {
@@ -776,21 +777,41 @@ class Listener extends Controller
         $id_mysql_server = $param[0];
         $database = $param[1];
 
-        if (empty($database)){
-            return "0";
-        }
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT id from mysql_database where id_mysql_server=1 and schema_name='".$database."';";
-        $res = $db->sql_query($sql);
-
-        while($ob = $db->sql_fetch_object($res))
+        if (!empty(self::$database[$id_mysql_server][$database]))
         {
-            Debug::debug($ob->id, "id_mysql_database");
-            return $ob->id;
+            return self::$database[$id_mysql_server][$database];
         }
+        else
+        {
+            $db = Sgbd::sql(DB_DEFAULT);
 
+            if (empty($database))
+            {
+                $database = 'NONE';
+            }
+
+            
+
+
+
+            $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
+            $res = $db->sql_query($sql);
+
+            while($ob = $db->sql_fetch_object($res))
+            {
+                self::$database[$id_mysql_server][$database] = $ob->id;
+                Debug::debug($ob->id, "id_mysql_database");
+                return $ob->id;
+            }
+
+
+            $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
+            $db->sql_query($sql);
+            return false;
+
+
+        }
     }
 
 

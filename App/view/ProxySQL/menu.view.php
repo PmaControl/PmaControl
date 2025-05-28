@@ -4,7 +4,6 @@
     <?php 
 
     echo '<button type="button" class="btn btn-default">';
-
      echo '<img src="'.IMG.'icon/proxysql.png" height="18px" width="18px">';
      echo ' <span title="Production" class="label label-danger">P</span> <b>'
      .$data['proxysql'][$data['id_proxysql_server']]['display_name'].'</b> ';
@@ -38,12 +37,27 @@
 
 //boutton
 echo '<div class="btn-group" role="group" aria-label="Default button group">';
+
+foreach($data['menu'] as $key => $menu)
+{
+
+  $active = '';
+  if ($data['param']['menu_current'] == $key)
+  {
+    $active = 'active';
+  }
+  echo '<a href="'.$menu['link'].'" type="button" class="btn btn-default '.$active.'">'.$menu['title'].'</a> ';
+}
+
+
+/*
 echo '<a href="'.LINK.'ProxySQL/auto/'.$data['id_proxysql_server'].'" type="button" class="btn btn-default">'.__('Auto config').'</a> ';
 echo '<a href="'.LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/MYSQL_SERVERS" type="button" class="active btn btn-default">'.__('Configuration').'</a> ';
 echo '<a href="'.LINK.'ProxySQL/statistic/'.$data['id_proxysql_server'].'" type="button" class="btn btn-default">'.__('Statistics').'</a> ';
 echo '<a href="'.LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'].'" type="button" class="btn btn-default">'.__('Monitor').'</a> ';
 echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-default">'.__('Cluster').'</a> ';
 echo '<a href="'.LINK.'ProxySQL/add" type="button" class="btn btn-default">'.__('Logs').'</a> ';
+*/
 echo '</div>';
 
 

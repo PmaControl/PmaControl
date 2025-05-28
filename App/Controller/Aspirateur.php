@@ -280,17 +280,25 @@ class Aspirateur extends Controller
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
+
+            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            if ($available === 0) {
+                //$mysql_tested->sql_close();
+                return false;
+            }
+
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
             if (empty($IS_PROXY)) {
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
-                if ($available === 0) {
-                    //$mysql_tested->sql_close();
-                    return false;
-                }
+
             }
             else{
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 try{
+
+
+
+
+
                     $error_filter='';
                     $sql ="BEGIN;";
                     $mysql_tested->sql_query($sql);

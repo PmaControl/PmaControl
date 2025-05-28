@@ -140,5 +140,17 @@ class MysqlDatabase extends Controller
     }
 
 
+    public function list($param)
+    {
+
+        $id_mysql_server = $param[0];
+        $db              = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT * FROM ";
+
+
+        
+    }
+
 
 }

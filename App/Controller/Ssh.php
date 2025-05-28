@@ -282,7 +282,6 @@ class Ssh extends Controller
 ');
         $db = Sgbd::sql(DB_DEFAULT);
 
-
         $sql = "SELECT * from ssh_key";
         $res = $db->sql_query($sql);
 
