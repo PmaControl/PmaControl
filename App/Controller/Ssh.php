@@ -496,7 +496,10 @@ AND b.id NOT IN (select id from z)";
 
     public function tryAssociate($param)
     {
-define('NET_SSH2_LOGGING', 2);
+        if (! defined('NET_SSH2_LOGGING'))
+        {
+            define('NET_SSH2_LOGGING', 2);
+        }
         Debug::parseDebug($param);
 
 
