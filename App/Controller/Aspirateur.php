@@ -1469,7 +1469,9 @@ GROUP BY C.ID, C.INFO;";
             $data['query_latency_µs_95'] =  $arr['avg_us'];
         }*/
 
-        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+
+        // upgrade because : ERROR 1690 (22003): BIGINT UNSIGNED value is out of range (in case of lot queries !)
+        $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 1 MINUTE);";
 
@@ -1480,7 +1482,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
 
-        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 10 MINUTE);";
 
@@ -1491,7 +1493,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
 
-        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 1 HOUR);";
 
@@ -1502,7 +1504,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
 
-        $sql = "SELECT round((sum(COUNT_STAR * AVG_TIMER_WAIT))/(sum(COUNT_STAR))/1000000,0) as time_average 
+        $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 24 HOUR);";
 
