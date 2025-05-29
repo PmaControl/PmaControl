@@ -42,7 +42,8 @@
     <li>Time zone: (global)<b> <?= $data['global_time_zone'] ?></b></li>
     <li>System time zone :<b> <?= $data['system_time_zone'] ?></b></li>
     <li>now() :<b> <?= $data['now'] ?></b></li>
-    <li>Date (PHP) :<b> <?= $data['now'] ?></b></li>
+    <li>Date (PHP) :<b> <?= $data['date_php'] ?></b></li>
+    <li>Time Zone (PHP) :<b> <?= date_default_timezone_get() ?></b></li>
 </ul>
 
 <h3><?= __('Powered by') ?></h3>
