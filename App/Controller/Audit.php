@@ -166,4 +166,23 @@ class Audit extends Controller {
         Debug::debug($info);
     }
 
+
+    public function export($param)
+    {
+        $this->layout_name = false;
+        $_GET['ajax'] = true;
+        
+        
+    }
+
+
+
+    public function server($param)
+    {
+        $this->layout_name = false;
+        $_GET['ajax'] = true;
+        
+        
+    }
+
 }

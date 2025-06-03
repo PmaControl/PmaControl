@@ -86,11 +86,10 @@ class Mysqlsys extends Controller {
                 //test if spider / rocksdb etc...
                 if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
 
-
-//patch
-//$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
-//$remote->sql_query($sql);
-//fin patch
+                //patch
+                //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
+                //$remote->sql_query($sql);
+                //fin patch
                     if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
                         $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
                     }
@@ -249,6 +248,9 @@ class Mysqlsys extends Controller {
     public function export($param)
     {
         //$this->view = true;
+        $this->layout_name = false;
+
+        $_GET['ajax'] = true;
         Debug::parseDebug($param);
 
         $id_mysql_server = $param[0];
@@ -262,7 +264,7 @@ class Mysqlsys extends Controller {
         $res2 = $def->sql_query($sql2);
         
         $select = '*';
-        $limit =50;
+        $limit = 2000;
         while ($arr = $def->sql_fetch_array($res2, MYSQLI_ASSOC))
         {
             $select = $arr['select'];
