@@ -458,6 +458,8 @@ class Extraction2
 
 
         $max_date = self::getLastPartition();
+
+        //debug($max_date);
         // array_sub 
         // Only request missing id
 
@@ -470,6 +472,7 @@ class Extraction2
         AND date > '".$max_date."'
         GROUP BY c.id;";
 
+        //debug($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)){
@@ -582,7 +585,7 @@ class Extraction2
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT FROM_DAYS(CAST(SUBSTRING(MIN(PARTITION_NAME), 2) AS UNSIGNED) - 2) AS partition_date
+        $sql = "SELECT FROM_DAYS(CAST(SUBSTRING(MIN(PARTITION_NAME), 2) AS UNSIGNED) - 1) AS partition_date
         FROM information_schema.partitions
         WHERE TABLE_NAME = 'ts_value_general_int' AND table_schema=database();";
 
