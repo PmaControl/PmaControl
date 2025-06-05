@@ -249,7 +249,7 @@ class Audit extends Controller {
                 .     '<param><value><string>' . htmlspecialchars($pass) . '</string></value></param>'
                 .   '</params>'
                 . '</methodCall>';
-        $loginResp = callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
+        $loginResp = $this->callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
         // (On pourrait analyser $loginResp pour vérifier la réussite)
 
         // 2. Téléversement du fichier SVG (wiki.putAttachment)

@@ -618,6 +618,10 @@ class Listener extends Controller
         $queries = Extraction2::display(array("performance_schema::events_statements_summary_by_digest"), 
         array($id_mysql_server), array($date));
 
+        if (empty($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'])) {
+            return true;
+        }
+
         //Debug::debug($queries, "query");
 
         $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
