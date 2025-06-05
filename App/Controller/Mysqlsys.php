@@ -259,6 +259,10 @@ class Mysqlsys extends Controller {
         $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
 
 
+
+
+
+
         $def = Sgbd::sql(DB_DEFAULT);
         $sql2 = "SELECT * FROM mysqlsys_config_export WHERE rapport ='".$rapport."'";
         $res2 = $def->sql_query($sql2);
@@ -274,7 +278,70 @@ class Mysqlsys extends Controller {
 
 
 
-        $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` LIMIT ".$limit;
+        switch ($rapport)
+        {
+            case 'schema_auto_increment_columns':
+                $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` WHERE auto_increment_ratio > 0.5 LIMIT ".$limit;
+                break;
+
+
+            case 'engines':
+                $sql ="SELECT 
+  ENGINE, 
+  group_concat(distinct table_schema), 
+  ROUND( SUM(INDEX_LENGTH) / 1024 / 1024 / 1024, 2 ) AS index_size_gb, 
+  ROUND( SUM(DATA_LENGTH) / 1024 / 1024 / 1024, 2 ) AS data_size_gb, 
+  ROUND( SUM(DATA_FREE) / 1024 / 1024 / 1024, 2 ) AS data_size_gb, 
+  COUNT(*) AS table_count, 
+  SUM(TABLE_ROWS) as row_count 
+FROM 
+  information_schema.tables 
+WHERE 
+  TABLE_SCHEMA NOT IN (
+    'mysql', 'performance_schema', 'information_schema', 
+    'sys'
+  ) 
+  AND TABLE_TYPE NOT IN ('SYSTEM VIEW', 'VIEW') 
+GROUP BY 
+  ENGINE;";
+                break;
+
+
+            case 'top10tables':
+
+                $sql = "SELECT
+  t.TABLE_SCHEMA AS 'Schéma',
+  t.TABLE_NAME AS 'Table',
+  ROUND(t.DATA_LENGTH / 1024 / 1024 / 1024, 2) AS 'Données (Go)',
+  ROUND(t.INDEX_LENGTH / 1024 / 1024 / 1024, 2) AS 'Index (Go)',
+  ROUND(t.DATA_FREE / 1024 / 1024 / 1024, 2) AS 'Libre (Go)',
+  t.TABLE_ROWS AS 'Nb lignes',
+  t.ENGINE AS 'Moteur',
+  COUNT(s.INDEX_NAME) AS 'Nb index'
+FROM
+  information_schema.TABLES t
+LEFT JOIN
+  information_schema.STATISTICS s
+  ON t.TABLE_SCHEMA = s.TABLE_SCHEMA AND t.TABLE_NAME = s.TABLE_NAME
+GROUP BY
+  t.TABLE_SCHEMA, t.TABLE_NAME
+ORDER BY
+  (t.DATA_LENGTH + t.INDEX_LENGTH) DESC
+LIMIT 10;";
+
+                break;
+
+            case "alter_table_redun"
+            
+
+            default:
+                $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` LIMIT ".$limit;
+
+            break;
+        }
+
+
+        
         $res = $db->sql_query($sql);
 
         $data['export'] = array();
@@ -288,5 +355,8 @@ class Mysqlsys extends Controller {
         $this->set('data', $data);/***/
 
     }
+
+
+    
 
 }

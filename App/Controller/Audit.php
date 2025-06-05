@@ -182,7 +182,134 @@ class Audit extends Controller {
         $this->layout_name = false;
         $_GET['ajax'] = true;
         
+        $db = Sgbd::sql(DB_DEFAULT);
+        $id_mysql_server = $param[0];
+
+        $sql ="SELECT * FROM mysql_server where id=".$id_mysql_server.";";
+
+        $res = $db->sql_query($sql);
+
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            $data['server'] = $arr;
+        }
+
+        // get cluster : 
+        $sub_query = "select max(z.id) from dot3_cluster__mysql_server z where z.id_mysql_server=".$id_mysql_server;
+
+        $sql2 = "SELECT c.svg FROM dot3_cluster__mysql_server a
+        INNER JOIN dot3_cluster b ON a.id_dot3_cluster = b.id
+        INNER JOIN dot3_graph c ON b.id_dot3_graph = c.id
+        WHERE a.id_mysql_server = ".$id_mysql_server." AND a.id in (".$sub_query.");";
+
+
+        $res2 = $db->sql_query($sql2);
         
+        //$this->logger->warning($db->sql_num_rows($res));
+        
+        while ($ob2 = $db->sql_fetch_object($res2)) {
+            $data['svg'] = $ob2->svg; 
+        }
+
+        
+
+
+        $this->set('data', $data);
+    }
+
+
+
+    public function upload($param)
+    {
+
+
+
+        $wikiUrl   = 'http://monsite.example/dokuwiki';      // URL de base du wiki (sans slash final)
+        $user      = 'monlogin';                             // Identifiant DokuWiki
+        $pass      = 'monmdp';                               // Mot de passe
+        $namespace = 'monespace';                            // Nom d'espace pour le média (dossier sous data/media)
+        $pageId    = 'monespace:PageCible';                  // ID de la page cible (incluant namespace)
+        $filePath  = '/chemin/local/vers/monimage.svg';      // Chemin vers le fichier SVG local
+
+        // Prépare l'URL de l'API XML-RPC
+        $xmlrpcUrl = rtrim($wikiUrl, '/') . '/lib/exe/xmlrpc.php';
+
+        // Fichier temporaire pour stocker le cookie de session
+        $cookieJar = tempnam(sys_get_temp_dir(), 'dokuwiki_cookie');
+
+        // Fonction utilitaire pour envoyer une requête XML-RPC
+
+
+        // 1. Authentification (dokuwiki.login)
+        $xmlLogin  = '<?xml version="1.0"?>'
+                . '<methodCall>'
+                .   '<methodName>dokuwiki.login</methodName>'
+                .   '<params>'
+                .     '<param><value><string>' . htmlspecialchars($user) . '</string></value></param>'
+                .     '<param><value><string>' . htmlspecialchars($pass) . '</string></value></param>'
+                .   '</params>'
+                . '</methodCall>';
+        $loginResp = callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
+        // (On pourrait analyser $loginResp pour vérifier la réussite)
+
+        // 2. Téléversement du fichier SVG (wiki.putAttachment)
+        $filename = basename($filePath);
+        $fileData = file_get_contents($filePath);
+        $base64   = base64_encode($fileData);
+        $fileId   = $namespace . ':' . $filename;
+
+        // Construction de la requête XML-RPC pour putAttachment
+        $xmlUpload  = '<?xml version="1.0"?>'
+                    . '<methodCall>'
+                    .   '<methodName>wiki.putAttachment</methodName>'
+                    .   '<params>'
+                    .     '<param><value><string>' . htmlspecialchars($fileId) . '</string></value></param>'
+                    .     '<param><value><base64>' . $base64 . '</base64></value></param>'
+                    .     '<param><value><struct>'
+                    .       '<member><name>ow</name><value><boolean>1</boolean></value></member>'
+                    .     '</struct></value></param>'
+                    .   '</params>'
+                    . '</methodCall>';
+        $uploadResp = callXmlRpc($xmlUpload, $xmlrpcUrl, $cookieJar);
+        // (On pourrait analyser $uploadResp pour confirmer le téléversement)
+
+        // 3. Mise à jour de la page (wiki.appendPage)
+        $imageTag = '{{:' . $namespace . ':' . $filename . '}}';  // syntaxe DokuWiki pour afficher l'image
+        $xmlAppend  = '<?xml version="1.0"?>'
+                    . '<methodCall>'
+                    .   '<methodName>wiki.appendPage</methodName>'
+                    .   '<params>'
+                    .     '<param><value><string>' . htmlspecialchars($pageId) . '</string></value></param>'
+                    .     '<param><value><string>' . htmlspecialchars($imageTag . "\n") . '</string></value></param>'
+                    .     '<param><value><struct>'
+                    .       '<member><name>sum</name><value><string>Ajout de l\'image ' . htmlspecialchars($filename) . '</string></value></member>'
+                    .       '<member><name>minor</name><value><boolean>1</boolean></value></member>'
+                    .     '</struct></value></param>'
+                    .   '</params>'
+                    . '</methodCall>';
+        $appendResp = callXmlRpc($xmlAppend, $xmlrpcUrl, $cookieJar);
+        // (On peut vérifier $appendResp pour s’assurer qu’il n’y a pas d’erreur)
+
+        echo "Image téléversée et insérée avec succès.\n";  
+    }
+
+
+    function callXmlRpc($xmlContent, $xmlrpcUrl, $cookieJar) {
+        $ch = curl_init($xmlrpcUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST       => true,
+            CURLOPT_POSTFIELDS => $xmlContent,
+            CURLOPT_HTTPHEADER => ['Content-Type: text/xml'],
+            CURLOPT_COOKIEJAR  => $cookieJar,
+            CURLOPT_COOKIEFILE => $cookieJar,
+            CURLOPT_RETURNTRANSFER => true,
+        ]);
+        $response = curl_exec($ch);
+        if(curl_errno($ch)) {
+            die('Erreur cURL : ' . curl_error($ch));
+        }
+        curl_close($ch);
+        return $response;
     }
 
 }
