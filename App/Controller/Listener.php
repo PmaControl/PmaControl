@@ -623,7 +623,12 @@ class Listener extends Controller
         $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
         
         $id_query = $this->insertNewQuery($param);
-        $register = $this->selectIdfromDigest(array($id_query));
+
+        if (!empty($id_query)) // case P_S not activated or INNODB not activated
+        {
+            $register = $this->selectIdfromDigest(array($id_query));
+        }
+        
         
         $i = 0;
 
@@ -684,6 +689,10 @@ class Listener extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $id_query = $this->getDigestFromDate(array($id_mysql_server, $date));
+
+        if (empty($id_query)){
+            return $id_query;
+        }
 
         $nb_id = count($id_query);
 
