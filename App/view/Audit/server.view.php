@@ -14,10 +14,11 @@ echo "Chaque serveur affiché est rattaché dynamiquement à un cluster identifi
 
 // dessin du cluster
 
+/*
 echo "\n<svgimage>\n";
 echo $data['svg'];
 echo "</svgimage>\n";
-
+*/
 
 echo "\n==== Les moteurs de stockage ====\n";
 

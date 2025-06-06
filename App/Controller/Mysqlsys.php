@@ -258,11 +258,6 @@ class Mysqlsys extends Controller {
 
         $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
 
-
-
-
-
-
         $def = Sgbd::sql(DB_DEFAULT);
         $sql2 = "SELECT * FROM mysqlsys_config_export WHERE rapport ='".$rapport."'";
         $res2 = $def->sql_query($sql2);
@@ -287,13 +282,13 @@ class Mysqlsys extends Controller {
 
             case 'engines':
                 $sql ="SELECT 
-  ENGINE, 
-  group_concat(distinct table_schema), 
-  ROUND( SUM(INDEX_LENGTH) / 1024 / 1024 / 1024, 2 ) AS index_size_gb, 
-  ROUND( SUM(DATA_LENGTH) / 1024 / 1024 / 1024, 2 ) AS data_size_gb, 
-  ROUND( SUM(DATA_FREE) / 1024 / 1024 / 1024, 2 ) AS data_size_gb, 
-  COUNT(*) AS table_count, 
-  SUM(TABLE_ROWS) as row_count 
+  ENGINE as Engine, 
+  group_concat(distinct table_schema) AS `Database`, 
+  ROUND( SUM(INDEX_LENGTH) / 1024 / 1024 / 1024, 2 ) AS `Index (Go)`, 
+  ROUND( SUM(DATA_LENGTH) / 1024 / 1024 / 1024, 2 ) AS `data (Go)`, 
+  ROUND( SUM(DATA_FREE) / 1024 / 1024 / 1024, 2 ) AS `Free (Go)`, 
+  COUNT(*) AS `Tables`, 
+  SUM(TABLE_ROWS) as `Rows (sum)`
 FROM 
   information_schema.tables 
 WHERE 

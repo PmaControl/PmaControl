@@ -36,8 +36,6 @@ class Format
             $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
         }
 
-        
-
         switch (strtolower($fork)) {
             case 'mariadb':
                 if ($logo)
