@@ -9,6 +9,7 @@ use App\Library\Extraction;
 use App\Library\Extraction2;
 use App\Library\Transfer;
 use \Glial\Sgbd\Sgbd;
+use \Glial\Synapse\FactoryController;
 
 class Audit extends Controller {
 
@@ -172,11 +173,8 @@ class Audit extends Controller {
     {
         $this->layout_name = false;
         $_GET['ajax'] = true;
-        
-        
+
     }
-
-
 
     public function server($param)
     {
@@ -507,15 +505,15 @@ performance_schema_digests_size
         $id_mysql_server = $param[0];
 
         $sql = "select * from global_variable WHERE  variable_name in ('query_cache_type', 'query_cache_size', 'query_cache_limit', 
-        'query_cache_min_res_unit','query_cache_wlock_invalidate')  and id_mysql_server =1;";
+        'query_cache_min_res_unit','query_cache_wlock_invalidate')  and id_mysql_server =".$id_mysql_server.";";
 
         $res = $db->sql_query($sql);
 
         while($ob = $db->sql_fetch_object($res))
         {
             $data['variable'][$ob->variable_name] = $ob->value;
-
         }
+        Debug::debug($data['variable'],"VARIABLES");
         ksort($data['variable']);
 
         if (strtoupper($data['variable']['query_cache_type'] === "ON"))
@@ -525,7 +523,7 @@ performance_schema_digests_size
         "qcache_free_blocks", "qcache_free_memory", "qcache_queries_in_cache", "qcache_total_blocks", "com_select"), array($id_mysql_server));
 
             Debug::debug($elems);
-            $cache = $elems[1];
+            $cache = $elems[$id_mysql_server];
 
             unset($cache['id_mysql_server']);
             unset($cache['date']);
@@ -534,7 +532,16 @@ performance_schema_digests_size
             
             $data['cache'] = $cache;
 
-            $data['ratio'] = round($cache['qcache_hits'] / ($cache['qcache_hits']+$cache['qcache_inserts']+$cache['qcache_not_cached'])*100, 2);
+            $div_by = $cache['qcache_hits']+$cache['qcache_inserts']+$cache['qcache_not_cached'];
+
+            if ($div_by != 0)
+            {
+                $data['ratio'] = round($cache['qcache_hits'] / ($cache['qcache_hits']+$cache['qcache_inserts']+$cache['qcache_not_cached'])*100, 2);
+            }
+            else{
+                $data['ratio'] = "N/A";
+            }
+
             $data['ratio_efficacite'] = round($cache['qcache_hits'] / ($cache['com_select'])*100, 2);
             Debug::debug($data);
         }
@@ -544,6 +551,27 @@ performance_schema_digests_size
     }
 
 
+    public function all($param)
+    {
+        $this->view = false;
+        $this->layout_name= false;
+        Debug::parseDebug($param);
 
+        $db = Sgbd::sql(DB_DEFAULT);
 
+        $data['servers'] = Extraction2::display(array("mysql_available","is_proxysql"));
+        Debug::debug($data['servers']);
+
+        echo "<pre>";
+        foreach($data['servers'] as $server) {
+            if ($server['mysql_available'] == "1" && $server['is_proxysql'] === "0") {
+
+                //echo $server['id_mysql_server']."\n";
+                FactoryController::addNode("audit", "server", array($server['id_mysql_server'] ));
+            }
+        }
+        echo "</pre>";
+
+        $this->set('data', $data);
+    }
 }
