@@ -331,7 +331,9 @@ LIMIT 10;";
 
                 break;
 
-            case "alter_table_redun"
+            case "alter_table_redundant_index":
+
+                break;
             
 
             default:
@@ -357,6 +359,6 @@ LIMIT 10;";
     }
 
 
-    
+
 
 }

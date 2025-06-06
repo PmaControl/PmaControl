@@ -358,7 +358,7 @@ class Graphviz
 
         $return = "".$edge['arrow'];
         $return .= '[tooltip="'.$edge['tooltip'].'" color="'.$edge['color'].'" penwidth="3" ';
-        $return .= 'fontname="arial" fontsize=8 edgeURL="" ';
+        $return .= 'fontname="arial" fontsize=8 edgeURL=""';
         foreach($edge['options'] as $key => $option) {
             $return .= $key.'="'.$option.'" ';
         }
