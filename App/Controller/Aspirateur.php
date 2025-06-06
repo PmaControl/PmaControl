@@ -1988,8 +1988,12 @@ GROUP BY C.ID, C.INFO;";
         if ($db_link->checkVersion(array('MySQL' => '5.1', 'Percona Server' => '5.1', 'MariaDB' => '5.1'))) {
             $time = intval($time);
 
+            
+
             if ($db_link->checkVersion(array('MySQL' => '8.0')))
             {
+                $this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$this->getServerType() );
+
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
                 IFNULL(t.trx_state, '')               AS trx_state,

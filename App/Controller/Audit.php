@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Post;
 use App\Library\Extraction;
+use App\Library\Extraction2;
 use App\Library\Transfer;
 use \Glial\Sgbd\Sgbd;
 
@@ -222,21 +223,22 @@ class Audit extends Controller {
     public function upload($param)
     {
 
+        Debug::parseDebug($param);
 
-
-        $wikiUrl   = 'http://monsite.example/dokuwiki';      // URL de base du wiki (sans slash final)
-        $user      = 'monlogin';                             // Identifiant DokuWiki
-        $pass      = 'monmdp';                               // Mot de passe
-        $namespace = 'monespace';                            // Nom d'espace pour le média (dossier sous data/media)
-        $pageId    = 'monespace:PageCible';                  // ID de la page cible (incluant namespace)
-        $filePath  = '/chemin/local/vers/monimage.svg';      // Chemin vers le fichier SVG local
+        $wikiUrl   = DOKUWIKI_URL;      // URL de base du wiki (sans slash final)
+        $user      = DOKUWIKI_LOGIN;                             // Identifiant DokuWiki
+        $pass      = DOKUWIKI_PASSWORD;                               // Mot de passe
+        $namespace = 'audit';                            // Nom d'espace pour le média (dossier sous data/media)
+        $pageId    = 'pmacontrol:audit';                  // ID de la page cible (incluant namespace)
+        $filePath  = '/srv/www/pmacontrol/App/Webroot/image/icon/maxscale.svg';      // Chemin vers le fichier SVG local
 
         // Prépare l'URL de l'API XML-RPC
         $xmlrpcUrl = rtrim($wikiUrl, '/') . '/lib/exe/xmlrpc.php';
 
+        Debug::debug($xmlrpcUrl, "xmlrpcUrl");
         // Fichier temporaire pour stocker le cookie de session
         $cookieJar = tempnam(sys_get_temp_dir(), 'dokuwiki_cookie');
-
+        Debug::debug($cookieJar, "xmlrpcUrl");
         // Fonction utilitaire pour envoyer une requête XML-RPC
 
 
@@ -250,6 +252,8 @@ class Audit extends Controller {
                 .   '</params>'
                 . '</methodCall>';
         $loginResp = $this->callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
+
+        Debug::debug($loginResp, "loginResp");
         // (On pourrait analyser $loginResp pour vérifier la réussite)
 
         // 2. Téléversement du fichier SVG (wiki.putAttachment)
@@ -270,8 +274,10 @@ class Audit extends Controller {
                     .     '</struct></value></param>'
                     .   '</params>'
                     . '</methodCall>';
-        $uploadResp = callXmlRpc($xmlUpload, $xmlrpcUrl, $cookieJar);
+        $uploadResp = $this->callXmlRpc($xmlUpload, $xmlrpcUrl, $cookieJar);
         // (On pourrait analyser $uploadResp pour confirmer le téléversement)
+
+        Debug::debug($uploadResp, "uploadResp");
 
         // 3. Mise à jour de la page (wiki.appendPage)
         $imageTag = '{{:' . $namespace . ':' . $filename . '}}';  // syntaxe DokuWiki pour afficher l'image
@@ -287,8 +293,10 @@ class Audit extends Controller {
                     .     '</struct></value></param>'
                     .   '</params>'
                     . '</methodCall>';
-        $appendResp = callXmlRpc($xmlAppend, $xmlrpcUrl, $cookieJar);
+        //$appendResp = $this->callXmlRpc($xmlAppend, $xmlrpcUrl, $cookieJar);
         // (On peut vérifier $appendResp pour s’assurer qu’il n’y a pas d’erreur)
+
+        //Debug::debug($appendResp, "appendResp");
 
         echo "Image téléversée et insérée avec succès.\n";  
     }
@@ -311,5 +319,232 @@ class Audit extends Controller {
         curl_close($ch);
         return $response;
     }
+
+
+    public function getCluster($param)
+    {
+
+
+
+    }
+
+
+
+    public function recommandation($param)
+    {
+
+
+        /*
+        innodb_change_buffering
+
+none
+none
+innodb_change_buffer_max_size
+25
+25
+innodb_adaptive_flushing_lwm
+10.000000
+10.000000
+innodb_max_dirty_pages_pct
+
+90.000000
+90.000000
+innodb_autoextend_increment
+1000
+1000
+thread_stack
+
+299008
+299008
+transaction_prealloc_size
+
+4096
+4096
+thread_cache_size
+
+100
+100
+max_connections
+
+100
+100
+query_cache_type
+
+0
+0
+query_cache_size
+
+0
+0
+query_cache_limit
+
+131072
+131072
+query_cache_min_res_unit
+
+4096
+4096
+key_buffer_size
+
+134217728
+134217728
+max_heap_table_size
+
+268435456
+268435456
+tmp_table_size
+
+268435456
+268435456
+innodb_buffer_pool_size
+
+2147483648
+2147483648
+innodb_log_file_size
+
+536870912
+536870912
+innodb_file_per_table
+1
+1
+sort_buffer_size
+
+33554432
+33554432
+read_rnd_buffer_size
+
+1048576
+1048576
+bulk_insert_buffer_size
+
+16777216
+16777216
+myisam_sort_buffer_size
+
+536870912
+536870912
+innodb_buffer_pool_chunk_size
+
+33554432
+33554432
+join_buffer_size
+
+262144
+262144
+table_open_cache
+
+10000
+10000
+table_definition_cache
+
+10000
+10000
+innodb_flush_log_at_trx_commit
+
+2
+2
+innodb_log_buffer_size
+
+8388608
+8388608
+innodb_write_io_threads
+
+4
+4
+innodb_read_io_threads
+
+4
+4
+innodb_flush_method
+
+O_DIRECT
+O_DIRECT
+optimizer_search_depth
+
+62
+62
+innodb_purge_threads
+
+4
+4
+thread_handling
+
+one-thread-per-connection
+one-thread-per-connection
+thread_pool_size
+
+8
+8
+innodb_log_file_buffering
+1
+1
+performance_schema_max_sql_text_length
+1024
+1024
+max_digest_length
+1024
+1024
+performance_schema_max_digest_length
+1024
+1024
+performance_schema_digests_size
+5000
+5000
+
+        */
+
+    }
+
+
+    public function queryCache($param)
+    {
+        Debug::parseDebug($param);
+
+        $this->layout_name = false;
+        $_GET['ajax'] = true;
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+        $id_mysql_server = $param[0];
+
+        $sql = "select * from global_variable WHERE  variable_name in ('query_cache_type', 'query_cache_size', 'query_cache_limit', 
+        'query_cache_min_res_unit','query_cache_wlock_invalidate')  and id_mysql_server =1;";
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            Debug::debug($arr);
+            $data['variable'][$ob->variable_name] = $ob->value;
+
+        }
+        ksort($data['variable']);
+
+        if (strtoupper($data['variable']['query_cache_type'] === "ON"))
+        {
+            $data['query_cache'] = "ON";
+            $elems = Extraction2::display(array("qcache_hits", "qcache_inserts", "qcache_not_cached", "qcache_lowmem_prunes",
+        "qcache_free_blocks", "qcache_free_memory", "qcache_queries_in_cache", "qcache_total_blocks", "com_select"), array($id_mysql_server));
+
+            Debug::debug($elems);
+            $cache = $elems[1];
+
+            unset($cache['id_mysql_server']);
+            unset($cache['date']);
+
+            ksort($cache);
+            
+            $data['cache'] = $cache;
+
+            $data['ratio'] = round($cache['qcache_hits'] / ($cache['qcache_hits']+$cache['qcache_inserts']+$cache['qcache_not_cached'])*100, 2);
+            $data['ratio_efficacite'] = round($cache['qcache_hits'] / ($cache['com_select'])*100, 2);
+            Debug::debug($data);
+        }
+
+        $this->set('data', $data);
+
+    }
+
+
+
 
 }
