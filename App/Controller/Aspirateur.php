@@ -1992,7 +1992,7 @@ GROUP BY C.ID, C.INFO;";
 
             if ($db_link->checkVersion(array('MySQL' => '8.0')))
             {
-                $this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$this->getServerType() );
+                $this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
 
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
