@@ -128,6 +128,7 @@ $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id
 
 
 
+
 echo "==== Les erreurs ====\n";
 
 $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings", "errors"));
@@ -138,4 +139,5 @@ echo "==== Les warnings ====\n";
 $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings", "warnings"));
 
 
+FactoryController::addNode("audit", "queryCache", array($data['server']['id']));
 
