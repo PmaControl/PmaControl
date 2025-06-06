@@ -513,7 +513,6 @@ performance_schema_digests_size
 
         while($ob = $db->sql_fetch_object($res))
         {
-            Debug::debug($arr);
             $data['variable'][$ob->variable_name] = $ob->value;
 
         }

@@ -1,7 +1,7 @@
 <?php
 
 
-if ($data['query_cache'] === "ON")
+if (!empty($data['query_cache']) && $data['query_cache'] === "ON")
 {
 
     echo "\n==== Analyse sur le query cache ====\n";
