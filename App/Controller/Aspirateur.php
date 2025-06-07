@@ -807,8 +807,12 @@ class Aspirateur extends Controller
         $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
 
         $stats['ips'] = json_encode(explode("\n", $ips));
+
+
+
+        // top -bn1 | grep "Cpu(s)"
         $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
-//$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
+        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
 
         $cpu_lines = explode("\n", $cpus);
 

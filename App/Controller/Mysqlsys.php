@@ -329,9 +329,41 @@ LIMIT 10;";
             case "alter_table_redundant_index":
 
                 break;
+
+
+
+            case "table_without_pg":
+
+                $sql = "SELECT 
+    t.table_schema,
+    t.table_name,
+    t.table_rows,
+    t.engine
+FROM 
+    information_schema.tables t
+LEFT JOIN (
+    SELECT 
+        table_schema,
+        table_name
+    FROM 
+        information_schema.table_constraints
+    WHERE 
+        constraint_type = 'PRIMARY KEY'
+) pk 
+ON t.table_schema = pk.table_schema AND t.table_name = pk.table_name
+WHERE 
+    pk.table_name IS NULL
+    AND t.table_type = 'BASE TABLE'
+    AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2;";
+
+                break;
             
 
             default:
+
+                
+
+
                 $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` LIMIT ".$limit;
 
             break;

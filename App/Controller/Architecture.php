@@ -38,7 +38,7 @@ class Architecture extends Controller
 SELECT dg.*, (dg.height * dg.width) as area
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
-JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information
+JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information-1
 ORDER BY  area DESC
 ;";
 
