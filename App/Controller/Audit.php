@@ -2,14 +2,16 @@
 
 namespace App\Controller;
 
+use Exception;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Post;
-use App\Library\Extraction;
-use App\Library\Extraction2;
-use App\Library\Transfer;
+use \App\Library\Extraction;
+use \App\Library\Extraction2;
+use \App\Library\Transfer;
 use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\FactoryController;
+use \App\Library\Mysql;
 
 class Audit extends Controller {
 
@@ -142,22 +144,16 @@ class Audit extends Controller {
 
         Debug::debug($param);
 
-
-
         $db = Sgbd::sql(DB_DEFAULT);
         
-
         $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
 
         Debug::debug($data['logs']);
 
-
         $general_log_file = $data['logs'][$_GET['mysql_server']['id']]['']['general_log_file'];
         $datadir = $data['logs'][$_GET['mysql_server']['id']]['']['datadir'];
 
-
         Debug::debug($general_log_file, "general_log_file");
-
 
         $dst = ROOT . "/data/general.log";
         Debug::debug($dst, "dst");
@@ -226,9 +222,15 @@ class Audit extends Controller {
         $wikiUrl   = DOKUWIKI_URL;      // URL de base du wiki (sans slash final)
         $user      = DOKUWIKI_LOGIN;                             // Identifiant DokuWiki
         $pass      = DOKUWIKI_PASSWORD;                               // Mot de passe
-        $namespace = 'audit';                            // Nom d'espace pour le média (dossier sous data/media)
+        $namespace = 'svg';                            // Nom d'espace pour le média (dossier sous data/media)
         $pageId    = 'pmacontrol:audit';                  // ID de la page cible (incluant namespace)
-        $filePath  = '/srv/www/pmacontrol/App/Webroot/image/icon/maxscale.svg';      // Chemin vers le fichier SVG local
+        $filePath  = $param[0];      // Chemin vers le fichier SVG local
+
+
+        if (! file_exists($filePath))
+        {
+            throw new \Exception("File not exist", 90);
+        }
 
         // Prépare l'URL de l'API XML-RPC
         $xmlrpcUrl = rtrim($wikiUrl, '/') . '/lib/exe/xmlrpc.php';
@@ -296,7 +298,7 @@ class Audit extends Controller {
 
         //Debug::debug($appendResp, "appendResp");
 
-        echo "Image téléversée et insérée avec succès.\n";  
+        
     }
 
 
@@ -319,19 +321,11 @@ class Audit extends Controller {
     }
 
 
-    public function getCluster($param)
-    {
-
-
-
-    }
 
 
 
     public function recommandation($param)
     {
-
-
         /*
         innodb_change_buffering
 
@@ -573,5 +567,256 @@ performance_schema_digests_size
         echo "</pre>";
 
         $this->set('data', $data);
+    }
+
+
+    public function cluster($param)
+    {
+
+        $this->view = false;
+        $this->layout_name= false;
+        Debug::parseDebug($param);
+
+        $id_dot3_cluster = $param[0];
+        $cluster_number = $param[1];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
+        $sql2 = "SELECT a.id_mysql_server,b.display_name 
+        FROM dot3_cluster__mysql_server a
+        INNER JOIN mysql_server b ON a.id_mysql_server = b.id
+        WHERE id_dot3_cluster=".$id_dot3_cluster.";";
+
+        $res2 = $db->sql_query($sql2);
+        $server_name = [];
+        $id_mysql_servers = [];
+        while($ob = $db->sql_fetch_object($res2))
+        {
+            $server_name[] = $ob->display_name;
+            $id_mysql_servers[] = $ob->id_mysql_server;
+        }
+
+        $cluster_name_brut = $this->get_common_parts($server_name)['prefix_commun'];
+        $cluster_name = $this->retirerChiffreEtSeparateurFin($cluster_name_brut);
+
+        $sql = "SELECT b.* FROM dot3_cluster a
+        INNER JOIN dot3_graph b ON a.id_dot3_graph = b.id
+        WHERE a.id=".$id_dot3_cluster.";";
+
+        $res = $db->sql_query($sql);
+
+
+        
+
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            echo "\n===== Cluster : ".$cluster_name." =====\n";
+
+            echo "\n==== Architechure ====\n";
+
+            $prefix = "svg";
+            $file_svg = $prefix."_".$ob->id.".svg";
+            $path_svg = TMP."dot/".$file_svg;
+            file_put_contents($path_svg, $ob->svg);
+            $this->upload(array($path_svg));
+
+            echo "\n{{ :".$prefix.":".$file_svg." |}}\n";
+
+            // table without PK
+
+            $this->getTableWithoutFk(array(implode(",",$id_mysql_servers)));
+            
+
+            //unlink($path_svg);
+
+
+            //FactoryController::addNode("audit", "server", array($ob->id ));
+        }
+
+
+
+    }
+
+
+    public function bycluster($param)
+    {
+        $this->view = false;
+        $this->layout_name= false;
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+
+        $sql = "WITH LatestDot3Information AS (
+            SELECT MAX(id_dot3_information) AS max_id_dot3_information
+            FROM dot3_cluster
+        )
+        SELECT a.id, a.id_dot3_information
+        FROM dot3_cluster a
+        INNER JOIN LatestDot3Information b ON a.id_dot3_information = b.max_id_dot3_information-1 ORDER BY id desc;";
+
+        $res = $db->sql_query($sql);
+
+        $i = 1;
+        while($ob = $db->sql_fetch_object($res))
+        {
+            FactoryController::addNode("audit", "cluster", array($ob->id, $i ));
+            $i++;
+        }
+    }
+
+
+    function get_common_parts(array $servers): array {
+        if (empty($servers)) return [];
+
+        // 1. Trouver le préfixe commun entre toutes les chaînes
+        $prefix = $servers[0];
+        foreach ($servers as $server) {
+            $i = 0;
+            while ($i < strlen($prefix) && $i < strlen($server) && $prefix[$i] === $server[$i]) {
+                $i++;
+            }
+            $prefix = substr($prefix, 0, $i);
+            if ($prefix === '') break;
+        }
+
+        // 2. Découper avec délimiteurs - et .
+        $split_servers = array_map(fn($name) => preg_split('/[-.]/', $name), $servers);
+        $common_segments = $split_servers[0];
+
+        foreach ($split_servers as $segments) {
+            $common_segments = array_intersect($common_segments, $segments);
+        }
+
+        // 3. Si aucun préfixe ni segment commun trouvé, fallback logique jusqu’au premier chiffre
+        if (empty($prefix) && empty($common_segments)) {
+            if (preg_match('/^([^\d]+)/', $servers[0], $matches)) {
+                $prefix = $matches[1]; // tout ce qui est avant le premier chiffre
+            }
+        }
+
+        return [
+            'prefix_commun' => $prefix,
+            'segments_communs' => array_values(array_unique($common_segments)),
+        ];
+    }
+
+    function retirerChiffreEtSeparateurFin($chaine) {
+        $gg =  preg_replace('/\d{1}$/', '', $chaine);
+        return trim($gg, "-");
+    }
+
+    /*
+        test
+        // Exemple d'utilisation
+        $servers1 = [
+            'dc1-prd-mysql-01.ipex.be',
+            'dc1-prd-mysql-02.ipex.be',
+            'dc1-prd-mysql-03.ipex.be',
+            'dc2-prd-mysql-04.ipex.be',
+            'dc2-prd-mysql-05.ipex.be'
+        ];
+
+        $servers2 = [
+            'ipex-galera-11',
+            'ipex-galera-12',
+            'ipex-galera-13',
+            'ipex-galera-15',
+            'ipex-galera-14'
+        ];
+
+        $servers3 = [
+            'waylon1bdd',
+            'waylon2'
+        ];
+
+        $servers4 = [
+            'lenny1bdd',
+            'secoursabdd'
+        ];
+
+    */
+
+
+    function getQueryOnCluster($param)
+    {
+        $servers = $param[0];
+        $query = $param[1];
+        $pk = $param[2];
+        $type = $param[3]; // MERGE / INTERSECT / ADD
+
+        Debug::debug($servers,"GGGG");
+
+        $id_mysql_servers = explode(",", $servers);
+        
+        $data = array();
+        
+        foreach($id_mysql_servers as $id_mysql_server)
+        {
+            $servers_online = Extraction2::display(array("mysql_available"),array($id_mysql_server));
+
+            if ($servers_online[$id_mysql_server]['mysql_available'] !== "1")
+            {
+                continue;
+            }
+
+
+            $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
+
+            $sql = $query;
+
+            $res = $db->sql_query($sql);
+
+            $data[$id_mysql_server] = array();
+            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+            {
+                $data[$id_mysql_server][] = $arr;
+            }
+
+        }
+
+
+        Debug::debug($data);
+    }
+
+
+    function getTableWithoutFk($param)
+    {
+
+        Debug::debug($param, "CHECK");
+
+
+        $param[1] = "SELECT 
+    t.table_schema,
+    t.table_name,
+    t.table_rows,
+    t.engine
+FROM 
+    information_schema.tables t
+LEFT JOIN (
+    SELECT 
+        table_schema,
+        table_name
+    FROM 
+        information_schema.table_constraints
+    WHERE 
+        constraint_type = 'PRIMARY KEY'
+) pk 
+ON t.table_schema = pk.table_schema AND t.table_name = pk.table_name
+WHERE 
+    pk.table_name IS NULL
+    AND t.table_type = 'BASE TABLE'
+    AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2;";
+
+
+        $param[2] = "table_schema,table_name";
+        $param[3] = "merge";
+
+
+        Debug::debug($param, "CHECK");
+
+        $this->getQueryOnCluster($param);
     }
 }

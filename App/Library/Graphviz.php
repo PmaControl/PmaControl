@@ -453,6 +453,7 @@ class Graphviz
          * to be sure to insert image with add <?xml version="1.0" encoding="UTF-8" standalone="no"?> in top of SVG
          */
         $image_server = ROOT."/App/Webroot/image/dot/";
+        //$image_server = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_ADDR'].LINK."image/dot/";
 
         $return = '';
         // define color
@@ -473,7 +474,6 @@ class Graphviz
         {
             $server['color'] = "#FFFF00"; // import this from legend
         }
-
 
         $forground_color = '#000000';
         if (static::getBrightness($server['color']) < 128) {
