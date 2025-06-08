@@ -18,28 +18,39 @@ class Architecture extends Controller
     {
         Debug::parseDebug($param);
 
+
+        /*
         $this->title  = '<i class="fa fa-object-group"></i> '.__("Architecture");
         $this->ariane = ' > <a href⁼"">'.'<span class="glyphicon glyphicon glyphicon-home" style="font-size:12px"></span> '
             .__("Dashboard").'</a> > <i class="fa fa-object-group" style="font-size:14px"></i> '.__("Architecture");
+        */
+
+        $this->di['js']->addJavascript(array("https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"));
+        
+        $this->di['js']->code_javascript('
+
+            $(".grid").masonry({
+                // options...
+                itemSelector: ".grid-item",
+                columnWidth: 5
+            });
+
+        ');
 
 
+        
         $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT c.id,c.display,c.height,c.`date`, b.id_architecture FROM mysql_server a
-            INNER JOIN link__architecture__mysql_server b ON a.id = b.id_mysql_server
-            INNER JOIN architecture c ON c.id = b.id_architecture
-            WHERE 1 ".$this->getFilter()." AND c.height > 8 GROUP BY c.id ORDER BY c.width DESC, c.height DESC ";
 
 
         $sql = "WITH LatestDot3Information AS (
     SELECT MAX(id_dot3_information) AS max_id_dot3_information
     FROM dot3_cluster
 )
-SELECT dg.*, (dg.height * dg.width) as area
+SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
 JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information-1
-ORDER BY  area DESC
+ORDER BY  height DESC, width desc
 ;";
 
 

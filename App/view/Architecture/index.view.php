@@ -15,13 +15,15 @@ echo '</div>';
                     
                     </h3>
             </div>
-            <div class="mpd">
+            <div class="mpd grid">
 <?php
 
+
+/*
 echo '<div style="float:right; border:#000 0px solid">';
 \Glial\Synapse\FactoryController::addNode("Dot2", "legend", array());
 echo '</div>';
-
+*/
 
 // @TODO remove empry graph from dot generateCache
 foreach ($data['graphs'] as $graph) {
@@ -31,16 +33,20 @@ foreach ($data['graphs'] as $graph) {
 
     if (!empty($graph['svg'])) {
 
-        echo '<div style="float:left; border:#000 0px solid">';
+        echo '<div class="grid-item" style="float:left; border:#000 0px solid">';
         //echo $graph['height'];
         echo $graph['svg'];
         echo '</div>';
-        $date['date'][] = $graph['date_inserted'];
+        $date['date'][] = $graph['date_refresh'];
     }
 }
 
 
 echo '<div style="clear:both"></div>';
+
+
+echo '</div>'; //end mpd
+
 if (!empty($data['graphs'])
 ) {
 
@@ -49,6 +55,4 @@ if (!empty($data['graphs'])
         echo '<div style="float:right;">'.__("Date de rafraichissement :", "fr")." ".$date['date'][0]."</div>";
     }
 }
-
-echo '</div>'; //end mpd
 

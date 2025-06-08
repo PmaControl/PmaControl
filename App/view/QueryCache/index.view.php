@@ -17,9 +17,6 @@ echo '<div class="well">';
 echo '</div>';
 
 
-
-
-
 echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';
 echo '<th>'.__('Server').'</th>';
@@ -39,8 +36,7 @@ if (!empty($data['variable'])) {
         {
             $style= "background:#e0e0e0; ";
         }
-
-
+        
         echo '<tr>';
         echo '<td style="'.$style.'">'.Display::srv($id_mysql_server).'</td>';
         echo '<td style="'.$style.'">'.$variable['query_cache_type'].'</td>';
