@@ -24,7 +24,7 @@ class Available
             $servers = Extraction2::display(array(self::MYSQL_AVAILABLE));
             foreach($servers as $id_server => $server){
                 if ($server[self::MYSQL_AVAILABLE] === "1"){
-                    self::$mysql_available[] = $id_server;
+                    self::$mysql_available[$id_server] = $id_server;
                 }
             }
         }
@@ -59,7 +59,7 @@ class Available
 
             foreach($servers as $id_server => $server){
                 if ($server[self::PERFORMANCE_SCHEMA] === "ON"){
-                    self::$performance_schema[] = $id_server;
+                    self::$performance_schema[$id_server] = $id_server;
                 }
             }
         }
