@@ -971,7 +971,7 @@ WHERE
 
 
         $param[1] = "SELECT * FROM `sys`.`schema_auto_increment_columns` WHERE auto_increment_ratio > 0.5";
-        $param[2] = "";
+        $param[2] = "innodb";
         //$param[2] = "";
         $param[3] = "merge";
 
@@ -1152,7 +1152,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
         $data = array();
         $res = $db->sql_query($sql);
-        while($arr = $db->sql_fetch_array($res))
+        while($arr = $db->sql_fetch_array($res, MYSQL_ASSOC))
         {
             $tmp = array();
             $tmp['row'] = $arr;
