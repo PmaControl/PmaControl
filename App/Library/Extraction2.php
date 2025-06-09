@@ -37,9 +37,9 @@ class Extraction2
           debug($date);
           /**** */
 
-          Debug::debug($var);
-          Debug::debug($server);
-          Debug::debug($date);
+        //  Debug::debug($var);
+        //  Debug::debug($server);
+        //  Debug::debug($date);
 
         //Debug::debug($date);
 
@@ -49,7 +49,7 @@ class Extraction2
         if (empty($server)) {
             $server = self::getServerList();
         }
-        Debug::debug($server, "SERVER LIST");
+        //Debug::debug($server, "SERVER LIST");
 
         //Debug::debug($variable);
 

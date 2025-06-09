@@ -57,9 +57,8 @@ si tu dois utilisé des titres tu doit démarrer depuis "=== titre ===" les titr
 FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "host_summary"));
 
 
+/*
 echo "\n\n";
-
-
 echo "==== Auto Increment ====\n";
 
 echo "Lorsque la colonne AUTO_INCREMENT atteint 100% de sa capacité (valeur maximale), le serveur ne peut plus attribuer de nouveaux identifiants : toute insertion de ligne provoque alors une erreur. En pratique, MySQL/MariaDB renvoie des messages tels que ''ERROR 1062 (23000): Duplicate entry ‘2147483647’ for key ‘PRIMARY’ ou ERROR 1467 (HY000): Failed to read auto-increment value from storage engine''. Ces erreurs indiquent que la prochaine valeur d’auto-incrément dépasserait la limite du type (par exemple 2 147 483 647 pour un ''INT'' signé) et est considérée comme un doublon ou invalide. En conséquence, les requêtes ''INSERT'' sur la table échouent, et l’application se retrouve dans l’incapacité d’ajouter de nouvelles données tant que le problème n’est pas résolu. Pour corriger ce problème, il faut augmenter la plage du champ incrémenté en changeant son type. Par exemple, convertir un ''INT SIGNED'' en ''INT UNSIGNED'' double la capacité disponible (car on supprime l’usage des valeurs négatives)
@@ -70,8 +69,10 @@ Sur une table ''InnoDB'' volumineuse, un ''ALTER TABLE'' traditionnel serait lon
 echo "On affiche ici uniquement les valeurs dépassant les 50% de remplissage :\n";
 
 FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "schema_auto_increment_columns"));
+*/
 
 
+/*
 echo "==== Index ====\n";
 echo "\n\n";
 
@@ -92,8 +93,10 @@ De plus, éviter les index trop larges ou inutiles contribue à une meilleure pe
 ";
 
 $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "schema_redundant_indexes"));
+*/
 
 
+/*
 echo "=== Analyse des index non utilisé ===\n";
 echo "\n\n";
 
@@ -115,7 +118,7 @@ La suppression des index inutilisés permet donc d’améliorer les performances
 ";
 
 $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "schema_unused_indexes"));
-
+*/
 
 echo "==== Requête les plus consomatrice ====\n";
 echo "\n\n";
@@ -128,16 +131,14 @@ $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id
 
 
 
-
-
 echo "==== Les erreurs ====\n";
 
-$gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings", "errors"));
+$gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings__errors"));
 
 
 echo "==== Les warnings ====\n";
 
-$gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings", "warnings"));
+$gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "statements_with_errors_or_warnings__warnings"));
 
 
 FactoryController::addNode("audit", "queryCache", array($data['server']['id']));

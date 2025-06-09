@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Available;
 use Exception;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
@@ -30,7 +31,6 @@ class Audit extends Controller {
 
                 while (($buffer = fgets($handle, 4096)) !== false) {
 
-
                     $output_array = array();
 
                     preg_match('/Connect\s+(\S+)@(\S+)/', $buffer, $output_array);
@@ -46,15 +46,11 @@ class Audit extends Controller {
                         //Debug::debug($output_array3);
                     }
 
-
                     if (count($output_array) > 0) {
 
-
                         $buffer2 = fgets($handle, 4096);
-
                         preg_match('/Access\sdenied for\suser\s\'([\w-]+)\'@\'(\S+)\'\s/', $buffer2, $output_array2);
                         //preg_match('/Access\sdenied for\suser\s\'([\w-]+)\'@\'(\S+)\'\sto\sdatabase\s\'([\w-]+)\'/', $buffer2, $output_array2);
-
 
                         if (!empty($output_array3[4])) {
                             $output_array[3] = $output_array3[4];
@@ -81,7 +77,6 @@ class Audit extends Controller {
                             }
                         }
                     }
-
                     //$this->login_host[] = $output_array[0];
                 }
             }
@@ -91,7 +86,6 @@ class Audit extends Controller {
             }
             fclose($handle);
         }
-
 
         arsort($this->denied);
         arsort($this->granted);
@@ -184,11 +178,12 @@ class Audit extends Controller {
 
         $res = $db->sql_query($sql);
 
-        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
-        {
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['server'] = $arr;
         }
 
+
+        /*
         // get cluster : 
         $sub_query = "select max(z.id) from dot3_cluster__mysql_server z where z.id_mysql_server=".$id_mysql_server;
 
@@ -204,10 +199,7 @@ class Audit extends Controller {
         
         while ($ob2 = $db->sql_fetch_object($res2)) {
             $data['svg'] = $ob2->svg; 
-        }
-
-        
-
+        }*/
 
         $this->set('data', $data);
     }
@@ -253,7 +245,7 @@ class Audit extends Controller {
                 . '</methodCall>';
         $loginResp = $this->callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
 
-        Debug::debug($loginResp, "loginResp");
+        //Debug::debug($loginResp, "loginResp");
         // (On pourrait analyser $loginResp pour vérifier la réussite)
 
         // 2. Téléversement du fichier SVG (wiki.putAttachment)
@@ -277,7 +269,7 @@ class Audit extends Controller {
         $uploadResp = $this->callXmlRpc($xmlUpload, $xmlrpcUrl, $cookieJar);
         // (On pourrait analyser $uploadResp pour confirmer le téléversement)
 
-        Debug::debug($uploadResp, "uploadResp");
+        //Debug::debug($uploadResp, "uploadResp");
 
         // 3. Mise à jour de la page (wiki.appendPage)
         $imageTag = '{{:' . $namespace . ':' . $filename . '}}';  // syntaxe DokuWiki pour afficher l'image
@@ -300,7 +292,6 @@ class Audit extends Controller {
 
         
     }
-
 
     function callXmlRpc($xmlContent, $xmlrpcUrl, $cookieJar) {
         $ch = curl_init($xmlrpcUrl);
@@ -578,40 +569,53 @@ performance_schema_digests_size
         Debug::parseDebug($param);
 
         $id_dot3_cluster = $param[0];
-        $cluster_number = $param[1];
+        //$cluster_number = $param[1];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        Debug::debug($id_dot3_cluster, "CLSUTER NUMBER");
 
         $sql2 = "SELECT a.id_mysql_server,b.display_name 
         FROM dot3_cluster__mysql_server a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-        WHERE id_dot3_cluster=".$id_dot3_cluster.";";
-
-        $res2 = $db->sql_query($sql2);
+        WHERE a.id_dot3_cluster=".$id_dot3_cluster." AND is_proxy=0;";
+        
         $server_name = [];
         $id_mysql_servers = [];
-        while($ob = $db->sql_fetch_object($res2))
+
+        $res2 = $db->sql_query($sql2);
+        while($ob2 = $db->sql_fetch_object($res2))
         {
-            $server_name[] = $ob->display_name;
-            $id_mysql_servers[] = $ob->id_mysql_server;
+            //Debug::debug($ob);
+            $server_name[] = $ob2->display_name;
+            $id_mysql_servers[] = $ob2->id_mysql_server;
         }
 
-        $cluster_name_brut = $this->get_common_parts($server_name)['prefix_commun'];
+        //Debug::debug($server_name, "SERVER NAME");
+        //Debug::debug($id_mysql_servers, "id_mysql_server NAME");
+
+        $common_parts = $this->get_common_parts($server_name);
+
+        if (empty($common_parts['prefix_commun'])) {
+            $cluster_name_brut = implode('-',$common_parts['segments_communs'] );
+        }
+        else {
+            $cluster_name_brut = $common_parts['prefix_commun'];
+        }
+
         $cluster_name = $this->retirerChiffreEtSeparateurFin($cluster_name_brut);
 
         $sql = "SELECT b.* FROM dot3_cluster a
         INNER JOIN dot3_graph b ON a.id_dot3_graph = b.id
-        WHERE a.id=".$id_dot3_cluster.";";
+        WHERE a.id=".$id_dot3_cluster." LIMIT 1;";
 
         $res = $db->sql_query($sql);
 
 
-        
-
-
         while($ob = $db->sql_fetch_object($res))
         {
+
+            //Debug::debug($ob);
             echo "\n===== Cluster : ".$cluster_name." =====\n";
 
             echo "\n==== Architechure ====\n";
@@ -624,17 +628,31 @@ performance_schema_digests_size
 
             echo "\n{{ :".$prefix.":".$file_svg." |}}\n";
 
-            // table without PK
 
-            $this->getTableWithoutFk(array(implode(",",$id_mysql_servers)));
+            if (count($id_mysql_servers) > 1)
+            {
+                $this->getConfig(array(implode(",",$id_mysql_servers)));
+            }
             
+            // table without PK
+            $this->getTableWithoutFk(array(implode(",",$id_mysql_servers)));
 
+            $this->getAutoInc(array(implode(",",$id_mysql_servers)));
+
+            $this->getIndex(array(implode(",",$id_mysql_servers)));
             //unlink($path_svg);
+            //$this->server(array($ob->id ));
 
-
-            //FactoryController::addNode("audit", "server", array($ob->id ));
+            foreach($id_mysql_servers as $id_mysql_server)
+            {
+                if (Available::getMySQL($id_mysql_server)){
+                    //FactoryController::addNode("audit", "server", array($ob->id ));
+                }
+                else{
+                    echo "\n<note danger>Le serveur ".$id_mysql_server." est OFFLINE maitenant !</note>\n";
+                }
+            }   
         }
-
 
 
     }
@@ -653,18 +671,33 @@ performance_schema_digests_size
             SELECT MAX(id_dot3_information) AS max_id_dot3_information
             FROM dot3_cluster
         )
-        SELECT a.id, a.id_dot3_information
-        FROM dot3_cluster a
-        INNER JOIN LatestDot3Information b ON a.id_dot3_information = b.max_id_dot3_information-1 ORDER BY id desc;";
+        SELECT a.id, a.id_dot3_information, GROUP_CONCAT(d.id_mysql_server) as id_mysql_servers, a.id as id_dot3_cluster
+        FROM dot3_cluster a INNER JOIN LatestDot3Information b ON a.id_dot3_information = b.max_id_dot3_information-1 
+        INNER JOIN dot3_graph c ON c.id = a.id_dot3_graph
+        INNER JOIN dot3_cluster__mysql_server d ON d.id_dot3_cluster = a.id
+        GROUP BY a.id
+        ORDER BY  c.height DESC, c.width desc;";
 
         $res = $db->sql_query($sql);
 
         $i = 1;
         while($ob = $db->sql_fetch_object($res))
         {
-            FactoryController::addNode("audit", "cluster", array($ob->id, $i ));
+
+            //echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+            //echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+
+
+            $this->cluster(array($ob->id_dot3_cluster, $i, $ob->id_mysql_servers ));
+            //FactoryController::addNode("audit", "cluster", array($ob->id, $i ));
             $i++;
+
+            //echo "############################################################################\n";
+            //echo "############################################################################\n";
         }
+
+        Debug::debug(Available::$engines, "ENGINES");
+        Debug::debug(Available::$performance_schema, "PS");
     }
 
 
@@ -744,10 +777,10 @@ performance_schema_digests_size
     {
         $servers = $param[0];
         $query = $param[1];
-        $pk = $param[2];
+        $require = explode(",",$param[2]);
         $type = $param[3]; // MERGE / INTERSECT / ADD
 
-        Debug::debug($servers,"GGGG");
+        Debug::debug($require,"GGGG");
 
         $id_mysql_servers = explode(",", $servers);
         
@@ -755,18 +788,29 @@ performance_schema_digests_size
         
         foreach($id_mysql_servers as $id_mysql_server)
         {
-            $servers_online = Extraction2::display(array("mysql_available"),array($id_mysql_server));
-
-            if ($servers_online[$id_mysql_server]['mysql_available'] !== "1")
+            if (Available::getMySQL($id_mysql_server) === false)
             {
+                //echo "SERVER $id_mysql_server OFFLINE\n";
                 continue;
             }
 
+            if (in_array('innodb', $require))
+            {
+                if (Available::hasEngine($id_mysql_server, "INNODB") === false) {
+                    continue;
+                }
+            }
 
-            $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
+            if (in_array('performance_schema', $require))
+            {
+                if (Available::getPS($id_mysql_server) === false) {
+                    continue;
+                }
+            }
 
+
+            $db = Mysql::getDbLink($id_mysql_server, "mysqlsys".$id_mysql_server);
             $sql = $query;
-
             $res = $db->sql_query($sql);
 
             $data[$id_mysql_server] = array();
@@ -775,10 +819,15 @@ performance_schema_digests_size
                 $data[$id_mysql_server][] = $arr;
             }
 
+            /************ */
         }
 
+        $data = self::aggregate(array($data));
 
-        Debug::debug($data);
+        return $data;
+        
+
+        //Debug::debug($data);
     }
 
 
@@ -810,13 +859,310 @@ WHERE
     AND t.table_type = 'BASE TABLE'
     AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2;";
 
+        //$param[1] = "SELECT * from sys.sys_config order by variable;";
 
-        $param[2] = "table_schema,table_name";
+        $param[2] = "";
         $param[3] = "merge";
 
 
         Debug::debug($param, "CHECK");
 
-        $this->getQueryOnCluster($param);
+        $data = $this->getQueryOnCluster($param);
+
+        if (! empty($data)) {
+
+            echo "\n==== Liste des tables sans clefs primaire====\n";
+            $this->displayTable(array($data));
+        }
+        
+
+    }
+
+
+    public function displayTable($param)
+    {
+
+        $data = $param[0];
+        if (empty($data)) {
+            return true;
+        }
+
+        $number_of_server = count($data[0]['present_on']) + count($data[0]['missing_from']);
+        
+
+
+        $keys = array_keys($data[0]['row']);
+
+        echo "\n^ ";
+        foreach($keys as $key){
+            echo "$key ^";
+        }
+        echo "present_on ^\n";
+
+        $i = 1;
+        
+        foreach($data as $elem)
+        {
+            echo "| ";
+            foreach($elem['row'] as $value) {
+                echo $value." |";
+            }
+            echo implode(",",$elem['present_on'])." |\n";
+        }
+
+        
+    }
+
+
+
+    static public function aggregate($param)
+    {
+        $data = $param[0];
+
+        if (empty($data))
+        {
+            return $data;
+        }
+
+        $allServers = array_keys($data);
+        $normalizedRows = [];
+
+        // Construction d'un index basé sur toutes les colonnes
+        foreach ($data as $serverId => $rows) {
+            foreach ($rows as $row) {
+                //ksort($row); // Trie les clés pour cohérence
+                $key = json_encode($row); // Génère une clé unique pour cette combinaison de colonnes/valeurs
+
+                if (!isset($normalizedRows[$key])) {
+                    $normalizedRows[$key] = [
+                        'row' => $row,
+                        'present_on' => [],
+                    ];
+                }
+                $normalizedRows[$key]['present_on'][] = $serverId;
+            }
+        }
+
+        // Compléter le tableau avec les serveurs manquants
+        $result = [];
+
+        foreach ($normalizedRows as $entry) {
+            $present = array_unique($entry['present_on']);
+            $missing = array_diff($allServers, $present);
+
+            $result[] = [
+                'row' => $entry['row'],
+                'present_on' => $present,
+                'missing_from' => array_values($missing),
+            ];
+        }
+
+        // Affichage ou retour
+        //print_r($result);
+    
+        return $result;
+    }
+
+
+    function getAutoInc($param)
+    {
+
+        Debug::debug($param, "CHECK");
+
+
+        $param[1] = "SELECT * FROM `sys`.`schema_auto_increment_columns` WHERE auto_increment_ratio > 0.5";
+        $param[2] = "";
+        //$param[2] = "";
+        $param[3] = "merge";
+
+
+        Debug::debug($param, "CHECK");
+
+        $data = $this->getQueryOnCluster($param);
+
+        if (! empty($data)) {
+
+            echo "\n==== Auto Increment ====\n";
+
+echo "Lorsque la colonne ''AUTO_INCREMENT'' atteint 100% de sa capacité (valeur maximale), le serveur ne peut plus attribuer de nouveaux identifiants : toute insertion de ligne provoque alors une erreur. En pratique, MySQL/MariaDB renvoie des messages tels que ''ERROR 1062 (23000): Duplicate entry ‘2147483647’ for key ‘PRIMARY’ ou ERROR 1467 (HY000): Failed to read auto-increment value from storage engine''. Ces erreurs indiquent que la prochaine valeur d’auto-incrément dépasserait la limite du type (par exemple 2 147 483 647 pour un ''INT'' signé) et est considérée comme un doublon ou invalide. En conséquence, les requêtes ''INSERT'' sur la table échouent, et l’application se retrouve dans l’incapacité d’ajouter de nouvelles données tant que le problème n’est pas résolu. Pour corriger ce problème, il faut augmenter la plage du champ incrémenté en changeant son type. Par exemple, convertir un ''INT SIGNED'' en ''INT UNSIGNED'' double la capacité disponible (car on supprime l’usage des valeurs négatives)
+On peut aussi passer à ''BIGINT'' (de préférence ''BIGINT UNSIGNED'') pour étendre encore plus largement la limite. Le manuel MySQL rappelle d’ailleurs qu’on doit utiliser ''UNSIGNED'' pour élargir la plage d’un champ auto-incrément dès que le type initial atteint sa limite
+Sur une table ''InnoDB'' volumineuse, un ''ALTER TABLE'' traditionnel serait long et bloquerait l’accès. On utilise alors l’outil ''pt-online-schema-change'' (Percona Toolkit), qui ne fonctionne qu’avec les tables InnoDB : il crée en arrière-plan une copie de la table modifiée (colonne convertie), copie les données par petits lots en maintenant des triggers pour synchroniser les changements, puis effectue un RENAME TABLE atomique pour basculer. Cette procédure en ligne permet à la table de rester accessible (en lecture, et sans doute en écriture via les triggers) durant la migration, minimisant ainsi les interruptions de service.";
+
+echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage :\n";
+            $this->displayTable(array($data));
+        }
+        
+
+    }
+
+
+    function getIndex($param)
+    {
+
+        echo "==== Index ====\n";
+        echo "\n\n";
+
+        $this->getRedundantIndex($param);
+        $this->getRedundantAlter($param);
+        
+        $this->getUnusedIndex($param);
+        
+    }
+
+    function getRedundantIndex($param)
+    {
+
+        Debug::debug($param, "CHECK");
+
+
+        $param[1] = "SELECT table_schema,table_name, redundant_index_name,redundant_index_name,dominant_index_name, dominant_index_columns
+        FROM `sys`.`schema_redundant_indexes` ORDER BY table_schema,table_name";
+        $param[2] = "innodb,performance_schema";
+        //$param[2] = "";
+        $param[3] = "merge";
+
+
+        Debug::debug($param, "CHECK");
+
+        $data = $this->getQueryOnCluster($param);
+
+        if (! empty($data)) {
+
+            echo "=== Analyse des index redondants ===\n";
+            echo "\n\n";
+
+
+            echo "Un index est considéré comme redondant lorsqu’un autre index existant couvre déjà les mêmes colonnes dans le même ordre, voire plus.
+
+            Supprimer ces index redondants permet de :
+
+            * Réduire la taille des fichiers d’index sur disque,
+            * Accélérer les opérations de modification (INSERT, UPDATE, DELETE), car chaque index ajouté implique une surcharge,
+            * Limiter la consommation mémoire (notamment pour les caches d’index),
+            * Faciliter la maintenance de la base en réduisant la complexité du schéma.
+
+            De plus, éviter les index trop larges ou inutiles contribue à une meilleure performance globale et à un temps d’analyse de requêtes plus court, tout en minimisant l’empreinte de stockage.
+            ";
+
+            $this->displayTable(array($data));
+        }
+    }
+
+
+
+
+    function getRedundantAlter($param)
+    {
+
+        Debug::debug($param, "CHECK");
+
+
+        $param[1] = "SELECT sql_drop_index
+        FROM `sys`.`schema_redundant_indexes` ORDER BY table_schema,table_name";
+        $param[2] = "innodb,performance_schema";
+        //$param[2] = "";
+        $param[3] = "merge";
+
+
+        Debug::debug($param, "CHECK");
+
+        $data = $this->getQueryOnCluster($param);
+
+        if (! empty($data)) {
+
+            echo "Liste des requêtes pour dropper les index redondants : ";
+
+            $this->displayTable(array($data));
+        }
+    }
+
+    function getUnusedIndex($param)
+    {
+
+        Debug::debug($param, "CHECK");
+
+
+        $param[1] = "SELECT object_schema, object_name, index_name  
+        FROM `sys`.`schema_unused_indexes` ORDER BY object_schema,object_name,index_name";
+        $param[2] = "innodb,performance_schema";
+        //$param[2] = "";
+        $param[3] = "merge";
+
+
+        Debug::debug($param, "CHECK");
+
+        $data = $this->getQueryOnCluster($param);
+
+        if (! empty($data)) {
+
+            echo "=== Analyse des index non utilisé ===\n";
+            echo "\n\n";
+
+
+            echo "
+            Le tableau schema_unused_indexes du schéma sys identifie les index qui existent mais ne sont jamais utilisés par le moteur MariaDB (ni dans des lectures, ni dans des plans d'exécution optimisés).
+
+            Conserver de tels index a plusieurs inconvénients :
+
+            * Occupation inutile de l’espace disque,
+            * Surcharge lors des écritures (chaque modification d’une table met aussi à jour tous ses index),
+            * Consommation mémoire excessive (s’ils sont chargés en cache sans utilité réelle),
+            * Complexité accrue du schéma, ce qui nuit à la lisibilité et à la maintenance.
+
+            La suppression des index inutilisés permet donc d’améliorer les performances, de réduire les coûts en ressources (I/O, RAM) et de simplifier l’administration de la base.
+
+            ⚠️  Remarque importante : les données de ce tableau sont fiables uniquement si le serveur tourne depuis un moment avec la surveillance des index activée (user/statistics), sans redémarrage récent, et avec une charge représentative de l’activité réelle. Les données sont remise à zéro après chaque redemarrage du serveur.
+
+            ";
+
+            $this->displayTable(array($data));
+        }
+        
+
+    }
+
+
+    public function getConfig($param)
+    {
+        echo "==== Difference de configuration entre les serveurs ====\n";
+
+        $id_mysql_servers = explode(',',$param[0]);
+        
+        Debug::debug($id_mysql_servers, 'wfdgwdf');
+
+        $sql = "SELECT
+            variable_name,";
+
+        $inter = array();
+        foreach($id_mysql_servers as $id_mysql_server)
+        {
+            Debug::debug($id_mysql_server, 'id_mysql_server');
+            $inter[] = " LEFT(MAX(CASE WHEN id_mysql_server = ".$id_mysql_server." THEN value END),30) AS value_server".$id_mysql_server." ";
+        }
+
+        $sql .= implode(',', $inter);
+            
+        $sql .= " FROM global_variable
+        WHERE id_mysql_server IN (".$param[0].")
+        GROUP BY variable_name
+        HAVING COUNT(DISTINCT value) > 1
+        ORDER BY variable_name;";
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $data = array();
+        $res = $db->sql_query($sql);
+        while($arr = $db->sql_fetch_array($res))
+        {
+            $tmp = array();
+            $tmp['row'] = $arr;
+            $tmp['present_on'] = $id_mysql_servers;
+            $tmp['missing_from'] = array();
+            
+            $data[]= $tmp;
+        }
+
+        $this->displayTable(array($data));
+
     }
 }

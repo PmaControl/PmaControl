@@ -23,7 +23,7 @@ class Index extends Controller {
     public function buildCash($param)
     {
         Debug::parseDebug($param);
-        $db = Sgbd::sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);                                                                                                            
 
         $sql = "TRUNCATE TABLE `index_stats`";
         $db->sql_query($sql);
@@ -201,9 +201,25 @@ class Index extends Controller {
     {
         $data['dashboard'] = array();
 
-        $db = Sgbd::getDbLink(DB_DEFAULT);
-        $sql = "select table_schema, table_name, count(1), sum(size_for_table)/1024/1024 as size from index_stats where (is_redundant=1 OR is_unused=1) and id_mysql_server = 2 group by table_schema, table_
-        name order by 4 desc limit 20;";
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT table_name,index_name, sum(is_redundant) as count_redundant, sum(is_unused) as count_unused, 
+        count(DISTINCT id_mysql_server) as Number_servers, 
+        sum(size_for_table)/1024/1024/1024 as size_in_go, group_concat(DISTINCT id_mysql_server) as id_mysql_server
+        FROM index_stats where (is_redundant=1 OR is_unused=1) AND id_mysql_server != 1  group by table_name, index_name
+        order by sum(size_for_table) desc limit 50;";
+
+        $sql = "SELECT table_name,index_name, sum(is_redundant) as count_redundant, sum(is_unused) as count_unused, 
+        count(DISTINCT id_mysql_server) as Number_servers, 
+        ROUND(sum(size_for_table)/1024/1024/1024,2) as size_in_go, group_concat(DISTINCT id_mysql_server) as id_mysql_server
+        FROM index_stats where (is_redundant=1) AND id_mysql_server != 1  group by table_name, index_name
+        order by sum(size_for_table) desc limit 50;";
+
+        $sql = "SELECT table_schema, table_name,index_name, sum(is_redundant) as count_redundant, sum(is_unused) as count_unused, count(1) as Number_servers, 
+        sum(size_for_table)/1024/1024/1024 as size_in_go, group_concat(id_mysql_server) as id_mysql_server
+        FROM index_stats where (is_redundant=1)   group by table_schema, table_name, index_name
+        order by sum(size_for_table) desc limit 50;";
+
+        //and id_mysql_server in (10,11)
 
         $res = $db->sql_query($sql);
 
