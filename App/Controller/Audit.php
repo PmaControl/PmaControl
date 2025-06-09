@@ -1152,7 +1152,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
         $data = array();
         $res = $db->sql_query($sql);
-        while($arr = $db->sql_fetch_array($res, MYSQL_ASSOC))
+        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
         {
             $tmp = array();
             $tmp['row'] = $arr;
