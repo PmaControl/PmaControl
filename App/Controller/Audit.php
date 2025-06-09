@@ -163,7 +163,6 @@ class Audit extends Controller {
     {
         $this->layout_name = false;
         $_GET['ajax'] = true;
-
     }
 
     public function server($param)
@@ -863,7 +862,7 @@ ON t.table_schema = pk.table_schema AND t.table_name = pk.table_name
 WHERE 
     pk.table_name IS NULL
     AND t.table_type = 'BASE TABLE'
-    AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2;";
+    AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2 LIMIT 50;";
 
         //$param[1] = "SELECT * from sys.sys_config order by variable;";
 
@@ -977,7 +976,7 @@ WHERE
         Debug::debug($param, "CHECK");
 
 
-        $param[1] = "SELECT * FROM `sys`.`schema_auto_increment_columns` WHERE auto_increment_ratio > 0.5";
+        $param[1] = "SELECT * FROM `sys`.`schema_auto_increment_columns` WHERE auto_increment_ratio > 0.5 ORDER BY auto_increment_ratio DESC";
         $param[2] = "innodb";
         //$param[2] = "";
         $param[3] = "merge";
@@ -1023,7 +1022,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
 
         $param[1] = "SELECT table_schema,table_name, redundant_index_name,redundant_index_name,dominant_index_name, dominant_index_columns
-        FROM `sys`.`schema_redundant_indexes` ORDER BY table_schema,table_name";
+        FROM `sys`.`schema_redundant_indexes` ORDER BY table_schema,table_name LIMIT 50";
         $param[2] = "innodb,performance_schema";
         //$param[2] = "";
         $param[3] = "merge";
@@ -1041,15 +1040,15 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
             echo "Un index est considéré comme redondant lorsqu’un autre index existant couvre déjà les mêmes colonnes dans le même ordre, voire plus.
 
-            Supprimer ces index redondants permet de :
+Supprimer ces index redondants permet de :
 
-            * Réduire la taille des fichiers d’index sur disque,
-            * Accélérer les opérations de modification (INSERT, UPDATE, DELETE), car chaque index ajouté implique une surcharge,
-            * Limiter la consommation mémoire (notamment pour les caches d’index),
-            * Faciliter la maintenance de la base en réduisant la complexité du schéma.
+* Réduire la taille des fichiers d’index sur disque,
+* Accélérer les opérations de modification (INSERT, UPDATE, DELETE), car chaque index ajouté implique une surcharge,
+* Limiter la consommation mémoire (notamment pour les caches d’index),
+* Faciliter la maintenance de la base en réduisant la complexité du schéma.
 
-            De plus, éviter les index trop larges ou inutiles contribue à une meilleure performance globale et à un temps d’analyse de requêtes plus court, tout en minimisant l’empreinte de stockage.
-            ";
+De plus, éviter les index trop larges ou inutiles contribue à une meilleure performance globale et à un temps d’analyse de requêtes plus court, tout en minimisant l’empreinte de stockage.
+";
 
             $this->displayTable(array($data));
         }
@@ -1090,7 +1089,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
 
         $param[1] = "SELECT object_schema, object_name, index_name  
-        FROM `sys`.`schema_unused_indexes` ORDER BY object_schema,object_name,index_name";
+        FROM `sys`.`schema_unused_indexes` ORDER BY object_schema,object_name,index_name LIMIT 50";
         $param[2] = "innodb,performance_schema";
         //$param[2] = "";
         $param[3] = "merge";
@@ -1107,20 +1106,20 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
 
             echo "
-            Le tableau schema_unused_indexes du schéma sys identifie les index qui existent mais ne sont jamais utilisés par le moteur MariaDB (ni dans des lectures, ni dans des plans d'exécution optimisés).
+Le tableau schema_unused_indexes du schéma sys identifie les index qui existent mais ne sont jamais utilisés par le moteur MariaDB (ni dans des lectures, ni dans des plans d'exécution optimisés).
 
-            Conserver de tels index a plusieurs inconvénients :
+Conserver de tels index a plusieurs inconvénients :
 
-            * Occupation inutile de l’espace disque,
-            * Surcharge lors des écritures (chaque modification d’une table met aussi à jour tous ses index),
-            * Consommation mémoire excessive (s’ils sont chargés en cache sans utilité réelle),
-            * Complexité accrue du schéma, ce qui nuit à la lisibilité et à la maintenance.
+* Occupation inutile de l’espace disque,
+* Surcharge lors des écritures (chaque modification d’une table met aussi à jour tous ses index),
+* Consommation mémoire excessive (s’ils sont chargés en cache sans utilité réelle),
+* Complexité accrue du schéma, ce qui nuit à la lisibilité et à la maintenance.
 
-            La suppression des index inutilisés permet donc d’améliorer les performances, de réduire les coûts en ressources (I/O, RAM) et de simplifier l’administration de la base.
+La suppression des index inutilisés permet donc d’améliorer les performances, de réduire les coûts en ressources (I/O, RAM) et de simplifier l’administration de la base.
 
-            ⚠️  Remarque importante : les données de ce tableau sont fiables uniquement si le serveur tourne depuis un moment avec la surveillance des index activée (user/statistics), sans redémarrage récent, et avec une charge représentative de l’activité réelle. Les données sont remise à zéro après chaque redemarrage du serveur.
+⚠️  Remarque importante : les données de ce tableau sont fiables uniquement si le serveur tourne depuis un moment avec la surveillance des index activée (user/statistics), sans redémarrage récent, et avec une charge représentative de l’activité réelle. Les données sont remise à zéro après chaque redemarrage du serveur.
 
-            ";
+";
 
             $this->displayTable(array($data));
         }
@@ -1173,7 +1172,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
     }
 
-
+/*
     public getClusterId($param)
     {
         $sql = "WITH LatestDot3Information AS (
@@ -1189,4 +1188,5 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
 
 
     }
+        */
 }
