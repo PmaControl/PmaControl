@@ -901,7 +901,7 @@ WHERE
 
         echo "\n^ ";
         foreach($keys as $key){
-            echo "$key ^";
+            echo "<nowiki>$key</nowiki> ^";
         }
         echo "present_on ^\n";
 
@@ -911,9 +911,9 @@ WHERE
         {
             echo "| ";
             foreach($elem['row'] as $value) {
-                echo $value." |";
+                echo "<nowiki>".$value."</nowiki> |";
             }
-            echo implode(",",$elem['present_on'])." |\n";
+            echo "<nowiki>".implode(",",$elem['present_on'])."</nowiki> |\n";
         }
         echo "\n";
 
@@ -1170,6 +1170,23 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
         }
 
         $this->displayTable(array($data));
+
+    }
+
+
+    public getClusterId($param)
+    {
+        $sql = "WITH LatestDot3Information AS (
+            SELECT MAX(id_dot3_information) AS max_id_dot3_information
+            FROM dot3_cluster
+        )
+        SELECT a.id, a.id_dot3_information, GROUP_CONCAT(d.id_mysql_server) as id_mysql_servers, a.id as id_dot3_cluster
+        FROM dot3_cluster a INNER JOIN LatestDot3Information b ON a.id_dot3_information = b.max_id_dot3_information-1 
+        INNER JOIN dot3_graph c ON c.id = a.id_dot3_graph
+        INNER JOIN dot3_cluster__mysql_server d ON d.id_dot3_cluster = a.id
+        GROUP BY a.id
+        ORDER BY  c.height DESC, c.width desc;";
+
 
     }
 }
