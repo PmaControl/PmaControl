@@ -25,6 +25,7 @@ class Architecture extends Controller
             .__("Dashboard").'</a> > <i class="fa fa-object-group" style="font-size:14px"></i> '.__("Architecture");
         */
 
+        //https://masonry.desandro.com/events
         $this->di['js']->addJavascript(array("https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"));
         
         $this->di['js']->code_javascript('

@@ -255,6 +255,7 @@ class Mysqlsys extends Controller {
 
         $id_mysql_server = $param[0];
         $rapport = $param[1];
+        $where = "";
 
         $db = Mysql::getDbLink($id_mysql_server, "mysqlsys");
 
@@ -275,10 +276,12 @@ class Mysqlsys extends Controller {
 
         switch ($rapport)
         {
+
+            /*
             case 'schema_auto_increment_columns':
                 $sql = "SELECT ".$select." FROM `sys`.`".$rapport."` WHERE auto_increment_ratio > 0.5 LIMIT ".$limit;
                 break;
-
+*/
 
             case 'engines':
                 $sql ="SELECT 
@@ -330,34 +333,20 @@ LIMIT 10;";
 
                 break;
 
+            case "statements_with_errors_or_warnings__errors":
 
-
-            case "table_without_pg":
-
-                $sql = "SELECT 
-    t.table_schema,
-    t.table_name,
-    t.table_rows,
-    t.engine
-FROM 
-    information_schema.tables t
-LEFT JOIN (
-    SELECT 
-        table_schema,
-        table_name
-    FROM 
-        information_schema.table_constraints
-    WHERE 
-        constraint_type = 'PRIMARY KEY'
-) pk 
-ON t.table_schema = pk.table_schema AND t.table_name = pk.table_name
-WHERE 
-    pk.table_name IS NULL
-    AND t.table_type = 'BASE TABLE'
-    AND t.table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY 1,2;";
-
+                $sql = "SELECT LEFT(query,60),db,exec_count,errors,error_pct,last_seen 
+                FROM `sys`.`statements_with_errors_or_warnings` 
+                WHERE errors != 0 AND db NOT IN ('sys', 'mysql'); ";
                 break;
             
+            case "statements_with_errors_or_warnings__warnings":
+
+                $sql = "SELECT LEFT(query,60),db,exec_count,warnings,warning_pct,last_seen 
+                FROM `sys`.`statements_with_errors_or_warnings` 
+                WHERE warnings != 0 AND db NOT IN ('sys', 'mysql'); ";
+                break;
+
 
             default:
 
