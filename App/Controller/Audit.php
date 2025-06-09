@@ -244,7 +244,7 @@ class Audit extends Controller {
                 . '</methodCall>';
         $loginResp = $this->callXmlRpc($xmlLogin, $xmlrpcUrl, $cookieJar);
 
-        //Debug::debug($loginResp, "loginResp");
+        Debug::debug($loginResp, "loginResp");
         // (On pourrait analyser $loginResp pour vérifier la réussite)
 
         // 2. Téléversement du fichier SVG (wiki.putAttachment)
@@ -268,7 +268,7 @@ class Audit extends Controller {
         $uploadResp = $this->callXmlRpc($xmlUpload, $xmlrpcUrl, $cookieJar);
         // (On pourrait analyser $uploadResp pour confirmer le téléversement)
 
-        //Debug::debug($uploadResp, "uploadResp");
+        Debug::debug($uploadResp, "uploadResp");
 
         // 3. Mise à jour de la page (wiki.appendPage)
         $imageTag = '{{:' . $namespace . ':' . $filename . '}}';  // syntaxe DokuWiki pour afficher l'image
