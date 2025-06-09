@@ -796,6 +796,12 @@ performance_schema_digests_size
 
             if (in_array('innodb', $require))
             {
+                if ($id_mysql_server == "16")
+                {
+                    continue;
+                }
+
+
                 if (Available::hasEngine($id_mysql_server, "INNODB") === false) {
                     continue;
                 }
@@ -909,6 +915,7 @@ WHERE
             }
             echo implode(",",$elem['present_on'])." |\n";
         }
+        echo "\n";
 
         
     }
@@ -999,7 +1006,7 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
     function getIndex($param)
     {
 
-        echo "==== Index ====\n";
+        echo "\n==== Index ====\n";
         echo "\n\n";
 
         $this->getRedundantIndex($param);
