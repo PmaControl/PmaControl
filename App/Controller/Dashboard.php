@@ -13,6 +13,7 @@ use \App\Library\Debug;
 use \App\Library\Microsecond;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Extraction2;
 
 class Dashboard extends Controller
 {
@@ -103,6 +104,63 @@ class Dashboard extends Controller
         }
 
         $this->set('data', $data);
+    }
+
+
+    public function hitRatio($param)
+    {
+        Debug::parseDebug($param);
+
+        $data = Extraction2::display(array("innodb_buffer_pool_reads", "innodb_buffer_pool_read_requests", "aria_pagecache_reads","aria_pagecache_read_requests",
+         "key_reads","key_read_requests"));
+
+
+        foreach($data as $id_mysql_server => $elem)
+        {
+            $data[$id_mysql_server]['ratio']['innodb'] = ($elem['innodb_buffer_pool_read_requests'] != 0)? 100 * (1-($elem['innodb_buffer_pool_reads']/ $elem['innodb_buffer_pool_read_requests'])): null;
+            $data[$id_mysql_server]['ratio']['aria'] = ($elem['aria_pagecache_read_requests'] != 0)? 100 * (1-($elem['aria_pagecache_reads']/ $elem['aria_pagecache_read_requests'])): null;
+            $data[$id_mysql_server]['ratio']['myisam'] = ($elem['key_read_requests'] != 0)? 100 * (1-($elem['key_reads']/ $elem['key_read_requests'])): null;
+
+        }
+
+        Debug::debug($data);
+        
+
+
+        $sql ="SELECT
+  -- InnoDB cache hit ratio
+  ROUND(
+    100 * (
+      1 - (
+        SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads'
+      ) / NULLIF(
+        (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests'), 0
+      )
+    ), 2
+  ) AS InnoDB_Cache_Hit_Percentage,
+
+  -- Aria cache hit ratio
+  ROUND(
+    100 * (
+      1 - (
+        SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'aria_pagecache_reads'
+      ) / NULLIF(
+        (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'aria_pagecache_read_requests'), 0
+      )
+    ), 2
+  ) AS Aria_Cache_Hit_Percentage,
+
+  -- MyISAM cache hit ratio
+  ROUND(
+    100 * (
+      1 - (
+        SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Key_reads'
+      ) / NULLIF(
+        (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Key_read_requests'), 0
+      )
+    ), 2
+  ) AS MyISAM_Cache_Hit_Percentage;";
+
     }
 }
 
