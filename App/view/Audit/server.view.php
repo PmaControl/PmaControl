@@ -7,11 +7,6 @@ echo "=====".$data['server']['display_name']." (".$data['server']['ip'].":".$dat
 
 
 
-echo "==== Cluster ====\n";
-
-echo "Chaque serveur affiché est rattaché dynamiquement à un cluster identifié, ce qui permet de visualiser rapidement sa répartition dans l’architecture globale.";
-
-
 // dessin du cluster
 
 /*

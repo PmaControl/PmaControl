@@ -642,13 +642,20 @@ performance_schema_digests_size
             //unlink($path_svg);
             //$this->server(array($ob->id ));
 
+            //debug($id_mysql_servers);
+
             foreach($id_mysql_servers as $id_mysql_server)
             {
-                if (Available::getMySQL($id_mysql_server)){
-                    //FactoryController::addNode("audit", "server", array($ob->id ));
+
+                //debug(Available::$mysql_available);
+                //debug($id_mysql_server);
+                //echo "&&&&&&&&&&&&&&&&&&&&&&&&&&&& : ". (int)Available::getMySQL($id_mysql_server)."\n";
+
+                if (Available::getMySQL($id_mysql_server) === false){
+                    echo "\n<note danger>Le serveur ".$id_mysql_server." est OFFLINE maitenant !</note>\n";
                 }
                 else{
-                    echo "\n<note danger>Le serveur ".$id_mysql_server." est OFFLINE maitenant !</note>\n";
+                    FactoryController::addNode("audit", "server", array($id_mysql_server ));
                 }
             }   
         }
