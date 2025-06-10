@@ -189,6 +189,20 @@ class Dashboard extends Controller
     }
 
 
+    public function ratioThreadCache($param)
+    {
+        Debug::parseDebug($param);
+
+        $data = Extraction2::display(array("threads_cached", "thread_cache_size", "threads_created"));
+
+        foreach($data as $id_mysql_server => $elem)
+        {
+            $data[$id_mysql_server]['ratio'] = round(100 * ($elem['threads_cached']/( $elem['thread_cache_size'])),2);
+        }
+        Debug::debug($data);
+    }
+
+
 }
 
         
