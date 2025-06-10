@@ -112,21 +112,19 @@ class Dashboard extends Controller
         Debug::parseDebug($param);
 
         $data = Extraction2::display(array("innodb_buffer_pool_reads", "innodb_buffer_pool_read_requests", "aria_pagecache_reads","aria_pagecache_read_requests",
-         "key_reads","key_read_requests"));
+         "key_reads","key_read_requests", "hostname", "key_cache_size","aria_pagecache_buffer_size", "aria_sort_buffer_size", "aria_max_sort_file_size"));
 
 
         foreach($data as $id_mysql_server => $elem)
         {
-            $data[$id_mysql_server]['ratio']['innodb'] = ($elem['innodb_buffer_pool_read_requests'] != 0)? 100 * (1-($elem['innodb_buffer_pool_reads']/ $elem['innodb_buffer_pool_read_requests'])): null;
-            $data[$id_mysql_server]['ratio']['aria'] = ($elem['aria_pagecache_read_requests'] != 0)? 100 * (1-($elem['aria_pagecache_reads']/ $elem['aria_pagecache_read_requests'])): null;
-            $data[$id_mysql_server]['ratio']['myisam'] = ($elem['key_read_requests'] != 0)? 100 * (1-($elem['key_reads']/ $elem['key_read_requests'])): null;
+            $data[$id_mysql_server]['ratio']['innodb'] = ($elem['innodb_buffer_pool_read_requests'] != 0)? round(100 * (1-($elem['innodb_buffer_pool_reads']/ $elem['innodb_buffer_pool_read_requests'])),2): null;
+            $data[$id_mysql_server]['ratio']['aria'] = ($elem['aria_pagecache_read_requests'] != 0)? round(100 * (1-($elem['aria_pagecache_reads']/ $elem['aria_pagecache_read_requests'])),2): null;
+            $data[$id_mysql_server]['ratio']['myisam'] = ($elem['key_read_requests'] != 0)? round(100 * (1-($elem['key_reads']/ $elem['key_read_requests'])),2): null;
 
         }
 
         Debug::debug($data);
         
-
-
         $sql ="SELECT
   -- InnoDB cache hit ratio
   ROUND(
@@ -160,6 +158,25 @@ class Dashboard extends Controller
       )
     ), 2
   ) AS MyISAM_Cache_Hit_Percentage;";
+
+    }
+
+
+    public function ratioTable($param)
+    {
+        Debug::parseDebug($param);
+
+        $data = Extraction2::display(array("open_table_definitions", "table_definition_cache"));
+
+
+        foreach($data as $id_mysql_server => $elem)
+        {
+            $data[$id_mysql_server]['ratio'] = ($elem['table_definition_cache'] != 0)? round(100 * (1-($elem['open_table_definitions']/ $elem['table_definition_cache'])),2): null;
+
+        }
+
+        Debug::debug($data);
+
 
     }
 }
