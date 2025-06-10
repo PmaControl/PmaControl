@@ -166,19 +166,29 @@ class Dashboard extends Controller
     {
         Debug::parseDebug($param);
 
-        $data = Extraction2::display(array("open_table_definitions", "table_definition_cache"));
-
+        $data = Extraction2::display(array("open_table_definitions", "table_definition_cache", "opened_table_definitions"));
 
         foreach($data as $id_mysql_server => $elem)
         {
             $data[$id_mysql_server]['ratio'] = ($elem['table_definition_cache'] != 0)? round(100 * (1-($elem['open_table_definitions']/ $elem['table_definition_cache'])),2): null;
-
         }
-
         Debug::debug($data);
-
-
     }
+
+    public function ratioLockTable($param)
+    {
+        Debug::parseDebug($param);
+
+        $data = Extraction2::display(array("table_locks_immediate", "table_locks_waited"));
+
+        foreach($data as $id_mysql_server => $elem)
+        {
+            $data[$id_mysql_server]['ratio'] = round(100 * ($elem['table_locks_immediate']/( $elem['table_locks_waited']+ $elem['table_locks_immediate'])),2);
+        }
+        Debug::debug($data);
+    }
+
+
 }
 
         
