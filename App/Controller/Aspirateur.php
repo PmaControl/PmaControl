@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Controller\ProxySQL;
+use App\Library\Available;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
@@ -531,13 +532,14 @@ class Aspirateur extends Controller
 
         /****************************************************************** */
 
+        /*
         $data = array();
         $elems = $this->getElemFromTable(array($id_mysql_server, "sys", "innodb_lock_waits"));
-        if ($elems != false )
+        if ($elems != false &&  !in_array($id_mysql_server, array(72,73,74,75)))
         {
             $data['sys']['innodb_lock_waits'] = json_encode($elems);
             $this->exportData($id_mysql_server, "sys__innodb_lock_waits", $data);
-        }
+        }*/
 
         /****************************************************************** */
 
@@ -1727,8 +1729,6 @@ GROUP BY C.ID, C.INFO;";
                 
             }
 
-            
-
             if ((time()+$id_mysql_server)%1 === 0)
             {
                 $data = array();
@@ -1809,7 +1809,6 @@ GROUP BY C.ID, C.INFO;";
         else {
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
-
 
         if (isset(self::$primary_key[$database][$table]))
         {
@@ -2044,4 +2043,130 @@ GROUP BY C.ID, C.INFO;";
         }, $array);
     }
 
+
+    public function getTables($param)
+    {
+        $id_mysql_server = $param[0];
+
+        if (Available::getMySQL($id_mysql_server) == false)
+        {
+            return;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        // if MARIADB ask limit 10 sec max
+        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+            $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
+        }
+        else{
+            $sql = "SELECT * FROM information_schema.tables;";
+        }
+        
+        $res = $db->sql_query($sql);
+
+        $ret  = array();
+        while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $ret[] = $data;
+        }
+
+        return $ret;
+    }
+
+
+    public function getCreateTables($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = $param[0];
+
+        if (Available::getMySQL($id_mysql_server) == false)
+        {
+            return;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SHOW CREATE TABLE information_schema.tables;";
+        $res = $db->sql_query($sql);
+
+        $table = "";
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $table = $arr[1];
+        }
+
+        return $table;
+    }
+
+
+    public function eachHour($param)
+    {
+        Debug::parseDebug($param);
+
+        $list_id_mysql_servers = Available::getMySQL(0);
+
+        $id_mysql_servers = explode(',', $list_id_mysql_servers);
+        foreach($id_mysql_servers as $id_mysql_server)
+        {
+            Debug::debug($id_mysql_server, "id_mysql_server");
+
+            if (Available::getMySQL($id_mysql_server) == false)
+            {
+                continue;
+            }
+
+            $db = Mysql::getDbLink($id_mysql_server);
+
+            $data = array();
+            $data['information_schema']['disks'] = json_encode($this->getDisks(array($id_mysql_server)));
+            $data['information_schema']['tables'] = json_encode($this->getTables(array($id_mysql_server)));
+            $data['information_schema']['create_tables'] = $this->getCreateTables(array($id_mysql_server));
+            
+            $db->sql_close();
+
+            //Debug::debug($data);
+
+            $this->exportData($id_mysql_server, "is_tables", $data);
+        }
+
+        Debug::debug($data);
+    }
+
+
+    public function getDisks($param)
+    {
+        $id_mysql_server = $param[0];
+
+        $ret  = array();
+
+        if (Available::getMySQL($id_mysql_server) == false)
+        {
+            return $ret;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql2 = "select count(1) as cpt from information_schema.plugins WHERE PLUGIN_NAME='DISKS' AND PLUGIN_STATUS='ACTIVE';";
+        $res2 = $db->sql_query($sql2);
+        $ob = $db->sql_fetch_object($res2);
+        
+        if ($ob->cpt == "1")
+        {
+            // if MARIADB ask limit 10 sec max
+            if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+                $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * from information_schema.disks";
+            }
+            else{
+                $sql = "SELECT * FROM information_schema.disks;";
+            }
+            
+            $res = $db->sql_query($sql);
+
+            
+            while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $ret[] = $data;
+            }
+        }
+        
+        return $ret;
+    }
 }

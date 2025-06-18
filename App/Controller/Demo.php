@@ -150,7 +150,7 @@ class Demo extends Controller {
         Debug::parseDebug($param);
 
         $data   = $this->AssociateServerByLevel();
-        $levels = array_reverse(array: $data['bylevel'], preserve_keys: true);
+        $levels = array_reverse($data['bylevel'],  true);
         $master_slave = array();
 
         foreach($levels as $key1 => $lvl)

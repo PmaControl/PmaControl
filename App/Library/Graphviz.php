@@ -653,6 +653,14 @@ class Graphviz
             {
                 $i++;
                 
+
+                if (empty($correspondance_hg[$link['hostgroup_id']]))
+                {
+                    //$this->logger->warning("Impossible to link this hostgroup : ".$link['hostgroup_id']);
+                    continue;
+                }
+
+
                 if ($hostgroup != $link['hostgroup_id'])
                 {
                     $max = "";
@@ -873,7 +881,7 @@ class Graphviz
 
     static function generateGalera($all_galera)
     {
-        Debug::debug($all_galera, "ALL GALERA");
+        //Debug::debug($all_galera, "ALL GALERA");
         $return = '';
 
         foreach($all_galera as $galera)
@@ -962,7 +970,7 @@ class Graphviz
                     $return .= $id_mysql_server.";".PHP_EOL;
                 }
 
-                Debug::debug($nodes, "NODES");
+                //Debug::debug($nodes, "NODES");
 
                 //if ($display_segment === true){
                     $return .= self::endCluster();

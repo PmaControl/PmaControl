@@ -22,14 +22,9 @@ FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "e
 
 
 
-echo "\n==== Le top 10 des tables les plus volumineurse ====\n";
-
-
+echo "\n==== Le top 10 des tables les plus volumineuse ====\n";
 
 FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "top10tables"));
-
-
-
 
 
 if ($data['server']['id'] != "16")
@@ -43,7 +38,7 @@ if ($data['server']['id'] != "16")
   FactoryController::addNode("mysqlsys", "export", array($data['server']['id'], "host_summary"));
 
 
-  echo "==== Requête les plus consomatrice ====\n";
+  echo "==== Requête les plus consommatrice ====\n";
   echo "\n\n";
 
   echo "Ce tableau fournit une vue synthétique et agrégée des requêtes SQL exécutées sur le serveur, en regroupant les requêtes similaires par leur structure (sans tenir compte des valeurs littérales). Il inclut des statistiques essentielles telles que le nombre d'exécutions (''exec_count''), le temps total et moyen d'exécution (''total_latency'', ''avg_latency''), le nombre de lectures disque/mémoire (''rows_sent'', ''rows_examined''), ou encore l’utilisation des index. Ce tableau permet ainsi d’identifier rapidement les requêtes les plus coûteuses ou les plus fréquentes, aidant à prioriser les optimisations et à surveiller les performances globales du serveur SQL.";

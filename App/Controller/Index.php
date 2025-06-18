@@ -149,10 +149,12 @@ class Index extends Controller {
     {
         $db = Mysql::getDbLink($id_mysql_server, "IMPORT");
 
-        if (empty(self::$redundant_indexes[$id_mysql_server]))
+        if (! isset(self::$redundant_indexes[$id_mysql_server]))
         {
             $sql = "SELECT * FROM sys.schema_redundant_indexes";
             $res = $db->sql_query($sql);
+
+            self::$redundant_indexes[$id_mysql_server] = array();
 
             while($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
                 self::$redundant_indexes[$id_mysql_server][$ob->table_schema][$ob->table_name][$ob->redundant_index_name] = 1;
@@ -175,14 +177,18 @@ class Index extends Controller {
     {
         $db = Mysql::getDbLink($id_mysql_server, "IMPORT");
 
-        if (empty(self::$unused_indexes[$id_mysql_server]))
+        if (! isset(self::$unused_indexes[$id_mysql_server]))
         {
             $sql = "SELECT * FROM sys.schema_unused_indexes";
             $res = $db->sql_query($sql);
 
+            self::$unused_indexes[$id_mysql_server] = array();
+
             while($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
                 self::$unused_indexes[$id_mysql_server][$ob->object_schema][$ob->object_name][$ob->index_name] = 1;
             }
+
+            
         }
 
         //Debug::debug(self::$redundant_indexes, "REDUNDANT INDEX");
