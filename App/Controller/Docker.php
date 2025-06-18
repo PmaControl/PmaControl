@@ -43,7 +43,7 @@ class Docker extends Controller
 
     public function getTag($param)
     {
-        Debug::parseDebug(param: $param);
+        Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 

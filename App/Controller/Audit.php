@@ -617,7 +617,7 @@ performance_schema_digests_size
             //Debug::debug($ob);
             echo "\n===== Cluster : ".$cluster_name." =====\n";
 
-            echo "\n==== Architechure ====\n";
+            echo "\n==== Architecture ====\n";
 
             $prefix = "svg";
             $file_svg = $prefix."_".$ob->id.".svg";

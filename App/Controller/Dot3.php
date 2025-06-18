@@ -63,7 +63,7 @@ class Dot3 extends Controller
     {
         $this->loadConfigColor();
         $monolog       = new Logger("Dot3");
-        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler      = new StreamHandler(LOG_FILE, Logger::WARNING);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
         $this->logger = $monolog;
@@ -71,7 +71,11 @@ class Dot3 extends Controller
 
     public function generateInformation($param)
     {
+        
+
 	    Debug::parseDebug($param);
+
+        //Debug::$debug=true;
 
         $date_request = $param[0] ?? "";
         $versioning = " WHERE 1=1 ";
@@ -108,6 +112,7 @@ class Dot3 extends Controller
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
+                "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::runtime_mysql_replication_hostgroups",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),array() , $date_request);
 
@@ -201,7 +206,7 @@ class Dot3 extends Controller
         $md5 = md5(json_encode($data_for_md5));
 
 
-        $this->logger->warning("MD5 : $md5");
+        $this->logger->notice("MD5 : $md5");
 
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
@@ -222,7 +227,7 @@ class Dot3 extends Controller
             $id_dot3_information =  $db->sql_save($dot3);
         }
 
-        $this->logger->warning("id_dot3_information : $id_dot3_information");
+        $this->logger->notice("id_dot3_information : $id_dot3_information");
 
         return $id_dot3_information;
     }
@@ -444,7 +449,7 @@ class Dot3 extends Controller
         $sql = "BEGIN";
         $res = $db->sql_query($sql);
 
-        $this->logger->warning("MD5 (DOT) : $md5");
+        $this->logger->notice("MD5 (DOT) : $md5");
 
         $sql = "SELECT id FROM dot3_graph WHERE md5 = '".$md5."'";
         $res = $db->sql_query($sql);
@@ -453,7 +458,7 @@ class Dot3 extends Controller
             $id_dot3_graph = $ob->id;
             
             $dot3_graph['dot3_graph']['id'] = $id_dot3_graph;
-            $this->logger->emergency("ID : ".$id_dot3_graph);
+            $this->logger->notice("ID : ".$id_dot3_graph);
         }
         
         if (empty($id_dot3_graph))
@@ -838,12 +843,19 @@ class Dot3 extends Controller
                     
                 }
 
-                if (in_array($hostgroup['hostgroup_id'], array(1,2)))
+                if (in_array($hostgroup['hostgroup_id'], array(1,2,100)))
                 {
                     if (in_array($hostgroup['hostgroup_id'], array(2)))
                     {
-                        $tmp['options']['style'] = "dashed";
+                        $tmp['options']['style'] = "fill";
                         $tmp['options']['color'] = "#32CD32";
+                    }
+
+
+                    if (in_array($hostgroup['hostgroup_id'], array(100)))
+                    {
+                        $tmp['options']['style'] = "fill";
+                        $tmp['options']['color'] = "#17a2b8";
                     }
 
 
@@ -1375,6 +1387,7 @@ class Dot3 extends Controller
                 }
             }
         }
+        $data[100] = "mirroring";
         Debug::debug($data, "HOSTGROUP FLIP");
 
         return $data;

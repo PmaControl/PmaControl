@@ -40,7 +40,7 @@ class Control extends Controller
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
-    public $partition_to_keep     = 90;
+    public $partition_to_keep     = 120;
 
 
     private $logger;

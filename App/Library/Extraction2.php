@@ -29,7 +29,7 @@ class Extraction2
 
     static $partition = array();
 
-    static public function extract($var = array(), $server = array(),mixed $date = "", $range = false, $graph = false)
+    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         /*
           debug($var);

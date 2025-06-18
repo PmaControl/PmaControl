@@ -202,7 +202,27 @@ class Dashboard extends Controller
         Debug::debug($data);
     }
 
+    public function ratioOpenFile($param)
+    {
+        Debug::parseDebug($param);
+        //ulimit -n
+        //cat /proc/$(pidof mysqld)/limits 
 
+        /*
+        mysql soft nofile 65535
+        mysql hard nofile 65535
+        */
+        ///etc/security/limits.conf
+        $data = Extraction2::display(array("opened_files", "open_files", "table_open_cache", "uptime"));
+
+        foreach($data as $id_mysql_server => $elem)
+        {
+
+            $data[$id_mysql_server]['ratio'] = round(100 * ($elem['opened_files']/( $elem['uptime'])),2);
+            
+        }
+        Debug::debug($data);
+    }
 }
 
         
