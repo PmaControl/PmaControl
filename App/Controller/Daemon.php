@@ -31,13 +31,40 @@ class Daemon extends Controller
             $(document).ready(function(){
                 function refresh(){
                     var myURL = GLIAL_LINK+"worker/list"+"/ajax:true";
-                    $("#worker-index").load(myURL);
+                    $("#worker-list").load(myURL);
                 }
 
                 var intervalId = window.setInterval(function(){
                     refresh()  
                   }, 300);
             });');
+
+
+            $this->di['js']->code_javascript('
+            $(document).ready(function(){
+                function refresh(){
+                    var myURL = GLIAL_LINK+"worker/file"+"/ajax:true";
+                    $("#tmp_file").load(myURL);
+                }
+
+                var intervalId = window.setInterval(function(){
+                    refresh()  
+                  }, 1000);
+            });');
+
+            
+            $this->di['js']->code_javascript('
+            $(document).ready(function(){
+                function refresh(){
+                    var myURL = GLIAL_LINK+"worker/index"+"/ajax:true";
+                    $("#worker-index").load(myURL);
+                }
+
+                var intervalId = window.setInterval(function(){
+                    refresh()  
+                  }, 100);
+            });');
+            
         }
 
         $sql = "SELECT * from daemon_main order by id";

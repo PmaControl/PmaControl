@@ -12,10 +12,13 @@ if (empty($_GET['ajax'])) {
     echo '<div id="tmp_file">';
 }
 
+
+
+
 ?>
-<pre id="data_log" style="background-color: black; overflow: auto; display: flex; color:#cccccc; height:100%; width:100%; padding: 10px 15px; font-family: monospace; margin-bottom:0px">
+<pre id="data_log" style="background-color: black; overflow: auto; height:300px; max-height:400px; display: flex; color:#cccccc;  width:100%; margin:0; padding: 10px 15px; font-family: monospace; margin-bottom:0px">
 <?php 
-echo "ls -lh ".TMP."tmp_file";
+echo "ls -lh ".TMP."tmp_file [ Number of Files : ".$data['nb_files']." ]";
 echo "\n";
 echo $data['ls'] ?>
 </pre>

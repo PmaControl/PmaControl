@@ -1,21 +1,15 @@
 <?php 
 
-
-
 if (empty($_GET['ajax'])) {
-
     echo '
     <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title">'.__('List of workers').'</h3>
     </div>';
-  
-    echo '<div id="worker-index">';
-  }
-  
+    echo '<div id="worker-list">';
+}
 
-
-echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px">';
+echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px; max-height:500px; height:300px; overflow: auto;" >';
 
 echo '<tr>';
 echo '<th>'.__("Top").'</th>';

@@ -566,17 +566,6 @@ class Agent extends Controller {
             }
         }
 
-
-        //to move to worker
-        $pid_to_check = glob(EngineV4::PATH_LOCK."*\.".EngineV4::EXT_PID);
-        foreach($pid_to_check as $filname)
-        {
-            $pid = EngineV4::getId($filname);
-
-            if (!System::isRunningPid($pid)) {
-                unlink($filname);
-            }
-        }
     }
 
     /*
