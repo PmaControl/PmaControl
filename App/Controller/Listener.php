@@ -532,6 +532,7 @@ class Listener extends Controller
         from ts_max_date a 
         inner join mysql_server b on a.id_mysql_server = b.id 
         INNER JOIN ts_file c on c.id = a.id_ts_file 
+        WHERE b.id = 1
         order by 5 desc, display_name, file_name;";
         Debug::sql($sql);
 
@@ -598,7 +599,6 @@ class Listener extends Controller
         //$gg = Extraction2::getQuery(array(array("variables::"), 1, "2025-03-29 20:40:20"));
 
         Debug::debug($gg);
-
     }
 
 
@@ -646,7 +646,6 @@ class Listener extends Controller
 
 
             //SCHEMA_NAME
-
             $id_mysql_database = $this->getIdDatabase(array($id_mysql_server, $data_lower['schema_name']));
 
             if (empty($id_mysql_database))
@@ -860,5 +859,31 @@ WHERE name IN ('events_statements_history', 'events_statements_history_long');
 
 
 UPDATE performance_schema.setup_instruments SET enabled = 'YES', timed = 'YES' WHERE name LIKE 'statement/%';
+
+*/
+
+
+
+/*
+
+
+
+SELECT t.*
+FROM ts_value_general_int t
+JOIN (
+  -- Pour chaque minute, on récupère la plus petite date (le premier enregistrement de la minute)
+  SELECT
+    DATE_FORMAT(date, '%Y-%m-%d %H:%i:00') AS minute,
+    MIN(date) AS first_date
+  FROM ts_value_general_int
+  WHERE id_ts_variable = 136
+    AND id_mysql_server = 1
+    AND date > '2025-06-21'
+  GROUP BY minute
+) first_per_minute ON t.date = first_per_minute.first_date
+WHERE t.id_ts_variable = 136
+  AND t.id_mysql_server = 1
+ORDER BY t.date DESC
+LIMIT 100;
 
 */

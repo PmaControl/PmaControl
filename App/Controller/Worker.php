@@ -83,13 +83,33 @@ class Worker extends Controller
 
             $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
+            $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
+            $sql = "INSERT INTO worker_execution (id_worker_run, id_mysql_server, date_started) 
+            SELECT id, ".$msg->id.",'".date("Y-m-d H:i:s")."' from worker_run WHERE pid = ".$pid.";";
+
+            $db->sql_query($sql);
+            $id_worker_execution = $db->sql_insert_id();
+            $start = microtime(true);
+
+            $this->logger->warning("====> id_worker_execution ".$id_worker_execution);
+
             //do your business logic here and process this message!
             FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
             //$this->tryMysqlConnection(array($msg->name, $msg->id));
-            
+
+            $end = microtime(true);
+            $executionTime = round(($end - $start) * 1000, 0);
+
+            $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
+            $sql ="UPDATE worker_execution SET date_end='".date("Y-m-d H:i:s")."', execution_time= ".$executionTime."
+            WHERE id=".$id_worker_execution.";";
+
+            $db->sql_query($sql);
+
             // if mysql connection is down, the worker will be down too and we have to restart one
             $this->logger->info("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
 
+            usleep(50);
             if (file_exists($lock_file)) {
                 unlink($lock_file);
             }
@@ -151,16 +171,38 @@ class Worker extends Controller
     }
 
 
-    public function index()
+    public function index($param)
     {
+        Debug::parseDebug($param);
+
         $db = Sgbd::sql(DB_DEFAULT);
+
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+
 
         $sql = "SELECT * FROM worker_queue";
 
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){
+
+            Debug::debug($arr,"ARRAY");
+
+            // check elem by list
+
+            $queue    = msg_get_queue($arr['queue_number']);
+            $msg_qnum = msg_stat_queue($queue);
+            $arr = array_merge($msg_qnum , $arr);
+
+
             $data['worker'][] = $arr;
         } 
+
+
+
+
+        Debug::debug($data,"DATA");
 
         $this->set('data',$data);
 
@@ -177,7 +219,7 @@ class Worker extends Controller
         $data['worker'] = array();
 
         $sql2 = "SELECT b.*,a.name  FROM worker_queue a
-            INNER JOIN worker_run b ON a.id = b.id_worker_queue
+            INNER JOIN worker_run b ON a.id = b.id_worker_queue WHERE is_working=1
             ORDER BY a.id, b.pid";
         $res2 = $db->sql_query($sql2);
         while ($arr  = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
@@ -244,7 +286,7 @@ class Worker extends Controller
 
         $sql2 = "SELECT a.*, b.name, b.nb_worker FROM `worker_run` a
         INNER JOIN worker_queue b ON a.id_worker_queue = b.id
-        where `id_worker_queue` = ".$id_worker_queue.";";
+        where `id_worker_queue` = ".$id_worker_queue." AND a.is_working=1;";
         $res2 = $db->sql_query($sql2);
         Debug::sql($sql2);
 
@@ -284,7 +326,10 @@ class Worker extends Controller
                     $this->logger->notice("[WORKER] removed worker ($ob2->name) with pid : ".$ob2->pid."");
                 }
 
-                $sql = "DELETE FROM worker_run WHERE id=".$ob2->id;
+                //$sql = "DELETE FROM worker_run WHERE id=".$ob2->id;
+                
+                $sql = "UPDATE worker_run SET is_working=0, date_killed='".date('Y-m-d H:i:s')."' WHERE id=".$ob2->id.";";
+                
                 Debug::sql($sql);
                 $db->sql_query($sql);
                 $nb_thread--;
@@ -373,7 +418,7 @@ class Worker extends Controller
 
         $sql = "SELECT a.*, b.name FROM `worker_run` a
         INNER JOIN worker_queue b ON a.id_worker_queue = b.id
-        WHERE `id_worker_queue`=".$id_worker_queue." LIMIT 1;";
+        WHERE `id_worker_queue`=".$id_worker_queue." AND is_working=1 LIMIT 1;";
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -394,7 +439,9 @@ class Worker extends Controller
                 unlink($double_buffer);
             }
 
-            $sql = "DELETE FROM `worker_run` WHERE `id`=".$ob->id.";";
+            //$sql = "DELETE FROM `worker_run` WHERE `id`=".$ob->id.";";
+            $sql = "UPDATE worker_run SET is_working=0, is_safe_kill=1, date_killed='".date('Y-m-d H:i:s')."' WHERE id=".$ob->id.";";
+
             Debug::sql($sql);
             $db->sql_query($sql);
         }
@@ -471,7 +518,20 @@ class Worker extends Controller
         // securité dans 2 cas de figure, 
         // 1 - trop de serveurs à monitorer et les worker non pas le temps de suivre
         // 2 - trop de serveur en erreur (DNS unreachable or MySQL who don't give back or just going down)
-        if ($msg_qnum != 0) {
+
+
+        // if  $msg_qnum > (number of mysql_server)
+
+        
+        $sql2 = preg_replace('/select\s+(.*)\s+from/','SELECT count(1) as cpt FROM' ,$main_query);
+        $res2 = $db->sql_query($sql2);
+
+        while ($db->sql_fetch_object($res))
+        {
+            $number_of_server_to_monitor = $ob2->cpt;
+        }
+
+        if ($msg_qnum > $number_of_server_to_monitor) {
 
             Debug::debug('On attends de vider la file d\'attente');
 
@@ -480,7 +540,7 @@ class Worker extends Controller
                 if ($msg_qnum == 0) {
                     break;
                 } else {
-                    $this->logger->warning('Number message waiting in queue ('.$name.') : '. $msg_qnum .'');
+                    $this->logger->emergency('[EMERGENCY] Number message waiting in queue ('.$name.') : '. $msg_qnum .'');
                 }
                 sleep(1);
             }
@@ -503,7 +563,7 @@ class Worker extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-
+        Debug::debug($elems, "SERVER LOCK");
 
         foreach ($elems as $server) {
             //on verifie avec le double buffer qu'on est bien sur le même pid
@@ -596,11 +656,10 @@ class Worker extends Controller
                 $this->logger->debug("Add id_mysql_server:".$server['id']." to the queue ($queue_key)");
                 usleep($delay);
             } else {
-                $this->logger->warning("could not add message to queue ($queue_key)");
+                $this->logger->error("could not add message to queue ($queue_key)");
             }
         }
     }
-
 
     public function update()
     {
@@ -652,14 +711,63 @@ class Worker extends Controller
         }
     }
 
-
     public function file($param)
     {
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
 
         $data['ls'] = "";
-        
-        $data['ls'] = shell_exec("ls -lh ". TMP."tmp_file");
+        $data['ls'] = trim(shell_exec("ls -lh ". TMP."tmp_file"));
+        $data['files'] = explode("\n", $data['ls']);
+        $data['nb_files'] = count($data['files']);
+
+        if ($data['nb_files'] > 2 )
+        {
+            $data['nb_files']--;
+        }
 
         $this->set('data', $data);
+    }
+
+
+    public function getPidWorking($param)
+    {
+        $data['ls'] = shell_exec("ls -lh ". TMP."tmp_file");
+    }
+
+    public function checkPid($param)
+    {
+        Debug::parseDebug($param);
+        $pid_to_check = glob(EngineV4::PATH_LOCK."*\.".EngineV4::EXT_PID);
+        foreach($pid_to_check as $filname)
+        {
+            Debug::debug($filname);
+            $pid = EngineV4::getPid($filname);
+
+            Debug::debug($pid, 'PID');
+
+            if (!System::isRunningPid($pid)) {
+
+                //delete worker withPID
+                unlink($filname);
+
+                //Debug::debug($pid, 'DELETE PID');
+            }
+        }
+    }
+
+    public function deleteWorkerPid($param)
+    {
+        $pid = $param[0];
+
+    }
+
+
+    public function getRunningId($param)
+    {
+        Debug::parseDebug($param);
+
+
     }
 }

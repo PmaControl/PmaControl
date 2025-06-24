@@ -7,7 +7,7 @@ if (!function_exists('generateDokuwikiTable')) {
     function generateDokuwikiTable($data) {
         // Récupération des colonnes (clés)
 
-        if (count($data) > 1 )
+        if (count($data) > 0 )
         {
             $columns = array_keys(current($data));
 

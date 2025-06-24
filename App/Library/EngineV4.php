@@ -26,10 +26,10 @@ class EngineV4
     const EXT_LOCK = 'lock';
     const EXT_PID = 'pid';
     
-    const FILE_MD5 = self::PATH_MD5.'{TS_FILE}'.self::SEPERATOR.'{ID_MYSQL_SERVER}.'.self::EXT_MD5;
-    const FILE_LOCK = self::PATH_LOCK.'{TS_FILE}'.self::SEPERATOR.'{ID_MYSQL_SERVER}.'.self::EXT_LOCK;
+    const FILE_MD5 = self::PATH_MD5.'{TS_FILE}'.self::SEPERATOR.'{PID}.'.self::EXT_MD5;
+    const FILE_LOCK = self::PATH_LOCK.'{TS_FILE}'.self::SEPERATOR.'{PID}.'.self::EXT_LOCK;
 
-    const FILE_PID = self::PATH_PID.'{TS_FILE}'.self::SEPERATOR.'{ID_MYSQL_SERVER}.'.self::EXT_PID;
+    const FILE_PID = self::PATH_PID.'{TS_FILE}'.self::SEPERATOR.'{PID}.'.self::EXT_PID;
     
     const SEPERATOR = "::";
 
@@ -42,25 +42,25 @@ class EngineV4
 	const FILE_TO_LISTEN = self::FILE_MYSQL_VARIABLE .",".self::FILE_MYSQL_DATABASE;
 
 
-    static public function getFileLock($ts_file, $id_mysql_server, $const=self::FILE_LOCK)
+    static public function getFileLock($ts_file, $pid, $const=self::FILE_LOCK)
     {
-        return str_replace(array('{TS_FILE}','{ID_MYSQL_SERVER}'), array($ts_file, $id_mysql_server), $const);
+        return str_replace(array('{TS_FILE}','{PID}'), array($ts_file, $pid), $const);
     }
 
-    static public function getFileMd5($ts_file, $id_mysql_server)
+    static public function getFileMd5($ts_file, $pid)
     {
-        return self::getFileLock($ts_file, $id_mysql_server, self::FILE_MD5);
+        return self::getFileLock($ts_file, $pid, self::FILE_MD5);
     }
 
-    static public function getFilePid($ts_file, $id_mysql_server)
+    static public function getFilePid($ts_file, $pid)
     {
-        return self::getFileLock($ts_file, $id_mysql_server, self::FILE_PID);
+        return self::getFileLock($ts_file, $pid, self::FILE_PID);
     }
 
-	static function getId($file_name)
+	static function getPid($file_name)
 	{
 		$part2 = explode(self::SEPERATOR, $file_name)[1];
-		return explode(".", $part2)[1];
+		return explode(".", $part2)[0];
 	}
 
 
@@ -108,6 +108,9 @@ class EngineV4
         return $monolog;
     }
 
+	/*
+	static public function get
+*/
 }
 
 /*

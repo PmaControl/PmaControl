@@ -11,7 +11,7 @@ use \Glial\Synapse\FactoryController;
       <h3 class="panel-title">'.__('List of queue').'</h3>
   </div>';
 
-  echo '<div id="daemon-index">';
+  echo '<div id="worker-index">';
 }
 
 
@@ -42,7 +42,22 @@ foreach ($data['worker'] as $daemon) {
     echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'worker/update" data-title="Enter class">'.$daemon['queue_number'].'</td>';
   //  echo '<td>'.$daemon['nb_msg'].'</td>';
   //  echo '<td>'.$daemon['queue_number'].'</td>';
-    echo '<td>'.'0'.'</td>';
+
+    $class="";
+
+    echo '<td class="'.$class.'">';
+    if ($daemon['msg_qnum'] != 0) // add error > superior of number of instance to monitor
+    {
+      echo '<span class="label label-warning" title="'.$daemon['msg_qnum'].'"><i class="glyphicon glyphicon-warning-sign"></i> '.$daemon['msg_qnum'].'</span>';
+    }
+    else
+    {
+      echo '<span class="label label-success" title="'.$daemon['msg_qnum'].'"> '.$daemon['msg_qnum'].' </span>';
+      //echo $daemon['msg_qnum'];
+    }
+    echo '</td>';
+
+
     echo '<td>'.$daemon['worker_class'].'/'.$daemon['worker_method'].'</td>';
     echo '<td>';
 

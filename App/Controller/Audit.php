@@ -543,6 +543,8 @@ performance_schema_digests_size
 
         $db = Sgbd::sql(DB_DEFAULT);
 
+        $filter = $param[0];
+
         $data['servers'] = Extraction2::display(array("mysql_available","is_proxysql"));
         Debug::debug($data['servers']);
 
@@ -551,7 +553,7 @@ performance_schema_digests_size
             if ($server['mysql_available'] == "1" && $server['is_proxysql'] === "0") {
 
                 //echo $server['id_mysql_server']."\n";
-                FactoryController::addNode("audit", "server", array($server['id_mysql_server'] ));
+                FactoryController::addNode("audit", "server", array($server['id_mysql_server'], $filter ));
             }
         }
         echo "</pre>";
@@ -1195,5 +1197,18 @@ La suppression des index inutilisés permet donc d’améliorer les performances
 
 
     }
+
+
+############## STORAGE ENGINE
+SELECT 
+    ENGINE,
+    ROUND(SUM(DATA_LENGTH) / (1024 * 1024 * 1024), 2) AS data_gb,
+    ROUND(SUM(INDEX_LENGTH) / (1024 * 1024 * 1024), 2) AS index_gb,
+    ROUND(SUM(DATA_FREE) / (1024 * 1024 * 1024), 2) AS free_gb,
+    GROUP_CONCAT(DISTINCT TABLE_SCHEMA ORDER BY TABLE_SCHEMA SEPARATOR ', ') AS `databases`
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')
+GROUP BY ENGINE
+ORDER BY data_gb DESC;
         */
 }
