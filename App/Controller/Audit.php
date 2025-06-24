@@ -570,7 +570,11 @@ performance_schema_digests_size
         Debug::parseDebug($param);
 
         $id_dot3_cluster = $param[0];
-        //$cluster_number = $param[1];
+        $cluster_number = $param[1];
+        $id_mysql_servers = $param[2];
+
+        //if (!empy)
+
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -579,7 +583,7 @@ performance_schema_digests_size
         $sql2 = "SELECT a.id_mysql_server,b.display_name 
         FROM dot3_cluster__mysql_server a
         INNER JOIN mysql_server b ON a.id_mysql_server = b.id
-        WHERE a.id_dot3_cluster=".$id_dot3_cluster." AND is_proxy=0;";
+        WHERE a.id_dot3_cluster=".$id_dot3_cluster." AND a.id_mysql_server IN(".$id_mysql_servers.") AND is_proxy=0;";
         
         $server_name = [];
         $id_mysql_servers = [];
@@ -666,11 +670,19 @@ performance_schema_digests_size
     }
 
 
-    public function bycluster($param)
+    public function byCluster($param)
     {
         $this->view = false;
         $this->layout_name= false;
         Debug::parseDebug($param);
+
+        $where = "";
+        if (! empty($param[0]))
+        {
+            $id_mysql_servers = $param[0];
+            $where = "WHERE d.id_mysql_server in (".$id_mysql_servers.")";
+        }
+        
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -682,9 +694,9 @@ performance_schema_digests_size
         SELECT a.id, a.id_dot3_information, GROUP_CONCAT(d.id_mysql_server) as id_mysql_servers, a.id as id_dot3_cluster
         FROM dot3_cluster a INNER JOIN LatestDot3Information b ON a.id_dot3_information = b.max_id_dot3_information-1 
         INNER JOIN dot3_graph c ON c.id = a.id_dot3_graph
-        INNER JOIN dot3_cluster__mysql_server d ON d.id_dot3_cluster = a.id
+        INNER JOIN dot3_cluster__mysql_server d ON d.id_dot3_cluster = a.id $where
         GROUP BY a.id
-        ORDER BY  c.height DESC, c.width desc;";
+        ORDER BY c.height DESC, c.width desc;";
 
         $res = $db->sql_query($sql);
 
