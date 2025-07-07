@@ -134,7 +134,12 @@ if (!empty($_GET['mysql_server']['id'])) {
                                     echo $val;
                                 }
                                 echo '</span>';
-                            } else if ($var == "percent" || $var == "auto_increment_ratio") {
+
+                            } else if ($var == "digest")
+                            {
+                                echo '<a href="'.LINK.'/Query/byDigest/'.$val.'/'.$_GET['mysql_server']['id'].'/'.$line['db'].'/">'.$val.'</a>';
+                            }
+                            else if ($var == "percent" || $var == "auto_increment_ratio") {
                                 $percent = round($val * 100, 2);
                                 $with = ceil($val * 100);
 

@@ -212,7 +212,8 @@ class Binlog extends Controller {
 
         $sql = "SELECT d.*
             FROM mysql_server a
-            INNER JOIN binlog_backup d on a.id = d.id_mysql_server WHERE a.id = " . $id_mysql_server;
+            INNER JOIN binlog_backup d on a.id = d.id_mysql_server 
+            WHERE a.id = " . $id_mysql_server;
 
         $res = $db->sql_query($sql);
 
@@ -416,7 +417,7 @@ class Binlog extends Controller {
             WHERE 1 " . self::getFilter() . " AND a.is_proxy = 0
             ORDER BY display_name";
 
-
+        //debug($sql);
 
         $res = $db->sql_query($sql);
 
