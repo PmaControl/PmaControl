@@ -177,6 +177,7 @@ class Audit extends Controller {
 
         $res = $db->sql_query($sql);
 
+        $data = [];
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['server'] = $arr;
         }
@@ -641,12 +642,12 @@ performance_schema_digests_size
             
             // table without PK
             $this->getTableWithoutFk(array(implode(",",$id_mysql_servers)));
-
+            
             $this->getAutoInc(array(implode(",",$id_mysql_servers)));
 
             $this->getIndex(array(implode(",",$id_mysql_servers)));
             //unlink($path_svg);
-            //$this->server(array($ob->id ));
+            $this->server(array($ob->id ));
 
             //debug($id_mysql_servers);
 
@@ -697,6 +698,10 @@ performance_schema_digests_size
         INNER JOIN dot3_cluster__mysql_server d ON d.id_dot3_cluster = a.id $where
         GROUP BY a.id
         ORDER BY c.height DESC, c.width desc;";
+
+
+        Debug::sql($sql);
+      
 
         $res = $db->sql_query($sql);
 
@@ -816,12 +821,6 @@ performance_schema_digests_size
 
             if (in_array('innodb', $require))
             {
-                if ($id_mysql_server == "16")
-                {
-                    continue;
-                }
-
-
                 if (Available::hasEngine($id_mysql_server, "INNODB") === false) {
                     continue;
                 }
@@ -1164,7 +1163,7 @@ La suppression des index inutilisés permet donc d’améliorer les performances
         foreach($id_mysql_servers as $id_mysql_server)
         {
             Debug::debug($id_mysql_server, 'id_mysql_server');
-            $inter[] = " LEFT(MAX(CASE WHEN id_mysql_server = ".$id_mysql_server." THEN value END),30) AS value_server".$id_mysql_server." ";
+            $inter[] = " LEFT(MAX(CASE WHEN id_mysql_server = ".$id_mysql_server." THEN value END),50) AS value_server".$id_mysql_server." ";
         }
 
         $sql .= implode(',', $inter);

@@ -526,7 +526,7 @@ class Worker extends Controller
         $sql2 = preg_replace('/select\s+(.*)\s+from/','SELECT count(1) as cpt FROM' ,$main_query);
         $res2 = $db->sql_query($sql2);
 
-        while ($db->sql_fetch_object($res))
+        while ($ob2 = $db->sql_fetch_object($res2))
         {
             $number_of_server_to_monitor = $ob2->cpt;
         }

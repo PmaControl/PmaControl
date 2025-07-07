@@ -34,6 +34,9 @@ echo "<title>".strip_tags($GLIALE_TITLE)." - ".SITE_NAME." ".SITE_VERSION."</tit
 
 <link rel="stylesheet" type="text/css" href="<?= CSS ?>pmacontrol.css" />
 
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.3.6/css/bootstrap-colorpicker.min.css" />
+
+
 
 
 <link href="<?= CSS ?>font-awesome.min.css" rel="stylesheet">

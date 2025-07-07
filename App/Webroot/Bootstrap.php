@@ -190,7 +190,7 @@ if (IS_CLI) {
         FactoryController::addDi("auth", $auth);
     }
 
-    (ENVIRONEMENT) ? $_DEBUG->save("User connexion") : "";
+    (DEBUG) ? $_DEBUG->save("User connexion") : "";
 
     //$_SYSTEM['controller'] = $url['controller'];
     $_SYSTEM['controller'] = \Glial\Utility\Inflector::camelize($url['controller']);

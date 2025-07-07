@@ -474,18 +474,19 @@ class Aspirateur extends Controller
 
             }
 
+            $data = array();
+            $data['velocity'] = $this->getVelocity($name_server);
+            $this->exportData($id_mysql_server, "mysql_velocity", $data, false);
 
             /* get DIGEST */
-
-            /*
             $digest = $this->getDigest(array($id_mysql_server));
             if (count($digest['data']) > 0)
             {
                 $data = array();
                 $data['performance_schema']['events_statements_summary_by_digest'] = json_encode($digest);
-                $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data);
+                $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data, false);
             }
-                */
+            
         }
 
         /*************************************** list Database  */
@@ -1475,51 +1476,42 @@ GROUP BY C.ID, C.INFO;";
             $data['query_latency_µs_95'] =  $arr['avg_us'];
         }*/
 
-
         // upgrade because : ERROR 1690 (22003): BIGINT UNSIGNED value is out of range (in case of lot queries !)
         $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 1 MINUTE);";
-
 
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['query_latency_1m'] = $arr['time_average'];
         }
 
-
         $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 10 MINUTE);";
-
 
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['query_latency_10m'] = $arr['time_average'];
         }
 
-
         $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 1 HOUR);";
-
 
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['query_latency_1h'] = $arr['time_average'];
         }
 
-
         $sql = "SELECT ROUND( (SUM(CAST(COUNT_STAR AS DECIMAL(30,0)) * CAST(AVG_TIMER_WAIT AS DECIMAL(30,0)))) / SUM(COUNT_STAR) / 1000000, 0 ) AS time_average
         FROM  `performance_schema`.`events_statements_summary_by_digest`
         WHERE LAST_SEEN > (NOW() - INTERVAL 24 HOUR);";
-
 
         $res = $db->sql_query($sql);
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['query_latency_24h'] = $arr['time_average'];
         }
-
 
         return $data;
     }
@@ -1932,6 +1924,9 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
+        /* TROP COUTEUX, se baser sur l'interval est plus judicieux entre 2 run est plus judicieux, 
+        on va peut etre louper des requettes mais trop couteux pour le serveur d'ouvrir un thread mysql pour chaque serveur
+
         $db = Sgbd::sql(DB_DEFAULT,"MAIN");
 
         $sql ="SELECT `date` from ts_max_date a 
@@ -1945,8 +1940,10 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $db->sql_close();
+        */
        
-        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > '".$date_last."';";
+        //$sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > '".$date_last."';";
+        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > NOW() - INTERVAL 11 SECOND;";
          
         Debug::sql($sql);
 
@@ -1961,22 +1958,12 @@ GROUP BY C.ID, C.INFO;";
             if ($i === 1) {
                 $data['fields'] = self::array_values_to_lowercase(array_keys($arr));
             }*/
-
             //$data['data'][$arr['DIGEST']] = array_values($arr);
+
+            // on a peut etre un probleme ici, si meme digest pour une base differente
             $data['data'][$arr['DIGEST']] = $arr;
         }
 
-        /*
-        $json =  json_encode($data);
-        echo $json;
-
-        $sql = "INSERT INTO gg7 (id_mysql_server, id_ts_variable,date,value) 
-        VALUES (".$id_mysql_server.",2, now(), '".$mysql_tested->sql_real_escape_string($json)."' )";
-
-        Debug::sql ($sql);
-
-        $mysql_tested->sql_query($sql);
-        */
         Debug::debug(count($data['data']));
 
         return $data;
@@ -2070,6 +2057,8 @@ GROUP BY C.ID, C.INFO;";
             $ret[] = $data;
         }
 
+        Debug::debug($ret);
+
         return $ret;
     }
 
@@ -2128,12 +2117,14 @@ GROUP BY C.ID, C.INFO;";
             $this->exportData($id_mysql_server, "is_tables", $data);
         }
 
-        Debug::debug($data);
+        //Debug::debug($data);
     }
 
 
     public function getDisks($param)
     {
+        Debug::parseDebug($param);
+        
         $id_mysql_server = $param[0];
 
         $ret  = array();
@@ -2153,7 +2144,7 @@ GROUP BY C.ID, C.INFO;";
         {
             // if MARIADB ask limit 10 sec max
             if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
-                $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * from information_schema.disks";
+                $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * from information_schema.disks;";
             }
             else{
                 $sql = "SELECT * FROM information_schema.disks;";
@@ -2165,8 +2156,72 @@ GROUP BY C.ID, C.INFO;";
             while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $ret[] = $data;
             }
+
+            Debug::debug($ret,"DISK");
         }
         
         return $ret;
     }
+
+
+    public function getVelocity($name_server)
+    {
+
+        $db = Sgbd::sql($name_server);
+        
+        $data = array();
+
+        // upgrade because : ERROR 1690 (22003): BIGINT UNSIGNED value is out of range (in case of lot queries !)
+
+        //ERROR SQL : (10.68.68.165:6002) {/srv/www/pmacontrol/App/Controller/Aspirateur.php:2178, 
+        // ERROR: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '�S          from performance_schema.events_statements_summary_by_digest' at line 1}
+        $sql = "SELECT sum(COUNT_STAR) as PS_NB_QUERY, ROUND(sum(SUM_TIMER_WAIT)/1000000,0) as PS_SUM_TIMER_WAIT_MICRO_SEC 
+        FROM performance_schema.events_statements_summary_by_digest;";
+
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['PS_SUM_TIMER_WAIT_µS'] = $arr['PS_SUM_TIMER_WAIT_MICRO_SEC']; 
+            $data['PS_NB_QUERY'] = $arr['PS_NB_QUERY'];
+        }
+
+
+        $sql = "SELECT CASE WHEN SUBSTRING(DIGEST_TEXT, 1, 1) = '(' THEN SUBSTRING_INDEX(SUBSTRING(DIGEST_TEXT, 3), ' ', 1) 
+        ELSE SUBSTRING_INDEX(DIGEST_TEXT, ' ', 1) END AS statement_type,
+        COUNT(*) AS count_statements, 
+        sum(COUNT_STAR) as sum_count_star, 
+        ROUND(sum(SUM_TIMER_WAIT)/1000000,0) as ps_sum_timer_wait_micro_sec, 
+        ROUND(sum(SUM_TIMER_WAIT)/sum(COUNT_STAR)/1000000,0) as by_elem   
+        FROM performance_schema.events_statements_summary_by_digest  
+        GROUP BY statement_type ORDER BY PS_SUM_TIMER_WAIT_MICRO_SEC DESC, count_statements DESC;";
+        $res = $db->sql_query($sql);
+
+        $tmp = array();
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $tmp[] = $arr;
+        }
+        $data['pma_statement_type_summary'] = json_encode($tmp);
+
+        return $data;
+    }
 }
+
+
+/*
+=> get exemple of Query
+
+SELECT 
+  `CURRENT_SCHEMA`, 
+  `DIGEST`, 
+  `SQL_TEXT` 
+FROM 
+  `performance_schema`.`events_statements_history` 
+WHERE 
+  `DIGEST` IS NOT NULL 
+  AND `CURRENT_SCHEMA` IS NOT NULL 
+GROUP BY 
+  `CURRENT_SCHEMA`, 
+  `DIGEST`, 
+  `SQL_TEXT`
+
+
+*/

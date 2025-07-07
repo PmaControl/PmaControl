@@ -433,11 +433,9 @@ class Table extends Controller {
             //$this->generateHiddenArrow($tables_by_colone);
         }
     }
-
-
+    
     // C'est clairement le meilleur algorythme pour repartir des éléments en fonction de leur poids
     // Le problème c'est que par moment le passage des flèches est problèmatique avec graphviz
-    
     
     public function splitTableByColumn($tables_before,$nombreColonnes )
     {
@@ -568,6 +566,15 @@ class Table extends Controller {
     public function index($param)
     {
         //liste des tables d'un DB 
+        $id_mysql_server = $param[0];
+        $table_schema = $param[1];
+        $table_name = $param[2];
+
+        $sql = "SELECT * FROM index_stats 
+        WHERE id_mysql_server=".$id_mysql_server." AND table_schema = '".$table_schema."' AND table_name= '".$table_name."'";
+
+        Debug::sql($sql);
+
 
 
     }
@@ -594,5 +601,15 @@ class Table extends Controller {
         $nouveau_hex = sprintf("#%02x%02x%02x", $nouveau_r, $nouveau_g, $nouveau_b);
     
         return $nouveau_hex;
+    }
+
+
+    function Query($param)
+    {
+
+
+
+
+        
     }
 }
