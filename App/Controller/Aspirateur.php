@@ -252,7 +252,7 @@ class Aspirateur extends Controller
         $refresh = $param[2];
 
         Debug::checkPoint('Init');
-        // To know if we use a proxy like PROXYSQL
+        // To know if we use a proxy like PROXYSQL / MAXSCALE
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
         $res = $db->sql_query($sql);
@@ -291,14 +291,13 @@ class Aspirateur extends Controller
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
             if (empty($IS_PROXY)) {
 
+
             }
             else{
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 try{
-
-
-
-
+                    // hack to force read to switch back online after shunned in case of no query on proxy (reader)
+                    $mysql_tested->sql_query("SELECT 1;");
 
                     $error_filter='';
                     $sql ="BEGIN;";
@@ -341,6 +340,8 @@ class Aspirateur extends Controller
         $var['variables'] = $mysql_tested->getVariables();
         Debug::checkPoint('After global variables');
 
+
+        // CAS PROXYSQL detected new
         if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
 
             $data = array();
@@ -355,14 +356,15 @@ class Aspirateur extends Controller
             }
 
             // TO DO => fix with new name of array
-            $version = Extraction2::display(array("proxysql_main_var::admin-version"), array($id_mysql_server));
+            $version = Extraction2::display(array("proxysql_runtime::global_variables"), array($id_mysql_server));
             
             $var_temp = array();
-            $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
+            $var_temp['variables']['is_proxy']     = "1";
+            $var_temp['variables']['is_proxysql']     =  $var['variables']['is_proxysql'];
 
-            if (! empty($version[$id_mysql_server]['admin-version']))
+            if (! empty($version[$id_mysql_server]['global_variables']['admin-version']))
             {
-                $version_proxysql = $version[$id_mysql_server]['admin-version'];
+                $version_proxysql = $version[$id_mysql_server]['global_variables']['admin-version'];
             }
             else{
                 $version_proxysql = "N/A";
@@ -370,13 +372,26 @@ class Aspirateur extends Controller
 
             $var_temp['variables']['version']         = $version_proxysql;
             $var_temp['variables']['version_comment'] = "ProxySQL";
+
+
+            Debug::debug($var_temp,"VERSION_PROXYSQL");
             
             $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
             return true;
         } 
 
-        if ($IS_PROXY)
+        // cas maxscale
+        if (empty($var['variables']['is_proxysql']) && $IS_PROXY)
         {
+
+            $var_temp = array();
+            $var_temp['variables']['is_proxy']     = "1";
+            $var_temp['variables']['is_maxscale']     = "1";
+
+            $var_temp['variables']['version']         = "2.x";
+            $var_temp['variables']['version_comment'] = "Maxscale";
+
+            $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
             return true;
         }
 
@@ -929,6 +944,9 @@ class Aspirateur extends Controller
 
         if ($mysql_tested->testAccess()) {
 
+            // If BACKUP STAGE BLOCK_COMMIT detectednot lunch 
+            // TO DO => case of mariadb backup need to stop that process
+
             $sql = "SHOW BINARY LOGS;";
             $res = $mysql_tested->sql_query($sql);
             if ($res) {
@@ -1179,7 +1197,7 @@ GROUP BY C.ID, C.INFO;";
      */
     public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
-        if (! in_array($type, array('mysql', 'ssh'))) {
+        if (! in_array($type, array('mysql', 'ssh', 'proxysql'))) {
             die('error');
         }
 
@@ -1544,18 +1562,52 @@ GROUP BY C.ID, C.INFO;";
         $this->view = false;
 
         
-        $this->logger->notice("##################".json_encode($param));
+        //$this->logger->notice("##################".json_encode($param));
         
         $name_server = $param[0];
-        $id_proxysql_server   = $param[1];
+        $id_proxysql_server   = $param[1]; // or split ?
         $refresh = $param[2] ?? "";
+        //$id_mysql_server = ;
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__function__.' should have id_proxysql_server in parameter');
         }
 
-        $db = Sgbd::sql($name_server);
+        Debug::debug($param, "NAME_SERVER");
 
+
+        try{
+            $error_msg='';
+            $time_start = microtime(true);
+            $db = Sgbd::sql("proxysql_".$id_proxysql_server);  // need try catch there
+            $db->sql_select_db("main");
+        }
+        catch(\Exception $e){
+            $error_msg = $e->getMessage();
+            $this->logger->warning($error_msg." id_proxysql_server:$id_proxysql_server");
+        }
+        finally{
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+
+            $id_mysql_server = ProxySQL::getIdMysqlServer(array($id_proxysql_server));
+
+            
+            if (empty($id_mysql_server))
+            {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "proxysql");
+                $this->logger->info("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
+            }
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+            if ($available === 0) {
+                //return false;
+            }
+        }
+
+
+
+        //Debug::debug($db, "DB");
 
         if (empty($id_mysql_server))
         {
@@ -1690,7 +1742,7 @@ GROUP BY C.ID, C.INFO;";
             }
         }
 
-
+        // Proxy have a 6033 routed to a server
         if (!empty($id_mysql_server))
         {
 
@@ -2046,7 +2098,7 @@ GROUP BY C.ID, C.INFO;";
         if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
             $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
         }
-        else{
+        else {
             $sql = "SELECT * FROM information_schema.tables;";
         }
         
@@ -2068,8 +2120,7 @@ GROUP BY C.ID, C.INFO;";
         Debug::parseDebug($param);
         $id_mysql_server = $param[0];
 
-        if (Available::getMySQL($id_mysql_server) == false)
-        {
+        if (Available::getMySQL($id_mysql_server) == false) {
             return;
         }
 
@@ -2129,8 +2180,7 @@ GROUP BY C.ID, C.INFO;";
 
         $ret  = array();
 
-        if (Available::getMySQL($id_mysql_server) == false)
-        {
+        if (Available::getMySQL($id_mysql_server) == false) {
             return $ret;
         }
 
@@ -2163,7 +2213,6 @@ GROUP BY C.ID, C.INFO;";
         return $ret;
     }
 
-
     public function getVelocity($name_server)
     {
 
@@ -2184,7 +2233,6 @@ GROUP BY C.ID, C.INFO;";
             $data['PS_NB_QUERY'] = $arr['PS_NB_QUERY'];
         }
 
-
         $sql = "SELECT CASE WHEN SUBSTRING(DIGEST_TEXT, 1, 1) = '(' THEN SUBSTRING_INDEX(SUBSTRING(DIGEST_TEXT, 3), ' ', 1) 
         ELSE SUBSTRING_INDEX(DIGEST_TEXT, ' ', 1) END AS statement_type,
         COUNT(*) AS count_statements, 
@@ -2203,6 +2251,91 @@ GROUP BY C.ID, C.INFO;";
 
         return $data;
     }
+
+    public function detectDouble($param)
+    {
+        Debug::parseDebug($param);
+
+        $servers = Extraction2::display(array("variables::hostname","variables::port","variables::server_uid" , "variables::is_proxysql" ));
+
+        function find_duplicate_server_uids(array $servers): array {
+            $map = [];
+            foreach ($servers as $entry) {
+                if (!empty($entry['server_uid'])) {
+                    $map[$entry['server_uid']][] = $entry['id_mysql_server'];
+                }
+            }
+
+            // Ne garder que ceux avec plus d'une occurence
+            $dups = [];
+            foreach ($map as $uid => $ids) {
+                if (count($ids) > 1) {
+                    $dups[$uid] = $ids;
+                }
+            }
+            return $dups;
+        }
+
+
+        $duplicates = find_duplicate_server_uids($servers);
+
+        // Affichage "joli" au format que tu as demandé : [UID] => (id1, id2, ...)
+        foreach ($duplicates as $uid => $ids) {
+            echo "[$uid] => (" . implode(', ', $ids) . ")\n";
+        }
+
+        //Debug::debug($hostnames);
+
+    }
+
+
+    public function gg($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.id_mysql_server, a.date, a.date_p1, a.date_p2,a.date_p3,a.date_p4 FROM ts_max_date a
+        INNER JOIN ts_file b ON a.id_ts_file = b.id
+        INNER JOIN ts_variable c on c.id_ts_file = b.id
+        WHERE `name` = 'server_uid' and a.id_mysql_server in(89);";
+
+        $res = $db->sql_query($sql);
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $date = [$ob->date, $ob->date_p1, $ob->date_p2, $ob->date_p4, $ob->date_p4];
+        }
+
+        $ret= Extraction2::display(array("server_uid"), array(), $date, false);
+
+
+        Debug::debug($ret);
+
+    }
+
+
+    public function gg2($param)
+    {
+        Debug::parseDebug($param);
+
+        $version2 = Extraction2::display(array("version", "version_comment"), array(116));
+        $version = Extraction2::display(array("proxysql_runtime::global_variables"), array(116));
+
+        $version = $version[116]['global_variables']['admin-version'];
+
+
+        
+        Debug::debug($version);
+
+        Debug::debug($version2);
+
+
+    }
+
+
+
+
 }
 
 

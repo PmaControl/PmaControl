@@ -51,14 +51,13 @@ SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
 JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information-1
-ORDER BY  height DESC, width desc
-;";
+ORDER BY  height DESC, width desc;";
 
 
 
         $data['graphs'] = array();
 
-        Debug::debug($sql);
+        Debug::sql($sql);
         //@TODO c.height > 8   => to fix on register table architecture on Dot
 
         /*         * *

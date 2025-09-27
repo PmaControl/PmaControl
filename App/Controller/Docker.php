@@ -109,6 +109,7 @@ class Docker extends Controller
             $ret = shell_exec("docker image pull ".$ob->name.":".$ob->tag);
             echo $ret."\n";
 
+            
         }
 
     }

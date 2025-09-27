@@ -7,6 +7,10 @@ if (empty($_GET['ajax'])){
         ?>
         <div >
         <div style="float:left; padding-right:10px;"><?= FactoryController::addNode("MysqlServer", "menu", $data['param']); ?></div>
+        
+        <!--enterprise -->
+        <?= FactoryController::addNode("Cluster", "replay", $data['param']); ?>
+        <!--enterprise -->
         </div> 
         <div style="clear:both"></div>
         <?php

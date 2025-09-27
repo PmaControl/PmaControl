@@ -49,7 +49,7 @@ GROUP BY id_mysql_server,variable_name having count(1) > 1)
  SELECT a.id_mysql_server, a.variable_name, a.value,date(ROW_START) as date, DATE_FORMAT(ROW_START, '%H:%i:%s') as time, DATE_FORMAT(ROW_START, '%W') as day
  FROM global_variable FOR SYSTEM_TIME ALL a
  INNER JOIN z ON a.id_mysql_server=z.id_mysql_server and a.variable_name=z.variable_name
- order by a.ROW_START,a.id_mysql_server, a.variable_name;";
+ order by a.ROW_START DESC,a.id_mysql_server, a.variable_name LIMIT 1000;";
 
         Debug::sql($sql);
 

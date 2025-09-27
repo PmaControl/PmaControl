@@ -13,6 +13,7 @@ use App\Library\Extraction;
 use App\Library\Extraction2;
 use \App\Library\Debug;
 use App\Library\Country;
+use App\Library\Color;
 
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -40,6 +41,8 @@ class Dot3 extends Controller
     */
     use \App\Library\Filter;
     use \App\Library\Dot;
+
+    const TARGET = 'target';
 
     static $information = array();
 
@@ -75,30 +78,48 @@ class Dot3 extends Controller
 
 	    Debug::parseDebug($param);
 
-        //Debug::$debug=true;
+        Debug::$debug=true;
 
         $date_request = $param[0] ?? "";
         $versioning = " WHERE 1=1 ";
-        $versioning2 = "  ";
-        $versioning3 = "  ";
+        $versioning2 = " WHERE 1=1 ";
+        $versioning3 = " WHERE 1=1 ";
 
         //to prevent id of daemon in comment
         if (! is_a($date_request, 'DateTime')) {
             $date_request ="";
         }
 
+        $remove_not_monitored = false;
+
         if ( ! empty($date_request))
         {
             $versioning = "WHERE '".$date_request."' between a.row_start and a.row_end ";
             $versioning2 = "WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
-            $versioning3 = "WHERE '".$date_request."' between d.row_start and d.row_end ";
+            $versioning3 = "WHERE '".$date_request."' between d.row_start and d.row_end AND '".$date_request."' between e.row_start and e.row_end ";
             $date_request = array($date_request);
+        }
+        else{
+            $remove_not_monitored = true;
         }
 
         //Debug::debug($date_request, "Date");
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
+        $sql2 = "SELECT a.id
+        FROM mysql_server a
+        INNER JOIN client x ON x.id = a.id_client
+        ".$versioning."
+        AND x.is_monitored = 1";
+
+        $ids = [];
+        $res2 = $db->sql_query($sql2);
+        while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $id_mysql_servers[] = $arr['id'];
+        }
+
+        //$id_mysql_servers = [87,88,116];
         // "status::wsrep_cluster_status"  => not exist anymore ?
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
@@ -112,15 +133,25 @@ class Dot3 extends Controller
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
-                "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::runtime_mysql_replication_hostgroups",
+                "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
+                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
-            ),array() , $date_request);
+            ),$id_mysql_servers , $date_request);
 
-        $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
-                FROM mysql_server a ".$versioning."
+        // only valid server
+        $sql = "SELECT a.id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
+                FROM mysql_server a
+                INNER JOIN client x ON x.id = a.id_client
+                ".$versioning."
+                AND x.is_monitored = 1 
                 UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
-                from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id ".$versioning2."
-                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1,d.hostname, d.port FROM proxysql_server d
+                FROM alias_dns b 
+                INNER JOIN mysql_server c ON b.id_mysql_server =c.id 
+                INNER JOIN client y ON y.id = c.id_client ".$versioning2." AND y.is_monitored = 1 
+                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1,d.hostname, d.port 
+                FROM proxysql_server d
+                INNER JOIN mysql_server e ON e.id = d.id_mysql_server
+                INNER JOIN client z ON z.id = e.id_client
                 ".$versioning3.";";
 
         Debug::sql($sql, "GET SERVER LIST");
@@ -135,8 +166,10 @@ class Dot3 extends Controller
             //TODO add alias_dns and virtual_ip
             $data['mapping'][$arr['ip'].':'.$arr['port']] = $arr['id_mysql_server'];
         }
-        $data['servers'] = array_replace_recursive($all, $server_mysql);
 
+        ksort($data['mapping']);
+
+        $data['servers'] = array_replace_recursive($all, $server_mysql);
 
         // ca sert a rien en fait car on recupère les élements du serveur mysql_server associé
         // just interessant pour faire des traitements spécifique
@@ -211,7 +244,7 @@ class Dot3 extends Controller
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
 
-        Debug::debug($dot3_information, 'Dot_information');
+        //Debug::debug($dot3_information, 'Dot_information');
         
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
@@ -259,7 +292,9 @@ class Dot3 extends Controller
                     $tmp_group[$id_group][] = $information['mapping'][$master];
                 }
                 else {
-                    echo "This master was not found : ".$master."\n";
+                    echo "SCRIPT KILLED [ERROR] This master was not found : ".$master."\n";
+                    Debug::debug($information['mapping'], "MAPPING");
+                    //die();
                 }
                 $id_group++;
                 
@@ -307,8 +342,14 @@ class Dot3 extends Controller
         $tmp_group = array();
 
         //$id_group = 0;  // replaced by $server['id_mysql_server'] for test
+
+        //Debug::debug($information['servers'], "SFGTHSFHGFG");
+
         foreach($information['servers'] as $id_mysql_server => $server)
         {
+            $server['id_mysql_server'] = $id_mysql_server;
+
+            //Debug::debug($server, "GOOD");
             //$id_group++;
             //$tmp_group[$idproxy] = array();
             if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
@@ -403,15 +444,17 @@ class Dot3 extends Controller
 
         $groups = $this->getGroup(array($id_dot3_information));
 
-        //Debug::debug($groups, "List of group ");
+        Debug::debug($groups, "List of group ");
 
         foreach($groups as $group)
         {
+
+            self::$rank_same = array();
             self::$build_galera = array();
             self::$build_ms = array();
             self::$build_server = array();
 
-            //Debug::debug($group);
+            Debug::debug($group, "GROUP");
             
             //Debug::debug(self::$build_galera);
 
@@ -429,6 +472,8 @@ class Dot3 extends Controller
             $this->linkHostGroup(array($id_dot3_information, $group));
 
             $dot = $this->writeDot();
+
+            //Debug::debug($dot, "DOT");
 
             $reference = md5(json_encode($group));
             $file_name = Graphviz::generateDot($reference, $dot);
@@ -511,6 +556,9 @@ class Dot3 extends Controller
         $dot = '';
         $dot .= Graphviz::generateStart();
 
+
+        //Debug::debug(self::$build_server, "BUILD_SERVER");
+
         foreach(self::$build_server as $server) {
 
             //Debug::debug($server);
@@ -582,7 +630,7 @@ class Dot3 extends Controller
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql));
 
-        //Debug::debug($group, "GROUP");
+        Debug::debug($group, "GROUP");
         //die();
         return $group;
     }
@@ -601,6 +649,7 @@ class Dot3 extends Controller
 
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['@slave'] as $key => $slave)
                 {
+                    Debug::debug($slave, "SLAVE");
 
                     $host = $slave['master_host'].':'.$slave['master_port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
@@ -613,13 +662,27 @@ class Dot3 extends Controller
                     && $slave['seconds_behind_master'] == "0")
                     {
                         $tmp = self::$config['REPLICATION_OK'];
-                        $tmp['tooltip'] = "OK";
+                        $tmp['tooltip'] = "OK hh🔒";
+                        
+
+                        if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
+                        {
+                            $tmp['options']['label'] = "SSL 🔒";
+                            $tmp['tooltip'] = "SSL 🔒";
+                        }
+
+
                     }
                     //replication STOPED
                     elseif(strtolower($slave['slave_io_running']) == 'yes' 
                     && strtolower($slave['slave_sql_running']) == 'yes' 
                     && $slave['seconds_behind_master'] == "NULL")
                     {
+                        if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
+                        {
+                            $tmp['options']['label'] = "SSL 🔒";
+                        }$tmp['options']['label'] = "SSL 🔒";
+
                         $tmp = self::$config['REPLICATION_STOPPED'];
                         $tmp['tooltip'] = "STOPPED";
                     }
@@ -692,7 +755,7 @@ class Dot3 extends Controller
 
                     $tmp['options']['arrowsize'] = "1.5";
                     
-                    $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
+                    $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
 
                     self::$build_ms[] = $tmp;
                 }
@@ -714,8 +777,29 @@ class Dot3 extends Controller
 
         foreach($group as $id_mysql_server)
         {
+            // to remove old server with empty data
+            if (empty($dot3_information['information']['servers'][$id_mysql_server]))
+            {
+                continue;
+            }
+
+            //consideringg if we don't have the version of server, this server is too old and we don't have fresh data to display.
+            if (empty($dot3_information['information']['servers'][$id_mysql_server]['version']))
+            {
+                continue;
+            }
+
+            //Debug::debug($dot3_information['information']['servers'][$id_mysql_server],"INFO_SERVER");
+
+
             $server = $dot3_information['information']['servers'][$id_mysql_server];
             $tmp = array();
+
+            // to remove server with organization not monitored
+            if (! isset($server['mysql_available']))
+            {
+                continue;
+            }
             
             if ($server['mysql_available'] == "1")
             {
@@ -820,8 +904,8 @@ class Dot3 extends Controller
                 $port = crc32($hostgroup['hostgroup_id'].':'.$host);
                 
                 //$tmp['arrow'] = '"'.$id_mysql_server.':hg'.$i.'" -> "'.
-                $id_mysql_server_target.':target"';
-                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':target';
+                $id_mysql_server_target.':'.self::TARGET.'"';
+                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':'.self::TARGET.'';
                 $tmp['options']['dir'] = 'both';
                 $tmp['options']['style'] = $tmp['style'];
                 $tmp['options']['arrowtail']= 'crow';
@@ -847,14 +931,14 @@ class Dot3 extends Controller
                 {
                     if (in_array($hostgroup['hostgroup_id'], array(2)))
                     {
-                        $tmp['options']['style'] = "fill";
+                        $tmp['options']['style'] = "filled";
                         $tmp['options']['color'] = "#32CD32";
                     }
 
 
                     if (in_array($hostgroup['hostgroup_id'], array(100)))
                     {
-                        $tmp['options']['style'] = "fill";
+                        $tmp['options']['style'] = "filled";
                         $tmp['options']['color'] = "#17a2b8";
                     }
 
@@ -875,9 +959,31 @@ class Dot3 extends Controller
         $sql = "SELECT * FROM `dot3_legend` order by `order`;";
         $res = $db->sql_query($sql);
 
+        //$to_test = ['font','color','background'];
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            unset($arr['id']);
+            /*
+            foreach ($arr as $key => $value) {
+                // Si la clé est dans le tableau $to_test
+                if (in_array($key, $to_test)) {
+
+                    $value = strtolower($value);
+                    // Si la valeur existe dans la colorMap, on remplace
+                    if (isset(self::$colorMap[$value])) {
+                        $arr[$key] = self::$colorMap[$value];
+                    }
+                }
+            }*/
+
+            
             self::$config[$arr['const']] = $arr;
         }
+
+        //Debug::$debug = true;
+        //Debug::debug(self::$config, "DOT3_LEGEND");
+        //die('wdfgdf');
     }
 
     private static function findIdMysqlServer($host, $id_dot3_information)
@@ -1412,17 +1518,20 @@ class Dot3 extends Controller
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
 
-                    $same[] = $id_master.":target";
+                    $same[] = $id_master.":".self::TARGET."";
                     if ($id_mysql_server == $id_master) {
                         continue;
                     }
                     
                     $tmp = self::$config['REPLICATION_OK'];
-                    $tmp['tooltip'] = "OK--- $id_master -> $id_mysql_server";
+                    
+                    //TO DO understand why only with proySQL it's generate a warning :  'Warning: Arrow type "117 -> 116" unknown - ignoring'
+                    $tmp['tooltip'] = "$id_master -> $id_mysql_server";  
+                    // tooltip in conflict with rank same
 
                     $tmp['options']['arrowsize'] = "1.5";
                     
-                    $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
+                    $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
 
                     self::$build_ms[] = $tmp;
 
@@ -1444,6 +1553,17 @@ class Dot3 extends Controller
     {
 
         echo Country::getFlag("FR");
+    }
+
+
+    public function testval($param)
+    {
+        Debug::parseDebug($param);
+
+        $all = Extraction2::display(array("mysql_replication_hostgroups"));
+
+
+            Debug::debug($all);
     }
 
 

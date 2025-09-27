@@ -337,8 +337,10 @@ class Graphviz
         file_put_contents($dot_file, $graph);
 
         $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
-        //debug($dot);
+        Debug::debug($dot, "DOT");
         exec($dot);
+
+        Debug::debug($type, "HR");
 
         $dot2 = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.'';
         exec($dot2);
@@ -356,14 +358,23 @@ class Graphviz
             $edge['options'] = array();
         }
 
+        if (!empty($edge['tooltip']))
+        {
+            $edge['options']['tooltip'] = $edge['tooltip'];
+        }
+
+
         $return = "".$edge['arrow'];
-        $return .= '[tooltip="'.$edge['tooltip'].'" color="'.$edge['color'].'" penwidth="3" ';
-        $return .= 'fontname="arial" fontsize=8 edgeURL=""';
+        $return .= '[color="'.$edge['color'].'" penwidth="3" ';
+        $return .= 'fontname="arial" fontsize=8 edgeURL="http://10.68.68.111/pmacontrol/fr/architecture/index/" ';
         foreach($edge['options'] as $key => $option) {
             $return .= $key.'="'.$option.'" ';
         }
 
         $return .= '];'.PHP_EOL;
+
+        // Trick to split double arrow in noth direction
+        $return .= 'node[shape=none fontsize=8 ranksep=10 splines=true overlap=true];'.PHP_EOL;
 
         return $return;
     }
@@ -371,6 +382,11 @@ class Graphviz
     static public function getBrightness($hex) {
         // returns brightness value from 0 to 255
         // strip off any leading #
+
+        if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $hex)) {
+            throw new \Exception("Erreur : '$hex' n'est pas une couleur HEX valide.");
+        }
+
         $hex = str_replace('#', '', $hex);
        
         $c_r = hexdec(substr($hex, 0, 2));
@@ -495,7 +511,7 @@ class Graphviz
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
         $return .= 'tooltip="'.$server['display_name'].'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-        <tr><td port="target" bgcolor="'.$server['color'].'">
+        <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$server['color'].'">
         
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
 
@@ -528,7 +544,7 @@ class Graphviz
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
 
             $debug = '';
-            //Debug::$debug = true;
+            Debug::$debug = true;
 
             //force le refresh du DOT
             if (Debug::$debug === true) {
@@ -545,7 +561,11 @@ class Graphviz
 
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
             
-            
+            if (empty($server['log_slave_updates']))
+            {
+                Debug::debug($server, "SERVER");
+                die();
+            }
             
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
@@ -638,13 +658,29 @@ class Graphviz
         }elseif ($server['is_proxysql'] == "1")
         {
             
-            //Debug::debug($server);
+            //Debug::debug($server,"CORRESPONDANCE");
             //exit;
             $hostgroup = 0;
             $i = 0;
 
-            $correspondance_hg = Dot3::getHostGroup($server['mysql_galera_hostgroups']);
+            if (! empty($server['mysql_galera_hostgroups']))
+            {
+                $correspondance_hg = Dot3::getHostGroup($server['mysql_galera_hostgroups']);
+            }
+
+            if(! empty($server['mysql_replication_hostgroups']))
+            {
+                $correspondance_hg = Dot3::getHostGroup($server['mysql_replication_hostgroups']);
+            }
             
+            if (! empty($server['mysql_group_replication_hostgroups']))
+            {
+                $correspondance_hg = Dot3::getHostGroup($server['mysql_group_replication_hostgroups']);
+            }
+
+            //Debug::debug($correspondance_hg, "HG");
+            
+            $max_writer = 0;
             if (isset($server['mysql_galera_hostgroups'][0]['max_writers'])){
                 $max_writer = $server['mysql_galera_hostgroups'][0]['max_writers'];
             }
@@ -664,7 +700,7 @@ class Graphviz
                 if ($hostgroup != $link['hostgroup_id'])
                 {
                     $max = "";
-                    if ($correspondance_hg[$link['hostgroup_id']] === "writer")
+                    if ($correspondance_hg[$link['hostgroup_id']] === "writer" && ! empty($max_writer))
                     {
                         $max = " (max : ". $max_writer.")";
                     }
@@ -739,84 +775,6 @@ class Graphviz
         return $return;
     }
 
-/*
-    static function buildApp()
-    {
-
-        //TO DO
-        $db = Sgbd::sql('proxysql_1');
-
-        $sql ="select cli_host, srv_host,srv_port, hostgroup, user, count(1) as cpt, db as table_schema,sum(time_ms) as sum_time_ms  
-        from stats_mysql_processlist WHERE command != 'Sleep' and hostgroup!=-1 group
-        by cli_host,srv_host,srv_port,hostgroup, user, db ;";
-
-        $res = $db->sql_query($sql);
-
-        $data = array();
-        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
-        {
-            $data[$arr['cli_host']][$arr['user']][$arr['table_schema']] = $arr;
-        }   
-
-
-        krsort($data);
-
-        Debug::debug($data);
-
-        $APP = '';
-        foreach($data as $ip => $users)
-        {
-            self::$edge= array();
-
-            $lines = '<table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
-            $lines .=  '<tr><td width="150" bgcolor="grey" colspan="4"><font color="#ffffff"><b>'.'App ??'.'</b></font></td></tr>';
-            $lines .=  '<tr><td width="150" bgcolor="lightgrey" colspan="4">'.$ip.'</td></tr>';
-
-            $lines .= '<tr>';
-            $lines .= '<td bgcolor="grey">'.__("User").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Schema").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Con").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Ms").'</td>';
-            $lines .= '</tr>'.PHP_EOL;
-
-            foreach($users as $name_user => $dbs)
-            {
-                $nb_dbs = count($dbs);
-                $lines .=  '<tr><td bgcolor="darkgrey" align="left" rowspan="'.$nb_dbs.'">'.$name_user.'</td>';
-                $i = 0;
-
-                ksort($dbs);
-                foreach($dbs as $db_name => $elem)
-                {
-                    $i++;
-                    if ($i != 1) {
-                        $lines .= '<tr>';
-                    }
-                    $port_ori = crc32(json_encode($elem));
-                    $port_dest = crc32($elem['hostgroup'].':'.$elem['srv_host'].':'.$elem['srv_port']);
-
-
-                    $lines .= '<td bgcolor="darkgrey" align="left">'.$db_name.'</td>';
-                    $lines .= '<td bgcolor="darkgrey" align="right">'.$elem['cpt'].'</td>';
-                    $lines .= '<td bgcolor="darkgrey" align="right" port="'.$port_ori.'">'.$elem['sum_time_ms'].'</td>';
-                    $lines .= '</tr>'.PHP_EOL;
-
-                    
-                    self::$edge[] = crc32($ip).':'.$port_ori.' -> 65:'.$port_dest;
-                }
-            }
-            $lines .= '</table>'.PHP_EOL;
-            $APP .= self::buildBox($lines, crc32($ip), "", "All", "grey").PHP_EOL;
-
-
-            foreach(self::$edge as $edge)
-            {
-                $APP .= $edge.'[tooltip="OK" color="darkgrey" fontname="arial" fontsize=8 edgeURL="" arrowhead="none" penwidth="3" style="solid" arrowsize="1.5" ];'.PHP_EOL;
-            }
-        }
-
-        return $APP;
-    }*/
 
     static function buildBox($body, $id_box, $link, $display_name, $box_color)
     {
@@ -825,7 +783,7 @@ class Graphviz
         $return .= '  "'.$id_box.'"[ href="'.$link.'"';
         $return .= 'tooltip="'.$display_name.'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-        <tr><td port="target" bgcolor="'.$box_color.'">
+        <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$box_color.'">
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>';
 
         $return .= $body;
@@ -895,7 +853,7 @@ class Graphviz
             $image_server  = ROOT."/App/Webroot/image/dot/";
 
             $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-            <tr><td port="target" bgcolor="'.'#000000'.'">
+            <tr><td port="'.Dot3::TARGET.'" bgcolor="'.'#000000'.'">
             
             <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
     

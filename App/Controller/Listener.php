@@ -13,7 +13,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 
-
+use \App\Library\Mysql;
 
 class Listener extends Controller
 {
@@ -44,7 +44,7 @@ class Listener extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) from ts_max_date where last_date_listener != date ORDER BY 3 DESC;";
-        Debug::sql($sql);
+        //Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
@@ -81,7 +81,7 @@ class Listener extends Controller
         GROUP BY a.id_mysql_server, a.id_ts_file;";
 
 
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -103,11 +103,13 @@ class Listener extends Controller
 
             case EngineV4::FILE_MYSQL_VARIABLE:
                 $this->afterUpdateVariable($arr);
+                //$this->detectProxy($arr);
                 break;
 
             case "ps_events_statements_summary_by_digest":
                 $this->collectQuery($arr);
                 break;
+
 
             default:
 
@@ -129,12 +131,12 @@ class Listener extends Controller
         $sql = "UPDATE ts_date_by_server SET is_listened=1 
         WHERE id_mysql_server=".$param['id_mysql_server']." AND id_ts_file=".$param['id_ts_file']." AND `date`='".$param['min_date']."';";
         $db->sql_query($sql);
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $sql ="UPDATE ts_max_date SET last_date_listener='".$param['min_date']."' 
         WHERE id_mysql_server=".$param['id_mysql_server']." AND id_ts_file=".$param['id_ts_file'].";";
         $db->sql_query($sql);
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $sql = "COMMIT;";
         $db->sql_query($sql);
@@ -198,10 +200,6 @@ class Listener extends Controller
             // write something to log
             return;
         }
-
-
-
-
 
         $data = json_decode($this->extract($res)['database'], true);
 
@@ -366,9 +364,6 @@ class Listener extends Controller
             $param['min_date'] = $param[1];
         }
 
-
-
-
         Debug::debug($param);
 
         $extract = Extraction2::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
@@ -384,7 +379,7 @@ class Listener extends Controller
         {
             unset($data[$param['id_mysql_server']]['date']);
         }
-        //Debug::debug($data , "VARIABLES");
+        Debug::debug($data , "VARIABLES");
 
         //to upgrade 
         //        => SELECT if different update and then update
@@ -394,8 +389,6 @@ class Listener extends Controller
         {
 
             $db  = Sgbd::sql(DB_DEFAULT);
-
-
             $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
             Debug::sql($sql);
             $res = $db->sql_query($sql);
@@ -610,7 +603,7 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        Debug::debug($param,"ICI");
+        //Debug::debug($param,"ICI");
 
         $id_mysql_server = $param['id_mysql_server'];
         $date= $param['min_date'];
@@ -637,10 +630,12 @@ class Listener extends Controller
         $i = 0;
 
         $SQL = [];
+        $keys = [];
+
         foreach($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'] as $query)
         {
             $i++;
-            Debug::debug($query);
+            //Debug::debug($query);
 
             $data_lower = array_change_key_case($query, CASE_LOWER);
 
@@ -650,10 +645,17 @@ class Listener extends Controller
 
             if (empty($id_mysql_database))
             {
+                $this->logger->warning("Couldn't find database  (id_mysql_server: $id_mysql_server) : ".implode(',', $data_lower));
                 continue;
             }
 
             $id_mysql_query = $register[$data_lower['digest']];
+
+            if (empty($id_mysql_query))
+            {
+                $this->logger->warning("Couldn't find id_mysql_query  (id_mysql_server : $id_mysql_server - id_mysql_query: $id_mysql_query) : ".implode(',', $data_lower));
+                continue;
+            }
             
             $result = array_filter($data_lower, function($value, $key) {
                 return (strpos($key, 'sum') === 0 || strpos($key, 'count_star') === 0);
@@ -665,12 +667,13 @@ class Listener extends Controller
             
             //$result['date'] = $date;
 
-            if ($i ===1) {
+            
+            if ($i ===1 ) {
                 $keys = array_keys($result);
             }
 
             $val = array_values($result);
-            Debug::debug($result);
+            //Debug::debug($result);
 
             $SQL[] = "('".$date."' ,".implode(",", $val).")";
         }
@@ -680,7 +683,7 @@ class Listener extends Controller
         $sql = $fields.implode(",",$SQL).";";
         $db->sql_query($sql);
 
-        Debug::debug($sql);
+        //Debug::debug($sql);
     }
 
     public function insertNewQuery($param)
@@ -688,6 +691,9 @@ class Listener extends Controller
         $id_mysql_server = $param['id_mysql_server'];
         $date= $param['min_date'];
         $queries = $param['queries'];
+
+
+        
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -702,7 +708,7 @@ class Listener extends Controller
         $list = implode("','", $id_query);
 
         $sql2 = "SELECT count(1) as cpt FROM mysql_query WHERE digest_mariadb IN ('".$list."')";
-        Debug::sql($sql2);
+        //Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
 
 
@@ -719,8 +725,22 @@ class Listener extends Controller
                         continue;
                     }
 
-                    $sql3 = "INSERT IGNORE INTO mysql_query (digest_mariadb, query_mariadb,digest_mysql,query_mysql)
-                    VALUES ('".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."',
+                    $this->logger->warning('DIGEST_TEST : '.$query['DIGEST_TEXT']);
+
+
+                    $size = mb_strlen($query['DIGEST_TEXT']);
+
+                    if ($size === 32)
+                    {
+
+                    }
+                    else if ($size === 64){
+                        
+                    }
+
+                    $sql3 = "INSERT IGNORE INTO mysql_query (digest_text_md5, digest_mariadb, query_mariadb,digest_mysql,query_mysql)
+                    VALUES ('".self::getHash(array($query['DIGEST_TEXT']))."', 
+                    '".substr($query['DIGEST'],0,32)."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."',
                     '".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."')";
                     Debug::sql($sql3);
                     $db->sql_query($sql3);
@@ -742,7 +762,9 @@ class Listener extends Controller
 
         $list = implode("','", $id_query);
 
-        $sql = "SELECT id, digest_mariadb FROM mysql_query WHERE digest_mariadb IN ('".$list."');";
+        $sql = "SELECT id, digest_mariadb FROM mysql_query WHERE digest_mariadb IN ('{$list}')
+        UNION ALL 
+        SELECT id, digest_mysql FROM mysql_query WHERE digest_mysql IN ('{$list}');";
         $res = $db->sql_query($sql);
 
         $data = [];
@@ -750,7 +772,7 @@ class Listener extends Controller
             $data[$ob->digest_mariadb] = $ob->id;
         }
 
-        Debug::debug($data);
+        //Debug::debug($data);
 
         return $data;
     }
@@ -768,7 +790,7 @@ class Listener extends Controller
         WHERE id_mysql_server = ".$id_mysql_server." 
         AND id_ts_variable IN (SELECT id from ts_variable WHERE name = 'events_statements_summary_by_digest') 
         AND  date = '".$date."' LIMIT 1";
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -776,7 +798,7 @@ class Listener extends Controller
             $data = json_decode($ob->digests);
         }
 
-        Debug::debug($data);
+        //Debug::debug($data);
 
         return $data;
 
@@ -803,31 +825,115 @@ class Listener extends Controller
                 $database = 'NONE';
             }
 
-            
-
-
-
             $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
             $res = $db->sql_query($sql);
 
             while($ob = $db->sql_fetch_object($res))
             {
                 self::$database[$id_mysql_server][$database] = $ob->id;
-                Debug::debug($ob->id, "id_mysql_database");
+                //Debug::debug($ob->id, "id_mysql_database");
                 return $ob->id;
             }
-
 
             $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
             $db->sql_query($sql);
             return false;
-
-
         }
     }
 
+    /*  
+        Get the first id_mysql_server who got MySQL 8.4 and available server
+    */
+
+    static public function getIdMySql84($param)
+    {
+        Debug::parseDebug($param);
+        $res = Extraction2::display(array('version','mysql_server::mysql_available'));
+
+        //Debug::debug($res);
+
+        foreach($res as $id_mysql_server => $server)
+        {
+            $pos = strpos($server['version'], "8.4.");
+
+            if ($pos !== false) {
+                if ($server['mysql_available'] === "1" ) {
+
+                    Debug::debug($id_mysql_server);
+                    return $id_mysql_server;
+                }
+            }
+        }
+        return null;
+    }
 
 
+    static public function getDigest($param)
+    {
+        Debug::parseDebug($param);
+        $query = $param[0];
+
+        if (in_array($query, array("SHOW SLAVE STATUS")))
+        {
+            return NULL;
+        }
+        
+
+        $id_mysql_server = self::getIdMySql84($param);
+
+        if ($id_mysql_server === false) {
+            return null;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        // replace ? by any value, to make query valid
+        $query = str_replace('LIMIT ?', 'LIMIT 1', $query);
+        $query = str_replace('?', '"34"', $query);
+
+        $sql = "SELECT STATEMENT_DIGEST('".$db->sql_real_escape_string($query)."');";
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM))
+        {
+            Debug::debug($arr);
+            return $arr[0];
+        }
+
+        return null;
+    }
+
+
+    static public function getHash($param)
+    {
+        Debug::parseDebug($param);
+        $query = $param[0];
+
+        return md5($query);
+    }
+
+
+    static public function getIdMariaDb12($param)
+    {
+        Debug::parseDebug($param);
+        $res = Extraction2::display(array('version','mysql_server::mysql_available'));
+
+        //Debug::debug($res);
+
+        foreach($res as $id_mysql_server => $server)
+        {
+            $pos = strpos($server['version'], "12.0.");
+
+            if ($pos !== false) {
+                if ($server['mysql_available'] === "1" ) {
+
+                    Debug::debug($id_mysql_server);
+                    return $id_mysql_server;
+                }
+            }
+        }
+        return null;
+    }
 }
 
 /****
@@ -849,25 +955,17 @@ WHERE a.date > (select b.date_previous_execution from listener b where id_ts_fil
 GROUP BY id_mysql_server, id_ts_file
 */
 
-
-
 /*
-
 UPDATE performance_schema.setup_consumers 
 SET enabled = 'YES' 
 WHERE name IN ('events_statements_history', 'events_statements_history_long');
 
-
 UPDATE performance_schema.setup_instruments SET enabled = 'YES', timed = 'YES' WHERE name LIKE 'statement/%';
-
 */
 
 
 
 /*
-
-
-
 SELECT t.*
 FROM ts_value_general_int t
 JOIN (

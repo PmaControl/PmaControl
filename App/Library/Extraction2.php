@@ -104,7 +104,11 @@ class Extraction2
                         $extra_where = " AND a.`date` IN ('".$all_date."') ";
 
                     }
-                } else {
+                } if($date === "MAX_DATE")
+                {
+
+                }
+                else {
                     $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
                     $extra_where .= " AND a.`date` <= now() ";
                 }
@@ -523,7 +527,7 @@ class Extraction2
         $date = $param[2];
         
         $id_ts_variables = self::getIdVariable($variables);
-        Debug::debug($id_ts_variables);
+        //Debug::debug($id_ts_variables);
 
         $partition = self::getPartitionFromDate($date);
 
@@ -555,7 +559,7 @@ class Extraction2
         //$db = Sgbd::sql(DB_DEFAULT);
         //$res = $db->sql_query($sql3);
 
-        Debug::sql($sql3);
+        //Debug::sql($sql3);
         
         //$sql = "SELECT `from`, `radical`, group_concat(id) as id_ts_variable FROM ts_variable WHERE id in (".$id_ts_variables.") GROUP BY 1,2;";
 
@@ -598,4 +602,31 @@ class Extraction2
 
         return $date;
     }
+
+    public static function getLast5Value($var = array(), $server = array())
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        if (empty($server)) {
+            $server = self::getServerList();
+        }
+
+
+        $sql = "SELECT a.id_mysql_server, a.date, a.date_p1, a.date_p2,a.date_p3,a.date_p4 FROM ts_max_date a
+        INNER JOIN ts_file b ON a.id_ts_file = b.id
+        INNER JOIN ts_variable c on c.id_ts_file = b.id
+        WHERE `name` = 'server_uid' and a.id_mysql_server in('".$server."');";
+
+        $res = $db->sql_query($sql);
+
+
+
+
+        return  Display::display($var, $id_mysql_server);
+    }
+
+
+    
+
 }

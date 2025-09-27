@@ -166,8 +166,12 @@ class Binlog extends Controller {
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $all_id_mysql_server[] = $arr['id_mysql_server'];
-
             $binlog_files = Extraction2::display(array("mysql_binlog::binlog_files"), array($arr['id_mysql_server']));
+
+            if (empty($binlog_files[$arr['id_mysql_server']]['binlog_files'])) {
+                continue;
+            }
+
             $data['extra'][$arr['id_mysql_server']]['binary_logs']['file'] = $binlog_files[$arr['id_mysql_server']]['binlog_files'];
 
             $binlog_sizes = Extraction2::display(array("mysql_binlog::binlog_sizes"), array($arr['id_mysql_server']));
@@ -406,7 +410,8 @@ class Binlog extends Controller {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $result = Extraction::display(array("mysql_binlog::binlog_file_first", "mysql_binlog::binlog_file_last", "mysql_binlog::binlog_files",
+        $result = Extraction::display(array("mysql_binlog::binlog_file_first", "mysql_binlog::binlog_file_last", 
+        "mysql_binlog::binlog_files","variables::binlog_expire_logs_seconds",
          "mysql_binlog::binlog_sizes", "mysql_binlog::binlog_total_size", "mysql_binlog::binlog_nb_files", "variables::expire_logs_days"));
 
         $sql = "SELECT a.*, b.libelle as organization,c.*, d.*, a.id as id_mysql_server

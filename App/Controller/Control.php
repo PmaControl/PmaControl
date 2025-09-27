@@ -11,6 +11,8 @@ use \App\Library\Extraction2;
 use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
+use \App\Controller\Worker;
+
 
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
@@ -291,7 +293,18 @@ class Control extends Controller
 
         $this->refreshVariable(array());
 
+        // remove old md5 file
         $this->delMd5File($param);
+
+        //remove old pid
+        $params = array('mysql', 'proxysql', 'ssh');
+
+        foreach($params as $param)
+        {
+            Worker::deleteExpiredPid(array());
+        }
+        
+
     }
 
     public function dropTsTable($param = array())
@@ -549,15 +562,19 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         shell_exec($cmd2);
     }
 
-
     public function truncateTsVariable()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "TRUNCATE TABLE `ts_variable`";
 
+        $sql = "SET FOREIGN_KEY_CHECKS=0;";
+        $db->sql_query($sql);
+
+        $sql = "TRUNCATE TABLE `ts_variable`";
+        $db->sql_query($sql);
+
+        $sql = "SET FOREIGN_KEY_CHECKS=1;";
         $db->sql_query($sql);
     }
-
 
     public function truncateTsMaxDate()
     {
@@ -575,18 +592,60 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     }
 
+
+    /* 
+        A reecrire avec vaec la lib EngineV4
+    */
     public function delMd5File($param)
     {
         Debug::parseDebug($param);
 
         $directory = TMP."md5/";
-
         //   delete md5 more than 1 day
         $cmd = 'find "'.$directory.'" -type f -mtime +0 ! -name ".gitignore" -delete';
         //$cmd = 'find "'.$directory.'" -type f -mmin +60 -exec rm -f {} \;';
 
         Debug::debug($cmd);
-
         shell_exec($cmd);
     }
+
+    /* Reclaim space for rocksDB to execute each week ? */
+
+    public function rocksdbCompact($param)
+    {
+        // table by table 
+
+        $tables = $this->generateAllTables($param);
+
+        $db  = Sgbd::sql(DB_DEFAULT);
+
+
+        foreach($tables as $table)
+        {
+            // time
+            $sql  = "SET GLOBAL rocksdb_compact_range = '$table';";
+            $db->sql_query($sql);
+            // time after compaction + name table
+        }
+        
+    }
+
+
+    public function generateAllTables($param)
+    {
+        Debug::parseDebug($param);
+
+        $tables = [];
+
+        foreach ($this->tables as $table) {
+            foreach ($this->ext as $ext) {
+                $table_name = $table."_".$ext;
+                $tables[] = $table_name;
+                Debug::debug($table_name);
+            }
+        }
+
+        return $tables;
+    }
+
 }

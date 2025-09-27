@@ -4,6 +4,7 @@ declare(ticks=1);
 
 namespace App\Controller;
 
+use App\Library\Extraction2;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \App\Library\Debug;
@@ -15,6 +16,12 @@ class Query extends Controller {
     const TABLE_NAME = 'tmp_setdefault';
     const TABLE_SCHEMA = 'dba';
     const LOG_FILE = TMP . "log/query.log";
+
+            // ajouter tout mot-clé à exclure
+    static $exceptions = ['ALL','AND','AS','CAST','COALESCE','COUNT', 'CURRENT_USER','DATE','DATE_ADD','DATE_SUB','DECIMAL','FROM',
+    'GROUP_CONCAT','IF','IN','JOIN','NOW', 'MAX', 'MIN', 'PARTITION',
+        'PASSWORD','SCHEMA','SUBSTRING','SUM','TIMESTAMPDIFF','UNION','USING','VALUES','WARNINGS', 'WHERE']; 
+
 
     public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
@@ -694,4 +701,656 @@ SQL;
 
     }
 
+
+
+
+
+
+        /**
+     * Approximation PHP de STATEMENT_DIGEST_TEXT() et STATEMENT_DIGEST() pour MariaDB 10.6+
+     *
+     * Limitations / hypothèses :
+     *  - by default double quotes are treated as string delimiters (si tu utilises ANSI_QUOTES, passe $ansi_quotes = true)
+     *  - l'algorithme serveur exact (tokenization fine) peut différer : ceci est une normalisation basée sur regexp/token heuristique
+     */
+
+    public static function normalize_sql_for_digest(string $sql, bool $ansi_quotes = false): string {
+        // 1) remove C-style comments /* ... */
+        $sql = preg_replace('#/\*.*?\*/#s', ' ', $sql);
+
+        // 2) remove -- and # line comments
+        $sql = preg_replace('/--[ \t]*[^\r\n]*/', ' ', $sql);
+        $sql = preg_replace('/#[^\r\n]*/', ' ', $sql);
+
+        // 3) collapse strings (single-quoted)
+        $sql = preg_replace("/'(?:\\\\.|[^\\\\'])*'/s", '?', $sql);
+
+        // 4) collapse double-quoted strings UNLESS ansi_quotes mode (then double quotes are identifiers -> keep them)
+        if (!$ansi_quotes) {
+            $sql = preg_replace('/"(?:\\\\.|[^\\\\"])*"/s', '?', $sql);
+        }
+
+        // 5) collapse bit literals b'0101' and hex 0xABC... and binary x'..'
+        $sql = preg_replace("/b'[01]+'/i", '?', $sql);
+        $sql = preg_replace("/0x[0-9A-Fa-f]+/i", '?', $sql);
+        $sql = preg_replace("/x'(?:\\\\.|[^\\\\'])*'/i", '?', $sql);
+
+        // 6) replace numeric literals (integers, floats, exponentials)
+        $sql = preg_replace('/\b[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b/', '?', $sql);
+
+        // 7) compact IN-lists of literals to (...) -> MariaDB digest_text tends to show IN (...)
+        //    Detect IN (literal, literal, ...) and replace content by '...'
+        $sql = preg_replace_callback('/\bIN\s*\(\s*(?:\?|\'.*?\'|".*?"|[0-9A-Fa-fxX]+)(?:\s*,\s*(?:\?|\'.*?\'|".*?"|[0-9A-Fa-fxX]+))*\s*\)/is',
+            function($m){ return 'IN (...)'; }, $sql);
+
+        // 8) remove redundant whitespace, keep single space, trim
+        $sql = preg_replace('/\s+/', ' ', $sql);
+        $sql = trim($sql);
+
+        // 9) optionally; ensure spacing around parentheses is normalized (aesthetic)
+        $sql = preg_replace('/\s*\(\s*/', '(', $sql);
+        $sql = preg_replace('/\s*\)\s*/', ') ', $sql);
+        $sql = trim($sql);
+
+        return $sql;
+    }
+
+
+
+    public static function normalize_sql_strict(string $sql, bool $ansi_quotes = false): string {
+        // 1) Supprimer tous les commentaires
+        $sql = preg_replace('#/\*.*?\*/#s', ' ', $sql);
+        $sql = preg_replace('/--[ \t]*[^\r\n]*/', ' ', $sql);
+        $sql = preg_replace('/#[^\r\n]*/', ' ', $sql);
+
+        // 2) Remplacer les littéraux (chaînes, nombres, hex, binaires, etc.)
+        $sql = preg_replace("/'(?:\\\\.|[^\\\\'])*'/s", '?', $sql);
+        if (!$ansi_quotes) {
+            $sql = preg_replace('/"(?:\\\\.|[^\\\\"])*"/s', '?', $sql);
+        }
+        $sql = preg_replace("/b'[01]+'/i", '?', $sql);
+        $sql = preg_replace("/0x[0-9A-Fa-f]+/i", '?', $sql);
+        $sql = preg_replace("/x'(?:\\\\.|[^\\\\'])*'/i", '?', $sql);
+        $sql = preg_replace('/\b[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b/', '?', $sql);
+
+        // 3) Réduire les listes IN (..)
+        $sql = preg_replace_callback(
+            '/\bIN\s*\(\s*(?:\?|\'.*?\'|".*?"|[0-9A-Fa-fxX]+)(?:\s*,\s*(?:\?|\'.*?\'|".*?"|[0-9A-Fa-fxX]+))*\s*\)/is',
+            fn($m) => 'IN (...)',
+            $sql
+        );
+
+        // 4) Espaces / casse / trim
+        $sql = preg_replace('/\s+/', ' ', $sql);
+        $sql = trim($sql);
+
+        return $sql;
+    }
+
+    /**
+     * Retourne le texte normalisé (comme DIGEST_TEXT). 
+     * $max_digest_length = valeur max utilisée pour la création (serveur a aussi max_digest_length); 
+     * $perf_max_digest_length = longueur conservée en performance_schema.DIGEST_TEXT (si plus petit, truncation).
+     */
+    public function statement_digest_text(string $sql, int $max_digest_length = 1024, int $perf_max_digest_length = 1024, bool $ansi_quotes = false): string {
+        // Normalise
+        $norm = self::normalize_sql_for_digest($sql, $ansi_quotes);
+
+        // Appliquer la limite max_digest_length (le serveur tronque à max_digest_length avant hash)
+        if (mb_strlen($norm, '8bit') > $max_digest_length) {
+            $norm_for_hash = mb_substr($norm, 0, $max_digest_length, '8bit');
+        } else {
+            $norm_for_hash = $norm;
+        }
+
+        // Le texte stocké dans performance_schema peut être plus court (performance_schema_max_digest_length)
+        if (mb_strlen($norm_for_hash, '8bit') > $perf_max_digest_length) {
+            return mb_substr($norm_for_hash, 0, $perf_max_digest_length, '8bit');
+        }
+        return $norm_for_hash;
+    }
+
+    /**
+     * Retourne le DIGEST (valeur hex MD5 32 caractères) similaire à la colonne DIGEST de MariaDB.
+     * IMPORTANT: on calcule le MD5 sur la forme normalisée **avant** la troncature éventuelle de performance_schema.
+     */
+    public static function statement_digest(string $sql, int $max_digest_length = 1024, bool $ansi_quotes = false): string {
+        $norm = self::normalize_sql_for_digest($sql, $ansi_quotes);
+
+        // Tronquer à max_digest_length car c'est sur cette version complète que le serveur calcule le hash.
+        if (mb_strlen($norm, '8bit') > $max_digest_length) {
+            $norm_for_hash = mb_substr($norm, 0, $max_digest_length, '8bit');
+        } else {
+            $norm_for_hash = $norm;
+        }
+
+        // MD5 en hex, en lowercase — correspond au format usuel de MariaDB DIGEST (HEX)
+        return md5($norm_for_hash);
+    }
+
+
+
+    public static function statement_digest_text_strict(string $sql, int $max_digest_length = 1024, int $show_length = 1024, bool $ansi_quotes = false): string {
+        $norm = self::normalize_sql_strict($sql, $ansi_quotes);
+        // maintenir la version pour affichage (troncature moins stricte)
+        $visible = (mb_strlen($norm, '8bit') > $show_length) ? mb_substr($norm, 0, $show_length, '8bit') : $norm;
+        return $visible;
+    }
+
+    public static function statement_digest_strict(string $sql, int $max_digest_length = 1024, bool $ansi_quotes = false): string {
+        $norm = self::normalize_sql_strict($sql, $ansi_quotes);
+        $forHash = (mb_strlen($norm, '8bit') > $max_digest_length) ? mb_substr($norm, 0, $max_digest_length, '8bit') : $norm;
+        $forHash = trim($forHash); // connais le problème du trim manquant
+        $forHash = mb_convert_encoding($forHash, 'UTF-8', 'auto');
+        $forHash = preg_replace('/^\xEF\xBB\xBF/', '', $forHash); // enlever BOM
+        return md5($forHash);
+    }
+
+
+    public function testDigest($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.DIGEST, a.SQL_TEXT, b.DIGEST_TEXT 
+        FROM performance_schema.events_statements_history a 
+        INNER JOIN performance_schema.events_statements_summary_by_digest b on a.DIGEST = b.DIGEST";
+
+        $sql = "SELECT `digest` as `DIGEST`, 
+        TRIM(`query`) as `SQL_TEXT`,
+        TRIM(`digest_text`) as `DIGEST_TEXT`
+        FROM query_sample WHERE `truncated` = 0";
+
+        $res = $db->sql_query($sql);
+
+        $good = 0;
+        $total = 0;
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+            $text3 = trim(self::digestText(trim($ob->SQL_TEXT)));
+
+            if ($text3 == $ob->DIGEST_TEXT) {
+                //echo "OK !".PHP_EOL;
+                $good++;
+            }
+            else {
+                echo "_____________________________________________________________________________________\n";
+                echo "DIGEST MariaDB    : " . $ob->DIGEST.PHP_EOL;
+                echo "VERSION ORIGINAL  : " . $ob->SQL_TEXT."--".PHP_EOL.PHP_EOL;
+                echo "VERSION MariaDB   : " . $ob->DIGEST_TEXT."--".PHP_EOL.PHP_EOL;
+                //echo "VERSION 1         : " . $generated_digest.PHP_EOL;
+                //echo "VERSION 2 (strict): " . $generated_digest_strict.PHP_EOL;
+                echo "VERSION 3         : " . $text3."--".PHP_EOL; 
+                echo "_____________________________________________________________________________________\n";
+            }
+
+            $total++;
+        }
+
+        $percent = round($good/$total*100,2);
+
+        echo "Taux de réussite : ".$percent."%\n";
+    } 
+
+
+
+
+    // new version 
+
+    public static function digest(string $query): string {
+        $normalized = self::normalize($query);
+        // MariaDB digest est 16 octets hex (md5-like)
+        return md5($normalized);
+    }
+
+    public static function digestText(string $query): string {
+        return self::normalize($query);
+    }
+
+    private static function normalize(string $query): string {
+
+        $q = $query;
+
+        $q = str_ireplace('/*!40003 GLOBAL*/', 'GLOBAL', $q);
+
+                // 1. Supprimer les commentaires
+        $q = preg_replace('/--.*(\r?\n|$)/', ' ', $q);
+        $q = preg_replace('/#.*(\r?\n|$)/', ' ', $q);
+        $q = preg_replace('/\/\*.*?\*\//s', ' ', $q);
+
+        // 2. Remplacer littéraux par ?
+        $q = preg_replace("/'(?:''|[^'])*'/", '?', $q);
+        $q = preg_replace('/"(?:\\"|[^"])*"/', '?', $q);
+        $q = preg_replace('/\b[0-9]+(\.[0-9]+)?\b/', '?', $q);
+
+        $q = str_ireplace('show databases', 'SHOW SCHEMAS', $q);
+        $q = str_ireplace('select database', 'SELECT SCHEMA', $q);
+        $q = str_ireplace('/', ' / ', $q);
+        $q = str_ireplace('+', ' + ', $q);
+        $q = str_ireplace('-', ' - ', $q);
+        $q = str_ireplace('*', ' * ', $q);
+        
+        
+
+        // 3. Découpage
+        $tokens = preg_split('/(\s+|[\(\),.=])/u', $q, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+        foreach($tokens as $key => $token) {
+            if (trim($token) === "") {
+                unset($tokens[$key]);
+            }
+        }
+
+        $tokens = array_values($tokens);
+
+        //Debug::debug($tokens);
+
+
+        $normalizedTokens = [];
+        foreach ($tokens as $key => $t) {
+            if (preg_match('/^\s+$/', $t)) {
+                // garder espaces
+                $normalizedTokens[] = $t;
+            } elseif (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $t)) {
+                
+                //function
+                if (!empty($tokens[$key+1]) && $tokens[$key+1] === "(" && $tokens[$key-1] != "INTO")
+                {
+                    // case des alias + upper case (il doit y en avoir d'autre)
+                    if (strtoupper($t) === "DATABASE" )
+                    {
+                        $normalizedTokens[] = "SCHEMA";
+                    }
+                    // cas des fonction mis en majuscule sinon laisser comme c'était
+                    else if (in_array(strtoupper($t), self::$exceptions)){
+                        $normalizedTokens[] = "".strtoupper($t)."";
+                    }
+                    else{
+                        $normalizedTokens[] = "".$t."";
+                    }
+                }
+                else if(!empty($tokens[$key-2]) && $tokens[$key-2] === "FORMAT" && $t === "JSON") {
+                    $normalizedTokens[] = $t;
+                }
+                //case des mots clef suivi par un prefix
+                else if (!empty($tokens[$key-1]) && $tokens[$key-1] == ".")
+                {
+                    $normalizedTokens[] = "`" . $t . "`";
+                }
+                // Identifiant ou mot-clé
+                else if (self::isKeyword($t)) {
+                    $normalizedTokens[] = "".strtoupper($t)."";
+                } else {
+                    $normalizedTokens[] = "`" . $t . "`";
+                }
+            } else {
+                // symboles, ?, ponctuation → garder
+                $normalizedTokens[] = $t;
+            }
+        }
+
+        $string =  implode(' ', $normalizedTokens);
+        
+        $string = preg_replace('/VALUES\s*\(\s*(\?\s*(,\s*\?)*)\s*\)/i', 'VALUES (...)', $string);
+        
+        $string = str_replace('`! =', '` !=', $string);
+        $string = str_replace('! =', '!=', $string);
+        $string = str_replace('< =', '<=', $string);
+        $string = str_replace('> =', '>=', $string);
+
+        $string = str_replace('( ? )', '(?)', $string);
+        $string = preg_replace('/ {2,}/', ' ', $string);
+        $string = preg_replace('/, ? {2,}/', ', ?, ...', $string);
+        $string = preg_replace('/(,\s*\?)(\s*,\s*\?){1,}/', ', ?, ...', $string);
+        
+        $string = preg_replace('/IN\s*\(\s*\?(\s*,\s*\?)+(\s*,\s*\.\.\.)?\s*\)/i', 'IN (...)', $string);;
+
+        $string = preg_replace('/\?(\s*,\s*\?)+/', '?, ...', $string);
+        //$string =  preg_replace('/@@`([^`]+)`/', '@@$1', $string);
+        //$string = preg_replace('/IN\s*\(\s*\?(\s*,\s*\?)+(\s*,\s*\.\.\.)?\s*\)/i', 'IN (...)', $string);;
+
+        //cas des VALUES avec une parenthère non fermé
+        $string = preg_replace('/VALUES\s*\(\s*(\?|\{\'\?)\s*.*$/i', 'VALUES (...)', $string);
+
+        $string = str_replace('. . .', '...', $string);
+        
+        $string = self::replaceAlias($string);
+
+        $string = str_replace('DECIMAL ( ?, ... )', 'DECIMAL (...)', $string);
+        
+
+        //###################################################################################
+
+        // only for fix mariadb
+
+        $string = preg_replace('/@@([a-zA-Z0-9_]+)/', '@@`$1`', $string);
+
+        $string = self::degradeMariaDB($string);
+
+        //no other choice
+        $string = str_replace(' @@`read_only` ', ' @@READ_ONLY ', $string);
+
+         
+
+        /*
+        $string = str_replace('. PROCESSLIST', '. `PROCESSLIST`', $string);
+        //$string = str_replace('WHERE `name`', 'WHERE NAME', $string);
+
+        //$string = preg_replace('/, `name` ,/', ', NAME ,', $string);
+        $string = preg_replace('/`USER`/', 'SYSTEM_USER', $string);
+        $string = preg_replace('/`HOST`/', 'HOST', $string);
+        $string = preg_replace('/, `port` ,/', ', PORT ,', $string);
+        $string = preg_replace('/, `port` AS/', ', PORT AS', $string);
+        $string = preg_replace('/`client`/', 'CLIENT', $string);
+        $string = preg_replace('/(?<!\.)(?<!\. )`schema_name`/', 'SCHEMA_NAME', $string);
+        //$string = preg_replace('/(?<!\.)(?<!\. )`date`/', 'DATE', $string);
+        $string = preg_replace('/(?<!\.)(?<!\. )`TABLE_NAME`/', 'TABLE_NAME', $string);
+        
+        $string = str_replace(' DISTINCT ', ' DISTINCTROW ', $string);
+
+        //$string = preg_replace('/(?<!\.)(?<!\. )`id`/', 'ID', $string);
+        $string = str_replace('` . ID', '` . `id`', $string);
+
+
+        //$string = str_replace('WHERE ID', 'WHERE `id`', $string);
+        $string = preg_replace('/(?<!\.)(?<!\. )`UNSIGNED`/', 'UNSIGNED', $string);
+        /**** END FIX MARIA DB */
+
+
+        return $string;
+    }
+
+
+    static function isKeyword(string $word): bool {
+        $keywords = [
+            "SELECT","FROM","WHERE","AND","OR","NOT","AS","ON","JOIN",
+            "LEFT","RIGHT","INNER","OUTER","GROUP","BY","ORDER","LIMIT",
+            "OFFSET","INSERT","INTO","VALUES","UPDATE","SET","DELETE",
+            "CREATE","ALTER","DROP","TABLE","DATABASE","SCHEMA","NOT",
+             "SHOW", "FULL",  "PROCESSLIST", "COUNT", "TABLES", "SCHEMAS",
+             "GLOBAL", "VARIABLES", "PARTITION", "STATUS", "IS",
+             "NULL", "BEGIN", "COMMIT", "ENGINE", "MAX", "EXPLAIN",
+             "SESSION", "COALESCE", "TIME", "DISTINCT", "ID", "UNION", 
+             "UNION ALL", "ALL", "TRUNCATE", "WITH",
+             "VALUE"
+        ];
+
+        $keywords = ["ACCOUNT","ACTION","ADMIN","AFTER","AGAINST","AGGREGATE","ALGORITHM","ALL","ALWAYS","ANALYSE","ANALYZE","AND",
+        "ANY","AS","ASC","ASCII","ASENSITIVE","AT","AUTO_INCREMENT","AUTOEXTEND_SIZE","AVG","AVG_ROW_LENGTH","BACKUP","BEFORE","BEGIN",
+        "BETWEEN","BIGINT","BINARY","BINLOG","BIT","BLOB","BLOCK","BOOL","BOOLEAN","BOTH","BTREE","BY","CALL","CASCADE","CASCADED","CASE",
+        "CATALOG_NAME","CHAIN","CHANGE","CHANGED","CHANNEL","CHAR","CHARACTER","CHARSET","CHECK","CHECKSUM","CIPHER","CLASS_ORIGIN","CLIENT",
+        "CLOSE","COALESCE","COLLATE","COLLATION","COLUMN","COLUMNS","COLUMN_FORMAT","COLUMN_NAME","COMMENT","COMMIT","COMMITTED","COMPACT",
+        "COMPLETION","COMPRESSED","COMPRESSION","CONCURRENT","CONDITION","CONNECTION","CONSISTENT","CONSTRAINT","CONTAINS","CONTEXT",
+        "CONTINUE","CONVERT","CPU","CONSTRAINT_NAME","CONSTRAINT_SCHEMA","CREATE","CROSS","CUBE","CURRENT", "CURRENT_USER","CURSOR",
+        "DATABASE","DATABASES","DATA","DATE","DATETIME","DAY",
+        "DEALLOCATE","DEC","DECIMAL","DECLARE","DEFAULT","DEFAULT_AUTH","DEFINED","DEFINER","DELAYED","DELAY_KEY_WRITE","DELETE","DESC",
+        "DESCRIBE","DES_KEY_FILE","DETERMINISTIC","DIAGNOSTICS","DIRECTORY","DISABLE","DISCARD","DISK","DISTINCT","DISTINCTROW","DIV",
+        "DO","DUMPFILE", "DUPLICATE","ELSE","ELSEIF","EMPTY","ENABLE","ENCLOSED","ENCRYPTION","END","ENGINE","ENGINES","ENUM","ERROR","ERRORS","ESCAPE",
+        "ESCAPED","EVENT","EVENTS","EVERY","EXCEPT","EXCHANGE","EXECUTE","EXISTS","EXIT","EXPANSION","EXPLAIN","EXPIRATION","EXPIRE","EXPORT",
+        "EXTENDED","EXTENT_SIZE","FALSE","FAST","FAULTS","FETCH","FIELDS","FILE","FILE_BLOCK_SIZE","FILTER","FIRST","FIXED","FLUSH",
+        "FOLLOWING","FOR","FORCE","FOREIGN","FORMAT","FOUND","FROM","FULL","GENERAL","GENERATED","GET","GLOBAL","GRANT", "GRANTS","GROUP","HANDLER","HASH",
+        "HELP","HIGH_PRIORITY","HISTORY","HOLD","HOST","HOSTS","HOUR","HOUR_MICROSECOND","HOUR_MINUTE","HOUR_SECOND","IDENTIFIED","IF",
+        "IGNORE","IGNORE_SERVER_IDS","IGNORE_SPACE","IMPORT","IN","INDEX","INDEXES","INLINE","INNER","INSERT","INSERT_METHOD","INSTANCE","INT",
+        "INTEGER","INTERVAL","INTO","INVISIBLE","IO","IO_AFTER_GTIDS","IO_BEFORE_GTIDS","IO_THREAD","IPC","IS","ISOLATION","ISSUER","ITERATE",
+        "JOIN","JSON_TABLE","KEY","KEYS","KILL","LANGUAGE","LAST","LEADING","LEAVE","LEAVES","LEFT","LESS","LEVEL","LIKE","LIMIT","LINEAR",
+        "LINES","LOAD","LOCAL","LOCALTIME","LOCALTIMESTAMP","LOCK","LOCKED","LOCKFILE","LOGS","MASTER","MATCH","MAXVALUE","MAX_CONNECTIONS_PER_HOUR",
+        "MAX_QUERIES_PER_HOUR","MAX_ROWS","MAX_SIZE","MAX_STATEMENT_TIME","MAX_UPDATES_PER_HOUR","MAX_USER_CONNECTIONS","MEDIUMINT","MEMBER",
+        "MEMORY","MERGE","MESSAGE_TEXT","MIDDLEINT","MIGRATE","MINUTE","MINUTE_MICROSECOND","MINUTE_SECOND","MIN_ROWS","MOD","MODE","MODIFIES",
+        "MODIFY","MODULE","MONTH","MULTILINESTRING","MULTIPOINT","MULTIPOLYGON","MUTEX","MYSQL_ERRNO","NAME","NAMES","NATIONAL","NATURAL","NCHAR",
+        "NDB","NDBCLUSTER","NEVER","NEW","NEXT","NO","NODEGROUP","NONE","NORMAL","NOT","NOWAIT","NTH_VALUE","NTILE","NULL","NUMBER","OFFSET",
+        "OLD_PASSWORD","ON","ONE","ONLY","OPEN","OPTIMIZE","OPTION","OPTIONALLY","OPTIONS","OR","ORDER","OTHERS","OUT","OUTER","OUTFILE","OVER",
+        "OWNER","PACK_KEYS","PAGE","PARTIAL","PARTITION","PARTITIONING","PARTITIONS","PASSWORD","PHASE","PLUGIN_DIR","PLUGIN","PLUGINS","POINT","POLYGON",
+        "PORT","PRECEDES","PRECISION","PREFIX","PREPARE","PRESERVE","PREV","PRIMARY","PRIVILEGES","PROCEDURE","PROCESSLIST","PROFILE","PROFILES",
+        "PURGE","QUERY","QUICK","QUIT","RANGE","READ","READ_ONLY","READ_WRITE","REAL","REBUILD","RECOVER","REDO_BUFFER_SIZE","REDOFILE","REDUNDANT",
+        "REFERENCES","REGEXP","RELAY","RELAY_LOG_FILE","RELAY_LOG_POS","RELAY_THREAD","RELEASE","REMOTE","RENAME","REORGANIZE","REPAIR","REPEAT",
+        "REPLACE","REPLICATION","REQUIRE","RESET","RESIGNAL","RESOURCE","RESPECT","RESTART","RESTRICT","RESULT","RESUME","RETAIN","RETURN",
+        "RETURNED_SQLSTATE","REUSE","REVERSE","REVOKE","RIGHT","RLIKE","ROLE","ROLLBACK","ROLLUP","ROW","ROWS","ROW_FORMAT","SAVEPOINT",
+        "SCHEDULE","SCHEMA","SCHEMAS", "SCHEMA_NAME","SECOND","SECOND_MICROSECOND","SECURITY","SELECT","SERIAL","SERIALIZABLE","SERVER","SESSION","SET",
+        "SHARE","SHOW","SIGNAL","SIGNED","SIMPLE","SLAVE", "SLAVES","SLOW","SMALLINT","SONAME","SOUNDS","SOURCE","SPATIAL","SPECIFIC","SQL","SQLEXCEPTION",
+        "SQLSTATE","SQLWARNING","SQL_AFTER_GTIDS","SQL_BEFORE_GTIDS","SQL_BIG_RESULT","SQL_BUFFER_RESULT","SQL_CACHE","SQL_CALC_FOUND_ROWS",
+        "SQL_NO_CACHE","SQL_SMALL_RESULT","SQL_THREAD","SQL_TSI_DAY","SQL_TSI_HOUR","SQL_TSI_MINUTE","SQL_TSI_MONTH","SQL_TSI_QUARTER",
+        "SQL_TSI_SECOND","SQL_TSI_WEEK","SQL_TSI_YEAR","SSL","STACKED","START","STARTING","STARTS","STATEMENT","STATS_AUTO_RECALC","STATS_PERSISTENT",
+        "STATS_SAMPLE_PAGES","STATUS","STOP","STORAGE","STORED","STRAIGHT_JOIN","STRING","SUBCLASS_ORIGIN","SUBJECT","SUBPARTITION",
+        "SUBPARTITIONS","SUPER","SUSPEND","SWAPS","SWITCHES","SYSTEM","TABLE","TABLES","TABLESPACE","TABLE_CHECKSUM","TABLE_NAME",
+        "TEMPORARY","TEMPTABLE","TERMINATED","TEXT","THAN","THEN","TIES","TIME","TIMESTAMP","TIMESTAMPADD","TIMESTAMPDIFF","TINYBLOB",
+        "TINYINT","TINYTEXT","TO","TRAILING","TRANSACTION","TRIGGER","TRIGGERS","TRUE","TRUNCATE","TYPE","TYPES","UNCOMMITTED","UNDEFINED",
+        "UNDO","UNDOFILE","UNDO_BUFFER_SIZE","UNINSTALL","UNION","UNIQUE","UNKNOWN","UNLOCK","UNSIGNED","UNTIL","UPDATE","UPGRADE","USAGE",
+        "USE","USER","USER_RESOURCES","USE_FRM","USING","UTC_DATE","UTC_TIME","UTC_TIMESTAMP","VALUE","VALUES","VARBINARY","VARCHAR",
+        "VARCHARACTER","VARIABLES","VARYING","VIEW","WHEN","WHERE","WHILE","WITH","WORK","X509","XA","XOR","YEAR_MONTH","ZEROFILL", "ID"];
+
+        return in_array(strtoupper($word), $keywords, true);
+    }
+
+    public static function replaceAlias($string)
+    {
+        // add space between to be sur to match a token
+        $map = [
+            ' SECOND'   => ' SQL_TSI_SECOND',
+            ' DAY'      => ' SQL_TSI_DAY',
+            ' HOUR'     => ' SQL_TSI_HOUR',
+            ' MINUTE'   => ' SQL_TSI_MINUTE',
+            ' MONTH'    => ' SQL_TSI_MONTH',
+            ' QUARTER'  => ' SQL_TSI_QUARTER',
+            ' USER '     => ' SYSTEM_USER ',
+            ' DISTINCT ' => ' DISTINCTROW ',
+            ' <> '       => ' != ',
+        ];
+
+        // Remplace chaque clé par sa valeur
+        return strtr($string, $map);
+    }
+
+
+    /*
+
+        UPDATE performance_schema.setup_instruments SET ENABLED = 'YES' WHERE NAME LIKE 'statement/%';
+        UPDATE performance_schema.setup_consumers   SET ENABLED = 'YES'   
+        WHERE NAME IN (
+        'events_statements_current',
+        'events_statements_history',
+        'events_statements_history_long',
+        'statements_digest'
+        );
+
+
+                    UPDATE performance_schema.setup_consumers   SET ENABLED = 'YES'   
+            WHERE NAME IN (
+            'events_statements_current',
+            'events_statements_history_long',
+            'statements_digest'
+            );
+
+
+        SELECT * FROM performance_schema.setup_consumers WHERE NAME IN (
+        'events_statements_current',
+        'events_statements_history',
+        'events_statements_history_long',
+        'statements_digest'
+        );
+
+
+    UPDATE performance_schema.setup_consumers   SET ENABLED = 'NO'   
+        WHERE NAME IN (
+        'events_statements_current',
+        'events_statements_history',
+        'events_statements_history_long'
+        );
+
+    */
+
+
+        // MAX_SQLTEXT_LENGTH => 1024 
+        // storage/perfschema/pfs_events_statements.h
+        // #define MAX_SQLTEXT_LENGTH 1024
+        // #define MAX_DIGEST_TEXT_LENGTH 1024
+    public function collectDigest($param)
+    {
+   
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+
+        $default = Sgbd::sql(DB_DEFAULT);
+        $db = Mysql::getDbLink($id_mysql_server);
+
+
+        $sql = "SELECT a.DIGEST, a.SQL_TEXT, b.DIGEST_TEXT 
+        FROM performance_schema.events_statements_history_long a 
+        INNER JOIN performance_schema.events_statements_summary_by_digest b on a.DIGEST = b.DIGEST";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res))
+        {
+
+
+            $sql3 = "SELECT count(1) as cpt from query_sample WHERE digest = '$ob->DIGEST'";
+            $res3 = $default->sql_query($sql3);
+
+            while($ob3 = $default->sql_fetch_object($res3))
+            {
+                if ($ob3->cpt === "0")
+                {
+                    $digest_text = trim($ob->DIGEST_TEXT);
+
+                    $is_truncated = 0;
+                    if (substr($ob->SQL_TEXT, -3) == "...") {
+                        $is_truncated = 1;
+                    }
+
+                    $sql2 = "INSERT IGNORE INTO query_sample VALUES(NULL,
+                    '".trim($default->sql_real_escape_string($ob->SQL_TEXT))."' ,
+                    '".trim($default->sql_real_escape_string($digest_text))."',
+                    '".trim($default->sql_real_escape_string($ob->DIGEST))."',
+                    '".$is_truncated."')";
+
+                    Debug::sql($sql2);
+
+                    $default->sql_query($sql2);
+                }
+            }
+
+
+        } 
+         
+    
+    }
+    
+
+    public function collectAll($param)
+    {
+        Debug::parseDebug($param);
+
+        $servers = Extraction2::display(
+            array("mysql_available")
+        );
+
+        foreach($servers as $id_mysql_server => $server)
+        {
+            Debug::debug($id_mysql_server);
+
+            if ($server['mysql_available'] === "1")
+            {
+                $this->collectDigest(array($id_mysql_server));
+            }
+
+        }
+    }
+
+    public static function degradeMariaDB($string)
+    {
+        // Regex pour capturer le mot avant la parenthèse
+        $regex = '/\b([A-Z_][A-Z0-9_]*)\s*(?=\()/i';
+
+        $exceptions = self::$exceptions;
+
+        $result = preg_replace_callback($regex, function($matches) use ($exceptions) {
+            $word = strtoupper($matches[1]);
+
+            // si le mot est dans la liste d'exceptions => pas de backquotes
+            if (in_array($word, self::$exceptions)) {
+                return $matches[1]." ";
+            }
+
+            // sinon ajouter les backquotes
+            return "`{$matches[1]}` ";
+        }, $string);
+
+        return $result;
+
+    }
+
+
 }
+/*
+SELECT 
+  (
+    SELECT 
+      VARIABLE_VALUE 
+    FROM 
+      INFORMATION_SCHEMA.GLOBAL_STATUS 
+    WHERE 
+      VARIABLE_NAME = 'WSREP_LOCAL_STATE'
+  ) wsrep_local_state, 
+  @@read_only read_only, 
+  (
+    SELECT 
+      VARIABLE_VALUE 
+    FROM 
+      INFORMATION_SCHEMA.GLOBAL_STATUS 
+    WHERE 
+      VARIABLE_NAME = 'WSREP_LOCAL_RECV_QUEUE'
+  ) wsrep_local_recv_queue, 
+  @@wsrep_desync wsrep_desync, 
+  @@wsrep_reject_queries wsrep_reject_queries, 
+  @@wsrep_sst_donor_rejects_queries wsrep_sst_donor_rejects_queries, 
+  (
+    SELECT 
+      VARIABLE_VALUE 
+    FROM 
+      INFORMATION_SCHEMA.GLOBAL_STATUS 
+    WHERE 
+      VARIABLE_NAME = 'WSREP_CLUSTER_STATUS'
+  ) wsrep_cluster_status, 
+  (
+    SELECT 
+      'DISABLED'
+  ) pxc_maint_mode | 
+SELECT 
+  (
+    SELECT 
+      `VARIABLE_VALUE` 
+    FROM 
+      `INFORMATION_SCHEMA`.`GLOBAL_STATUS` 
+    WHERE 
+      `VARIABLE_NAME` = ?
+  ) `wsrep_local_state`, 
+  @@READ_ONLY READ_ONLY, 
+  (
+    SELECT 
+      `VARIABLE_VALUE` 
+    FROM 
+      `INFORMATION_SCHEMA`.`GLOBAL_STATUS` 
+    WHERE 
+      `VARIABLE_NAME` = ?
+  ) `wsrep_local_recv_queue`, 
+  @@ `wsrep_desync` `wsrep_desync`, 
+  @@ `wsrep_reject_queries` `wsrep_reject_queries`, 
+  @@ `wsrep_sst_donor_rejects_queries` `wsrep_sst_donor_rejects_queries`, 
+  (
+    SELECT 
+      `VARIABLE_VALUE` 
+    FROM 
+      `INFORMATION_SCHEMA`.`GLOBAL_STATUS` 
+    WHERE 
+      `VARIABLE_NAME` = ?
+  ) `wsrep_cluster_status`, 
+  (
+    SELECT 
+      ?
+  ) `pxc_maint_mode`
+
+*/

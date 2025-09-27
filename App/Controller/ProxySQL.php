@@ -66,6 +66,7 @@ class ProxySQL extends Controller
 
     static $proxysql_server = array();
 
+    static $proxysql_list = array();
 
     public function before($param)
     {
@@ -1040,6 +1041,38 @@ class ProxySQL extends Controller
         $data['param'] = $param;
 
         $this->set('data', $data);
+    }
+
+    public static function getIdMysqlServer($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_proxysql = $param[0];
+
+        if (count(self::$proxysql_list ) === 0)
+        {
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT id_mysql_server, id from proxysql_server";
+
+            $res = $db->sql_query($sql);
+            while($ob = $db->sql_fetch_object($res ))
+            {
+                self::$proxysql_list[$ob->id] = $ob->id_mysql_server;
+            }
+
+            Debug::debug(self::$proxysql_list, "LIST OF PROXYSQL");
+
+        }
+
+        if (! empty(self::$proxysql_list[$id_proxysql]))
+        {
+            return self::$proxysql_list[$id_proxysql];
+        }
+        else{
+            return false;
+        }
+
     }
 
 }

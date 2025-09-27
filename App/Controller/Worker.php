@@ -38,6 +38,17 @@ class Worker extends Controller
         $this->logger = $monolog;
     }
 
+    public static function logger($param)
+    {
+        $monolog       = new Logger("Worker");
+        $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
+        $handler->setFormatter(new LineFormatter(null, null, false, true));
+        $monolog->pushHandler($handler);
+        $this->logger = $monolog;
+    }
+
+
+
     public function run($param)
     {
         $id_worker_queue = $param[0];
@@ -91,7 +102,7 @@ class Worker extends Controller
             $id_worker_execution = $db->sql_insert_id();
             $start = microtime(true);
 
-            $this->logger->warning("====> id_worker_execution ".$id_worker_execution);
+            $this->logger->debug("====> id_worker_execution ".$id_worker_execution);
 
             //do your business logic here and process this message!
             FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
@@ -571,7 +582,10 @@ class Worker extends Controller
 
 
             //$idmysqlserver = trim(file_get_contents(TMP."lock/worker/".$server['pid'].".pid"));
-            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid("worker_mysql", $server['pid'])));
+            
+            // why workermysql ? good idea to replacE?
+            //$idmysqlserver = trim(file_get_contents(EngineV4::getFilePid("worker_mysql", $server['pid'])));
+            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid($name, $server['pid'])));
 
             // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
             if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
@@ -586,7 +600,9 @@ class Worker extends Controller
             } else {
                 //si pid n'existe plus alors on efface le fichier de lock
                 //$lock_file = TMP."lock/worker/".$server['id'].".lock";
-                $lock_file = EngineV4::getFileLock("worker_mysql", $server['id'] );
+
+                //$lock_file = EngineV4::getFileLock("worker_mysql", $server['id'] );
+                $lock_file = EngineV4::getFileLock($name, $server['id'] );
                 
                 if (file_exists($lock_file)) {
                     $this->logger->notice('[addToQueueMySQL] the pid didn\'t exist anymore : "'.$lock_file.'", (id_mysql_server:'.$server['id'].') we deleted id !');
@@ -596,7 +612,6 @@ class Worker extends Controller
         }
 
         $this->view = false;
-
 
         /*
         $sql = "select a.id,a.name from mysql_server a
@@ -608,11 +623,19 @@ class Worker extends Controller
         }
         */
 
+        //remove server already in current process 
+        $blacklist = $this->getListofWorkingServer(array('mysql'));
+
         Debug::sql($main_query);
         $res = $db->sql_query($main_query);
 
         $server_list = array();
         while ($ob          = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            if (in_array($ob['id'], $blacklist)) {
+                continue;
+            }
+
             $server_list[] = $ob;
         }
 
@@ -620,12 +643,10 @@ class Worker extends Controller
         //to prevent any trouble with fork
         $db->sql_close();
 
-
         //to prevent negative value from UI, and impose minimal wait to not kill the serveur
         if ($refresh_time < 1){
             $refresh_time = 1;
         }
-
 
         // le but est de lisser le charge du serveur au maximum afin d'éviter l'effet dans de scie sur le CPU.
         $nb_server_to_monitor = count($server_list);
@@ -767,7 +788,104 @@ class Worker extends Controller
     public function getRunningId($param)
     {
         Debug::parseDebug($param);
+    }
 
 
+
+    public function getListofWorkingServer($param)
+    {
+        Debug::parseDebug($param);
+
+        $worker_type = $param[0] ?? "mysql";
+
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM worker_run WHERE is_working = 1;";
+        $res = $db->sql_query($sql);
+
+        $elems = array();
+
+        while($ob = $db->sql_fetch_object($res))
+        {
+            //echo "PID : $ob->pid\n";
+            $file =  EngineV4::getFilePid("worker_".$worker_type,$ob->pid);
+
+            //echo $file."\n";
+
+            if ( file_exists($file))
+            {
+                $id_mysql_server = file_get_contents($file);
+                Debug::debug($id_mysql_server, "id mysql server");
+
+                if ($id_mysql_server === "Waiting..."){
+                    continue;
+                }
+
+                $elems[] = $id_mysql_server;
+            }
+
+        }
+
+        Debug::debug($elems);
+
+        $count_values = array_count_values($elems);
+
+        Debug::debug($count_values);
+
+        $result = array_keys(array_filter($count_values, fn($count) => $count >= 1));
+
+        Debug::debug($result);
+
+        $this->logger->warning("getListofWorkingServer worker_".$worker_type." : ".json_encode($result)."");
+
+        return $result;
+    }
+
+
+    /* Remove old expired PID 
+    
+    param : ssh mysql proxysql
+    */
+
+    public static function deleteExpiredPid($param)
+    {
+        Debug::parseDebug($param);
+        $dir = EngineV4::PATH_LOCK;
+
+        $dir = substr($dir,0,-1);
+
+        $worker_type = $param[0] ?? "mysql";
+
+        $elems = [];
+        // Parcourir tous les fichiers du dossier
+        foreach (glob("{$dir}/worker_".$worker_type."::*.pid") as $file) {
+            // Extraire le PID depuis le nom du fichier
+            if (preg_match('/worker_'.$worker_type.'::(\d+)\.pid$/', $file, $m)) {
+                $pid = (int)$m[1];
+
+                // Vérifier si le PID existe encore
+                // posix_kill($pid, 0) renvoie true si le processus existe
+                if ($pid > 0 && !posix_kill($pid, 0)) {
+                    echo "Suppression de $file (PID $pid inactif)\n";
+                    
+                    if ( file_exists($file))
+                    {
+                        $id_mysql_server = file_get_contents($file);
+                        Debug::debug($id_mysql_server);
+
+                        $elems[] = $id_mysql_server;
+
+                        unlink($file);
+                    }      
+                }
+            }
+        }
+
+        $count_values = array_count_values($elems);
+
+        //$this->logger->warning("deleteExpiredPid worker_".$worker_type." : ".json_encode($count_values).""); 
+        Debug::debug($count_values);
+
+        return $count_values;
     }
 }

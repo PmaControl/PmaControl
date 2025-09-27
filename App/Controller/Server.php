@@ -297,7 +297,7 @@ class Server extends Controller
             FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE 1 ".self::getFilter()."
+                 WHERE c.is_monitored=1 ".self::getFilter()."
                  ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, 
                  FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
 

@@ -248,6 +248,13 @@ class Daemon extends Controller
     }
 
 
+    public function getAllProcessPhp($param)
+    {
+
+        $cmd = "ps -eo args= | grep '^/usr/bin/php' | sort | uniq -c | sort -nr";
+    }
+
+
 
 
 }

@@ -223,7 +223,7 @@ class Alias extends Controller
         Debug::debug($param);
         
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "INSERT INTO alias_dns (id_mysql_server, dns, port)
+        $sql = "INSERT IGNORE INTO alias_dns (id_mysql_server, dns, port)
         SELECT ms.id, ms.hostname, ms.port
         FROM mysql_server ms
         LEFT JOIN alias_dns ad 
@@ -261,7 +261,7 @@ class Alias extends Controller
 
                     if ($ob->id_mysql_server != $hostname['id_mysql_server'])
                     {
-                        $sql2 = "UPDATE alias_dns SET id_mysql_server=".$hostname['id_mysql_server']." dns='".$hostname['_HOST']."' and port =".$hostname['_PORT']." WHERE id=".$ob->id.";";
+                        $sql2 = "UPDATE alias_dns SET id_mysql_server=".$hostname['id_mysql_server'].", dns='".$hostname['_HOST']."' and port =".$hostname['_PORT']." WHERE id=".$ob->id.";";
                         Debug::sql($sql2);
                         $db->sql_query($sql2);
                     }

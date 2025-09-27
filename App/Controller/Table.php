@@ -129,7 +129,6 @@ class Table extends Controller {
         $graph = "";
         $graph .= Graphviz::generateStart(array());
 
-
         //debug(self::$main_table);
         //debug(self::$tables);
 
@@ -144,7 +143,6 @@ class Table extends Controller {
             $cluster['tooltip'] = $table_schema.".".$table_name;
             
             $graph .= Graphviz::openSubgraph($cluster);
-
 
             $premiere_table_de_chaque_colonne = array();
             foreach(self::$main_table['table_par_colonne'] as $colonne_numero => $tables) {
@@ -433,7 +431,7 @@ class Table extends Controller {
             //$this->generateHiddenArrow($tables_by_colone);
         }
     }
-    
+
     // C'est clairement le meilleur algorythme pour repartir des éléments en fonction de leur poids
     // Le problème c'est que par moment le passage des flèches est problèmatique avec graphviz
     

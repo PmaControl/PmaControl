@@ -1,4 +1,8 @@
 <?php
+
+use App\Library\Debug;
+
+
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -33,7 +37,13 @@ foreach ($data['graphs'] as $graph) {
 
     if (!empty($graph['svg'])) {
 
-        echo '<div class="grid-item" style="float:left; border:#000 0px solid">';
+        $border = "0";
+        if (Debug::$debug === true)
+        {
+            $border = "1";
+        }
+
+        echo '<div class="grid-item" style="float:left; border:#000 '.$border.'px solid">';
         //echo $graph['height'];
         echo $graph['svg'];
         echo '</div>';

@@ -10,6 +10,7 @@ namespace App\Controller;
 use App\Library\EngineV4;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use \App\Library\Format;
 use \App\Library\Microsecond;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -112,15 +113,33 @@ class Dashboard extends Controller
         Debug::parseDebug($param);
 
         $data = Extraction2::display(array("innodb_buffer_pool_reads", "innodb_buffer_pool_read_requests", "aria_pagecache_reads","aria_pagecache_read_requests",
-         "key_reads","key_read_requests", "hostname", "key_cache_size","aria_pagecache_buffer_size", "aria_sort_buffer_size", "aria_max_sort_file_size"));
+         "key_reads","key_read_requests", "hostname", "key_cache_size","aria_pagecache_buffer_size", "aria_sort_buffer_size", "aria_max_sort_file_size", "version",
+        "version_comment"));
 
 
         foreach($data as $id_mysql_server => $elem)
         {
-            $data[$id_mysql_server]['ratio']['innodb'] = ($elem['innodb_buffer_pool_read_requests'] != 0)? round(100 * (1-($elem['innodb_buffer_pool_reads']/ $elem['innodb_buffer_pool_read_requests'])),2): null;
-            $data[$id_mysql_server]['ratio']['aria'] = ($elem['aria_pagecache_read_requests'] != 0)? round(100 * (1-($elem['aria_pagecache_reads']/ $elem['aria_pagecache_read_requests'])),2): null;
-            $data[$id_mysql_server]['ratio']['myisam'] = ($elem['key_read_requests'] != 0)? round(100 * (1-($elem['key_reads']/ $elem['key_read_requests'])),2): null;
+          if ($elem['version_comment'] === "ProxySQL")
+          {
+            unset($data[$id_mysql_server]);
+            continue;
+          }
 
+            if (isset($elem['innodb_buffer_pool_reads']) && isset($elem['innodb_buffer_pool_read_requests']))
+            {
+              $data[$id_mysql_server]['ratio']['innodb'] = ($elem['innodb_buffer_pool_read_requests'] != 0)? round(100 * (1-($elem['innodb_buffer_pool_reads']/ $elem['innodb_buffer_pool_read_requests'])),2): null;
+            }
+
+            if (isset($elem['aria_pagecache_read_requests']) && isset($elem['aria_pagecache_reads']))
+            {
+              $data[$id_mysql_server]['ratio']['aria'] = ($elem['aria_pagecache_read_requests'] != 0)? round(100 * (1-($elem['aria_pagecache_reads']/ $elem['aria_pagecache_read_requests'])),2): null;
+            }
+            
+            
+            if (isset($elem['key_read_requests']) && isset($elem['key_reads']))
+            {
+              $data[$id_mysql_server]['ratio']['myisam'] = ($elem['key_read_requests'] != 0)? round(100 * (1-($elem['key_reads']/ $elem['key_read_requests'])),2): null;
+            }
         }
 
         Debug::debug($data);
