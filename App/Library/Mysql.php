@@ -101,6 +101,7 @@ class Mysql
             $string .= "password=".$ob->passwd."\n";
             $string .= "crypted=1\n";
             $string .= "database=".$ob->database."\n";
+            $string .= "ssl=".$ob->is_ssl."\n";
 
             $config .= $string."\n\n";
         }

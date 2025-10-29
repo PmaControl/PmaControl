@@ -18,7 +18,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
-
+use App\Library\Microsecond;
 
 use GeoIp2\Database\Reader;
 /*
@@ -307,13 +307,14 @@ class Server extends Controller
         while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr;
             $servers[]         = $arr['id'];
-
         }
 
-        $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status",
+        $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
          "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
 
         $data['last_date'] = Extraction2::display(array("mysql_server::"));
+
+        //debug($data);
 
         // get Tag
         $sql          = "SELECT * FROM link__mysql_server__tag a
@@ -1153,24 +1154,89 @@ var myChart = new Chart(ctx, {
     public function getDaemonRunning($param)
     {
         Debug::parseDebug($param);
-        $lock_directory = EngineV4::PATH_LOCK."*.".EngineV4::EXT_LOCK;
+
+        //self::testGetDaemonRunning($param);
 
         $elems          = array();
-        foreach (glob($lock_directory) as $filename) {
 
-            Debug::debug($filename, "filename");
-            if (file_exists($filename)) {
-                $json         = file_get_contents($filename);
-                $data         = json_decode($json, true);
-                $data['time'] = round(microtime(true) - $data['microtime'], 2);
+        $lock_path = EngineV4::PATH_LOCK;
+        $lock_ext  = EngineV4::EXT_LOCK;
 
-                if ($data['time'] > 1) {
+        // Date exacte 2 secondes avant maintenant
+        $two_seconds_ago = date('Y-m-d H:i:s', time() - 2);
+
+        // Commande find : tous les fichiers *.lock modifiés il y a plus de 2 secondes
+        $cmd = "find " . escapeshellarg($lock_path) . " -maxdepth 1 -name '*." . $lock_ext . "' ! -newermt " . escapeshellarg($two_seconds_ago);
+
+        exec($cmd, $files, $return_code);
+
+        if ($return_code === 0) {
+            foreach ($files as $filename) {
+
+                if (!file_exists($filename)) continue;
+                // ici tu peux lire ton fichier JSON en toute sécurité
+                $json = file_get_contents($filename);
+                if ($json === false) continue;
+
+                $data = json_decode($json, true);
+                Debug::debug($data);
+                if ($data === null) continue;
+
+                Debug::debug(microtime(true));
+                $data['time'] = round(Microsecond::timestamp() - $data['microtime'], 2);
+
+                Debug::debug($data);
+                $seconds = round($data['time'] / 1_000_000,2);
+
+
+                if ($seconds > 1) {
+                    $data['time'] = $seconds;
                     $elems[$data['id']] = $data;
                 }
             }
         }
 
+        Debug::debug($elems, "ELEM");
+
         return $elems;
+    }
+
+
+    public static function testGetDaemonRunning($param)
+    {
+        define('EngineV4_PATH_LOCK', __DIR__ . '/tmp/lock/');
+        define('EngineV4_EXT_LOCK', 'lock');
+
+        // Crée le dossier tmp/lock si nécessaire
+        if (!is_dir(EngineV4_PATH_LOCK)) {
+            mkdir(EngineV4_PATH_LOCK, 0777, true);
+        }
+
+        // Génère un fichier lock test
+        $testFile = EngineV4_PATH_LOCK . 'worker_test::3453465454567.' . EngineV4_EXT_LOCK;
+
+        // Données JSON simulant un daemon
+        $data = [
+            'id'        => 1234,
+            'microtime' => microtime(true) - 5, // 5 secondes avant pour dépasser le seuil
+            'name'      => 'worker_test',
+            'status'    => 'running'
+        ];
+
+        // Écriture dans le fichier
+        file_put_contents($testFile, json_encode($data, JSON_PRETTY_PRINT));
+
+        // Force la modification à 5 secondes avant
+        
+
+        echo "Fichier de test créé : $testFile\n";
+
+        // === Lecture rapide pour vérifier ===
+        $json = file_get_contents($testFile);
+        $decoded = json_decode($json, true);
+        print_r($decoded);
+
+        sleep(3);
     }
 
     public function retract($param)
@@ -1196,6 +1262,15 @@ var myChart = new Chart(ctx, {
 
         print($record->country->isoCode);
 
+
+    }
+
+    public function ssl($param)
+    {
+        Debug::parseDebug($param);
+        $ssl = Extraction2::display(array("ssl_cipher"));
+
+        Debug::debug($ssl, "SSL");
 
     }
     

@@ -19,8 +19,6 @@ class Format
 
     static public function mysqlVersion($version, $comment, $is_proxysql=0)
     {
-
-        
         $format = self::getMySQLNumVersion($version, $comment);
 
         $fork = $format['fork'];
@@ -28,47 +26,36 @@ class Format
         $enter = $format['enterprise'];
 
         $name = '';
-        $logo = true;
-        
-        if ($is_proxysql === "1")
-        {
-            $logo = false;
-            $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
-        }
 
         switch (strtolower($fork)) {
             case 'mariadb':
-                if ($logo)
-                {
-                    $name .= '<span class="geek">&#xF130;</span>';
-                }
+                $name .= '<span class="geek">&#xF130;</span>';
 		        $name .=  ' MariaDB';
                 if ($enter === true)
                 {
                     $name .= ' (Enterprise)';
                 }
-
                 break;
 
             case 'percona':
-                if ($logo)
-                {
-                	$name .= '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
-                }
-		$name .= ' Percona Server';
+                $name .= '<img title="Percona Server" alt="Percona Server" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
+		        $name .= ' Percona Server';
                 //$name = 'percona';
                 break;
 
             case 'proxysql':
+                $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
                 $name .= ' ProxySQL';
                 break;
 
+            case 'maxscale':
+                $name .= '<img title="MaxScale Server" alt="MaxScale Server" height="16" width="16" src="'.IMG.'/icon/maxscale.svg"/>';
+                $name .= ' MaxScale';
+                break; 
+
             default:
-                if ($logo)
-		{
-			$name .= '<span class="geek">&#xF137;</span>';
-		}
-		$name .= ' MySQL';
+                $name .= '<span class="geek">&#xF137;</span>';
+                $name .= ' MySQL';
         }
 
         return $name." ".$number;
@@ -89,11 +76,15 @@ class Format
                 $logo = '<span class="geek">&#xF130;</span>';
                 break;
             case 'percona':
-                $logo = '<img title="Percona Server" alt="Galera Cluster" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
+                $logo = '<img title="Percona Server" alt="Percona Server" height="16" width="16" src="'.IMG.'/icon/percona.svg"/>';
                 break;
 
             case 'proxysql':
                 $logo = '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+                break;
+
+            case 'maxscale':
+                $logo = '<img title="MaxScale" alt="MaxScale" height="16" width="16" src="'.IMG.'/icon/maxscale.png"/>';
                 break;
         }
 
@@ -143,6 +134,11 @@ class Format
         $pos = strpos(strtolower($comment), "proxysql");
         if ($pos !== false) {
             $fork = "ProxySQL";
+        }
+
+        $pos = strpos(strtolower($comment), "maxscale");
+        if ($pos !== false) {
+            $fork = "MaxScale";
         }
 
         return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);

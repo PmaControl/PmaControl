@@ -7,9 +7,13 @@ use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use \App\Library\Available;
+use \App\Library\Extraction2;
+
+
 
 class MysqlUser extends Controller
 {
+    const USER_DIR = "/srv/www/pmacontrol/data/backup/user";
 
     public function index($param)
     {
@@ -367,6 +371,68 @@ SQL;
         foreach($roles as $role)
         {
             echo $role."\n";
+        }
+    }
+
+
+    public function export($param)
+    {
+
+        Debug::parseDebug($param);
+
+        shell_exec("mkdir -p ".self::USER_DIR);
+
+        $all = Extraction2::display(array("mysql_available", "is_proxy"));
+
+
+        $def = Sgbd::sql(DB_DEFAULT);
+        $sql3 = "SELECT id, display_name, ip, port, hostname FROM mysql_server;";
+        $res3 = $def->sql_query($sql3);
+
+        while ($ob3 = $def->sql_fetch_object($res3)) {
+            $server[$ob3->id] = $ob3->display_name. " ($ob3->ip:$ob3->port)";
+        }
+
+        foreach($all as $mysql_server)
+        {
+            
+            if ($mysql_server['mysql_available'] == "1" && empty($mysql_server['is_proxy']))
+            {
+                Debug::debug($mysql_server, "MYSQL_SERVER");
+
+                $DIRECTORY = self::USER_DIR."/".$mysql_server['id_mysql_server'];
+                shell_exec("mkdir -p ".$DIRECTORY);
+
+                $db = Mysql::getDbLink($mysql_server['id_mysql_server']);
+
+                $sql = "SELECT User as `user`,`Host` as `host` FROM mysql.user ORDER by user,host";
+                $res = $db->sql_query($sql);
+
+                $display_name = "XXXXXXXXX";
+                if (! empty($server[$mysql_server['id_mysql_server']]))
+                {
+                    $display_name = $server[$mysql_server['id_mysql_server']];
+                }
+                $file_user  = "-- From $display_name".PHP_EOL;
+                while($ob = $db->sql_fetch_object($res))
+                {
+
+                    Debug::debug($ob, "OB");
+                    $sql2 = "SHOW GRANTS FOR `".$ob->user."`@`".$ob->host."`;";
+                    $res2 = $db->sql_query($sql2);
+
+                    
+                    while($arr = $db->sql_fetch_array($res2, MYSQLI_NUM))
+                    {
+                        //Debug::debug($arr, "USER");
+                        $file_user .=  str_replace("\n",";\n", $arr[0]).";".PHP_EOL;
+                    }
+
+                    file_put_contents($DIRECTORY."/"."users.sql", $file_user);
+                }
+
+                $db->sql_close();
+            }
         }
     }
 

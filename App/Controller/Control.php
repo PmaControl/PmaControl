@@ -12,7 +12,7 @@ use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Controller\Worker;
-
+use \App\Controller\Listener;
 
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
@@ -21,24 +21,27 @@ use \App\Controller\Worker;
 
 class Control extends Controller
 {
-    public $tables                = array("ts_value_general", "ts_value_slave");
+    public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_calculated", "ts_value_digest");
     public $ext                   = array("int", "double", "text", "json");
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
-    public $primary_key_old           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
 
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)");
+     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+     "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+    "ts_value_digest" => "PRIMARY KEY (`date`,`digest`,`id_mysql_server`,`id_ts_variable` )");
 
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
+        "ts_value_calculated" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)",
+        "ts_value_digest" => " INDEX (`id_mysql_server`, `digest`,`id_ts_variable` , `date`)",
     );
-
     //=> TODO a voir pour delete
     private $engine               = "rocksdb";
     private $engine_preference    = array("ROCKSDB");
-    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
+    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,",
+                                    "ts_value_digest" => "`digest` varchar(64) NOT NULL,");
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
@@ -305,6 +308,8 @@ class Control extends Controller
         }
         
 
+        Listener::init($params);
+
     }
 
     public function dropTsTable($param = array())
@@ -339,11 +344,16 @@ class Control extends Controller
             foreach ($this->ext as $ext) {
                 $table_name = $table."_".$ext;
 
+                $extra_field = '';
+                if (!empty($this->extra_field[$table])){
+                    $extra_field = $this->extra_field[$table];
+                }
+
                 $sql = "CREATE TABLE `".$table_name."` (
   `date` datetime NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
   `id_mysql_server` int(11) NOT NULL,
-  ".$this->extra_field[$table]."
+  ".$extra_field."
   `value` ".$this->field_value[$ext].",
   ".$this->primary_key[$table]."
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1

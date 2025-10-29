@@ -39,7 +39,10 @@ class Html
 
     static function tbody(array $td)
     {
-        $html = "<tr><td>".implode("</td><td>",$td)."</td></tr>";
+
+        $percent = floor(100 / count($td));
+
+        $html = '<tr><td width="'.$percent.'%">'.implode('</td><td width="'.$percent.'%">',$td)."</td></tr>";
         return $html;
     }
 }

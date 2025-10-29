@@ -24,7 +24,7 @@ class Debug
         if (!empty($param)) {
             if (is_array($param)) {
                 foreach ($param as $key => $elem) {
-                    if ($elem == "--debug") {
+                    if ($elem === "--debug") {
                         self::$debug = true;
                         self::checkPoint("Start debug");
                         //self::debug(\Glial\Cli\Color::getColoredString("Debug enabled !", "yellow"));
@@ -33,7 +33,7 @@ class Debug
                     }
                 }
             } else {
-                if ($param == "--debug") {
+                if ($param === "--debug") {
                     self::$debug = true;
                     self::checkPoint("Start debug");
                 }

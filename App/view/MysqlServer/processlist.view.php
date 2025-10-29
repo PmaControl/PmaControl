@@ -26,6 +26,26 @@ function getrgba($label, $alpha)
     return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
 }
 
+function highlight_mariadb_keywords(string $sql): string {
+    // Liste des principaux mots-clés réservés MariaDB/MySQL (tu peux en ajouter si besoin)
+    $keywords = [
+        'SELECT','FROM','WHERE','INSERT','INTO','VALUES','UPDATE','SET','DELETE','JOIN',
+        'LEFT','RIGHT','INNER','OUTER','ON','AS','AND','OR','NOT','NULL','IS','IN','EXISTS',
+        'GROUP','BY','ORDER','HAVING','LIMIT','DISTINCT','CREATE','TABLE','ALTER','DROP',
+        'DATABASE','INDEX','VIEW','TRIGGER','PROCEDURE','FUNCTION','PRIMARY','KEY','FOREIGN',
+        'REFERENCES','AUTO_INCREMENT','DEFAULT','ENGINE','CHARSET','UNION','ALL','CASE','WHEN','THEN','ELSE','END'
+    ];
+
+    // Création du motif regex pour les mots complets insensibles à la casse
+    $pattern = '/\b(' . implode('|', $keywords) . ')\b/i';
+
+    // Remplacement par la mise en forme HTML
+    return preg_replace_callback($pattern, function ($matches) {
+        return '<b><span style="color:rgb(51, 122, 183)">' . strtoupper($matches[1]) . '</span></b>';
+    }, $sql);
+}
+
+
 
 if (empty($_GET['ajax'])){
 
@@ -92,7 +112,7 @@ foreach($data['processlist'] as $line){
     if (! empty($line['query']))
     {
         //echo $line['query'];
-        echo htmlentities(substr($line['query'], 0, 2048));
+        echo highlight_mariadb_keywords(htmlentities(substr($line['query'], 0, 2048)));
     }
     echo '</td>';
     echo '</tr>';

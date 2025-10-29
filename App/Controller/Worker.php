@@ -836,7 +836,10 @@ class Worker extends Controller
 
         Debug::debug($result);
 
-        $this->logger->warning("getListofWorkingServer worker_".$worker_type." : ".json_encode($result)."");
+        if (count($result) > 0) {
+            $this->logger->warning("getListofWorkingServer worker_".$worker_type." : ".json_encode($result)."");
+        }
+        
 
         return $result;
     }

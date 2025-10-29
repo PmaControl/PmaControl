@@ -9,6 +9,7 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Graphviz;
+use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
 
@@ -285,6 +286,7 @@ class Mysql extends Controller
 
     public function exportUser($param)
     {
+        Debug::parseDebug($param);
 
         $this->layout_name = false;
         $this->view        = false;
@@ -297,7 +299,11 @@ class Mysql extends Controller
             }
         }
 
+        Debug::debug($users, "USERS");
+
         $def = Sgbd::sql(DB_DEFAULT);
+
+        $all = Extraction2::display(array("mysql_available"));
 
         $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
@@ -305,9 +311,10 @@ class Mysql extends Controller
         while ($ob2 = $def->sql_fetch_object($res2)) {
 
             $db = Sgbd::sql($ob2->name);
+
             foreach ($users as $user) {
 
-                $sql = "select * from mysql.user where user = '".$user."'";
+                $sql = "select * from mysql.user where user = '".$user ."'";
                 $res = $db->sql_query($sql);
 
                 $i  = 1;
@@ -1160,14 +1167,93 @@ class Mysql extends Controller
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+
+
+        $link = mysqli_init();
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 5);
+
+        // 1. Essayer sans SSL (sans propager l'erreur)
+        try {
+            if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port)) {
+                // Échec de la première tentative : on passe à la deuxième
+                $firstError = mysqli_connect_error();
+                //throw new \RuntimeException("Première tentative échouée (non critique)");
+            }
+        } catch (\RuntimeException $e) {
+            // On ignore l'erreur et on essaie avec SSL
+            mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
+
+            if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port, null, MYSQLI_CLIENT_SSL)) {
+                // Les deux tentatives ont échoué : on lève une exception "globale"
+                throw new \Exception(
+                    "Connexion MySQL impossible. Détails : " .
+                    mysqli_connect_error() .
+                    " (Erreur n°" . mysqli_connect_errno() . ")" .
+                    ($firstError ? " | Premier essai : " . $firstError : "")
+                );
+            }
+        }
+
+
+
+
+
+        /*
+        //$link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+        $link = mysqli_init();
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+        
+        if (! @mysqli_real_connect($link, $hostname, $user, $password, "", $port) )
+        {
+            unset($link);
+            $link = mysqli_init();
+            mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
+            if (!mysqli_real_connect($link, $hostname, $user, $password, '', $port, null, MYSQLI_CLIENT_SSL)) {
+                throw new \Exception(
+                    "Impossible de se connecter au serveur MySQL : " .
+                    mysqli_connect_error() .
+                    " (Erreur n°" . mysqli_connect_errno() . ")"
+                );
+            }
+            else{
+                echo "GOOD !!!!!\n";
+            }
+        }/************ */
+
+
 
         if ($link) {
             return true;
         } else {
+            echo "GOOD !!!!!\n";
             return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
     }
+
+
+    public function aa($param)
+    {
+        Debug::parseDebug($param);
+        $this->testMySQL("127.0.0.1","3306", "pmacontrol", "NDQ3ZjVkNDIzZjFlMGFiZGU1NWM1MzI4" );
+        Debug::debug("OK2");
+        //$this->testMySQL("127.0.0.1","8009", "pmacontrol", "Marneuse127*" );
+        Debug::debug("OK");
+
+    }
+
+    public function bb($param)
+    {
+        Debug::parseDebug($param);
+
+        Debug::debug("OK2");
+        $this->testMySQL("127.0.0.1","8009", "pmacontrol", "Marneuse127*" );
+        Debug::debug("OK");
+
+    }
+
+
 
     private function scanPort($ip, $port, $timeOut = 1)
     {
@@ -1216,6 +1302,7 @@ class Mysql extends Controller
             $string .= "password=".$ob->passwd."\n";
             $string .= "crypted=1\n";
             $string .= "database=".$ob->database."\n";
+            $string .= "ssl=".$ob->is_ssl."\n";
 
             $config .= $string."\n\n";
 

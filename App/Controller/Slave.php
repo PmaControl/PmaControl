@@ -467,10 +467,65 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function startSlave($param)
     {
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Mysql::getDbLink();
+
+        $id_mysql_server = $param[0];
+        $connection_name = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        //MySQL 
+        $sql = "START SLAVE FOR CHANNEL ''";  
+
+        //MariaDB
+        $sql = "START SLAVE '".$connection_name."'";  
+
+        if (empty($connection_name))
+        {
+            $sql = "START SLAVE;";
         }
+
+        $db->sql_query($sql);
+
+        $title = "Success";
+        $msg = $sql;
+        set_flash("success", $title, $msg);
+
+        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        
+        
     }
+
+
+
+    public function stopSlave($param)
+    {
+
+        $id_mysql_server = $param[0];
+        $connection_name = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        //MySQL 
+        $sql = "STOP SLAVE FOR CHANNEL ''";  
+
+        //MariaDB
+        $sql = "STOP SLAVE '".$connection_name."'";  
+
+        if (empty($connection_name)) {
+            $sql = "STOP SLAVE;";
+        }
+
+        $db->sql_query($sql);
+
+        $title = "Success";
+        $msg = $sql;
+        set_flash("success", $title, $msg);
+
+        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        
+    }
+
+
 
     public function setSlave($param)
     {
@@ -732,5 +787,37 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $sql3 = "CHANGE MASTER '' TO MASTER_LOG_FILE='".$master_log_file."', MASTER_LOG_POS='.$master_log_pos.'";
 
         //test if old_master is on proxysql
+    }
+
+
+    public function activateGtid($param)
+    {
+        $id_mysql_server = $param[0];
+        $connection_name = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        if (! empty($connection_name))
+        {
+            $connection_name = " '$connection_name' ";
+        }
+
+
+        $sql = "STOP SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+        $sql = "CHANGE MASTER $connection_name TO MASTER_USE_GTID = slave_pos;";
+        $db->sql_query($sql);
+
+        $sql = "START SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+
+        $title = "Success";
+        $msg = $sql;
+        set_flash("success", $title, "GTID Activated");
+
+        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        
     }
 }

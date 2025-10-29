@@ -65,7 +65,7 @@ if (empty($data['replication_name'])) {
             <div class="well">
 
 
-                <!--
+            <!--
                 <div style="float:right">
                     <table class="tab-slave">
                         <tr>
@@ -79,7 +79,7 @@ if (empty($data['replication_name'])) {
                         </tr>
                     </table>
                 </div>
-                -->
+                !-->
                 <div>
                     <a class="btn btn-success" href="<?= LINK ?><?= $data['class'] ?>/startSlave/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button">START SLAVE</a>
                     <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/stopSlave/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button">STOP SLAVE</a>
@@ -120,8 +120,8 @@ if (empty($data['replication_name'])) {
                 <h3 class="panel-title"><?= __("Global transaction identifier") ?></h3>
             </div>
             <div class="well">
-                <a class="btn btn-success" href="#" role="button"><?= __('Activate GTID') ?></a>
-                <a class="btn btn-warning" href="#" role="button"><?= __('Desactivate GTID') ?></a>
+                <a class="btn btn-success" href="<?= LINK ?><?= $data['class'] ?>/activateGtid/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Activate GTID') ?></a>
+                <a class="btn btn-warning" href="<?= LINK ?><?= $data['class'] ?>/deactivateGtid/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/" role="button"><?= __('Desactivate GTID') ?></a>
             </div>
         </div>
     </div>

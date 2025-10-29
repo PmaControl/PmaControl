@@ -5,10 +5,25 @@ use Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 use App\Library\Format;
 
+
+function isoToFlag(string $iso): string {
+    // Chaque lettre est convertie en Regional Indicator Symbol
+    $flag = '';
+    $iso = strtoupper($iso);
+    if (strlen($iso) === 2) {
+        $flag .= mb_chr(127397 + ord($iso[0]));
+        $flag .= mb_chr(127397 + ord($iso[1]));
+    }
+    return $flag;
+}
+
 if (empty($_GET['ajax'])){
     echo '<div class="well">';
     FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '</div>';
+
+    echo '<div width="100%">';
+
 
     echo __("Refresh each :")."&nbsp;";
     echo '<div class="btn-group">';
@@ -16,7 +31,13 @@ if (empty($_GET['ajax'])){
     echo '<a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
     echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
     echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
-    echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a></div><br /><br />';
+    echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a>';
+    
+        echo '<div class="col-md-2" style="text-align: right">';
+echo '<a href="'.LINK.'mysql/add/" class="btn btn-primary" style="font-size:12px"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a MySQL server</a>';
+echo '</div>';
+    
+    echo '</div><br /><br />';
     
     echo '<div id="servermain">';
 }
@@ -26,11 +47,10 @@ $converter = new AnsiToHtmlConverter();
 
 echo '<table class="table table-condensed table-bordered table-striped">';
 echo '<tr>';
-
 echo '<th>'.__("Top").'</th>';
 echo '<th>'.__("ID").'</th>';
 //echo '<th>'.__("Available").'</th>';
-echo '<th>'.__("Client").'</th>';
+echo '<th>'.__("Organizations").'</th>';
 echo '<th>'.__("Environment").'</th>';
 echo '<th>'.__("Name").'</th>';
 echo '<th>';
@@ -39,7 +59,7 @@ echo __('Tags');
 
 echo '</th>';
 echo '<th>'.__("IP").':'.__("Port").'</th>';
-//echo '<th>'.__("Port").'</th>';
+echo '<th>'.__("SSL").'</th>';
 echo '<th>'.__("User").'</th>';
 echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
@@ -148,16 +168,48 @@ if (!empty($data['servers'])) {
         }
         echo '</td>';
 
-        echo '<td style="'.$style.'">'.$server['ip'].":".$server['port'];
+        echo '<td style="'.$style.'">';
+
+        $flag = '';
+        if (filter_var($server['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            // C'est une IPv4 valide
+            try {
+                $reader = new \GeoIp2\Database\Reader(ROOT.'/data/GeoLite2-Country.mmdb');
+                $record = $reader->country($server['ip']);
+                $flag = isoToFlag($record->country->isoCode); 
+            } catch (\GeoIp2\Exception\AddressNotFoundException $e) {
+                // IP non trouvée, on continue avec un flag vide ou neutre
+                $flag = "🌐"; // drapeau par défaut ou vide ""
+            }
+        } else {
+            // Ce n'est pas une IPv4
+            $is_ipv4 = false;
+        }
 
 
+
+        echo $flag."&nbsp;";
+        
+        echo $server['ip'].":".$server['port'];
+
+        if (!empty($server['is_ssl']) && strtolower($server['is_ssl']) === "1")
+        {
+            echo "🔒";
+        }
 
         if (!empty($extra['read_only']) && $extra['read_only'] === "ON") {
             echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
         }
 
         echo '</td>';
-        //echo '<td style="'.$style.'">'.$server['port'].'</td>';
+
+        
+        echo '<td style="'.$style.'">';
+        if (!empty($extra['have_ssl']) && strtolower($extra['have_ssl']) === "yes")
+        {
+            echo __("Yes")." 🔒";
+        }
+        echo '</td>';
         echo '<td style="'.$style.'">'.$server['login'].'</td>';
         echo '<td style="'.$style.'" title="">';
 
@@ -278,7 +330,7 @@ if (!empty($data['servers'])) {
         $h = intval(((int)$subTime / (60 * 60))) % 24;
         $m = (int)($subTime / 60) % 60;
 
-    //debug($data['processing']);
+        //debug($data['processing']);
 
         if (!empty($data['processing'][$server['id']])) {
             echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds")

@@ -292,6 +292,7 @@ class Install extends Controller
         $mysql['user']     = $user;
         $mysql['password'] = $passwd;
         $mysql['database'] = $database;
+        $mysql['database'] = 0;
         return $mysql;
     }
 
@@ -339,7 +340,8 @@ hostname=".$server["hostname"]."
 user=".$server['user']."
 password='".$server['password']."'
 crypted='1'
-database=".$server['database']."";
+database=".$server['database']."
+ssl=".$server['is_ssl']."";
 
         $fp = fopen(CONFIG."/db.config.ini.php", 'w');
         fwrite($fp, $config);

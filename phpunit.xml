@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<phpunit bootstrap="vendor/autoload.php" colors="true">
+<phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true" 
+         displayDetailsOnPhpunitDeprecations="true">
     <testsuites>
-	    <testsuite name="PHPUnit-Tdd test suite">
-            <directory>./App</directory>
-	    </testsuite>
+        <testsuite name="PmaControl Test Suite">
+            <directory>tests</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
+

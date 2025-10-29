@@ -126,8 +126,16 @@ foreach($data['json'] as $elem)
               $td = 'style="min-width:1000px"';
             }
 
+            if (is_array($value))
+            {
+              echo "<td $td><pre>";
+              print_r($value);
+              echo "</pre></td>";
+            }
+            else{
+              echo "<td $td>" . $value . "</td>";
+            }
             
-            echo "<td $td>" . $value . "</td>";
         }
         echo "</tr>";
     }

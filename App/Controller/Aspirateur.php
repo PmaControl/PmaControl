@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Controller\ProxySQL;
+use App\Controller\MaxScale;
 use App\Library\Available;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
@@ -207,6 +208,9 @@ class Aspirateur extends Controller
 
     static $primary_key = array();
 
+
+
+
     /*
      * (PmaControl 0.8)<br/>
      * @author Aurélien LEQUOY, <aurelien.lequoy@esysteme.com>
@@ -247,11 +251,40 @@ class Aspirateur extends Controller
         Debug::parseDebug($param);
         $this->view = false;
 
-        $name_server = $param[0];
-        $id_mysql_server   = $param[1];
-        $refresh = $param[2];
+        $name_server = $param[0] ?? null;
+        $id_mysql_server   = $param[1] ?? null;
+        $refresh = $param[2] ?? null;
+
+
+        if (!$name_server || !$id_mysql_server) {
+            throw new \Exception(
+                "Paramètre manquant : name_server et id_mysql_server sont obligatoires",
+                1001
+            );
+        }
+
+        if (!is_int((int)$refresh)) {
+            throw new \Exception(
+                "Paramètre refresh doit être un entier",
+                1002
+            );
+        }
+
+        // Vérifier que le serveur existe dans le fichier de config
+        $configServers = parse_ini_file('/srv/www/pmacontrol/configuration/db.config.ini.php', true);
+        $serverFound = false;
+        foreach ($configServers as $section => $values) {
+            if ($section === $name_server) {
+                $serverFound = true;
+                break;
+            }
+        }
+
 
         Debug::checkPoint('Init');
+
+
+        // to make it in cache one time for all
         // To know if we use a proxy like PROXYSQL / MAXSCALE
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
@@ -261,7 +294,7 @@ class Aspirateur extends Controller
             $IS_PROXY = $ob->is_proxy;
         }
         $db->sql_close();
-        //end of case of HA proxy
+        //end of case of HA proxy & Maxscale
 
         Debug::checkPoint('After getting proxy');
         $pid = getmypid();
@@ -281,7 +314,7 @@ class Aspirateur extends Controller
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
-
+            Debug::debug([$id_mysql_server, $ping, $error_msg, $available], "REPONSE MYSQL");
             $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
             if ($available === 0) {
                 //$mysql_tested->sql_close();
@@ -342,14 +375,14 @@ class Aspirateur extends Controller
 
 
         // CAS PROXYSQL detected new
-        if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
+        if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] == "1") {
 
             $data = array();
             $db  = Sgbd::sql(DB_DEFAULT);
             $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
             $res = $db->sql_query($sql);
             while ($ob = $db->sql_fetch_object($res)){
-                $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server.";";
+                $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server." AND `is_proxy`!=1;";
                 Debug::sql($sql);
                 $db->sql_query($sql);
                 $this->logger->notice("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
@@ -381,15 +414,17 @@ class Aspirateur extends Controller
         } 
 
         // cas maxscale
-        if (empty($var['variables']['is_proxysql']) && $IS_PROXY)
+        if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1")
         {
 
             $var_temp = array();
             $var_temp['variables']['is_proxy']     = "1";
             $var_temp['variables']['is_maxscale']     = "1";
 
-            $var_temp['variables']['version']         = "2.x";
-            $var_temp['variables']['version_comment'] = "Maxscale";
+
+
+            $var_temp['variables']['version']         = MaxScale::getVersion(array($id_mysql_server));
+            $var_temp['variables']['version_comment'] = "MaxScale";
 
             $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
             return true;
@@ -1197,7 +1232,7 @@ GROUP BY C.ID, C.INFO;";
      */
     public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
-        if (! in_array($type, array('mysql', 'ssh', 'proxysql'))) {
+        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale_port', 'maxscale_service'))) {
             die('error');
         }
 
@@ -1423,8 +1458,14 @@ GROUP BY C.ID, C.INFO;";
         //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
         if (posix_geteuid() === 0) {
 
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PID);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_LOCK);
+
             Debug::debug("Time to wait all PIVOT_FILE to be created to change chown because we are root");
-            sleep(1);
+            usleep(50000);
+            
             //case debian
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
@@ -2002,7 +2043,7 @@ GROUP BY C.ID, C.INFO;";
         $res = $mysql_tested->sql_query($sql);
         $i = 0;
 
-        $data = [];
+        $data['data'] = [];
         //$data['fields'] = [];
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {  
             $i++;
@@ -2308,34 +2349,118 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $ret= Extraction2::display(array("server_uid"), array(), $date, false);
-
-
         Debug::debug($ret);
-
     }
 
-
-    public function gg2($param)
+    public function tryMaxScaleConnection($param)
     {
         Debug::parseDebug($param);
-
-        $version2 = Extraction2::display(array("version", "version_comment"), array(116));
-        $version = Extraction2::display(array("proxysql_runtime::global_variables"), array(116));
-
-        $version = $version[116]['global_variables']['admin-version'];
-
+        $this->view = false;
 
         
-        Debug::debug($version);
+        //$this->logger->notice("##################".json_encode($param));
+        
+        $list_id_mysql_server = $param[0];
+        $id_mysql_servers = explode(',',$list_id_mysql_server);
 
-        Debug::debug($version2);
+        $id_maxscale_server   = $param[1]; // or split ?
+        $refresh = $param[2] ?? "";
+        //$id_mysql_server = ;
 
+        if (empty($id_maxscale_server)) {
+            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+        }
 
+        Debug::debug($param, "NAME_SERVER");
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `hostname`, `is_ssl`,`port`, `login`,`password` from maxscale_server WHERE `id` = ".$id_maxscale_server .";";
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) == 0) {
+            throw new \Exception("[PMACONTROL-2001] No MaxScale server found with id '{$id_maxscale_server}'. Check configuration or connection settings.");
+        }
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $maxscale = $arr;
+        }
+
+        try{
+            $error_msg= '';
+
+            $time_start   = microtime(true);
+            $connection = fsockopen($maxscale[0], $maxscale[2], $errno, $errstr, 3);
+            if ($connection) {
+                fclose($connection);
+            }
+        }
+        catch(\Throwable $e){
+            $error_msg = $e->getMessage();
+            $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_maxscale_server:$id_maxscale_server");
+        }
+        finally{
+
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+            // associate =)
+            //$id_mysql_server = MaxScale::getIdMysqlServer(array($id_maxscale_server));
+            
+            foreach($id_mysql_servers as $id_mysql_server) {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_port");
+            }
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+
+            if (empty($available))
+            {
+                return false;
+            }
+        }
+        // Maxscale have a 4003 routed to a server
+
+        $services = array("filters", "listeners", "maxscale", "monitors", "sessions", "servers", "services", "users");
+
+        foreach($services as $service)
+        {
+            $maxscale[5] = $service; 
+
+            Debug::debug($service, "SERVICE");
+
+            try{
+                $error_msg = '';
+                $time_start   = microtime(true);
+                $array = MaxScale::curl($maxscale) or die($service);
+
+                Debug::debug($array);
+
+                $data = array();
+                $data['maxscale']['maxscale_'.$service] = json_encode($array);
+
+                foreach($id_mysql_servers as $id_mysql_server) {
+                    $this->exportData($id_mysql_server, "maxscale_".$service, $data);
+                }
+                
+            }
+            catch (\Throwable $e) {
+
+                //echo "⚠️ Erreur inattendue capturée mais ignorée : " . $e->getMessage() . "\n";
+                $this->logger->warning($e->getMessage()." id_maxscale_server:$id_maxscale_server");
+
+                $error_msg = $e->getMessage();
+            }
+            finally
+            {
+                $ping = microtime(true) - $time_start;
+                $available = empty($error_msg) ? 1 : 0;
+
+                foreach($id_mysql_servers as $id_mysql_server) {
+                    $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_service");
+                }
+            }
+        }
+        
+        $db->sql_close();
     }
-
-
-
-
 }
 
 

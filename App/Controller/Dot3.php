@@ -44,6 +44,9 @@ class Dot3 extends Controller
 
     const TARGET = 'target';
 
+
+    static $id_dot3_information;
+
     static $information = array();
 
     // build link MasterSlave
@@ -78,7 +81,7 @@ class Dot3 extends Controller
 
 	    Debug::parseDebug($param);
 
-        Debug::$debug=true;
+        //Debug::$debug=true;
 
         $date_request = $param[0] ?? "";
         $versioning = " WHERE 1=1 ";
@@ -122,7 +125,8 @@ class Dot3 extends Controller
         //$id_mysql_servers = [87,88,116];
         // "status::wsrep_cluster_status"  => not exist anymore ?
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
+                "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::is_proxy", "variables::is_maxscale",
+                "variables::wsrep_cluster_address",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
@@ -130,11 +134,12 @@ class Dot3 extends Controller
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
-                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
+                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed","maxscale::maxscale_servers","maxscale::maxscale_services", 
+                "maxscale::maxscale_monitors", "maxscale::maxscale_listeners",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),$id_mysql_servers , $date_request);
 
@@ -165,8 +170,13 @@ class Dot3 extends Controller
 
             //TODO add alias_dns and virtual_ip
             $data['mapping'][$arr['ip'].':'.$arr['port']] = $arr['id_mysql_server'];
+            // add tunnel 
         }
 
+        $data['tunnel'] =  Tunnel::getTunnelsMapping([$date_request]);
+
+
+        Debug::debug($data['tunnel'], "TUNNEL");
         ksort($data['mapping']);
 
         $data['servers'] = array_replace_recursive($all, $server_mysql);
@@ -189,6 +199,8 @@ class Dot3 extends Controller
                 $data['servers'][$arr['id_mysql_server']]['version_comment'] = "ProxySQL"; 
 
             }
+
+
 
             //json decode in same time
             //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
@@ -249,6 +261,7 @@ class Dot3 extends Controller
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
             $id_dot3_information = $dot3_information['id'];
+            self::$id_dot3_information = $dot3_information['id'];
         }
 
         if ($previous_md5 != $md5)
@@ -258,6 +271,7 @@ class Dot3 extends Controller
             $dot3['dot3_information']['information'] = $json;
             $dot3['dot3_information']['md5'] = $md5;
             $id_dot3_information =  $db->sql_save($dot3);
+            self::$id_dot3_information = $id_dot3_information;
         }
 
         $this->logger->notice("id_dot3_information : $id_dot3_information");
@@ -294,7 +308,7 @@ class Dot3 extends Controller
                 else {
                     echo "SCRIPT KILLED [ERROR] This master was not found : ".$master."\n";
                     Debug::debug($information['mapping'], "MAPPING");
-                    //die();
+                    
                 }
                 $id_group++;
                 
@@ -302,7 +316,7 @@ class Dot3 extends Controller
         }
 
         Debug::debug($tmp_group, "MASTER SLAVE");
-
+        //die();
         return $tmp_group;
     }
 
@@ -422,6 +436,73 @@ class Dot3 extends Controller
     }
 
 
+
+    public function generateGroupMaxScale($information)
+    {
+        $tmp_group = array();
+        //Debug::debug($information['servers'][65]);
+        
+        foreach($information['servers'] as $id_mysql_server => $server)
+        {
+            
+            if ( empty($server['is_maxscale']) ) {
+                continue;
+            }
+
+            Debug::debug("#####################################");
+
+
+            $tmp_group[$id_mysql_server][] = $id_mysql_server;
+            $maxcale_ip_port = trim($server['ip_real']).":".trim($server['port_real']);
+
+            Debug::debug($maxcale_ip_port, "IP:PORT");
+
+            $maxscale = MaxScale::rewriteJson($server);
+
+
+            if (count($maxscale) != 0)
+            {
+                
+
+                $maxscale = self::resolveMaxScaleConnection($maxscale,  $maxcale_ip_port);
+
+                if (empty($maxscale[$maxcale_ip_port]['servers']))
+                {
+                    //Debug::debug(maxScale::removeArraysDeeperThan($maxscale,3), "MAXSCALE");
+                    //Debug::debug(maxScale::removeArraysDeeperThan($server,2), "SERVER");
+                    //Debug::debug($maxscale, "maxscale");
+                    Debug::debug($maxcale_ip_port, "IP REAL");
+
+                    throw new \Exception(
+                    "[PMACONTROL-4001] No 'servers' section found for listener '$maxcale_ip_port' in the MaxScale response. "
+                    . "This usually indicates an incomplete service configuration or an inconsistency in the data returned by the REST API."
+                    );
+                }
+
+                foreach($maxscale[$maxcale_ip_port]['servers'] as $server => $srv) {
+
+                    if (!empty($information['mapping'][$server]))
+                    {
+                        $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+                    }
+                    else{
+                        // insert to alias
+
+                        $elems = explode(":", $server);
+
+                        $db = Sgbd::sql(DB_DEFAULT);
+
+                        $sql = " INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (NULL, '".$elems[0]."', ".$elems[1].")";
+                        $db->sql_query($sql);
+                    }
+                }
+            }
+        }
+
+        return $tmp_group;
+    }
+
+
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -470,6 +551,8 @@ class Dot3 extends Controller
 
             //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
             $this->linkHostGroup(array($id_dot3_information, $group));
+
+            $this->linkMaxScale(array($id_dot3_information, $group));
 
             $dot = $this->writeDot();
 
@@ -628,7 +711,10 @@ class Dot3 extends Controller
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
 
-        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql));
+        $maxscale = $this->generateGroupMaxScale($dot3_information['information']);
+        
+
+        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale));
 
         Debug::debug($group, "GROUP");
         //die();
@@ -656,13 +742,24 @@ class Dot3 extends Controller
 
                     $tmp = array();
 
+
                     //ALL OK
                     if (strtolower($slave['slave_io_running']) == 'yes' 
                     && strtolower($slave['slave_sql_running']) == 'yes' 
                     && $slave['seconds_behind_master'] == "0")
                     {
+                        if (!empty($slave['connection_name'] ))
+                        {
+                            $tmp['tooltip'] = $slave['connection_name'];
+                        }
+                        else
+                        {
+                            $tmp['tooltip'] = "[default]";
+                        }
+
+
                         $tmp = self::$config['REPLICATION_OK'];
-                        $tmp['tooltip'] = "OK hh🔒";
+                        
                         
 
                         if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
@@ -681,7 +778,8 @@ class Dot3 extends Controller
                         if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
                         {
                             $tmp['options']['label'] = "SSL 🔒";
-                        }$tmp['options']['label'] = "SSL 🔒";
+                        }
+                        
 
                         $tmp = self::$config['REPLICATION_STOPPED'];
                         $tmp['tooltip'] = "STOPPED";
@@ -754,7 +852,15 @@ class Dot3 extends Controller
                     }
 
                     $tmp['options']['arrowsize'] = "1.5";
-                    
+
+                    $connection_name = '';
+                    if (!empty($slave['connection_name'] ))
+                    {
+                        $connection_name = $slave['connection_name'];
+                    }
+
+                    $tmp['options']['edgeURL'] = LINK."slave/show/".$id_mysql_server."/".$connection_name."/";
+
                     $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
 
                     self::$build_ms[] = $tmp;
@@ -869,6 +975,14 @@ class Dot3 extends Controller
             }
 
             $i = 0;
+
+            if (empty($server['mysql_servers']))
+            {
+                Debug::debug($server, "PROBLEM PROCYSQL");
+                Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
+            }
+
+
             foreach($server['mysql_servers'] as $hostgroup) {
                 $i++;
 
@@ -952,6 +1066,91 @@ class Dot3 extends Controller
         //Debug::debug(self::$build_ms);
     }
 
+
+    public function linkMaxScale($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach(self::$build_server as $id_mysql_server => $server)
+        {
+            if (empty($server['is_maxscale']))
+            {
+                continue;
+            }
+
+            if (empty($server['is_maxscale']) && $server['is_maxscale'] != "1") {
+                continue;
+            }
+
+            $i = 0;
+            $maxscale = MaxScale::rewriteJson($server);
+
+            $listener_maxscale = $server['ip_real'].':'.$server['port_real'];
+
+            $ret_max = Dot3::resolveMaxScaleConnection($maxscale,  $listener_maxscale);
+
+            // faire le match
+
+            if (empty($ret_max[$listener_maxscale]))
+            {
+                Debug::debug($ret_max, "MAXSCALE");
+                $this->logger->warning($server['display_name']. "[$listener_maxscale] Impossible to find informations from Maxscale Admin (empty)");
+
+                continue;
+            }
+
+            foreach($ret_max[$listener_maxscale]['servers'] as $elem)
+            {
+                //Debug::debug($elem['parameters'], "SERVER");
+
+                $id_mysql_server_target = self::findIdMysqlServer($elem['parameters']['address'].":".$elem['parameters']['port'], $id_dot3_information);
+
+                $tmp = [];
+
+
+
+                if (in_array("Master",explode(", ",$elem['state']) )){
+                    $tmp['options']['style'] = "filled";
+                }
+                else{
+                    $tmp['options']['style'] = "dashed";
+                    $tmp['options']['style'] = "filled";
+                }
+
+                $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$elem['parameters']['address'].":".$elem['parameters']['port']);
+                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':'.self::TARGET.'';
+                
+                if ($server['mysql_available'] == "1")
+                {
+                    if (in_array("Master",explode(", ",$elem['state']) )){
+                        $tmp['options']['color'] = "#008000";
+                    }
+                    else{
+                        $tmp['options']['color'] = "#00B33C";
+                    }
+
+                    if (in_array("Donor/Desynced",explode(", ",$elem['state']) )){
+                        $tmp['options']['color'] = "#337ab7";
+                    }
+                    
+
+                }
+                else{
+                    $tmp['options']['color'] = "#cc5500";
+                }
+
+                self::$build_ms[] = $tmp;
+            }
+            
+
+
+        }
+    }
+
     public function loadConfigColor()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -981,7 +1180,7 @@ class Dot3 extends Controller
             self::$config[$arr['const']] = $arr;
         }
 
-        //Debug::$debug = true;
+        Debug::$debug = true;
         //Debug::debug(self::$config, "DOT3_LEGEND");
         //die('wdfgdf');
     }
@@ -1219,6 +1418,8 @@ class Dot3 extends Controller
     public function show($param)
     {
         $id_dot3_information = 2356819;
+
+        self::$id_dot3_information;
 
         $this->run($id_dot3_information);
     }
@@ -1544,27 +1745,139 @@ class Dot3 extends Controller
                 
             }
         }
-
-
-
     }
 
-    public function testflag()
+
+
+
+    public static function resolveMaxScaleConnection(array $maxscale, string $maxscale_ip_port): array
     {
+        Debug::debug(self::$id_dot3_information, "id_dot3_information");
 
-        echo Country::getFlag("FR");
+        $dot3_information = self::getInformation(self::$id_dot3_information);
+
+        $tunnel = $dot3_information['information']['tunnel'];
+
+        //Debug::debug(maxScale::removeArraysDeeperThan($dot3_information, 3), "TUNNEL");
+
+        // Copie locale modifiable
+        $resolved = $maxscale;
+
+        // Variante 0.0.0.0
+        $port = explode(':', $maxscale_ip_port)[1] ?? null;
+        $maxscale_ip_port_2 = "0.0.0.0:" . trim($port);
+
+        // Si listener sur 0.0.0.0:port
+        if (!empty($resolved[$maxscale_ip_port_2]['listener'])) {
+            Debug::debug("USE 0.0.0.0");
+            $resolved[$maxscale_ip_port] = $resolved[$maxscale_ip_port_2];
+            return $resolved;
+        }
+
+        Debug::debug($maxscale_ip_port, "maxscale_ip_port");
+        Debug::debug($maxscale_ip_port_2, "maxscale_ip_port_2");
+
+        // Si un tunnel existe pour cette IP:port
+        if (!empty($tunnel[$maxscale_ip_port])) {
+            $tunnel_ip_port = $tunnel[$maxscale_ip_port];
+            Debug::debug($tunnel_ip_port, "TUNNEL_FOUND");
+
+            // Cas 1 : le tunnel mène directement à une entrée connue
+            if (!empty($resolved[$tunnel_ip_port]['servers'])) {
+                $resolved[$maxscale_ip_port] = $resolved[$tunnel_ip_port];
+                return $resolved;
+            }
+
+            // Cas 2 : correspondance via 0.0.0.0 + port du tunnel
+            $new_port = explode(':', $tunnel_ip_port)[1] ?? null;
+            $maxscale_ip_port_3 = "0.0.0.0:" . trim($new_port);
+
+            Debug::debug($maxscale_ip_port_3, "TEST 0.0.0.0 + Port originie before tunnel");
+
+            if (!empty($resolved[$maxscale_ip_port_3]['servers'])) {
+                $resolved[$maxscale_ip_port] = $resolved[$maxscale_ip_port_3];
+            }
+        }
+
+        return $resolved;
     }
 
 
-    public function testval($param)
+    public static function getTunnel($param)
     {
-        Debug::parseDebug($param);
+        // Vérifie que l’identifiant d’information Dot3 est défini
+        if (empty(self::$id_dot3_information)) {
+            throw new \Exception(
+                "[PMACONTROL-1000] Missing dot3 information ID — self::\$id_dot3_information cannot be empty in dot3::getTunnel().",
+                1000 // Paramètre manquant (plage 1000–1999)
+            );
+        }
 
-        $all = Extraction2::display(array("mysql_replication_hostgroups"));
+        // Vérifie le type de paramètre
+        if (empty($param) || !is_array($param)) {
+            throw new \Exception(
+                "[PMACONTROL-1001] Invalid parameter passed to dot3::getTunnel() — the first array key must be a string.",
+                1001
+            );
+        }
 
+        // Récupère les informations du tunnel
+        $dot3_information = self::getInformation(self::$id_dot3_information);
+        if (empty($dot3_information['information']['tunnel'])) {
+            throw new \Exception(
+                "[PMACONTROL-4001] No tunnel information found in dot3::getTunnel() — application logic error.",
+                4001
+            );
+        }
 
-            Debug::debug($all);
+        $tunnel = $dot3_information['information']['tunnel'];
+
+        // Si on a un paramètre de type ip:port, on valide le format
+        if (!empty($param[0])) {
+            $ip_port = $param[0];
+
+            // Vérifie le format IPv4:port
+            if (!preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $ip_port)) {
+                throw new \Exception(
+                    "[PMACONTROL-1002] Invalid ip_port format in dot3::getTunnel() — expected IPv4:port, got '{$ip_port}'.",
+                    1002
+                );
+            }
+
+            // Vérifie que ce tunnel existe dans la liste
+            return !empty($tunnel[$ip_port]) ? $tunnel[$ip_port] : false;
+        }
+
+        
+
+        // Si aucun paramètre, renvoie la liste complète des tunnels
+        return $tunnel;
     }
 
 
+    public function after($param)
+    {
+        if (posix_geteuid() === 0) {
+            usleep(5000);
+            shell_exec("chown www-data:www-data -R ".TMP."dot");
+        }
+    }
+
+    public function generateGroupByServerId($information)
+    {
+        $tmp_group = array();
+        
+        foreach($information['servers'] as $id_mysql_server => $server)
+        {
+            $server['id_mysql_server'] = $id_mysql_server;
+
+
+
+
+
+        }
+
+
+        return $tmp_group;
+    }
 }

@@ -1075,4 +1075,13 @@ class ProxySQL extends Controller
 
     }
 
+    public function addLine($param)
+    {
+        $id_proxysql_server = $param[0];
+        $table_name = $param[1];
+
+
+        
+        
+    }
 }

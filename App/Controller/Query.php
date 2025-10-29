@@ -701,6 +701,8 @@ SQL;
 
     }
 
+    /* extraire les tables avec les alias d'une requete SQL */
+
 
 
 
@@ -899,7 +901,10 @@ SQL;
 
     // new version 
 
-    public static function digest(string $query): string {
+
+
+    // old digest
+    public static function digest2(string $query): string {
         $normalized = self::normalize($query);
         // MariaDB digest est 16 octets hex (md5-like)
         return md5($normalized);
@@ -1284,6 +1289,149 @@ SQL;
     }
 
 
+    public function all($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $param[0];
+
+        if (empty($id_mysql_server))
+        {
+            $id_mysql_server = 1;
+            $param[0] = 1;
+            $_GET['id_mysql_server'] = 1;
+        }
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $elems = Extraction2::display(array("events_statements_summary_by_digest","performance_schema") , array($id_mysql_server));
+
+        $data['queries'] = array();
+        $data['performance_schema'] =0;
+
+        if (! empty($elems[$id_mysql_server]['events_statements_summary_by_digest']['data']))
+        {
+            $queries = $elems[$id_mysql_server]['events_statements_summary_by_digest']['data'];
+
+            if (isset($elems[$id_mysql_server]['performance_schema'])){
+                $data['performance_schema']  = $elems[$id_mysql_server]['performance_schema'];
+            }
+
+            uasort($queries, function ($a, $b) {
+                $a_val = $a['AVG_TIMER_WAIT'] * $a['COUNT_STAR'];
+                $b_val = $b['AVG_TIMER_WAIT'] * $b['COUNT_STAR'];
+                return $b_val <=> $a_val; // tri décroissant
+            });
+
+            Debug::debug($queries, "QUERIES");
+
+            $data['queries'] = $queries;
+        }
+        
+        $this->set('data', $data);
+        $this->set('param', $param);
+    }
+
+    public function digest($param)
+    {
+        Debug::parseDebug($parma);
+
+        $id_mysql_server = $param[0];
+        $digest = $param[1];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        
+        // if mysql server available
+        $extra = Mysql::getDbLink($id_mysql_server, "EXTRA");
+
+
+$sql ="WITH stats AS (
+  SELECT
+    b.date,
+    JSON_UNQUOTE(JSON_EXTRACT(b.value, '$.data.$digest.COUNT_STAR')) + 0 AS count_star,
+    JSON_UNQUOTE(JSON_EXTRACT(b.value, '$.data.$digest.SUM_TIMER_WAIT')) + 0 AS sum_timer_wait,
+    LAG(
+      JSON_UNQUOTE(JSON_EXTRACT(b.value, '$.data.$digest.COUNT_STAR')) + 0
+    ) OVER (ORDER BY b.date) AS prev_count_star,
+    LAG(
+      JSON_UNQUOTE(JSON_EXTRACT(b.value, '$.data.$digest.SUM_TIMER_WAIT')) + 0
+    ) OVER (ORDER BY b.date) AS prev_sum_timer_wait
+  FROM ts_variable a
+  JOIN ts_value_general_json b
+    ON b.id_ts_variable = a.id
+   AND b.id_mysql_server = ".$id_mysql_server."
+   AND b.date BETWEEN NOW() - INTERVAL 1 HOUR AND NOW()
+  WHERE a.`from` = 'performance_schema'
+    AND a.`name` = 'events_statements_summary_by_digest'
+)
+SELECT
+  date,
+  count_star,
+  sum_timer_wait,
+  count_star - prev_count_star AS diff_count_star,
+  (sum_timer_wait - prev_sum_timer_wait) / 1000000000.0 AS diff_sum_timer_wait,
+  -- conversion en millisecondes, arrondi
+  ROUND(
+    (sum_timer_wait - prev_sum_timer_wait) / 1000000000.0
+    / NULLIF((count_star - prev_count_star), 0)
+  ) AS avg_ms_per_count
+FROM stats
+WHERE prev_count_star IS NOT NULL
+ORDER BY date;
+";
+
+        //debug($sql);
+
+        //$res = $db->sql_query($sql);
+
+        $elems = Extraction2::display(array("events_statements_summary_by_digest") , array($id_mysql_server));
+        
+        $data = [];
+        $data['query'] = $elems[$id_mysql_server]['events_statements_summary_by_digest']['data'][$digest];
+
+        
+        $sql2 = "select * from performance_schema.events_statements_history_long where DIGEST= '".$digest."' LIMIT 1";
+        $res2 = $extra->sql_query($sql2);
+
+        while($arr2 = $extra->sql_fetch_array($res2, MYSQLI_ASSOC))
+        {
+            $data['sql_text'] = $arr2['SQL_TEXT'];
+        }
+
+        $data['tables'] = $this->extractTablesWithOffsets($data['sql_text']);
+        
+        foreach($data['tables']  as $key => $table)
+        {   
+            if (empty($table['alias']))
+            {
+                $data['tables'][$key]['alias'] = $table['table']; 
+            }
+            $data['alias'][$data['tables'][$key]['alias']] = $table;
+        }
+        
+        Debug::debug($data['alias']);
+
+        $data['explain'] = array();
+        if (! str_ends_with(trim($data['sql_text']), '...')) {
+
+            $sql3 = "EXPLAIN extended ".$data['sql_text'];
+            $res3 = $extra->sql_query($sql3);
+
+            
+            while($arr3 = $extra->sql_fetch_array($res3, MYSQLI_ASSOC))
+            {
+                $data['explain'][] = $arr3;
+            }
+        }
+
+
+
+
+
+        $this->set('data', $data);
+    }
+
+
 }
 /*
 SELECT 
@@ -1352,5 +1500,12 @@ SELECT
     SELECT 
       ?
   ) `pxc_maint_mode`
+
+
+SELECT CURRENT_SCHEMA, DIGEST, SQL_TEXT FROM performance_schema.events_statements_history 
+WHERE DIGEST IS NOT NULL AND CURRENT_SCHEMA IS NOT NULL 
+GROUP BY CURRENT_SCHEMA, DIGEST, SQL_TEXT
+
+
 
 */

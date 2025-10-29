@@ -19,6 +19,8 @@ class Alias extends Controller
 {
     static $hostname = array();
 
+    private static array $alias_dns_cache = [];
+
     public function index()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -274,5 +276,73 @@ class Alias extends Controller
             }
         }
         Debug::debug($hostname);
+    }
+    public static function upsertAliasDns(array $param): void
+    {
+        // $param = [dns, port, id_mysql_server]
+        $dns = $param[0] ?? null;
+        $port = $param[1] ?? null;
+        $id_mysql_server = $param[2] ?? null;
+
+        if (!$dns || !$port || !$id_mysql_server) {
+            return; // paramètre manquant
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // clé pour le cache
+        $key = "$dns:$port";
+
+        // si déjà en cache et différent, update
+        if (isset(self::$alias_dns_cache[$key])) {
+            if (self::$alias_dns_cache[$key] !== $id_mysql_server) {
+                
+                $sqlUpdate = sprintf(
+                    "UPDATE alias_dns SET id_mysql_server = %d WHERE dns = '%s' AND port = %d",
+                    $id_mysql_server,
+                    $db->sql_real_escape_string($dns),
+                    $port
+                );
+                $db->sql_query($sqlUpdate);
+                self::$alias_dns_cache[$key] = $id_mysql_server;
+            }
+            return;
+        }
+
+        // vérifie si l'entrée existe déjà dans la base
+        $sqlCheck = sprintf(
+            "SELECT id_mysql_server FROM alias_dns WHERE dns = '%s' AND port = %d",
+            $db->sql_real_escape_string($dns),
+            $port
+        );
+        $res = $db->sql_query($sqlCheck);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if ($row) {
+            if ((int)$row['id_mysql_server'] !== $id_mysql_server) {
+                $sqlUpdate = sprintf(
+                    "UPDATE alias_dns SET id_mysql_server = %d WHERE dns = '%s' AND port = %d",
+                    $id_mysql_server,
+                    $db->sql_real_escape_string($dns),
+                    $port
+                );
+                $db->sql_query($sqlUpdate);
+            }
+            self::$alias_dns_cache[$key] = $id_mysql_server;
+        } else {
+            $sqlInsert = sprintf(
+                "INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (%d, '%s', %d)",
+                $id_mysql_server,
+                $db->sql_real_escape_string($dns),
+                $port
+            );
+            $db->sql_query($sqlInsert);
+            self::$alias_dns_cache[$key] = $id_mysql_server;
+        }
+    }
+
+    public static function clearAliasDnsCache(): void
+    {
+        self::$alias_dns_cache = [];
     }
 }

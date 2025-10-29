@@ -15,11 +15,100 @@ use \App\Library\Extraction2;
 
 use \App\Library\Mysql;
 
+
+/*
+
+MariaDB [pmacontrol]> select b.file_name, `from`, count(1) from ts_variable a inner join ts_file b on a.id_ts_file = b.id GROUP by b.file_name, `from`;
++-----------------------------------------------+------------------------+----------+
+| file_name                                     | from                   | count(1) |
++-----------------------------------------------+------------------------+----------+
+| information_schema__metadata_lock_info        | information_schema     |        1 |
+| information_schema__plugins                   | information_schema     |        1 |
+| is_tables                                     | information_schema     |        3 |
+| mysql_binlog                                  | master_status          |        2 |
+| mysql_binlog                                  | mysql_binlog           |        6 |
+| mysql_global                                  | slave                  |       62 |
+| mysql_global                                  | status                 |      926 |
+| mysql_global_variable                         | variables              |     1102 |
+| mysql_innodb_metrics                          | innodb_metrics         |       76 |
+| mysql_processlist                             | mysql_processlist      |        1 |
+| mysql_schemata                                | mysql_database         |        1 |
+| mysql_server                                  | mysql_server           |        3 |
+| mysql_statistics                              | mysql_latency          |        4 |
+| mysql_table                                   | mysql_table            |        1 |
+| mysql_variable_gtid                           | gtid                   |        4 |
+| mysql_velocity                                | velocity               |        3 |
+| proxysql_connect_error                        | proxysql_connect_error |        1 |
+| proxysql_runtime_checksums_values             | proxysql_runtime       |        1 |
+| proxysql_runtime_global_variables             | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_galera_hostgroups      | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_query_rules            | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_replication_hostgroups | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_servers                | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_users                  | proxysql_runtime       |        1 |
+| proxysql_runtime_proxysql_servers             | proxysql_runtime       |        1 |
+| proxysql_server                               | proxysql_server        |        3 |
+| ps_events_statements_summary_by_digest        | performance_schema     |        1 |
+| ps_memory_summary_global_by_event_name        | performance_schema     |        1 |
+| ssh_hardware                                  | ssh_hardware           |       11 |
+| ssh_server                                    | ssh_server             |        4 |
+| ssh_stats                                     | ssh_stats              |       15 |
++-----------------------------------------------+------------------------+----------+
+31 rows in set (0,003 sec)
+*/
+
+
 class Listener extends Controller
 {
     var $logger;
 
     static $database = array();
+
+
+    static $load_listener = [];
+
+          
+    /*
+
+    contain all post treatment and alert
+    */
+    public static function load($param)
+    {
+        self::$load_listener['mysql_schemata']['mysql_database'] = "Listerner::updateDatabase";
+        self::$load_listener['mysql_global_variable']['variables'] = "Listerner::afterUpdateVariable";
+        self::$load_listener['ps_events_statements_summary_by_digest']['performance_schema'] = "Listerner::collectQuery";
+    }
+
+
+    public static function init($param)
+    {
+        Debug::parseDebug($param);
+        
+        self::load($param);
+
+        Debug::debug(self::$load_listener);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        
+        foreach(self::$load_listener as $ts_file => $froms)
+        {
+            foreach($froms as $from => $elem)
+            {
+                $splited = explode('::', $elem);
+                $sql = "INSERT INTO listener_main SELECT NULL, id,'".$splited[0]."', '".$splited[1]."',1 FROM ts_file WHERE file_name IN('".$ts_file."');";
+                Debug::sql($sql);
+
+                $db->sql_query($sql);
+            }
+        }
+
+    }
+
+
+
+
+
 
     public function before($param)
     {
@@ -43,8 +132,10 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) from ts_max_date where last_date_listener != date ORDER BY 3 DESC;";
-        //Debug::sql($sql);
+        $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) 
+        FROM ts_max_date WHERE last_date_listener != date AND id_ts_file in (SELECT distinct id_ts_file FROM listener_main)
+        ORDER BY 3 DESC;";
+        Debug::sql($sql);
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res, MYSQLI_ASSOC)) {
@@ -77,11 +168,11 @@ class Listener extends Controller
         FROM ts_max_date 
         WHERE id_ts_file = ".$id_ts_file." 
             AND id_mysql_server = ".$id_mysql_server." 
-            AND last_date_listener != date LIMIT 1)
+            AND last_date_listener != `date` LIMIT 1)
         GROUP BY a.id_mysql_server, a.id_ts_file;";
 
 
-        //Debug::sql($sql);
+        Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -131,12 +222,12 @@ class Listener extends Controller
         $sql = "UPDATE ts_date_by_server SET is_listened=1 
         WHERE id_mysql_server=".$param['id_mysql_server']." AND id_ts_file=".$param['id_ts_file']." AND `date`='".$param['min_date']."';";
         $db->sql_query($sql);
-        //Debug::sql($sql);
+        Debug::sql($sql);
 
         $sql ="UPDATE ts_max_date SET last_date_listener='".$param['min_date']."' 
         WHERE id_mysql_server=".$param['id_mysql_server']." AND id_ts_file=".$param['id_ts_file'].";";
         $db->sql_query($sql);
-        //Debug::sql($sql);
+        Debug::sql($sql);
 
         $sql = "COMMIT;";
         $db->sql_query($sql);
@@ -521,11 +612,11 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="select b.id as id_mysql_server, b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
+        $sql ="SELECT b.id as id_mysql_server, b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
         from ts_max_date a 
         inner join mysql_server b on a.id_mysql_server = b.id 
         INNER JOIN ts_file c on c.id = a.id_ts_file 
-        WHERE b.id = 1
+        WHERE  b.id = 126 
         order by 5 desc, display_name, file_name;";
         Debug::sql($sql);
 

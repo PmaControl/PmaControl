@@ -7,6 +7,8 @@
 
 namespace App\Library;
 
+use App\Controller\Listener;
+use App\Controller\MaxScale;
 use \App\Library\Table;
 use \App\Library\Format;
 use \App\Library\Ofuscate;
@@ -335,12 +337,12 @@ class Graphviz
         $file_name2 = TMP."dot/".$reference.".".$type2;
 
         file_put_contents($dot_file, $graph);
-
+        usleep(500);
         $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
         Debug::debug($dot, "DOT");
         exec($dot);
 
-        Debug::debug($type, "HR");
+        //Debug::debug($type, "HR");
 
         $dot2 = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.'';
         exec($dot2);
@@ -363,10 +365,14 @@ class Graphviz
             $edge['options']['tooltip'] = $edge['tooltip'];
         }
 
+        if (empty($edge['color']))
+        {
+            $edge['color'] = "#0000ff";
+        }
 
         $return = "".$edge['arrow'];
         $return .= '[color="'.$edge['color'].'" penwidth="3" ';
-        $return .= 'fontname="arial" fontsize=8 edgeURL="http://10.68.68.111/pmacontrol/fr/architecture/index/" ';
+        $return .= 'fontname="arial" fontsize=8 ';
         foreach($edge['options'] as $key => $option) {
             $return .= $key.'="'.$option.'" ';
         }
@@ -502,6 +508,11 @@ class Graphviz
             $image_logo = 'proxysql.png';            
         }
 
+        if (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1" ) {
+            $image_logo = 'maxscale.png';            
+        }
+
+
         if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
             //$image_logo = 'galera.svg';
         }
@@ -512,12 +523,10 @@ class Graphviz
         $return .= 'tooltip="'.$server['display_name'].'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
         <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$server['color'].'">
-        
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
-
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"> <b>'.$server['display_name'].'</b></font></td></tr>';
+        <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
@@ -525,6 +534,15 @@ class Graphviz
         $nat = '';
         if ($server['port_real'] != $server['port']){
             $nat = ' <b>(NAT)</b>';
+            $nat = ' 🔀';
+
+            $ip_real = Dot3::getTunnel([$server['ip_real'].":".$server['port_real']]);
+            if ($ip_real){
+                $nat .= "$ip_real";
+            }
+            else{
+                $nat .= '🌐:'.$server['port'];
+            }
         }
 
         //country there
@@ -532,7 +550,9 @@ class Graphviz
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
-        if (empty($server['is_proxysql']) )
+
+
+        if (empty($server['is_proxysql']) && empty($server['is_maxscale']) && empty($server['is_proxy'])   )
         {
 
             $time_zone = $server['time_zone'];
@@ -540,11 +560,17 @@ class Graphviz
                 $time_zone = $server['time_zone']. " (".$server['system_time_zone'].")";
             }
 
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.'</td></tr>'.PHP_EOL;
+            if (empty($server['system_time_zone']))
+            {
+                Debug::debug($server, "ID_MYSQL_SERVER");
+            }
+
+            // 🇫🇷
+            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
 
             $debug = '';
-            Debug::$debug = true;
+            //Debug::$debug = true;
 
             //force le refresh du DOT
             if (Debug::$debug === true) {
@@ -563,10 +589,23 @@ class Graphviz
             
             if (empty($server['log_slave_updates']))
             {
-                Debug::debug($server, "SERVER");
-                die();
+                //Debug::debug($server, "SERVER");
+                //die();
+                //return "";
             }
             
+            if (strtolower($server['read_only']) === "on")
+            {
+                //$server['read_only'] = '🅞🅝';
+                $server['read_only'] = '✅ ON';
+                
+            }
+
+            if ($server['log_slave_updates'] === "OFF")
+            {
+                $server['log_slave_updates'] = "⚫ OFF";
+            }
+
             $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
             
 
@@ -621,41 +660,51 @@ class Graphviz
                 <td bgcolor="grey">R</td>
             </tr>'.PHP_EOL;
             
+
+            
             if (! empty($server['mysql_database']))
             {
+                $i = 1;
                 foreach($server['mysql_database'] as $database)
                 {
+                    if (in_array($database, array("NONE", 'sys')))
+                    {
+                        continue;
+                    }
+
+                    $i++;
                     $return .= '<tr>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="left">'.$database.'</td>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
                     $return .= '</tr>'.PHP_EOL;
 
-                    if ($database == "eshop")
+                    if ($database == "sakila")
                     {
                         $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
                     }
+
+                    if ($i > 5)
+                    {
+                        break;
+                    }
                 }
             }
             else
             {
                 
-            }
+            } 
 
             $return .= '</table>'.PHP_EOL;
             $return .= '</td></tr>'.PHP_EOL;
-            */
+            /***** */
 
 
-            $return .= '</table>'.PHP_EOL;
 
-            $return .= '</td></tr></table>> ];'.PHP_EOL;
-
-            //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Auto_increment')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
-        }elseif ($server['is_proxysql'] == "1")
+        }elseif (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1")
         {
             
             //Debug::debug($server,"CORRESPONDANCE");
@@ -753,10 +802,215 @@ class Graphviz
             
             
             $return .= '</td></tr>'.PHP_EOL;
-            $return .= '</table>'.PHP_EOL;
+
+
+
+
+        }elseif ($server['is_maxscale'] == "1")
+        {
+
+            $background = Dot3::$config['SERVER_CONFIG']['background'];
+            $color = Dot3::$config['SERVER_CONFIG']['color'];
             
-            $return .= '</td></tr></table>> ];'.PHP_EOL;
+            $maxscale = MaxScale::rewriteJson($server);
+
+           
+
+            $ret_max = Dot3::resolveMaxScaleConnection($maxscale,  $server['ip_real'].":".$server['port_real']);
+
+            if (empty($ret_max[$server['ip_real'].":".$server['port_real']]))
+            {
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.'#FF0000'.'" align="left">';
+                $return .= '<font color="'.'#ffffff'.'"> Impossible to match Maxcale Admin</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.'#FF0000'.'" align="left">';
+                $return .= '<font color="'.'#ffffff'.'"><a href="'.LINK.'MaxScale/index">check it here</a></font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+            }
+            else
+            {
+
+                
+                $max = $ret_max[$server['ip_real'].":".$server['port_real']];
+
+                //Debug::debug(maxScale::removeArraysDeeperThan($max,3), "MAX");
+
+                if ($max['service']['state'] === 'Started'){
+                    $icone = '✅';
+                }
+                else{
+                    $icone = '⛔';
+                }
+
+                if (empty($server['mysql_available'])){
+                    $icone = "⛔";
+                }
+
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                $return .= '<font color="'.$color.'">'.$icone.' Router : '.$max['service']['router'].' ('
+                .$max['service']['statistics']['active_operations'] ."/".$max['service']['statistics']['connections'].')</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+
+
+
+                foreach($max['monitor'] as $module_name => $module)
+                {
+                    if ($module['state'] === 'Running'){
+                        $icone = '✅';
+                    }
+                    else{
+                        $icone = '⛔';
+                    }
+
+                    if (empty($server['mysql_available'])){
+                        $icone = "⛔";
+                    }
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                    $return .= '<font color="'.$color.'">'.$icone.' Module : '.$module['module'].'</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+
+
+                // Read-write-listener ✅
+                // Read-write-split ✅
+                // Total connections : 434
+                // Monitor : galeramon ✅
+
+                // Master, Synced, Running   => Down
+                // 10.68.68.233:3306 (10)
+                // Slave, Synced, Running
+                // 10.68.68.231:3306 (10)
+                // 10.68.68.232:3306 (10)
+
+
+                foreach($max['servers'] as $server_ip_port => $elem)
+                {
+                    //valeur possible :
+                    /*
+                    Master — le serveur est le maître (primary) dans la réplication. 
+                    Slave — le serveur est un esclave (réplica). 
+                    Running — indication que le serveur est accessible / actif sous le monitor. (souvent combiné avec Master/Slave, ex. “Master, Running”) 
+                    Synced — dans les environnements Galera / cluster, pour indiquer qu’il est synchronisé. Par exemple “Slave, Synced, Running” comme valeur combinée dans un exemple de list servers. 
+                    Draining — l’état de « drainage » : le serveur est en train de se vider, c’est-à-dire qu’il n’accepte plus de nouvelles connexions mais les connexions existantes peuvent continuer. 
+                    Drained — l’état où le serveur a été complètement drainé (plus de connexions restantes). 
+                    Maintenance — le serveur est en maintenance, donc non éligible pour de nouvelles connexions. 
+                    Down — le serveur est hors ligne ou injoignable selon le monitor. Dans les scénarios de failover, le monitor peut marquer un serveur “Down”. 
+                    */
+
+                    $states = explode(",", $elem['state']);
+                    foreach($states as $key => $state)
+                    {
+                        $states[$key] = trim($state);
+                    }
+
+
+                    if (in_array("Running", $states))
+                    {
+
+                        $hasGaleraMon = false;
+
+                        foreach ($max['monitor'] as $item) {
+                            if (isset($item['module']) && $item['module'] === 'galeramon') {
+                                $hasGaleraMon = true;
+                                break; // on peut sortir dès qu'on trouve
+                            }
+                        }
+
+
+                        if ($hasGaleraMon)
+                        {
+                            if (in_array("Synced", $states))
+                            {
+
+                                $background = Dot3::$config['MAXSCALE_RUNNING']['background'];
+                                $color = Dot3::$config['MAXSCALE_RUNNING']['color'];
+
+                                if (in_array("Master", $states)){
+                                    $background = "#008000";
+                                }
+                                else{
+                                    $background = "#00B33C";
+                                }
+                                //$color="#333333";
+                            }
+                            else{
+                                $background = Dot3::$config['MAXSCALE_UNSYNC']['background'];
+                                $color = Dot3::$config['MAXSCALE_UNSYNC']['color'];
+                            }
+                        }
+                        else{
+
+                                if (in_array("Master", $states)){
+                                    $background = "#008000";
+                                }
+                                else{
+                                    $background = "#00B33C";
+                                }
+
+                            //$background = Dot3::$config['MAXSCALE_RUNNING']['background'];
+                            $color = Dot3::$config['MAXSCALE_RUNNING']['color'];
+                        }
+
+                    }
+
+                    if (in_array("Down", $states))
+                    {
+                        $background = Dot3::$config['MAXSCALE_DOWN']['background'];
+                        $color = Dot3::$config['MAXSCALE_DOWN']['color'];
+                    }
+
+                    $icone = "⛔";
+                    if (in_array("Master", $states))
+                    {
+                        $icone = "✍️";
+                    }
+
+                    if (in_array("Slave", $states))
+                    {
+                        $icone = "📖";
+                    }
+
+                    if (empty($server['mysql_available']))
+                    {
+                        $icone = "⛔";
+                        $elem['connections'] = 0;
+                        $background = Dot3::$config['MAXSCALE_DOWN']['background'];
+                        $color = Dot3::$config['MAXSCALE_DOWN']['color'];
+                    }
+
+
+                    $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$server_ip_port);
+
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left" port="'.$port.'">';
+                    $return .= '<font color="'.$color.'">'.$icone.' '.$server_ip_port.' ('.$elem['statistics']['connections'].'/'.$elem['statistics']['max_connections'].')</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+            }
+
+            $return .= '</table>'.PHP_EOL;
+            $return .= '</td></tr>'.PHP_EOL;
+
+            //rgb(125, 208, 18) => color arrow maxscale
         }
+
+
+        $return .= '</table>'.PHP_EOL;
+        $return .= '</td></tr></table>> ];'.PHP_EOL;
         
         
         // http://localhost/pmacontrol/image/icon/proxysql.png
