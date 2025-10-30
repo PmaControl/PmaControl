@@ -157,6 +157,10 @@ class Extraction2
 
                     foreach ($tab_ids as $id_ts_variable) {
 
+                        if (!empty(self::$partition[$id_ts_variable])){
+                            continue;
+                        }
+
                         // meilleur plan d'execution en splitant par id_varaible pour un meilleur temps d'exec 
                         // => ce qui n'est plus le cas avec 7 Milliards d'enregistremenets avec une date specifique
                         // permet d'avoir toutes les données 
