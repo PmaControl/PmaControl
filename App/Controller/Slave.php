@@ -795,6 +795,8 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $id_mysql_server = $param[0];
         $connection_name = $param[1];
 
+        $this->view = false;
+
         $db = Mysql::getDbLink($id_mysql_server);
 
         if (! empty($connection_name))
