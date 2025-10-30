@@ -62,7 +62,9 @@ class Control extends Controller
         $db      = Sgbd::sql(DB_DEFAULT);
         
         $id_mysql_server = 1;
-        $val = Extraction2::display(array("information_schema::disks", "variables::datadir"), array($id_mysql_server));
+        $val = Extraction2::display(array("disks", "datadir"), array($id_mysql_server));
+
+        Debug::debug($val);
 
         $data = $val[$id_mysql_server];
         $datadir = $data['datadir'];
