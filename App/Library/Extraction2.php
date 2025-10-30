@@ -157,7 +157,7 @@ class Extraction2
 
                     foreach ($tab_ids as $id_ts_variable) {
 
-                        if (!empty(self::$partition[$id_ts_variable])){
+                        if (empty(self::$partition[$id_ts_variable])){
                             continue;
                         }
 
