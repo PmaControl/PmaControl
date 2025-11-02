@@ -1167,17 +1167,21 @@ class Mysql extends Controller
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-
+        debug("$hostname, $port, $user, $password");
 
         $link = mysqli_init();
-        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 5);
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+                    mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
 
         // 1. Essayer sans SSL (sans propager l'erreur)
         try {
             if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port)) {
                 // Échec de la première tentative : on passe à la deuxième
                 $firstError = mysqli_connect_error();
-                //throw new \RuntimeException("Première tentative échouée (non critique)");
+
+                debug($firstError);
+                throw new \RuntimeException("Première tentative échouée (non critique)");
             }
         } catch (\RuntimeException $e) {
             // On ignore l'erreur et on essaie avec SSL
@@ -1287,29 +1291,7 @@ class Mysql extends Controller
 
         Debug::parseDebug($param);
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
-        $res = $db->sql_query($sql);
-
-        $config = "";
-        while ($ob     = $db->sql_fetch_object($res)) {
-            $string = "[".$ob->name."]\n";
-            $string .= "driver=mysql\n";
-            $string .= "hostname=".$ob->ip."\n";
-            $string .= "port=".$ob->port."\n";
-            $string .= "user=".$ob->login."\n";
-            $string .= "password=".$ob->passwd."\n";
-            $string .= "crypted=1\n";
-            $string .= "database=".$ob->database."\n";
-            $string .= "ssl=".$ob->is_ssl."\n";
-
-            $config .= $string."\n\n";
-
-            Debug::debug($string);
-        }
-
-        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
+        Mysql2::generateMySQLConfig();
     }
 
     public function parsecnf()

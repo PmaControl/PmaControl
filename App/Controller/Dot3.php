@@ -126,7 +126,7 @@ class Dot3 extends Controller
         // "status::wsrep_cluster_status"  => not exist anymore ?
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::is_proxy", "variables::is_maxscale",
-                "variables::wsrep_cluster_address",
+                "variables::wsrep_cluster_address","slave::connection_name",
                 "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
@@ -138,8 +138,8 @@ class Dot3 extends Controller
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
-                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed","maxscale::maxscale_servers","maxscale::maxscale_services", 
-                "maxscale::maxscale_monitors", "maxscale::maxscale_listeners",
+                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
+                "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),$id_mysql_servers , $date_request);
 
@@ -175,11 +175,14 @@ class Dot3 extends Controller
 
         $data['tunnel'] =  Tunnel::getTunnelsMapping([$date_request]);
 
-
-        Debug::debug($data['tunnel'], "TUNNEL");
+        //Debug::debug($data['tunnel'], "TUNNEL");
         ksort($data['mapping']);
 
+        //Debug::debug(MaxScale::removeArraysDeeperThan($all['125'], 4), "YYYYYYYYYYYYYYYYY");
         $data['servers'] = array_replace_recursive($all, $server_mysql);
+        //Debug::debug($data['servers'][125]);
+
+        //Debug::debug(MaxScale::removeArraysDeeperThan($data['servers']['125'], 5), "XXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
         // ca sert a rien en fait car on recupère les élements du serveur mysql_server associé
         // just interessant pour faire des traitements spécifique
@@ -199,9 +202,6 @@ class Dot3 extends Controller
                 $data['servers'][$arr['id_mysql_server']]['version_comment'] = "ProxySQL"; 
 
             }
-
-
-
             //json decode in same time
             //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
             //exit;
@@ -239,6 +239,9 @@ class Dot3 extends Controller
 
         //insert to DB
         $data_for_md5 = $data;
+
+
+        //Debug::debug(MaxScale::removeArraysDeeperThan($data['servers']['124'], 5), "DATA");
 
         //remove all date to be able to compare data with date
         array_walk_recursive($data_for_md5, function(&$value, $key) use (&$array) {
@@ -367,21 +370,51 @@ class Dot3 extends Controller
             //$id_group++;
             //$tmp_group[$idproxy] = array();
             if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
+
+                Debug::debug($server, "CLUSTER");
+
                 $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
                 $servers2 = self::getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
+
+                Debug::debug($servers, "SERVERS");
 
                 foreach($servers as $ip_port)
                 {
                     if (!empty($information['mapping'][$ip_port])) {
-                        $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
+                        
+                        $id_mysql_server_galera = $information['mapping'][$ip_port];
+                        Debug::debug($id_mysql_server_galera, "ID MYSQL SERVER GALERA ({$server['id_mysql_server']})");
+                        Debug::debug($information['servers'][$id_mysql_server_galera]['wsrep_on'], "WSREP ON");
+
+                        if ($information['servers'][$id_mysql_server_galera]['wsrep_on'] === 'ON') {
+
+                            $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
+                            //generate Alert 
+                            Debug::debug("WARNING: The server $ip_port (ID: $id_mysql_server_galera) 
+                            is part of the Galera cluster but has wsrep_on set to OFF.", "GALERA CONFIGURATION WARNING");
+                        }
+
+                        Debug::debug($information['mapping'][$ip_port], "MAPPING");
+
+                        
                     }
                     else {
                         //autodetect autoadd Mysql::autodetect($server['id_mysql_server'], $ip_port);
                     }
                 }
                 //$id_group++;
+                Debug::debug($servers2, "SERVERS2");
+
+
                 foreach($servers2 as $ip_port)
                 {
+                    Debug::debug($ip_port, "IP:PORT");
+                    if ($ip_port[0] === ':') {
+                        //detection arbitre
+                        $id_garb = $this->createGarb($information, $id_mysql_server);
+                        $tmp_group[$server['id_mysql_server']][] = $id_garb;
+                    } 
+
                     if (!empty($information['mapping'][$ip_port])) {
                         $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
                     }
@@ -525,7 +558,7 @@ class Dot3 extends Controller
 
         $groups = $this->getGroup(array($id_dot3_information));
 
-        Debug::debug($groups, "List of group ");
+        //Debug::debug($groups, "List of group ");
 
         foreach($groups as $group)
         {
@@ -535,7 +568,7 @@ class Dot3 extends Controller
             self::$build_ms = array();
             self::$build_server = array();
 
-            Debug::debug($group, "GROUP");
+            //Debug::debug($group, "GROUP");
             
             //Debug::debug(self::$build_galera);
 
@@ -588,7 +621,7 @@ class Dot3 extends Controller
             $dot3_graph['dot3_graph']['id'] = $id_dot3_graph;
             $this->logger->notice("ID : ".$id_dot3_graph);
         }
-        
+
         if (empty($id_dot3_graph))
         {
             $images = getimagesize(str_replace(".svg",".png",$file_name));
@@ -706,7 +739,7 @@ class Dot3 extends Controller
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
-        //Debug::debug($galera, "GALERA");
+        Debug::debug($galera, "GALERA");
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -716,7 +749,7 @@ class Dot3 extends Controller
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale));
 
-        Debug::debug($group, "GROUP");
+        //Debug::debug($group, "GROUP");
         //die();
         return $group;
     }
@@ -733,10 +766,13 @@ class Dot3 extends Controller
             if (! empty($dot3_information['information']['servers'][$id_mysql_server]['@slave']))
             {
 
+                //Debug::debug($dot3_information['information']['servers'][$id_mysql_server]['@slave'], "@@SLAVE");
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['@slave'] as $key => $slave)
                 {
-                    Debug::debug($slave, "SLAVE");
+                    //Debug::debug($slave, "SLAVE");
+                    //Debug::debug($key, "KEY");
 
+                  
                     $host = $slave['master_host'].':'.$slave['master_port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
 
@@ -870,7 +906,7 @@ class Dot3 extends Controller
         }
 
 
-        //Debug::debug($group , "debug");
+        //Debug::debug(self::$build_ms , "LINK MASTER SLAVE");
 
     }
 
@@ -1638,9 +1674,6 @@ class Dot3 extends Controller
             THROW new \Exception("Impossible to find id_mysql_server : $id_mysql_server");
         }
 
-
-        
-
         $tmp = self::$config[$theme];
 
         Debug::debug($tmp, "COLOR");
@@ -1848,8 +1881,6 @@ class Dot3 extends Controller
             return !empty($tunnel[$ip_port]) ? $tunnel[$ip_port] : false;
         }
 
-        
-
         // Si aucun paramètre, renvoie la liste complète des tunnels
         return $tunnel;
     }
@@ -1870,14 +1901,39 @@ class Dot3 extends Controller
         foreach($information['servers'] as $id_mysql_server => $server)
         {
             $server['id_mysql_server'] = $id_mysql_server;
-
-
-
-
-
         }
 
 
         return $tmp_group;
+    }
+
+    public function createGarb($information, $id_mysql_server)
+    {
+        $server = $information['servers'][$id_mysql_server] ?? null;
+        if (!$server) {
+            throw new \Exception("Server not found", 404);
+        }
+
+        //generate next id in $information['servers']
+        $next_id = max(array_keys($information['servers'])) + 1;
+
+        $information['servers'][$next_id] = $information['servers'][$id_mysql_server];
+
+        $information['servers'][$next_id]['display_name'] = 'garb';
+        $information['servers'][$next_id]['hostname'] = 'garb';
+        $information['servers'][$next_id]['id_mysql_server'] = $next_id;
+
+        //remplace moi le dernier xxx par *
+        //$information['servers'][$next_id]['ip_real'] = preg_replace('/\d+\.\d+\.\d+\.\d+$/', '*', $server['ip_real']);
+
+        self::$information[self::$id_dot3_information]['information'] = $information;
+        
+        //Debug::debug($information, "Information after creating garb");  
+        
+        return $next_id;
+
+
+    
+        // Logique de création de l'arbitre
     }
 }

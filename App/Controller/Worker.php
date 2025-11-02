@@ -10,6 +10,7 @@ namespace App\Controller;
 use App\Library\EngineV4;
 
 use \App\Library\Debug;
+use App\Library\Extraction2;
 use App\Library\Microsecond;
 use \App\Library\System;
 use \App\Library\Log;
@@ -44,7 +45,7 @@ class Worker extends Controller
         $handler      = new StreamHandler(LOG_FILE, Logger::NOTICE);
         $handler->setFormatter(new LineFormatter(null, null, false, true));
         $monolog->pushHandler($handler);
-        $this->logger = $monolog;
+        self::$logger = $monolog;
     }
 
 
@@ -156,14 +157,119 @@ class Worker extends Controller
     }
 
 
-    public function keepWorker()
+    public function adaptNumberWorker($param)
     {
+        Debug::parseDebug($param);
+        
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ='SELECT `name`, `nb_worker` FROM worker_queue';
+        $res = $db->sql_query($sql);
+
+        $worker = array();
+        while($ob = $db->sql_fetch_object($res))
+        {
+            $type = str_replace('worker_', '', $ob->name);
+            $worker[$type] = $ob->nb_worker;
+        }
+
+        Debug::debug($worker);
+
+        $elem_to_get = [];
+        foreach($worker as $type => $value){
+            $elem_to_get[] = $type.'_available';
+        }
+
+        Debug::debug($elem_to_get, "ELEMENTS TO GET");
+
+        $elems = Extraction2::display($elem_to_get);
+
+        $result = self::summarizeAvailability($elems);
+
+        Debug::debug($result);
+        // if 5 fail => black list for 1 minutes   
 
 
+        $queries = self::generateWorkerUpdateQueries($result);
 
+
+        foreach($queries as $sql2)
+        {
+            $db->sql_query($sql2);
+        }
+
+        Debug::debug($queries);
 
     }
 
+    public static function summarizeAvailability(array $data): array
+    {
+        $result = [];
+
+        foreach ($data as $row) {
+            foreach ($row as $key => $value) {
+                // On cherche tous les champs de type xxxx_available
+                if (str_ends_with($key, '_available')) {
+
+                    // Initialise la structure si besoin
+                    if (!isset($result[$key])) {
+                        $result[$key] = [
+                            'available_1_count' => 0,
+                            'available_1_ids'   => [],
+                            'available_0_count' => 0,
+                            'available_0_ids'   => [],
+                        ];
+                    }
+
+                    // On range les valeurs
+                    if ((int)$value === 1) {
+                        $result[$key]['available_1_count']++;
+                        $result[$key]['available_1_ids'][] = $row['id_mysql_server'];
+                    } else {
+                        $result[$key]['available_0_count']++;
+                        $result[$key]['available_0_ids'][] = $row['id_mysql_server'];
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    function generateWorkerUpdateQueries(array $availability): array
+    {
+        // Correspondance entre les clés *_available et la colonne `table` de worker_queue
+        $mapping = [
+            'mysql_available'    => 'mysql_server',
+            'ssh_available'      => 'ssh_server',
+            'proxysql_available' => 'proxysql_server',
+            'maxscale_available' => 'maxscale_server',
+        ];
+
+        $queries = [];
+
+        foreach ($availability as $key => $info) {
+
+            // Vérifie que la clé est bien mappée à une table
+            if (!isset($mapping[$key])) {
+                continue;
+            }
+
+            $available   = $info['available_1_count'] ?? 0;
+            $unavailable = $info['available_0_count'] ?? 0;
+
+            // Règle métier : floor(count(1)/5) + count(0)
+            $nb_worker = floor($available / 5) + $unavailable;
+
+            $queries[] = sprintf(
+                "UPDATE worker_queue SET nb_worker = %d WHERE `table` = '%s';",
+                $nb_worker,
+                $mapping[$key]
+            );
+        }
+
+        return $queries;
+    }
 
     public function test($param)
     {
@@ -261,6 +367,8 @@ class Worker extends Controller
         while ($ob = $db->sql_fetch_object($res)) {
             $this->check(array($ob->id));
         }
+
+        self::refresh($param);
 
         $this->logger->debug("----------------------------------------------------------------");
     }
@@ -535,10 +643,13 @@ class Worker extends Controller
 
         
         $sql2 = preg_replace('/select\s+(.*)\s+from/','SELECT count(1) as cpt FROM' ,$main_query);
+        Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
 
-        while ($ob2 = $db->sql_fetch_object($res2))
-        {
+        //bug avec group by with SSH queue
+        $number_of_server_to_monitor = 0;
+
+        while ($ob2 = $db->sql_fetch_object($res2)) {
             $number_of_server_to_monitor = $ob2->cpt;
         }
 
@@ -890,5 +1001,38 @@ class Worker extends Controller
         Debug::debug($count_values);
 
         return $count_values;
+    }
+
+
+    public static function refresh($param)
+    {
+        Debug::parseDebug($param);
+        $elems = Extraction2::display(['version', 'mysql_available']);
+
+        foreach($elems as $id_mysql_server => $elem)
+        {
+            if (!empty($elem['mysql_available']))
+            {
+                if (empty($elem['version']) || $elem['version'] == "N/A")
+                {
+                    Debug::debug($elem);
+
+                    // purge file
+                    $path = EngineV4::PATH_MD5."*::$id_mysql_server.md5";
+                    Debug::debug($path);
+                    $files = glob($path);
+
+                    Debug::debug($files, "FILE TO DELETE");
+                    foreach($files as $file)
+                    {
+                        
+                        if (file_exists($file))
+                        {
+                            unlink($file);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

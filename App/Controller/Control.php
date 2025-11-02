@@ -27,9 +27,9 @@ class Control extends Controller
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
 
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`, `connection_name`)",
      "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-    "ts_value_digest" => "PRIMARY KEY (`date`,`digest`,`id_mysql_server`,`id_ts_variable` )");
+    "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`digest` )");
 
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
@@ -62,13 +62,14 @@ class Control extends Controller
         $db      = Sgbd::sql(DB_DEFAULT);
         
         $id_mysql_server = 1;
-        $val = Extraction2::display(array("disks", "datadir"), array($id_mysql_server));
-
-        Debug::debug($val);
+        $val = Extraction2::display(array("information_schema::disks", "variables::datadir"), array($id_mysql_server));
 
         $data = $val[$id_mysql_server];
-        $datadir = $data['datadir'];
 
+        if (!empty($data['datadir'])) {
+            $datadir = $data['datadir'];
+        }
+        
         // Recherche du disque dont le 'Path' correspond le plus précisément à datadir
         $closestDisk = null;
         $maxPrefixLength = 0;
@@ -94,7 +95,7 @@ class Control extends Controller
         }
 
         $percent = round($closestDisk['Used']/ $closestDisk['Total'] * 100);
-        Debug::debug($percent);
+        Debug::debug($percent, "PERCENT");
 
         //$size = trim(shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\''));
         //Debug::debug($size, 'Size on /srv/mysql/data');

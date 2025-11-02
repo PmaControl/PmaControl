@@ -13,6 +13,7 @@ echo '</div>';
 echo '</div>';
 
 
+
 if ( ! empty($data['proxysql']))
 {
     foreach ($data['proxysql'] as $id_proxysql => $proxysql) {
@@ -124,6 +125,7 @@ if ( ! empty($data['proxysql']))
 
         foreach($proxysql['servers'] as $server)
         {
+            
             echo '<tr>';
             echo '<td>'.$server['hostgroup_id'].'</td>';
             echo '<td><a href="">'.$server['hostname'].':'.$server['port'].'</a></td>';

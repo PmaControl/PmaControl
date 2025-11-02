@@ -71,9 +71,12 @@ echo '<th>usage</th>';
 echo '<th>'.__("Percentage").'</th>';
 echo '</tr>';
 
-
 if (!empty($data['cache'])) {
     foreach ($data['cache'] as $id_mysql_server => $variable) {
+
+        if (empty($data['variable'][$id_mysql_server]['query_cache_type'])){
+            continue;
+        }
 
         if (strtolower($data['variable'][$id_mysql_server]['query_cache_type']) === "off"){
             continue;

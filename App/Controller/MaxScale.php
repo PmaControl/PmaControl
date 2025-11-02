@@ -21,6 +21,8 @@ SELECT a.user, a.host, a.role FROM mysql.roles_mapping AS a;
 
 
 /*
+maxctrl create user MONUSER 'MONPASSWORD' --type=admin
+
 
 1000–1999 → erreurs de paramètre
 2000–2999 → erreurs de connexion
@@ -55,7 +57,11 @@ class MaxScale extends Controller {
         $res = $db->sql_query($sql);
 
         $data = array();
+        $id_mysql_servers = [];
         while ($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC)) {
+
+            //MaxScale::rewriteJson([]);
+            /*
             $services = array("filters", "listeners", "maxscale", "monitors", "sessions", "servers", "services", "users");
 
             foreach($services as $command)
@@ -69,14 +75,29 @@ class MaxScale extends Controller {
                     //echo "⚠️ Erreur inattendue capturée mais ignorée : " . $e->getMessage() . "\n<br>";
                     break;
                 }
-            }
-
+            }*/
+            $id_mysql_servers[] = $arr['id_mysql_servers'];
             $data['maxscale'][] = $arr;
         }
 
 
-        $data['extra'] = Extraction2::display(array("mysql_available", "mysql_error", "maxscale::maxscale_listeners"));
+        $output = [];
+        foreach ($id_mysql_servers as $val) {
+            if ($val == '') continue;
+            foreach (explode(',', $val) as $id) {
+                $id = trim($id);
+                if ($id !== '') $output[] = $id;
+            }
+        }
+        $output = array_values(array_unique($output));
 
+
+
+
+        $data['extra'] = Extraction2::display(["mysql_available", "mysql_error", "maxscale::maxscale_listeners",
+        "maxscale::maxscale_servers","maxscale_services" ], $output);
+
+        //debug(MaxScale::removeArraysDeeperThan( $data['extra'],4));
 
         $this->set('data', $data);
     }
@@ -193,10 +214,20 @@ class MaxScale extends Controller {
                         $res2 = $db->sql_query($sql2);
                         while($ob = $db->sql_fetch_object($res2))
                         {
-                            $sql3 = "UPDATE maxscale_server SET id_mysql_server = ".$ob->id ." WHERE `id`=".$id_maxscale_server." AND id_mysql_server != ".$ob->id .";";
-                            Debug::sql($sql3);
-                            $db->sql_query($sql3);
+                            $id_mysql_server = $ob->id;
 
+                            $sql5 = "SELECT count(1) as cpt FROM maxscale_server__mysql_server 
+                            WHERE id_maxscale_server =$id_maxscale_server AND id_mysql_server=$id_mysql_server";
+                            $res5 = $db->sql_query($sql5);
+
+                            while($ob5 = $db->sql_fetch_object($res5)) {
+                                if ($ob5->cpt == "0") {
+                                    $sql6 = "INSERT INTO maxscale_server__mysql_server (id_maxscale_server,id_mysql_server) 
+                                    VALUES ($id_maxscale_server, $id_mysql_server)";
+                                    $db->sql_query($sql6);
+                                }
+                            }
+                            
                             $sql4 = "UPDATE mysql_server SET is_proxy = 1 WHERE `id`=".$ob->id ." AND is_proxy != 1;";
                             Debug::sql($sql4);
                             $db->sql_query($sql4);
@@ -291,6 +322,13 @@ class MaxScale extends Controller {
         }
 
         $result = [];
+
+
+        if (empty($servers['maxscale_listeners']))
+        {
+            Debug::debug(MaxScale::removeArraysDeeperThan($servers, 4),"MAXSCALE EMPTY maxscale_listeners");
+            return [];
+        }
 
         // Parcours des listeners
         foreach ($servers['maxscale_listeners']['data'] as $lst) {

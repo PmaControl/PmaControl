@@ -51,28 +51,48 @@ th {
             <th><?=__('Remote') ?></th>
             <th><?=__('Server') ?></th>
             <th><?=__('Jump Hosts') ?></th>
-            <th><?=__('Command') ?></th>
+            <th><?=__('Pid') ?></th>
             <th><?=__('Date Created') ?></th>
         </tr>
     </thead>
     <tbody>
+
         <?php foreach ($data as $tunnel): ?>
+
             <tr class="<?= $tunnel['date_end'] ? 'closed' : 'open' ?>">
                 <td><?= $tunnel['id'] ?></td>
-                <td><?= htmlspecialchars($tunnel['local']) ?></td>
-                <td><?= htmlspecialchars($tunnel['remote']) ?></td>
+                <td><?= htmlspecialchars($tunnel['local_host'].":".$tunnel['local_port']) ?></td>
+                <td><?= htmlspecialchars($tunnel['remote_host'].":".$tunnel['remote_port']) ;
+                
+                $key = crc32(trim($tunnel['remote_host']).":".trim($tunnel['remote_port']));
+                if ($doublon[$key] > 1) {
+                    echo ' 🔁 [Doublons]';
+                }
+                ?></td>
                 <td>
-                    <?php if ($tunnel['id_mysql_server'] === null): ?>
-                        <select data-tunnel-id="<?= $tunnel['id'] ?>">
-                            <option value="">-- Choisir --</option>
-                            <?php foreach ($servers as $id => $name): ?>
-                                <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <?php if ($tunnel['id_mysql_server'] === null && $tunnel['id_maxscale_server'] === null && $tunnel['id_proxysql_server'] === null): ?>
+                        <?php 
+                            
+
+                            echo '<a href="'.LINK.'Mysql/add/mysql_server:ip:'.$tunnel['local_host'].'/mysql_server:port:'.$tunnel['local_port'].'" type="button" class="btn btn-primary btn-xs">Add MySQL Server</a>'; 
+                            echo ' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$tunnel['local_host'].'/mysql_server:port:'.$tunnel['local_port'].'" type="button" class="btn btn-primary btn-xs">Add MaxScale Admin</a>'; 
+                            echo ' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$tunnel['local_host'].'/mysql_server:port:'.$tunnel['local_port'].'" type="button" class="btn btn-primary btn-xs">Add ProxySQL Admin</a>'; 
+                            //echo ' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$tunnel['local_host'].'/mysql_server:port:'.$tunnel['local_port'].'" type="button" class="btn btn-primary btn-xs">Add HA Proxy</a>'; 
+                        ?>
                     <?php else: ?>
-                        <?php echo Display::srv($tunnel['id_mysql_server']);
-                             ?>
-                    <?php endif; ?>
+                        <?php 
+
+                        if (!empty($tunnel['id_mysql_server'])) {
+                            echo Display::srv($tunnel['id_mysql_server']);
+                        }
+                        if (!empty($tunnel['id_maxscale_server'])) {
+                            echo '<img title="MaxScale Server" alt="MaxScale Server" height="16" width="16" src="'.IMG.'/icon/maxscale.svg">';
+                            echo " [MaxScale Admin] ". Display::srv($tunnel['id_maxscale_server']);
+                        }
+
+                        
+                        ?>
+                    <?php endif; ?> 
                 </td>
                 <td>
                     <?php if (!empty($tunnel['servers_jump'])): ?>
@@ -93,35 +113,14 @@ th {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </td>
-                <td style="max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><code><?= htmlspecialchars($tunnel['command']) ?></code></td>
+                <td><?= htmlspecialchars($tunnel['pid']) ?></td>
+                <!--<td style="max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><code><?= htmlspecialchars($tunnel['command']) ?></code></td>-->
                 <td><?= $tunnel['date_created'] ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>
 </table>
 
-<script>
-document.querySelectorAll('select[data-tunnel-id]').forEach(function(select){
-    select.addEventListener('change', function(){
-        const tunnelId = this.getAttribute('data-tunnel-id');
-        const serverId = this.value;
 
-        if(serverId === '') return;
+<?php
 
-        // Envoi AJAX pour mettre à jour l'id_mysql_server
-        fetch('/tunnel/update', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({id: tunnelId, id_mysql_server: serverId})
-        }).then(r => r.json())
-          .then(resp => {
-              if(resp.success){
-                  alert('Tunnel mis à jour avec succès !');
-                  location.reload(); // reload pour rafraîchir la table
-              } else {
-                  alert('Erreur : ' + resp.message);
-              }
-          });
-    });
-});
-</script>

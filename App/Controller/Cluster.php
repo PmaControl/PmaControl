@@ -32,6 +32,7 @@ class Cluster extends Controller
             $id_mysql_server = 1;
             
             header("location: ".LINK."Cluster/svg/1/");
+            exit;
         }
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
@@ -94,6 +95,7 @@ class Cluster extends Controller
 
         $data['param'] = $param;
         $this->set('data',$data);
+        $this->set('param', $param);
     }
 
     /*
@@ -102,6 +104,8 @@ class Cluster extends Controller
     */
    public function replay($param)
    {
+
+
         $id_mysql_server = $param[0];
 
 
