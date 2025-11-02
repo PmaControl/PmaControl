@@ -1,0 +1,6 @@
+{
+    "files.followSymlinks": true,
+    "search.followSymlinks": true,
+    "intelephense.files.followSymlinks": true,
+    "typescript.preferences.includePackageJsonAutoImports": "on"
+}

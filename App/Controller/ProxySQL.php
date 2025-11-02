@@ -339,20 +339,28 @@ class ProxySQL extends Controller
         }
     } */
 
-    public function index()
+    public function index($param)
     {
+        Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM proxysql_server;";
-
         $res = $db->sql_query($sql);
+
+        $proxysql = Extraction2::display(['proxysql_available','proxysql_runtime::mysql_servers']);
 
         $data = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['servers'] = array();
-            $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'], $arr['password']);
+            //$arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'], $arr['password']);
+            $arr['servers'] = [];
+
+            if (isset($proxysql[$arr['id_mysql_server']]['mysql_servers']))
+            {
+                $arr['servers'] = $proxysql[$arr['id_mysql_server']]['mysql_servers'];
+            }
 
             if (!empty($arr['id_mysql_server'])) {
                 
@@ -363,14 +371,13 @@ class ProxySQL extends Controller
 
             $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
 
-            $data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
+            $data['proxysql_error'] = [];
+            //$data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
             $data['proxysql'][] = $arr;
         }
 
         $this->set('data', $data);
     }
-
-
 
 
     static function getServers($hostname, $port, $login, $password)
@@ -848,10 +855,17 @@ class ProxySQL extends Controller
                     $data['proxysql'][$ob['id']]['version'] = explode("-", $ob2->variable_value)[0];
                 }
             } else {
-                $global_variable = Extraction2::display(array("proxysql_runtime::global_variables"), array($ob['id_mysql_server']));
+                $global_variable = Extraction2::display(["proxysql_runtime::global_variables", "proxysql_available"], [$ob['id_mysql_server']]);
 
-                $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
-                $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
+                if (isset($global_variable[$ob['id_mysql_server']]['global_variables']['admin-version']))
+                {
+                    $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
+                    $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
+                }
+                else{
+                    $data['proxysql'][$ob['id']]['version'] = "N/A";
+                }
+
             }
         }
 
@@ -1084,4 +1098,7 @@ class ProxySQL extends Controller
         
         
     }
+
+
+
 }

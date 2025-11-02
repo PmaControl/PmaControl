@@ -339,7 +339,7 @@ class Graphviz
         file_put_contents($dot_file, $graph);
         usleep(500);
         $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
-        Debug::debug($dot, "DOT");
+        //Debug::debug($dot, "DOT");
         exec($dot);
 
         //Debug::debug($type, "HR");
@@ -471,6 +471,8 @@ class Graphviz
 
     static public function generateServer($server)
     { 
+
+
         /*
          * to be sure to insert image with add <?xml version="1.0" encoding="UTF-8" standalone="no"?> in top of SVG
          */
@@ -517,7 +519,11 @@ class Graphviz
             //$image_logo = 'galera.svg';
         }
         
-        
+        if ($server['mysql_available'] == "0") {
+            $server['color'] = "#FF5733";
+        }
+
+
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
         $return .= 'tooltip="'.$server['display_name'].'"
@@ -525,13 +531,16 @@ class Graphviz
         <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$server['color'].'">
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
         <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
-        $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
+        $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">'
+        .'<font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
 
         $nat = '';
+
+
+
         if ($server['port_real'] != $server['port']){
             $nat = ' <b>(NAT)</b>';
             $nat = ' 🔀';
@@ -543,6 +552,13 @@ class Graphviz
             else{
                 $nat .= '🌐:'.$server['port'];
             }
+        }
+
+        if ($server['display_name'] === "garb")
+        {
+            $server['ip_real'] = "N/A";
+            $nat = '';
+            $server['port_real'] = explode(":",$ip_real)[1] ?? "3306";
         }
 
         //country there
@@ -565,87 +581,89 @@ class Graphviz
                 Debug::debug($server, "ID_MYSQL_SERVER");
             }
 
-            // 🇫🇷
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
-
-            $debug = '';
-            //Debug::$debug = true;
-
-            //force le refresh du DOT
-            if (Debug::$debug === true) {
-                $rand = rand(1,100);
-                $debug  = ' (Debug : '.$rand.')';
-            }
-
-            
-            $ROW = '';
-            if (strtolower($server['binlog_format'])=== "row")
+            if ($server['display_name'] !== "garb")
             {
-                $ROW = "(".$server['binlog_row_image'].")";
-            }
 
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
-            
-            if (empty($server['log_slave_updates']))
-            {
-                //Debug::debug($server, "SERVER");
-                //die();
-                //return "";
-            }
-            
-            if (strtolower($server['read_only']) === "on")
-            {
-                //$server['read_only'] = '🅞🅝';
-                $server['read_only'] = '✅ ON';
+                // 🇫🇷
+                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
+                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
+
+                $debug = '';
+                //Debug::$debug = true;
+
+                //force le refresh du DOT
+                if (Debug::$debug === true) {
+                    $rand = rand(1,100);
+                    $debug  = ' (Debug : '.$rand.')';
+                }
+
+                $ROW = '';
+                if (strtolower($server['binlog_format'])=== "row")
+                {
+                    $ROW = "(".$server['binlog_row_image'].")";
+                }
+
+                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
                 
-            }
-
-            if ($server['log_slave_updates'] === "OFF")
-            {
-                $server['log_slave_updates'] = "⚫ OFF";
-            }
-
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
-            
-
-            //A déplacer dans DOT quoi que ?
-            if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
-                if ($server['wsrep_local_state_comment'] != "Synced") {
-
-                        if ($server['wsrep_local_state'] === "2") { // Donnor / desync
-
-                            if ($server['wsrep_desync'] === "ON"){
-                                $server['wsrep_local_state_comment'] = "Desynced - Desync : ".$server['wsrep_desync'];
-                            }
-                            else{
-                                $server['wsrep_local_state_comment'] = "Donor - Desync : ".$server['wsrep_desync'];
-                            }
-                        }
-
-                    $comment = "<b>".trim($server['wsrep_local_state_comment'])."</b>";
-                }
-                else
+                if (empty($server['log_slave_updates']))
                 {
-                    $comment = $server['wsrep_local_state_comment'];
+                    //Debug::debug($server, "SERVER");
+                    //die();
+                    //return "";
                 }
-
-                if ($server['wsrep_cluster_status'] !== "Primary")
+                
+                if (strtolower($server['read_only']) === "on")
                 {
-                    $server['wsrep_cluster_status'] = "<b>".trim($server['wsrep_cluster_status'])."</b>";
+                    //$server['read_only'] = '🅞🅝';
+                    $server['read_only'] = '✅ ON';
+                    
                 }
 
-
-                if ($server['mysql_available'] === "0") {
-                    $status = '<b>Offline</b>';
-                }
-                else {
-                    $status = $server['wsrep_cluster_status'].' ('.$comment.')';
+                if ($server['log_slave_updates'] === "OFF")
+                {
+                    $server['log_slave_updates'] = "⚫ OFF";
                 }
 
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
+                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
+                
+
+                //A déplacer dans DOT quoi que ?
+                if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+                    if ($server['wsrep_local_state_comment'] != "Synced") {
+
+                            if ($server['wsrep_local_state'] === "2") { // Donnor / desync
+
+                                if ($server['wsrep_desync'] === "ON"){
+                                    $server['wsrep_local_state_comment'] = "Desynced - Desync : ".$server['wsrep_desync'];
+                                }
+                                else{
+                                    $server['wsrep_local_state_comment'] = "Donor - Desync : ".$server['wsrep_desync'];
+                                }
+                            }
+
+                        $comment = "<b>".trim($server['wsrep_local_state_comment'])."</b>";
+                    }
+                    else
+                    {
+                        $comment = $server['wsrep_local_state_comment'];
+                    }
+
+                    if ($server['wsrep_cluster_status'] !== "Primary")
+                    {
+                        $server['wsrep_cluster_status'] = "<b>".trim($server['wsrep_cluster_status'])."</b>";
+                    }
+
+
+                    if ($server['mysql_available'] === "0") {
+                        $status = '<b>Offline</b>';
+                    }
+                    else {
+                        $status = $server['wsrep_cluster_status'].' ('.$comment.')';
+                    }
+
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
+                }
             }
-            
             
             $return .= '</table>'.PHP_EOL;
             $return .= '</td></tr>'.PHP_EOL;
@@ -828,9 +846,40 @@ class Graphviz
 
                 $return .= '<tr>';
                 $return .= '<td colspan="2" bgcolor="'.'#FF0000'.'" align="left">';
-                $return .= '<font color="'.'#ffffff'.'"><a href="'.LINK.'MaxScale/index">check it here</a></font>';
+                $return .= '<font color="'.'#ffffff'.'">[ Check it here ]</font>';
                 $return .= '</td>';
                 $return .= '</tr>'.PHP_EOL;
+
+
+                $services = ['listeners', 'services','monitors','servers'];
+
+                foreach($services as $service)
+                {
+                    if (empty($server['maxscale_'.$service])) {
+                        $icon = '✖️';
+                        $bgcolor ='#FF0000';
+                    }
+                    else{
+                        $icon = '✅';
+                        $bgcolor ='#008000';
+                    }
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left">';
+                    $return .= '<font color="'.'#ffffff'.'">MaxScale '.$service." : ".$icon;
+                    
+
+
+                    $return .= '</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+
+
+
+
+
+                
 
             }
             else

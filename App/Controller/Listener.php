@@ -96,10 +96,25 @@ class Listener extends Controller
             foreach($froms as $from => $elem)
             {
                 $splited = explode('::', $elem);
-                $sql = "INSERT INTO listener_main SELECT NULL, id,'".$splited[0]."', '".$splited[1]."',1 FROM ts_file WHERE file_name IN('".$ts_file."');";
+                $sql ="SELECT count(1) as cpt FROM listener_main WHERE `class` = '".$splited[0]."' AND `method` = '".$splited[1]."'";
                 Debug::sql($sql);
+                $res = $db->sql_query($sql);
 
-                $db->sql_query($sql);
+                while($ob = $db->sql_fetch_object($res))
+                {
+                    if ($ob->cpt === "0")
+                    {
+                        
+                        $sql = "INSERT INTO listener_main SELECT NULL, id,'".$splited[0]."', '".$splited[1]."',1 FROM ts_file WHERE file_name IN('".$ts_file."') ;";
+                        Debug::sql($sql);
+
+                        $db->sql_query($sql);
+                    }
+
+                }
+
+
+
             }
         }
 
@@ -630,14 +645,18 @@ class Listener extends Controller
         }
         $cmd = "cd ".TMP.'md5 && find . -type f ! -name ".*" -printf "%M %u %g %TY-%Tm-%Td %TH:%TM:%TS %p\n" | sed \'s/\.[0-9]*//\'';
 
+        $data['md5'] = [];
+
+
         Debug::debug($cmd);
         $text = shell_exec($cmd );
 
-        $data['md5'] = $this->splitAndFormat($text);
+        if (!empty($text)) {
+            $data['md5'] = $this->splitAndFormat($text);
+        }
+
         Debug::debug($data);
-
         $this->set('data', $data);
-
     }
 
 

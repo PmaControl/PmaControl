@@ -125,6 +125,8 @@ class Tunnel extends Controller
             $existingTunnels[(int)$row['pid']] = $row;
         }
 
+        Debug::debug($existingTunnels, "TUNNEL EXISTING");
+
         // 3. Ajouter les tunnels actifs non présents
         foreach ($activeTunnels as $pid => $tunnel) {
             if (!isset($existingTunnels[$pid])) {
@@ -219,6 +221,8 @@ class Tunnel extends Controller
         $line = $param[0];
         $parts = preg_split('/\s+/', trim($line));
 
+        Debug::debug($parts, "PREG_SPLIT");
+
         if (count($parts) < 10) {
             return null; // ligne incomplète
         }
@@ -261,6 +265,7 @@ class Tunnel extends Controller
             $local_port = (int)$m[1];
             $local_host = '127.0.0.1';
         } else {
+            Debug::debug("NOT FOUND");
             return null;
         }
 
@@ -278,6 +283,8 @@ class Tunnel extends Controller
             }
         }
 
+        Debug::debug($jump_hosts, "REBOND");
+
         // Extraction de toutes les IP pour déterminer la "vraie" cible s’il faut
         preg_match_all('/(\d{1,3}\.){3}\d{1,3}/', $command, $ips);
         $all_ips = array_values(array_unique($ips[0]));
@@ -286,7 +293,7 @@ class Tunnel extends Controller
 
         // Règle principale :
         // Si aucune IP valide avant le port distant OU si elle est 127.0.0.1 → on prend la dernière IP (la cible réelle)
-        if (empty($remote_host) || $remote_host === '127.0.0.1') {
+        if (empty($remote_host) || $remote_host === '127.0.0.1' || $remote_host === 'localhost') {
             $remote_host = $last_ip;
         }
 
@@ -350,42 +357,30 @@ class Tunnel extends Controller
         $sql = "SELECT t.*, m.display_name AS mysql_display_name
                 FROM ssh_tunnel t
                 LEFT JOIN mysql_server m ON t.id_mysql_server = m.id
-                ORDER BY t.date_created DESC";
+                ORDER BY t.remote_host, t.remote_port DESC";
         $res = $db->sql_query($sql);
 
-        $tunnels = [];
+        $data = [];
+        $doublon = [];
+
+
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $row['servers_jump'] = json_decode($row['servers_jump'], true) ?: [];
-            $tunnels[] = $row;
+
+            $key = crc32(trim($row['remote_host']).":".trim($row['remote_port']));
+            
+            $doublon[$key] = ($doublon[$key] ?? 0) + 1;
+
+            $data[] = $row;
         }
 
-        // Récupérer tous les mysql_server pour le select
-        $sql2 = "SELECT id, display_name FROM mysql_server ORDER BY display_name";
-        $res2 = $db->sql_query($sql2);
-        $servers = [];
-        while ($row = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
-            $servers[$row['id']] = $row['display_name'];
-        }
 
-        // Préparer le data array pour la vue
-        $data = [];
-        foreach ($tunnels as $t) {
-            $data[] = [
-                'id'              => $t['id'],
-                'local'           => $t['local_host'] . ':' . $t['local_port'],
-                'remote'          => $t['remote_host'] . ':' . $t['remote_port'],
-                'mysql_display'   => $t['mysql_display_name'] ?: null,
-                'id_mysql_server' => $t['id_mysql_server'] ?: null,
-                'servers_jump'    => $t['servers_jump'],
-                'command'         => $t['command'],
-                'date_created'    => $t['date_created'],
-                'date_end'        => $t['date_end'] === '0000-00-00 00:00:00' ? null : $t['date_end']
-            ];
-        }
+
+
 
         // Envoyer à la vue
+        $this->set('doublon', $doublon);
         $this->set('data', $data);
-        $this->set('servers', $servers); // pour les select dans la vue
     }
 
 
@@ -564,6 +559,111 @@ class Tunnel extends Controller
     }
 
 
+    public static function syncServersForTunnelsGeneric(array $param = []): void
+    {
+        Debug::parseDebug($param);
 
+        $db = Sgbd::sql(DB_DEFAULT);
+        $now = date('Y-m-d H:i:s');
+
+        // === Table de configuration générique ===
+        $mappings = [
+            [
+                'name' => 'mysql',
+                'table' => 'mysql_server',
+                'fk' => 'id_mysql_server',
+                'match' => 'local', // correspondance sur local_host:local_port
+                'fields' => ['ip', 'port'],
+                'post_action' => function ($row, $id_server) {
+                    // ajout alias DNS pour MySQL
+                    Alias::upsertAliasDns([$row['remote_host'], $row['remote_port'], $id_server]);
+                }
+            ],
+            [
+                'name' => 'maxscale',
+                'table' => 'maxscale_server',
+                'fk' => 'id_maxscale_server',
+                'match' => 'remote', // correspondance sur remote_host:remote_port
+                'fields' => ['hostname', 'port']
+            ],
+            [
+                'name' => 'proxysql',
+                'table' => 'proxysql_server',
+                'fk' => 'id_proxysql_server',
+                'match' => 'remote', // correspondance sur remote_host:remote_port
+                'fields' => ['hostname', 'port']
+            ]
+        ];
+
+        // === Sélection des tunnels à traiter ===
+        $sql = "SELECT id, local_host, local_port, remote_host, remote_port, pid
+                FROM ssh_tunnel
+                WHERE id_mysql_server IS NULL 
+                AND id_maxscale_server IS NULL 
+                AND id_proxysql_server IS NULL";
+        $res = $db->sql_query($sql);
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $pid = (int)($row['pid'] ?? 0);
+
+            foreach ($mappings as $map) {
+                $fk = $map['fk'];
+
+                // on saute si déjà rempli
+                if (!empty($row[$fk])) {
+                    continue;
+                }
+
+                // détermine ip:port selon le mode de correspondance
+                if ($map['match'] === 'local') {
+                    $ip = $row['local_host'];
+                    $port = (int)$row['local_port'];
+                } else {
+                    $ip = $row['remote_host'];
+                    $port = (int)$row['remote_port'];
+                }
+
+                $sqlFind = sprintf(
+                    "SELECT id FROM %s WHERE CONCAT(%s, ':', %s) = '%s'",
+                    $map['table'],
+                    $map['fields'][0],
+                    $map['fields'][1],
+                    $db->sql_real_escape_string("$ip:$port")
+                );
+
+                $resFind = $db->sql_query($sqlFind);
+                $found = $db->sql_fetch_array($resFind, MYSQLI_ASSOC);
+                if (empty($found['id'])) {
+                    continue;
+                }
+
+                $id_server = (int)$found['id'];
+                $sqlUpdate = sprintf(
+                    "UPDATE ssh_tunnel SET %s = %d WHERE id = %d AND (%s IS NULL OR %s != %d)",
+                    $fk,
+                    $id_server,
+                    (int)$row['id'],
+                    $fk,
+                    $fk,
+                    $id_server
+                );
+                $db->sql_query($sqlUpdate);
+
+                // éventuelle action additionnelle (DNS pour MySQL)
+                if (isset($map['post_action']) && is_callable($map['post_action'])) {
+                    $map['post_action']($row, $id_server);
+                }
+
+                echo sprintf(
+                    "✅ Tunnel %d linked to %s server ID %d via %s:%d\n",
+                    $row['id'],
+                    strtoupper($map['name']),
+                    $id_server,
+                    $ip,
+                    $port
+                );
+            }
+        }
+    }
 
 }

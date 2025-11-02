@@ -1232,7 +1232,7 @@ GROUP BY C.ID, C.INFO;";
      */
     public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
-        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale_port', 'maxscale_service'))) {
+        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale', 'maxscale_service'))) {
             die('error');
         }
 
@@ -1616,7 +1616,6 @@ GROUP BY C.ID, C.INFO;";
 
         Debug::debug($param, "NAME_SERVER");
 
-
         try{
             $error_msg='';
             $time_start = microtime(true);
@@ -1631,22 +1630,18 @@ GROUP BY C.ID, C.INFO;";
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
-
             $id_mysql_server = ProxySQL::getIdMysqlServer(array($id_proxysql_server));
 
-            
-            if (empty($id_mysql_server))
+            if (!empty($id_mysql_server))
             {
                 $this->setService($id_mysql_server, $ping, $error_msg, $available, "proxysql");
-                $this->logger->info("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
             }
+            
             // VERY important else we got error and we kill the worker and have to restart with a new one
             if ($available === 0) {
-                //return false;
+                return false;
             }
         }
-
-
 
         //Debug::debug($db, "DB");
 
@@ -2389,6 +2384,11 @@ GROUP BY C.ID, C.INFO;";
             $error_msg= '';
 
             $time_start   = microtime(true);
+
+            set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+                throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            });
+
             $connection = fsockopen($maxscale[0], $maxscale[2], $errno, $errstr, 3);
             if ($connection) {
                 fclose($connection);
@@ -2400,14 +2400,16 @@ GROUP BY C.ID, C.INFO;";
         }
         finally{
 
+            restore_error_handler();
+
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
             // associate =)
-            //$id_mysql_server = MaxScale::getIdMysqlServer(array($id_maxscale_server));
+            $id_mysql_server = MaxScale::getIdMysqlServer(array($id_maxscale_server));
             
             foreach($id_mysql_servers as $id_mysql_server) {
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_port");
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale");
             }
             // VERY important else we got error and we kill the worker and have to restart with a new one
 
@@ -2418,7 +2420,7 @@ GROUP BY C.ID, C.INFO;";
         }
         // Maxscale have a 4003 routed to a server
 
-        $services = array("filters", "listeners", "maxscale", "monitors", "sessions", "servers", "services", "users");
+        $services = array("listeners", "maxscale", "monitors", "sessions", "servers", "services", "users","filters");
 
         foreach($services as $service)
         {
@@ -2431,7 +2433,7 @@ GROUP BY C.ID, C.INFO;";
                 $time_start   = microtime(true);
                 $array = MaxScale::curl($maxscale) or die($service);
 
-                Debug::debug($array);
+                Debug::debug(MaxScale::removeArraysDeeperThan( $array, 3));
 
                 $data = array();
                 $data['maxscale']['maxscale_'.$service] = json_encode($array);
@@ -2445,7 +2447,7 @@ GROUP BY C.ID, C.INFO;";
 
                 //echo "⚠️ Erreur inattendue capturée mais ignorée : " . $e->getMessage() . "\n";
                 $this->logger->warning($e->getMessage()." id_maxscale_server:$id_maxscale_server");
-
+                Debug::debug($e->getMessage(), "ERROR_MSG");
                 $error_msg = $e->getMessage();
             }
             finally
@@ -2461,6 +2463,8 @@ GROUP BY C.ID, C.INFO;";
         
         $db->sql_close();
     }
+
+
 }
 
 

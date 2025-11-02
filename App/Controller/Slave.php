@@ -467,6 +467,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
     public function startSlave($param)
     {
+        $this->view = false;
 
         $id_mysql_server = $param[0];
         $connection_name = $param[1];
@@ -479,8 +480,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         //MariaDB
         $sql = "START SLAVE '".$connection_name."'";  
 
-        if (empty($connection_name))
-        {
+        if (empty($connection_name)) {
             $sql = "START SLAVE;";
         }
 
@@ -490,15 +490,15 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $msg = $sql;
         set_flash("success", $title, $msg);
 
-        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
-        
-        
+        if (! IS_CLI){
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        }
     }
-
-
 
     public function stopSlave($param)
     {
+
+        $this->view = false;
 
         $id_mysql_server = $param[0];
         $connection_name = $param[1];
@@ -521,15 +521,14 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         $msg = $sql;
         set_flash("success", $title, $msg);
 
-        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        if (! IS_CLI){
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        }
         
     }
 
-
-
     public function setSlave($param)
     {
-
         //add param force
         Debug::parseDebug($param);
 
@@ -582,13 +581,10 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $pid_array = array();
         foreach ($servers as $server) {
-
             $target = $this->getInfoServer($server);
-
             $db_passwd = Chiffrement::decrypt($target->passwd);
 
             foreach ($databases as $database) {
-
 
                 $dir = self::BACKUP_TEMP.$source->display_name."/".$database;
 
@@ -778,7 +774,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
         if (empty($output_array[2])) {
-            throw new \Exception("number of clsuter");
+            throw new \Exception("number of cluster");
         }
         $connection_name = $output_array[1].'g'.$output_array[2];
 
@@ -821,5 +817,38 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
         
+    }
+
+
+    public function skipCounter($param)
+    {
+        $this->view = false;
+
+        $id_mysql_server = $param[0];
+        $connection_name = $param[1];
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+
+        if (! empty($connection_name))
+        {
+            $connection_name = " '$connection_name' ";
+        }
+
+        $sql = "STOP SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+        $sql = "SET GLOBAL sql_slave_skip_counter=1;";
+        $db->sql_query($sql);
+
+        $sql = "START SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+
+        if (! IS_CLI){
+            usleep(5000);
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        }
+
     }
 }

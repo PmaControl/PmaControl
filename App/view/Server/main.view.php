@@ -309,7 +309,7 @@ if (!empty($data['servers'])) {
         }
 
         echo '</td>';
-        echo '<td style="max-width:400px;'.$style.'" class="">';
+        echo '<td style="max-width:300px;'.$style.'" class="">';
 
         if (isset($extra['mysql_available']) && $extra['mysql_available']==="0") {
             echo $extra['mysql_error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';

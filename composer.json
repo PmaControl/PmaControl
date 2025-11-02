@@ -30,7 +30,10 @@
         "geoip2/geoip2": "^3.2"
     },
     "autoload": {
-        "psr-4": {"App\\": "App/"}
+        "psr-4": {
+		"App\\": "App/",
+		"Glial\\": "Glial/"
+		}
     },
     "autoload-dev": {
         "psr-4": {

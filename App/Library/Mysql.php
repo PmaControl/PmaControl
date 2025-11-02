@@ -88,6 +88,8 @@ class Mysql
 ;user => user who will be used to connect to the SGBD
 ;password => password who will be used to connect to the SGBD
 ;database => database / schema witch will be used to access to datas
+;ssl => 1 or 0 (0 prefered faster)
+;timeout => 1 for normal mysql or 11 for Proxy
 ';
 
         $delta = $config;
@@ -102,6 +104,7 @@ class Mysql
             $string .= "crypted=1\n";
             $string .= "database=".$ob->database."\n";
             $string .= "ssl=".$ob->is_ssl."\n";
+            $string .= "timeout=".$ob->timeout."\n";
 
             $config .= $string."\n\n";
         }
