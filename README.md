@@ -27,16 +27,33 @@ have a look on : https://github.com/Esysteme/Debian/blob/master/ubuntu_server.ba
 
 ### Dependencies to install
 
-* **PHP 7.0.*** or highter
-* **ext-gd**
-* **ext-mcrypt**
-* **ext-ssh2** => used for monitoring system and backup
-* **ext-mysqlnd**
-* **ext-curl**
-* **MariaDB 10.11**
-* **graphviz** => make a graph about replication (include multi master and galera cluster)
-* **apache2** (with a2enmod php5 & **a2enmod rewrite**)
-* **curl** used for get translatation from google
+The current branch targets **PHP 8.2 or newer** (matching the Composer constraint `php >8.2`).
+Make sure the PHP runtime you install exposes the CLI and PHP-FPM/SAPI variant used by
+your web server (Apache `mod_php`, PHP-FPM through Nginx, etc.).
+
+**Required PHP extensions**
+
+* `ext-curl`
+* `ext-gd`
+* `ext-mysqlnd`
+* `ext-openssl`
+* `ext-pcntl`
+* `ext-posix`
+* `ext-ssh2` (used for monitoring system and backup)
+
+**System packages**
+
+* MariaDB 10.11 (or compatible MySQL server)
+* `graphviz` (builds replication graphs, including multi-master and Galera cluster)
+* `curl` (used for fetching translations)
+* A web server such as Apache 2.4 or Nginx, configured with PHP 8.2
+
+> **Heads-up**
+> * PHP 8.2 dropped the old `mcrypt` extension, so code paths relying on it have been
+>   refactored to use OpenSSL; ensure you load `ext-openssl` instead of trying to install
+>   legacy PHP 5 packages.
+> * When running under Apache, enable `rewrite` and point the DocumentRoot to
+>   `App/Webroot/`. The previous `a2enmod php5` guidance no longer applies.
 
 in [mysqld] section
 
@@ -56,7 +73,11 @@ plugin-load=ha_rocksdb
 ### Install dependencies
 * `cd pmacontrol`
 * `git config core.fileMode false`
-* `composer install`
+* `composer install --no-interaction`
+
+### Run automated tests (optional but recommended)
+
+* `./vendor/bin/phpunit`
 
 ### Auto install
 
