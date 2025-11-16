@@ -53,7 +53,6 @@ class StorageArea extends Controller {
             $_GET['backup_storage_area']['path'] = str_replace("[DS]", "/", $_GET['backup_storage_area']['path']);
         }
 
-
         $db = Sgbd::sql(DB_DEFAULT);
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
 

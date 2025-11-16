@@ -298,6 +298,8 @@ class Mysql
             self::$return['mysql']['failed'][] = $msg;
         }
 
+        $server['mysql_server']['id'] = $id_mysql_server;
+
 
         return $server;
     }

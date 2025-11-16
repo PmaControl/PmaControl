@@ -432,6 +432,8 @@ class Aspirateur extends Controller
 
         //we delete variable who change each time and put in on status
         $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
+        
+        
         $data = array();
         foreach($remove_var as $var_to_remove){
             if (!empty($var['variables'][$var_to_remove])) {
@@ -442,15 +444,15 @@ class Aspirateur extends Controller
             }
         }
 
-        if ((time()+$id_mysql_server)%3 === 0)
-        {
+        //if ((time()+$id_mysql_server)%3 === 0)
+        //{
             $this->exportData($id_mysql_server,"mysql_global_variable", $var);
-        }
+        //}
 
-        if ((time()+$id_mysql_server)%3 === 0)
-        {
+        //if ((time()+$id_mysql_server)%3 === 0)
+        //{
             $this->exportData($id_mysql_server,"mysql_variable_gtid", $data, false );
-        }
+        //}
 
         //get SHOW GLOBAL STATUS
         Debug::debug("apres Variables");
@@ -458,14 +460,17 @@ class Aspirateur extends Controller
         $data = array();
         $data['status'] = $mysql_tested->getStatus();
         
-        
+
         $slave  = $mysql_tested->isSlave();
         if (($slave) != 0) {
             $data['slave'] = $slave;
         }
+        Debug::debug($data['slave'], "SLAVE");
+
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
         
+
         /*
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
@@ -480,7 +485,7 @@ class Aspirateur extends Controller
         $this->exportData($id_mysql_server, "mysql_processlist", $data);
 
 
-
+        // toutes les 10 secs si refresh =1 (toutes les 10* $refresh)
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
             if ($var['variables']['log_bin'] === "ON") {
@@ -505,6 +510,8 @@ class Aspirateur extends Controller
 
         // if performance_schema == ON
         if ($var['variables']['performance_schema'] == "ON") {
+
+            /*
             if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
             {
                 $data = array();
@@ -512,31 +519,48 @@ class Aspirateur extends Controller
 
                 Debug::debug($data);
                 $this->exportData($id_mysql_server, "mysql_statistics", $data);
-            }
+            }*/
 
-            if ($id_mysql_server == "1")
+                /*
+            $data = array();
+            $data['performance_schema']['memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
+            Debug::debug($data);
+            $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
+            */
+
+            $this->runEachMinuteAtBalancedSecond($id_mysql_server, 'digest', function($id) {
+
+                // Ici, on utilise $mysql_tested EXISTANT => aucune reconnection MySQL
+                $data = [];
+                $data = $this->getDigest([$id]);
+                
+                // FROM::Metric
+                $performance_schema['performance_schema']['events_statements_summary_by_digest'] = json_encode($data);
+                $this->exportData($id, "performance_schema", $performance_schema, false);
+
+                $this->logger->emergency("[DIGEST][$id] executed at second (crc32 offset)");
+            });
+
+            //duplicate 2025-11-08 15:41:57-2397-96-2181 PK ts_value_digest_int
+            
+
+            /*
+            if ((time()+$id_mysql_server)%(30*$refresh) < $refresh)
             {
-                $data = array();
-                $data['performance_schema']['memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
-                Debug::debug($data);
-                $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
-
-
-            }
-
+               $data = array();
+               $data['digest'] = $this->getDigest([$id_mysql_server]);
+               $this->exportData($id_mysql_server, "performance_schema__digest", $data, false);
+            }*/
+/****/
+            /*
             $data = array();
             $data['velocity'] = $this->getVelocity($name_server);
             $this->exportData($id_mysql_server, "mysql_velocity", $data, false);
+            */
 
-            /* get DIGEST */
-            $digest = $this->getDigest(array($id_mysql_server));
-            if (count($digest['data']) > 0)
-            {
-                $data = array();
-                $data['performance_schema']['events_statements_summary_by_digest'] = json_encode($digest);
-                $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data, false);
-            }
-            
+
+
+          
         }
 
         /*************************************** list Database  */
@@ -569,9 +593,7 @@ class Aspirateur extends Controller
             }
         }
 
-
         /****************************************************************** */
-
 
         $data = array();
         $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "metadata_lock_info"));
@@ -602,13 +624,13 @@ class Aspirateur extends Controller
         return true;
     }
 
-    public function allocate_shared_storage($name)
+    public function allocate_shared_storage($name, $separator = EngineV4::SEPERATOR)
     {
         //storage shared
         Debug::debug($name, 'create file');
 
-        $shared_file = EngineV4::PATH_PIVOT_FILE.time().EngineV4::SEPERATOR.$name;
-        $storage             = new StorageFile($shared_file); // to export in config ?
+        $shared_file   = EngineV4::PATH_PIVOT_FILE.time().$separator.$name;
+        $storage       = new StorageFile($shared_file); // to export in config ?
         $SHARED_MEMORY = new SharedMemory($storage);
         return $SHARED_MEMORY;
     }
@@ -666,13 +688,8 @@ class Aspirateur extends Controller
             if (!empty($ssh) && $ssh !== false ) {
                 $ssh_available = 1;
    
-
-
-
                 $stats['ssh_stats']    = $this->getStats($ssh);
                 $hardware['ssh_hardware'] = $this->getHardware($ssh);
-
-
 
                 //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
                 $ssh->disconnect();
@@ -683,13 +700,6 @@ class Aspirateur extends Controller
 
                 $this->exportData($id_mysql_server, "ssh_hardware", $hardware);
                 $this->exportData($id_mysql_server, "ssh_stats", $stats, false);
-
-
-
-
-
-
-
 
             } else {
                 Debug::debug("Can't connect to ssh");
@@ -1321,7 +1331,7 @@ GROUP BY C.ID, C.INFO;";
     */
 
     
-    public function exportData($id_mysql_server, $ts_file, array $data, $check_data = true)
+    public function exportData($id_mysql_server, $ts_file, array $data, $check_data = true, $separator=EngineV4::SEPERATOR)
     {
         Debug::debug("exportData $id_mysql_server, $ts_file, ".count($data)."");
 
@@ -1348,7 +1358,7 @@ GROUP BY C.ID, C.INFO;";
 
             $tmp[$ts][$id_mysql_server] = $data;
 
-            $memory = $this->allocate_shared_storage($ts_file);
+            $memory = $this->allocate_shared_storage($ts_file, $separator);
             $memory->{$id_mysql_server}     = $tmp;
         }
     }
@@ -1456,7 +1466,7 @@ GROUP BY C.ID, C.INFO;";
     {
         // need test if root
         //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
-        if (posix_geteuid() === 0) {
+        if (\posix_geteuid() === 0) {
 
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
@@ -1485,6 +1495,14 @@ GROUP BY C.ID, C.INFO;";
                 foreach ($value as $subKey => $subValue) {
                     if (is_array($subValue)) {
                         if (isset($subValue['Seconds_Behind_Master'])){
+                            return true;
+                        }
+
+                        if (isset($subValue['seconds_behind_master'])){
+                            return true;
+                        }
+
+                        if (isset($subValue['Digest'])){
                             return true;
                         }
 
@@ -2012,47 +2030,26 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
-        /* TROP COUTEUX, se baser sur l'interval est plus judicieux entre 2 run est plus judicieux, 
-        on va peut etre louper des requettes mais trop couteux pour le serveur d'ouvrir un thread mysql pour chaque serveur
-
-        $db = Sgbd::sql(DB_DEFAULT,"MAIN");
-
-        $sql ="SELECT `date` from ts_max_date a 
-        INNER JOIN ts_file b ON a.id_ts_file = b.id 
-        where b.file_name ='ps_events_statements_summary_by_digest' 
-        and id_mysql_server=".$id_mysql_server.";";
-
-        $res = $db->sql_query($sql);
-        while ($ob = $db->sql_fetch_object($res)) {
-            $date_last = $ob->date;
-        }
-
-        $db->sql_close();
-        */
-       
-        //$sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > '".$date_last."';";
-        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > NOW() - INTERVAL 11 SECOND;";
-         
+        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > NOW() - INTERVAL 2 DAY;";
         Debug::sql($sql);
-
+        
         $res = $mysql_tested->sql_query($sql);
         $i = 0;
 
-        $data['data'] = [];
-        //$data['fields'] = [];
+        $data = [];
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {  
             $i++;
-            /*
-            if ($i === 1) {
-                $data['fields'] = self::array_values_to_lowercase(array_keys($arr));
-            }*/
-            //$data['data'][$arr['DIGEST']] = array_values($arr);
+            $arr = array_change_key_case($arr);
 
-            // on a peut etre un probleme ici, si meme digest pour une base differente
-            $data['data'][$arr['DIGEST']] = $arr;
+            // Skip invalid lines (no digest)
+            if (empty($arr['digest'])) {
+                continue;
+            }
+
+            $data[] = $arr;
         }
 
-        Debug::debug(count($data['data']));
+        Debug::debug($data, "QUERIES");
 
         return $data;
 
@@ -2070,7 +2067,7 @@ GROUP BY C.ID, C.INFO;";
 
             if ($db_link->checkVersion(array('MySQL' => '8.0')))
             {
-                $this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
+                //$this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
 
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
@@ -2462,8 +2459,153 @@ GROUP BY C.ID, C.INFO;";
         }
         
         $db->sql_close();
+        }
+
+    private function saveDigestMeta(int $id_mysql_server, array $arr): ?int
+    {
+        static $digest_cache = []; // cache partagé entre appels, multi-serveur
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // === 1️⃣ Charger le cache du serveur si absent ===
+        if (empty($digest_cache[$id_mysql_server])) {
+            $digest_cache[$id_mysql_server] = $this->loadDigestCache($id_mysql_server);
+        }
+
+        // === 2️⃣ Extraction & validation des champs ===
+        $digest        = $arr['DIGEST']      ?? null;
+        $schema_name   = $arr['SCHEMA_NAME'] ?? '';
+        $digest_text   = $arr['DIGEST_TEXT'] ?? null;
+        $first_seen    = $arr['FIRST_SEEN']  ?? null;
+        $last_seen     = $arr['LAST_SEEN']   ?? null;
+
+        $required = [
+            'DIGEST'      => $digest,
+            'DIGEST_TEXT' => $digest_text,
+            'FIRST_SEEN'  => $first_seen,
+            'LAST_SEEN'   => $last_seen
+        ];
+
+        foreach ($required as $key => $val) {
+            if ($val === null || $val === '') {
+                Debug::error("Digest skipped (server #{$id_mysql_server}): missing field {$key}");
+                return null;
+            }
+        }
+
+        // === 3️⃣ Génération du hash interne ===
+        $digest_pmacontrol = md5($digest_text);
+        $cache_key = $digest . '|' . $schema_name;
+
+        // === 4️⃣ Déjà connu en cache → retour immédiat ===
+        if (isset($digest_cache[$id_mysql_server][$cache_key])) {
+            return $digest_cache[$id_mysql_server][$cache_key];
+        }
+
+        // === 5️⃣ Insert / Update dans ts_mysql_query ===
+        $sql = sprintf(
+            "INSERT INTO ts_mysql_query 
+            (id_mysql_server, digest, digest_pmacontrol, schema_name, digest_text, first_seen, last_seen)
+            VALUES (%d, '%s', '%s', %s, %s, '%s', '%s')
+            ON DUPLICATE KEY UPDATE 
+                last_seen = GREATEST(last_seen, VALUES(last_seen))",
+            (int)$id_mysql_server,
+            $db->sql_real_escape_string($digest),
+            $db->sql_real_escape_string($digest_pmacontrol),
+            !empty($schema_name) ? "'" . $db->sql_real_escape_string($schema_name) . "'" : "NULL",
+            "'" . $db->sql_real_escape_string($digest_text) . "'",
+            $db->sql_real_escape_string($first_seen),
+            $db->sql_real_escape_string($last_seen)
+        );
+
+        $db->sql_query($sql);
+
+        // === 6️⃣ Récupération de l’ID ===
+        if ($db->sql_affected_rows() > 0) {
+            $id_ts_mysql_query = $db->sql_insert_id();
+        } else {
+            $res = $db->sql_query(sprintf(
+                "SELECT id FROM ts_mysql_query 
+                WHERE id_mysql_server=%d AND digest='%s' AND schema_name %s",
+                (int)$id_mysql_server,
+                $db->sql_real_escape_string($digest),
+                !empty($schema_name)
+                    ? "= '" . $db->sql_real_escape_string($schema_name) . "'"
+                    : "IS NULL"
+            ));
+            $id_ts_mysql_query = $db->sql_fetch_object($res)->id ?? null;
+        }
+
+        // === 7️⃣ Mise en cache (multi-serveur) ===
+        $digest_cache[$id_mysql_server][$cache_key] = $id_ts_mysql_query;
+
+        return $id_ts_mysql_query;
     }
 
+
+    private function loadDigestCache(int $id_mysql_server): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $cache = [];
+
+        $sql = sprintf(
+            "SELECT id, digest, schema_name 
+            FROM ts_mysql_query 
+            WHERE id_mysql_server = %d",
+            (int)$id_mysql_server
+        );
+
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $key = $row['digest'] . '|' . ($row['schema_name'] ?? '');
+            $cache[$key] = (int)$row['id'];
+        }
+
+        Debug::debug(count($cache), "Digest cache loaded for server #{$id_mysql_server}");
+        return $cache;
+    }
+    private function runEachMinuteAtBalancedSecond(int $id_mysql_server, string $file_key, callable $callback): bool
+    {
+        $interval = 60; // 1 minute
+        $offset = crc32((string)$id_mysql_server) % $interval; // seconde cible dans la minute
+        $now = time();
+        $sec = $now % $interval;
+        $minute = intdiv($now, $interval);
+
+        // Tolérance de ±2 s
+        $delta = abs($sec - $offset);
+        if ($delta > 2 && $delta < ($interval - 2)) {
+            return false;
+        }
+
+        // Fichier d’état anti-double-run
+        $cache_file = "/tmp/pmacontrol_last_run_{$file_key}_{$id_mysql_server}";
+        $fp = fopen($cache_file, 'c+');
+        if ($fp === false) {
+            $last_minute_run = null;
+        } else {
+            flock($fp, LOCK_EX);
+            $last_minute_run = trim(stream_get_contents($fp));
+        }
+
+        if ($last_minute_run == $minute) {
+            if ($fp !== false) {
+                flock($fp, LOCK_UN);
+                fclose($fp);
+            }
+            return false;
+        }
+
+        if ($fp !== false) {
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, (string)$minute);
+            flock($fp, LOCK_UN);
+            fclose($fp);
+        }
+
+        $callback($id_mysql_server);
+        return true;
+    }
 
 }
 

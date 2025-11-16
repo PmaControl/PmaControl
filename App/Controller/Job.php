@@ -17,10 +17,7 @@ class Job extends Controller {
         $sql = "SELECT * from `job` ORDER BY date_start DESC LIMIT 20;";
         $res = $db->sql_query($sql);
 
-
-
         $converter = new AnsiToHtmlConverter();
-
 
         $data['jobs'] = array();
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -39,10 +36,6 @@ class Job extends Controller {
                 }
             }
 
-
-
-
-
             if (file_exists($ob['log'])) {
                 $log = file_get_contents($ob['log']);
             } else {
@@ -50,10 +43,6 @@ class Job extends Controller {
             }
             $log = Mydumper::ParseLog($converter->convert($log));
             $ob['log_msg'] = $log;
-
-
-
-
 
             if (file_exists($ob['error'])) {
                 $error = file_get_contents($ob['error']);
@@ -102,7 +91,7 @@ class Job extends Controller {
 
     public function add($param) {
 
-        Debug::parseDebug($param, "param Add Job");
+        Debug::parseDebug($param);
 
         $uuid = $param[0];
         $parametre = $param[1];
@@ -144,10 +133,7 @@ class Job extends Controller {
 
         $this->view = false;
 
-
         $id_job = $param[0];
-
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -159,13 +145,9 @@ class Job extends Controller {
             $debug = "--debug";
         }
 
-
         if (!empty($param[1]) && $param[1] === "--debug") {
             $debug = "--debug";
         }
-
-
-
 
         while ($ob = $db->sql_fetch_object($res)) {
 

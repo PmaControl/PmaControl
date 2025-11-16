@@ -227,8 +227,10 @@ class Server extends Controller
       /*
      */
 
-    public function main()
+    public function main($param)
     {
+        Debug::parseDebug($param);
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
@@ -312,7 +314,7 @@ class Server extends Controller
         $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
          "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
 
-        $data['last_date'] = Extraction2::display(array("mysql_server::"));
+        $data['last_date'] = Extraction2::display(array("mysql_available"));
 
         //debug($data);
 
@@ -325,7 +327,7 @@ class Server extends Controller
             $data['tag'][$arr['id_mysql_server']][] = $arr;
         }
 
-        $data['processing'] = $this->getDaemonRunning(array());
+        $data['processing'] = $this->getDaemonRunning(['mysql']);
 
 
         //debug($data);
@@ -1155,6 +1157,13 @@ var myChart = new Chart(ctx, {
     {
         Debug::parseDebug($param);
 
+        $worker_type = $param[0] ?? '';
+        $type = ['mysql', 'maxscale', 'proxysql', 'ssh'];
+
+        if (! in_array($worker_type, $type))
+        {
+            throw new \Exception("PMATRCL-1009 : This worker type is unknow : '$worker_type'");
+        }
         //self::testGetDaemonRunning($param);
 
         $elems          = array();
@@ -1166,7 +1175,8 @@ var myChart = new Chart(ctx, {
         $two_seconds_ago = date('Y-m-d H:i:s', time() - 2);
 
         // Commande find : tous les fichiers *.lock modifiés il y a plus de 2 secondes
-        $cmd = "find " . escapeshellarg($lock_path) . " -maxdepth 1 -name '*." . $lock_ext . "' ! -newermt " . escapeshellarg($two_seconds_ago);
+        $cmd = "find " . escapeshellarg($lock_path) . " -maxdepth 1 -name 'worker_".$worker_type."*." . $lock_ext . "' ! -newermt " . escapeshellarg($two_seconds_ago);
+        Debug::debug($cmd, "PROCESSING");
 
         exec($cmd, $files, $return_code);
 
@@ -1187,7 +1197,6 @@ var myChart = new Chart(ctx, {
 
                 Debug::debug($data);
                 $seconds = round($data['time'] / 1_000_000,2);
-
 
                 if ($seconds > 1) {
                     $data['time'] = $seconds;

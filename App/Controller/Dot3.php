@@ -1216,7 +1216,7 @@ class Dot3 extends Controller
             self::$config[$arr['const']] = $arr;
         }
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
         //Debug::debug(self::$config, "DOT3_LEGEND");
         //die('wdfgdf');
     }
@@ -1414,7 +1414,7 @@ class Dot3 extends Controller
     }
 
 
-    public function purgeAll($param)
+    public static function purgeAll($param)
     {
         Debug::parseDebug($param);
 

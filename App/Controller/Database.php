@@ -21,6 +21,7 @@ use \App\Library\Param;
 use \App\Library\Available;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
+use \Glial\Synapse\FactoryController;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
@@ -243,7 +244,7 @@ class Database extends Controller
 
         $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
-        \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
+        FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
 
         shell_exec("rm -rvf ".$directory);
     }
@@ -855,8 +856,8 @@ END;";
 
         Debug::debug($pid, "PID");
 
-        \Glial\Synapse\FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
-        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
+        //FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), FactoryController::RESULT);
+        FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), FactoryController::RESULT);
 
 //unlink($cmd_file);
 

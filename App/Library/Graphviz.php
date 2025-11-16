@@ -117,6 +117,7 @@ class Graphviz
 
         $sql3 = "SELECT * FROM index_stats WHERE id_mysql_server = ".$id_mysql_server." AND table_schema='".$table_schema."' AND table_name = '".$table_name."'";
 
+        /*
         $CARD = array();
         $res3 = $db2->sql_query($sql3);
         while($ob3 = $db2->sql_fetch_object($res3, MYSQLI_ASSOC)) {
@@ -134,7 +135,7 @@ class Graphviz
             $tmp['U'] = $ob3->is_unused;
 
             $CARD[] = $tmp;
-        }
+        }*/
 
         if (isset($table_rows))
         {
@@ -164,24 +165,26 @@ class Graphviz
         $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
         label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
-        $return .= '<tr><td PORT="title" colspan="3" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
+        
+        $colspan = 2;
+        $return .= '<tr><td PORT="title" colspan="'.$colspan.'" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
 
         if (empty($engine)) {
             //view
-            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
         }
         else
         {
-            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
         }
         
-        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
+        $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
 
         $return .=
         '<tr>'
         .'<td bgcolor="#bbbbbb" align="left" title="'.__('Field').'">'.__('Field').'</td>'
         .'<td bgcolor="#bbbbbb" align="left">'.__('Type').'</td>'
-        .'<td bgcolor="#bbbbbb" align="left">'.__('Key').'</td>'
+      //  .'<td bgcolor="#bbbbbb" align="left">'.__('Key').'</td>'
         .'</tr>'.PHP_EOL;
         
         $line = 1;
@@ -229,8 +232,9 @@ class Graphviz
             $return .=
                 '<tr>'
                 .'<td '.$bgcolor.' port="a'.$line.'" align="left" title="'.$def['Field'].'"><font color ="'.$forground_color.'">'.$us.''.$def['Field'].''.$ue.'</font></td>'
-                .'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
-                .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Key'].''.$ue.'&nbsp;</font></td>'
+                //.'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
+                .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
+               // .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Key'].''.$ue.'&nbsp;</font></td>'
                 .'</tr>'.PHP_EOL;
             $line++;
         }
@@ -240,38 +244,43 @@ class Graphviz
         $bgindex = 'bgcolor="#bbbbbb"';
         $forground_color = '#000000';
 
-        $return .= '<tr>'
-        .'<td '.$bgindex.' colspan="2" align="center"><font color ="'.$forground_color.'"><b>'.__('Index').'</b></font></td>'
-        .'<td '.$bgindex.' align="center"><font color ="'.$forground_color.'"><b>'.__('Size').'</b></font></td>'
-        .'</tr>'.PHP_EOL;
 
-        $bgindex = 'bgcolor="#dddddd"';
-
-        foreach($CARD as $elem)
+        if (! empty($CARD))
         {
-            $b1 = "";
-            $b2 = "";
-
-            $extra = '';
-            if (!empty($elem['R'])) {
-                $extra .= 'R';
-            }
-            if (!empty($elem['U'])){
-                $extra .= 'U';
-            }
-            if (! empty($extra))
-            {
-                $extra = '('.$extra.') ';
-                $b1 = "<b>";
-                $b2 = "</b>";
-            }
-
 
             $return .= '<tr>'
-            .'<td '.$bgindex.' colspan="2" align="left"><font color ="'.$forground_color.'">'.$extra.''.$elem['columns'].'</font></td>'
-            .'<td '.$bgindex.' align="right"><font color ="'.$forground_color.'">'.$b1.$elem['size'].$b2.'</font></td>'
+            .'<td '.$bgindex.' colspan="2" align="center"><font color ="'.$forground_color.'"><b>'.__('Index').'</b></font></td>'
+            .'<td '.$bgindex.' align="center"><font color ="'.$forground_color.'"><b>'.__('Size').'</b></font></td>'
             .'</tr>'.PHP_EOL;
 
+            $bgindex = 'bgcolor="#dddddd"';
+
+            foreach($CARD as $elem)
+            {
+                $b1 = "";
+                $b2 = "";
+
+                $extra = '';
+                if (!empty($elem['R'])) {
+                    $extra .= 'R';
+                }
+                if (!empty($elem['U'])){
+                    $extra .= 'U';
+                }
+                if (! empty($extra))
+                {
+                    $extra = '('.$extra.') ';
+                    $b1 = "<b>";
+                    $b2 = "</b>";
+                }
+
+
+                $return .= '<tr>'
+                .'<td '.$bgindex.' colspan="2" align="left"><font color ="'.$forground_color.'">'.$extra.''.$elem['columns'].'</font></td>'
+                .'<td '.$bgindex.' align="right"><font color ="'.$forground_color.'">'.$b1.$elem['size'].$b2.'</font></td>'
+                .'</tr>'.PHP_EOL;
+
+            }
         }
 
         $return .= '</table>';

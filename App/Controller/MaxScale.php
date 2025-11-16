@@ -257,9 +257,6 @@ class MaxScale extends Controller {
             Debug::debug($version[$id_mysql_server]['maxscale_maxscale']['data']['attributes']['version'], "VERSION");
         }
 
-        
-
-
         return $version[$id_mysql_server]['maxscale_maxscale']['data']['attributes']['version'] ?? 'N/A';
 
     }

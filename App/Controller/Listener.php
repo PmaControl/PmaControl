@@ -13,7 +13,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 
-use \App\Library\Mysql;
+
 
 
 /*
@@ -62,9 +62,6 @@ class Listener extends Controller
 {
     var $logger;
 
-    static $database = array();
-
-
     static $load_listener = [];
 
           
@@ -110,11 +107,7 @@ class Listener extends Controller
 
                         $db->sql_query($sql);
                     }
-
                 }
-
-
-
             }
         }
 
@@ -212,7 +205,7 @@ class Listener extends Controller
                 //$this->detectProxy($arr);
                 break;
 
-            case "ps_events_statements_summary_by_digest":
+            case "performance_schema":
                 $this->collectQuery($arr);
                 break;
 
@@ -705,345 +698,7 @@ class Listener extends Controller
     }
 
 
-    /*
-    ps_events_statements_summary_by_digest
-    */
-    public function collectQuery($param)
-    {
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        //Debug::debug($param,"ICI");
-
-        $id_mysql_server = $param['id_mysql_server'];
-        $date= $param['min_date'];
-
-        $queries = Extraction2::display(array("performance_schema::events_statements_summary_by_digest"), 
-        array($id_mysql_server), array($date));
-
-        if (empty($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'])) {
-            return true;
-        }
-
-        //Debug::debug($queries, "query");
-
-        $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
-        
-        $id_query = $this->insertNewQuery($param);
-
-        if (!empty($id_query)) // case P_S not activated or INNODB not activated
-        {
-            $register = $this->selectIdfromDigest(array($id_query));
-        }
-        
-        
-        $i = 0;
-
-        $SQL = [];
-        $keys = [];
-
-        foreach($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'] as $query)
-        {
-            $i++;
-            //Debug::debug($query);
-
-            $data_lower = array_change_key_case($query, CASE_LOWER);
-
-
-            //SCHEMA_NAME
-            $id_mysql_database = $this->getIdDatabase(array($id_mysql_server, $data_lower['schema_name']));
-
-            if (empty($id_mysql_database))
-            {
-                $this->logger->warning("Couldn't find database  (id_mysql_server: $id_mysql_server) : ".implode(',', $data_lower));
-                continue;
-            }
-
-            $id_mysql_query = $register[$data_lower['digest']];
-
-            if (empty($id_mysql_query))
-            {
-                $this->logger->warning("Couldn't find id_mysql_query  (id_mysql_server : $id_mysql_server - id_mysql_query: $id_mysql_query) : ".implode(',', $data_lower));
-                continue;
-            }
-            
-            $result = array_filter($data_lower, function($value, $key) {
-                return (strpos($key, 'sum') === 0 || strpos($key, 'count_star') === 0);
-            }, ARRAY_FILTER_USE_BOTH);
-
-            $result['id_mysql_query'] = $id_mysql_query;
-            $result['id_mysql_server'] = $id_mysql_server;
-            $result['id_mysql_database'] = $id_mysql_database;
-            
-            //$result['date'] = $date;
-
-            
-            if ($i ===1 ) {
-                $keys = array_keys($result);
-            }
-
-            $val = array_values($result);
-            //Debug::debug($result);
-
-            $SQL[] = "('".$date."' ,".implode(",", $val).")";
-        }
-
-        $fields  = 'INSERT INTO ts_mysql_query (`date`, `'. implode('`,`', $keys).'`) VALUES ';
-
-        $sql = $fields.implode(",",$SQL).";";
-        $db->sql_query($sql);
-
-        //Debug::debug($sql);
-    }
-
-    public function insertNewQuery($param)
-    {
-        $id_mysql_server = $param['id_mysql_server'];
-        $date= $param['min_date'];
-        $queries = $param['queries'];
-
-
-        
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $id_query = $this->getDigestFromDate(array($id_mysql_server, $date));
-
-        if (empty($id_query)){
-            return $id_query;
-        }
-
-        $nb_id = count($id_query);
-
-        $list = implode("','", $id_query);
-
-        $sql2 = "SELECT count(1) as cpt FROM mysql_query WHERE digest_mariadb IN ('".$list."')";
-        //Debug::sql($sql2);
-        $res2 = $db->sql_query($sql2);
-
-
-        $register = $this->selectIdfromDigest(array($id_query));
-        $keys = array_keys($register);
-
-        while ($ob2 = $db->sql_fetch_object($res2))
-        {
-            if ($nb_id > $ob2->cpt)
-            {
-                foreach($queries as $query)
-                {
-                    if (in_array($query['DIGEST'], $keys)) {
-                        continue;
-                    }
-
-                    $this->logger->warning('DIGEST_TEST : '.$query['DIGEST_TEXT']);
-
-
-                    $size = mb_strlen($query['DIGEST_TEXT']);
-
-                    if ($size === 32)
-                    {
-
-                    }
-                    else if ($size === 64){
-                        
-                    }
-
-                    $sql3 = "INSERT IGNORE INTO mysql_query (digest_text_md5, digest_mariadb, query_mariadb,digest_mysql,query_mysql)
-                    VALUES ('".self::getHash(array($query['DIGEST_TEXT']))."', 
-                    '".substr($query['DIGEST'],0,32)."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."',
-                    '".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."')";
-                    Debug::sql($sql3);
-                    $db->sql_query($sql3);
-                }
-            }
-        }
-
-        return $id_query;
-    }
-
-    public function selectIdfromDigest($param)
-    {
-        Debug::parseDebug($param);
-
-
-        $id_query = $param[0];
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $list = implode("','", $id_query);
-
-        $sql = "SELECT id, digest_mariadb FROM mysql_query WHERE digest_mariadb IN ('{$list}')
-        UNION ALL 
-        SELECT id, digest_mysql FROM mysql_query WHERE digest_mysql IN ('{$list}');";
-        $res = $db->sql_query($sql);
-
-        $data = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $data[$ob->digest_mariadb] = $ob->id;
-        }
-
-        //Debug::debug($data);
-
-        return $data;
-    }
-
-    public function getDigestFromDate($param)
-    {
-        Debug::parseDebug($param);
-
-        $id_mysql_server = $param[0];
-        $date= $param[1];
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT JSON_KEYS(value, '$.data') AS digests, date FROM ts_value_general_json 
-        WHERE id_mysql_server = ".$id_mysql_server." 
-        AND id_ts_variable IN (SELECT id from ts_variable WHERE name = 'events_statements_summary_by_digest') 
-        AND  date = '".$date."' LIMIT 1";
-        //Debug::sql($sql);
-
-        $res = $db->sql_query($sql);
-
-        while($ob = $db->sql_fetch_object($res)) {
-            $data = json_decode($ob->digests);
-        }
-
-        //Debug::debug($data);
-
-        return $data;
-
-    }
-
-
-    public function getIdDatabase($param)
-    {
-        Debug::parseDebug($param);
-        $id_mysql_server = $param[0];
-        $database = $param[1];
-
-
-        if (!empty(self::$database[$id_mysql_server][$database]))
-        {
-            return self::$database[$id_mysql_server][$database];
-        }
-        else
-        {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            if (empty($database))
-            {
-                $database = 'NONE';
-            }
-
-            $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
-            $res = $db->sql_query($sql);
-
-            while($ob = $db->sql_fetch_object($res))
-            {
-                self::$database[$id_mysql_server][$database] = $ob->id;
-                //Debug::debug($ob->id, "id_mysql_database");
-                return $ob->id;
-            }
-
-            $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
-            $db->sql_query($sql);
-            return false;
-        }
-    }
-
-    /*  
-        Get the first id_mysql_server who got MySQL 8.4 and available server
-    */
-
-    static public function getIdMySql84($param)
-    {
-        Debug::parseDebug($param);
-        $res = Extraction2::display(array('version','mysql_server::mysql_available'));
-
-        //Debug::debug($res);
-
-        foreach($res as $id_mysql_server => $server)
-        {
-            $pos = strpos($server['version'], "8.4.");
-
-            if ($pos !== false) {
-                if ($server['mysql_available'] === "1" ) {
-
-                    Debug::debug($id_mysql_server);
-                    return $id_mysql_server;
-                }
-            }
-        }
-        return null;
-    }
-
-
-    static public function getDigest($param)
-    {
-        Debug::parseDebug($param);
-        $query = $param[0];
-
-        if (in_array($query, array("SHOW SLAVE STATUS")))
-        {
-            return NULL;
-        }
-        
-
-        $id_mysql_server = self::getIdMySql84($param);
-
-        if ($id_mysql_server === false) {
-            return null;
-        }
-
-        $db = Mysql::getDbLink($id_mysql_server);
-
-        // replace ? by any value, to make query valid
-        $query = str_replace('LIMIT ?', 'LIMIT 1', $query);
-        $query = str_replace('?', '"34"', $query);
-
-        $sql = "SELECT STATEMENT_DIGEST('".$db->sql_real_escape_string($query)."');";
-        $res = $db->sql_query($sql);
-
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM))
-        {
-            Debug::debug($arr);
-            return $arr[0];
-        }
-
-        return null;
-    }
-
-
-    static public function getHash($param)
-    {
-        Debug::parseDebug($param);
-        $query = $param[0];
-
-        return md5($query);
-    }
-
-
-    static public function getIdMariaDb12($param)
-    {
-        Debug::parseDebug($param);
-        $res = Extraction2::display(array('version','mysql_server::mysql_available'));
-
-        //Debug::debug($res);
-
-        foreach($res as $id_mysql_server => $server)
-        {
-            $pos = strpos($server['version'], "12.0.");
-
-            if ($pos !== false) {
-                if ($server['mysql_available'] === "1" ) {
-
-                    Debug::debug($id_mysql_server);
-                    return $id_mysql_server;
-                }
-            }
-        }
-        return null;
-    }
 }
 
 /****

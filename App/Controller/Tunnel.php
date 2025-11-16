@@ -444,11 +444,11 @@ class Tunnel extends Controller
                 // add alias pour le mapping maxscale & co
                 Alias::upsertAliasDns([$row['remote_host'], $row['remote_port'], $id_mysql_server]);
 
-                echo "Tunnel ID {$row['id']} updated with MySQL server ID $id_mysql_server\n";
+                //echo "Tunnel ID {$row['id']} updated with MySQL server ID $id_mysql_server\n";
 
                 
             } else {
-                echo "Tunnel ID {$row['id']} has no matching MySQL server\n";
+                //echo "Tunnel ID {$row['id']} has no matching MySQL server\n";
             }
         }
     }

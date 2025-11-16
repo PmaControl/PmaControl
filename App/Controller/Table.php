@@ -16,7 +16,7 @@ class Table extends Controller {
     const NB_ROWS_EXTRA = 5;
     //number of line who feet in screen
     const MAX_HIGHT = 43;
-    const MAX_COLUMN = 4; // we don't count main table
+    const MAX_COLUMN = 5; // we don't count main table
 
     static $type_graph = "compound";
     static $table_number = 1;

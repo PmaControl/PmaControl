@@ -1,7 +1,7 @@
 <?php
 
 use \App\Library\Display;
-
+use \Glial\Synapse\FactoryController;
 
 function setColor($type)
 {
@@ -53,7 +53,7 @@ if (empty($_GET['ajax'])){
     ?>
     <div>
     <div style="float:left; padding-right:10px;">
-        <?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", $param); ?>
+        <?= FactoryController::addNode("MysqlServer", "menu", $param); ?>
         <?php
 
 

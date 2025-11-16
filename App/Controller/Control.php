@@ -12,6 +12,7 @@ use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Controller\Worker;
+use \App\Controller\Dot3;
 use \App\Controller\Listener;
 
 /*
@@ -29,19 +30,19 @@ class Control extends Controller
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
      "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`, `connection_name`)",
      "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-    "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`digest` )");
+    "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`id_ts_mysql_query`)");
 
     public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_calculated" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)",
-        "ts_value_digest" => " INDEX (`id_mysql_server`, `digest`,`id_ts_variable` , `date`)",
+        "ts_value_digest" => " INDEX (`id_mysql_server`, `id_ts_mysql_query`, `id_ts_variable` , `date`)",
     );
     //=> TODO a voir pour delete
     private $engine               = "rocksdb";
     private $engine_preference    = array("ROCKSDB");
     public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,",
-                                    "ts_value_digest" => "`digest` varchar(64) NOT NULL,");
+                                    "ts_value_digest" => "id_ts_mysql_query INT(11) UNSIGNED NOT NULL,");
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
@@ -334,6 +335,8 @@ class Control extends Controller
         $this->truncateTsVariable();
         $this->truncateTsMaxDate();
         $this->truncateTsFile();
+
+        Listener::purgeAll($param);
         //System::deleteFiles("server");
     }
 
@@ -414,8 +417,16 @@ PARTITION BY RANGE (to_days(`date`))
 
         $php = explode(" ", shell_exec("whereis php"))[1];
         $cmd = $php." ".GLIAL_INDEX." Daemon stopAll";
+
+
+        if (Debug::$debug == true)
+        {
+            $cmd = $cmd." --debug";
+        }
+
         Debug::debug($cmd);
-        shell_exec($cmd);
+        $gg = shell_exec($cmd);
+        echo $gg."\n";
 
         usleep(500);
 
@@ -427,12 +438,14 @@ PARTITION BY RANGE (to_days(`date`))
         Mysql::onAddMysqlServer();
         $this->dropAllFile();
 
-        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        //Debug::debug($cmd);
-        //shell_exec($cmd);
+        Dot3::purgeAll($param);
+        Worker::purgeAll($param);
+        self::purgeAll($param);
 
-        //sleep(1);
-        //$this->dropLock();
+        // su -s /bin/bash -c 'php /path/to/script.php' www-data
+        $cmd = 'su -s /bin/bash -c "'.$php.' '.GLIAL_INDEX.' Daemon startAll" www-data';
+        Debug::debug($cmd);
+        shell_exec($cmd);
     }
 
     public function statistique($param = "")
@@ -632,7 +645,6 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
-
         foreach($tables as $table)
         {
             // time
@@ -642,7 +654,6 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         }
         
     }
-
 
     public function generateAllTables($param)
     {
@@ -661,4 +672,23 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         return $tables;
     }
 
+
+    public static function purgeAll($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE integrate_all_run_time";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+
+        $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    
+    }
 }

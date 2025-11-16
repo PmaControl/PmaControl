@@ -22,8 +22,6 @@ class Mydumper
      */
     static public function parseLog($log)
     {
-
-
         $log = str_replace(array("\n\n", "\n"), array("\n", "<br>"), trim($log));
         //
 

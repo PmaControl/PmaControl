@@ -25,6 +25,13 @@ class Ssh
      */
     static $server = array();
 
+
+    public static $mock = null;
+
+    public static function setMockInstance($instance) {
+        self::$mock = $instance;
+    }
+    
     static function formatPrivateKey($key)
     {
         $key = str_replace('\n', "", $key);
@@ -224,50 +231,71 @@ class Ssh
         
     }
 
-    static function ssh($id_mysql_server)
+    static function ssh($id_server, $type = 'mysql')
     {
-        $server = self::getSsh($id_mysql_server);
+        if (self::$mock) {
+            return self::$mock;
+        }
+
+        $server = self::getSsh($id_server, $type);
 
         if ($server === false) {
             return false;
         }
-
+        
         $ssh = self::connect($server['ip'], $server['port'], $server['user'], Crypt::decrypt($server['private_key'], CRYPT_KEY));
 
         if ($ssh) {
 
             Debug::debug($ssh->exec("ls -l"), "ls -l");
 
-            self::$ssh[$id_mysql_server] = $ssh;
+            self::$ssh[$id_server] = $ssh;
             return $ssh;
         }
+
 
         return false;
     }
 
-    static function getSsh($id_mysql_server)
+    static function getSsh(int $id, string $type = 'mysql')
     {
-        if (empty(self::$server[$id_mysql_server])) {
+        if (empty(self::$server[$type])) {
+            self::$server[$type] = [];
+        }
+
+        if (empty(self::$server[$type][$id])) {
 
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "SELECT a.id, a.ip, c.user, a.ssh_port as port,c.public_key,c.private_key, c.type, c.fingerprint   FROM mysql_server a
-          LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
-          INNER JOIN ssh_key c ON b.id_ssh_key = c.id
-          WHERE `active` = 1";
+
+            if ($type === 'mysql') {
+                $sql = "SELECT a.id, a.ip, c.user, a.ssh_port as port,c.public_key,c.private_key, c.type, c.fingerprint   
+                FROM mysql_server a
+                LEFT JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
+                INNER JOIN ssh_key c ON b.id_ssh_key = c.id
+                WHERE `active` = 1";
+            }elseif ($type === 'docker') {
+
+                $sql = "SELECT ds.id, ds.hostname AS ip, sk.user, ds.port, sk.public_key, sk.private_key, sk.type, sk.fingerprint
+                FROM docker_server ds
+                INNER JOIN ssh_key sk ON ds.id_ssh_key = sk.id";
+
+            } else {
+                throw new \Exception("Unknown SSH lookup type `$type`");
+            }
 
             Debug::sql($sql);
 
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                self::$server[$ob['id']] = $ob;
+                self::$server[$type][$ob['id']] = $ob;
             }
         }
 
-        if (empty(self::$server[$id_mysql_server])) {
+        if (empty(self::$server[$type][$id])) {
             return false;
         }
 
-        return self::$server[$id_mysql_server];
+        return self::$server[$type][$id];
     }
 }

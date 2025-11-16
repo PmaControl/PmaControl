@@ -39,7 +39,6 @@ class Daemon extends Controller
                   }, 300);
             });');
 
-
             $this->di['js']->code_javascript('
             $(document).ready(function(){
                 function refresh(){
@@ -52,7 +51,6 @@ class Daemon extends Controller
                   }, 1000);
             });');
 
-            
             $this->di['js']->code_javascript('
             $(document).ready(function(){
                 function refresh(){

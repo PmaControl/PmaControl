@@ -246,11 +246,7 @@ class Agent extends Controller {
         while (true) {
             $id_loop++;
 
-
-
             $time_start = microtime(true);
-
-
 
             $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM daemon_main where id=" . $id;

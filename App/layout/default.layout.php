@@ -14,7 +14,7 @@ echo "<h2>".$elems['title']."</h2>";
 echo '<span class="ariane">'.$elems['ariane'].'</span>';
 echo "</div>";
 
-echo "<div style=\"padding:0 10px 10px 10px\">";
+echo "<div style=\"padding:0 15px 15px 15px\">";
 
 get_flash();
 echo $GLIALE_CONTENT;

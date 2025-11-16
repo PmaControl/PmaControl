@@ -61,6 +61,12 @@ GROUP BY id_mysql_server,variable_name having count(1) > 1)
         
         $this->set('data', $data);
     }
+
+
+    public function tsVariable($param)
+    {
+
+    }
 }
 
 

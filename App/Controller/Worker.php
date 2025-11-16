@@ -101,36 +101,48 @@ class Worker extends Controller
 
             $db->sql_query($sql);
             $id_worker_execution = $db->sql_insert_id();
+            $db->sql_close();
             $start = microtime(true);
 
             $this->logger->debug("====> id_worker_execution ".$id_worker_execution);
 
             //do your business logic here and process this message!
-            FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
-            //$this->tryMysqlConnection(array($msg->name, $msg->id));
-
-            $end = microtime(true);
-            $executionTime = round(($end - $start) * 1000, 0);
-
-            $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
-            $sql ="UPDATE worker_execution SET date_end='".date("Y-m-d H:i:s")."', execution_time= ".$executionTime."
-            WHERE id=".$id_worker_execution.";";
-
-            $db->sql_query($sql);
-
-            // if mysql connection is down, the worker will be down too and we have to restart one
-            $this->logger->info("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
-
-            usleep(50);
-            if (file_exists($lock_file)) {
-                unlink($lock_file);
+            try{
+                FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
             }
+            catch (\Exception $e) {
+                $this->logger->warning("[WORKER:$pid] CRASHED with id_mysql_server:$msg->id");
 
-            file_put_contents($worker_pid,"Waiting...");
+                if (file_exists($worker_pid)) {
+                    unlink($worker_pid);
+                }
+            }
+            finally
+            {
+                $end = microtime(true);
+                $executionTime = round(($end - $start) * 1000, 0);
 
-            //finally, reset our msg vars for when we loop and run again
-            $msg_type = NULL;
-            $msg      = NULL;
+                $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
+                $sql ="UPDATE worker_execution SET date_end='".date("Y-m-d H:i:s")."', execution_time= ".$executionTime."
+                WHERE id=".$id_worker_execution.";";
+
+                $db->sql_query($sql);
+                $db->sql_close();
+
+                // if mysql connection is down, the worker will be down too and we have to restart one
+                $this->logger->info("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
+
+                usleep(50);
+                if (file_exists($lock_file)) {
+                    unlink($lock_file);
+                }
+
+                file_put_contents($worker_pid,"Waiting...");
+
+                //finally, reset our msg vars for when we loop and run again
+                $msg_type = NULL;
+                $msg      = NULL;
+            }
         }
 
         $this->logger->warning("We not wait waited next msg in queue ($queue_key)");
@@ -580,13 +592,13 @@ class Worker extends Controller
 
         $sql = "SELECT a.*,b.name  FROM `worker_run` a
             INNER JOIN `worker_queue` b ON a.`id_worker_queue` = b.id
-            ";
+            WHERE 1=1 ";
 
         if ($id_worker_queue != 0) {
-            $sql .= "WHERE `id_worker_queue`=".$id_worker_queue;
+            $sql .= " `id_worker_queue`=".$id_worker_queue;
         }
 
-        $sql .= ";";
+        $sql .= " AND is_working=1;";
 
         Debug::sql($sql);
         $res = $db->sql_query($sql);
@@ -768,7 +780,7 @@ class Worker extends Controller
         }
 
         //le but est de lisser la charge sur la totallité du créneau entre 2 run (ca ne change rien si c'est sur une seconde)
-        $delay = floor(1000000 * $refresh_time / $nb_server_to_monitor - 100);
+        $delay = floor(1000000 * $refresh_time / 2 / $nb_server_to_monitor - 100);
 
         $this->logger->debug("Delay : ".$delay."");
 
@@ -1034,5 +1046,26 @@ class Worker extends Controller
                 }
             }
         }
+    }
+
+    public static function purgeAll($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE worker_execution";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE worker_run";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+        
+        $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
     }
 }

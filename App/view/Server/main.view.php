@@ -4,7 +4,29 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 use App\Library\Format;
+use App\Library\Debug;
 
+function human_time_diff_dec($date_start, $precision = 1) {
+    $seconds = time() - strtotime($date_start);
+    $seconds--;
+
+    if ($seconds < 60) {
+        return round($seconds, $precision) . 's';
+    }
+
+    $minutes = $seconds / 60;
+    if ($minutes < 60) {
+        return round($minutes, $precision) . 'm';
+    }
+
+    $hours = $minutes / 60;
+    if ($hours < 24) {
+        return round($hours, $precision) . 'h';
+    }
+
+    $days = $hours / 24;
+    return round($days, $precision) . 'j';
+}
 
 function isoToFlag(string $iso): string {
     // Chaque lettre est convertie en Regional Indicator Symbol
@@ -67,7 +89,7 @@ echo '<th>'.__("Version").'</th>';
 echo '<th>'.__("Latency AVG").'</th>';
 echo '<th>'."G_L".'</th>';
 echo '<th>'."P_S".'</th>';
-echo '<th>'.__("Date refresh").'</th>';
+echo '<th>'.__("Last refresh").'</th>';
 echo '<th>'.__("Ping").'</th>';
 
 echo '<th style="max-width:400px">'.__("Error").'</th>';
@@ -296,8 +318,13 @@ if (!empty($data['servers'])) {
         echo '</td>';
         echo '<td style="'.$style.'">';
 
+
+
+
         if (!empty($data['last_date'][$server['id']]['date'])) {
-            echo $data['last_date'][$server['id']]['date'];
+            //echo $data['last_date'][$server['id']]['date'];
+
+            echo human_time_diff_dec($data['last_date'][$server['id']]['date'],2);
         }
         
         echo '</td>';
@@ -367,6 +394,10 @@ if (!empty($data['servers'])) {
         }
         unset($error_extra);
 
+        if (Debug::$debug){
+            echo " pmacontrol Aspirateur tryMysqlConnection {$server['name']} {$server['id']} --debug";
+        }
+        
         if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
             echo ' <a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
@@ -374,7 +405,6 @@ if (!empty($data['servers'])) {
         if ($IS_ACKNOWLEDGE === true) {
             echo ' <a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
         }
-
 
         echo '</td>';
 

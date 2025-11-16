@@ -4,6 +4,7 @@ declare(ticks=1);
 
 namespace App\Controller;
 
+use App\Library\Extraction;
 use App\Library\Extraction2;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
@@ -1288,51 +1289,104 @@ SQL;
 
     }
 
-
     public function all($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-
-        if (empty($id_mysql_server))
-        {
-            $id_mysql_server = 1;
-            $param[0] = 1;
-            $_GET['id_mysql_server'] = 1;
-        }
+        $id_mysql_server = $param[0] ?? 1;
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
-        $elems = Extraction2::display(array("events_statements_summary_by_digest","performance_schema") , array($id_mysql_server));
+        // TRI
+        $sort = $_GET['sort'] ?? 'sum_timer_wait';
+        $order = $_GET['order'] ?? 'desc';
 
-        $data['queries'] = array();
-        $data['performance_schema'] =0;
+        $elems = Extraction2::display(["performance_schema"], [$id_mysql_server]);
+        $query = Extraction2::display(
+            ["sum_timer_wait", "count_star", "avg_timer_wait", "sum_rows_examined", "sum_rows_sent", "sum_rows_affected", 
+            "sum_no_index_used","sum_no_good_index_used", "sum_errors", "sum_warnings" ],
+            [$id_mysql_server]
+        );
 
-        if (! empty($elems[$id_mysql_server]['events_statements_summary_by_digest']['data']))
-        {
-            $queries = $elems[$id_mysql_server]['events_statements_summary_by_digest']['data'];
+        // Ajout colonne virtual "rows_query" pour tri correct
+        if (isset($query[$id_mysql_server]['@digest'])) {
+            foreach ($query[$id_mysql_server]['@digest'] as $k => $v) {
+                $count = $v['count_star'] ?? 0;
+                $exam  = $v['sum_rows_sent'] ?? 0;
 
-            if (isset($elems[$id_mysql_server]['performance_schema'])){
-                $data['performance_schema']  = $elems[$id_mysql_server]['performance_schema'];
+
+                // Virtual rows/query
+                $v['rows_query'] = ($count > 0) ? ($sent / $count) : 0;
+
+                // Flags (déjà demandés)
+                $v['has_errors']      = !empty($v['sum_errors']);
+                $v['has_warnings']    = !empty($v['sum_warnings']);
+                $v['has_no_index_used'] = !empty($v['sum_no_index_used']) && $v['sum_no_index_used'] > 0;
+                $v['has_no_good_index_used'] = !empty($v['sum_no_good_index_used']) && $v['sum_no_good_index_used'] > 0;
+
+                $v['has_table_scan'] = $v['has_no_index_used'] || $v['has_no_good_index_used'];
+                
+                // ---------------------------------------------------------------------
+                //  AJOUT : RATIO normalisé par requête (0.xx)
+                // ---------------------------------------------------------------------
+                $v['errors_ratio'] = ($count > 0 && !empty($v['sum_errors']))
+                    ? round($v['sum_errors'] / $count, 2)
+                    : 0.00;
+
+                $v['warnings_ratio'] = ($count > 0 && !empty($v['sum_warnings']))
+                    ? round($v['sum_warnings'] / $count, 2)
+                    : 0.00;
+
+                $v['no_index_ratio'] = ($count > 0 && !empty($v['sum_no_index_used']))
+                    ? round($v['sum_no_index_used'] / $count, 2)
+                    : 0.00;
+
+                $v['no_good_index_ratio'] = ($count > 0 && !empty($v['sum_no_good_index_used']))
+                    ? round($v['sum_no_good_index_used'] / $count, 2)
+                    : 0.00;
+
+                $query[$id_mysql_server]['@digest'][$k]['rows_query'] = ($count > 0) ? ($exam / $count) : 0;
             }
 
-            uasort($queries, function ($a, $b) {
-                $a_val = $a['AVG_TIMER_WAIT'] * $a['COUNT_STAR'];
-                $b_val = $b['AVG_TIMER_WAIT'] * $b['COUNT_STAR'];
-                return $b_val <=> $a_val; // tri décroissant
+            $rows =& $query[$id_mysql_server]['@digest'];
+            uasort($rows, function ($a, $b) use ($sort, $order) {
+
+                // tri spécial rows/query
+                if ($sort === 'rows_query') {
+                    return ($order === 'asc')
+                        ? ($a['rows_query'] <=> $b['rows_query'])
+                        : ($b['rows_query'] <=> $a['rows_query']);
+                }
+
+                $aVal = $a[$sort] ?? 0;
+                $bVal = $b[$sort] ?? 0;
+
+                return ($order === 'asc')
+                    ? ($aVal <=> $bVal)
+                    : ($bVal <=> $aVal);
             });
-
-            Debug::debug($queries, "QUERIES");
-
-            $data['queries'] = $queries;
         }
-        
+
+        $data['queries'] = [];
+        $data['performance_schema'] = $elems[$id_mysql_server]['performance_schema'] ?? 0;
+
+        $sql = "SELECT * FROM ts_mysql_query WHERE id_mysql_server = $id_mysql_server";
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['queries'][$arr['id']] = $arr;
+        }
+
+        $this->set('id_mysql_server', $id_mysql_server);
         $this->set('data', $data);
         $this->set('param', $param);
+        $this->set('query', $query);
+        $this->set('sort', $sort);
+        $this->set('order', $order);
     }
 
-    public function digest($param)
+    public function digest_old($param)
     {
         Debug::parseDebug($parma);
 
@@ -1431,6 +1485,195 @@ ORDER BY date;
         $this->set('data', $data);
     }
 
+public function digest($param)
+{
+    Debug::parseDebug($param);
+
+    $id_mysql_server = $param[0];
+    $schema_name     = $param[1];
+    $digest          = $param[2];
+
+    $db    = Sgbd::sql(DB_DEFAULT);
+    $extra = Mysql::getDbLink($id_mysql_server, "EXTRA");
+
+    if ($schema_name === "NULL"){
+        $schema_name = "";
+    }
+
+    if (!empty($schema_name)) {
+        $extra->sql_select_db($schema_name);
+    }
+
+    // 1) Charger métadonnées digest (local)
+    $sql = "SELECT id,schema_name, digest_text, digest
+            FROM ts_mysql_query
+            WHERE id_mysql_server = ".intval($id_mysql_server)."
+              AND digest = '".$db->sql_real_escape_string($digest)."'";
+              
+    if (empty($schema_name))
+    {
+        $sql .= " AND schema_name IS NULL";
+    }
+    else{
+        $sql .= " AND schema_name = '".$db->sql_real_escape_string($schema_name)."'";
+    }
+
+
+              debug($sql);
+
+    $res = $db->sql_query($sql);
+    $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+
+    $query = Extraction2::display(
+        ["count_star","sum_timer_wait","min_timer_wait","avg_timer_wait","max_timer_wait","sum_lock_time","sum_errors","sum_warnings",
+        "sum_rows_affected","sum_rows_sent","sum_rows_examined","sum_created_tmp_disk_tables","sum_created_tmp_tables","sum_select_full_join",
+        "sum_select_full_range_join","sum_select_range","sum_select_range_check","sum_select_scan","sum_sort_merge_passes","sum_sort_range",
+        "sum_sort_rows","sum_sort_scan","sum_no_index_used","sum_no_good_index_used","id_ts_mysql_query","sum_cpu_time","max_controlled_memory",
+        "max_total_memory","count_secondary","quantile_95","quantile_99","quantile_999","query_sample_text","query_sample_seen","query_sample_timer_wait"],
+        [$id_mysql_server]
+    );
+
+
+    debug($query[$id_mysql_server]['@digest'][$data['id']]);
+    //debug($stats);
+
+
+    // Fallback si digest non présent localement
+    if (empty($data)) {
+        $sql_fb = "SELECT SCHEMA_NAME, DIGEST_TEXT, DIGEST
+                   FROM performance_schema.events_statements_summary_by_digest
+                   WHERE DIGEST = '".$extra->sql_real_escape_string($digest)."'
+                   LIMIT 1";
+
+        $res_fb = $extra->sql_query($sql_fb);
+        $data = $extra->sql_fetch_array($res_fb, MYSQLI_ASSOC);
+
+
+
+
+        if (empty($data)) {
+            throw new \Exception("Digest '$digest' not found locally or on server $id_mysql_server");
+        }
+    }
+
+    // 2) Récupérer l'exemple réel (non normalisé)
+    $sql_real = "SELECT SQL_TEXT
+                 FROM performance_schema.events_statements_history_long
+                 WHERE DIGEST = '".$extra->sql_real_escape_string($digest)."'
+                 ORDER BY EVENT_ID DESC
+                 LIMIT 1";
+
+    $res2 = $extra->sql_query($sql_real);
+    $arr2 = $extra->sql_fetch_array($res2, MYSQLI_ASSOC);
+
+    if (empty($arr2['SQL_TEXT'])) {
+        // Pas d'exemple → pas d'EXPLAIN possible
+        $data['sql_text']     = $data['digest_text'];
+        $data['tables']       = [];
+        $data['alias']        = [];
+        $data['index_info']   = [];
+        $data['explain']      = [];
+        $data['explain_json'] = null;
+
+        $this->set('data', $data);
+        return;
+    }
+
+    $data['sql_text'] = $arr2['SQL_TEXT'];
+
+    // 3) Extraction tables + alias
+    $data['tables'] = $this->extractTablesWithOffsets($data['sql_text']);
+    foreach ($data['tables'] as $key => $tbl) {
+        if (empty($tbl['alias'])) {
+            $data['tables'][$key]['alias'] = $tbl['table'];
+        }
+        $data['alias'][$data['tables'][$key]['alias']] = $data['tables'][$key];
+    }
+
+    // 4) Index & cardinalité
+    $data['index_info'] = [];
+    foreach ($data['tables'] as $tbl) {
+        $table_name = $tbl['table'];
+
+        $sql_idx = "SHOW INDEX FROM `".$extra->sql_real_escape_string($table_name)."`";
+        $res_idx = $extra->sql_query($sql_idx);
+
+        while ($row = $extra->sql_fetch_array($res_idx, MYSQLI_ASSOC)) {
+            $data['index_info'][$table_name][] = [
+                'index_name'  => $row['Key_name'],
+                'seq'         => $row['Seq_in_index'],
+                'column_name' => $row['Column_name'],
+                'cardinality' => $row['Cardinality'],
+                'non_unique'  => $row['Non_unique'],
+            ];
+        }
+    }
+
+    // 5) Vérification type requête pour autoriser EXPLAIN
+    $normalized = ltrim($data['sql_text']);
+    $prefix = strtoupper(substr($normalized, 0, 6));
+
+    $allowed = ["SELECT", "UPDATE", "INSERT", "DELETE"];
+    if (!in_array($prefix, $allowed)) {
+        $data['explain']      = [];
+        $data['explain_json'] = null;
+        $this->set('data', $data);
+        return;
+    }
+
+    // 6) EXPLAIN classique
+    $data['explain'] = [];
+    $sql_explain = "EXPLAIN " . $data['sql_text'];
+    if ($res3 = $extra->sql_query($sql_explain)) {
+        while ($r3 = $extra->sql_fetch_array($res3, MYSQLI_ASSOC)) {
+            $data['explain'][] = $r3;
+        }
+    }
+
+    // 7) EXPLAIN JSON
+    $data['explain_json'] = null;
+    $sql_explain_json = "EXPLAIN FORMAT=JSON " . $data['sql_text'];
+    if ($res4 = $extra->sql_query($sql_explain_json)) {
+        $row = $extra->sql_fetch_array($res4, MYSQLI_ASSOC);
+        $data['explain_json'] = json_decode($row['EXPLAIN'], true);
+    }
+
+    $this->set('data', $data);
+}
+
+
+
+    public static function parseExplainJson(array $json)
+    {
+        // Path change selon version MariaDB/MySQL
+        $plan = $json['query_block'] ?? $json['join'] ?? $json;
+
+        $tables = [];
+
+        $extract = function($node) use (&$extract, &$tables) {
+            if (isset($node['table_name'])) {
+                $tables[] = [
+                    'table'         => $node['table_name'] ?? '?',
+                    'access_type'   => $node['access_type'] ?? '?',
+                    'rows'          => $node['rows'] ?? '?',
+                    'filtered'      => isset($node['filtered']) ? $node['filtered'].'%' : '?',
+                    'possible_keys' => $node['possible_keys'] ?? '',
+                    'key'           => $node['key'] ?? '',
+                    'cost'          => $node['cost_info']['query_cost'] ?? '',
+                ];
+            }
+
+            foreach ($node as $k => $v) {
+                if (is_array($v)) {
+                    $extract($v);
+                }
+            }
+        };
+
+        $extract($plan);
+        return $tables;
+    }
 
 }
 /*

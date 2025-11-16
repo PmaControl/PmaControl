@@ -137,6 +137,10 @@ class Extraction2
 
                     if ($radical == "slave") {
                         $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+                    }
+                    elseif ($radical === "digest") {
+                        // digest => pas de connection_name
+                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`id_ts_mysql_query` as `id_ts_mysql_query`, a.`date`, a.`value` ";
                     } else {
                         $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
 
@@ -214,10 +218,11 @@ class Extraction2
 
             }
         }
-
+        
+        Debug::sql($sql3);
 
         if (empty($sql3)) {
-            return false;
+            return [];
         }
 
 
@@ -276,26 +281,40 @@ class Extraction2
             return $table;
         }
 
+        $extra = [
+            'digest' => 'id_ts_mysql_query',
+            'slave' => 'connection_name'
+        ];
+
         while ($ob = $db->sql_fetch_object($res)) {
             //Debug::debug($ob);
             //Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
 
+            $radical = self::$variable[$ob->id_ts_variable]['radical'];
+            //$is_digest = ($radical === 'digest');
+
             if ($range) {
-                if ($ob->connection_name === "N/A") {
+
+
+
+                if (! in_array($radical, ["digest", "slave"])) {
                     $ob->value = trim($ob->value);
                     if ($ob->type == "json") {
                         $ob->value = json_decode($ob->value, true);
                     }
+
+                    //$group = $is_digest ? '@digest' : null;
+
                     $table[$ob->id_mysql_server][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
                     $table[$ob->id_mysql_server][$ob->date]['date']                                       = $ob->date;
                     $table[$ob->id_mysql_server][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
                 } else {
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date]['date']                                       = $ob->date;
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
                 }
             } else {
-                if ($ob->connection_name === "N/A") {
+                if (! in_array($radical, ["digest", "slave"])) {
 
                     $ob->value = trim($ob->value);
                     if ($ob->type == "json") {
@@ -306,13 +325,13 @@ class Extraction2
                     $table[$ob->id_mysql_server][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
                 } else {
 
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name]['date']                                       = $ob->date;
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}]['id_mysql_server']                            = $ob->id_mysql_server;
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}]['date']                                       = $ob->date;
 
                     if (! isset($ob->value)) {
                         $ob->value = "";
                     }
-                    $table[$ob->id_mysql_server]['@slave'][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
+                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
                 }
             }
         }
@@ -369,6 +388,7 @@ class Extraction2
             }
 
             self::$variable[$ob->id]['name']                 = $ob->name;
+            self::$variable[$ob->id]['radical']              = $ob->radical;
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
             //$radical                              = $ob->radical;
 

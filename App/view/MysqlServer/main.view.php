@@ -1,0 +1,142 @@
+<?php
+
+use \App\Library\Display;
+use \Glial\Synapse\FactoryController;
+
+FactoryController::addNode("MysqlServer", "menu", $param);
+
+
+
+//debug($data);
+/** @var array $data */
+$id = (int)$data['id_mysql_server'];
+?>
+
+
+  <?php
+  // Panels simples pour chaque catégorie
+  $groups = [
+      "Résumé"        => $data['summary'],
+      "OS / Système"  => $data['os'],
+      "InnoDB"        => $data['innodb'],
+      "Connexions"    => $data['connections'],
+      "Binlog"        => $data['binlog'],
+      "Réplication / WSREP" => $data['wsrep'],
+      "SSL"           => $data['ssl'],
+      
+  ];
+  ?>
+
+<div style="padding-right:20px">
+    <div class="grid row" style="margin-top:20px;">
+        <?php foreach ($groups as $title => $items): ?>
+        <div class="col-md-4 grid-item" style="margin-bottom:0px;">
+            <div class="panel panel-default">
+            <div class="panel-heading"><strong><?= htmlspecialchars($title) ?></strong></div>
+            <div class="panel-body" style="">
+                <table class="table table-condensed table-striped" style="margin:0">
+                <tbody>
+                <?php foreach ($items as $k => $v): ?>
+                    <tr>
+                    <td style="width:55%"><?= htmlspecialchars($k) ?></td>
+                    <td style="width:45%; text-align:right"><?= (string)$v ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+  <!-- DISQUES -->
+  <?php if (!empty($data['disks']) && is_array($data['disks'])): ?>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-info">
+        <div class="panel-heading"><strong>Disques</strong></div>
+        <div class="panel-body" style="padding:0; overflow:auto">
+          <table class="table table-condensed table-bordered table-striped" style="margin:0">
+            <thead>
+              <tr>
+                <th>Mount</th>
+                <th>Filesystem</th>
+                <th>Taille</th>
+                <th>Utilisé</th>
+                <th>Libre</th>
+                <th>%</th>
+                <th>Point de montage</th>
+              </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['disks'] as $mount => $info): ?>
+              <tr>
+                <td><?= htmlspecialchars($mount) ?></td>
+                <td><?= htmlspecialchars($info[0] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[1] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[2] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[3] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[4] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[5] ?? '') ?></td>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?php endif; ?>
+
+
+  <!-- PROCESSLIST -->
+  <?php if (!empty($data['processlist']) && is_array($data['processlist'])): ?>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-warning">
+        <div class="panel-heading"><strong>Processlist</strong></div>
+        <div class="panel-body" style="overflow:auto; max-height:600px; padding:0">
+          <table class="table table-condensed table-bordered table-striped">
+            <thead>
+            <tr>
+              <?php $first = reset($data['processlist']); ?>
+              <?php if ($first && is_array($first)): ?>
+                <?php foreach (array_keys($first) as $col): ?>
+                  <th><?= htmlspecialchars($col) ?></th>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['processlist'] as $row): ?>
+              <tr>
+                <?php foreach ($row as $val): ?>
+                  <td>
+                    <?php
+                      $text = (string)$val;
+                      if (strlen($text) > 200) {
+                          $text = substr($text, 0, 200) . "…";
+                      }
+                      echo nl2br(htmlspecialchars($text));
+                    ?>
+                  </td>
+                <?php endforeach; ?>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+
+
+<?php
+
+FactoryController::addNode("MysqlServer", "lastRefresh", $param);
+

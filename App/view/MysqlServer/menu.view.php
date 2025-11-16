@@ -1,12 +1,7 @@
 <?php
 
 use \Glial\Synapse\FactoryController;
-
 FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-style" => "btn-primary", "data-width" => "auto","all_selectable"=> "true")));
-
-
-
-
 ?>
 
 <div class="btn-group">
@@ -21,6 +16,7 @@ FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_se
 $node = FactoryController::getRootNode();
 
 $menu= array();
+$menu['MysqlServer']['main'] = __('Info');
 $menu['MysqlServer']['processlist'] = __('Processlist');
 $menu['Cluster']['svg'] = __('Cluster');
 $menu['Query']['all'] = __('Queries');

@@ -67,7 +67,7 @@ function getBadge($status)
                 <td><?= $i ?></td>
                 <td><?= $job['class'] ?></td>
                 <td><?= $job['method'] ?></td>
-                <td><pre><?php print_r(json_decode($job['param'], true)); ?></pre></td>
+                <td style="max-width:200px; overflow-wrap: break-word;"><?= json_encode(json_decode($job['param'], true), JSON_PRETTY_PRINT) ?></td>
                 <td><?= $job['date_start'] ?></td>
                 <td><?= $job['date_end'] ?></td>
                 <td><?= $job['pid'] ?></td>
@@ -93,7 +93,7 @@ function getBadge($status)
 
             <td><?php
                 if (!empty($job['log_msg'])) {
-                    echo '<pre id="data_log" style="background-color: black; overflow: auto; max-height:400px; max-width:500px; padding: 5px; font-family: monospace;">'.$job['log_msg'].'</pre>';
+                    echo '<pre id="data_log" style="background-color: black; overflow: auto;  padding: 5px; font-family: monospace;">'.$job['log_msg'].'</pre>';
                 }
                 ?></td>
             <td><?php

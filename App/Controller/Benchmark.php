@@ -608,7 +608,7 @@ Threads fairness:
             return;
         }
 
-        $sql = "select a.*,b.display_name from `benchmark_main` a
+        $sql = "select a.*,b.display_name, b.port from `benchmark_main` a
          INNER JOIN mysql_server b ON a.id_mysql_server = b.id
          ORDER BY a.date_end DESC LIMIT 100";
         $res = $db->sql_query($sql);
@@ -620,12 +620,12 @@ Threads fairness:
             $tmp = array();
 
             $tmp['id']      = $ob->id;
-            $tmp['libelle'] = $ob->display_name." (".$ob->date_end.")";
+            $tmp['libelle'] = $ob->display_name.":".$ob->port." (".$ob->date_end.")";
 
             $data['select_bench'][] = $tmp;
         }
 
-        $sql = "SELECT a.display_name, b.`date`,b.id
+        $sql = "SELECT a.display_name, a.port, b.`date`,b.id
             FROM mysql_server a
             INNER JOIN `benchmark_main` b ON a.id = b.id_mysql_server
             WHERE b.id IN (".$id_to_take.")
@@ -634,7 +634,7 @@ Threads fairness:
 
         $benchmark = array();
         while ($ob        = $db->sql_fetch_object($res)) {
-            $benchmark[$ob->id] = $ob->display_name." (".$ob->date.")";
+            $benchmark[$ob->id] = $ob->display_name.":".$ob->port." (".$ob->date.")";
         }
 
         $sql = "SELECT id_benchmark_main,
