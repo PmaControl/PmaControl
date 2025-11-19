@@ -111,7 +111,7 @@ class Worker extends Controller
                 FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
             }
             catch (\Exception $e) {
-                $this->logger->warning("[WORKER:$pid] CRASHED with id_mysql_server:$msg->id");
+                $this->logger->warning("[WORKER:$pid] CRASHED with id_mysql_server:$msg->id (ERROR : ".$e->getMessage().")");
 
                 if (file_exists($worker_pid)) {
                     unlink($worker_pid);

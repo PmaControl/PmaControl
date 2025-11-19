@@ -10,7 +10,7 @@
  * https://www.npmjs.com/package/chartjs-plugin-datasource-prometheus
 
  * vertical line
- * https://jsfiddle.net/pu68rhLd/7/
+
  *  */
 
 namespace App\Library;
@@ -49,6 +49,11 @@ class Extraction2
         if (empty($server)) {
             $server = self::getServerList();
         }
+        else
+        {
+            sort($server);
+            self::$server = $server;
+        }
         //Debug::debug($server, "SERVER LIST");
 
         //Debug::debug($variable);
@@ -58,7 +63,7 @@ class Extraction2
         if (! empty($date) && $range == false 
         && count($server) == 1 
         && count($date) == 1){
-            $server = implode(',',$server);
+            
             $date  = implode(',', $date);
 
             $sql3 = self::getQuery(array($var, $server, $date));
@@ -128,7 +133,7 @@ class Extraction2
             $WINDOW   = "";
 
             $variable = self::getIdVariable($var);
-            //Debug::debug($variable);
+            Debug::debug($variable);
 
             foreach ($variable as $radical => $data_type) {
                 foreach ($data_type as $type => $tab_ids) {
@@ -373,6 +378,7 @@ class Extraction2
         }
 
         $sql = implode(' UNION ALL ', $sqls);
+        Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -493,14 +499,18 @@ class Extraction2
 
         $sql = "SELECT 
         c.id AS ts_variable_id,
-        group_concat(distinct concat('p',TO_DAYS(b.date) + 1)) AS partition_day
+        group_concat(distinct concat('p',TO_DAYS(b.date) + 1)) AS partition_day,
+        group_concat(b.id_mysql_server)
         FROM ts_max_date b
         JOIN ts_variable c ON b.id_ts_file = c.id_ts_file
         WHERE c.id in (".$list_id_variable.")
-        AND date > '".$max_date."'
+        AND b.date != b.date_p4
+        AND date > '".$max_date."' AND b.id_mysql_server IN (".implode(',', self::$server).")
         GROUP BY c.id;";
 
-        //debug($sql);
+        // AND b.date != b.date_p4 => empeche de ramener unitilement la premiere partition dans le cas ou il y a jamais eu de données.
+
+        Debug::debug($sql, "PARTITIONS");
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)){
@@ -547,7 +557,7 @@ class Extraction2
     public static function getQuery($param)
     {
         $variables = $param[0];
-        $id_mysql_server = $param[1];
+        $id_mysql_server = end($param[1]);
         $date = $param[2];
         
         $id_ts_variables = self::getIdVariable($variables);
@@ -578,32 +588,6 @@ class Extraction2
         }
 
         $sql3 = implode(" \nUNION ALL\n ", $sql2);
-
-
-        //$db = Sgbd::sql(DB_DEFAULT);
-        //$res = $db->sql_query($sql3);
-
-        //Debug::sql($sql3);
-        
-        //$sql = "SELECT `from`, `radical`, group_concat(id) as id_ts_variable FROM ts_variable WHERE id in (".$id_ts_variables.") GROUP BY 1,2;";
-
-            /*
-
-        $sql4= array();
-        while ($ob = $db->sql_fetch_object($res)) {
-            //debug($radical);
-            if ($ob->radical == "slave") {
-                $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-            } else {
-                $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
-            }
-            $sql2[] = "(SELECT ".$fields." FROM `ts_value_".$ob->radical."_".$ob->type."` PARTITION (".$partition.") a 
-                  WHERE a.id_ts_variable = ".$ob->id_ts_variable." AND a.id_mysql_server = ".$id_mysql_server.") AND date= '".$date."' ";
-        }
-
-        $sql3 = implode (" UNION ALL " ,$sql2);*/
-
-        
 
         return $sql3;
 
@@ -643,9 +627,6 @@ class Extraction2
         WHERE `name` = 'server_uid' and a.id_mysql_server in('".$server."');";
 
         $res = $db->sql_query($sql);
-
-
-
 
         return  Display::display($var, $id_mysql_server);
     }

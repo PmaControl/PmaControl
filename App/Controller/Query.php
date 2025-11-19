@@ -659,7 +659,6 @@ SQL;
             IF(configSens.acValeur='Emission',msg_sortie.amCodeEanSocieteClient,msg_entree.amCodeEanSocieteClient) as glnClient,
             IF(configSens.acValeur='Emission',fournisseur_sortie.soRaisonSociale,fournisseur_entree.soRaisonSociale) as libelleFournisseur,
             IF(configSens.acValeur='Emission',client_sortie.soRaisonSociale,client_entree.soRaisonSociale) as libelleClient 
-        
             FROM autosessions
             LEFT JOIN automodules ON asRefModule=mdReference
             LEFT JOIN autoconfiguration as `configSens`  ON asRefModule=acRefModule and acParametre='Mode transmission'
@@ -1289,7 +1288,7 @@ SQL;
 
     }
 
-    public function all($param)
+    public function all2($param)
     {
         Debug::parseDebug($param);
 
@@ -1485,6 +1484,11 @@ ORDER BY date;
         $this->set('data', $data);
     }
 
+
+
+
+
+    
 public function digest($param)
 {
     Debug::parseDebug($param);
@@ -1505,18 +1509,10 @@ public function digest($param)
     }
 
     // 1) Charger métadonnées digest (local)
-    $sql = "SELECT id,schema_name, digest_text, digest
-            FROM ts_mysql_query
-            WHERE id_mysql_server = ".intval($id_mysql_server)."
-              AND digest = '".$db->sql_real_escape_string($digest)."'";
+    $sql = "SELECT id, digest_text, digest
+            FROM mysql_digest
+            WHERE digest = '".$db->sql_real_escape_string($digest)."'";
               
-    if (empty($schema_name))
-    {
-        $sql .= " AND schema_name IS NULL";
-    }
-    else{
-        $sql .= " AND schema_name = '".$db->sql_real_escape_string($schema_name)."'";
-    }
 
 
               debug($sql);
@@ -1674,6 +1670,381 @@ public function digest($param)
         $extract($plan);
         return $tables;
     }
+
+
+/**************************** */
+
+
+
+    public function all($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = (int)($param[0] ?? 1);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        // TRI
+        $sort  = $_GET['sort']  ?? 'sum_timer_wait';
+        $order = $_GET['order'] ?? 'desc';
+
+        // Fenêtre de temps (zoom) en secondes : min 1 min, max 2 jours
+        $window = isset($_GET['window']) ? (int)$_GET['window'] : 86400; // défaut 24h
+        if ($window < 60) {
+            $window = 60;
+        } elseif ($window > 172800) {
+            $window = 172800; // max 2 jours
+        }
+
+        // ts_file.id pour les digests (ps_sum_summary_by_digest)
+        $TS_FILE_DIGEST = 3790;
+
+        // Récupère l'uptime du serveur MySQL (en secondes)
+        $uptime = 0;
+        try {
+            $uptimeData = Extraction2::display(["uptime"], [$id_mysql_server]);
+            if (!empty($uptimeData[$id_mysql_server]['uptime'])) {
+                $urow = $uptimeData[$id_mysql_server]['uptime'];
+                if (is_array($urow)) {
+                    foreach ($urow as $val) {
+                        if (is_numeric($val)) {
+                            $uptime = (int)$val;
+                            break;
+                        }
+                    }
+                } elseif (is_numeric($urow)) {
+                    $uptime = (int)$urow;
+                }
+            }
+        } catch (\Exception $e) {
+            // si problème, uptime = 0 => on ignore simplement la contrainte reboot
+            $uptime = 0;
+        }
+        //debug($uptime);
+
+        // Dernière date disponible pour ce serveur / ts_file (fin de fenêtre)
+        $sql = "SELECT b.id,a.last_date_listener as `date`
+        from ts_max_date a INNER JOIN ts_file b ON a.id_ts_file=b.id 
+        WHERE b.file_name ='performance_schema' and a.id_mysql_server=1;";
+
+        $res = $db->sql_query($sql);
+        $end_date = null;
+        if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $end_date = $row['date'];
+        }
+
+
+
+        $data = [];
+        $query = [];
+
+        if (empty($end_date)) {
+            // Pas de données…
+            $this->set('id_mysql_server', $id_mysql_server);
+            $this->set('data', $data);
+            $this->set('param', $param);
+            $this->set('query', $query);
+            $this->set('sort', $sort);
+            $this->set('order', $order);
+            $this->set('window', $window);
+            $this->set('start_date', null);
+            $this->set('end_date', null);
+            return;
+        }
+
+        $end_ts = strtotime($end_date);
+
+        // Fenêtre théorique (end_date - window)
+        $start_ts = $end_ts - $window;
+
+        // Si uptime plus petit que window => on ne remonte pas avant reboot
+        if ($uptime > 0) {
+            $reboot_ts = $end_ts - $uptime;
+            if ($reboot_ts > $start_ts) {
+                $start_ts = $reboot_ts;
+            }
+        }
+
+        $start_candidate = date('Y-m-d H:i:s', $start_ts);
+
+        // Aligner la date de début sur une date réellement présente
+        $start_date = null;
+        $start_candidate_esc = $db->sql_real_escape_string($start_candidate);
+
+        $sql = "SELECT MIN(`date`) AS date_min
+                FROM ts_date_by_server
+                WHERE id_mysql_server = ".$id_mysql_server."
+                AND id_ts_file      = ".$TS_FILE_DIGEST."
+                AND `date`         >= '".$start_candidate_esc."'";
+
+        $res = $db->sql_query($sql);
+        if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $start_date = $row['date_min'];
+        }
+
+        if (empty($start_date)) {
+            // Aucun point >= start_candidate, on prend la plus ancienne date connue
+            $sql = "SELECT MIN(`date`) AS date_min
+                    FROM ts_date_by_server
+                    WHERE id_mysql_server = ".$id_mysql_server."
+                    AND id_ts_file      = ".$TS_FILE_DIGEST;
+            $res = $db->sql_query($sql);
+            if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $start_date = $row['date_min'];
+            } else {
+                // Toujours rien => on quitte
+                $this->set('id_mysql_server', $id_mysql_server);
+                $this->set('data', $data);
+                $this->set('param', $param);
+                $this->set('query', $query);
+                $this->set('sort', $sort);
+                $this->set('order', $order);
+                $this->set('window', $window);
+                $this->set('start_date', null);
+                $this->set('end_date', $end_date);
+                return;
+            }
+        }
+
+        // Sécurisation dates pour les requêtes
+        $start_esc = $db->sql_real_escape_string($start_date);
+        $end_esc   = $db->sql_real_escape_string($end_date);
+
+        // --- Snapshot courant (fin de fenêtre) ---
+        $sql_current = "
+            SELECT s.*
+            FROM ts_mysql_digest_stat s
+            INNER JOIN mysql_database__mysql_digest m
+                ON m.id = s.id_mysql_database__mysql_digest
+            INNER JOIN (
+                SELECT s.id_mysql_database__mysql_digest, MAX(s.date) AS max_date
+                FROM ts_mysql_digest_stat s
+                INNER JOIN mysql_database__mysql_digest m
+                    ON m.id = s.id_mysql_database__mysql_digest
+                WHERE m.id_mysql_server = ".$id_mysql_server."
+                AND s.date <= '".$end_esc."'
+                GROUP BY s.id_mysql_database__mysql_digest
+            ) t
+                ON t.id_mysql_database__mysql_digest = s.id_mysql_database__mysql_digest
+            AND t.max_date = s.date
+        ";
+
+
+        $sql_current =   "SELECT s.* 
+        FROM ts_mysql_digest_stat s 
+        INNER JOIN mysql_database__mysql_digest m ON m.id = s.id_mysql_database__mysql_digest 
+        WHERE m.id_mysql_server = ".$id_mysql_server." AND s.date = '".$end_esc."';";
+
+        Debug::debug($sql_current);
+
+        $res = $db->sql_query($sql_current);
+        $current = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $current[(int)$row['id_mysql_database__mysql_digest']] = $row;
+        }
+
+        // --- Snapshot "début" (début de fenêtre aligné) ---
+        $sql_previous = "
+            SELECT s.*
+            FROM ts_mysql_digest_stat s
+            INNER JOIN mysql_database__mysql_digest m
+                ON m.id = s.id_mysql_database__mysql_digest
+            INNER JOIN (
+                SELECT s.id_mysql_database__mysql_digest, MAX(s.date) AS max_date
+                FROM ts_mysql_digest_stat s
+                INNER JOIN mysql_database__mysql_digest m
+                    ON m.id = s.id_mysql_database__mysql_digest
+                WHERE m.id_mysql_server = ".$id_mysql_server."
+                AND s.date <= '".$start_esc."'
+                GROUP BY s.id_mysql_database__mysql_digest
+            ) t
+                ON t.id_mysql_database__mysql_digest = s.id_mysql_database__mysql_digest
+            AND t.max_date = s.date
+        ";
+        $sql_previous =   "SELECT s.* 
+        FROM ts_mysql_digest_stat s 
+        INNER JOIN mysql_database__mysql_digest m ON m.id = s.id_mysql_database__mysql_digest 
+        WHERE m.id_mysql_server = ".$id_mysql_server." AND s.date = '".$start_esc."';";
+
+        $res = $db->sql_query($sql_previous);
+        $previous = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $previous[(int)$row['id_mysql_database__mysql_digest']] = $row;
+        }
+
+
+        // --- Calcul des deltas par digest_schema ---
+        $digest_rows = [];
+
+        // champs cumulés sur lesquels on fait un delta
+        $deltaFields = [
+            'count_star',
+            'sum_timer_wait',
+            'min_timer_wait',     // on recalculera ensuite min/max si besoin, mais on peut les ignorer
+            'avg_timer_wait',     // ne servira pas tel quel
+            'max_timer_wait',
+            'sum_lock_time',
+            'sum_errors',
+            'sum_warnings',
+            'sum_rows_affected',
+            'sum_rows_sent',
+            'sum_rows_examined',
+            'sum_created_tmp_disk_tables',
+            'sum_created_tmp_tables',
+            'sum_select_full_join',
+            'sum_select_full_range_join',
+            'sum_select_range',
+            'sum_select_range_check',
+            'sum_select_scan',
+            'sum_sort_merge_passes',
+            'sum_sort_range',
+            'sum_sort_rows',
+            'sum_sort_scan',
+            'sum_no_index_used',
+            'sum_no_good_index_used',
+            'sum_cpu_time',
+            'max_controlled_memory',
+            'max_total_memory',
+            'count_secondary',
+            'quantile_95',
+            'quantile_99',
+            'quantile_999',
+            'query_sample_timer_wait'
+        ];
+
+        foreach ($current as $id_digest_schema => $cur) {
+
+            $prev = $previous[$id_digest_schema] ?? [];
+
+            $row = [
+                'id_mysql_database__mysql_digest' => $id_digest_schema,
+                'date'                            => $cur['date'],
+            ];
+
+            // deltas
+            foreach ($deltaFields as $field) {
+                $c = isset($cur[$field])  ? (float)$cur[$field]  : 0.0;
+                $p = isset($prev[$field]) ? (float)$prev[$field] : 0.0;
+                $delta = $c - $p;
+                if ($delta < 0) {
+                    $delta = 0; // sécurité si reset de stats
+                }
+                $row[$field] = $delta;
+            }
+
+            // Si aucune requête sur la période => on skip
+            if ($row['count_star'] <= 0) {
+                continue;
+            }
+
+            // Recalcul avg_latency = sum_timer_wait_delta / count_star_delta
+            if ($row['sum_timer_wait'] > 0 && $row['count_star'] > 0) {
+                $row['avg_timer_wait'] = (float)($row['sum_timer_wait'] / $row['count_star']);
+            } else {
+                $row['avg_timer_wait'] = 0.0;
+            }
+
+            // rows per query (basé sur DELTA)
+            $row['rows_query'] = ($row['count_star'] > 0)
+                ? (float)($row['sum_rows_sent'] / $row['count_star'])
+                : 0.0;
+
+            // Flags
+            $row['has_errors']              = !empty($row['sum_errors']);
+            $row['has_warnings']            = !empty($row['sum_warnings']);
+            $row['has_no_index_used']       = !empty($row['sum_no_index_used']) && $row['sum_no_index_used'] > 0;
+            $row['has_no_good_index_used']  = !empty($row['sum_no_good_index_used']) && $row['sum_no_good_index_used'] > 0;
+            $row['has_table_scan']          = $row['has_no_index_used'] || $row['has_no_good_index_used'];
+
+            // Ratios normalisés (par requête) sur la période
+            $count = $row['count_star'];
+
+            $row['errors_ratio'] = ($count > 0 && !empty($row['sum_errors']))
+                ? round($row['sum_errors'] / $count, 2)
+                : 0.00;
+
+            $row['warnings_ratio'] = ($count > 0 && !empty($row['sum_warnings']))
+                ? round($row['sum_warnings'] / $count, 2)
+                : 0.00;
+
+            $row['no_index_ratio'] = ($count > 0 && !empty($row['sum_no_index_used']))
+                ? round($row['sum_no_index_used'] / $count, 2)
+                : 0.00;
+
+            $row['no_good_index_ratio'] = ($count > 0 && !empty($row['sum_no_good_index_used']))
+                ? round($row['sum_no_good_index_used'] / $count, 2)
+                : 0.00;
+
+            $digest_rows[$id_digest_schema] = $row;
+        }
+
+        // TRI (comme avant)
+        $rows = $digest_rows;
+        uasort($rows, function ($a, $b) use ($sort, $order) {
+
+            if ($sort === 'rows_query') {
+                $cmp = $a['rows_query'] <=> $b['rows_query'];
+            } else {
+                $aVal = $a[$sort] ?? 0;
+                $bVal = $b[$sort] ?? 0;
+                $cmp = $aVal <=> $bVal;
+            }
+
+            return ($order === 'asc') ? $cmp : -$cmp;
+        });
+
+        // On le remet dans la structure $query[$id]['@digest'] pour la vue existante
+        $query = [];
+        $query[$id_mysql_server]['@digest'] = $rows;
+
+        // Récupérer les infos texte (schema_name, digest, digest_text) pour les id présents
+        $ids_digest_schema = array_keys($rows);
+        $data['queries']   = [];
+
+        if (!empty($ids_digest_schema)) {
+            $in = implode(',', array_map('intval', $ids_digest_schema));
+
+            $sql = "
+                SELECT
+                    m.id                                   AS id_mysql_database__mysql_digest,
+                    db.schema_name                         AS schema_name,
+                    d.digest                               AS digest,
+                    d.digest_text                          AS digest_text
+                FROM mysql_database__mysql_digest m
+                INNER JOIN mysql_database db ON db.id = m.id_mysql_database
+                INNER JOIN mysql_digest   d  ON d.id  = m.id_mysql_digest
+                WHERE m.id_mysql_server = ".$id_mysql_server."
+                AND m.id IN (".$in.")
+            ";
+
+            $res = $db->sql_query($sql);
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $id = (int)$arr['id_mysql_database__mysql_digest'];
+                $data['queries'][$id] = $arr;
+            }
+        }
+
+        // (optionnel) : info performance_schema si tu veux garder le warning
+        $elems = Extraction2::display(["performance_schema"], [$id_mysql_server]);
+        $data['performance_schema'] = $elems[$id_mysql_server]['performance_schema'] ?? 0;
+
+        // Passage à la vue
+        $this->set('id_mysql_server', $id_mysql_server);
+        $this->set('data', $data);
+        $this->set('param', $param);
+        $this->set('query', $query);
+        $this->set('sort', $sort);
+        $this->set('order', $order);
+        $this->set('window', $window);
+        $this->set('start_date', $start_date);
+        $this->set('end_date', $end_date);
+    }
+
+
+
+
+
 
 }
 /*

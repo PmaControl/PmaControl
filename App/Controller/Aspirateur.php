@@ -192,6 +192,88 @@ SET
     tv.`type` = tovr.`type`,
     tv.`is_derived` = tovr.`is_derived`,
     tv.`is_dynamic` = tovr.`is_dynamic`;
+
+
+
+PHPMYADMIN :
+
+SELECT `CHARACTER_SET_NAME` AS `Charset`, `DEFAULT_COLLATE_NAME` AS `Default collation`, `DESCRIPTION` AS `Description`, `MAXLEN` AS `Maxlen` FROM `information_schema`.`CHARACTER_SETS`;
++----------+---------------------+-----------------------------+--------+
+| Charset  | Default collation   | Description                 | Maxlen |
++----------+---------------------+-----------------------------+--------+
+| big5     | big5_chinese_ci     | Big5 Traditional Chinese    |      2 |
+| dec8     | dec8_swedish_ci     | DEC West European           |      1 |
+| cp850    | cp850_general_ci    | DOS West European           |      1 |
+| hp8      | hp8_english_ci      | HP West European            |      1 |
+| koi8r    | koi8r_general_ci    | KOI8-R Relcom Russian       |      1 |
+| latin1   | latin1_swedish_ci   | cp1252 West European        |      1 |
+| latin2   | latin2_general_ci   | ISO 8859-2 Central European |      1 |
+| swe7     | swe7_swedish_ci     | 7bit Swedish                |      1 |
+| ascii    | ascii_general_ci    | US ASCII                    |      1 |
+| ujis     | ujis_japanese_ci    | EUC-JP Japanese             |      3 |
+| sjis     | sjis_japanese_ci    | Shift-JIS Japanese          |      2 |
+| hebrew   | hebrew_general_ci   | ISO 8859-8 Hebrew           |      1 |
+| tis620   | tis620_thai_ci      | TIS620 Thai                 |      1 |
+| euckr    | euckr_korean_ci     | EUC-KR Korean               |      2 |
+| koi8u    | koi8u_general_ci    | KOI8-U Ukrainian            |      1 |
+| gb2312   | gb2312_chinese_ci   | GB2312 Simplified Chinese   |      2 |
+| greek    | greek_general_ci    | ISO 8859-7 Greek            |      1 |
+| cp1250   | cp1250_general_ci   | Windows Central European    |      1 |
+| gbk      | gbk_chinese_ci      | GBK Simplified Chinese      |      2 |
+| latin5   | latin5_turkish_ci   | ISO 8859-9 Turkish          |      1 |
+| armscii8 | armscii8_general_ci | ARMSCII-8 Armenian          |      1 |
+| utf8mb3  | utf8mb3_general_ci  | UTF-8 Unicode               |      3 |
+| ucs2     | ucs2_general_ci     | UCS-2 Unicode               |      2 |
+| cp866    | cp866_general_ci    | DOS Russian                 |      1 |
+| keybcs2  | keybcs2_general_ci  | DOS Kamenicky Czech-Slovak  |      1 |
+| macce    | macce_general_ci    | Mac Central European        |      1 |
+| macroman | macroman_general_ci | Mac West European           |      1 |
+| cp852    | cp852_general_ci    | DOS Central European        |      1 |
+| latin7   | latin7_general_ci   | ISO 8859-13 Baltic          |      1 |
+| utf8mb4  | utf8mb4_general_ci  | UTF-8 Unicode               |      4 |
+| cp1251   | cp1251_general_ci   | Windows Cyrillic            |      1 |
+| utf16    | utf16_general_ci    | UTF-16 Unicode              |      4 |
+| utf16le  | utf16le_general_ci  | UTF-16LE Unicode            |      4 |
+| cp1256   | cp1256_general_ci   | Windows Arabic              |      1 |
+| cp1257   | cp1257_general_ci   | Windows Baltic              |      1 |
+| utf32    | utf32_general_ci    | UTF-32 Unicode              |      4 |
+| binary   | binary              | Binary pseudo charset       |      1 |
+| geostd8  | geostd8_general_ci  | GEOSTD8 Georgian            |      1 |
+| cp932    | cp932_japanese_ci   | SJIS for Windows Japanese   |      2 |
+| eucjpms  | eucjpms_japanese_ci | UJIS for Windows Japanese   |      3 |
++----------+---------------------+-----------------------------+--------+
+40 rows in set (0,000 sec)
+
+SELECT `COLLATION_NAME` AS `Collation`, `CHARACTER_SET_NAME` AS `Charset`, `ID` AS `Id`, `IS_DEFAULT` AS `Default`, `IS_COMPILED` AS `Compiled`, `SORTLEN` AS `Sortlen` FROM `information_schema`.`COLLATIONS`;
+
+
+MariaDB [performance_schema]> SHOW SESSION VARIABLES LIKE 'character_set_server';
++----------------------+---------+
+| Variable_name        | Value   |
++----------------------+---------+
+| character_set_server | utf8mb4 |
++----------------------+---------+
+1 row in set (0,001 sec)
+
+SET NAMES 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+SET lc_messages = 'fr_FR'
+
+(SELECT DISTINCT `User`, `Host` FROM `mysql`.`user` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`db` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`tables_priv` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`columns_priv` ) UNION (SELECT DISTINCT `User`, `Host` 
+FROM `mysql`.`procs_priv` ) ORDER BY `User` ASC, `Host` ASC
+
+
+SELECT * FROM `mysql`.`user` WHERE `User` = ? AND `Host` = ?
+SELECT * FROM `mysql`.`global_priv` WHERE `User` = ? AND `Host` = ?
+
+ALTER USER 'mariadb.sys'@'localhost' ACCOUNT LOCK
+
+SHOW BINLOG EVENTS LIMIT 0, 25
+
+SELECT * FROM information_schema.PLUGINS ORDER BY PLUGIN_TYPE, PLUGIN_NAME
+
+SELECT *, `TABLE_SCHEMA`       AS `Db`, `TABLE_NAME`         AS `Name`, `TABLE_TYPE`         AS `TABLE_TYPE`, `ENGINE`             AS `Engine`, `ENGINE`             AS `Type`, `VERSION`            AS `Version`, `ROW_FORMAT`         AS `Row_format`, `TABLE_ROWS`         AS `Rows`, `AVG_ROW_LENGTH`     AS `Avg_row_length`, `DATA_LENGTH`        AS `Data_length`, `MAX_DATA_LENGTH`    AS `Max_data_length`, `INDEX_LENGTH`       AS `Index_length`, `DATA_FREE`          AS `Data_free`, `AUTO_INCREMENT`     AS `Auto_increment`, `CREATE_TIME`        AS `Create_time`, `UPDATE_TIME`        AS `Update_time`, `CHECK_TIME`         AS `Check_time`, `TABLE_COLLATION`    AS `Collation`, `CHECKSUM`           AS `Checksum`, `CREATE_OPTIONS`     AS `Create_options`, `TABLE_COMMENT`      AS `Comment` FROM `information_schema`.`TABLES` t WHERE `TABLE_SCHEMA`  IN ('sakila2')  ORDER BY Name ASC;
+
+
 */
 
 class Aspirateur extends Controller
@@ -209,7 +291,7 @@ class Aspirateur extends Controller
     static $primary_key = array();
 
 
-
+    static $time_ns = 0;
 
     /*
      * (PmaControl 0.8)<br/>
@@ -271,7 +353,7 @@ class Aspirateur extends Controller
         }
 
         // Vérifier que le serveur existe dans le fichier de config
-        $configServers = parse_ini_file('/srv/www/pmacontrol/configuration/db.config.ini.php', true);
+        $configServers = parse_ini_file(CONFIG.'db.config.ini.php', true);
         $serverFound = false;
         foreach ($configServers as $section => $values) {
             if ($section === $name_server) {
@@ -421,8 +503,6 @@ class Aspirateur extends Controller
             $var_temp['variables']['is_proxy']     = "1";
             $var_temp['variables']['is_maxscale']     = "1";
 
-
-
             $var_temp['variables']['version']         = MaxScale::getVersion(array($id_mysql_server));
             $var_temp['variables']['version_comment'] = "MaxScale";
 
@@ -528,7 +608,7 @@ class Aspirateur extends Controller
             $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
             */
 
-            $this->runEachMinuteAtBalancedSecond($id_mysql_server, 'digest', function($id) {
+            $this->runEachMinuteAtBalancedSecond($id_mysql_server, 60,'digest', function($id) {
 
                 // Ici, on utilise $mysql_tested EXISTANT => aucune reconnection MySQL
                 $data = [];
@@ -541,6 +621,20 @@ class Aspirateur extends Controller
                 $this->logger->emergency("[DIGEST][$id] executed at second (crc32 offset)");
             });
 
+            
+            $this->runEachMinuteAtBalancedSecond($id_mysql_server,10, 'avg_latency', function($id) {
+
+                $data = array();
+                $start = hrtime(as_number: true);
+                $data['summary_by_digest'] = Digest::getSum([$id]);
+                $duration_us = round((hrtime(true) - $start) / 1000);
+                $data['summary_by_digest']['sum_duration'] = $duration_us;
+
+                $this->exportData($id, "ps_sum_summary_by_digest", $data);
+
+            });
+
+            
             //duplicate 2025-11-08 15:41:57-2397-96-2181 PK ts_value_digest_int
             
 
@@ -615,6 +709,8 @@ class Aspirateur extends Controller
         }*/
 
         /****************************************************************** */
+
+
 
 
         $mysql_tested->sql_close();
@@ -2459,113 +2555,12 @@ GROUP BY C.ID, C.INFO;";
         }
         
         $db->sql_close();
-        }
-
-    private function saveDigestMeta(int $id_mysql_server, array $arr): ?int
-    {
-        static $digest_cache = []; // cache partagé entre appels, multi-serveur
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        // === 1️⃣ Charger le cache du serveur si absent ===
-        if (empty($digest_cache[$id_mysql_server])) {
-            $digest_cache[$id_mysql_server] = $this->loadDigestCache($id_mysql_server);
-        }
-
-        // === 2️⃣ Extraction & validation des champs ===
-        $digest        = $arr['DIGEST']      ?? null;
-        $schema_name   = $arr['SCHEMA_NAME'] ?? '';
-        $digest_text   = $arr['DIGEST_TEXT'] ?? null;
-        $first_seen    = $arr['FIRST_SEEN']  ?? null;
-        $last_seen     = $arr['LAST_SEEN']   ?? null;
-
-        $required = [
-            'DIGEST'      => $digest,
-            'DIGEST_TEXT' => $digest_text,
-            'FIRST_SEEN'  => $first_seen,
-            'LAST_SEEN'   => $last_seen
-        ];
-
-        foreach ($required as $key => $val) {
-            if ($val === null || $val === '') {
-                Debug::error("Digest skipped (server #{$id_mysql_server}): missing field {$key}");
-                return null;
-            }
-        }
-
-        // === 3️⃣ Génération du hash interne ===
-        $digest_pmacontrol = md5($digest_text);
-        $cache_key = $digest . '|' . $schema_name;
-
-        // === 4️⃣ Déjà connu en cache → retour immédiat ===
-        if (isset($digest_cache[$id_mysql_server][$cache_key])) {
-            return $digest_cache[$id_mysql_server][$cache_key];
-        }
-
-        // === 5️⃣ Insert / Update dans ts_mysql_query ===
-        $sql = sprintf(
-            "INSERT INTO ts_mysql_query 
-            (id_mysql_server, digest, digest_pmacontrol, schema_name, digest_text, first_seen, last_seen)
-            VALUES (%d, '%s', '%s', %s, %s, '%s', '%s')
-            ON DUPLICATE KEY UPDATE 
-                last_seen = GREATEST(last_seen, VALUES(last_seen))",
-            (int)$id_mysql_server,
-            $db->sql_real_escape_string($digest),
-            $db->sql_real_escape_string($digest_pmacontrol),
-            !empty($schema_name) ? "'" . $db->sql_real_escape_string($schema_name) . "'" : "NULL",
-            "'" . $db->sql_real_escape_string($digest_text) . "'",
-            $db->sql_real_escape_string($first_seen),
-            $db->sql_real_escape_string($last_seen)
-        );
-
-        $db->sql_query($sql);
-
-        // === 6️⃣ Récupération de l’ID ===
-        if ($db->sql_affected_rows() > 0) {
-            $id_ts_mysql_query = $db->sql_insert_id();
-        } else {
-            $res = $db->sql_query(sprintf(
-                "SELECT id FROM ts_mysql_query 
-                WHERE id_mysql_server=%d AND digest='%s' AND schema_name %s",
-                (int)$id_mysql_server,
-                $db->sql_real_escape_string($digest),
-                !empty($schema_name)
-                    ? "= '" . $db->sql_real_escape_string($schema_name) . "'"
-                    : "IS NULL"
-            ));
-            $id_ts_mysql_query = $db->sql_fetch_object($res)->id ?? null;
-        }
-
-        // === 7️⃣ Mise en cache (multi-serveur) ===
-        $digest_cache[$id_mysql_server][$cache_key] = $id_ts_mysql_query;
-
-        return $id_ts_mysql_query;
     }
 
-
-    private function loadDigestCache(int $id_mysql_server): array
+    
+    private function runEachMinuteAtBalancedSecond(int $id_mysql_server,int $interval, string $file_key, callable $callback): bool
     {
-        $db = Sgbd::sql(DB_DEFAULT);
-        $cache = [];
-
-        $sql = sprintf(
-            "SELECT id, digest, schema_name 
-            FROM ts_mysql_query 
-            WHERE id_mysql_server = %d",
-            (int)$id_mysql_server
-        );
-
-        $res = $db->sql_query($sql);
-        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $key = $row['digest'] . '|' . ($row['schema_name'] ?? '');
-            $cache[$key] = (int)$row['id'];
-        }
-
-        Debug::debug(count($cache), "Digest cache loaded for server #{$id_mysql_server}");
-        return $cache;
-    }
-    private function runEachMinuteAtBalancedSecond(int $id_mysql_server, string $file_key, callable $callback): bool
-    {
-        $interval = 60; // 1 minute
+         // 1 minute
         $offset = crc32((string)$id_mysql_server) % $interval; // seconde cible dans la minute
         $now = time();
         $sec = $now % $interval;
@@ -2606,6 +2601,9 @@ GROUP BY C.ID, C.INFO;";
         $callback($id_mysql_server);
         return true;
     }
+
+
+
 
 }
 

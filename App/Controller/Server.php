@@ -296,12 +296,12 @@ class Server extends Controller
         }
 
         $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
-            FROM mysql_server a
+            FROM mysql_server PARTITION(pn) as a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
                  WHERE c.is_monitored=1 ".self::getFilter()."
                  ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, 
-                 FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,2,6,8,5,17,18'), a.ip, a.display_name;";
+                 FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,6,8,5,17,18'), a.ip, a.display_name;";
 
         $res = $db->sql_query($sql);
 
@@ -312,7 +312,8 @@ class Server extends Controller
         }
 
         $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
-         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", "query_latency_1m"));
+         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", 
+         "avg_latency","delta_sum_timer_wait", "delta_sum_lock_time"));
 
         $data['last_date'] = Extraction2::display(array("mysql_available"));
 

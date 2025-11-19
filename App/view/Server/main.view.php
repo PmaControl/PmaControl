@@ -39,6 +39,61 @@ function isoToFlag(string $iso): string {
     return $flag;
 }
 
+
+function format_time_ps_with_label($ps, $precision = 2)
+{
+    if (!is_numeric($ps)) {
+        return '<span class="badge bg-secondary">-</span>';
+    }
+
+    // Unités
+    $units = [
+        "ps" => 1,
+        "ns" => 1_000,
+        "µs" => 1_000_000,
+        "ms" => 1_000_000_000,
+        "s"  => 1_000_000_000_000,
+    ];
+
+    // Conversion
+    foreach ($units as $unit => $factor) {
+        if ($ps < $factor * 1000) {
+            $value = $ps / $factor;
+            $formatted = round($value, $precision) . " " . $unit;
+            break;
+        }
+    }
+
+    // Si pas encore défini, on est en secondes
+    if (!isset($formatted)) {
+        $value = $ps / 1_000_000_000_000;
+        $formatted = round($value, $precision) . " s";
+    }
+
+    // Détermination du type de label
+    // - success : ≤ 1 µs
+    // - warning : < 10 ms
+    // - danger  : ≥ 10 ms
+
+    $label = "danger"; 
+
+    if ($ps < 2_000_000_000) { 
+        $label = "warning";     // < 10 ms
+    } 
+    if ($ps <= 1_000_000_000) { 
+        $label = "success";     // ≤ 1 µs
+
+    } 
+    if ($ps <= 450_000_000) { 
+        $label = "primary";     // ≤ 1 µs
+    } 
+    if ($ps <= 250_000_000) { 
+        $label = "default";     // ≤ 1 µs
+    } 
+    return '<span class="label label-' . $label . '">' . $formatted . '</span>';
+}
+
+
 if (empty($_GET['ajax'])){
     echo '<div class="well">';
     FactoryController::addNode("Common", "displayClientEnvironment", array());
@@ -252,8 +307,15 @@ if (!empty($data['servers'])) {
 
         echo '</td>';
         echo '<td style="'.$style.'">';
-        if (!empty($extra['query_latency_1m'])) {
-            echo round($extra['query_latency_1m'], 3)." µs";
+        if (!empty($extra['avg_latency'])) {
+
+            echo format_time_ps_with_label($extra['avg_latency'],2);
+
+
+            echo format_time_ps_with_label($extra['delta_sum_timer_wait'],2);
+            echo format_time_ps_with_label($extra['delta_sum_lock_time'],2);
+            
+            //echo round($extra['avg_latency'], 3)." ps";
         }
         echo '</td>';
 

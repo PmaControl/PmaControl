@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Display;
+use Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Mysql;
@@ -287,6 +288,7 @@ class MysqlServer extends Controller
             'Version' => $g('version'),
             'Commentaire' => $g('version_comment'),
             'Uptime' => $uptime_h,
+            'Cmd' => self::getAdminInformation([$id_mysql_server])
         ];
 
         $data['connections'] = [
@@ -496,5 +498,25 @@ class MysqlServer extends Controller
     }
 
 
+
+    public static function getAdminInformation($param)
+    {
+        $id_mysql_server= $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $data = [];
+
+        $sql = "SELECT * FROM mysql_server where id=".(int)$id_mysql_server;
+        $res = $db->sql_query($sql);
+        while($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
+        {
+            $password = Crypt::decrypt($arr['passwd']);
+
+            $data['cmd'] = "mysql -A -P".$arr['port']." -h ".$arr['ip']." -u ".$arr['login']." -p'".$password."'";
+        }
+
+        return $data['cmd'];
+    }
 
 }

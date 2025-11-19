@@ -8,6 +8,85 @@ use \App\Library\Extraction2;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
+/*
+SELECT 
+    SUM(sum_lock_time)             AS sum_lock_time,
+    SUM(sum_errors)                AS sum_errors,
+    SUM(sum_warnings)              AS sum_warnings,
+    SUM(sum_timer_wait)            AS sum_timer_wait,
+    SUM(sum_rows_affected)         AS sum_rows_affected,
+    SUM(sum_rows_sent)             AS sum_rows_sent,
+    SUM(sum_rows_examined)         AS sum_rows_examined,
+    SUM(sum_no_index_used)         AS sum_no_index_used,
+    SUM(sum_no_good_index_used)    AS sum_no_good_index_used,
+    SUM(count_star)                AS sum_count_star
+FROM performance_schema.events_statements_summary_by_digest
+WHERE sum_rows_sent < 50000000000;
+
+
+| Champ (P_S)                 | Existe dans SHOW GLOBAL STATUS ? | Nom éventuel dans SHOW GLOBAL STATUS | Commentaire                        |
+| --------------------------- | -------------------------------- | ------------------------------------ | ---------------------------------- |
+| sum_lock_time               | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_errors                  | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_warnings                | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_rows_affected           | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_rows_sent               | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_rows_examined           | ❌ NON                            | —                                    | P_S uniquement                     |
+| sum_created_tmp_disk_tables | ✔️ OUI                           | `Created_tmp_disk_tables`            | Global metric, mais pas par digest |
+| sum_created_tmp_tables      | ✔️ OUI                           | `Created_tmp_tables`                 | Idem                               |
+| sum_select_full_join        | ✔️ OUI                           | `Select_full_join`                   | Idem                               |
+| sum_select_full_range_join  | ✔️ OUI                           | `Select_full_range_join`             | Idem                               |
+| sum_select_range            | ✔️ OUI                           | `Select_range`                       | Idem                               |
+| sum_select_range_check      | ✔️ OUI                           | `Select_range_check`                 | Idem                               |
+| sum_select_scan             | ✔️ OUI                           | `Select_scan`                        | Idem                               |
+| sum_sort_merge_passes       | ✔️ OUI                           | `Sort_merge_passes`                  | Idem                               |
+| sum_sort_range              | ✔️ OUI                           | `Sort_range`                         | Idem                               |
+| sum_sort_rows               | ✔️ OUI                           | `Sort_rows`                          | Idem                               |
+| sum_sort_scan               | ✔️ OUI                           | `Sort_scan`                          | Idem                               |
+| sum_no_index_used           | ✔️ OUI                           | `Select_no_index_used`               | Idem                               |
+| sum_no_good_index_used      | ✔️ OUI                           | `Select_no_good_index_used`          | Idem                               |
+
+
+SELECT 
+  `KCU`.`REFERENCED_TABLE_SCHEMA` AS `PKTABLE_CAT`,
+  NULL AS `PKTABLE_SCHEM`,
+  `KCU`.`REFERENCED_TABLE_NAME` AS `PKTABLE_NAME`,
+  `KCU`.`REFERENCED_COLUMN_NAME` AS `PKCOLUMN_NAME`,
+  `KCU`.`TABLE_SCHEMA` AS `FKTABLE_CAT`,
+  NULL AS `FKTABLE_SCHEM`,
+  `KCU`.`TABLE_NAME` AS `FKTABLE_NAME`,
+  `KCU`.`COLUMN_NAME` AS `FKCOLUMN_NAME`,
+  `KCU`.`POSITION_IN_UNIQUE_CONSTRAINT` AS `KEY_SEQ`,
+
+  CASE `RC`.`UPDATE_RULE`
+      WHEN 'CASCADE' THEN 0
+      WHEN 'RESTRICT' THEN 1
+      WHEN 'SET NULL' THEN 2
+      WHEN 'NO ACTION' THEN 3
+      WHEN 'SET DEFAULT' THEN 4
+  END AS `UPDATE_RULE`,
+
+  CASE `RC`.`DELETE_RULE`
+      WHEN 'CASCADE' THEN 0
+      WHEN 'RESTRICT' THEN 1
+      WHEN 'SET NULL' THEN 2
+      WHEN 'NO ACTION' THEN 3
+      WHEN 'SET DEFAULT' THEN 4
+  END AS `DELETE_RULE`,
+
+  `RC`.`CONSTRAINT_NAME` AS `FK_NAME`,
+  `RC`.`UNIQUE_CONSTRAINT_NAME` AS `PK_NAME`,
+
+  7 AS `DEFERRABILITY`
+
+FROM 
+  `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` AS `KCU`
+  INNER JOIN `INFORMATION_SCHEMA`.`REFERENTIAL_CONSTRAINTS` AS `RC`
+    ON `KCU`.`CONSTRAINT_CATALOG` = `RC`.`CONSTRAINT_CATALOG`
+   AND `KCU`.`CONSTRAINT_SCHEMA`  = `RC`.`CONSTRAINT_SCHEMA`
+   AND `KCU`.`CONSTRAINT_NAME`    = `RC`.`CONSTRAINT_NAME`
+   AND `KCU`.`TABLE_NAME`         = `RC`.`TABLE_NAME`;
+*/
 
 class Digest extends Controller
 {
@@ -17,11 +96,7 @@ class Digest extends Controller
 
     static $logger;
 
-    public function before($param)
-    {
-        Debug::parseDebug($param);
-        Debug::debug($param);
-    }
+
 
     public static function integrate($param)
     {
@@ -57,18 +132,16 @@ class Digest extends Controller
         {
             $i++;
 
-            $data_lower = $query;
-
             //SCHEMA_NAME
             $id_mysql_database = self::getIdDatabase(array($id_mysql_server, $query['schema_name']));
 
             if (empty($id_mysql_server))
             {
-                throw new Exception("Couldn't find database  (id_mysql_server: $id_mysql_server) : ".implode(',', $data_lower));
+                throw new Exception("Couldn't find database  (id_mysql_server: $id_mysql_server) : ".implode(',', $query));
                 //$this->logger->warning("Couldn't find database  (id_mysql_server: $id_mysql_server) : ".implode(',', $data_lower));
             }
 
-            $id_mysql_digest = $register[$data_lower['digest']];
+            $id_mysql_digest = $register[$query['digest']];
 
             /*
             $result = array_filter($data_lower, function($value, $key) {
@@ -76,6 +149,7 @@ class Digest extends Controller
             }, ARRAY_FILTER_USE_BOTH);
             */
 
+            $query['schema_name'] ?? '';
             $query['id_mysql_digest'] = $id_mysql_digest;
             $query['id_mysql_server'] = $id_mysql_server;
             $query['id_mysql_database'] = $id_mysql_database;
@@ -131,21 +205,12 @@ class Digest extends Controller
         }
 
         $table['ts_mysql_digest_stat'] = $data_to_insert;
-
-
         $sqls = self::insert($table);
 
         // TODO a multithread
         foreach($sqls as $sql) {
             $db->sql_query($sql);
         }
-
-        Debug::debug($sql, "QUERIES");
-        //$db->sql_query($sql);
-
-        //Debug::debug($sql);
-
-
     }
 
     public static function insertDigest($param)
@@ -227,30 +292,13 @@ class Digest extends Controller
         return $data;
     }
 
-
-
-    public static function insertDispatch($param)
-    {
-        
-        
-        
-        $db = Sgbd::sql(DB_DEFAULT);
-
-
-    }
-
-
     public static function getIdDatabase($param)
     {
         Debug::parseDebug($param);
         $id_mysql_server = $param[0];
         $database = $param[1];
 
-        if (!empty(self::$database[$id_mysql_server][$database]))
-        {
-            return self::$database[$id_mysql_server][$database];
-        }
-        else
+        if (empty(self::$database[$id_mysql_server][$database]))
         {
             $db = Sgbd::sql(DB_DEFAULT);
 
@@ -260,6 +308,7 @@ class Digest extends Controller
             }
 
             $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
+            Debug::sql($sql);
             $res = $db->sql_query($sql);
 
             while($ob = $db->sql_fetch_object($res))
@@ -270,9 +319,15 @@ class Digest extends Controller
             }
 
             $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
+            Debug::sql($sql);
             $db->sql_query($sql);
-            return false;
+            
+            $id_mysql_database = $db->sql_insert_id();
+
+            self::$database[$id_mysql_server][$database] = $id_mysql_database;
         }
+
+        return self::$database[$id_mysql_server][$database];
     }
 
     /*  
@@ -377,8 +432,8 @@ class Digest extends Controller
                     'id_mysql_digest'   => $query['id_mysql_digest'],
                     'id_mysql_server'   => $query['id_mysql_server'],
                     'id_mysql_database' => $query['id_mysql_database'],
-                    'schema_name'       => $query['schema_name'],
-                    'password'          => $query['first_seen'],
+                    'schema_name'       => $query['schema_name'] ?? '',
+                    'first_seen'        => substr($query['first_seen'],0 ,19),
                 ]
             ];
 
@@ -388,7 +443,20 @@ class Digest extends Controller
 
             if (empty($id_mysql_database__mysql_digest))
             {
-                throw new Exception("ERROR id_mysql_database__mysql_digest : $id_mysql_database__mysql_digest");
+                $sql = "SELECT * FROM mysql_database__mysql_digest 
+                WHERE id_mysql_digest={$query['id_mysql_digest']}
+                AND id_mysql_server={$query['id_mysql_digest']}
+                AND id_mysql_database={$query['id_mysql_digest']}";
+
+
+
+                Debug::debug($db->get_validate());
+                Debug::debug($db->error);
+
+                Debug::debug($db->sql_error());
+                Debug::debug($db->getInfosTable("mysql_database__mysql_digest"));
+                throw new Exception("ERROR id_mysql_database__mysql_digest : $id_mysql_database__mysql_digest" 
+                .json_encode($insert)." ====> ".json_encode($db->getError()));
             }
 
             self::$cache_dispatch[$uuid] = $id_mysql_database__mysql_digest;
@@ -444,6 +512,8 @@ class Digest extends Controller
                     $sql_values[] = "(" . implode(", ", $line) . ")";
                 }
 
+
+                Debug::debug(count($sql_values), "NB LINE INSERT INTO $table_name");
                 // 3. construire la requête SQL finale pour CE batch
                 $sql = "INSERT IGNORE INTO `$table_name` (`" . implode("`,`", $columns) . "`) VALUES\n"
                     . implode(",\n", $sql_values) . ";";
@@ -453,5 +523,85 @@ class Digest extends Controller
         }
 
         return $sql_list;
+    }
+
+
+    /*
+        SELECT SUM(sum_timer_wait) / SUM(count_star) / 1000000000 AS avg_ms FROM performance_schema.events_statements_summary_by_digest;
+    */
+    public static function getSum(array $param)
+    {
+        $id_mysql_server = $param[0] ?? '';
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $sql = "SELECT 
+            SUM(sum_lock_time)             AS sum_lock_time,
+            SUM(sum_errors)                AS sum_errors,
+            SUM(sum_warnings)              AS sum_warnings,
+            SUM(sum_timer_wait)            AS sum_timer_wait,
+            SUM(sum_rows_affected)         AS sum_rows_affected,
+            SUM(sum_rows_sent)             AS sum_rows_sent,
+            SUM(sum_rows_examined)         AS sum_rows_examined,
+            SUM(sum_no_index_used)         AS sum_no_index_used,
+            SUM(sum_no_good_index_used)    AS sum_no_good_index_used,
+            SUM(count_star)                AS sum_count_star
+            FROM performance_schema.events_statements_summary_by_digest
+            WHERE sum_rows_sent < 50000000000;";
+        // see bug https://jira.mariadb.org/browse/MDEV-38106
+
+        $res = $db->sql_query($sql);
+        $current = [];
+        while($current = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+        {
+            
+            $cache_dir = TMP."/cache";
+            if (!is_dir($cache_dir)) {
+                // EXCEPTION
+                mkdir($cache_dir, 0777, true);
+            }
+
+            $cache_file = "$cache_dir/digest_sum_{$id_mysql_server}.json";
+
+            // Load previous values (if exists)
+            $previous = null;
+            if (file_exists($cache_file)) {
+                $previous = json_decode(file_get_contents($cache_file), true);
+            }
+
+            // Save current values to cache (always)
+            file_put_contents($cache_file, json_encode($current));
+
+            // -------------------------------
+            //   FIRST RUN ? => no calculation
+            // -------------------------------
+            if (empty($previous)) {
+                return $current;
+            }
+
+            //in case of restart daemon or MySQL Server
+            if ($previous['sum_count_star'] > $current['sum_count_star'] ){
+                return $current;
+            }
+
+            $delta_sum_count_star = $current['sum_count_star'] - $previous['sum_count_star'];
+            $delta_sum_lock_time  = $current['sum_lock_time']  - $previous['sum_lock_time'];
+            $delta_sum_timer_wait  = $current['sum_timer_wait']  - $previous['sum_timer_wait'];
+
+            if ($delta_sum_count_star <= 0 ) {
+                // no calculation possible
+                return $current;
+            }
+
+            // average lock time per query (ps)
+            $current['avg_lock_time'] = round($delta_sum_lock_time / $delta_sum_count_star);
+            $current['avg_latency'] = round($delta_sum_timer_wait / $delta_sum_count_star);
+            $current['delta_sum_timer_wait'] = $delta_sum_lock_time;
+            $current['delta_sum_lock_time'] = $delta_sum_timer_wait;
+            
+            Debug::debug($current, "SUM events_statements_summary_by_digest");
+            return $current;
+        }
+        return $current;
     }
 }

@@ -57,25 +57,21 @@ MariaDB [pmacontrol]> select b.file_name, `from`, count(1) from ts_variable a in
 31 rows in set (0,003 sec)
 */
 
-
 class Listener extends Controller
 {
     var $logger;
 
     static $load_listener = [];
 
-          
     /*
-
     contain all post treatment and alert
     */
     public static function load($param)
     {
         self::$load_listener['mysql_schemata']['mysql_database'] = "Listerner::updateDatabase";
         self::$load_listener['mysql_global_variable']['variables'] = "Listerner::afterUpdateVariable";
-        self::$load_listener['ps_events_statements_summary_by_digest']['performance_schema'] = "Listerner::collectQuery";
+        self::$load_listener['performance_schema']['performance_schema'] = "Digest::integrate";
     }
-
 
     public static function init($param)
     {
@@ -112,11 +108,6 @@ class Listener extends Controller
         }
 
     }
-
-
-
-
-
 
     public function before($param)
     {
@@ -206,7 +197,7 @@ class Listener extends Controller
                 break;
 
             case "performance_schema":
-                $this->collectQuery($arr);
+                Digest::integrate([$arr['id_mysql_server'],$arr['min_date'] ]);
                 break;
 
 
@@ -449,6 +440,7 @@ class Listener extends Controller
 
 
 
+    //TODO to move on Variable.php
     //after upgrading mysql_global_variable
     public function afterUpdateVariable($param)
     {
@@ -531,7 +523,7 @@ class Listener extends Controller
 
             //insert
             if (!empty($insert) && count($insert) > 0) {
-                Debug::debug($insert, "TO INSERT");
+                //Debug::debug($insert, "TO INSERT");
                 $elem_ins = array();
                 foreach ($insert as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
@@ -541,7 +533,7 @@ class Listener extends Controller
 
                 if (!empty($elem_ins)) {
                     $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
-                    Debug::sql($sql);
+                    //Debug::sql($sql);
                     //$this->logger->debug("INSERT SQL : $sql");
                     $db->sql_query($sql);
                 }
@@ -549,7 +541,7 @@ class Listener extends Controller
 
             //delete
             if (!empty($delete) && count($delete) > 0) {
-                Debug::debug($delete, "TO DELETE");
+                //Debug::debug($delete, "TO DELETE");
                 $elem_del = array();
                 foreach ($delete as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
@@ -566,7 +558,7 @@ class Listener extends Controller
 
             //update
             if (!empty($update) && count($update) > 0) {
-                Debug::debug($update, "TO UPDATE");
+                //Debug::debug($update, "TO UPDATE");
                 $elem_upt = array();
                 foreach ($update as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
