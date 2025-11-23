@@ -178,10 +178,6 @@ class Dot3 extends Controller
             ],$id_mysql_servers , $date_request);
 
 
-            
-
-
-
             // variables::is_proxy", "variables::is_maxscale"
             $mysql_servers = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone",
                 "variables::system_time_zone", "variables::port", 
@@ -220,7 +216,7 @@ class Dot3 extends Controller
                 FROM mysql_server a
                 INNER JOIN client x ON x.id = a.id_client
                 ".$versioning."
-                AND x.is_monitored = 1 
+                AND x.is_monitored = 1 AND a.is_deleted=0
                 UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
                 FROM alias_dns b 
                 INNER JOIN mysql_server c ON b.id_mysql_server =c.id 
@@ -1431,16 +1427,9 @@ class Dot3 extends Controller
   }
 }';
 
-        //echo str_replace("\n", "<br />",htmlentities($legend));
-
-        file_put_contents(TMP . "/legend", $legend);
-
 
         $file_name = Graphviz::generateDot("legend", $legend);
         $data['legend'] = file_get_contents($file_name);
-
-
-        
 
         $this->set('data', $data);
 

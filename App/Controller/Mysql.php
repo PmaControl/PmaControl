@@ -19,6 +19,7 @@ class Mysql extends Controller
 
     public $foreign_key = array();
     public $columns     = array();
+    private $last_connection_used_ssl = 0;
 
     private function generate_passswd($length)
     {
@@ -1085,6 +1086,7 @@ class Mysql extends Controller
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = $table['mysql_server']['id_environement'] ?? 1;
+                $table['mysql_server']['is_ssl']              = $this->last_connection_used_ssl;
 
                 /*
                   debug($table);
@@ -1169,6 +1171,8 @@ class Mysql extends Controller
 
         debug("$hostname, $port, $user, $password");
 
+        $this->last_connection_used_ssl = 0;
+
         $link = mysqli_init();
         mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
                     mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
@@ -1197,6 +1201,7 @@ class Mysql extends Controller
                     ($firstError ? " | Premier essai : " . $firstError : "")
                 );
             }
+            $this->last_connection_used_ssl = 1;
         }
 
 

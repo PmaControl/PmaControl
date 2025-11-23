@@ -4,7 +4,8 @@ namespace App\Controller;
 
 use Glial\Synapse\Controller;
 use Glial\Sgbd\Sgbd;
-
+use App\Library\Extraction2;
+use App\Library\Debug;
 
 class Event extends Controller
 {
@@ -25,4 +26,16 @@ class Event extends Controller
         $data['events'] = $db->sql_fetch_all($res, MYSQLI_ASSOC);
         $this->set('data', $data);
     }
+
+    public function gg($param)
+    {
+        Debug::parseDebug($param);
+
+        $gg = Extraction2::getLast5Value(["mysql_available"]);
+
+        Debug::debug($gg);
+        
+    }
+
+
 }

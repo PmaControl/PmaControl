@@ -299,7 +299,7 @@ class Server extends Controller
             FROM mysql_server PARTITION(pn) as a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE c.is_monitored=1 ".self::getFilter()."
+                 WHERE c.is_monitored=1 AND a.is_deleted=0 ".self::getFilter()."
                  ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, 
                  FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,6,8,5,17,18'), a.ip, a.display_name;";
 
@@ -870,7 +870,7 @@ var myChart = new Chart(ctx, {
         $data['ssh']   = Extraction::display(array("ssh_available"));
         $data['mysql'] = Extraction::display(array("mysql_available"));
 
-        $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".self::getFilter()." ORDER by name";
+        $sql             = "SELECT * FROM mysql_server a WHERE is_deleted=0 ".self::getFilter()." ORDER by name";
         $data['servers'] = $db->sql_fetch_yield($sql);
 
         $data['clients']      = $this->getClients();
@@ -1090,7 +1090,7 @@ var myChart = new Chart(ctx, {
 
         Debug::parseDebug($param);
         $this->view = false;
-        $id_server  = $param[0];
+        $id_server  = (int)$param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -1101,7 +1101,7 @@ var myChart = new Chart(ctx, {
 
         while ($ob = $db->sql_fetch_object($res)) {
             if ($ob->name != DB_DEFAULT) {
-                $sql = "DELETE FROM mysql_server WHERE id=".$id_server.";";
+                $sql = "UPDATE mysql_server SET is_deleted=1 WHERE id=".$id_server.";";
                 $db->sql_query($sql);
                 Debug::sql($sql);
             }

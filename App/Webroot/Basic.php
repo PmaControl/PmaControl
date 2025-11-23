@@ -29,7 +29,7 @@ define('YEAR', 31536000);
  * @link http://book.cakephp.org/view/1190/Basic-Debugging
  * @link http://book.cakephp.org/view/1128/debug
  */
-function debug($var, $showHtml = false, $showFrom = true)
+function debug(mixed $var, $showHtml = false, $showFrom = true)
 {
     
     if (IS_CLI) {

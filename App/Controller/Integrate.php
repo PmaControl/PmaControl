@@ -23,7 +23,7 @@ use \Monolog\Handler\StreamHandler;
 class Integrate extends Controller
 {
     use \App\Library\Filter;
-    const MAX_FILE_AT_ONCE = 20;
+    const MAX_FILE_AT_ONCE = 10;
     //advice *2 of or result from select count(1) from ts_file;
 
     const VARIABLES = "mysql_global_variable";

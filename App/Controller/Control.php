@@ -22,27 +22,27 @@ use \App\Controller\Listener;
 
 class Control extends Controller
 {
-    public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_calculated", "ts_value_digest");
+    public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_calculated");
     public $ext                   = array("int", "double", "text", "json");
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
 
-    public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+    public $primary_key           = [
+    "ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
      "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`, `connection_name`)",
-     "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-    "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`id_ts_mysql_query`)");
+     "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)"
+    ];
 
-    public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+    public $index                 = [
+        "ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_calculated" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)",
-        "ts_value_digest" => " INDEX (`id_mysql_server`, `id_ts_mysql_query`, `id_ts_variable` , `date`)",
-    );
+    ];
     //=> TODO a voir pour delete
     private $engine               = "rocksdb";
     private $engine_preference    = array("ROCKSDB");
-    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,",
-                                    "ts_value_digest" => "id_ts_mysql_query INT(11) UNSIGNED NOT NULL,");
+    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,");
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,

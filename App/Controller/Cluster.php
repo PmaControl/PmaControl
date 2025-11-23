@@ -9,6 +9,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+use \App\Library\Debug;
 
 class Cluster extends Controller
 {
@@ -104,7 +105,7 @@ class Cluster extends Controller
     */
    public function replay($param)
    {
-
+        Debug::debug($param);
 
         $id_mysql_server = $param[0];
 
@@ -143,6 +144,8 @@ class Cluster extends Controller
         (SELECT @row := -1) AS init
         ) AS seq_gen
         WHERE DATE_ADD('{$data['date_min']}', INTERVAL seq DAY) <= '{$data['date_max']}';";
+
+        Debug::debug($sql2);
 
         $res2 = $db->sql_query($sql2);
         while($ob2 = $db->sql_fetch_object($res2))

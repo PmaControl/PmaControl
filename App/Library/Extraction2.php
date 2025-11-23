@@ -29,7 +29,7 @@ class Extraction2
 
     static $partition = array();
 
-    static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
+    static public function extract($var = array(),array $server = array(), $date = "", $range = false, $graph = false)
     {
         /*
           debug($var);
@@ -54,19 +54,17 @@ class Extraction2
             sort($server);
             self::$server = $server;
         }
-        //Debug::debug($server, "SERVER LIST");
-
-        //Debug::debug($variable);
 
 
+        Debug::debug(self::$server, "SERVER");
 
         if (! empty($date) && $range == false 
-        && count($server) == 1 
+        && count(self::$server) == 1 
         && count($date) == 1){
             
             $date  = implode(',', $date);
 
-            $sql3 = self::getQuery(array($var, $server, $date));
+            $sql3 = self::getQuery([$var, self::$server, $date]);
         } else {
 
             $extra_where = "";
@@ -92,7 +90,7 @@ class Extraction2
 
                         $sql_get_mindate = "select id_mysql_server, id_ts_file, max(date) as date from ts_date_by_server 
                         where date = '".$date[0]."' 
-                        AND id_mysql_server IN (".implode(",", $server ).")
+                        AND id_mysql_server IN (".implode(",", self::$server ).")
                         AND id_ts_file in (".implode(",", self::$ts_file ).")
                         group by 1,2;";
 
@@ -255,7 +253,7 @@ class Extraction2
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty(self::$server)) {
-            $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
+            $sql = "SELECT id FROM mysql_server PARTITION(`pn`) a WHERE is_deleted=0 ".self::getFilter();
 
             $res = $db->sql_query($sql);
 
@@ -395,6 +393,9 @@ class Extraction2
 
             self::$variable[$ob->id]['name']                 = $ob->name;
             self::$variable[$ob->id]['radical']              = $ob->radical;
+            self::$variable[$ob->id]['id_ts_file'] = $ob->id_ts_file;
+            self::$variable[$ob->id]['type']       = strtolower($ob->type);
+
             $variable[$ob->radical][strtolower($ob->type)][] = $ob->id;
             //$radical                              = $ob->radical;
 
@@ -407,78 +408,6 @@ class Extraction2
     }
 
 
-    /*
-    static function count_recursive($array)
-    {
-        if (!is_array($array)) {
-            return 1;
-        }
-
-        $count = 0;
-        foreach ($array as $sub_array) {
-            $count += self::count_recursive($sub_array);
-        }
-
-        return $count;
-    }
-
-
-
-    static public function setOption($var, $val)
-    {
-        self::$$var = $val;
-    } */
-    /*
-     * Cette fonction prend comme paramètres la sortie de la fonction
-     * Extraction::display(array("databases::databases"));
-     */
-
-
-     /*
-    static public function getSizeByEngine($data)
-    {
-        $res = array();
-
-        $engines = array();
-
-        foreach ($data as $id_mysql_server => $elems) {
-            foreach ($elems as $databases) {
-
-                if (empty($databases['databases'])) {
-
-//Debug($databases);
-                    continue;
-                }
-
-                $dbs = json_decode($databases['databases'], true);
-
-                foreach ($dbs as $db_attr) {
-                    foreach ($db_attr['engine'] as $engine => $row_formats) {
-                        foreach ($row_formats as $details) {
-
-                            $res['server'][$id_mysql_server][$engine]['size_data']  = $res['server'][$id_mysql_server][$engine]['size_data'] ?? 0;
-                            $res['server'][$id_mysql_server][$engine]['size_index'] = $res['server'][$id_mysql_server][$engine]['size_index'] ?? 0;
-                            $res['server'][$id_mysql_server][$engine]['size_free']  = $res['server'][$id_mysql_server][$engine]['size_free'] ?? 0;
-
-                            $res['server'][$id_mysql_server][$engine]['size_data']  += $details['size_data'];
-                            $res['server'][$id_mysql_server][$engine]['size_index'] += $details['size_index'];
-                            $res['server'][$id_mysql_server][$engine]['size_free']  += $details['size_free'];
-
-                            $engines[] = $engine;
-                        }
-                    }
-                }
-            }
-        }
-
-        $res['engine'] = array_unique($engines);
-        sort($res['engine']);
-
-        return $res;
-    }
-    */
-
-
     static public function getPartition(array $ids_variable)
     {
 
@@ -489,11 +418,8 @@ class Extraction2
         $db = Sgbd::sql(DB_DEFAULT);
 
         $list_id_variable = implode(",",$ids_variable);
-
-
         $max_date = self::getLastPartition();
 
-        //debug($max_date);
         // array_sub 
         // Only request missing id
 
@@ -611,6 +537,7 @@ class Extraction2
         return $date;
     }
 
+    /*
     public static function getLast5Value($var = array(), $server = array())
     {
 
@@ -628,10 +555,107 @@ class Extraction2
 
         $res = $db->sql_query($sql);
 
-        return  Display::display($var, $id_mysql_server);
+        //return  Display::display($var, $id_mysql_server);
+    }*/
+
+
+
+
+
+    public static function getLast5Value($var = array(), $server = array())
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        self::$server = $server;
+        if (empty($server)) {
+            $server = self::getServerList();
+        }
+
+        // 1. Variables avec radical / type / id_ts_file
+        $variables = self::getIdVariable($var);
+
+        $result = [];
+
+        foreach ($server as $id_server) {
+
+            foreach ($variables as $radical => $types) {
+
+                if (!in_array($radical, ["general", "slave"])) {
+                    continue; // on ignore digest / status / variables
+                }
+
+                foreach ($types as $type => $list_ids) {
+
+                    foreach ($list_ids as $id_ts_variable) {
+
+                        $var_name = self::$variable[$id_ts_variable]['name'];
+                        $id_ts_file = self::$variable[$id_ts_variable]['id_ts_file'];
+
+                        // 2. Récupère les 5 dernières dates
+                        $sql = "SELECT date, date_p1, date_p2, date_p3, date_p4
+                            FROM ts_max_date
+                            WHERE id_mysql_server = {$id_server}
+                            AND id_ts_file = {$id_ts_file};
+                        ";
+                        Debug::sql($sql);
+
+                        $res = $db->sql_query($sql);
+                        if ($row = $db->sql_fetch_object($res)) {
+
+                            $dates = array_filter([
+                                $row->date,
+                                $row->date_p1,
+                                $row->date_p2,
+                                $row->date_p3,
+                                $row->date_p4
+                            ]);
+
+                            // 3. Pour chaque date → partition directe
+                            foreach ($dates as $dt) {
+
+                                $partition = self::getPartitionFromDate($dt);
+                                $table = "ts_value_{$radical}_{$type}";
+
+                                $extra = ($radical === "slave") ? ", connection_name" : "";
+
+                                $sqlv = "SELECT value {$extra}
+                                    FROM {$table} PARTITION({$partition})
+                                    WHERE id_mysql_server = {$id_server}
+                                    AND id_ts_variable = {$id_ts_variable}
+                                    AND date = '{$dt}'
+                                    LIMIT 1;
+                                ";
+                                Debug::sql($sqlv);
+
+                                $res2 = $db->sql_query($sqlv);
+
+                                if ($ob = $db->sql_fetch_object($res2)) {
+
+                                    // JSON decode
+                                    $value = ($type === "json")
+                                        ? json_decode($ob->value, true)
+                                        : trim($ob->value);
+
+                                    if ($radical === "slave") {
+                                        $result[$id_server]['@slave'][$ob->connection_name][$var_name][] = [
+                                            'date'  => $dt,
+                                            'value' => $value
+                                        ];
+                                    } else {
+                                        $result[$id_server][$var_name][] = [
+                                            'date'  => $dt,
+                                            'value' => $value
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
-
-
-    
 
 }

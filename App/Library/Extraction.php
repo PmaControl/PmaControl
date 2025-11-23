@@ -42,7 +42,10 @@ class Extraction
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty($server)) {
-            $server = self::getServerList();
+            $server = Extraction2::getServerList();
+        }
+        else{
+            Extraction2::$server = $server;
         }
 
         $extra_where = "";
@@ -224,30 +227,7 @@ class Extraction
         return $res2;
     }
 
-    static private function getServerList()
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
 
-        if (empty(self::$server)) {
-            $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
-
-            $res = $db->sql_query($sql);
-
-            $server = array();
-            while ($ob     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $server[] = $ob['id'];
-                //self::$server[] = $ob;
-            }
-
-            if (count($server) === 0) {//int negatif pour être sur de rien remonté
-                $server[] = "-999";
-            }
-
-            self::$server = $server;
-        }
-
-        return self::$server;
-    }
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
