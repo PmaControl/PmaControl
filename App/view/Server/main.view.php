@@ -230,7 +230,10 @@ if (!empty($data['servers'])) {
         echo '<td style="'.$style.'">';
         echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
         echo '</td>';
-        echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1-hour/ts_variable:derivate:1">';
+        
+        // http://10.68.68.111/pmacontrol/en/MysqlServer/main/1/pmacontrol/
+        //echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1-hour/ts_variable:derivate:1">';
+        echo '<td style="'.$style.'"><a href="'.LINK.'MysqlServer/main/'.$server['id'].'/pmacontrol">';
 
         echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
         

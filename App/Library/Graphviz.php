@@ -747,6 +747,7 @@ class Graphviz
             if(! empty($server['mysql_replication_hostgroups']))
             {
                 $correspondance_hg = Dot3::getHostGroup($server['mysql_replication_hostgroups']);
+
             }
             
             if (! empty($server['mysql_group_replication_hostgroups']))

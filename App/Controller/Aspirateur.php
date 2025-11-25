@@ -337,11 +337,18 @@ class Aspirateur extends Controller
         $id_mysql_server   = $param[1] ?? null;
         $refresh = $param[2] ?? null;
 
-
         if (!$name_server || !$id_mysql_server) {
             throw new \Exception(
                 "Paramètre manquant : name_server et id_mysql_server sont obligatoires",
                 1001
+            );
+        }
+
+
+
+        if (!is_numeric($id_mysql_server) || (int)$id_mysql_server <= 0) {
+            throw new \InvalidArgumentException(
+                "Invalid parameter 'id_mysql_server': expected positive integer"
             );
         }
 

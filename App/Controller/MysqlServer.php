@@ -10,6 +10,43 @@ use \App\Library\Mysql;
 use \App\Library\Debug;
 use App\Library\Extraction2;
 
+// ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
+/*
+
+ALTER TABLE mysql_server ADD SYSTEM VERSIONING;
+
+
+ALTER TABLE mysql_server REMOVE PARTITIONING;
+ALTER TABLE mysql_server DROP SYSTEM VERSIONING;
+ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
+
+-----------------
+
+CREATE TABLE mysql_server2 LIKE mysql_server;
+
+ALTER TABLE mysql_server2
+    DROP COLUMN IF EXISTS SYS_START,
+    DROP COLUMN IF EXISTS SYS_END;
+
+
+INSERT INTO mysql_server2
+SELECT * FROM mysql_server
+WHERE SYS_END = 'infinity';
+
+ALTER TABLE mysql_server2 ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
+
+RENAME TABLE mysql_server2 TO mysql_server;
+
+
+
+
+
+
+
+
+
+*/
+
 class MysqlServer extends Controller
 {
     public function menu($param)
@@ -390,6 +427,11 @@ class MysqlServer extends Controller
 
 
         function human_time_diff_dec($date_start, $precision = 1) {
+
+            if (empty($date_start)) {
+                return '0s';
+            }
+
             $seconds = time() - strtotime($date_start);
             $seconds--;
 

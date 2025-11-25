@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\Graphviz;
+use Exception;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Extraction2;
@@ -21,6 +22,8 @@ use \Monolog\Handler\StreamHandler;
 
 
 use \Glial\Sgbd\Sgbd;
+
+// #01a31c green
 
 // ""	&#9635;   ▣
 // "□"	&#9633;	&#x25A1;
@@ -140,10 +143,7 @@ class Dot3 extends Controller
         //$id_mysql_servers = [87,88,116];
         // "status::wsrep_cluster_status"  => not exist anymore ?
 
-
-
         $all = [];
-
 
         // to split en 3 morceau
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
@@ -158,10 +158,13 @@ class Dot3 extends Controller
                 "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
-                "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
+                "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
-                "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
+                "maxscale::maxscale_listeners", 
+                "maxscale::maxscale_servers",
+                "maxscale::maxscale_services", 
+                "maxscale::maxscale_monitors", 
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),$id_mysql_servers , $date_request);
 /***/
@@ -386,7 +389,7 @@ class Dot3 extends Controller
             }   
         }
 
-        Debug::debug($tmp_group, "MASTER SLAVE");
+        //Debug::debug($tmp_group, "MASTER SLAVE");
         //die();
         return $tmp_group;
     }
@@ -550,7 +553,7 @@ class Dot3 extends Controller
                 continue;
             }
 
-            Debug::debug("#####################################");
+            //Debug::debug("#####################################");
 
 
             $tmp_group[$id_mysql_server][] = $id_mysql_server;
@@ -630,6 +633,13 @@ class Dot3 extends Controller
 
         foreach($groups as $group)
         {
+            echo "##########################################################\n";
+
+            if (! in_array(127, $group))
+            {
+                continue;
+            }
+
 
             self::$rank_same = array();
             self::$build_galera = array();
@@ -801,13 +811,13 @@ class Dot3 extends Controller
 
     public function getGroup($param)
     {
-        Debug::parseDebug($param);
+        //Debug::parseDebug($param);
 
         $id_dot3_information = $param[0];
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
-        Debug::debug($galera, "GALERA");
+        //Debug::debug($galera, "GALERA");
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -1082,9 +1092,12 @@ class Dot3 extends Controller
 
             if (empty($server['mysql_servers']))
             {
+                //throw new Exception("Impossible to find server");
                 Debug::debug($server, "PROBLEM PROCYSQL");
                 Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
             }
+
+            Debug::debug($server,"PROXYSQL -------------");
 
 
             foreach($server['mysql_servers'] as $hostgroup) {
@@ -1145,6 +1158,17 @@ class Dot3 extends Controller
                     
                 }
 
+                $writer = $server['mysql_replication_hostgroups'][0]['writer_hostgroup'] ?? null;
+                $reader = $server['mysql_replication_hostgroups'][0]['reader_hostgroup'] ?? null;
+
+
+                if (in_array($hostgroup['hostgroup_id'], [$reader]))
+                {
+                    $tmp['options']['style'] = "filled";
+                    $tmp['options']['color'] = "#32CD32";
+                }
+
+
                 if (in_array($hostgroup['hostgroup_id'], array(1,2,100)))
                 {
                     if (in_array($hostgroup['hostgroup_id'], array(2)))
@@ -1161,13 +1185,13 @@ class Dot3 extends Controller
                     }
 
 
-                    self::$build_ms[] = $tmp;
+                    
                 }
-                
+                self::$build_ms[] = $tmp;
             }
         }
 
-        //Debug::debug(self::$build_ms);
+        Debug::debug(self::$build_ms);
     }
 
 
@@ -1284,7 +1308,7 @@ class Dot3 extends Controller
             self::$config[$arr['const']] = $arr;
         }
 
-        //Debug::$debug = true;
+        Debug::$debug = true;
         //Debug::debug(self::$config, "DOT3_LEGEND");
         //die('wdfgdf');
     }
@@ -1305,7 +1329,7 @@ class Dot3 extends Controller
             //Debug::debug($dot_information, "mapping");
             // create box => autodetect
             echo "This master was not found : ".$host."\n";
-            die();
+            //die();
         }
     }
 
@@ -1856,6 +1880,8 @@ class Dot3 extends Controller
 
         // Copie locale modifiable
         $resolved = $maxscale;
+
+        Debug::debug($resolved, "LISTENER");
 
         // Variante 0.0.0.0
         $port = explode(':', $maxscale_ip_port)[1] ?? null;

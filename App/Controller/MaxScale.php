@@ -194,10 +194,12 @@ class MaxScale extends Controller {
         while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
             
             $arr[] = "services";
+
+            Debug::debug($arr, "ARR");
             $data = self::curl($arr );
 
             
-            //Debug::debug($data, "RESULT");
+            Debug::debug($data, "RESULT");
 
             foreach ($data['data'] as $service) {
                 if (!empty($service['attributes']['listeners'])) {

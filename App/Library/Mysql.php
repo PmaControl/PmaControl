@@ -133,8 +133,8 @@ class Mysql
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "INSERT IGNORE INTO `ts_max_date` ( `id_mysql_server`, `date`,`date_p1`,`date_p2`,`date_p3`,`date_p4`, `id_ts_file`)
-        SELECT a.id as id_mysql_server,now(), now(),now(),now(),now(), b.id as id_ts_file 
+        $sql = "INSERT IGNORE INTO `ts_max_date` ( `id_mysql_server`, `id_ts_file`)
+        SELECT a.id as id_mysql_server, b.id as id_ts_file 
         from mysql_server a
         INNER JOIN ts_file b 
         LEFT JOIN ts_max_date c ON a.id = c.id_mysql_server AND b.id = c.id_ts_file 
