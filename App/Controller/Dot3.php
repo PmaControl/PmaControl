@@ -1308,7 +1308,7 @@ class Dot3 extends Controller
             self::$config[$arr['const']] = $arr;
         }
 
-        Debug::$debug = true;
+        //Debug::$debug = true;
         //Debug::debug(self::$config, "DOT3_LEGEND");
         //die('wdfgdf');
     }
@@ -1883,19 +1883,26 @@ class Dot3 extends Controller
 
         Debug::debug($resolved, "LISTENER");
 
-        // Variante 0.0.0.0
-        $port = explode(':', $maxscale_ip_port)[1] ?? null;
-        $maxscale_ip_port_2 = "0.0.0.0:" . trim($port);
+        [$listenerAddress, $listenerPort] = self::splitAddressPort($maxscale_ip_port);
 
-        // Si listener sur 0.0.0.0:port
-        if (!empty($resolved[$maxscale_ip_port_2]['listener'])) {
-            Debug::debug("USE 0.0.0.0");
-            $resolved[$maxscale_ip_port] = $resolved[$maxscale_ip_port_2];
-            return $resolved;
+        // Si listener sur 0.0.0.0:port ou [::]:port
+        $wildcard_candidates = [];
+        if ($listenerPort !== null && $listenerPort !== '') {
+            foreach (['0.0.0.0', '::'] as $wildcard) {
+                $wildcard_candidates[] = $wildcard . ":" . trim($listenerPort);
+            }
+        }
+
+        foreach ($wildcard_candidates as $candidate) {
+            if (!empty($resolved[$candidate]['listener'])) {
+                Debug::debug("USE " . $candidate);
+                $resolved[$maxscale_ip_port] = $resolved[$candidate];
+                return $resolved;
+            }
         }
 
         Debug::debug($maxscale_ip_port, "maxscale_ip_port");
-        Debug::debug($maxscale_ip_port_2, "maxscale_ip_port_2");
+        Debug::debug($wildcard_candidates, "maxscale_ip_port_fallbacks");
 
         // Si un tunnel existe pour cette IP:port
         if (!empty($tunnel[$maxscale_ip_port])) {
@@ -1909,17 +1916,49 @@ class Dot3 extends Controller
             }
 
             // Cas 2 : correspondance via 0.0.0.0 + port du tunnel
-            $new_port = explode(':', $tunnel_ip_port)[1] ?? null;
-            $maxscale_ip_port_3 = "0.0.0.0:" . trim($new_port);
-
-            Debug::debug($maxscale_ip_port_3, "TEST 0.0.0.0 + Port originie before tunnel");
-
-            if (!empty($resolved[$maxscale_ip_port_3]['servers'])) {
-                $resolved[$maxscale_ip_port] = $resolved[$maxscale_ip_port_3];
+            [, $tunnelPort] = self::splitAddressPort($tunnel_ip_port);
+            if ($tunnelPort !== null && $tunnelPort !== '') {
+                foreach (['0.0.0.0', '::'] as $wildcard) {
+                    $candidate = $wildcard . ":" . trim($tunnelPort);
+                    Debug::debug($candidate, "TEST {$wildcard} + Port originie before tunnel");
+                    if (!empty($resolved[$candidate]['servers'])) {
+                        $resolved[$maxscale_ip_port] = $resolved[$candidate];
+                        break;
+                    }
+                }
             }
         }
 
         return $resolved;
+    }
+
+    private static function splitAddressPort(string $value): array
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return [null, null];
+        }
+
+        if ($value[0] === '[') {
+            $closing_bracket = strpos($value, ']');
+            if ($closing_bracket !== false) {
+                $host = substr($value, 1, $closing_bracket - 1);
+                $port = ltrim(substr($value, $closing_bracket + 1), ':');
+                return [trim($host), $port === '' ? null : trim($port)];
+            }
+        }
+
+        $last_colon = strrpos($value, ':');
+
+        if ($last_colon === false) {
+            return [trim($value, '[]'), null];
+        }
+
+        $host = substr($value, 0, $last_colon);
+        $port = substr($value, $last_colon + 1);
+
+        return [trim($host, '[]'), $port === '' ? null : trim($port)];
     }
 
 
