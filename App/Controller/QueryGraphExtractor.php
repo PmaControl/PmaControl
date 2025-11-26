@@ -1,7 +1,14 @@
 <?php
 
+namespace App\Controller;
+
+use \App\Library\Debug;
+use \Glial\Synapse\Controller;
+use \Glial\Sgbd\Sgbd;
+
+
 // https://chatgpt.com/c/691b9112-ebcc-8329-a0cd-9cfcea9a3bee
-class QueryGraphExtractor
+class QueryGraphExtractor extends Controller
 {
     
 

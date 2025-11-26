@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Library;
+namespace App\Controller;
 
+
+use \App\Library\Extraction2;
+use \App\Library\Debug;
+use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
-use App\Library\Extraction2;
-use App\Library\Debug;
 
-class Check
+class Check extends Controller
 {
     /**
      * Détecte un redémarrage MySQL via une baisse de uptime
