@@ -296,7 +296,7 @@ class Schema extends Controller
         $lines = [];
         $lines[] = sprintf("📦 Schema change on %s", $serverLabel);
         $lines[] = sprintf(
-            "Database : <b>%s</b> <i>Version #%d</i>",
+            "Database : 🗄️ <b>%s</b> - <i>Version #%d</i>",
             htmlspecialchars($database, ENT_QUOTES, 'UTF-8'),
             $snapshotNumber
         );
@@ -315,7 +315,7 @@ class Schema extends Controller
         }
 
         $message = implode("\n", $lines);
-        Telegram::broadcast($message);
+        //Telegram::broadcast($message);
     }
 
     private function formatChangeList(array $items): string
@@ -353,6 +353,15 @@ class Schema extends Controller
         return "🖥️ " . htmlspecialchars($socket, ENT_QUOTES, 'UTF-8');
     }
 
+    private function isUnknownDatabaseError(\Throwable $exception): bool
+    {
+        if ($exception instanceof \mysqli_sql_exception && (int)$exception->getCode() === 1049) {
+            return true;
+        }
+
+        return stripos($exception->getMessage(), 'unknown database') !== false;
+    }
+
     public function exportAll(array $param): void
     {
         Debug::parseDebug($param);
@@ -381,7 +390,23 @@ class Schema extends Controller
         }
 
         foreach ($databases as $database) {
-            $this->export([$id_mysql_server, $database]);
+            try {
+                $this->export([$id_mysql_server, $database]);
+            } catch (\Throwable $exception) {
+                if ($this->isUnknownDatabaseError($exception)) {
+                    Debug::debug(
+                        [
+                            'id_mysql_server' => $id_mysql_server,
+                            'database' => $database,
+                            'error' => $exception->getMessage(),
+                        ],
+                        'PMACTRL-SCHEMA-MISSING-DB'
+                    );
+                    continue;
+                }
+
+                throw $exception;
+            }
         }
 
         $this->view = false;
