@@ -306,12 +306,10 @@ class Control extends Controller
         //remove old pid
         $params = array('mysql', 'proxysql', 'ssh');
 
-        foreach($params as $param)
-        {
+        foreach($params as $param) {
             Worker::deleteExpiredPid(array());
         }
         
-
         Listener::init($params);
 
     }

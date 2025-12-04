@@ -7,9 +7,13 @@ use App\Library\Extraction2;
 use Glial\Synapse\Controller;
 use Glial\Sgbd\Sgbd;
 use App\Controller\Telegram;
+use SebastianBergmann\Diff\Differ;
+use SebastianBergmann\Diff\Output\DiffOnlyOutputBuilder;
 
 class Schema extends Controller
 {
+    private $differ;
+
     /**
      * Export the schema (SHOW CREATE TABLE) for every table found in a database.
      *
@@ -367,10 +371,21 @@ class Schema extends Controller
         Debug::parseDebug($param);
 
         $id_mysql_server = isset($param[0]) ? (int)$param[0] : 0;
-        if ($id_mysql_server <= 0) {
-            throw new \Exception("PMACTRL-SCHEMA-020: Missing id_mysql_server for exportAll.");
+        $serverIds = $this->getEligibleServerIds([$id_mysql_server]);
+
+        if (empty($serverIds)) {
+            throw new \Exception("PMACTRL-SCHEMA-020: No eligible mysql_server found for exportAll.");
         }
 
+        foreach ($serverIds as $serverId) {
+            $this->exportSchemasForServer($serverId);
+        }
+
+        $this->view = false;
+    }
+
+    private function exportSchemasForServer(int $id_mysql_server): void
+    {
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "
             SELECT schema_name
@@ -409,8 +424,47 @@ class Schema extends Controller
             }
         }
 
-        $this->view = false;
         echo "All schemas exported for server " . $id_mysql_server . PHP_EOL;
+    }
+
+    public function getEligibleServerIds($param): array
+    {
+        debug::parseDebug($param);
+
+        $requestedServerId = $param[0] ?? 0;
+
+        if ($requestedServerId > 0) {
+            return [$requestedServerId];
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id FROM mysql_server WHERE is_deleted = 0 and is_proxy=0";
+        $res = $db->sql_query($sql);
+
+        $serverIds = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $serverIds[] = (int)$row['id'];
+        }
+
+        if (empty($serverIds)) {
+            return [];
+        }
+
+        $metrics = Extraction2::display(["mysql_available"], $serverIds);
+        if (empty($metrics)) {
+            return [];
+        }
+
+        $eligible = [];
+        foreach ($metrics as $serverId => $values) {
+            if ($this->toInt($values['mysql_available'] ?? 0) === 1) {
+                $eligible[] = (int)$serverId;
+            }
+        }
+
+        Debug::debug($eligible);
+
+        return $eligible;
     }
 
     /**
@@ -490,6 +544,547 @@ class Schema extends Controller
         }
 
         return $current - $previous;
+    }
+
+    /**
+     * Compare the exported schema models of two servers.
+     * Usage: ./glial schema compareModels <id_mysql_server_left> <id_mysql_server_right>
+     */
+    public function compareModels(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $leftId  = isset($param[0]) ? (int)$param[0] : 0;
+        $rightId = isset($param[1]) ? (int)$param[1] : 0;
+
+        if ($leftId <= 0 || $rightId <= 0) {
+            throw new \Exception("PMACTRL-SCHEMA-040: Expected two mysql_server ids to compare.");
+        }
+
+        if ($leftId === $rightId) {
+            throw new \Exception("PMACTRL-SCHEMA-041: Provided ids must reference two different servers.");
+        }
+
+        $comparison = $this->diffModelServers($leftId, $rightId);
+
+        $this->view = false;
+        echo $this->formatModelComparison($comparison) . PHP_EOL;
+    }
+
+    private function diffModelServers(int $leftId, int $rightId, array $options = []): array
+    {
+        $ignoreColumnOrder = !empty($options['ignore_column_order']);
+        $leftPath  = $this->getModelServerPath($leftId);
+        $rightPath = $this->getModelServerPath($rightId);
+
+        $leftDatabases  = $this->listModelDatabases($leftPath);
+        $rightDatabases = $this->listModelDatabases($rightPath);
+
+        $leftNames  = array_keys($leftDatabases);
+        $rightNames = array_keys($rightDatabases);
+
+        sort($leftNames);
+        sort($rightNames);
+
+        $leftOnly  = array_values(array_diff($leftNames, $rightNames));
+        $rightOnly = array_values(array_diff($rightNames, $leftNames));
+        $common    = array_values(array_intersect($leftNames, $rightNames));
+
+        $diffPerDb = [];
+        foreach ($common as $database) {
+            $diff = $this->diffModelDatabase(
+                $leftDatabases[$database],
+                $rightDatabases[$database],
+                $ignoreColumnOrder
+            );
+            if (!empty($diff['left_only']) || !empty($diff['right_only']) || !empty($diff['different'])) {
+                $diffPerDb[$database] = $diff;
+            }
+        }
+
+        ksort($diffPerDb);
+
+        return [
+            'left' => $leftId,
+            'right' => $rightId,
+            'databases' => [
+                'left_only' => $leftOnly,
+                'right_only' => $rightOnly,
+                'differences' => $diffPerDb,
+            ],
+        ];
+    }
+
+    private function getModelServerPath(int $serverId): string
+    {
+        $path = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . "model" . DIRECTORY_SEPARATOR . $serverId;
+        if (!is_dir($path)) {
+            throw new \Exception("PMACTRL-SCHEMA-042: No model found for server #" . $serverId . " in " . $path . ".");
+        }
+
+        return $path;
+    }
+
+    private function listModelDatabases(string $serverPath): array
+    {
+        $paths = glob($serverPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+        $result = [];
+
+        foreach ($paths as $path) {
+            $name = basename($path);
+            if ($name === '.' || $name === '..' || $name === '.git') {
+                continue;
+            }
+
+            $result[$name] = $path;
+        }
+
+        ksort($result);
+        return $result;
+    }
+
+    private function listModelObjects(string $databasePath): array
+    {
+        $files = glob($databasePath . DIRECTORY_SEPARATOR . '*.sql') ?: [];
+        $objects = [];
+
+        foreach ($files as $file) {
+            $name = pathinfo($file, PATHINFO_FILENAME);
+            $objects[$name] = $file;
+        }
+
+        ksort($objects);
+        return $objects;
+    }
+
+    private function diffModelDatabase(string $leftDatabasePath, string $rightDatabasePath, bool $ignoreColumnOrder = false): array
+    {
+        $leftObjects  = $this->listModelObjects($leftDatabasePath);
+        $rightObjects = $this->listModelObjects($rightDatabasePath);
+
+        $leftNames  = array_keys($leftObjects);
+        $rightNames = array_keys($rightObjects);
+
+        $leftOnly  = array_values(array_diff($leftNames, $rightNames));
+        $rightOnly = array_values(array_diff($rightNames, $leftNames));
+        $common    = array_values(array_intersect($leftNames, $rightNames));
+
+        $different = [];
+        foreach ($common as $object) {
+            $leftFile = $leftObjects[$object];
+            $rightFile = $rightObjects[$object];
+
+            if (!$this->areModelFilesIdentical($leftFile, $rightFile, $ignoreColumnOrder)) {
+                $different[] = [
+                    'name' => $object,
+                    'left' => $leftFile,
+                    'right' => $rightFile,
+                ];
+            }
+        }
+
+        return [
+            'left_only' => $leftOnly,
+            'right_only' => $rightOnly,
+            'different' => $different,
+        ];
+    }
+
+    private function formatModelComparison(array $comparison): string
+    {
+        $lines = [];
+        $lines[] = sprintf(
+            "Comparaison des exports pour les serveurs #%d et #%d",
+            $comparison['left'],
+            $comparison['right']
+        );
+
+        $dbInfo = $comparison['databases'];
+
+        if (empty($dbInfo['left_only']) && empty($dbInfo['right_only']) && empty($dbInfo['differences'])) {
+            $lines[] = "Aucune différence détectée.";
+            return implode("\n", $lines);
+        }
+
+        if (!empty($dbInfo['left_only'])) {
+            $lines[] = "Bases seulement sur le serveur gauche : " . implode(', ', $dbInfo['left_only']);
+        }
+
+        if (!empty($dbInfo['right_only'])) {
+            $lines[] = "Bases seulement sur le serveur droit : " . implode(', ', $dbInfo['right_only']);
+        }
+
+        foreach ($dbInfo['differences'] as $database => $diff) {
+            $lines[] = "Base " . $database . " :";
+
+            if (!empty($diff['left_only'])) {
+                $lines[] = "  Objets manquants à droite : " . implode(', ', $diff['left_only']);
+            }
+
+            if (!empty($diff['right_only'])) {
+                $lines[] = "  Objets manquants à gauche : " . implode(', ', $diff['right_only']);
+            }
+
+            if (!empty($diff['different'])) {
+                $objectNames = array_map(
+                    function ($item) {
+                        return $item['name'];
+                    },
+                    $diff['different']
+                );
+
+                $lines[] = "  Objets divergents : " . implode(', ', $objectNames);
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    public function compareModelsUi(array $param): void
+    {
+        $this->title = __("Compare schema exports");
+
+        $leftId = isset($_GET['schema_compare']['id_mysql_server__left']) ? (int)$_GET['schema_compare']['id_mysql_server__left'] : 0;
+        $rightId = isset($_GET['schema_compare']['id_mysql_server__right']) ? (int)$_GET['schema_compare']['id_mysql_server__right'] : 0;
+        $ignoreColumnOrder = !empty($_GET['schema_compare']['ignore_column_order']);
+
+        $data = [
+            'left_id' => $leftId,
+            'right_id' => $rightId,
+            'ignore_column_order' => $ignoreColumnOrder,
+            'errors' => [],
+            'comparison' => null,
+            'detailed' => [],
+            'diff_css' => $this->getDiffTableCss(),
+        ];
+
+        if ($leftId > 0 && $rightId > 0 && $leftId !== $rightId) {
+            try {
+                $comparison = $this->diffModelServers(
+                    $leftId,
+                    $rightId,
+                    ['ignore_column_order' => $ignoreColumnOrder]
+                );
+                $data['comparison'] = $comparison;
+                $data['detailed'] = $this->buildComparisonDetails(
+                    $comparison['databases']['differences'] ?? [],
+                    $ignoreColumnOrder
+                );
+            } catch (\Throwable $exception) {
+                $data['errors'][] = $exception->getMessage();
+            }
+        } elseif ($leftId !== 0 || $rightId !== 0) {
+            $data['errors'][] = __("Please select two different servers.");
+        }
+
+        $this->set('data', $data);
+    }
+
+    private function buildComparisonDetails(array $differences, bool $ignoreColumnOrder): array
+    {
+        $result = [];
+
+        foreach ($differences as $database => $diff) {
+            $entry = [
+                'name' => $database,
+                'left_only' => $diff['left_only'] ?? [],
+                'right_only' => $diff['right_only'] ?? [],
+                'objects' => [],
+            ];
+
+            foreach ($diff['different'] as $objectDiff) {
+                $entry['objects'][] = [
+                    'name' => $objectDiff['name'],
+                    'diff' => $this->renderDiffTable(
+                        $objectDiff['left'],
+                        $objectDiff['right'],
+                        $ignoreColumnOrder
+                    ),
+                ];
+            }
+
+            $result[] = $entry;
+        }
+
+        return $result;
+    }
+
+    private function renderDiffTable(string $leftFile, string $rightFile, bool $ignoreColumnOrder = false): string
+    {
+        $left = $this->readFileContent($leftFile);
+        $right = $this->readFileContent($rightFile);
+
+        if ($ignoreColumnOrder) {
+            $left = $this->normalizeCreateTableStatement($left);
+            $right = $this->normalizeCreateTableStatement($right);
+        }
+
+        $diff = $this->getDiffer()->diffToArray($left, $right);
+
+        $rows = [];
+        $oldLine = 1;
+        $newLine = 1;
+
+        foreach ($diff as $edit) {
+            [$line, $type] = $edit;
+
+            if ($type === Differ::DIFF_LINE_END_WARNING || $type === Differ::NO_LINE_END_EOF_WARNING) {
+                continue;
+            }
+
+            $class = $this->getDiffClass($type);
+            $prefix = $this->getDiffPrefix($type);
+
+            $rows[] = sprintf(
+                '<tr><td class="ln">%s</td><td class="ln">%s</td><td class="%s">%s</td></tr>',
+                $type === Differ::ADDED ? '' : $oldLine++,
+                $type === Differ::REMOVED ? '' : $newLine++,
+                $class,
+                htmlspecialchars($prefix . $line)
+            );
+        }
+
+        return '<table class="diff-table">' . implode('', $rows) . '</table>';
+    }
+
+    private function getDiffClass(int $type): string
+    {
+        if ($type === Differ::ADDED) {
+            return 'add';
+        }
+
+        if ($type === Differ::REMOVED) {
+            return 'del';
+        }
+
+        return 'same';
+    }
+
+    private function getDiffPrefix(int $type): string
+    {
+        if ($type === Differ::ADDED) {
+            return '+ ';
+        }
+
+        if ($type === Differ::REMOVED) {
+            return '- ';
+        }
+
+        return '  ';
+    }
+
+    private function readFileContent(string $path): string
+    {
+        if (!is_readable($path)) {
+            return '';
+        }
+
+        $content = file_get_contents($path);
+        return $content === false ? '' : $content;
+    }
+
+    private function areModelFilesIdentical(string $fileA, string $fileB, bool $ignoreColumnOrder = false): bool
+    {
+        if (!is_readable($fileA) || !is_readable($fileB)) {
+            return false;
+        }
+
+        if ($ignoreColumnOrder === false) {
+            return md5_file($fileA) === md5_file($fileB);
+        }
+
+        $contentA = $this->normalizeCreateTableStatement($this->readFileContent($fileA));
+        $contentB = $this->normalizeCreateTableStatement($this->readFileContent($fileB));
+
+        return md5($contentA) === md5($contentB);
+    }
+
+    private function normalizeCreateTableStatement(string $sql): string
+    {
+        $sql = str_replace(["\r\n", "\r"], "\n", trim($sql));
+
+        if ($sql === '' || stripos($sql, 'CREATE TABLE') === false) {
+            return $sql;
+        }
+
+        $openParen = strpos($sql, '(');
+        $closeParen = strrpos($sql, ')');
+
+        if ($openParen === false || $closeParen === false || $closeParen <= $openParen) {
+            return $sql;
+        }
+
+        $prefix = substr($sql, 0, $openParen);
+        $body = substr($sql, $openParen + 1, $closeParen - $openParen - 1);
+        $suffix = trim(substr($sql, $closeParen + 1));
+
+        $definitions = $this->splitSqlDefinitionList($body);
+
+        if (empty($definitions)) {
+            return $sql;
+        }
+
+        $columns = [];
+        $others = [];
+
+        foreach ($definitions as $definition) {
+            $clean = trim($definition);
+            if ($clean === '') {
+                continue;
+            }
+
+            if ($this->isColumnDefinitionLine($clean)) {
+                $columns[] = [
+                    'name' => strtolower($this->extractColumnName($clean)),
+                    'definition' => $clean,
+                ];
+            } else {
+                $others[] = $clean;
+            }
+        }
+
+        if (!empty($columns)) {
+            usort(
+                $columns,
+                function (array $left, array $right): int {
+                    return $left['name'] <=> $right['name'];
+                }
+            );
+        }
+
+        $orderedColumns = array_map(
+            function (array $column): string {
+                return $column['definition'];
+            },
+            $columns
+        );
+
+        $normalizedBody = implode(",\n    ", array_merge($orderedColumns, $others));
+
+        $normalized = rtrim($prefix) . " (\n    " . $normalizedBody . "\n)";
+        if ($suffix !== '') {
+            $normalized .= "\n" . $suffix;
+        }
+
+        return $normalized;
+    }
+
+    private function splitSqlDefinitionList(string $body): array
+    {
+        $length = strlen($body);
+        $entries = [];
+        $current = '';
+        $depth = 0;
+        $inSingle = false;
+        $inDouble = false;
+        $inBacktick = false;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $body[$i];
+            $next = $body[$i + 1] ?? '';
+
+            if ($char === "'" && !$inDouble && !$inBacktick) {
+                if ($inSingle) {
+                    if ($next === "'") {
+                        $current .= "''";
+                        $i++;
+                        continue;
+                    }
+
+                    if (!$this->isEscapedByBackslash($body, $i)) {
+                        $inSingle = false;
+                    }
+                } elseif (!$this->isEscapedByBackslash($body, $i)) {
+                    $inSingle = true;
+                }
+            } elseif ($char === '"' && !$inSingle && !$inBacktick) {
+                if ($inDouble) {
+                    if (!$this->isEscapedByBackslash($body, $i)) {
+                        $inDouble = false;
+                    }
+                } elseif (!$this->isEscapedByBackslash($body, $i)) {
+                    $inDouble = true;
+                }
+            } elseif ($char === '`' && !$inSingle && !$inDouble) {
+                $inBacktick = !$inBacktick;
+            }
+
+            if (!$inSingle && !$inDouble && !$inBacktick) {
+                if ($char === '(') {
+                    $depth++;
+                } elseif ($char === ')' && $depth > 0) {
+                    $depth--;
+                }
+            }
+
+            if ($char === ',' && !$inSingle && !$inDouble && !$inBacktick && $depth === 0) {
+                $trimmed = trim($current);
+                if ($trimmed !== '') {
+                    $entries[] = $trimmed;
+                }
+                $current = '';
+                continue;
+            }
+
+            $current .= $char;
+        }
+
+        $trimmed = trim($current);
+        if ($trimmed !== '') {
+            $entries[] = $trimmed;
+        }
+
+        return $entries;
+    }
+
+    private function isColumnDefinitionLine(string $definition): bool
+    {
+        $definition = ltrim($definition);
+        return isset($definition[0]) && $definition[0] === '`';
+    }
+
+    private function extractColumnName(string $definition): string
+    {
+        if (preg_match('/^`([^`]+)`/', $definition, $matches)) {
+            return $matches[1];
+        }
+
+        return $definition;
+    }
+
+    private function isEscapedByBackslash(string $subject, int $position): bool
+    {
+        $backslashes = 0;
+        for ($i = $position - 1; $i >= 0; $i--) {
+            if ($subject[$i] === '\\') {
+                $backslashes++;
+            } else {
+                break;
+            }
+        }
+
+        return ($backslashes % 2) === 1;
+    }
+
+    private function getDiffTableCss(): string
+    {
+        return '<style>
+.diff-table { width: 100%; border-collapse: collapse; font-family: monospace; }
+.diff-table td { padding: 4px; vertical-align: top; white-space: pre; }
+.diff-table .add { background: #e6ffed; color: #22863a; }
+.diff-table .del { background: #ffeef0; color: #b31d28; }
+.diff-table .same { background: #f6f8fa; color: #24292e; }
+.diff-table .ln { width:40px; text-align:right; color:#999; }
+</style>';
+    }
+
+    private function getDiffer(): Differ
+    {
+        if (!$this->differ instanceof Differ) {
+            $this->differ = new Differ(new DiffOnlyOutputBuilder());
+        }
+
+        return $this->differ;
     }
 
     public function watch(array $param): void

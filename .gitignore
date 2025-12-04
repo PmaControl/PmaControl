@@ -10,3 +10,5 @@ phpunit.xml
 packages.json
 1
 .phpunit.result.cache
+/tmp/*
+!/tmp/.gitkeep

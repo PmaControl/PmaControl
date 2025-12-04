@@ -633,11 +633,11 @@ class Dot3 extends Controller
 
         foreach($groups as $group)
         {
-            echo "##########################################################\n";
+            //echo "##########################################################\n";
 
             if (! in_array(127, $group))
             {
-                continue;
+                //continue;
             }
 
 

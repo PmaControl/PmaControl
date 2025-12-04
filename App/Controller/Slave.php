@@ -11,7 +11,7 @@ use App\Library\Mysql;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
-use \App\Library\Available;
+use \App\Library\DryRun;
 
 class Slave extends Controller
 {
@@ -820,6 +820,40 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     }
 
 
+    public function deactivateGtid($param)
+    {
+        $id_mysql_server = $param[0];
+        $connection_name = $param[1];
+
+        $this->view = false;
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        if (! empty($connection_name))
+        {
+            $connection_name = " '$connection_name' ";
+        }
+
+
+        $sql = "STOP SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+        $sql = "CHANGE MASTER $connection_name TO MASTER_USE_GTID = no;";
+        $db->sql_query($sql);
+
+        $sql = "START SLAVE $connection_name;";
+        $db->sql_query($sql);
+
+
+        $title = "Success";
+        $msg = $sql;
+        set_flash("success", $title, "GTID Deactivated");
+
+        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        
+    }
+
+
     public function skipCounter($param)
     {
         $this->view = false;
@@ -851,4 +885,321 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
     }
+
+
+    /**
+     * Extrait le fichier binaire, la position et le nom de la base de données à partir d'une ligne de log.
+     *
+     * @param string $line Ligne de log au format "mariadb-bin.009564 2735165 /srv/backup/..."
+     * @return array|null Tableau associatif avec les clés 'binlog_file', 'binlog_pos' et 'db_name', ou null si la ligne est invalide.
+     */
+    function extractBinlogInfo($line) {
+        // Utilisation d'une expression régulière pour extraire les informations
+        $pattern = '/^([^\s]+)\s+(\d+)\s+.+\/([^\/]+)_\d{4}-\d{2}-\d{2}_\d{2}h\d{2}m\.[^\.]+\.sql\.gz$/';
+        if (preg_match($pattern, trim($line), $matches)) {
+            return [
+                'binlog_file' => $matches[1],
+                'binlog_pos'  => $matches[2],
+                'db_name'     => $matches[3],
+            ];
+        }
+        return [];
+    }
+
+
+
+    /**
+     * Regroupe les informations de binlog par fichier et position, avec un GROUP_CONCAT sur les noms de bases.
+     *
+     * @param array $extractedData Tableau d'informations extraites (binlog_file, binlog_pos, db_name).
+     * @return array Tableau regroupé par binlog_file et binlog_pos, avec les db_name concaténés.
+     */
+    function groupBinlogInfoByPosition(array $extractedData) {
+        $grouped = [];
+
+        foreach ($extractedData as $entry) {
+            $key = $entry['binlog_file'] . '|' . $entry['binlog_pos'];
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'binlog_file' => $entry['binlog_file'],
+                    'binlog_pos'  => $entry['binlog_pos'],
+                    'db_names'    => [],
+                ];
+            }
+            $grouped[$key]['db_names'][] = $entry['db_name'];
+        }
+
+        // Concaténation des noms de bases avec une virgule
+        foreach ($grouped as &$group) {
+            $group['db_names'] = implode(', ', $group['db_names']);
+        }
+
+        //Debug::debug($grouped, "GROUPED");
+
+        // Réindexer le tableau pour une sortie plus propre
+        return array_values($grouped);
+    }
+
+
+
+    function processBinlogFile($param) {
+
+        Debug::parseDebug($param);
+
+        $filePath = $param[0] ?? '';
+
+        if (!file_exists($filePath)) {
+            throw new \Exception("Le fichier $filePath n'existe pas.");
+        }
+
+        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $extractedData = [];
+
+        foreach ($lines as $line) {
+            $info = $this->extractBinlogInfo($line);
+            if ($info !== null) {
+                $extractedData[] = $info;
+            }
+        }
+
+        return $this->groupBinlogInfoByPosition($extractedData);
+    }
+
+
+    public function generateCmd($param)
+    {
+        Debug::parseDebug($param);
+        $DRY_RUN = DryRun::parseDryRun($param);
+
+        Debug::debug($DRY_RUN, "--dry-run");
+
+        $elems = $this->processBinlogFile($param);
+
+        $id_mysql_server__master = $param[1] ?? '';
+        $id_mysql_server__slave = $param[2] ?? '';
+
+        $master_host = $param[3] ?? '';
+
+        $user = "replication_pmacontrol";
+        $password = $this->generateSecurePassword();
+
+        $master = "MASTER";
+        $slave = "SLAVE";
+        if (! $DRY_RUN) {
+            $master = Mysql::getDbLink($id_mysql_server__master);
+            $slave = Mysql::getDbLink($id_mysql_server__slave);
+        }
+
+        function execute($sql, $db, $DRY_RUN)
+        {
+            if ($DRY_RUN === true) {
+                //echo "$db > $sql\n";
+                Debug::sql($sql);
+            }
+            else{
+                echo "[".date("Y-m-d H:i:s")."] $sql";
+                $db->sql_query($sql);
+            }
+        }
+
+
+
+        $sql = "GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '".$user."'@'%' IDENTIFIED BY '".$password."';";
+        execute($sql, $master, $DRY_RUN);
+
+
+        $databases = "";
+        $i = 0;
+
+        foreach($elems as $elem)
+        {
+            $i++;
+
+            if ($i === 1)
+            {
+                $databases .=  $elem['db_names'];
+                
+                $sql = "RESET SLAVE ALL;";
+                execute($sql, $slave, $DRY_RUN);
+
+                $sql = "CHANGE MASTER TO MASTER_HOST='".$master_host."', MASTER_USER='".$user."', MASTER_PASSWORD='".$password."', 
+                MASTER_SSL=0, MASTER_SSL_VERIFY_SERVER_CERT=0,
+                MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
+                execute($sql, $slave, $DRY_RUN);
+                
+
+                $sql  = "SET GLOBAL replicate_do_db='".$databases."';";
+                execute($sql, $slave, $DRY_RUN);
+            }
+            else{
+                $databases .=  ",".$elem['db_names'];
+                
+                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
+                execute($sql, $slave, $DRY_RUN);
+                
+
+                if ($DRY_RUN === false) {
+                    $this->waitForSlavePosition([$id_mysql_server__slave,$elem['binlog_file'], $elem['binlog_pos'] ]);
+                }
+                $sql = "STOP SLAVE;";
+                execute($sql, $slave, $DRY_RUN);
+
+
+                $sql = "SET GLOBAL replicate_do_db='".$databases."';";
+                execute($sql, $slave, $DRY_RUN);
+
+            }
+
+
+        }
+
+        $sql = "STOP SLAVE;";
+        execute($sql, $slave, $DRY_RUN);
+
+        $sql = "SET GLOBAL replicate_do_db='';";
+        execute($sql, $slave, $DRY_RUN);
+        $sql = "START SLAVE;";
+        execute($sql, $slave, $DRY_RUN);
+
+        
+    }
+
+
+
+    /**
+     * Génère un mot de passe aléatoire sécurisé, avec au moins une minuscule, une majuscule, un chiffre et un caractère spécial,
+     * et sans guillemets simples ni doubles.
+     *
+     * @param int $length Longueur du mot de passe (par défaut : 16).
+     * @return string Mot de passe généré.
+     */
+    function generateSecurePassword($length = 16) {
+        // Définition des ensembles de caractères
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $digits = '0123456789';
+        $specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        // On s'assure que chaque type de caractère est présent
+        $password = [
+            $lowercase[random_int(0, strlen($lowercase) - 1)],
+            $uppercase[random_int(0, strlen($uppercase) - 1)],
+            $digits[random_int(0, strlen($digits) - 1)],
+            $specialChars[random_int(0, strlen($specialChars) - 1)]
+        ];
+
+        // Remplissage du reste du mot de passe avec tous les caractères autorisés
+        $allChars = $lowercase . $uppercase . $digits . $specialChars;
+        $allCharsLength = strlen($allChars);
+
+        for ($i = 4; $i < $length; $i++) {
+            $password[] = $allChars[random_int(0, $allCharsLength - 1)];
+        }
+
+        // Mélange des caractères pour éviter une séquence prévisible
+        shuffle($password);
+
+        // Conversion du tableau en chaîne
+        return implode('', $password);
+    }
+
+    /**
+     * Vérifie si le slave a atteint la position spécifiée dans le binlog.
+     *
+     * @param string $masterLogFile Fichier de binlog à atteindre.
+     * @param int $masterLogPos Position dans le binlog à atteindre.
+     * @param int $timeout Délai maximal d'attente en secondes (par défaut : 3600).
+     * @param int $interval Intervalle entre les vérifications en secondes (par défaut : 5).
+     * @return bool True si la position est atteinte, false si le délai est dépassé.
+     * @throws Exception En cas d'erreur lors de la vérification du statut du slave.
+     */
+    function waitForSlavePosition($param) {
+
+        Debug::parseDebug($param);
+        Debug::debug($param);
+
+        $startTime = time();
+        $timeout = 3600;
+
+        $id_mysql_server = $param[0] ?? "";
+        $binlog_file = $param[1];
+        $binlog_pos = $param[2];
+        
+        while (true) {
+            $db = Mysql::getDbLink($id_mysql_server, "SLAVE");
+            // Vérification du timeout
+            if (time() - $startTime > $timeout) {
+                return false;
+            }
+
+            // Exécution de SHOW SLAVE STATUS
+            $result = $db->sql_query("SHOW SLAVE STATUS");
+            if (!$result) {
+                throw new \Exception("Erreur lors de l'exécution de SHOW SLAVE STATUS : " . $db->sql_error());
+            }
+
+            $slaveStatus = array_change_key_case($db->sql_fetch_array($result, MYSQLI_ASSOC));
+            $db->sql_free_result($result);
+            // Vérifie qu'on n'a pas dépassé le fichier binlog ciblé
+            
+            
+            
+            if (
+                isset($slaveStatus['relay_master_log_file']) &&
+                strnatcmp($slaveStatus['relay_master_log_file'], $binlog_file) > 0
+            ) {
+                $db->sql_close();
+                throw new \Exception(
+                    "waitForSlavePosition aborted: slave binlog file {$slaveStatus['relay_master_log_file']} exceeded requested {$binlog_file}"
+                );
+            }
+
+            // Vérification si la position est atteinte
+            if (
+                isset($slaveStatus['relay_master_log_file'], $slaveStatus['exec_master_log_pos']) &&
+                $slaveStatus['relay_master_log_file'] === $binlog_file &&
+                $slaveStatus['exec_master_log_pos'] >= $binlog_pos
+            ) {
+                Debug::debug("relay_master_log_file : ".$slaveStatus['relay_master_log_file']." - exec_master_log_pos : ".$slaveStatus['exec_master_log_pos'], "");
+
+                $db->sql_close();
+                return true;
+            }
+
+
+            $slaveSqlError   = trim($slaveStatus['last_sql_error'] ?? '');
+            $slaveIoError    = trim($slaveStatus['last_io_error'] ?? '');
+            $slaveSqlErrno   = (int)($slaveStatus['last_sql_errno'] ?? 0);
+            $slaveIoErrno    = (int)($slaveStatus['last_io_errno'] ?? 0);
+
+            $hasSqlError = $slaveSqlErrno !== 0 || $slaveSqlError !== '';
+            $hasIoError  = $slaveIoErrno !== 0 || $slaveIoError !== '';
+
+            if ($hasSqlError || $hasIoError) {
+                Debug::debug($slaveStatus, "Replication error detected, aborting wait");
+                $message = sprintf(
+                    "SQL[%d/%s] IO[%d/%s]",
+                    $slaveSqlErrno,
+                    $slaveSqlError !== '' ? $slaveSqlError : 'No error',
+                    $slaveIoErrno,
+                    $slaveIoError !== '' ? $slaveIoError : 'No error'
+                );
+                Debug::debug($message, "Replication error message");
+                $db->sql_close();
+                throw new \Exception("waitForSlavePosition aborted due to replication error: " . $message);
+            }
+
+            Debug::debug("master_log_file : ".$slaveStatus['master_log_file']." - exec_master_log_pos : ".$slaveStatus['exec_master_log_pos'], "");
+            unset($slaveStatus);
+
+            
+
+            // Attente avant la prochaine vérification
+            sleep(1);
+        }
+
+        
+    }
+
+
 }
