@@ -347,10 +347,19 @@ $qs      = $_GET;
         }
 
         if (!empty($sql['has_no_good_index_used'])) {
-            $perc = round($sql['no_good_index_ratio'] * 100, 0).'%';
-            $icons_q .= '<span class="qicon" title="Full table scan (no_good_index_used: '.$sql['sum_no_good_index_used'].') ('.$perc.')">
+            $perc = intval(round($sql['no_good_index_ratio'] * 100)).'%';
+            $icons_q .= '<span class="qicon" title="Full table scan (no_good_index_used: '.$sql['sum_no_index_used'].') ('.$perc.')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#31b0d5">
                     <path d="M3 3h18v2H3V3zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
+                </svg>
+            </span>';
+        }
+
+        if (!empty($sql['has_wrong_index'])) {
+            $add_perc = !empty($sql['wrong_index_ratio']) ? round($sql['wrong_index_ratio'] * 100, 0).'%' : '';
+            $icons_q .= '<span class="qicon" title="Wrong index: selectivity > 10% ('.$add_perc.')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3d5875">
+                    <path d="M13.414 10.586L12 12l1.414 1.414-.707.707L12 12.707l-.707.707.707.707L13.414 10.586z"/>
                 </svg>
             </span>';
         }

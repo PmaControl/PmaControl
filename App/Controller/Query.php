@@ -1947,6 +1947,18 @@ public function digest($param)
                 ? round($row['sum_no_good_index_used'] / $count, 2)
                 : 0.00;
 
+            // Wrong index indicator
+            $line = $data['queries'][$id_digest_schema] ?? [];
+            $digest_text = $line['digest_text'] ?? '';
+            if (strtoupper(substr(ltrim($digest_text), 0, 6)) === 'SELECT' && !$row['has_table_scan']) {
+                $examined = $row['sum_rows_examined'] ?? 0;
+                $sent = $row['sum_rows_sent'] ?? 0;
+                if ($examined > 0 && ($sent / $examined) > 0.1) {
+                    $row['has_wrong_index'] = true;
+                    $row['wrong_index_ratio'] = ($sent / $examined);
+                }
+            }
+
             $digest_rows[$id_digest_schema] = $row;
         }
 
