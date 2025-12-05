@@ -518,19 +518,19 @@ class Dot3 extends Controller
 
         // Initialiser le tableau de résultat
         $resultArray = array();
-        
+
         // Parcourir chaque élément du tableau des adresses
         foreach ($addressList as $key => $value) {
             // Séparer l'adresse IP du port
             $parts = explode(':', $value);
             $ip = $parts[0];
             $port = isset($parts[1]) ? $parts[1] : 3306; // Définir le port à 3306 si non spécifié ou 0
-        
+
             // Remplacer le port par 3306 si c'est 0
             if ($port == 0) {
                 $port = 3306;
             }
-        
+
             // Ajouter au tableau de résultat
             $resultArray[$key + 1] = "$ip:$port";
         }
@@ -635,7 +635,7 @@ class Dot3 extends Controller
         {
             //echo "##########################################################\n";
 
-            if (! in_array(127, $group))
+            if (! in_array(149, $group))
             {
                 //continue;
             }
@@ -1097,7 +1097,7 @@ class Dot3 extends Controller
                 Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
             }
 
-            Debug::debug($server,"PROXYSQL -------------");
+            //Debug::debug($server,"PROXYSQL -------------");
 
 
             foreach($server['mysql_servers'] as $hostgroup) {
@@ -1191,7 +1191,7 @@ class Dot3 extends Controller
             }
         }
 
-        Debug::debug(self::$build_ms);
+        //Debug::debug(self::$build_ms);
     }
 
 
@@ -1870,7 +1870,7 @@ class Dot3 extends Controller
 
     public static function resolveMaxScaleConnection(array $maxscale, string $maxscale_ip_port): array
     {
-        Debug::debug(self::$id_dot3_information, "id_dot3_information");
+        //Debug::debug(self::$id_dot3_information, "id_dot3_information");
 
         $dot3_information = self::getInformation(self::$id_dot3_information);
 
@@ -1881,7 +1881,7 @@ class Dot3 extends Controller
         // Copie locale modifiable
         $resolved = $maxscale;
 
-        Debug::debug($resolved, "LISTENER");
+        //Debug::debug($resolved, "LISTENER");
 
         [$listenerAddress, $listenerPort] = self::splitAddressPort($maxscale_ip_port);
 
@@ -1895,19 +1895,19 @@ class Dot3 extends Controller
 
         foreach ($wildcard_candidates as $candidate) {
             if (!empty($resolved[$candidate]['listener'])) {
-                Debug::debug("USE " . $candidate);
+                //Debug::debug("USE " . $candidate);
                 $resolved[$maxscale_ip_port] = $resolved[$candidate];
                 return $resolved;
             }
         }
 
-        Debug::debug($maxscale_ip_port, "maxscale_ip_port");
-        Debug::debug($wildcard_candidates, "maxscale_ip_port_fallbacks");
+        //Debug::debug($maxscale_ip_port, "maxscale_ip_port");
+        //Debug::debug($wildcard_candidates, "maxscale_ip_port_fallbacks");
 
         // Si un tunnel existe pour cette IP:port
         if (!empty($tunnel[$maxscale_ip_port])) {
             $tunnel_ip_port = $tunnel[$maxscale_ip_port];
-            Debug::debug($tunnel_ip_port, "TUNNEL_FOUND");
+            //Debug::debug($tunnel_ip_port, "TUNNEL_FOUND");
 
             // Cas 1 : le tunnel mène directement à une entrée connue
             if (!empty($resolved[$tunnel_ip_port]['servers'])) {
@@ -1920,7 +1920,7 @@ class Dot3 extends Controller
             if ($tunnelPort !== null && $tunnelPort !== '') {
                 foreach (['0.0.0.0', '::'] as $wildcard) {
                     $candidate = $wildcard . ":" . trim($tunnelPort);
-                    Debug::debug($candidate, "TEST {$wildcard} + Port originie before tunnel");
+                    //Debug::debug($candidate, "TEST {$wildcard} + Port originie before tunnel");
                     if (!empty($resolved[$candidate]['servers'])) {
                         $resolved[$maxscale_ip_port] = $resolved[$candidate];
                         break;
