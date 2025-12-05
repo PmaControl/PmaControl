@@ -1530,8 +1530,9 @@ public function digest($param)
         [$id_mysql_server]
     );
 
-
-    debug($query[$id_mysql_server]['@digest'][$data['id']]);
+    if (!empty($data) && isset($query[$id_mysql_server]['@digest'][$data['id']])) {
+        debug($query[$id_mysql_server]['@digest'][$data['id']]);
+    }
     //debug($stats);
 
 
@@ -1707,12 +1708,12 @@ public function digest($param)
 
         // Récupère l'uptime du serveur MySQL (en secondes)
         $uptime = 0;
-        $extractedUptime = null;
+        $tmp = null;
         try {
             $uptimeData = Extraction2::display(["uptime"], [$id_mysql_server]);
-            $extractedUptime = $uptimeData[$id_mysql_server]['uptime'] ?? null;
-            if (is_numeric($extractedUptime)) {
-                $uptime = (int)$extractedUptime;
+            $tmp = $uptimeData[$id_mysql_server]['uptime'] ?? null;
+            if (is_numeric($tmp)) {
+                $uptime = (int)$tmp;
             }
         } catch (\Exception $e) {
             // si problème, uptime = 0 => on ignore simplement la contrainte reboot
