@@ -689,6 +689,17 @@ class Listener extends Controller
         Debug::debug($gg);
     }
 
+    public static function purgeAll($param)
+    {
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "TRUNCATE TABLE listener_main;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    }
+
 
 
 }
