@@ -836,8 +836,10 @@ class Schema extends Controller
             $prefix = $this->getDiffPrefix($type);
 
             $rows[] = sprintf(
-                '<tr><td class="ln">%s</td><td class="ln">%s</td><td class="%s">%s</td></tr>',
+                '<tr><td class="ln %s">%s</td><td class="ln %s">%s</td><td class="%s">%s</td></tr>',
+                $class,
                 $type === Differ::ADDED ? '' : $oldLine++,
+                $class,
                 $type === Differ::REMOVED ? '' : $newLine++,
                 $class,
                 htmlspecialchars($prefix . $line)
@@ -925,6 +927,7 @@ class Schema extends Controller
         }
 
         $columns = [];
+        $indexes = [];
         $others = [];
 
         foreach ($definitions as $definition) {
@@ -938,9 +941,18 @@ class Schema extends Controller
                     'name' => strtolower($this->extractColumnName($clean)),
                     'definition' => $clean,
                 ];
-            } else {
-                $others[] = $clean;
+                continue;
             }
+
+            if ($this->isIndexDefinitionLine($clean)) {
+                $indexes[] = [
+                    'name' => strtolower($this->extractIndexName($clean)),
+                    'definition' => $clean,
+                ];
+                continue;
+            }
+
+            $others[] = $clean;
         }
 
         if (!empty($columns)) {
@@ -959,7 +971,23 @@ class Schema extends Controller
             $columns
         );
 
-        $normalizedBody = implode(",\n    ", array_merge($orderedColumns, $others));
+        if (!empty($indexes)) {
+            usort(
+                $indexes,
+                function (array $left, array $right): int {
+                    return $left['name'] <=> $right['name'];
+                }
+            );
+        }
+
+        $orderedIndexes = array_map(
+            function (array $index): string {
+                return $index['definition'];
+            },
+            $indexes
+        );
+
+        $normalizedBody = implode(",\n    ", array_merge($orderedColumns, $orderedIndexes, $others));
 
         $normalized = rtrim($prefix) . " (\n    " . $normalizedBody . "\n)";
         if ($suffix !== '') {
@@ -1043,6 +1071,33 @@ class Schema extends Controller
         return isset($definition[0]) && $definition[0] === '`';
     }
 
+    private function isIndexDefinitionLine(string $definition): bool
+    {
+        $definition = ltrim($definition);
+        if ($definition === '') {
+            return false;
+        }
+
+        $upper = strtoupper($definition);
+        $patterns = [
+            'PRIMARY KEY',
+            'UNIQUE KEY',
+            'FULLTEXT KEY',
+            'SPATIAL KEY',
+            'KEY ',
+            'CONSTRAINT',
+            'FOREIGN KEY',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (strpos($upper, $pattern) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function extractColumnName(string $definition): string
     {
         if (preg_match('/^`([^`]+)`/', $definition, $matches)) {
@@ -1050,6 +1105,29 @@ class Schema extends Controller
         }
 
         return $definition;
+    }
+
+    private function extractIndexName(string $definition): string
+    {
+        $definition = ltrim($definition);
+
+        if (stripos($definition, 'PRIMARY KEY') === 0) {
+            return 'primary';
+        }
+
+        if (preg_match('/^CONSTRAINT\s+`([^`]+)`/i', $definition, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/^(?:UNIQUE|FULLTEXT|SPATIAL)?\s*KEY\s+`([^`]+)`/i', $definition, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/^FOREIGN KEY\s+`([^`]+)`/i', $definition, $matches)) {
+            return $matches[1];
+        }
+
+        return strtolower(preg_replace('/\s+/', ' ', $definition));
     }
 
     private function isEscapedByBackslash(string $subject, int $position): bool
@@ -1069,10 +1147,12 @@ class Schema extends Controller
     private function getDiffTableCss(): string
     {
         return '<style>
-.diff-table { width: 100%; border-collapse: collapse; font-family: monospace; }
+.diff-table { width: 100%; border-collapse: collapse; font-family: "Monaspace Neon", ui-monospace, SFMono-Regular, "SF Mono", Menlo,monospace; }
 .diff-table td { padding: 4px; vertical-align: top; white-space: pre; }
-.diff-table .add { background: #e6ffed; color: #22863a; }
-.diff-table .del { background: #ffeef0; color: #b31d28; }
+.diff-table .add { background: rgba(172, 238, 187, 0.7); color: #22863a; }
+.diff-table .del { background: rgba(238, 199, 206, 0.7); color: #b31d28; }
+.diff-table .ln.add { background: rgba(172, 238, 187, 1); }
+.diff-table .ln.del { background: rgba(238, 199, 206, 1); }
 .diff-table .same { background: #f6f8fa; color: #24292e; }
 .diff-table .ln { width:40px; text-align:right; color:#999; }
 </style>';

@@ -43,11 +43,18 @@ use Glial\Synapse\FactoryController;
             </div>
             <div class="col-md-2">
                 <label>&nbsp;</label>
-                <div>
-                    <button type="submit" class="btn btn-primary btn-block">
-                        <span class="glyphicon glyphicon-transfer"></span> <?= __("Compare") ?>
-                    </button>
+                <div class="checkbox" style="margin-top:0;">
+                    <label>
+                        <input type="checkbox"
+                               name="schema_compare[ignore_column_order]"
+                               value="1"
+                               <?= !empty($data['ignore_column_order']) ? 'checked' : ''; ?>>
+                        <?= __("Ignore column order"); ?>
+                    </label>
                 </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span class="glyphicon glyphicon-transfer"></span> <?= __("Compare") ?>
+                </button>
             </div>
         </div>
     </form>
@@ -78,6 +85,11 @@ use Glial\Synapse\FactoryController;
                 ); ?>
             </div>
             <div class="panel-body">
+                <?php if (!empty($data['ignore_column_order'])): ?>
+                    <p class="text-muted" style="margin-top:0;">
+                        <?= __("Column order differences are ignored for this comparison."); ?>
+                    </p>
+                <?php endif; ?>
                 <?php if ($noDiff): ?>
                     <div class="alert alert-success" style="margin-bottom:0;">
                         <?= __("No differences detected between the exported schemas."); ?>
@@ -119,8 +131,8 @@ use Glial\Synapse\FactoryController;
                                 <?php foreach ($dbInfo['differences'] as $dbName => $diff): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($dbName); ?></td>
-                                        <td><?= count($diff['left_only']); ?></td>
                                         <td><?= count($diff['right_only']); ?></td>
+                                        <td><?= count($diff['left_only']); ?></td>
                                         <td><?= count($diff['different']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
