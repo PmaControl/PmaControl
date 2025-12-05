@@ -23,7 +23,7 @@ define('YEAR', 31536000);
  *
  * Only runs if debug level is greater than zero.
  *
- * @param boolean $var Variable to show debug information for.
+ * @param mixed $var Variable to show debug information for.
  * @param boolean $showHtml If set to true, the method prints the debug data in a screen-friendly way.
  * @param boolean $showFrom If set to true, the method prints from where the function was called.
  * @link http://book.cakephp.org/view/1190/Basic-Debugging
