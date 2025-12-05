@@ -264,8 +264,11 @@ class MysqlUser extends Controller
                 }
             }
         }
-        exit;
+
+
         print_r($data);
+        exit;
+        
     }
 
     public function security($param)

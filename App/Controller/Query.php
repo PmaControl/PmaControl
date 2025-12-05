@@ -131,7 +131,7 @@ SQL;
      *
      * @param string $id_mysql_server
      * @param string $list_databases (coma separated or ALL for all databases, if omited same as ALL)
-     * @return void
+     * @return array
      * 
      * @example ./glial Query setDefault 1 test1,test2
      * 
