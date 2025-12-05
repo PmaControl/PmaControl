@@ -1316,7 +1316,7 @@ SQL;
 
 
                 // Virtual rows/query
-                $v['rows_query'] = ($count > 0) ? ($sent / $count) : 0;
+                $v['rows_query'] = ($count > 0) ? ($exam / $count) : 0;
 
                 // Flags (déjà demandés)
                 $v['has_errors']      = !empty($v['sum_errors']);
@@ -1698,24 +1698,21 @@ public function digest($param)
         }
 
         // ts_file.id pour les digests (ps_sum_summary_by_digest)
-        $TS_FILE_DIGEST = 3790;
+        $db_ts = Sgbd::sql(DB_DEFAULT);
+        $sql_id = "SELECT id FROM ts_file WHERE file_name = 'ps_sum_summary_by_digest' LIMIT 1";
+        $res_id = $db_ts->sql_query($sql_id);
+        $TS_FILE_DIGEST = $db_ts->sql_fetch_array($res_id, MYSQLI_ASSOC)['id'] ?? 3790;
+
+        
 
         // Récupère l'uptime du serveur MySQL (en secondes)
         $uptime = 0;
+        $extractedUptime = null;
         try {
             $uptimeData = Extraction2::display(["uptime"], [$id_mysql_server]);
-            if (!empty($uptimeData[$id_mysql_server]['uptime'])) {
-                $urow = $uptimeData[$id_mysql_server]['uptime'];
-                if (is_array($urow)) {
-                    foreach ($urow as $val) {
-                        if (is_numeric($val)) {
-                            $uptime = (int)$val;
-                            break;
-                        }
-                    }
-                } elseif (is_numeric($urow)) {
-                    $uptime = (int)$urow;
-                }
+            $extractedUptime = $uptimeData[$id_mysql_server]['uptime'] ?? null;
+            if (is_numeric($extractedUptime)) {
+                $uptime = (int)$extractedUptime;
             }
         } catch (\Exception $e) {
             // si problème, uptime = 0 => on ignore simplement la contrainte reboot
@@ -1725,16 +1722,14 @@ public function digest($param)
 
         // Dernière date disponible pour ce serveur / ts_file (fin de fenêtre)
         $sql = "SELECT b.id,a.last_date_listener as `date`
-        from ts_max_date a INNER JOIN ts_file b ON a.id_ts_file=b.id 
-        WHERE b.file_name ='performance_schema' and a.id_mysql_server=1;";
+        from ts_max_date a INNER JOIN ts_file b ON a.id_ts_file=b.id
+        WHERE b.file_name ='performance_schema' and a.id_mysql_server=$id_mysql_server;";
 
         $res = $db->sql_query($sql);
         $end_date = null;
         if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $end_date = $row['date'];
         }
-
-
 
         $data = [];
         $query = [];
@@ -1778,6 +1773,8 @@ public function digest($param)
                 AND id_ts_file      = ".$TS_FILE_DIGEST."
                 AND `date`         >= '".$start_candidate_esc."'";
 
+
+
         $res = $db->sql_query($sql);
         if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $start_date = $row['date_min'];
@@ -1789,6 +1786,8 @@ public function digest($param)
                     FROM ts_date_by_server
                     WHERE id_mysql_server = ".$id_mysql_server."
                     AND id_ts_file      = ".$TS_FILE_DIGEST;
+
+
             $res = $db->sql_query($sql);
             if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $start_date = $row['date_min'];
@@ -1811,30 +1810,15 @@ public function digest($param)
         $start_esc = $db->sql_real_escape_string($start_date);
         $end_esc   = $db->sql_real_escape_string($end_date);
 
-        // --- Snapshot courant (fin de fenêtre) ---
-        $sql_current = "
-            SELECT s.*
-            FROM ts_mysql_digest_stat s
-            INNER JOIN mysql_database__mysql_digest m
-                ON m.id = s.id_mysql_database__mysql_digest
-            INNER JOIN (
-                SELECT s.id_mysql_database__mysql_digest, MAX(s.date) AS max_date
-                FROM ts_mysql_digest_stat s
-                INNER JOIN mysql_database__mysql_digest m
-                    ON m.id = s.id_mysql_database__mysql_digest
-                WHERE m.id_mysql_server = ".$id_mysql_server."
-                AND s.date <= '".$end_esc."'
-                GROUP BY s.id_mysql_database__mysql_digest
-            ) t
-                ON t.id_mysql_database__mysql_digest = s.id_mysql_database__mysql_digest
-            AND t.max_date = s.date
-        ";
+        
+        
 
-
+// --- Snapshot courant (fin de fenêtre) ---
         $sql_current =   "SELECT s.* 
         FROM ts_mysql_digest_stat s 
         INNER JOIN mysql_database__mysql_digest m ON m.id = s.id_mysql_database__mysql_digest 
         WHERE m.id_mysql_server = ".$id_mysql_server." AND s.date = '".$end_esc."';";
+
 
         Debug::debug($sql_current);
 
@@ -1845,27 +1829,13 @@ public function digest($param)
         }
 
         // --- Snapshot "début" (début de fenêtre aligné) ---
-        $sql_previous = "
-            SELECT s.*
-            FROM ts_mysql_digest_stat s
-            INNER JOIN mysql_database__mysql_digest m
-                ON m.id = s.id_mysql_database__mysql_digest
-            INNER JOIN (
-                SELECT s.id_mysql_database__mysql_digest, MAX(s.date) AS max_date
-                FROM ts_mysql_digest_stat s
-                INNER JOIN mysql_database__mysql_digest m
-                    ON m.id = s.id_mysql_database__mysql_digest
-                WHERE m.id_mysql_server = ".$id_mysql_server."
-                AND s.date <= '".$start_esc."'
-                GROUP BY s.id_mysql_database__mysql_digest
-            ) t
-                ON t.id_mysql_database__mysql_digest = s.id_mysql_database__mysql_digest
-            AND t.max_date = s.date
-        ";
+
         $sql_previous =   "SELECT s.* 
         FROM ts_mysql_digest_stat s 
         INNER JOIN mysql_database__mysql_digest m ON m.id = s.id_mysql_database__mysql_digest 
         WHERE m.id_mysql_server = ".$id_mysql_server." AND s.date = '".$start_esc."';";
+
+
 
         $res = $db->sql_query($sql_previous);
         $previous = [];
