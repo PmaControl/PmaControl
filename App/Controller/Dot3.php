@@ -149,7 +149,7 @@ class Dot3 extends Controller
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                 "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::is_proxy", "variables::is_maxscale",
                 "variables::wsrep_cluster_address","slave::connection_name",
-                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
+                "variables::wsrep_node_address", "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",

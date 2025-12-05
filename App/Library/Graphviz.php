@@ -570,8 +570,16 @@ class Graphviz
             $server['port_real'] = explode(":",$ip_real)[1] ?? "3306";
         }
 
+        // Determine IP to display
+        $ip_display = Ofuscate::ip($server['ip_real']);
+
+        // Replace 🌐 with wsrep_node_address if present
+        if (!empty($server['wsrep_node_address']) && strpos($nat, '🌐') !== false) {
+            $nat = ' 🔀' . Ofuscate::ip($server['wsrep_node_address']) . ':' . $server['port'];
+        }
+
         //country there
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.Ofuscate::ip($server['ip_real']).':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
+        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.$ip_display.':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 

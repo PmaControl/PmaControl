@@ -101,6 +101,7 @@ class Alias extends Controller
 
         $this->addHostname($param);
         $this->addAliasFromHostname($param);
+        $this->addAliasFromWsrepNodeAddress($param);
 
         if (!IS_CLI) {
             header("location: ".LINK."alias/index");
@@ -128,9 +129,11 @@ class Alias extends Controller
                     continue;
                 }
 
-                $list_host[$master[$host].':'.$master[$port]]          = $master;
-                $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
-                $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
+                if (isset($master[$host]) && !empty($master[$host]) && isset($master[$port]) && !empty($master[$port])) {
+                    $list_host[$master[$host].':'.$master[$port]]          = $master;
+                    $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
+                    $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
+                }
             }
         }
 
@@ -240,8 +243,6 @@ class Alias extends Controller
     {
         $this->view = false;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
         Debug::parseDebug($param);
         $hostnames = $this->getExtraction(array("variables::hostname","variables::port", "variables::is_proxysql" ));
 
@@ -251,31 +252,8 @@ class Alias extends Controller
                 continue;
             }
 
-            $sql = "SELECT id,id_mysql_server from alias_dns WHERE dns='".$hostname['_HOST']."' and port =".$hostname['_PORT'].";";
-            
-            $res = $db->sql_query($sql);
-
-            if ( $db->sql_num_rows($res) > 0) {
-            
-                while( $ob = $db->sql_fetch_object($res) )  {
-
-                    Debug::debug($ob);
-
-                    if ($ob->id_mysql_server != $hostname['id_mysql_server'])
-                    {
-                        $sql2 = "UPDATE alias_dns SET id_mysql_server=".$hostname['id_mysql_server'].", dns='".$hostname['_HOST']."' and port =".$hostname['_PORT']." WHERE id=".$ob->id.";";
-                        Debug::sql($sql2);
-                        $db->sql_query($sql2);
-                    }
-                }
-            }
-            else {
-                $sql3 = "INSERT INTO alias_dns (id_mysql_server,dns,port) VALUES (".$hostname['id_mysql_server'].",'".$hostname['_HOST']."' ,".$hostname['_PORT'].");";
-                Debug::sql($sql3);
-                $db->sql_query($sql3);
-            }
+            self::upsertAliasDns([$hostname['_HOST'], $hostname['_PORT'], $hostname['id_mysql_server']]);
         }
-        Debug::debug($hostname);
     }
     public static function upsertAliasDns(array $param): void
     {
@@ -296,48 +274,56 @@ class Alias extends Controller
         // si déjà en cache et différent, update
         if (isset(self::$alias_dns_cache[$key])) {
             if (self::$alias_dns_cache[$key] !== $id_mysql_server) {
-                
-                $sqlUpdate = sprintf(
-                    "UPDATE alias_dns SET id_mysql_server = %d WHERE dns = '%s' AND port = %d",
-                    $id_mysql_server,
+                $sqlUpsert = sprintf(
+                    "INSERT INTO alias_dns (dns, port, id_mysql_server) VALUES ('%s', %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = %d",
                     $db->sql_real_escape_string($dns),
-                    $port
+                    $port,
+                    $id_mysql_server,
+                    $id_mysql_server
                 );
-                $db->sql_query($sqlUpdate);
+                $db->sql_query($sqlUpsert);
                 self::$alias_dns_cache[$key] = $id_mysql_server;
             }
             return;
         }
 
-        // vérifie si l'entrée existe déjà dans la base
-        $sqlCheck = sprintf(
-            "SELECT id_mysql_server FROM alias_dns WHERE dns = '%s' AND port = %d",
+        // éviter les doublons avec INSERT ... ON DUPLICATE KEY UPDATE (assurant que dns et port sont uniques)
+        $sqlUpsert = sprintf(
+            "INSERT INTO alias_dns (dns, port, id_mysql_server) VALUES ('%s', %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = %d",
             $db->sql_real_escape_string($dns),
-            $port
+            $port,
+            $id_mysql_server,
+            $id_mysql_server
         );
-        $res = $db->sql_query($sqlCheck);
-        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        $db->sql_query($sqlUpsert);
+        self::$alias_dns_cache[$key] = $id_mysql_server;
+    }
 
-        if ($row) {
-            if ((int)$row['id_mysql_server'] !== $id_mysql_server) {
-                $sqlUpdate = sprintf(
-                    "UPDATE alias_dns SET id_mysql_server = %d WHERE dns = '%s' AND port = %d",
-                    $id_mysql_server,
-                    $db->sql_real_escape_string($dns),
-                    $port
-                );
-                $db->sql_query($sqlUpdate);
+    public function addAliasFromWsrepNodeAddress($param)
+    {
+        $this->view = false;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        Debug::parseDebug($param);
+        $wsrep_addresses = $this->getExtraction(array("variables::wsrep_node_address","variables::port", "variables::is_proxysql"));
+
+        foreach($wsrep_addresses as $wsrep)
+        {
+            if (!empty($wsrep['is_proxysql']) && $wsrep['is_proxysql'] === "1") {
+                continue;
             }
-            self::$alias_dns_cache[$key] = $id_mysql_server;
-        } else {
-            $sqlInsert = sprintf(
-                "INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (%d, '%s', %d)",
-                $id_mysql_server,
-                $db->sql_real_escape_string($dns),
-                $port
-            );
-            $db->sql_query($sqlInsert);
-            self::$alias_dns_cache[$key] = $id_mysql_server;
+
+            // vérifier si c'est différent du hostname dans mysql_server (cas NAT)
+            $sql = "SELECT hostname FROM mysql_server WHERE id = ".$wsrep['id_mysql_server'];
+            $res = $db->sql_query($sql);
+            if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $hostname_db = $row['hostname'];
+                if ($wsrep['_HOST'] !== $hostname_db) {
+                    // ajouter l'alias si wsrep_node_address != hostname (scénario NAT)
+                    self::upsertAliasDns([$wsrep['_HOST'], $wsrep['_PORT'], $wsrep['id_mysql_server']]);
+                }
+            }
         }
     }
 
