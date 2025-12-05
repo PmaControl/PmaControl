@@ -173,7 +173,7 @@ trait Galera {
         $db = Sgbd::sql(DB_DEFAULT);
 
         // Main servers
-        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0";
+        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0 AND is_proxy=0";
         $res = $db->sql_query($sql);
         while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $this->maping_master[$ar['ip'] . ":" . $ar['port']] = $ar['id'];
