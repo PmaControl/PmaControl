@@ -42,7 +42,8 @@ foreach ($data['galera'] as $cluster_name => $galera) {
             echo '<tr>';
             echo '<td class="pma-grey" rowspan="'.($rowspan+1).'"><b>' . $i . '<b></td>';
             
-            echo '<td class="pma-grey" colspan="10">Cluster name : <b>' . $cluster_name . '</b> - Cluster size : <b>'.$rowspan.'</b></td>';
+            $cluster_display_name = explode('~', $cluster_name)[0];
+            echo '<td class="pma-grey" colspan="10">Cluster name : <b>' . $cluster_display_name . '</b> - Cluster size : <b>'.$rowspan.'</b></td>';
             echo '</tr>';
         }
 

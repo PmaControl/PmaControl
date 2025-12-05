@@ -30,7 +30,7 @@ trait Galera {
 
                 // the goal is to remove proxy
                 if (in_array($to_match, $tab)) {
-                    $this->galera_cluster[$server['wsrep_cluster_name']][$server['id_mysql_server']] = $server;
+                    $this->galera_cluster[$server['wsrep_cluster_name'] . '~' . md5($server['wsrep_incoming_addresses'])][$server['id_mysql_server']] = $server;
                 }
             }
         }
@@ -171,13 +171,22 @@ trait Galera {
     public function mappingMaster() {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,ip,port FROM mysql_server";
 
+        // Main servers
+        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0";
         $res = $db->sql_query($sql);
-
         while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $this->maping_master[$ar['ip'] . ":" . $ar['port']] = $ar['id'];
             $this->servers[$ar['id']] = $ar;
+        }
+
+        // Aliases from alias_dns table
+        $sql_alias = "SELECT a.id_mysql_server, a.dns, a.port FROM alias_dns a
+                      INNER JOIN mysql_server s ON a.id_mysql_server = s.id
+                      WHERE s.is_deleted=0";
+        $res_alias = $db->sql_query($sql_alias);
+        while ($ar = $db->sql_fetch_array($res_alias, MYSQLI_ASSOC)) {
+            $this->maping_master[$ar['dns'] . ":" . $ar['port']] = $ar['id_mysql_server'];
         }
 
         return $this->maping_master;
