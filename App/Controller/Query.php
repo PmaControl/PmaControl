@@ -1711,9 +1711,12 @@ public function digest($param)
         $tmp = null;
         try {
             $uptimeData = Extraction2::display(["uptime"], [$id_mysql_server]);
+            $tmp = null;
             $tmp = $uptimeData[$id_mysql_server]['uptime'] ?? null;
-            if (is_numeric($tmp)) {
-                $uptime = (int)$tmp;
+            
+            $test = is_numeric($tmp);
+            if ($test) {
+                $uptime = intval($tmp);
             }
         } catch (\Exception $e) {
             // si problème, uptime = 0 => on ignore simplement la contrainte reboot

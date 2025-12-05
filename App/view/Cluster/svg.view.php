@@ -36,7 +36,7 @@ if (empty($_GET['ajax'])){
 
     echo '<div id="svg">';
     echo '<div style="float:right; border:#000 0px solid">';
-    \Glial\Synapse\FactoryController::addNode("Dot3", "legend", array());
+    FactoryController::addNode("Dot3", "legend", array());
     echo '</div>';
 
     echo '<div id="graph" style="float:left; border:#000 0px solid">';

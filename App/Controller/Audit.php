@@ -221,7 +221,7 @@ class Audit extends Controller {
 
         if (! file_exists($filePath))
         {
-            throw new \Exception("File not exist", 90);
+            throw new Exception("File not exist", 90);
         }
 
         // Prépare l'URL de l'API XML-RPC

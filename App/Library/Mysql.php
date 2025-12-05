@@ -952,7 +952,7 @@ END IF;";
         Debug::debug($data);
 
         if (count($data['slave']) !== count($data['server_id'])) {
-            throw new  \Exception('PMACTRL-249 impossible to match server_id with id_mysql_server');
+            throw new Exception('PMACTRL-249 impossible to match server_id with id_mysql_server');
         }
 
         return $data;

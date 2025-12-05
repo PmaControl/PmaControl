@@ -26,12 +26,33 @@ class MysqlUser extends Controller
 
         $data = array();
 
+        // Handle CLI parameters if no GET request
+        if (!empty($param[0])) {
+            $_GET['mysql_server']['id'] = $param[0];
+        }
+
         //debug($_GET);
 
         if (!empty($_GET['mysql_server']['id'])) {
             $db  = Sgbd::sql(DB_DEFAULT);
             $ids = substr($_GET['mysql_server']['id'], 1, -1);
+            $id_servers = explode(',', $ids);
 
+            $all = Extraction2::display(array("mysql_available"), $id_servers);
+
+            foreach ($all as $server) {
+                if ($server['mysql_available'] !== "1") {
+                    unset($id_servers[array_search($server['id_mysql_server'], $id_servers)]);
+                }
+            }
+
+            if (empty($id_servers)) {
+                $data['error'] = "No available MySQL servers found.";
+                $this->set('data', $data);
+                return;
+            }
+
+            $ids = implode(',', $id_servers);
             $sql = "SELECT * FROM mysql_server where id in (".$ids.")";
 
             $res1 = $db->sql_query($sql);

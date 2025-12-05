@@ -45,7 +45,6 @@ class Alias extends Controller
      * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
      * @license GNU/GPL
      * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
-     * @param void
      * @return void
      * @description try to find different way to match master_host and master_port that we cannot find in table mysql_server
      * @access public
