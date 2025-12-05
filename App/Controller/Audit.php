@@ -169,7 +169,7 @@ class Audit extends Controller {
     {
         $this->layout_name = false;
         $_GET['ajax'] = true;
-        
+
         $db = Sgbd::sql(DB_DEFAULT);
         $id_mysql_server = $param[0];
 
@@ -180,6 +180,19 @@ class Audit extends Controller {
         $data = [];
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['server'] = $arr;
+        }
+
+        // Use wsrep_node_address if available, else ip:port
+        $elem = Extraction2::display(array("wsrep_node_address","port"), array($id_mysql_server));
+        $wsrep_address = $elem[$id_mysql_server]['wsrep_node_address'] ?? '';
+        $port = $elem[$id_mysql_server]['port'] ?? '3306';
+
+        $current_address = $data['server']['ip'] . ":" . $data['server']['port'];
+
+        if (!empty($wsrep_address)) {
+            $data['server']['address'] = $wsrep_address.":".$port;
+        } else {
+            $data['server']['address'] = $current_address;
         }
 
 

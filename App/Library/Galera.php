@@ -128,7 +128,10 @@ trait Galera {
             }
         }
 
-        $all_nodes = array_merge(arrays: $group_galera, $galera_nodes, $arbitres);
+        $all_nodes = array_merge( 
+        $group_galera, 
+        $galera_nodes, 
+        $arbitres);
 
         //debug($all_nodes);
 

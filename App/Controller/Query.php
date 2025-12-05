@@ -392,7 +392,7 @@ SQL;
             case SIGTERM:
                 echo "Reçu le signe SIGTERM...\n";
                 
-                exit;
+                //exit;
                 break;
 
             case SIGUSR1:
@@ -406,7 +406,7 @@ SQL;
                 // gestion du redémarrage
                 //ne marche pas au second run pourquoi ?
                 echo "Reçu le signe SIGHUP...\n";
-                $this->sighup();
+                //$this->sighup();
 
                 break;
 

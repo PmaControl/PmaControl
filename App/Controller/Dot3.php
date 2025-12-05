@@ -577,7 +577,7 @@ class Dot3 extends Controller
                     //Debug::debug($maxscale, "maxscale");
                     Debug::debug($maxcale_ip_port, "IP REAL");
 
-                    throw new \Exception(
+                    throw new Exception(
                     "[PMACONTROL-4001] No 'servers' section found for listener '$maxcale_ip_port' in the MaxScale response. "
                     . "This usually indicates an incomplete service configuration or an inconsistency in the data returned by the REST API."
                     );
@@ -1319,7 +1319,7 @@ class Dot3 extends Controller
 
         if (empty($dot_information['information']['mapping']))
         {
-            throw new \Exception('Impossible to acess to item Mapping');
+            throw new Exception('Impossible to acess to item Mapping');
         }
 
         if (! empty($dot_information['information']['mapping'][$host])) {
@@ -1742,7 +1742,7 @@ class Dot3 extends Controller
             return $output_array[1];
         } else {
             // il faudrait prevoir un mode stric afin de catch tous les problemes
-            //throw new \Exception("Impossible to find : ".$variable." in (".$wsrep_provider_options.")");
+            //throw new Exception("Impossible to find : ".$variable." in (".$wsrep_provider_options.")");
             return 0;
             
         }
@@ -1752,11 +1752,11 @@ class Dot3 extends Controller
     {
         if (empty(self::$config[$theme])) {
             // error
-            THROW new \Exception("Impossible to find theme : $theme");
+            THROW new Exception("Impossible to find theme : $theme");
         }
 
         if (empty(self::$build_server[$id_mysql_server])) {
-            THROW new \Exception("Impossible to find id_mysql_server : $id_mysql_server");
+            THROW new Exception("Impossible to find id_mysql_server : $id_mysql_server");
         }
 
         $tmp = self::$config[$theme];
@@ -1966,7 +1966,7 @@ class Dot3 extends Controller
     {
         // Vérifie que l’identifiant d’information Dot3 est défini
         if (empty(self::$id_dot3_information)) {
-            throw new \Exception(
+            throw new Exception(
                 "[PMACONTROL-1000] Missing dot3 information ID — self::\$id_dot3_information cannot be empty in dot3::getTunnel().",
                 1000 // Paramètre manquant (plage 1000–1999)
             );
@@ -1974,7 +1974,7 @@ class Dot3 extends Controller
 
         // Vérifie le type de paramètre
         if (empty($param) || !is_array($param)) {
-            throw new \Exception(
+            throw new Exception(
                 "[PMACONTROL-1001] Invalid parameter passed to dot3::getTunnel() — the first array key must be a string.",
                 1001
             );
@@ -1983,7 +1983,7 @@ class Dot3 extends Controller
         // Récupère les informations du tunnel
         $dot3_information = self::getInformation(self::$id_dot3_information);
         if (empty($dot3_information['information']['tunnel'])) {
-            throw new \Exception(
+            throw new Exception(
                 "[PMACONTROL-4001] No tunnel information found in dot3::getTunnel() — application logic error.",
                 4001
             );
@@ -1997,7 +1997,7 @@ class Dot3 extends Controller
 
             // Vérifie le format IPv4:port
             if (!preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $ip_port)) {
-                throw new \Exception(
+                throw new Exception(
                     "[PMACONTROL-1002] Invalid ip_port format in dot3::getTunnel() — expected IPv4:port, got '{$ip_port}'.",
                     1002
                 );
@@ -2037,7 +2037,7 @@ class Dot3 extends Controller
     {
         $server = $information['servers'][$id_mysql_server] ?? null;
         if (!$server) {
-            throw new \Exception("Server not found", 404);
+            throw new Exception("Server not found", 404);
         }
 
         //generate next id in $information['servers']

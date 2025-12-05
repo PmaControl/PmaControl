@@ -923,7 +923,7 @@ class Docker extends Controller
                 // Pour count > 1 on génère des labels auto si non fournis
                 for ($x = 1; $x <= $count; $x++) {
 
-                    $label = (empty($labelBase)) ? $img['family'] . "-" . $img['tag'] . "-" . self::getIdContener() : $label . self::getIdContener();
+                    $label = (empty($labelBase)) ? $img['family'] . "-" . $img['tag'] . "-" . self::getIdContener() : $labelBase . "-" . self::getIdContener();
 
                     $finalList[] = [
                         'family' => $img['family'], // ex: mariadb, mysql, proxysql
@@ -1251,16 +1251,17 @@ CMD;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT b.name,a.tag 
-        FROM docker_image a 
+        $sql = "SELECT b.name,a.tag
+        FROM docker_image a
         INNER JOIN docker_software b ON a.id_docker_software = b.id
-        WHERE a.id".$id_docker_image;
+        WHERE a.id = ".$id_docker_image;
 
         $res = $db->sql_query($sql);
 
         $password = Docker::password();
+        $label = "container"; // Fix unassigned variable, though method seems incomplete
         $container_name = hash('sha256', $label);
-        //$hostname = 
+        //$hostname =
 
         while ($ob = $db->sql_fetch_object($res))
         {

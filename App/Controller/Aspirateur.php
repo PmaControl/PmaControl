@@ -1569,7 +1569,7 @@ GROUP BY C.ID, C.INFO;";
     {
         // need test if root
         //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
-        if (\posix_geteuid() === 0) {
+        if (posix_geteuid() === 0) {
 
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);

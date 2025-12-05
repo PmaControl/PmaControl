@@ -46,6 +46,8 @@ use \Glial\Synapse\FactoryController;
 <?php
 FactoryController::addNode("Docker", "imageAvailable", [$data['server']['id']]);
 
-debug($_SESSION['docker_containers_pending']);
+if (isset($_SESSION['docker_containers_pending'])) {
+    debug($_SESSION['docker_containers_pending']);
+}
 
 ?>

@@ -175,7 +175,7 @@ class Alias extends Controller
             }
         }
 
-        return false;
+        return [];
     }
 
     /**
@@ -216,7 +216,7 @@ class Alias extends Controller
             return $tmp;
         }
 
-        return false;
+        return [];
     }
 
 

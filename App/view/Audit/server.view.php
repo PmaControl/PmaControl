@@ -3,7 +3,7 @@
 use \Glial\Synapse\FactoryController;
 
 
-echo "=====".$data['server']['display_name']." (".$data['server']['ip'].":".$data['server']['port'].") =====\n";
+echo "=====".$data['server']['display_name']." (".$data['server']['address'].") =====\n";
 
 
 
@@ -67,4 +67,3 @@ $gg = FactoryController::addNode("mysqlsys", "export", array($data['server']['id
 
 
 FactoryController::addNode("audit", "queryCache", array($data['server']['id']));
-
