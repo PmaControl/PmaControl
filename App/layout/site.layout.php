@@ -16,10 +16,10 @@ if (!function_exists('pmac_site_lang')) {
 }
 
 $lang       = I18n::Get() ?: 'fr';
-$common     = $site_common ?? [];
+$common     = $GLIALE_DATA['site_common'] ?? [];
 $menu       = $common['menu'] ?? [];
 $phone      = $common['phone'] ?? '';
-$activeItem = $site_active ?? 'home';
+$activeItem = $GLIALE_DATA['site_active'] ?? 'home';
 $baseLink   = defined('LINK') ? LINK : '/';
 ?><!DOCTYPE html>
 <html lang="<?= htmlspecialchars($lang, ENT_QUOTES) ?>">
