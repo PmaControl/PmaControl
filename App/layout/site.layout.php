@@ -123,10 +123,14 @@ $baseLink   = defined('LINK') ? LINK : '/';
                                 <button type="button" class="lang-btn is-active" data-lang-btn="fr">FR</button>
                                 <button type="button" class="lang-btn" data-lang-btn="en">EN</button>
                             </div>
-                            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
-                                <span class="sun">☀️</span>
-                                <span class="moon">🌙</span>
-                            </button>
+
+                            <div class="language-switch" role="group" data-theme-toggle aria-label="Toggle dark mode">
+                                <button type="button" class="lang-btn is-active" data-lang-btn="fr">☀️</button>
+                                <button type="button" class="lang-btn" data-lang-btn="en">🌙</button>
+                            </div>
+
+
+
                         </div>
                     </nav>
                 </div>
