@@ -3,9 +3,9 @@
     --color-surface: #151a24;
     --color-surface-alt: #1f2633;
     --color-border: rgba(255, 255, 255, 0.1);
-    --color-primary: #27f4c7;
-    --color-primary-soft: rgba(39, 244, 199, 0.15);
-    --color-secondary: #5a8dee;
+    --color-primary: #2969FF;
+    --color-primary-soft: rgba(41, 105, 255, 0.15);
+    --color-secondary: #2969FF;
     --color-text: #f4f7ff;
     --color-muted: rgba(244, 247, 255, 0.65);
     --gradient-hero: radial-gradient(circle at 20% 20%, rgba(39, 244, 199, 0.35), transparent 45%),
@@ -21,9 +21,9 @@ body[data-theme="light"] {
     --color-surface: #ffffff;
     --color-surface-alt: #ecf1ff;
     --color-border: rgba(10, 20, 40, 0.12);
-    --color-primary: #0f9b92;
-    --color-primary-soft: rgba(15, 155, 146, 0.1);
-    --color-secondary: #294fff;
+    --color-primary: #2969FF;
+    --color-primary-soft: rgba(41, 105, 255, 0.1);
+    --color-secondary: #2969FF;
     --color-text: #111324;
     --color-muted: rgba(17, 19, 36, 0.75);
     --gradient-hero: radial-gradient(circle at 20% 20%, rgba(15, 155, 146, 0.2), transparent 45%),
@@ -202,7 +202,7 @@ body[data-lang="en"] .lang-en.lang-block {
 
 .lang-btn.is-active {
     background: var(--color-primary);
-    color: #041015;
+    color: white;
 }
 
 .theme-toggle {
@@ -249,8 +249,8 @@ body[data-lang="en"] .lang-en.lang-block {
 
 .btn-primary {
     background: var(--color-primary);
-    color: #040d12;
-    box-shadow: 0 10px 30px rgba(39, 244, 199, 0.25);
+    color: white;
+    box-shadow: 0 10px 30px rgba(41, 105, 255, 0.25);
 }
 
 .btn-secondary {
