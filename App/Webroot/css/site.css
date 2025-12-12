@@ -105,6 +105,15 @@ body[data-lang="en"] .lang-en.lang-block {
     gap: 1rem;
     position: relative;
     z-index: 2;
+    height: 60px;
+}
+
+.primary-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .brand {
@@ -126,12 +135,6 @@ body[data-lang="en"] .lang-en.lang-block {
     font-size: 1.1rem;
 }
 
-.primary-nav {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
 .primary-nav ul {
     list-style: none;
     display: flex;
@@ -151,14 +154,18 @@ body[data-lang="en"] .lang-en.lang-block {
     content: "▾";
     margin-left: 0.35rem;
     font-size: 0.75rem;
+    transition: transform 0.3s ease;
 }
 
 .primary-nav li {
     position: relative;
 }
 
+.primary-nav li.has-children:hover > a::after {
+    transform: scaleY(-1);
+}
+
 .submenu {
-    display: none;
     position: absolute;
     top: 120%;
     left: 0;
@@ -170,11 +177,19 @@ body[data-lang="en"] .lang-en.lang-block {
     gap: 0.5rem;
     min-width: 200px;
     border: 1px solid var(--color-border);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
 
 .primary-nav li.has-children:hover .submenu,
 .primary-nav li.has-children:focus-within .submenu {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .nav-actions {
@@ -432,6 +447,18 @@ body[data-lang="en"] .lang-en.lang-block {
     gap: 2rem;
 }
 
+/* ===== NAV ALIGNED CONTAINER ===== */
+.nav-aligned-container {
+    padding: 0 var(--spacing-lg);
+}
+
+/* ===== MAIN FRAME ===== */
+.site-main-frame {
+    margin-top: 80px; /* Account for fixed header */
+    padding: var(--spacing-2xl) 0;
+    min-height: calc(100vh - 80px);
+}
+
 .panel {
     background: var(--color-surface);
     border-radius: 1.5rem;
@@ -632,6 +659,7 @@ body[data-lang="en"] .lang-en.lang-block {
     align-items: center;
     justify-content: space-between;
     background: #0a0d13;
+    color: white;
 }
 
 .site-footer a {
@@ -639,12 +667,21 @@ body[data-lang="en"] .lang-en.lang-block {
     text-decoration: none;
 }
 
+.site-footer a:hover {
+    color: #4d73ff;
+}
+
 .footer-slogans {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
-    color: var(--color-muted);
+    color: rgba(255, 255, 255, 0.8);
     font-size: 0.9rem;
+}
+
+[data-theme="dark"] .site-footer {
+    background: #000000;
+    color: white;
 }
 
 @media (max-width: 1100px) {

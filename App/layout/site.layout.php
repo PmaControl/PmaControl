@@ -138,7 +138,9 @@ $baseLink   = defined('LINK') ? LINK : '/';
 
             <main class="site-main-frame">
                 <?php get_flash(); ?>
-                <?= $GLIALE_CONTENT ?>
+                <div class="nav-aligned-container">
+                    <?= $GLIALE_CONTENT ?>
+                </div>
             </main>
 
             <footer class="site-footer">
