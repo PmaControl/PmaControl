@@ -22,3 +22,206 @@ Regarde ma situation avec objectivité totale et profondeur stratégique.
 Montre-moi où je me cherche des excuses, où je me limite, ou où je sous-estime les risques/l’effort.
 Traite-moi comme quelqu’un dont la progression dépend de la vérité, pas du réconfort.
 */
+
+/*
+TEST
+
+pmacontrol llm analyze "SHOW CREATE TABLE: CREATE TABLE orders ( id BIGINT PRIMARY KEY, customer_id BIGINT, created_at DATETIME, status VARCHAR(20) ); 
+
+Existing indexes: PRIMARY KEY (id) EXPLAIN: EXPLAIN SELECT * FROM orders WHERE customer_id = 42 AND status = 'PAID'; 
+-> type: ALL -> rows: 1200000 TXT;"
+
+*/
+namespace App\Controller;
+
+use Glial\Synapse\Controller;
+use App\Library\Debug;
+
+
+class Llm extends Controller{
+
+
+    public function analyze($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        // Étape 1 : récupérer l’input
+        $input = $this->extractInput($param);
+        if (!$input) {
+            return;
+        }
+
+        // Étape 2 : appeler le LLM
+        $response = $this->callLLM($input);
+        if (!$response) {
+            echo "❌ LLM error or empty response\n";
+            echo "ANSWER : $response\n";
+            return;
+        }
+
+        // Étape 3 : parser la réponse
+        $parsed = $this->parseLLMResponse($response);
+        if ($parsed['status'] !== 'OK') {
+            $this->handleNonOkStatus($parsed);
+            return;
+        }
+
+        // Étape 4 : sauvegarder l'historique
+        $this->saveHistory($param, $parsed['indexes']);
+
+        // Étape 5 : afficher les indexes proposés
+        $this->displayIndexes($parsed['indexes']);
+
+        // Étape 6 : générer les ALTER TABLE
+        $this->generateAlterSQL($parsed['indexes']);
+    }
+
+    /* ============================================================
+     * INPUT
+     * ============================================================ */
+
+    private function extractInput($param)
+    {
+        if (empty($param[0])) {
+            echo "❌ Usage:\n";
+            echo "php index.php llm/analyze \"<SHOW CREATE TABLE + EXPLAIN>\"\n";
+            return null;
+        }
+
+        return $param[0];
+    }
+
+    /* ============================================================
+     * LLM CALL
+     * ============================================================ */
+
+    private function callLLM(string $input)
+    {
+        $endpoint = 'http://10.68.68.79:11434/api/generate';
+        $model    = 'phi4';
+        $model    = 'qwen3:32b';
+
+        $payload = json_encode([
+            'model'  => $model,
+            'prompt' => $input,
+            'system' => $this->buildSystemPrompt(),
+            'stream' => false
+        ]);
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+
+        $response = curl_exec($ch);
+        if ($response === false) {
+            Debug::debug(curl_error($ch));
+            return null;
+        }
+        curl_close($ch);
+
+        $json = json_decode($response, true);
+        return $json['response'] ?? null;
+    }
+
+    private function buildSystemPrompt()
+    {
+        return <<<SYS
+You are a senior MySQL / MariaDB performance expert.
+
+Your ONLY goal is to detect MISSING INDEXES caused by FULL TABLE SCANS.
+
+Rules:
+- Never suggest existing indexes
+- Never suggest speculative indexes
+- Never suggest schema changes
+- Never optimize queries
+- Only indexes that eliminate FULL TABLE SCANS
+- Ask for missing input if needed
+
+Output ONLY valid JSON in one of these formats:
+
+If indexes found:
+{"status":"OK", "indexes":[{"table":"table_name", "columns":["col1","col2"]}, ...]}
+
+If error or missing input:
+{"status":"ERROR", "missing_input":["SHOW CREATE TABLE", "EXPLAIN"]}
+
+SYS;
+    }
+
+    /* ============================================================
+     * PARSING
+     * ============================================================ */
+
+    private function parseLLMResponse(string $raw): array
+    {
+        $clean = trim($raw, "` \n\r\t");
+        $clean = preg_replace('/^json\s*/i', '', $clean);
+
+        $data = json_decode($clean, true);
+        if (!$data || !isset($data['status'])) {
+            return [
+                'status' => 'ERROR',
+                'error'  => 'Invalid JSON returned by LLM',
+                'raw'    => $raw
+            ];
+        }
+
+        return $data;
+    }
+
+    private function handleNonOkStatus(array $parsed)
+    {
+        echo "⚠️ Status: {$parsed['status']}\n";
+
+        if (!empty($parsed['missing_input'])) {
+            echo "ℹ️ Missing input:\n";
+            foreach ($parsed['missing_input'] as $miss) {
+                echo " - $miss\n";
+            }
+        }
+    }
+
+    /* ============================================================
+     * HISTORY
+     * ============================================================ */
+
+    private function saveHistory($param, $indexes)
+    {
+        // TODO: implement saving to history table
+        // Fields: id_mysql_server, id_mysql_database, id_query, proposed_indexes (JSON), date_created
+    }
+
+    /* ============================================================
+     * OUTPUT
+     * ============================================================ */
+
+    private function displayIndexes(array $indexes)
+    {
+        echo "✅ Indexes proposés :\n";
+        foreach ($indexes as $idx) {
+            echo "- {$idx['table']} (";
+            echo implode(', ', $idx['columns']);
+            echo ")\n";
+        }
+    }
+
+    private function generateAlterSQL(array $indexes)
+    {
+        echo "\n🛠 ALTER TABLE statements:\n";
+        foreach ($indexes as $idx) {
+            echo "ALTER TABLE `{$idx['table']}` ADD INDEX (";
+            echo implode(',', $idx['columns']);
+            echo ");\n";
+        }
+    }
+
+    
+
+}

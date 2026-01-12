@@ -643,10 +643,16 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
+        $sql = "SET SESSION rocksdb_bulk_load = ON;";
+        $db->sql_query($sql);
+
         foreach($tables as $table)
         {
             // time
-            $sql  = "SET GLOBAL rocksdb_compact_range = '$table';";
+
+
+            $sql  = "ALTER TABLE `$table` engine=rocksDB;";
+            Debug::sql($sql);
             $db->sql_query($sql);
             // time after compaction + name table
         }
