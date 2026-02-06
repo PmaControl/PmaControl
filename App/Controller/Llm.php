@@ -93,14 +93,57 @@ class Llm extends Controller{
     }
 
     /* ============================================================
+     * LLM AVAILABILITY CHECK
+     * ============================================================ */
+
+    private function checkLLMAvailability()
+    {
+        // Load LLM configuration
+        $config = include CONFIG.'llm.config.php';
+        $endpoint = $config['llm']['endpoint'];
+
+        // Parse URL to extract host and port
+        $parsed_url = parse_url($endpoint);
+        if (!isset($parsed_url['host']) || !isset($parsed_url['port'])) {
+            echo "❌ Invalid LLM endpoint URL format\n";
+            return false;
+        }
+
+        $host = $parsed_url['host'];
+        $port = $parsed_url['port'];
+
+        echo "🔍 Checking LLM server availability at $host:$port...\n";
+
+        // Check if port is open using fsockopen
+        $connection = @fsockopen($host, $port, $errno, $errstr, 2);
+        if ($connection === false) {
+            echo "❌ LLM server is not available\n";
+            echo "   Error: $errstr ($errno)\n";
+            echo "   Please ensure the LLM service is running at $host:$port\n";
+            return false;
+        }
+
+        // Close the connection
+        fclose($connection);
+        echo "✅ LLM server is available and accepting connections\n";
+        return true;
+    }
+
+    /* ============================================================
      * LLM CALL
      * ============================================================ */
 
     private function callLLM(string $input)
     {
-        $endpoint = 'http://10.68.68.79:11434/api/generate';
-        $model    = 'phi4';
-        $model    = 'qwen3:32b';
+        // Check if LLM server is available before making the call
+        if (!$this->checkLLMAvailability()) {
+            return null;
+        }
+
+        // Load LLM configuration
+        $config = include CONFIG.'llm.config.php';
+        $endpoint = $config['llm']['endpoint'];
+        $model    = $config['llm']['model'];
 
         $payload = json_encode([
             'model'  => $model,

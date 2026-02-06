@@ -811,7 +811,11 @@ class ProxySQL extends Controller
         $id_proxysql_server = $param[0] ?? "";
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM proxysql_server a ORDER BY display_name";
+        $sql = "SELECT a.* FROM proxysql_server a 
+        LEFT JOIN mysql_server b ON a.id_mysql_server = b.id
+        INNER JOIN client c on b.id_client = c.id
+        WHERE b.is_deleted IS NULL or b.is_deleted = 0 and c.is_monitored =1
+        ORDER BY a.display_name";
         $res = $db->sql_query($sql);
 
         $data = array();
@@ -831,11 +835,11 @@ class ProxySQL extends Controller
         $data['menu']['statistic']['title'] =  __('Statistics');
         $data['menu']['statistic']['link'] = LINK.'ProxySQL/statistic/'.$data['id_proxysql_server'];
 
-        $data['menu']['monitor']['title'] =  __('Monitor');
-        $data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
+       // $data['menu']['monitor']['title'] =  __('Monitor');
+        //$data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
 
-        $data['menu']['cluster']['title'] =  __('Cluster');
-        $data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
+        //$data['menu']['cluster']['title'] =  __('Cluster');
+        //$data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
 
         $data['menu']['log']['title'] =  __('Logs');
         $data['menu']['log']['link'] = LINK.'ProxySQL/log/'.$data['id_proxysql_server'];

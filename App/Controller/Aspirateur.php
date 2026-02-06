@@ -1910,6 +1910,7 @@ GROUP BY C.ID, C.INFO;";
             {
                 $table_name = $arr['tables'];
 
+
                 
                 Debug::debug($table_name, "TABLE NAME");
 
@@ -1974,6 +1975,7 @@ GROUP BY C.ID, C.INFO;";
     {
         Debug::parseDebug($param);
 
+        Debug::debug($param);
         $id_mysql_server = $param[0];
         $database = $param[1];
         $table = $param[2];
@@ -1998,7 +2000,7 @@ GROUP BY C.ID, C.INFO;";
             return $this->getTableElems($id_mysql_server, $database, $table);
         }
         
-        return false;
+        return [];
     }
 
 
