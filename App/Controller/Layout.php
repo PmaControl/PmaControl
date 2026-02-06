@@ -39,6 +39,16 @@ class Layout extends Controller
         $this->set('data', $data);
     }
 
+    function headerPmacontrol($param)
+    {
+        $title = $param[0];
+        $this->set('GLIALE_TITLE', $title);
+    }
+
+    function footerPmacontrol()
+    {
+    }
+
     public function ariane($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
