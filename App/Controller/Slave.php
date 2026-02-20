@@ -884,7 +884,6 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
     }
-<<<<<<< HEAD
 
 
     /**
@@ -1203,6 +1202,3 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 }
-=======
-}
->>>>>>> enterprise
