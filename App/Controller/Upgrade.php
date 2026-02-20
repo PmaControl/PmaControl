@@ -151,7 +151,8 @@ class Upgrade extends Controller
     {
         $commit = Git::getCurrentCommit();
 
-        $file = ROOT."/configuration/site.config.php";
+        //$file = ROOT."/configuration/site.config.php";
+        $file = ROOT."configuration/site.config.php";
         $text = file_get_contents($file);
 
         $date = explode(" ", $commit['date'])[0];
