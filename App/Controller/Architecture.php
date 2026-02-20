@@ -69,6 +69,17 @@ FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
 WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information)-1 FROM dot3_cluster)";
 
+/*
+        $sql = "WITH LatestDot3Information AS (
+    SELECT MAX(id_dot3_information)-1 AS max_id_dot3_information
+    FROM dot3_cluster
+)
+SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
+FROM dot3_graph dg
+JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
+JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information
+ORDER BY  height DESC, width desc;";
+*/
         // Filter by selected organization if one is selected
         $filter_conditions = "";
         if (!empty($selected_client)) {

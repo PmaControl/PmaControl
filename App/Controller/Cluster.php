@@ -105,10 +105,7 @@ class Cluster extends Controller
     */
    public function replay($param)
    {
-        Debug::debug($param);
-
         $id_mysql_server = $param[0];
-
 
         $db = Sgbd::sql(DB_DEFAULT);
 

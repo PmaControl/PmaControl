@@ -7,6 +7,7 @@ cd "/srv/www/pmacontrol/" || exit
 # === Chemin vers le fichier de configuration PHP ===
 TELEGRAM_CONFIG="configuration/telegram.php"
 
+
 # === Extraction du token et du chat_id depuis le fichier PHP ===
 if [ -f "$TELEGRAM_CONFIG" ]; then
     TELEGRAM_TOKEN=$(grep -oP '\$TELEGRAM_TOKEN\s*=\s*"\K[^"]+' "$TELEGRAM_CONFIG")

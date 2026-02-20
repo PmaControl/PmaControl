@@ -182,6 +182,3 @@ function copyKillTunnelCommand() {
 }
 </script>
 
-
-<?php
-

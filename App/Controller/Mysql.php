@@ -1170,7 +1170,6 @@ class Mysql extends Controller
     {
 
         debug("$hostname, $port, $user, $password");
-
         $this->last_connection_used_ssl = 0;
 
         $link = mysqli_init();

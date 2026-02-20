@@ -161,10 +161,7 @@ class Dot3 extends Controller
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
-                "maxscale::maxscale_listeners", 
-                "maxscale::maxscale_servers",
-                "maxscale::maxscale_services", 
-                "maxscale::maxscale_monitors", 
+                "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
             ),$id_mysql_servers , $date_request);
 /***/
@@ -817,7 +814,7 @@ class Dot3 extends Controller
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
-        //Debug::debug($galera, "GALERA");
+        Debug::debug($galera, "GALERA");
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -2037,7 +2034,7 @@ class Dot3 extends Controller
     {
         $server = $information['servers'][$id_mysql_server] ?? null;
         if (!$server) {
-            throw new Exception("Server not found", 404);
+            throw new \Exception("Server not found", 404);
         }
 
         //generate next id in $information['servers']

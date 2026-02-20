@@ -97,7 +97,6 @@ class Listener extends Controller
                 {
                     if ($ob->cpt === "0")
                     {
-                        
                         $sql = "INSERT INTO listener_main SELECT NULL, id,'".$splited[0]."', '".$splited[1]."',1 FROM ts_file WHERE file_name IN('".$ts_file."') ;";
                         Debug::sql($sql);
 
