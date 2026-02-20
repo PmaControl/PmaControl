@@ -16,7 +16,7 @@ if (empty($_GET['ajax'])) {
 
 
 ?>
-<pre id="data_log" style="background-color: black; overflow: auto; height:300px; max-height:400px; display: flex; color:#cccccc;  width:100%; margin:0; padding: 10px 15px; font-family: monospace; margin-bottom:0px">
+<pre id="data_log" style="background-color: black; overflow: auto; height:300px; max-height:300px; display:block; color:#cccccc; width:100%; margin:0; padding: 10px 15px; font-family: monospace; margin-bottom:0px; box-sizing:border-box;">
 <?php 
 echo "ls -lh ".TMP."tmp_file [ Number of Files : ".$data['nb_files']." ]";
 echo "\n";

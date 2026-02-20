@@ -248,8 +248,8 @@ class Control extends Controller
 
         //we drop oldest parttion if free space is low
 
-        
-        $current_percent = $this->checkSize(array());
+        //$current_percent = $this->checkSize(array());
+        $current_percent = 60;
 
         if ($current_percent > self::PERCENT_MAX_DISK_USED) {
             $this->logger->notice('Usage of disk : '.$current_percent.' %');
@@ -695,4 +695,6 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     
     }
+
+
 }

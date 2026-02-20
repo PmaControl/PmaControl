@@ -123,4 +123,65 @@ th {
 
 
 <?php
+$pids = [];
+foreach ($data as $tunnel) {
+    if (!empty($tunnel['pid'])) {
+        $pids[] = (int) $tunnel['pid'];
+    }
+}
+$pids = array_values(array_unique(array_filter($pids)));
+$killCommand = !empty($pids) ? 'kill -9 ' . implode(' ', $pids) : '';
+?>
+
+<div class="text-right" style="margin-top: 15px; margin-bottom: 15px;">
+    <button id="copy-kill-command" type="button" class="btn btn-danger" onclick="copyKillTunnelCommand()" <?= empty($killCommand) ? 'disabled' : '' ?>>
+        <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
+        <?= __('Copier la commande kill de tous les tunnels') ?>
+    </button>
+    <small id="copy-kill-feedback" class="text-success" style="margin-left: 10px; display: none;"><?= __('Commande copiée dans le presse-papiers') ?></small>
+</div>
+
+<script>
+function copyKillTunnelCommand() {
+    var command = <?= json_encode($killCommand) ?>;
+    if (!command) {
+        return;
+    }
+
+    var feedback = document.getElementById('copy-kill-feedback');
+
+    function showCopiedMessage() {
+        if (!feedback) {
+            return;
+        }
+        feedback.style.display = 'inline';
+        setTimeout(function () {
+            feedback.style.display = 'none';
+        }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(command).then(showCopiedMessage);
+        return;
+    }
+
+    var textarea = document.createElement('textarea');
+    textarea.value = command;
+    textarea.setAttribute('readonly', 'readonly');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+        document.execCommand('copy');
+        showCopiedMessage();
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+</script>
+
+
+<?php
 
