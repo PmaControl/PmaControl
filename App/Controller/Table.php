@@ -431,7 +431,6 @@ class Table extends Controller {
             //$this->generateHiddenArrow($tables_by_colone);
         }
     }
-
     // C'est clairement le meilleur algorythme pour repartir des éléments en fonction de leur poids
     // Le problème c'est que par moment le passage des flèches est problèmatique avec graphviz
     

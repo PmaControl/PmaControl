@@ -2610,10 +2610,6 @@ GROUP BY C.ID, C.INFO;";
         $callback($id_mysql_server);
         return true;
     }
-
-
-
-
 }
 
 
@@ -2633,6 +2629,4 @@ GROUP BY
   `CURRENT_SCHEMA`, 
   `DIGEST`, 
   `SQL_TEXT`
-
-
 */

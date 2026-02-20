@@ -701,6 +701,7 @@ SQL;
 
     }
 
+<<<<<<< HEAD
     /* extraire les tables avec les alias d'une requete SQL */
 
 
