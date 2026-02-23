@@ -120,7 +120,7 @@ class Integrate extends Controller
 
             //case of negative int (not allowed)
             if ($value < 0) {
-                throw new \Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
+                throw new Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
             }
         }
 
@@ -149,7 +149,7 @@ class Integrate extends Controller
         EngineV4::cleanMd5(self::$id_mysql_server__to_refresh);
 
         if (!$res) {
-            throw new \Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
+            throw new Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
         }
     }
 
@@ -416,12 +416,26 @@ public function integrateAll($param)
 
         $ts_file = explode(',',$ts_file_list);
 
+        // Alias de compatibilité : l'ancienne entrée digest
+        // ps_events_statements_summary_by_digest est maintenant exportée
+        // dans le fichier performance_schema.
+        $alias_ts_file = [
+            'ps_events_statements_summary_by_digest' => ['performance_schema'],
+        ];
+
         $files = [];
         foreach($ts_file as $file)
         {
 
             $file_match = EngineV4::PATH_PIVOT_FILE ."*".EngineV4::SEPERATOR."$file";
             $part_file = glob($file_match);
+
+            if (!empty($alias_ts_file[$file])) {
+                foreach ($alias_ts_file[$file] as $alias) {
+                    $alias_match = EngineV4::PATH_PIVOT_FILE ."*".EngineV4::SEPERATOR."$alias";
+                    $part_file = array_merge($part_file, glob($alias_match));
+                }
+            }
 
             $files = array_merge($files, $part_file);
         }
@@ -446,6 +460,7 @@ public function integrateAll($param)
         $history       = array();
         $slave         = array();
         $digest_insert = array();
+        $memory_file   = null;
 
         foreach ($files as $file) {
 
@@ -556,6 +571,11 @@ public function integrateAll($param)
 
                                                 $id_ts_mysql_query = $value['id_ts_mysql_query'] ?? "";
 
+                                                // id_ts_mysql_query est obligatoire pour ts_value_digest_*
+                                                if (!is_numeric($id_ts_mysql_query) || (int)$id_ts_mysql_query <= 0) {
+                                                    continue;
+                                                }
+
                                                 if (empty($variables[$type_metrics][$digest_variable])) {
 
                                                     if ($digest_value === "-1") continue;
@@ -652,7 +672,7 @@ public function integrateAll($param)
                 unlink($file);
             } else {
                 $this->logger->emergency('Two process in same time for integrate the same data, please remove one');
-                throw new \Exception("PMACTRL-647 : deux intégrateurs lancés en même temps (supprimer le mauvais)");
+                throw new Exception("PMACTRL-647 : deux intégrateurs lancés en même temps (supprimer le mauvais)");
             }
 
             /*
@@ -688,7 +708,7 @@ public function integrateAll($param)
             }
         }
 
-        if (!empty($history)) {
+        if (!empty($history) && !empty($memory_file)) {
             $this->linkServerVariable($history, $memory_file);
         }
 

@@ -124,7 +124,37 @@ class MysqlDatabase extends Controller
         $db              = Mysql::getDbLink($id_mysql_server);
         $default         = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM information_schema.tables WHERE table_schema='".$table_schema."' ORDER BY table_name";
+        $allowedSortColumns = [
+            'table' => 'TABLE_NAME',
+            'rows' => 'TABLE_ROWS',
+            'engine' => 'ENGINE',
+            'row_format' => 'ROW_FORMAT',
+            'collation' => 'TABLE_COLLATION',
+            'size' => 'DATA_LENGTH',
+            'index' => 'INDEX_LENGTH',
+            'overhead' => 'DATA_FREE',
+            'total' => 'TOTAL_LENGTH',
+        ];
+
+        $sort = $_GET['sort'] ?? 'total';
+        $order = strtolower($_GET['order'] ?? 'desc');
+
+        if (!isset($allowedSortColumns[$sort])) {
+            $sort = 'total';
+        }
+
+        if (!in_array($order, ['asc', 'desc'], true)) {
+            $order = 'desc';
+        }
+
+        $orderByColumn = $allowedSortColumns[$sort];
+        $orderByDirection = strtoupper($order);
+
+        $sql = "SELECT *,
+            (IFNULL(DATA_LENGTH,0) + IFNULL(INDEX_LENGTH,0) + IFNULL(DATA_FREE,0)) AS TOTAL_LENGTH
+            FROM information_schema.tables
+            WHERE table_schema='".$table_schema."'
+            ORDER BY ".$orderByColumn." ".$orderByDirection.", TABLE_NAME";
         $res = $db->sql_query($sql);
 
         $data['table'] = array();
@@ -133,6 +163,8 @@ class MysqlDatabase extends Controller
         }
 
         $data['table_schema'] = $table_schema;
+        $data['sort'] = $sort;
+        $data['order'] = $order;
 
         $data['param'] = $param;
         $this->set('data',$data);
