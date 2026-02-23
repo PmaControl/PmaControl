@@ -12,6 +12,38 @@ FactoryController::addNode("MysqlServer", "menu", $param);
 $id = (int)$data['id_mysql_server'];
 ?>
 
+<style>
+/*
+ * Stabilise l'affichage en 3 colonnes sur desktop,
+ * avec une petite marge de sécurité pour éviter les retours à la ligne
+ * dus aux arrondis ou aux contenus un peu longs.
+ */
+@media (min-width: 992px) {
+    .grid-row-third {
+        display: flex;
+        flex-wrap: wrap;
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .grid-row-third > .grid-item {
+        float: none;
+        width: calc(33.3333% - 1px);
+        padding-left: 6px;
+        padding-right: 6px;
+        margin-bottom: 10px;
+    }
+}
+
+.grid-item .table {
+    table-layout: fixed;
+}
+
+.grid-item .table td {
+    word-break: break-word;
+}
+</style>
+
 
   <?php
   // Panels simples pour chaque catégorie
@@ -28,7 +60,7 @@ $id = (int)$data['id_mysql_server'];
   ?>
 
 <div style="padding-right:20px">
-    <div class="grid row" style="margin-top:20px;">
+    <div class="grid row grid-row-third" style="margin-top:20px;">
         <?php foreach ($groups as $title => $items): ?>
         <div class="col-md-4 grid-item" style="margin-bottom:0px;">
             <div class="panel panel-default">

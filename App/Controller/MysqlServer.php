@@ -349,7 +349,7 @@ class MysqlServer extends Controller
             'log_bin' => $g('log_bin'),
             'binlog_format' => $g('binlog_format'),
             '#files' => $g('binlog_nb_files'),
-            'Total size' => $g('binlog_total_size'),
+            'Total size' => self::formatBytesToMbGb($g('binlog_total_size')),
             'expire (sec)' => $g('binlog_expire_logs_seconds'),
         ];
 
@@ -404,6 +404,24 @@ class MysqlServer extends Controller
         if ($m || !empty($out)) $out[] = $m.'m';
         $out[] = $s.'s';
         return implode(' ', $out);
+    }
+
+    private static function formatBytesToMbGb($bytes): string
+    {
+        if ($bytes === null || $bytes === '') {
+            return 'n/a';
+        }
+
+        $bytes = (float) $bytes;
+
+        $oneGb = 1024 * 1024 * 1024;
+        $oneMb = 1024 * 1024;
+
+        if ($bytes >= $oneGb) {
+            return number_format($bytes / $oneGb, 2).' GB';
+        }
+
+        return number_format($bytes / $oneMb, 2).' MB';
     }
 
 
