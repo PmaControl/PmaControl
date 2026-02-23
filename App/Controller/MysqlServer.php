@@ -338,7 +338,7 @@ class MysqlServer extends Controller
         ];
 
         $data['innodb'] = [
-            'Buffer pool size' => $bp_size,
+            'Buffer pool size' => self::formatBytesToMbGbTb($bp_size),
             'Buffer data bytes' => $bp_data,
             'Buffer Used %' => $bp_used_pct !== null ? $bp_used_pct.'%' : 'n/a',
             'BP Hit Ratio %' => $hit !== null ? $hit.'%' : 'n/a',
@@ -365,16 +365,14 @@ class MysqlServer extends Controller
             'Valid from' => $g('ssl_server_not_before'),
             'Valid to' => $g('ssl_server_not_after'),
         ];
-
         $data['os'] = [
             'Hostname' => $g('hostname'),
             'OS' => $g('os'),
             'Kernel' => $g('kernel'),
             'Arch' => $g('arch'),
-            'CPU usage %' => $g('cpu_usage'),
-            'CPU threads' => $g('cpu_thread_count'),
-            'Mem used / total' => $g('memory_used')." / ".$g('memory_total'),
-            'Swap used / total' => $g('swap_used')." / ".$g('swap_total'),
+            '<img src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($g('cpu_usage'), $g('cpu_thread_count')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > '.self::tr('RAM Usage') => self::formatRamUsage($g('memory_used'), $g('memory_total')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/swap.svg" > '.self::tr('SWAP Usage') => self::formatSwapUsage($g('swap_used'), $g('swap_total')),
         ];
 
 
@@ -422,6 +420,163 @@ class MysqlServer extends Controller
         }
 
         return number_format($bytes / $oneMb, 2).' MB';
+    }
+
+    private static function formatBytesToMbGbTb($bytes): string
+    {
+        if ($bytes === null || $bytes === '') {
+            return 'n/a';
+        }
+
+        $bytes = (float) $bytes;
+
+        $oneTb = 1024 * 1024 * 1024 * 1024;
+        $oneGb = 1024 * 1024 * 1024;
+        $oneMb = 1024 * 1024;
+        $oneKb = 1024;
+
+        if ($bytes >= $oneTb) {
+            return number_format($bytes / $oneTb, 2).' TB';
+        }
+
+        if ($bytes >= $oneGb) {
+            return number_format($bytes / $oneGb, 2).' GB';
+        }
+
+        if ($bytes >= $oneMb) {
+            return number_format($bytes / $oneMb, 2).' MB';
+        }
+
+        return number_format($bytes / $oneKb, 2).' KB';
+    }
+
+    private static function formatBytesHuman($bytes): string
+    {
+        if ($bytes === null || $bytes === '' || !is_numeric($bytes)) {
+            return 'n/a';
+        }
+
+        $bytes = (float) $bytes;
+
+        $oneTb = 1024 * 1024 * 1024 * 1024;
+        $oneGb = 1024 * 1024 * 1024;
+        $oneMb = 1024 * 1024;
+        $oneKb = 1024;
+
+        if ($bytes >= $oneTb) {
+            return number_format($bytes / $oneTb, 2).' TB';
+        }
+
+        if ($bytes >= $oneGb) {
+            return number_format($bytes / $oneGb, 2).' GB';
+        }
+
+        if ($bytes >= $oneMb) {
+            return number_format($bytes / $oneMb, 2).' MB';
+        }
+
+        if ($bytes >= $oneKb) {
+            return number_format($bytes / $oneKb, 2).' KB';
+        }
+
+        return number_format($bytes, 0).' B';
+    }
+
+    private static function formatRamUsage($usedBytes, $totalBytes): array
+    {
+        return self::formatUsageFromBytes(self::tr('RAM usage'), 'ram', $usedBytes, $totalBytes);
+    }
+
+    private static function formatSwapUsage($usedBytes, $totalBytes): array
+    {
+        return self::formatUsageFromBytes(self::tr('Swap usage'), 'swap', $usedBytes, $totalBytes);
+    }
+
+    private static function formatCpuUsage($cpuPercent, $cpuThreads = null): array
+    {
+        $percent = is_numeric($cpuPercent) ? (float) $cpuPercent : 0;
+        $percent = max(0, min(100, $percent));
+        $usageColor = self::getUsageColorByPercent($percent);
+
+        $cpuLabel = number_format($percent, 2).'%';
+
+        if (is_numeric($cpuThreads) && (int)$cpuThreads > 0) {
+            $cpuLabel .= ' of '.(int)$cpuThreads.' CPU(s)';
+        }
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => 'cpu',
+            'percent' => $percent,
+            'text' => $cpuLabel,
+            'color' => $usageColor['color'],
+            'level' => $usageColor['level'],
+        ];
+    }
+
+    private static function formatUsageFromBytes(string $label, string $metric, $usedBytes, $totalBytes): array
+    {
+        $used = is_numeric($usedBytes) ? (float) $usedBytes : 0;
+        $total = is_numeric($totalBytes) ? (float) $totalBytes : 0;
+
+        if ($total <= 0) {
+            $usageColor = self::getUsageColorByPercent(0);
+            return [
+                'type' => 'usage_meter',
+                'metric' => $metric,
+                'percent' => 0,
+                'text' => 'n/a',
+                'color' => $usageColor['color'],
+                'level' => $usageColor['level'],
+            ];
+        }
+
+        $percent = round(($used / $total) * 100, 2);
+        $usageColor = self::getUsageColorByPercent($percent);
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => $metric,
+            'percent' => $percent,
+            'text' => number_format($percent, 2).'% ('
+                .self::formatBytesHuman($used).' of '.self::formatBytesHuman($total).')',
+            'color' => $usageColor['color'],
+            'level' => $usageColor['level'],
+        ];
+    }
+
+    /**
+     * Fonction réutilisable pour mapper un pourcentage d'utilisation vers une couleur/état.
+     *
+     * Règles:
+     *  - 0%   -> 79.99% : vert (normal)
+     *  - 80%  -> 89.99% : orange (élevé)
+     *  - >=90%          : rouge (critique)
+     */
+    public static function getUsageColorByPercent(float $percent): array
+    {
+        if ($percent >= 90) {
+            return ['color' => '#d9534f', 'level' => 'critical'];
+        }
+
+        if ($percent >= 80) {
+            return ['color' => '#f0ad4e', 'level' => 'warning'];
+        }
+
+        return ['color' => '#5cb85c', 'level' => 'ok'];
+    }
+
+    private static function tr(string $text): string
+    {
+        if (function_exists('_')) {
+            return _( $text );
+        }
+
+        if (function_exists('__')) {
+            return __( $text );
+        }
+
+        return $text;
     }
 
 

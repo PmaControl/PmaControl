@@ -42,6 +42,46 @@ $id = (int)$data['id_mysql_server'];
 .grid-item .table td {
     word-break: break-word;
 }
+
+.usage-meter-wrap {
+    text-align: right;
+}
+
+.usage-meter-wrap--left {
+    text-align: left;
+}
+
+.usage-meter-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    max-width: 100%;
+}
+
+.usage-meter-text--left {
+    justify-content: flex-start;
+}
+
+.usage-meter-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+.usage-meter-progress {
+    margin-top: 4px;
+    width: 100%;
+    height: 4px;
+    background: #e8edf3;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.usage-meter-progress-value {
+    height: 100%;
+    background: #5cb85c;
+}
 </style>
 
 
@@ -70,8 +110,25 @@ $id = (int)$data['id_mysql_server'];
                 <tbody>
                 <?php foreach ($items as $k => $v): ?>
                     <tr>
-                    <td style="width:55%"><?= htmlspecialchars($k) ?></td>
-                    <td style="width:45%; text-align:right"><?= (string)$v ?></td>
+                    <td style="width:50%"><?= $k ?></td>
+                    <td style="width:50%; text-align:right">
+                        <?php if (is_array($v) && ($v['type'] ?? '') === 'usage_meter'): ?>
+                            <?php $percent = max(0, min(100, (float)($v['percent'] ?? 0))); ?>
+                            <?php $meterColor = $v['color'] ?? '#5cb85c'; ?>
+                            <?php $metric = $v['metric'] ?? 'ram'; ?>
+                            <div class="usage-meter-wrap">
+                                <div class="usage-meter-text">
+
+                                    <span><?= htmlspecialchars((string)($v['text'] ?? 'RAM usage : n/a')) ?></span>
+                                </div>
+                                <div class="usage-meter-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $percent ?>">
+                                    <div class="usage-meter-progress-value" style="width: <?= $percent ?>%; background: <?= htmlspecialchars($meterColor) ?>;"></div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <?= (string)$v ?>
+                        <?php endif; ?>
+                    </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
