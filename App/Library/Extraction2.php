@@ -280,7 +280,7 @@ class Extraction2
 
         $table = array();
 
-        if ($res === false) {
+        if ($res === false || !($res instanceof \mysqli_result)) {
             return $table;
         }
 
