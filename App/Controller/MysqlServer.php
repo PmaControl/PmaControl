@@ -331,7 +331,7 @@ class MysqlServer extends Controller
         $data['connections'] = [
             'Threads connected' => $g('threads_connected'),
             'Threads running' => $g('threads_running'),
-            'Max used' => $g('max_used_connections')." / ".$g('max_connections'),
+            'Max used' => self::formatConnectionUsage($g('max_used_connections'), $g('max_connections')),
             'Utilisation %' => $conn_usage !== null ? $conn_usage."%" : 'n/a',
             'Aborted clients' => $g('aborted_clients'),
             'Aborted connects' => $g('aborted_connects'),
@@ -509,6 +509,36 @@ class MysqlServer extends Controller
             'metric' => 'cpu',
             'percent' => $percent,
             'text' => $cpuLabel,
+            'color' => $usageColor['color'],
+            'level' => $usageColor['level'],
+        ];
+    }
+
+    private static function formatConnectionUsage($maxUsed, $maxTotal): array
+    {
+        $used = is_numeric($maxUsed) ? (float) $maxUsed : 0;
+        $total = is_numeric($maxTotal) ? (float) $maxTotal : 0;
+
+        if ($total <= 0) {
+            $usageColor = self::getUsageColorByPercent(0);
+            return [
+                'type' => 'usage_meter',
+                'metric' => 'connections',
+                'percent' => 0,
+                'text' => 'n/a',
+                'color' => $usageColor['color'],
+                'level' => $usageColor['level'],
+            ];
+        }
+
+        $percent = round(($used / $total) * 100, 2);
+        $usageColor = self::getUsageColorByPercent($percent);
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => 'connections',
+            'percent' => $percent,
+            'text' => number_format($percent, 0).'% of total of '.(int)$total,
             'color' => $usageColor['color'],
             'level' => $usageColor['level'],
         ];
