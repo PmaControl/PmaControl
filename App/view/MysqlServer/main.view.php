@@ -82,6 +82,19 @@ $id = (int)$data['id_mysql_server'];
     height: 100%;
     background: #5cb85c;
 }
+
+.cmd-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.cmd-link {
+    font-family: monospace;
+    font-size: 12px;
+}
 </style>
 
 
@@ -124,6 +137,11 @@ $id = (int)$data['id_mysql_server'];
                                 <div class="usage-meter-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $percent ?>">
                                     <div class="usage-meter-progress-value" style="width: <?= $percent ?>%; background: <?= htmlspecialchars($meterColor) ?>;"></div>
                                 </div>
+                            </div>
+                        <?php elseif ($k === 'Cmd' && is_string($v)): ?>
+                            <div class="cmd-actions">
+
+                                <button type="button" class="btn btn-xs btn-success" onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, 'UTF-8') ?>)">Copy</button>
                             </div>
                         <?php else: ?>
                             <?= (string)$v ?>
@@ -229,3 +247,21 @@ $id = (int)$data['id_mysql_server'];
 
 FactoryController::addNode("MysqlServer", "lastRefresh", $param);
 
+
+?>
+
+<script>
+function copyMysqlCmd(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        return;
+    }
+
+    var temp = document.createElement('textarea');
+    temp.value = text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+}
+</script>

@@ -272,13 +272,14 @@ class MysqlServer extends Controller
             "log_bin","binlog_format","binlog_row_image","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds",
             "wsrep_cluster_status","wsrep_ready","wsrep_local_state_comment",
             "ssl_version","ssl_cipher","ssl_server_not_before","ssl_server_not_after",
-            "hostname","os","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
+            "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
             "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_read_requests","buffer_pool_reads",
-            "disks","ips","processlist",
+            "ssh_stats::disks","ips","processlist",
         ];
 
         $raw = Extraction2::display($keys, [$id_mysql_server]);
         Debug::debug($raw);
+        debug($raw);
 
         // On prend la première ligne
         $row = reset($raw);
@@ -329,10 +330,9 @@ class MysqlServer extends Controller
         ];
 
         $data['connections'] = [
-            'Threads connected' => $g('threads_connected'),
-            'Threads running' => $g('threads_running'),
+            'Threads running' => self::formatThreadUsage($g('threads_running'), $g('max_connections')),
+            'Threads connected' => self::formatThreadUsage($g('threads_connected'), $g('max_connections')),
             'Max used' => self::formatConnectionUsage($g('max_used_connections'), $g('max_connections')),
-            'Utilisation %' => $conn_usage !== null ? $conn_usage."%" : 'n/a',
             'Aborted clients' => $g('aborted_clients'),
             'Aborted connects' => $g('aborted_connects'),
         ];
@@ -366,11 +366,11 @@ class MysqlServer extends Controller
             'Valid to' => $g('ssl_server_not_after'),
         ];
         $data['os'] = [
-            'Hostname' => $g('hostname'),
-            'OS' => $g('os'),
-            'Kernel' => $g('kernel'),
-            'Arch' => $g('arch'),
-            '<img src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($g('cpu_usage'), $g('cpu_thread_count')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/hostname.svg" > Hostname' => $g('hostname'),
+            '<img height="16px" width="16px" src="'.IMG.'icon/linux-svgrepo-com.svg" > OS' => self::formatOsWithIcon($g('os'), $g('distributor')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/kernel.svg" > Kernel' => $g('kernel'),
+            '<img height="16px" width="16px" src="'.IMG.'icon/64bit.svg" > Arch' => self::formatArchWithBitLabel($g('arch')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($g('cpu_usage'), $g('cpu_thread_count')),
             '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > '.self::tr('RAM Usage') => self::formatRamUsage($g('memory_used'), $g('memory_total')),
             '<img height="16px" width="16px" src="'.IMG.'icon/swap.svg" > '.self::tr('SWAP Usage') => self::formatSwapUsage($g('swap_used'), $g('swap_total')),
         ];
@@ -542,6 +542,101 @@ class MysqlServer extends Controller
             'color' => $usageColor['color'],
             'level' => $usageColor['level'],
         ];
+    }
+
+    private static function formatThreadUsage($current, $maxTotal): array
+    {
+        $value = is_numeric($current) ? (float) $current : 0;
+        $total = is_numeric($maxTotal) ? (float) $maxTotal : 0;
+
+        if ($total <= 0) {
+            $usageColor = self::getUsageColorByPercent(0);
+            return [
+                'type' => 'usage_meter',
+                'metric' => 'connections',
+                'percent' => 0,
+                'text' => 'n/a',
+                'color' => $usageColor['color'],
+                'level' => $usageColor['level'],
+            ];
+        }
+
+        $percent = round(($value / $total) * 100, 2);
+        $usageColor = self::getUsageColorByPercent($percent);
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => 'connections',
+            'percent' => $percent,
+            'text' => number_format($percent, 0).'% of total of '.(int)$total,
+            'color' => $usageColor['color'],
+            'level' => $usageColor['level'],
+        ];
+    }
+
+    private static function formatOsWithIcon($os, $distributor): string
+    {
+        $osLabel = (string)($os ?? 'n/a');
+
+        if (empty($distributor)) {
+            return $osLabel;
+        }
+
+        $icon = '<img src="'.IMG.'/os/'.strtolower((string)$distributor).'.png" alt="['.(string)$distributor.']" title="'.(string)$distributor.'" style="width:16px;height:16px;vertical-align:middle;"> ';
+
+        return $icon.$osLabel;
+    }
+
+    private static function formatArchWithBitLabel($arch): string
+    {
+        if ($arch === null || $arch === '') {
+            return 'n/a';
+        }
+
+        $archStr = mb_strtolower((string) $arch, 'UTF-8');
+        $bits = self::detectArchitectureBits($archStr);
+
+        if ($bits === null) {
+            return $archStr;
+        }
+
+        return $arch.' <span class="label label-default">'.$bits.' BIT</span>';
+        //return $archStr.' ('.$bits.' BIT)';
+    }
+
+    private static function detectArchitectureBits(string $arch): ?int
+    {
+        $patterns64 = [
+            'x86_64', 'amd64', 'aarch64', 'arm64', 'ppc64', 's390x',
+            'riscv64', 'sparc64', 'mips64', 'ia64',
+        ];
+
+        foreach ($patterns64 as $p) {
+            if (str_contains($arch, $p)) {
+                return 64;
+            }
+        }
+
+        $patterns32 = [
+            'i386', 'i486', 'i586', 'i686', 'x86', 'armv7', 'armv6',
+            'armv5', 'armhf', 'armel', 'ppc', 'mips', 's390',
+        ];
+
+        foreach ($patterns32 as $p) {
+            if (str_contains($arch, $p)) {
+                return 32;
+            }
+        }
+
+        if (preg_match('/\b64\b/', $arch)) {
+            return 64;
+        }
+
+        if (preg_match('/\b32\b/', $arch)) {
+            return 32;
+        }
+
+        return null;
     }
 
     private static function formatUsageFromBytes(string $label, string $metric, $usedBytes, $totalBytes): array
