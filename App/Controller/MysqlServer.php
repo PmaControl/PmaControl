@@ -268,18 +268,34 @@ class MysqlServer extends Controller
             "threads_connected","threads_running","max_used_connections","max_connections",
             "questions","queries","bytes_sent","bytes_received",
             "aborted_clients","aborted_connects","access_denied_errors",
-            "innodb_flush_log_at_trx_commit",
-            "log_bin","binlog_format","binlog_row_image","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds",
+            "innodb_flush_log_at_trx_commit","innodb_log_file_size","innodb_log_buffer_size","innodb_buffer_pool_instances",
+            "innodb_page_size","innodb_read_io_threads","innodb_write_io_threads",
+            "log_bin","sync_binlog","binlog_format","binlog_row_image","binlog_checksum","binlog_cache_size","binlog_stmt_cache_size","max_binlog_size","binlog_space_limit","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds",
+            "log_bin_basename","mysql_binlog::binlog_file_last","gtid_current_pos","gtid_binlog_pos",
             "wsrep_cluster_status","wsrep_ready","wsrep_local_state_comment",
             "ssl_version","ssl_cipher","ssl_server_not_before","ssl_server_not_after",
             "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
-            "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_read_requests","buffer_pool_reads",
+            "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_pages_dirty","buffer_pool_read_requests","buffer_pool_reads",
+            "aria_pagecache_buffer_size","aria_log_file_size","aria_block_size","aria_used_for_temp_tables","aria_encrypt_tables","aria_recover","aria_page_checksum",
+            "aria_pagecache_blocks_used","aria_pagecache_blocks_unused","aria_pagecache_blocks_not_flushed","aria_pagecache_reads","aria_pagecache_read_requests",
+            "have_rocksdb","default_storage_engine","rocksdb_block_cache_size","rocksdb_db_write_buffer_size","rocksdb_max_total_wal_size",
+            "rocksdb_wal_size_limit_mb","rocksdb_write_disable_wal","rocksdb_flush_log_at_trx_commit","rocksdb_info_log_level",
+            "rocksdb_enable_ttl","rocksdb_cache_index_and_filter_blocks","rocksdb_use_direct_reads","rocksdb_use_direct_io_for_flush_and_compaction",
+            "have_myisam","key_buffer_size","key_blocks_used","key_blocks_unused","key_read_requests","key_reads","key_write_requests","key_writes",
+            "myisam_sort_buffer_size","myisam_recover_options","delay_key_write",
+            "have_columnstore","columnstore_version","columnstore_select_handler","columnstore_cache_inserts",
+            "columnstore_use_import_for_batchinsert","columnstore_diskjoin_smallsidelimit","columnstore_ordered_only",
+            "columnstore_um_mem_limit","columnstore_pm_mem_limit","columnstore_num_compress_threads",
+            "spider_use_handler","spider_connect_timeout","spider_connect_retry_count","spider_connect_retry_interval",
+            "spider_connect_error_interval","spider_net_read_timeout","spider_net_write_timeout","spider_quick_mode","spider_split_read",
+            "spider_semi_split_read","spider_semi_split_read_limit","spider_support_xa","spider_internal_xa","spider_sync_autocommit",
+            "spider_sync_trx_isolation","spider_sync_time_zone","spider_remote_trx_isolation","spider_remote_autocommit","spider_general_log",
             "ssh_stats::disks","ips","processlist",
         ];
 
         $raw = Extraction2::display($keys, [$id_mysql_server]);
         Debug::debug($raw);
-        debug($raw);
+        //debug($raw);
 
         // On prend la première ligne
         $row = reset($raw);
@@ -288,6 +304,16 @@ class MysqlServer extends Controller
         $g = function($k) use ($row) { return $row[$k] ?? null; };
         $metric = function($k) use ($row) {
             return isset($row[$k]['count']) ? $row[$k]['count'] : null;
+        };
+        $value = function($k) use ($row) {
+            if (!array_key_exists($k, $row)) {
+                return null;
+            }
+            $v = $row[$k];
+            if (is_array($v) && array_key_exists('count', $v)) {
+                return $v['count'];
+            }
+            return $v;
         };
 
         // Dérivés
@@ -302,6 +328,7 @@ class MysqlServer extends Controller
         $bp_data  = $metric('buffer_pool_bytes_data');
         $bp_total = $metric('buffer_pool_pages_total');
         $bp_free  = $metric('buffer_pool_pages_free');
+        $bp_dirty = $metric('buffer_pool_pages_dirty');
 
         if ($bp_size > 0 && $bp_data >= 0) {
             $bp_used_pct = round(100 * $bp_data / $bp_size, 1);
@@ -316,6 +343,99 @@ class MysqlServer extends Controller
         $reads = $metric('buffer_pool_reads');
         if ($req > 0) {
             $hit = round(100 * (1 - $reads / $req), 2);
+        }
+
+        $bp_free_pct = null;
+        if ($bp_total > 0 && is_numeric($bp_free)) {
+            $bp_free_pct = round(100 * ((float)$bp_free / (float)$bp_total), 2);
+        }
+
+        $bp_dirty_pct = null;
+        if ($bp_total > 0 && is_numeric($bp_dirty)) {
+            $bp_dirty_pct = round(100 * ((float)$bp_dirty / (float)$bp_total), 2);
+        }
+
+        $bp_miss_pct = null;
+        if ($req > 0 && is_numeric($reads)) {
+            $bp_miss_pct = round(100 * ((float)$reads / (float)$req), 4);
+        }
+
+        $ariaBlocksUsed = $metric('aria_pagecache_blocks_used');
+        $ariaBlocksUnused = $metric('aria_pagecache_blocks_unused');
+        $ariaBlocksNotFlushed = $metric('aria_pagecache_blocks_not_flushed');
+        $ariaTotalBlocks = (is_numeric($ariaBlocksUsed) ? (float)$ariaBlocksUsed : 0)
+            + (is_numeric($ariaBlocksUnused) ? (float)$ariaBlocksUnused : 0);
+
+        $ariaCacheUsedPct = null;
+        if ($ariaTotalBlocks > 0) {
+            $ariaCacheUsedPct = round(100 * ((float)$ariaBlocksUsed / $ariaTotalBlocks), 2);
+        }
+
+        $ariaDirtyPct = null;
+        if (is_numeric($ariaBlocksUsed) && (float)$ariaBlocksUsed > 0 && is_numeric($ariaBlocksNotFlushed)) {
+            $ariaDirtyPct = round(100 * ((float)$ariaBlocksNotFlushed / (float)$ariaBlocksUsed), 2);
+        }
+
+        $ariaHit = null;
+        $ariaReq = $metric('aria_pagecache_read_requests');
+        $ariaReads = $metric('aria_pagecache_reads');
+        if (is_numeric($ariaReq) && (float)$ariaReq > 0 && is_numeric($ariaReads)) {
+            $ariaHit = round(100 * (1 - ((float)$ariaReads / (float)$ariaReq)), 2);
+        }
+
+        $rocksdbEnabled = in_array(strtoupper((string)$g('have_rocksdb')), ['YES', 'ON', '1'], true)
+            || strtolower((string)$g('default_storage_engine')) === 'rocksdb'
+            || is_numeric($g('rocksdb_block_cache_size'));
+
+        $myisamEnabled = in_array(strtoupper((string)$g('have_myisam')), ['YES', 'ON', '1'], true)
+            || strtolower((string)$g('default_storage_engine')) === 'myisam'
+            || is_numeric($g('key_buffer_size'));
+
+        $keyBlocksUsed = $metric('key_blocks_used');
+        $keyBlocksUnused = $metric('key_blocks_unused');
+        $keyTotalBlocks = (is_numeric($keyBlocksUsed) ? (float)$keyBlocksUsed : 0)
+            + (is_numeric($keyBlocksUnused) ? (float)$keyBlocksUnused : 0);
+
+        $keyCacheUsedPct = null;
+        if ($keyTotalBlocks > 0) {
+            $keyCacheUsedPct = round(100 * ((float)$keyBlocksUsed / $keyTotalBlocks), 2);
+        }
+
+        $keyHit = null;
+        $keyReq = $metric('key_read_requests');
+        $keyReads = $metric('key_reads');
+        if (is_numeric($keyReq) && (float)$keyReq > 0 && is_numeric($keyReads)) {
+            $keyHit = round(100 * (1 - ((float)$keyReads / (float)$keyReq)), 2);
+        }
+
+        $keyMiss = null;
+        if (is_numeric($keyReq) && (float)$keyReq > 0 && is_numeric($keyReads)) {
+            $keyMiss = round(100 * ((float)$keyReads / (float)$keyReq), 4);
+        }
+
+        $columnstoreEnabled = in_array(strtoupper((string)$g('have_columnstore')), ['YES', 'ON', '1'], true)
+            || strtolower((string)$g('default_storage_engine')) === 'columnstore'
+            || !empty($g('columnstore_select_handler'))
+            || !empty($g('columnstore_version'));
+
+        $spiderEnabled = in_array(strtoupper((string)$value('spider_use_handler')), ['ON', 'YES', '1'], true)
+            || strtolower((string)$g('default_storage_engine')) === 'spider';
+
+        if (!$spiderEnabled) {
+            foreach ($row as $k => $v) {
+                if (strpos((string)$k, 'spider_') !== 0) {
+                    continue;
+                }
+
+                if (is_array($v) && array_key_exists('count', $v)) {
+                    $v = $v['count'];
+                }
+
+                if ($v !== null && $v !== '') {
+                    $spiderEnabled = true;
+                    break;
+                }
+            }
         }
 
         $data = [];
@@ -338,16 +458,122 @@ class MysqlServer extends Controller
         ];
 
         $data['innodb'] = [
-            'Buffer pool size' => self::formatBytesToMbGbTb($bp_size),
-            'Buffer data bytes' => $bp_data,
-            'Buffer Used %' => $bp_used_pct !== null ? $bp_used_pct.'%' : 'n/a',
-            'BP Hit Ratio %' => $hit !== null ? $hit.'%' : 'n/a',
-            'FLUSH_LOG_AT_TRX_COMMIT' => $g('innodb_flush_log_at_trx_commit'),
+            '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Buffer pool size' => self::formatBytesToMbGbTb($bp_size),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool used' => self::formatPercentUsage($bp_used_pct),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool free' => self::formatPercentUsage($bp_free_pct),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($bp_dirty_pct),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > BP hit ratio' => self::formatQualityPercent($hit),
+            'Read miss ratio' => $bp_miss_pct !== null ? $bp_miss_pct.'%' : 'n/a',
+            'Log file size' => self::formatBytesToMbGbTb($g('innodb_log_file_size')),
+            'Log buffer size' => self::formatBytesToMbGbTb($g('innodb_log_buffer_size')),
+            'Buffer pool instances' => $g('innodb_buffer_pool_instances') ?? 'n/a',
+            'Page size' => is_numeric($g('innodb_page_size')) ? number_format((float)$g('innodb_page_size'), 0).' B' : 'n/a',
+            'Read IO threads' => $g('innodb_read_io_threads') ?? 'n/a',
+            'Write IO threads' => $g('innodb_write_io_threads') ?? 'n/a',
+            'FLUSH_LOG_AT_TRX_COMMIT' => $g('innodb_flush_log_at_trx_commit') ?? 'n/a',
         ];
+
+        $data['aria'] = [
+            '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Aria pagecache' => self::formatBytesToMbGbTb($g('aria_pagecache_buffer_size')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Cache used' => self::formatPercentUsage($ariaCacheUsedPct),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($ariaDirtyPct),
+            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Hit ratio' => self::formatPercentUsage($ariaHit),
+            'Log file size' => self::formatBytesToMbGbTb($g('aria_log_file_size')),
+            'Block size' => is_numeric($g('aria_block_size')) ? number_format((float)$g('aria_block_size'), 0).' B' : 'n/a',
+            'Temp tables engine' => $g('aria_used_for_temp_tables') ?? 'n/a',
+            'Encrypt tables' => $g('aria_encrypt_tables') ?? 'n/a',
+            'Recover mode' => $g('aria_recover') ?? 'n/a',
+            'Page checksum' => $g('aria_page_checksum') ?? 'n/a',
+        ];
+
+        if ($rocksdbEnabled) {
+            $walLimitBytes = is_numeric($g('rocksdb_wal_size_limit_mb')) ? ((float)$g('rocksdb_wal_size_limit_mb') * 1024 * 1024) : null;
+
+            $data['rocksdb'] = [
+                '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Block cache' => self::formatBytesToMbGbTb($g('rocksdb_block_cache_size')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Block cache / RAM' => self::formatUsageFromBytes('', 'rocksdb', $g('rocksdb_block_cache_size'), $g('memory_total')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Write buffer' => self::formatBytesToMbGbTb($g('rocksdb_db_write_buffer_size')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Write buffer / RAM' => self::formatUsageFromBytes('', 'rocksdb', $g('rocksdb_db_write_buffer_size'), $g('memory_total')),
+                'Max total WAL size' => self::formatBytesToMbGbTb($g('rocksdb_max_total_wal_size')),
+                'WAL size limit' => self::formatBytesToMbGbTb($walLimitBytes),
+                'flush_log_at_trx_commit' => $g('rocksdb_flush_log_at_trx_commit') ?? 'n/a',
+                'Write disable WAL' => $g('rocksdb_write_disable_wal') ?? 'n/a',
+                'Info log level' => $g('rocksdb_info_log_level') ?? 'n/a',
+                'Enable TTL' => $g('rocksdb_enable_ttl') ?? 'n/a',
+                'Cache index/filter blocks' => $g('rocksdb_cache_index_and_filter_blocks') ?? 'n/a',
+                'Direct reads' => $g('rocksdb_use_direct_reads') ?? 'n/a',
+                'Direct IO flush/compaction' => $g('rocksdb_use_direct_io_for_flush_and_compaction') ?? 'n/a',
+            ];
+        }
+
+        if ($myisamEnabled) {
+            $data['myisam'] = [
+                '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Key buffer size' => self::formatBytesToMbGbTb($g('key_buffer_size')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Key cache used' => self::formatPercentUsage($keyCacheUsedPct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Key hit ratio' => self::formatQualityPercent($keyHit),
+                'Key miss ratio' => $keyMiss !== null ? $keyMiss.'%' : 'n/a',
+                'Read requests' => is_numeric($g('key_read_requests')) ? number_format((float)$g('key_read_requests'), 0) : 'n/a',
+                'Reads from disk' => is_numeric($g('key_reads')) ? number_format((float)$g('key_reads'), 0) : 'n/a',
+                'Write requests' => is_numeric($g('key_write_requests')) ? number_format((float)$g('key_write_requests'), 0) : 'n/a',
+                'Writes' => is_numeric($g('key_writes')) ? number_format((float)$g('key_writes'), 0) : 'n/a',
+                'Sort buffer size' => self::formatBytesToMbGbTb($g('myisam_sort_buffer_size')),
+                'Recover options' => $g('myisam_recover_options') ?? 'n/a',
+                'Delay key write' => $g('delay_key_write') ?? 'n/a',
+            ];
+        }
+
+        if ($columnstoreEnabled) {
+            $data['columnstore'] = [
+                'Version' => $g('columnstore_version') ?? 'n/a',
+                'Select handler' => $g('columnstore_select_handler') ?? 'n/a',
+                'Cache inserts' => $g('columnstore_cache_inserts') ?? 'n/a',
+                'Use import for batch insert' => $g('columnstore_use_import_for_batchinsert') ?? 'n/a',
+                'Ordered only' => $g('columnstore_ordered_only') ?? 'n/a',
+                'Diskjoin small side limit' => self::formatBytesToMbGbTb($g('columnstore_diskjoin_smallsidelimit')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > UM mem / RAM' => self::formatUsageFromBytes('', 'columnstore', $g('columnstore_um_mem_limit'), $g('memory_total')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > PM mem / RAM' => self::formatUsageFromBytes('', 'columnstore', $g('columnstore_pm_mem_limit'), $g('memory_total')),
+                'Compression threads' => $g('columnstore_num_compress_threads') ?? 'n/a',
+            ];
+        }
+
+        if ($spiderEnabled) {
+            $data['spider'] = [
+                'Use handler' => $value('spider_use_handler') ?? 'n/a',
+                'Connect timeout' => is_numeric($value('spider_connect_timeout')) ? $value('spider_connect_timeout').'s' : ($value('spider_connect_timeout') ?? 'n/a'),
+                'Retry count' => $value('spider_connect_retry_count') ?? 'n/a',
+                'Retry interval' => is_numeric($value('spider_connect_retry_interval')) ? $value('spider_connect_retry_interval').'s' : ($value('spider_connect_retry_interval') ?? 'n/a'),
+                'Error interval' => is_numeric($value('spider_connect_error_interval')) ? $value('spider_connect_error_interval').'s' : ($value('spider_connect_error_interval') ?? 'n/a'),
+                'Net read timeout' => is_numeric($value('spider_net_read_timeout')) ? $value('spider_net_read_timeout').'s' : ($value('spider_net_read_timeout') ?? 'n/a'),
+                'Net write timeout' => is_numeric($value('spider_net_write_timeout')) ? $value('spider_net_write_timeout').'s' : ($value('spider_net_write_timeout') ?? 'n/a'),
+                'Quick mode' => $value('spider_quick_mode') ?? 'n/a',
+                'Split read' => $value('spider_split_read') ?? 'n/a',
+                'Semi split read' => $value('spider_semi_split_read') ?? 'n/a',
+                'Semi split read limit' => $value('spider_semi_split_read_limit') ?? 'n/a',
+                'Support XA' => $value('spider_support_xa') ?? 'n/a',
+                'Internal XA' => $value('spider_internal_xa') ?? 'n/a',
+                'Sync autocommit' => $value('spider_sync_autocommit') ?? 'n/a',
+                'Sync trx isolation' => $value('spider_sync_trx_isolation') ?? 'n/a',
+                'Sync time zone' => $value('spider_sync_time_zone') ?? 'n/a',
+                'Remote trx isolation' => $value('spider_remote_trx_isolation') ?? 'n/a',
+                'Remote autocommit' => $value('spider_remote_autocommit') ?? 'n/a',
+                'General log' => $value('spider_general_log') ?? 'n/a',
+            ];
+        }
 
         $data['binlog'] = [
             'log_bin' => $g('log_bin'),
+            'sync_binlog' => $g('sync_binlog') ?? 'n/a',
+            'Last binlog file' => $g('binlog_file_last') ?? 'n/a',
+            'Binlog basename' => $g('log_bin_basename') ?? 'n/a',
+            'Last position (GTID current)' => $g('gtid_current_pos') ?? 'n/a',
+            'Last position (GTID binlog)' => $g('gtid_binlog_pos') ?? 'n/a',
             'binlog_format' => $g('binlog_format'),
+            'binlog_row_image' => $g('binlog_row_image') ?? 'n/a',
+            'binlog_checksum' => $g('binlog_checksum') ?? 'n/a',
+            'max_binlog_size' => self::formatBytesToMbGbTb($g('max_binlog_size')),
+            'binlog_cache_size' => self::formatBytesToMbGbTb($g('binlog_cache_size')),
+            'binlog_stmt_cache_size' => self::formatBytesToMbGbTb($g('binlog_stmt_cache_size')),
+            'binlog_space_limit' => self::formatBytesToMbGbTb($g('binlog_space_limit')),
             '#files' => $g('binlog_nb_files'),
             'Total size' => self::formatBytesToMbGb($g('binlog_total_size')),
             'expire (sec)' => $g('binlog_expire_logs_seconds'),
@@ -367,6 +593,8 @@ class MysqlServer extends Controller
         ];
         $data['os'] = [
             '<img height="16px" width="16px" src="'.IMG.'icon/hostname.svg" > Hostname' => $g('hostname'),
+            '<img height="16px" width="16px" src="'.IMG.'icon/time.svg" > Uptime' => $uptime_h,
+            '<img height="16px" width="16px" src="'.IMG.'icon/network.svg" > IPs' => self::formatJsonValue($g('ips')),
             '<img height="16px" width="16px" src="'.IMG.'icon/linux-svgrepo-com.svg" > OS' => self::formatOsWithIcon($g('os'), $g('distributor')),
             '<img height="16px" width="16px" src="'.IMG.'icon/kernel.svg" > Kernel' => $g('kernel'),
             '<img height="16px" width="16px" src="'.IMG.'icon/64bit.svg" > Arch' => self::formatArchWithBitLabel($g('arch')),
@@ -482,6 +710,20 @@ class MysqlServer extends Controller
         return number_format($bytes, 0).' B';
     }
 
+    private static function formatJsonValue($value): string
+    {
+        if ($value === null || $value === '') {
+            return 'n/a';
+        }
+
+        if (is_array($value) || is_object($value)) {
+            $json = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return $json !== false ? $json : 'n/a';
+        }
+
+        return (string) $value;
+    }
+
     private static function formatRamUsage($usedBytes, $totalBytes): array
     {
         return self::formatUsageFromBytes(self::tr('RAM usage'), 'ram', $usedBytes, $totalBytes);
@@ -571,6 +813,59 @@ class MysqlServer extends Controller
             'text' => number_format($percent, 0).'% of total of '.(int)$total,
             'color' => $usageColor['color'],
             'level' => $usageColor['level'],
+        ];
+    }
+
+    private static function formatPercentUsage($percent): array
+    {
+        $value = is_numeric($percent) ? (float)$percent : 0;
+        $value = max(0, min(100, $value));
+        $usageColor = self::getUsageColorByPercent($value);
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => 'aria',
+            'percent' => $value,
+            'text' => (is_numeric($percent) ? number_format($value, 2).'%' : 'n/a'),
+            'color' => $usageColor['color'],
+            'level' => $usageColor['level'],
+        ];
+    }
+
+    private static function formatQualityPercent($percent): array
+    {
+        $value = is_numeric($percent) ? (float)$percent : 0;
+        $value = max(0, min(100, $value));
+
+        if (!is_numeric($percent)) {
+            return [
+                'type' => 'usage_meter',
+                'metric' => 'quality',
+                'percent' => 0,
+                'text' => 'n/a',
+                'color' => '#5bc0de',
+                'level' => 'unknown',
+            ];
+        }
+
+        if ($value >= 99) {
+            $color = '#5cb85c';
+            $level = 'excellent';
+        } elseif ($value >= 95) {
+            $color = '#f0ad4e';
+            $level = 'warning';
+        } else {
+            $color = '#d9534f';
+            $level = 'critical';
+        }
+
+        return [
+            'type' => 'usage_meter',
+            'metric' => 'quality',
+            'percent' => $value,
+            'text' => number_format($value, 2).'%',
+            'color' => $color,
+            'level' => $level,
         ];
     }
 

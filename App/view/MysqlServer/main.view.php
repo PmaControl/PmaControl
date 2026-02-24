@@ -104,12 +104,29 @@ $id = (int)$data['id_mysql_server'];
       "Résumé"        => $data['summary'],
       "OS / Système"  => $data['os'],
       "InnoDB"        => $data['innodb'],
+      "Aria"          => $data['aria'] ?? [],
       "Connexions"    => $data['connections'],
       "Binlog"        => $data['binlog'],
       "Réplication / WSREP" => $data['wsrep'],
       "SSL"           => $data['ssl'],
       
   ];
+
+  if (!empty($data['rocksdb']) && is_array($data['rocksdb'])) {
+      $groups['RocksDB'] = $data['rocksdb'];
+  }
+
+  if (!empty($data['myisam']) && is_array($data['myisam'])) {
+      $groups['MyISAM'] = $data['myisam'];
+  }
+
+  if (!empty($data['columnstore']) && is_array($data['columnstore'])) {
+      $groups['ColumnStore'] = $data['columnstore'];
+  }
+
+  if (!empty($data['spider']) && is_array($data['spider'])) {
+      $groups['Spider'] = $data['spider'];
+  }
   ?>
 
 <div style="padding-right:20px">
