@@ -115,12 +115,15 @@ class Integrate extends Controller
             $is_float = self::isFloat($value);
 
             if ($is_float) {
+                //throw new Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
                 $val = 2;
             }
 
-            //case of negative int (not allowed)
+            // Some engines (ex: SingleStore) expose valid numeric settings
+            // with negative sentinel values (ex: -1 or -1.000000 = unlimited/auto).
+            // We store these values as DOUBLE to avoid unsigned INT constraints.
             if ($value < 0) {
-                throw new Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
+                $val = 2;
             }
         }
 
