@@ -155,6 +155,15 @@ $id = (int)$data['id_mysql_server'];
                                     <div class="usage-meter-progress-value" style="width: <?= $percent ?>%; background: <?= htmlspecialchars($meterColor) ?>;"></div>
                                 </div>
                             </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'copy_clipboard'): ?>
+                            <span
+                                data-clipboard-text="<?= htmlspecialchars((string)($v['text'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode((string)($v['text'] ?? '')), ENT_QUOTES, 'UTF-8') ?>); return false;"
+                                class="copy-button clipboard badge badge-info"
+                                style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7; cursor:pointer;"
+                                title="Copy">
+                                <?= $v['icon'] ?? '<i class="fa fa-files-o" aria-hidden="true"></i>' ?>
+                            </span>
                         <?php elseif ($k === 'Cmd' && is_string($v)): ?>
                             <div class="cmd-actions">
 

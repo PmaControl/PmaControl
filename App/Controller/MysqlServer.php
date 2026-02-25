@@ -440,9 +440,16 @@ class MysqlServer extends Controller
 
         $data = [];
         $data['id_mysql_server'] = $id_mysql_server;
+        $credentials = self::getMysqlServerCredentials($id_mysql_server);
 
         $data['summary'] = [
             'Server' => Display::srv($id_mysql_server),
+            'User' => $credentials['login'] ?? 'n/a',
+            'Password' => [
+                'type' => 'copy_clipboard',
+                'text' => $credentials['password'] ?? '',
+                'icon' => '<i class="fa fa-files-o" aria-hidden="true"></i>',
+            ],
             'Version' => $g('version'),
             'Commentaire' => $g('version_comment'),
             'Uptime' => $uptime_h,
@@ -1138,20 +1145,37 @@ class MysqlServer extends Controller
     {
         $id_mysql_server= $param[0];
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $credentials = self::getMysqlServerCredentials((int)$id_mysql_server);
 
-        $data = [];
+        if (empty($credentials['ip']) || empty($credentials['port']) || empty($credentials['login'])) {
+            return '';
+        }
+
+        return "mysql -A -P".$credentials['port']." -h ".$credentials['ip']." -u ".$credentials['login']." -p'".$credentials['password']."'";
+    }
+
+    private static function getMysqlServerCredentials(int $id_mysql_server): array
+    {
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $data = [
+            'ip' => null,
+            'port' => null,
+            'login' => null,
+            'password' => null,
+        ];
 
         $sql = "SELECT * FROM mysql_server where id=".(int)$id_mysql_server;
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
         {
-            $password = Crypt::decrypt($arr['passwd']);
-
-            $data['cmd'] = "mysql -A -P".$arr['port']." -h ".$arr['ip']." -u ".$arr['login']." -p'".$password."'";
+            $data['ip'] = $arr['ip'] ?? null;
+            $data['port'] = $arr['port'] ?? null;
+            $data['login'] = $arr['login'] ?? null;
+            $data['password'] = Crypt::decrypt($arr['passwd']);
         }
 
-        return $data['cmd'];
+        return $data;
     }
 
 }
