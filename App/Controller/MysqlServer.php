@@ -49,6 +49,32 @@ RENAME TABLE mysql_server2 TO mysql_server;
 
 class MysqlServer extends Controller
 {
+    private $table_exists_cache = array();
+
+    private function informationSchemaTableExists($db, $schema, $table)
+    {
+        $cache_key = $db->host.":".$db->port.":".$schema.".".$table;
+        if (isset($this->table_exists_cache[$cache_key])) {
+            return $this->table_exists_cache[$cache_key];
+        }
+
+        $schema = $db->sql_real_escape_string($schema);
+        $table  = $db->sql_real_escape_string($table);
+
+        $sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = '".$schema."' AND table_name = '".$table."' LIMIT 1";
+        $res = $db->sql_query_silent($sql);
+        if (!$res) {
+            $this->table_exists_cache[$cache_key] = false;
+            return false;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_NUM);
+        $exists = !empty($row);
+
+        $this->table_exists_cache[$cache_key] = $exists;
+        return $exists;
+    }
+
     public function menu($param)
     {
         $this->di['js']->code_javascript('
@@ -99,40 +125,74 @@ class MysqlServer extends Controller
         {
             $db = Mysql::getDbLink(  $id_mysql_server);
 
-            if ($db->checkVersion(array('MySQL' => '8.0')))
+            $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx');
+            $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads');
+            $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist');
+
+            if ($db->checkVersion(array('MySQL' => '8.0')) && $has_perf_threads)
             {
-                $sql = "SELECT /* pmacontrol-processlist */
-                    $id_mysql_server                    AS id_mysql_server,
-                    processlist_id                      AS id,
-                    IFNULL(thread_id, '0')              AS mysql_thread_id,
-                    IFNULL(processlist_user, '')        AS user,
-                    IFNULL(processlist_host, '')        AS host,
-                    IFNULL(processlist_db, '')          AS db,
-                    IFNULL(processlist_command, '')     As command,
-                    IFNULL(processlist_time, '0')       AS time,
-                    IFNULL(processlist_info, '')        AS query,
-                    IFNULL(processlist_state, '')       AS state,
-                    IFNULL(trx_query, '')               AS trx_query,
-                    IFNULL(trx_state, '')               AS trx_state,
-                    IFNULL(trx_operation_state, '')     AS trx_operation_state,
-                    IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
-                    IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
-                    IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
-                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
-                FROM
-                    performance_schema.threads t
-                    LEFT JOIN information_schema.innodb_trx tx ON trx_mysql_thread_id = t.processlist_id
-                WHERE
-                    processlist_id IS NOT NULL AND
-                    processlist_time IS NOT NULL AND
-                    processlist_command != 'Daemon'
-                    AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%') 
-                    AND (processlist_info IS NOT NULL OR trx_query IS NOT NULL) AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
-                    ORDER BY processlist_time DESC;";
+                if ($has_innodb_trx) {
+                    $sql = "SELECT /* pmacontrol-processlist */
+                        $id_mysql_server                    AS id_mysql_server,
+                        processlist_id                      AS id,
+                        IFNULL(thread_id, '0')              AS mysql_thread_id,
+                        IFNULL(processlist_user, '')        AS user,
+                        IFNULL(processlist_host, '')        AS host,
+                        IFNULL(processlist_db, '')          AS db,
+                        IFNULL(processlist_command, '')     As command,
+                        IFNULL(processlist_time, '0')       AS time,
+                        IFNULL(processlist_info, '')        AS query,
+                        IFNULL(processlist_state, '')       AS state,
+                        IFNULL(trx_query, '')               AS trx_query,
+                        IFNULL(trx_state, '')               AS trx_state,
+                        IFNULL(trx_operation_state, '')     AS trx_operation_state,
+                        IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
+                        IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
+                        IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
+                        IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
+                    FROM
+                        performance_schema.threads t
+                        LEFT JOIN information_schema.innodb_trx tx ON trx_mysql_thread_id = t.processlist_id
+                    WHERE
+                        processlist_id IS NOT NULL AND
+                        processlist_time IS NOT NULL AND
+                        processlist_command != 'Daemon'
+                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%') 
+                        AND (processlist_info IS NOT NULL OR trx_query IS NOT NULL) AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
+                        ORDER BY processlist_time DESC;";
+                } else {
+                    $sql = "SELECT /* pmacontrol-processlist */
+                        $id_mysql_server                    AS id_mysql_server,
+                        processlist_id                      AS id,
+                        IFNULL(thread_id, '0')              AS mysql_thread_id,
+                        IFNULL(processlist_user, '')        AS user,
+                        IFNULL(processlist_host, '')        AS host,
+                        IFNULL(processlist_db, '')          AS db,
+                        IFNULL(processlist_command, '')     As command,
+                        IFNULL(processlist_time, '0')       AS time,
+                        IFNULL(processlist_info, '')        AS query,
+                        IFNULL(processlist_state, '')       AS state,
+                        ''                                  AS trx_query,
+                        'N/A'                               AS trx_state,
+                        'N/A'                               AS trx_operation_state,
+                        'N/A'                               AS trx_rows_locked,
+                        'N/A'                               AS trx_rows_modified,
+                        'N/A'                               AS trx_concurrency_tickets,
+                        'N/A'                               AS trx_time
+                    FROM
+                        performance_schema.threads t
+                    WHERE
+                        processlist_id IS NOT NULL AND
+                        processlist_time IS NOT NULL AND
+                        processlist_command != 'Daemon'
+                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%') 
+                        AND processlist_info IS NOT NULL AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
+                        ORDER BY processlist_time DESC;";
+                }
 
 
             }
-            else
+            else if ($has_info_processlist)
             {
                 /*
                 $sql ="SELECT 
@@ -156,33 +216,98 @@ class MysqlServer extends Controller
                     p.TIME DESC;";
                 */
 
-                $sql ="SELECT /* pmacontrol-processlist */
-                    $id_mysql_server AS id_mysql_server,
-                    p.ID AS id,
-                    t.trx_mysql_thread_id as mysql_thread_id,
-                    p.USER AS user,
-                    p.HOST AS host,
-                    p.DB AS database_name,
-                    p.COMMAND AS command,
-                    p.TIME AS time,
-                    p.STATE AS state,
-                    p.INFO AS query,
-                    IFNULL(trx_query, '')               AS trx_query,
-                    IFNULL(trx_state, '')               AS trx_state,
-                    IFNULL(trx_operation_state, '')     AS trx_operation_state,
-                    IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
-                    IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
-                    IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
-                    IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
-                FROM information_schema.processlist p
-                LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
-                WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
-                ORDER BY 
-                    p.TIME DESC;";
+                if ($has_innodb_trx) {
+                    $sql ="SELECT /* pmacontrol-processlist */
+                        $id_mysql_server AS id_mysql_server,
+                        p.ID AS id,
+                        t.trx_mysql_thread_id as mysql_thread_id,
+                        p.USER AS user,
+                        p.HOST AS host,
+                        p.DB AS database_name,
+                        p.COMMAND AS command,
+                        p.TIME AS time,
+                        p.STATE AS state,
+                        p.INFO AS query,
+                        IFNULL(trx_query, '')               AS trx_query,
+                        IFNULL(trx_state, '')               AS trx_state,
+                        IFNULL(trx_operation_state, '')     AS trx_operation_state,
+                        IFNULL(trx_rows_locked, '0')        AS trx_rows_locked,
+                        IFNULL(trx_rows_modified, '0')      AS trx_rows_modified,
+                        IFNULL(trx_concurrency_tickets, '') AS trx_concurrency_tickets,
+                        IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
+                    FROM information_schema.processlist p
+                    LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
+                    WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
+                    ORDER BY 
+                        p.TIME DESC;";
+                } else {
+                    $sql ="SELECT /* pmacontrol-processlist */
+                        $id_mysql_server AS id_mysql_server,
+                        p.ID AS id,
+                        p.ID as mysql_thread_id,
+                        p.USER AS user,
+                        p.HOST AS host,
+                        p.DB AS database_name,
+                        p.COMMAND AS command,
+                        p.TIME AS time,
+                        p.STATE AS state,
+                        p.INFO AS query,
+                        '' AS trx_query,
+                        'N/A' AS trx_state,
+                        'N/A' AS trx_operation_state,
+                        'N/A' AS trx_rows_locked,
+                        'N/A' AS trx_rows_modified,
+                        'N/A' AS trx_concurrency_tickets,
+                        'N/A' AS trx_time
+                    FROM information_schema.processlist p
+                    WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
+                    ORDER BY 
+                        p.TIME DESC;";
+                }
+            }
+            else
+            {
+                $sql = "SHOW FULL PROCESSLIST";
             }
 
             $res = $db->sql_query($sql);
-            
+            if (!$res) {
+                continue;
+            }
+
+            if ($sql === "SHOW FULL PROCESSLIST") {
+                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $command = $arr['Command'] ?? $arr['COMMAND'] ?? '';
+                    $info = $arr['Info'] ?? $arr['INFO'] ?? '';
+
+                    if ($command === 'Sleep' || str_starts_with($command, 'Binlog Dump')) {
+                        continue;
+                    }
+
+                    $data['processlist'][] = array(
+                        'id_mysql_server'       => $id_mysql_server,
+                        'id'                    => $arr['Id'] ?? $arr['ID'] ?? '',
+                        'mysql_thread_id'       => $arr['Id'] ?? $arr['ID'] ?? '',
+                        'user'                  => $arr['User'] ?? $arr['USER'] ?? '',
+                        'host'                  => $arr['Host'] ?? $arr['HOST'] ?? '',
+                        'database_name'         => $arr['db'] ?? $arr['DB'] ?? '',
+                        'command'               => $command,
+                        'time'                  => $arr['Time'] ?? $arr['TIME'] ?? 0,
+                        'state'                 => $arr['State'] ?? $arr['STATE'] ?? '',
+                        'query'                 => $info,
+                        'trx_query'             => '',
+                        'trx_state'             => 'N/A',
+                        'trx_operation_state'   => 'N/A',
+                        'trx_rows_locked'       => 'N/A',
+                        'trx_rows_modified'     => 'N/A',
+                        'trx_concurrency_tickets' => 'N/A',
+                        'trx_time'              => 'N/A',
+                        'class'                 => self::getProcesslistClass($arr['Time'] ?? $arr['TIME'] ?? 0),
+                    );
+                }
+                continue;
+            }
+
             while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
             {
                 if (empty($arr['query']) || str_contains($arr['query'], '/* pmacontrol-processlist */')) {
@@ -249,6 +374,26 @@ class MysqlServer extends Controller
         $this->set('param', $param);
         $this->set('data', $data);
 
+    }
+
+    private static function getProcesslistClass($time): string
+    {
+        $time = (int) $time;
+
+        if ($time > 600) {
+            return 'danger';
+        }
+        if ($time > 60) {
+            return 'warning';
+        }
+        if ($time > 10) {
+            return 'primary';
+        }
+        if ($time > 1) {
+            return 'info';
+        }
+
+        return '';
     }
 
 

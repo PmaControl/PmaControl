@@ -97,16 +97,17 @@ echo '</tr>';
 $i = 0;
 
 foreach($data['processlist'] as $line){
-    echo '<tr class="pma-'.$line['class'].'">';
-    echo '<td>'.Display::srv($line['id_mysql_server'], false).'</td>';
-    echo '<td>'.$line['id'].'</td>';
-    echo '<td>'.$line['user'].'</td>';
-    echo '<td>'.$line['command'].'</td>';
-    echo '<td>'.$line['state'].'</td>';
-    echo '<td>'.$line['trx_state'].'</td>';
-    echo '<td>'.$line['trx_rows_locked'].'</td>';
-    echo '<td>'.$line['trx_rows_modified'].'</td>';
-    echo '<td>'.$line['time'].'</td>';
+    $rowClass = $line['class'] ?? '';
+    echo '<tr class="pma-'.$rowClass.'">';
+    echo '<td>'.Display::srv($line['id_mysql_server'] ?? '', false).'</td>';
+    echo '<td>'.($line['id'] ?? '').'</td>';
+    echo '<td>'.($line['user'] ?? '').'</td>';
+    echo '<td>'.($line['command'] ?? '').'</td>';
+    echo '<td>'.($line['state'] ?? '').'</td>';
+    echo '<td>'.($line['trx_state'] ?? 'N/A').'</td>';
+    echo '<td>'.($line['trx_rows_locked'] ?? 'N/A').'</td>';
+    echo '<td>'.($line['trx_rows_modified'] ?? 'N/A').'</td>';
+    echo '<td>'.($line['time'] ?? 0).'</td>';
     
     echo '<td>';
     if (! empty($line['query']))

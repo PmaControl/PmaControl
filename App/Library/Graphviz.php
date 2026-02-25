@@ -543,7 +543,7 @@ class Graphviz
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">'
         .'<font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
-        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
+        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" WIDTH="16" HEIGHT="16" SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
 
         $nat = '';
@@ -1182,7 +1182,7 @@ class Graphviz
             $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.'#000000'.'">
             <font color="'.'#FFFFFF'.'"><b>'.$galera['name'].'</b></font></td></tr>';
 
-            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server."galera.svg".'" /></td>
+            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server."galera.svg".'" /></td>
             <td bgcolor="lightgrey" width="100" align="left">'.'Nodes available'.' : <b>'.$galera['node_available'].'/'.$galera['members'].'</b> - '.$galera['wsrep_provider_version'].'</td></tr>';
             $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.'Galera Version : '.$galera['galera_version'].' - Worker : '.$galera['wsrep_slave_threads'].'</td></tr>'.PHP_EOL;
 
