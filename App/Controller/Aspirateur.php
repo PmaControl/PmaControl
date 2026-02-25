@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Exception;
 use App\Controller\ProxySQL;
 use App\Controller\MaxScale;
 use App\Library\Available;
@@ -338,7 +339,7 @@ class Aspirateur extends Controller
         $refresh = $param[2] ?? null;
 
         if (!$name_server || !$id_mysql_server) {
-            throw new \Exception(
+            throw new Exception(
                 "Paramètre manquant : name_server et id_mysql_server sont obligatoires",
                 1001
             );
@@ -353,7 +354,7 @@ class Aspirateur extends Controller
         }
 
         if (!is_int((int)$refresh)) {
-            throw new \Exception(
+            throw new Exception(
                 "Paramètre refresh doit être un entier",
                 1002
             );
@@ -394,7 +395,7 @@ class Aspirateur extends Controller
             $error_msg='';
             $mysql_tested = Sgbd::sql($name_server);
         }
-        catch(\Exception $e){
+        catch(Exception $e){
             $error_msg = $e->getMessage();
             Debug::debug($error_msg, "Error_MSG");
             $this->logger->emergency($error_msg." id_mysql_server:$id_mysql_server");
@@ -427,7 +428,7 @@ class Aspirateur extends Controller
                     $sql ="COMMIT;";
                     $mysql_tested->sql_query($sql);
                 }
-                catch(\Exception $e){
+                catch(Exception $e){
                     $error_ori = $e->getMessage();
                     preg_match('/ERROR:(.*)}/', $error_ori, $output_array);
                     if (!empty($output_array[1])) {
@@ -770,7 +771,7 @@ class Aspirateur extends Controller
                 $time_start = microtime(true);
                 $ssh        = Ssh::ssh($id_mysql_server);
             }
-            catch(\Exception $e){
+            catch(Exception $e){
                 $error_msg = $e->getMessage();
                 $this->logger->warning($error_msg." id_ssh_server:$id_mysql_server");
             }
@@ -1476,7 +1477,7 @@ GROUP BY C.ID, C.INFO;";
 
         if (! is_array($data)) {
             trigger_error("PMATRL-347 : data must be an array", E_USER_ERROR);
-            throw new \Exception("data must be an array !");
+            throw new Exception("data must be an array !");
         }
         
         $import = true;
@@ -1524,7 +1525,7 @@ GROUP BY C.ID, C.INFO;";
             }
         } else {
             if (!is_writable(dirname($file_md5))) {
-                Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+                Throw new Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
             } 
             file_put_contents($file_md5, $md5);
             $export = true;
@@ -1644,12 +1645,12 @@ GROUP BY C.ID, C.INFO;";
 
                         //Debug::debug($subValue, "NOT A STRING");
                         trigger_error("PMATRL-478 : Wrong level of DATA (One rank of Array too much) check : $key", E_USER_ERROR);
-                        throw new \Exception("Wrong level of DATA (One rank of Array too much) check : $key");
+                        throw new Exception("Wrong level of DATA (One rank of Array too much) check : $key");
                     }
                 }
             } else {
                 trigger_error("PMATRL-83 : Wrong level of DATA (One rank of Array missing) check : $key", E_USER_ERROR);
-                throw new \Exception("Wrong level of DATA (One rank of Array missing) check : $key");
+                throw new Exception("Wrong level of DATA (One rank of Array missing) check : $key");
             }
         }
         return true; // Tout est vérifié, retourner true
@@ -1765,7 +1766,7 @@ GROUP BY C.ID, C.INFO;";
         //$id_mysql_server = ;
 
         if (empty($id_proxysql_server)) {
-            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+            throw new Exception(__function__.' should have id_proxysql_server in parameter');
         }
 
         Debug::debug($param, "NAME_SERVER");
@@ -1776,7 +1777,7 @@ GROUP BY C.ID, C.INFO;";
             $db = Sgbd::sql("proxysql_".$id_proxysql_server);  // need try catch there
             $db->sql_select_db("main");
         }
-        catch(\Exception $e){
+        catch(Exception $e){
             $error_msg = $e->getMessage();
             $this->logger->warning($error_msg." id_proxysql_server:$id_proxysql_server");
         }
@@ -1847,7 +1848,7 @@ GROUP BY C.ID, C.INFO;";
                     $ret = Mysql::testMySQL(array($ip_proxysql_server,$port,$user, $password  ));
 
                 }
-                catch(\Exception $e) {
+                catch(Exception $e) {
 
 
                     Debug::debug($e->getMessage(), "dfgdgf");
@@ -2511,7 +2512,7 @@ GROUP BY C.ID, C.INFO;";
         //$id_mysql_server = ;
 
         if (empty($id_maxscale_server)) {
-            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+            throw new Exception(__function__.' should have id_proxysql_server in parameter');
         }
 
         Debug::debug($param, "NAME_SERVER");
@@ -2521,7 +2522,7 @@ GROUP BY C.ID, C.INFO;";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) == 0) {
-            throw new \Exception("[PMACONTROL-2001] No MaxScale server found with id '{$id_maxscale_server}'. Check configuration or connection settings.");
+            throw new Exception("[PMACONTROL-2001] No MaxScale server found with id '{$id_maxscale_server}'. Check configuration or connection settings.");
         }
 
         while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
