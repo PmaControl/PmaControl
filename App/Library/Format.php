@@ -53,6 +53,11 @@ class Format
                 $name .= ' MaxScale';
                 break; 
 
+            case 'singlestore':
+                $name .= '<img title="SingleStore" alt="SingleStore" height="16" width="16" src="'.IMG.'/icon/singlestore.svg"/>';
+                $name .= ' SingleStore';
+                break;
+
             default:
                 $name .= '<span class="geek">&#xF137;</span>';
                 $name .= ' MySQL';
@@ -85,6 +90,10 @@ class Format
 
             case 'maxscale':
                 $logo = '<img title="MaxScale" alt="MaxScale" height="16" width="16" src="'.IMG.'/icon/maxscale.png"/>';
+                break;
+
+            case 'singlestore':
+                $logo = '<img title="SingleStore" alt="SingleStore" height="16" width="16" src="'.IMG.'/icon/singlestore.svg"/>';
                 break;
         }
 
@@ -139,6 +148,11 @@ class Format
         $pos = strpos(strtolower($comment), "maxscale");
         if ($pos !== false) {
             $fork = "MaxScale";
+        }
+
+        $pos = strpos(strtolower($comment), "singlestore");
+        if ($pos !== false) {
+            $fork = "SingleStore";
         }
 
         return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);

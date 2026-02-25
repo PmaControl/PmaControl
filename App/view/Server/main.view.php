@@ -93,6 +93,21 @@ function format_time_ps_with_label($ps, $precision = 2)
     return '<span class="label label-' . $label . '">' . $formatted . '</span>';
 }
 
+function shorten_host_for_display($host, $max = 32)
+{
+    $host = (string) $host;
+
+    if ($host === '') {
+        return '';
+    }
+
+    if (mb_strlen($host, 'UTF-8') <= $max) {
+        return $host;
+    }
+
+    return mb_substr($host, 0, $max, 'UTF-8').'…';
+}
+
 
 if (empty($_GET['ajax'])){
     echo '<div class="well">';
@@ -137,8 +152,6 @@ echo __('Tags');
 echo '</th>';
 echo '<th>'.__("IP").':'.__("Port").'</th>';
 echo '<th>'.__("SSL").'</th>';
-echo '<th>'.__("User").'</th>';
-echo '<th>'.__("Password").'</th>';
 //echo '<th>'.__("Hostname").'</th>';
 echo '<th>'.__("Version").'</th>';
 echo '<th>'.__("Latency AVG").'</th>';
@@ -270,7 +283,10 @@ if (!empty($data['servers'])) {
 
         echo $flag."&nbsp;";
         
-        echo $server['ip'].":".$server['port'];
+        $displayHost = shorten_host_for_display($server['ip'], 32);
+        echo '<span title="'.htmlspecialchars($server['ip'].':'.$server['port'], ENT_QUOTES, 'UTF-8').'">'
+            .htmlspecialchars($displayHost, ENT_QUOTES, 'UTF-8').':'.$server['port']
+            .'</span>';
 
         if (!empty($server['is_ssl']) && strtolower($server['is_ssl']) === "1")
         {
@@ -289,12 +305,6 @@ if (!empty($data['servers'])) {
         {
             echo __("Yes")." 🔒";
         }
-        echo '</td>';
-        echo '<td style="'.$style.'">'.$server['login'].'</td>';
-        echo '<td style="'.$style.'" title="">';
-
-        FactoryController::addNode("Server", "passwd", array($server['passwd']));
-
         echo '</td>';
         echo '<td style="'.$style.'">';
 
