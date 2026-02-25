@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\EngineV4;
+
 function human_time_diff_dec($date_start, $precision = 1) {
     $seconds = time() - strtotime($date_start);
     $seconds--;
@@ -42,6 +44,7 @@ function age_color($date) {
     <th><?=__('Date +3') ?></th>
     <th><?=__('Date +4') ?></th>
     <th><?=__('Listener refresh') ?></th>
+    <th style="text-align:right"><?=__('Action') ?></th>
 </tr>
 
 
@@ -49,6 +52,9 @@ function age_color($date) {
     $i=0;
     foreach ($data['rows'] as $row): 
         $i++;
+        $metricFile = (string)($row['file_name'] ?? '');
+        $md5File = EngineV4::PATH_MD5.$metricFile.'::'.$id_mysql_server.'.md5';
+        $hasMd5File = ($metricFile !== '' && is_file($md5File));
 ?>
 <tr>
   <td><?= $i ?></td>
@@ -80,6 +86,16 @@ function age_color($date) {
 
   <td><?= $row['last_date_listener'] ?>
       <small class="text-muted">(<?= $row['diff_last_listener'] ?>)</small>
+  </td>
+
+  <td style="text-align:right; white-space:nowrap;">
+    <?php if ($hasMd5File): ?>
+      <a href="<?= LINK ?>MysqlServer/refreshMetric/<?= (int)$id_mysql_server ?>/<?= urlencode($metricFile) ?>"
+         class="btn btn-default btn-xs"
+         title="Refresh only this metric">
+        🔄
+      </a>
+    <?php endif; ?>
   </td>
 </tr>
 <?php endforeach; ?>

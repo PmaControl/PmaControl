@@ -595,6 +595,11 @@ class MysqlServer extends Controller
                 'text' => $credentials['password'] ?? '',
                 'icon' => '<i class="fa fa-files-o" aria-hidden="true"></i>',
             ],
+            'Debug' => [
+                'type' => 'copy_clipboard',
+                'text' => self::getTryMysqlConnectionDebugCommand((int)$id_mysql_server),
+                'icon' => '<i class="fa fa-files-o" aria-hidden="true"></i>',
+            ],
             'Version' => $g('version'),
             'Commentaire' => $g('version_comment'),
             'Uptime' => $uptime_h,
@@ -1284,6 +1289,36 @@ class MysqlServer extends Controller
         exit;
     }
 
+    public function refreshMetric($param)
+    {
+        if (empty($param[0]) || !ctype_digit((string)$param[0]) || empty($param[1])) {
+            throw new \Exception("Usage: /MysqlServer/refreshMetric/{id_mysql_server}/{ts_file}");
+        }
+
+        $id_mysql_server = (int) $param[0];
+        $ts_file = urldecode((string) $param[1]);
+
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $ts_file)) {
+            throw new \Exception("Invalid metric file name");
+        }
+
+        $file = TMP."md5/".$ts_file."::".$id_mysql_server.".md5";
+        $deleted = 0;
+
+        if (is_file($file) && @unlink($file)) {
+            $deleted = 1;
+        }
+
+        if (defined("IS_CLI") && IS_CLI === true) {
+            echo "Cleared {$deleted} cache file for metric {$ts_file} on server {$id_mysql_server}\n";
+            return;
+        }
+
+        $back = $_SERVER['HTTP_REFERER'] ?? "/serverdashboard/main/{$id_mysql_server}";
+        header("Location: " . $back);
+        exit;
+    }
+
 
 
     public static function getAdminInformation($param)
@@ -1297,6 +1332,34 @@ class MysqlServer extends Controller
         }
 
         return "mysql -A -P".$credentials['port']." -h ".$credentials['ip']." -u ".$credentials['login']." -p'".$credentials['password']."'";
+    }
+
+    public static function getTryMysqlConnectionDebugCommand(int $id_mysql_server): string
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $serverName = '';
+        $refresh = 1;
+
+        $sql = "SELECT name FROM mysql_server WHERE id=".(int)$id_mysql_server." LIMIT 1";
+        $res = $db->sql_query($sql);
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $serverName = (string)($arr['name'] ?? '');
+        }
+
+        $sql2 = "SELECT b.refresh_time
+        FROM worker_queue a
+        INNER JOIN daemon_main b ON b.id = a.id_daemon_main
+        WHERE a.`table`='mysql_server'
+        LIMIT 1";
+        $res2 = $db->sql_query($sql2);
+        while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            if (isset($arr2['refresh_time']) && is_numeric($arr2['refresh_time'])) {
+                $refresh = max(1, (int)$arr2['refresh_time']);
+            }
+        }
+
+        return "pmacontrol Aspirateur tryMysqlConnection ".$serverName." ".$id_mysql_server." ".$refresh." --debug";
     }
 
     private static function getMysqlServerCredentials(int $id_mysql_server): array

@@ -1373,15 +1373,47 @@ GROUP BY C.ID, C.INFO;";
     {
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
         $schemas = array();
-        if ($mysql_tested->testAccess()) {
 
-            //$this->logger->debug("We import schema list from id_mysql_server : ".$id_mysql_server);
-            $sql = "SELECT * FROM information_schema.schemata";
+        // SingleStore / environnements restreints : testAccess() peut retourner false
+        // alors que SHOW DATABASES reste autorisé. On tente donc d'abord schemata,
+        // puis fallback sur SHOW DATABASES.
+        $res = $mysql_tested->sql_query_silent("SELECT * FROM information_schema.schemata");
 
-            $res = $mysql_tested->sql_query($sql);
-
+        if ($res) {
             while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $schemas[] = array_change_key_case($arr);
+                $arr = array_change_key_case($arr);
+                $schemas[] = [
+                    'schema_name'                => $arr['schema_name'] ?? '',
+                    'default_character_set_name' => $arr['default_character_set_name'] ?? '',
+                    'default_collation_name'     => $arr['default_collation_name'] ?? '',
+                    'catalog_name'               => $arr['catalog_name'] ?? '',
+                    'sql_path'                   => $arr['sql_path'] ?? '',
+                    'schema_comment'             => $arr['schema_comment'] ?? '',
+                ];
+            }
+        }
+
+        if (empty($schemas)) {
+            $res = $mysql_tested->sql_query_silent("SHOW DATABASES");
+
+            if ($res) {
+                while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $arr = array_change_key_case($arr);
+                    $schemaName = $arr['database'] ?? reset($arr) ?: '';
+
+                    if ($schemaName === '') {
+                        continue;
+                    }
+
+                    $schemas[] = [
+                        'schema_name'                => $schemaName,
+                        'default_character_set_name' => '',
+                        'default_collation_name'     => '',
+                        'catalog_name'               => 'def',
+                        'sql_path'                   => null,
+                        'schema_comment'             => '',
+                    ];
+                }
             }
         }
         
