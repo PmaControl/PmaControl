@@ -568,7 +568,8 @@ class Aspirateur extends Controller
 
         //SHOW SLAVE HOSTS; => add in glial
         $data = array();
-        $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested));
+        $isSingleStore = !empty($var['variables']['is_single_store']) && (int)$var['variables']['is_single_store'] === 1;
+        $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested, $isSingleStore));
         $this->exportData($id_mysql_server, "mysql_processlist", $data);
 
 
@@ -2193,16 +2194,28 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
-    public function getProcesslist($db_link)
+    public function getProcesslist($db_link, bool $isSingleStore = false)
     {
         $time = 0;
 
         if ($db_link->checkVersion(array('MySQL' => '5.1', 'Percona Server' => '5.1', 'MariaDB' => '5.1'))) {
             $time = intval($time);
 
-            
-
-            if ($db_link->checkVersion(array('MySQL' => '8.0')))
+            if ($isSingleStore)
+            {
+                // SingleStore: pas de information_schema.innodb_trx
+                $sql  = "SELECT p.*,
+                '0'  AS trx_rows_locked,
+                ''   AS trx_state,
+                ''   AS trx_operation_state,
+                '0'  AS trx_rows_modified,
+                ''   AS trx_concurrency_tickets,
+                ''   AS trx_time
+                FROM information_schema.processlist p
+                WHERE p.command NOT IN ('Sleep', 'Binlog Dump')
+                AND p.user NOT IN ('system user', 'event_scheduler') AND TIME > ".$time;
+            }
+            else if ($db_link->checkVersion(array('MySQL' => '8.0')))
             {
                 //$this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
 
@@ -2236,6 +2249,7 @@ GROUP BY C.ID, C.INFO;";
             }
 
             $res  = $db_link->sql_query($sql);
+
             $ret  = array();
             while ($data = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $ret[] = $data;
