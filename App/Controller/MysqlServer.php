@@ -51,6 +51,43 @@ class MysqlServer extends Controller
 {
     private $table_exists_cache = array();
 
+    private static function getProcesslistConnectionMetrics($db): array
+    {
+        $metrics = [
+            'threads_running' => 0,
+            'threads_connected' => 0,
+            'max_used_connections' => 0,
+            'max_connections' => 0,
+        ];
+
+        $sqlStatus = "SHOW GLOBAL STATUS WHERE Variable_name IN ('Threads_running', 'Threads_connected', 'Max_used_connections')";
+        $resStatus = $db->sql_query_silent($sqlStatus);
+        if ($resStatus) {
+            while ($arr = $db->sql_fetch_array($resStatus, MYSQLI_ASSOC)) {
+                $name = strtolower((string)($arr['Variable_name'] ?? ''));
+                $value = (int)($arr['Value'] ?? 0);
+
+                if ($name === 'threads_running') {
+                    $metrics['threads_running'] = $value;
+                } elseif ($name === 'threads_connected') {
+                    $metrics['threads_connected'] = $value;
+                } elseif ($name === 'max_used_connections') {
+                    $metrics['max_used_connections'] = $value;
+                }
+            }
+        }
+
+        $sqlVariables = "SHOW GLOBAL VARIABLES WHERE Variable_name = 'max_connections'";
+        $resVariables = $db->sql_query_silent($sqlVariables);
+        if ($resVariables) {
+            while ($arr = $db->sql_fetch_array($resVariables, MYSQLI_ASSOC)) {
+                $metrics['max_connections'] = (int)($arr['Value'] ?? 0);
+            }
+        }
+
+        return $metrics;
+    }
+
     private function informationSchemaTableExists($db, $schema, $table)
     {
         $cache_key = $db->host.":".$db->port.":".$schema.".".$table;
@@ -120,10 +157,22 @@ class MysqlServer extends Controller
 
         //test if performance_schema activated or not
         $data['processlist'] = array();
+        $connectionSnapshot = [
+            'threads_running' => 0,
+            'threads_connected' => 0,
+            'max_used_connections' => 0,
+            'max_connections' => 0,
+        ];
 
         foreach($id_mysql_servers as $id_mysql_server)
         {
             $db = Mysql::getDbLink(  $id_mysql_server);
+
+            $metrics = self::getProcesslistConnectionMetrics($db);
+            $connectionSnapshot['threads_running'] += (int)$metrics['threads_running'];
+            $connectionSnapshot['threads_connected'] += (int)$metrics['threads_connected'];
+            $connectionSnapshot['max_used_connections'] += (int)$metrics['max_used_connections'];
+            $connectionSnapshot['max_connections'] += (int)$metrics['max_connections'];
 
             $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx');
             $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads');
@@ -335,6 +384,21 @@ class MysqlServer extends Controller
         usort($data['processlist'], function($a, $b) {
             return $b['time'] <=> $a['time'];
         });
+
+        $maxConnections = max(0, (int)$connectionSnapshot['max_connections']);
+        $running = max(0, (int)$connectionSnapshot['threads_running']);
+        $connected = max(0, (int)$connectionSnapshot['threads_connected']);
+        $maxUsed = max(0, (int)$connectionSnapshot['max_used_connections']);
+
+        $data['connections_bar'] = [
+            'threads_running' => $running,
+            'threads_connected' => $connected,
+            'max_used_connections' => $maxUsed,
+            'max_connections' => $maxConnections,
+            'running_percent' => $maxConnections > 0 ? round(($running / $maxConnections) * 100, 2) : 0,
+            'connected_percent' => $maxConnections > 0 ? round(($connected / $maxConnections) * 100, 2) : 0,
+            'max_used_percent' => $maxConnections > 0 ? round(($maxUsed / $maxConnections) * 100, 2) : 0,
+        ];
 
         //debug($data['processlist']);
 
