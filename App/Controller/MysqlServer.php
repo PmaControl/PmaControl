@@ -618,6 +618,13 @@ class MysqlServer extends Controller
         $data['summary'] = [
             'Server' => Display::srv($id_mysql_server),
             'User' => $credentials['login'] ?? 'n/a',
+            'Monitoring' => [
+                'type' => 'action_button',
+                'status' => !empty($credentials['is_monitored']) ? self::tr('Enabled') : self::tr('Disabled'),
+                'url' => LINK.'MysqlServer/toggleMonitored/'.$id_mysql_server,
+                'label' => !empty($credentials['is_monitored']) ? self::tr('Disable monitoring') : self::tr('Enable monitoring'),
+                'class' => !empty($credentials['is_monitored']) ? 'btn btn-xs btn-danger' : 'btn btn-xs btn-success',
+            ],
             'Password' => [
                 'type' => 'copy_clipboard',
                 'text' => $credentials['password'] ?? '',
@@ -1442,6 +1449,25 @@ class MysqlServer extends Controller
         exit;
     }
 
+    public function toggleMonitored($param)
+    {
+        if (empty($param[0]) || !ctype_digit((string)$param[0])) {
+            throw new \Exception("Usage: /MysqlServer/toggleMonitored/{id_mysql_server}");
+        }
+
+        $id_mysql_server = (int)$param[0];
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "UPDATE mysql_server
+            SET is_monitored = CASE WHEN is_monitored = 1 THEN 0 ELSE 1 END
+            WHERE id = ".$id_mysql_server." LIMIT 1";
+        $db->sql_query($sql);
+
+        $back = $_SERVER['HTTP_REFERER'] ?? (LINK."MysqlServer/main/".$id_mysql_server."/pmacontrol");
+        header("Location: " . $back);
+        exit;
+    }
+
 
 
     public static function getAdminInformation($param)
@@ -1494,6 +1520,7 @@ class MysqlServer extends Controller
             'port' => null,
             'login' => null,
             'password' => null,
+            'is_monitored' => null,
         ];
 
         $sql = "SELECT * FROM mysql_server where id=".(int)$id_mysql_server;
@@ -1504,6 +1531,7 @@ class MysqlServer extends Controller
             $data['port'] = $arr['port'] ?? null;
             $data['login'] = $arr['login'] ?? null;
             $data['password'] = Crypt::decrypt($arr['passwd']);
+            $data['is_monitored'] = $arr['is_monitored'] ?? null;
         }
 
         return $data;

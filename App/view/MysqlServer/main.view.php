@@ -169,6 +169,13 @@ $id = (int)$data['id_mysql_server'];
 
                                 <button type="button" class="btn btn-xs btn-success" onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, 'UTF-8') ?>)">Copy</button>
                             </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'action_button'): ?>
+                            <div class="cmd-actions">
+                                <span class="label label-default"><?= htmlspecialchars((string)($v['status'] ?? 'n/a')) ?></span>
+                                <a href="<?= htmlspecialchars((string)($v['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars((string)($v['class'] ?? 'btn btn-xs btn-default'), ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                </a>
+                            </div>
                         <?php else: ?>
                             <?= (string)$v ?>
                         <?php endif; ?>
