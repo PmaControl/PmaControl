@@ -500,6 +500,7 @@ class Aspirateur extends Controller
             Debug::debug($var_temp,"VERSION_PROXYSQL");
             
             $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            $mysql_tested->sql_close();
             return true;
         } 
 
@@ -515,6 +516,7 @@ class Aspirateur extends Controller
             $var_temp['variables']['version_comment'] = "MaxScale";
 
             $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            $mysql_tested->sql_close();
             return true;
         }
 
