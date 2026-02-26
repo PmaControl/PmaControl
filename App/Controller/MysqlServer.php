@@ -586,6 +586,7 @@ class MysqlServer extends Controller
             "wsrep_dirty_reads","wsrep_drupal_282555_workaround","wsrep_mysql_replication_bundle","wsrep_slave_fk_checks",
             "wsrep_slave_uk_checks","wsrep_replicate_myisam","wsrep_patch_version","wsrep_dbug_option",
             "ssl_version","ssl_cipher","ssl_server_not_before","ssl_server_not_after",
+            "Ssl_version","Ssl_cipher","Ssl_server_not_before","Ssl_server_not_after",
             "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
             "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_pages_dirty","buffer_pool_read_requests","buffer_pool_reads",
             "aria_pagecache_buffer_size","aria_log_file_size","aria_block_size","aria_used_for_temp_tables","aria_encrypt_tables","aria_recover","aria_page_checksum",
@@ -760,6 +761,7 @@ class MysqlServer extends Controller
 
         $data = [];
         $data['id_mysql_server'] = $id_mysql_server;
+        $data['mysql_available'] = $serverIsAvailable ? 1 : 0;
         $credentials = self::getMysqlServerCredentials($id_mysql_server);
         $data['is_proxy'] = !empty($credentials['is_proxy']) ? (int)$credentials['is_proxy'] : 0;
 
@@ -1077,12 +1079,37 @@ class MysqlServer extends Controller
                     $nodeMeta[(int)$arrNode['id']] = $arrNode;
                 }
 
+                $hasPrimarySyncedAvailableNode = false;
+
+                foreach ($clusterNodeIds as $clusterNodeIdScan) {
+                    $nodeScan = $nodeStateRows[$clusterNodeIdScan] ?? [];
+
+                    $scanAvailable = (string)($nodeScan['mysql_available'] ?? $nodeScan['mysql_server::mysql_available'] ?? '0');
+                    $scanClusterStatus = (string)($nodeScan['wsrep_cluster_status'] ?? '');
+                    $scanState = (string)($nodeScan['wsrep_local_state_comment'] ?? '');
+
+                    if (
+                        $scanAvailable === '1'
+                        && strcasecmp($scanClusterStatus, 'Primary') === 0
+                        && strcasecmp($scanState, 'Synced') === 0
+                    ) {
+                        $hasPrimarySyncedAvailableNode = true;
+                        break;
+                    }
+                }
+
                 $hasRemoteNode = false;
+                $printedNodeIds = [];
 
                 foreach ($clusterNodeIds as $clusterNodeId) {
                     if ($clusterNodeId === $id_mysql_server) {
                         continue;
                     }
+
+                    if (isset($printedNodeIds[$clusterNodeId])) {
+                        continue;
+                    }
+                    $printedNodeIds[$clusterNodeId] = true;
 
                     $hasRemoteNode = true;
                     $node = $nodeStateRows[$clusterNodeId] ?? [];
@@ -1093,7 +1120,7 @@ class MysqlServer extends Controller
                     $nodeState = (string)($node['wsrep_local_state_comment'] ?? 'n/a');
                     $nodeReady = strtoupper((string)($node['wsrep_ready'] ?? ''));
 
-                    $eligibleForPrimary = (
+                    $eligibleByStandardRule = (
                         $nodeAvailable === '1'
                         && $nodeWsrepOn === 'ON'
                         && strcasecmp($nodeClusterStatus, 'Primary') !== 0
@@ -1101,17 +1128,35 @@ class MysqlServer extends Controller
                         && $nodeReady === 'ON'
                     );
 
+                    $eligibleByEmergencyRule = (
+                        $nodeAvailable === '1'
+                        && !$hasPrimarySyncedAvailableNode
+                    );
+
+                    $eligibleForPrimary = $eligibleByStandardRule || $eligibleByEmergencyRule;
+
                     $nodeIdentity = $nodeMeta[$clusterNodeId] ?? [];
                     $nodeLabel = trim((string)($nodeIdentity['display_name'] ?? 'Node #'.$clusterNodeId));
                     $nodeIp = (string)($nodeIdentity['ip'] ?? 'n/a');
                     $nodePort = (string)($nodeIdentity['port'] ?? 'n/a');
 
-                    $data['galera_cluster']['Node #'.$clusterNodeId.' ('.$nodeLabel.')'] =
-                        'IP: '.$nodeIp.':'.$nodePort
-                        .' | Cluster: '.$nodeClusterStatus
-                        .' | State: '.$nodeState
-                        .' | Ready: '.($nodeReady === '' ? 'n/a' : $nodeReady)
-                        .' | MySQL available: '.($nodeAvailable === '1' ? 'YES' : 'NO');
+                    $nodeRowClass = '';
+                    if ($nodeAvailable !== '1') {
+                        $nodeRowClass = 'danger';
+                    } elseif (strcasecmp($nodeClusterStatus, 'Primary') !== 0) {
+                        $nodeRowClass = 'warning';
+                    }
+
+                    $data['galera_cluster']['Node #'.$clusterNodeId.' ('.$nodeLabel.')'] = [
+                        'type' => 'status_text',
+                        'value' =>
+                            'IP: '.$nodeIp.':'.$nodePort
+                            .' | Cluster: '.$nodeClusterStatus
+                            .' | State: '.$nodeState
+                            .' | Ready: '.($nodeReady === '' ? 'n/a' : $nodeReady)
+                            .' | MySQL available: '.($nodeAvailable === '1' ? 'YES' : 'NO'),
+                        'row_class' => $nodeRowClass,
+                    ];
 
                     $data['galera_cluster']['SET primary → node #'.$clusterNodeId] = [
                         'type' => 'action_button',
@@ -1122,8 +1167,10 @@ class MysqlServer extends Controller
                         'class' => $eligibleForPrimary ? 'btn btn-xs btn-danger' : 'btn btn-xs btn-default',
                         'disabled' => !$eligibleForPrimary,
                         'title' => $eligibleForPrimary
-                            ? self::tr('Node is Non-Primary + Synced + Ready=ON')
-                            : self::tr('Required: Non-Primary + Synced + Ready=ON + mysql_available=1'),
+                            ? ($eligibleByEmergencyRule
+                                ? self::tr('Emergency mode: no reachable node is currently Primary + Synced')
+                                : self::tr('Node is Non-Primary + Synced + Ready=ON'))
+                            : self::tr('Required: mysql_available=1 and (Non-Primary + Synced + Ready=ON OR no reachable node Primary + Synced)'),
                     ];
                 }
 
@@ -1144,11 +1191,31 @@ class MysqlServer extends Controller
             ];
         }
 
+        $sslVersion = self::firstNonEmpty(
+            $g('ssl_version'),
+            $g('Ssl_version')
+        );
+
+        $sslCipher = self::firstNonEmpty(
+            $g('ssl_cipher'),
+            $g('Ssl_cipher')
+        );
+
+        $sslValidFrom = self::firstNonEmpty(
+            $g('ssl_server_not_before'),
+            $g('Ssl_server_not_before')
+        );
+
+        $sslValidTo = self::firstNonEmpty(
+            $g('ssl_server_not_after'),
+            $g('Ssl_server_not_after')
+        );
+
         $data['ssl'] = [
-            'Version' => $g('ssl_version'),
-            'Cipher' => $g('ssl_cipher'),
-            'Valid from' => $g('ssl_server_not_before'),
-            'Valid to' => $g('ssl_server_not_after'),
+            'Version' => $sslVersion ?? 'n/a',
+            'Cipher' => $sslCipher ?? 'n/a',
+            'Valid from' => $sslValidFrom ?? 'n/a',
+            'Valid to' => $sslValidTo ?? 'n/a',
         ];
         $data['os'] = [
             '<img height="16px" width="16px" src="'.IMG.'icon/hostname.svg" > Hostname' => $g('hostname'),
@@ -1281,6 +1348,27 @@ class MysqlServer extends Controller
         }
 
         return (string) $value;
+    }
+
+    private static function firstNonEmpty(...$values)
+    {
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                continue;
+            }
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_string($value) && trim($value) === '') {
+                continue;
+            }
+
+            return $value;
+        }
+
+        return null;
     }
 
     private static function formatIpsValue($value): string

@@ -75,6 +75,7 @@ class GaleraCluster extends Controller {
             'wsrep_cluster_status',
             'wsrep_local_state_comment',
             'wsrep_ready',
+            'wsrep_incoming_addresses',
         ], [$id_mysql_server]);
 
         $row = $state[$id_mysql_server] ?? [];
@@ -84,8 +85,9 @@ class GaleraCluster extends Controller {
         $clusterStatus = (string)($row['wsrep_cluster_status'] ?? '');
         $localStateComment = (string)($row['wsrep_local_state_comment'] ?? '');
         $wsrepReady = strtoupper((string)($row['wsrep_ready'] ?? ''));
+        $incomingAddresses = (string)($row['wsrep_incoming_addresses'] ?? '');
 
-        $isEligible = (
+        $isEligibleByStandardRule = (
             $mysqlAvailable === '1'
             && $wsrepOn === 'ON'
             && strcasecmp($clusterStatus, 'Primary') !== 0
@@ -93,9 +95,57 @@ class GaleraCluster extends Controller {
             && $wsrepReady === 'ON'
         );
 
+        $isEligibleByEmergencyRule = false;
+
+        if ($mysqlAvailable === '1') {
+            $clusterNodeIds = [];
+
+            if ($incomingAddresses !== '' && strpos($incomingAddresses, ':') !== false) {
+                try {
+                    $clusterNodeIds = Mysql::getIdMySQLFromGalera($incomingAddresses);
+                } catch (\Throwable $e) {
+                    $clusterNodeIds = [];
+                }
+            }
+
+            $clusterNodeIds = array_values(array_unique(array_filter(array_map('intval', (array)$clusterNodeIds))));
+            if (!in_array($id_mysql_server, $clusterNodeIds, true)) {
+                $clusterNodeIds[] = $id_mysql_server;
+            }
+
+            $clusterState = Extraction2::display([
+                'mysql_server::mysql_available',
+                'wsrep_cluster_status',
+                'wsrep_local_state_comment',
+            ], $clusterNodeIds);
+
+            $hasPrimarySyncedAvailableNode = false;
+
+            foreach ($clusterNodeIds as $clusterNodeId) {
+                $clusterRow = $clusterState[$clusterNodeId] ?? [];
+
+                $clusterNodeAvailable = (string)($clusterRow['mysql_available'] ?? $clusterRow['mysql_server::mysql_available'] ?? '0');
+                $clusterNodeStatus = (string)($clusterRow['wsrep_cluster_status'] ?? '');
+                $clusterNodeState = (string)($clusterRow['wsrep_local_state_comment'] ?? '');
+
+                if (
+                    $clusterNodeAvailable === '1'
+                    && strcasecmp($clusterNodeStatus, 'Primary') === 0
+                    && strcasecmp($clusterNodeState, 'Synced') === 0
+                ) {
+                    $hasPrimarySyncedAvailableNode = true;
+                    break;
+                }
+            }
+
+            $isEligibleByEmergencyRule = !$hasPrimarySyncedAvailableNode;
+        }
+
+        $isEligible = $isEligibleByStandardRule || $isEligibleByEmergencyRule;
+
         if (!$isEligible) {
             if (function_exists('set_flash')) {
-                set_flash('warning', 'Galera', __('SET PRIMARY allowed only for reachable Galera nodes with status Non-Primary + Synced + Ready=ON.'));
+                set_flash('caution', 'Galera', __('SET PRIMARY allowed only for reachable Galera nodes with status Non-Primary + Synced + Ready=ON, unless no reachable node is currently Primary + Synced.'));
             }
 
             if (IS_CLI === false) {
@@ -110,8 +160,45 @@ class GaleraCluster extends Controller {
 
         $sql = "SET GLOBAL wsrep_provider_options='pc.bootstrap=true';";
         
-        // Write something to log
-        $db->sql_query($sql);
+        try {
+            // Write something to log
+            $db->sql_query($sql);
+        } catch (\Throwable $e) {
+            $errorCode = (int) $e->getCode();
+            $errorMessage = (string) $e->getMessage();
+
+            $isReadOnlyWsrepProvider = (
+                ($errorCode === 60 || stripos($errorMessage, 'read only variable') !== false)
+                && stripos($errorMessage, 'wsrep_provider_options') !== false
+            );
+
+            if (function_exists('set_flash')) {
+                if ($isReadOnlyWsrepProvider) {
+                    set_flash(
+                        'caution',
+                        'Galera',
+                        __('Cannot switch node to Primary dynamically: wsrep_provider_options is read-only on this server. Use galera_new_cluster / --wsrep-new-cluster on one node after quorum loss.')
+                    );
+                } else {
+                    set_flash(
+                        'error',
+                        'Galera',
+                        __('Unable to set node as Primary (pc.bootstrap=true). Please check server logs and privileges.')
+                    );
+                }
+            }
+
+            if (IS_CLI === false) {
+                header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? LINK.'MysqlServer/main/'.$id_mysql_server.'/pmacontrol'));
+                exit;
+            }
+
+            if (!$isReadOnlyWsrepProvider) {
+                throw $e;
+            }
+
+            return;
+        }
 
         
         if (function_exists('set_flash')) {

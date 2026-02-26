@@ -187,17 +187,21 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
         <?php foreach ($groups as $title => $items): ?>
         <?php if (!is_array($items) || empty($items)) { continue; } ?>
         <?php $isGaleraPanel = in_array($title, ['GaleraCluster', 'GaleraCluster / Flow-Control', 'GaleraCluster / Provider', 'GaleraCluster / Configuration'], true); ?>
-        <?php $panelClass = 'panel panel-default'; ?>
+        <?php $isSummaryPanel = ($title === 'Résumé'); ?>
+        <?php $isMysqlUnavailable = isset($data['mysql_available']) && (string)$data['mysql_available'] === '0'; ?>
+        <?php $panelClass = ($isSummaryPanel && $isMysqlUnavailable) ? 'panel panel-danger' : 'panel panel-default'; ?>
+        <?php $panelBodyStyle = ($isSummaryPanel && $isMysqlUnavailable) ? 'background-color:#f2dede;' : ''; ?>
         <div class="col-md-4 grid-item" style="margin-bottom:0px;">
             <div class="<?= $panelClass ?>">
             <div class="panel-heading"><strong><?= htmlspecialchars($title) ?></strong></div>
-            <div class="panel-body" style="">
+            <div class="panel-body" style="<?= $panelBodyStyle ?>">
                 <table class="table table-condensed table-striped" style="margin:0">
                 <tbody>
                 <?php foreach ($items as $k => $v): ?>
                     <?php $isGaleraCluster = $isGaleraPanel; ?>
                     <?php $valueAlign = $isGaleraCluster ? 'left' : 'right'; ?>
-                    <tr>
+                    <?php $rowClass = (is_array($v) && !empty($v['row_class'])) ? (string)$v['row_class'] : ''; ?>
+                    <tr<?= $rowClass !== '' ? ' class="'.htmlspecialchars($rowClass, ENT_QUOTES, 'UTF-8').'"' : '' ?>>
                     <td style="width:50%"><?= $k ?></td>
                     <td style="width:50%; text-align:<?= $valueAlign ?>">
                         <?php if (is_array($v) && ($v['type'] ?? '') === 'usage_meter'): ?>
@@ -254,6 +258,8 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
                                     </a>
                                 <?php endif; ?>
                             </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'status_text'): ?>
+                            <?= (string)($v['value'] ?? '') ?>
                         <?php else: ?>
                             <?= (string)$v ?>
                         <?php endif; ?>

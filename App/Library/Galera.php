@@ -27,10 +27,18 @@ trait Galera {
                 $tab = explode(",", $server['wsrep_incoming_addresses']);
                 $to_match = $server['ip'] . ":" . $server['port'];
 
+                $nodeUuid = trim((string)($server['wsrep_local_state_uuid'] ?? ''));
+                if ($nodeUuid === '') {
+                    $nodeUuid = trim((string)($server['wsrep_cluster_state_uuid'] ?? ''));
+                }
+                if ($nodeUuid === '') {
+                    $nodeUuid = 'node-' . (string)($server['id_mysql_server'] ?? ($server['ip'] . ':' . $server['port']));
+                }
+
 
                 // the goal is to remove proxy
                 if (in_array($to_match, $tab)) {
-                    $this->galera_cluster[$server['wsrep_cluster_name'] . '~' . md5($server['wsrep_incoming_addresses'])][$server['id_mysql_server']] = $server;
+                    $this->galera_cluster[$server['wsrep_cluster_name'] . '~' . $nodeUuid][$server['id_mysql_server']] = $server;
                 }
             }
         }
@@ -78,9 +86,102 @@ trait Galera {
             Debug::debug($group_galera);
         }
 
+        $this->galera_cluster = $this->deduplicateGaleraClustersByNodeId($this->galera_cluster);
+
 
 
         return $group_galera;
+    }
+
+    private function deduplicateGaleraClustersByNodeId(array $clusters): array
+    {
+        $clusterScore = [];
+        $clusterLatestDate = [];
+        $bestClusterByNodeId = [];
+
+        foreach ($clusters as $clusterName => $nodes) {
+            $score = 0;
+            $latestDate = 0;
+
+            foreach ($nodes as $node) {
+                if (!empty($node['hostname'])) {
+                    $score++;
+                }
+
+                $dateTs = 0;
+                if (!empty($node['date'])) {
+                    $tmp = strtotime((string)$node['date']);
+                    if ($tmp !== false) {
+                        $dateTs = (int)$tmp;
+                    }
+                }
+
+                if ($dateTs > $latestDate) {
+                    $latestDate = $dateTs;
+                }
+            }
+
+            $clusterScore[$clusterName] = $score;
+            $clusterLatestDate[$clusterName] = $latestDate;
+        }
+
+        foreach ($clusters as $clusterName => $nodes) {
+            foreach ($nodes as $node) {
+                if (!isset($node['id_mysql_server'])) {
+                    continue;
+                }
+
+                $nodeId = (int)$node['id_mysql_server'];
+                if ($nodeId <= 0) {
+                    continue;
+                }
+
+                if (!isset($bestClusterByNodeId[$nodeId])) {
+                    $bestClusterByNodeId[$nodeId] = $clusterName;
+                    continue;
+                }
+
+                $currentBest = $bestClusterByNodeId[$nodeId];
+                $candidateIsBetter = false;
+
+                if (($clusterScore[$clusterName] ?? 0) > ($clusterScore[$currentBest] ?? 0)) {
+                    $candidateIsBetter = true;
+                } elseif (($clusterScore[$clusterName] ?? 0) === ($clusterScore[$currentBest] ?? 0)
+                    && ($clusterLatestDate[$clusterName] ?? 0) > ($clusterLatestDate[$currentBest] ?? 0)) {
+                    $candidateIsBetter = true;
+                }
+
+                if ($candidateIsBetter) {
+                    $bestClusterByNodeId[$nodeId] = $clusterName;
+                }
+            }
+        }
+
+        $clean = [];
+        foreach ($clusters as $clusterName => $nodes) {
+            foreach ($nodes as $nodeId => $node) {
+                if (!isset($node['id_mysql_server'])) {
+                    $clean[$clusterName][$nodeId] = $node;
+                    continue;
+                }
+
+                $idMysqlServer = (int)$node['id_mysql_server'];
+                if ($idMysqlServer <= 0) {
+                    $clean[$clusterName][$nodeId] = $node;
+                    continue;
+                }
+
+                if (($bestClusterByNodeId[$idMysqlServer] ?? null) === $clusterName) {
+                    $clean[$clusterName][$nodeId] = $node;
+                }
+            }
+
+            if (empty($clean[$clusterName])) {
+                unset($clean[$clusterName]);
+            }
+        }
+
+        return $clean;
     }
 
     /*
@@ -156,7 +257,7 @@ trait Galera {
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                     "variables::system_time_zone",
                     "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method", "variables::wsrep_desync",
-                    "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses", "status::wsrep_cluster_size"));
+                    "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses", "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_local_state_uuid"));
 
         //debug($temp);
 
