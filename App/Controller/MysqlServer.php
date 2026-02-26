@@ -572,7 +572,19 @@ class MysqlServer extends Controller
             "innodb_page_size","innodb_read_io_threads","innodb_write_io_threads",
             "log_bin","sync_binlog","binlog_format","binlog_row_image","binlog_checksum","binlog_cache_size","binlog_stmt_cache_size","max_binlog_size","binlog_space_limit","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds",
             "log_bin_basename","mysql_binlog::binlog_file_last","gtid_current_pos","gtid_binlog_pos",
-            "wsrep_cluster_status","wsrep_ready","wsrep_local_state_comment",
+            "wsrep_on","wsrep_connected","wsrep_cluster_name","wsrep_cluster_status","wsrep_cluster_size","wsrep_cluster_state_uuid",
+            "wsrep_local_state","wsrep_local_state_comment","wsrep_local_state_uuid","wsrep_ready","wsrep_desync","wsrep_sst_method",
+            "wsrep_provider_version","wsrep_provider_options","wsrep_incoming_addresses","wsrep_node_address","wsrep_gcomm_uuid",
+            "wsrep_flow_control_paused","wsrep_local_recv_queue","wsrep_local_send_queue","wsrep_cert_deps_distance",
+            "wsrep_apply_window","wsrep_commit_window","wsrep_cert_interval","wsrep_last_committed","wsrep_repl_data_bytes",
+            "wsrep_repl_keys","wsrep_repl_keys_bytes",
+            "wsrep_cluster_address","wsrep_node_name","wsrep_node_incoming_address","wsrep_provider","wsrep_notify_cmd",
+            "wsrep_osu_method","wsrep_sync_wait","wsrep_slave_threads","wsrep_sst_auth","wsrep_sst_donor","wsrep_sst_donor_rejects_queries",
+            "wsrep_reject_queries","wsrep_auto_increment_control","wsrep_gtid_mode","wsrep_gtid_domain_id","wsrep_forced_binlog_format",
+            "wsrep_log_conflicts","wsrep_max_ws_rows","wsrep_max_ws_size","wsrep_retry_autocommit","wsrep_restart_slave",
+            "wsrep_recover","wsrep_start_position","wsrep_data_home_dir","wsrep_convert_lock_to_trx","wsrep_causal_reads",
+            "wsrep_dirty_reads","wsrep_drupal_282555_workaround","wsrep_mysql_replication_bundle","wsrep_slave_fk_checks",
+            "wsrep_slave_uk_checks","wsrep_replicate_myisam","wsrep_patch_version","wsrep_dbug_option",
             "ssl_version","ssl_cipher","ssl_server_not_before","ssl_server_not_after",
             "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
             "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_pages_dirty","buffer_pool_read_requests","buffer_pool_reads",
@@ -911,11 +923,226 @@ class MysqlServer extends Controller
             'expire (sec)' => $g('binlog_expire_logs_seconds'),
         ];
 
-        $data['wsrep'] = [
-            'Cluster status' => $g('wsrep_cluster_status'),
-            'Ready' => $g('wsrep_ready'),
-            'State' => $g('wsrep_local_state_comment'),
-        ];
+        $wsrepOn = strtoupper((string)($g('wsrep_on') ?? ''));
+        $data['galera_cluster'] = [];
+        $data['galera_cluster_flow'] = [];
+        $data['galera_cluster_provider'] = [];
+        $data['galera_cluster_config'] = [];
+
+        if ($wsrepOn === 'ON') {
+            $clusterStatus = (string)($g('wsrep_cluster_status') ?? 'n/a');
+            $localStateComment = (string)($g('wsrep_local_state_comment') ?? 'n/a');
+            $ready = (string)($g('wsrep_ready') ?? 'n/a');
+            $connected = (string)($g('wsrep_connected') ?? 'n/a');
+            $desync = (string)($g('wsrep_desync') ?? 'n/a');
+            $recvQueue = $g('wsrep_local_recv_queue');
+            $sendQueue = $g('wsrep_local_send_queue');
+            $flowPaused = $g('wsrep_flow_control_paused');
+
+            $quorumOk = (
+                strcasecmp($clusterStatus, 'Primary') === 0
+                && strtoupper((string)$ready) === 'ON'
+                && strtoupper((string)$connected) === 'ON'
+            );
+
+            $providerOptionsRaw = (string)($g('wsrep_provider_options') ?? '');
+            $providerOptionsParsed = self::parseWsrepProviderOptions($providerOptionsRaw);
+
+            $data['galera_cluster'] = [
+                'Cluster name' => $g('wsrep_cluster_name') ?: 'n/a',
+                'Cluster status' => self::formatGaleraClusterStatus($clusterStatus),
+                'Node state' => self::formatGaleraNodeState($localStateComment),
+                'Ready' => self::formatGaleraBoolean($ready),
+                'Connected' => self::formatGaleraBoolean($connected),
+                'Quorum health' => self::formatGaleraBoolean($quorumOk ? 'ON' : 'OFF', 'QUORUM OK', 'QUORUM LOST'),
+                'Desync' => self::formatGaleraBoolean($desync, 'DESYNC', 'SYNCED'),
+                'Cluster size' => $g('wsrep_cluster_size') ?? 'n/a',
+                'Local state id' => $g('wsrep_local_state') ?? 'n/a',
+                'SST method' => $g('wsrep_sst_method') ?? 'n/a',
+                'Provider version' => $g('wsrep_provider_version') ?? 'n/a',
+                'Flow control paused' => self::formatGaleraFlowControlPaused($g('wsrep_flow_control_paused')),
+                'Recv queue' => $g('wsrep_local_recv_queue') ?? 'n/a',
+                'Send queue' => $g('wsrep_local_send_queue') ?? 'n/a',
+                'Cert deps distance' => $g('wsrep_cert_deps_distance') ?? 'n/a',
+                'Apply window' => $g('wsrep_apply_window') ?? 'n/a',
+                'Commit window' => $g('wsrep_commit_window') ?? 'n/a',
+                'Cert interval' => $g('wsrep_cert_interval') ?? 'n/a',
+                'Last committed' => $g('wsrep_last_committed') ?? 'n/a',
+                'Replicated data' => self::formatBytesHuman($g('wsrep_repl_data_bytes')),
+                'Replicated keys' => $g('wsrep_repl_keys') ?? 'n/a',
+                'Replicated keys size' => self::formatBytesHuman($g('wsrep_repl_keys_bytes')),
+                'Incoming addresses' => $g('wsrep_incoming_addresses') ?: 'n/a',
+                'Node address' => $g('wsrep_node_address') ?: 'n/a',
+                'Cluster UUID' => $g('wsrep_cluster_state_uuid') ?: 'n/a',
+                'Local UUID' => $g('wsrep_local_state_uuid') ?: 'n/a',
+                'gcomm UUID' => $g('wsrep_gcomm_uuid') ?: 'n/a',
+                'Bootstrap safety' => self::tr('pc.bootstrap=true should be used only when the cluster lost quorum and only on one node.'),
+            ];
+
+            $data['galera_cluster_flow'] = [
+                'Flow control paused' => self::formatGaleraFlowControlPaused($flowPaused),
+                'Flow pressure' => self::formatGaleraQueuePressure($flowPaused, $recvQueue, $sendQueue),
+                'Recv queue' => self::formatGaleraQueue($recvQueue),
+                'Send queue' => self::formatGaleraQueue($sendQueue),
+                'Cert deps distance' => $g('wsrep_cert_deps_distance') ?? 'n/a',
+                'Apply window' => $g('wsrep_apply_window') ?? 'n/a',
+                'Commit window' => $g('wsrep_commit_window') ?? 'n/a',
+                'Cert interval' => $g('wsrep_cert_interval') ?? 'n/a',
+                'Last committed' => $g('wsrep_last_committed') ?? 'n/a',
+                'Replicated data' => self::formatBytesHuman($g('wsrep_repl_data_bytes')),
+                'Replicated keys' => $g('wsrep_repl_keys') ?? 'n/a',
+                'Replicated keys size' => self::formatBytesHuman($g('wsrep_repl_keys_bytes')),
+            ];
+
+            $data['galera_cluster_provider'] = [
+                'Provider library' => $g('wsrep_provider') ?: 'n/a',
+                'Provider version' => $g('wsrep_provider_version') ?: 'n/a',
+                'Patch version' => $g('wsrep_patch_version') ?: 'n/a',
+            ];
+
+            if (!empty($providerOptionsParsed)) {
+                foreach ($providerOptionsParsed as $providerOptionKey => $providerOptionValue) {
+                    $data['galera_cluster_provider']['wsrep_provider_options.'.$providerOptionKey] = $providerOptionValue;
+                }
+            } else {
+                $data['galera_cluster_provider']['wsrep_provider_options.*'] = 'n/a';
+            }
+
+            $data['galera_cluster_config'] = [
+                'Cluster address' => $g('wsrep_cluster_address') ?: 'n/a',
+                'Incoming addresses' => $g('wsrep_incoming_addresses') ?: 'n/a',
+                'Node name' => $g('wsrep_node_name') ?: 'n/a',
+                'Node address' => $g('wsrep_node_address') ?: 'n/a',
+                'Node incoming address' => $g('wsrep_node_incoming_address') ?: 'n/a',
+                'SST method' => $g('wsrep_sst_method') ?: 'n/a',
+                'SST donor' => $g('wsrep_sst_donor') ?: 'n/a',
+                'SST donor rejects queries' => self::formatGaleraBoolean($g('wsrep_sst_donor_rejects_queries')),
+                'SST auth (masked)' => self::maskGaleraSecret((string)($g('wsrep_sst_auth') ?? '')),
+                'Reject queries' => self::formatGaleraBoolean($g('wsrep_reject_queries')),
+                'wsrep_sync_wait' => $g('wsrep_sync_wait') ?? 'n/a',
+                'wsrep_slave_threads' => $g('wsrep_slave_threads') ?? 'n/a',
+                'wsrep_auto_increment_control' => self::formatGaleraBoolean($g('wsrep_auto_increment_control')),
+                'wsrep_gtid_mode' => self::formatGaleraBoolean($g('wsrep_gtid_mode')),
+                'wsrep_gtid_domain_id' => $g('wsrep_gtid_domain_id') ?? 'n/a',
+                'wsrep_forced_binlog_format' => $g('wsrep_forced_binlog_format') ?? 'n/a',
+                'wsrep_log_conflicts' => self::formatGaleraBoolean($g('wsrep_log_conflicts')),
+                'wsrep_max_ws_rows' => is_numeric($g('wsrep_max_ws_rows')) ? number_format((float)$g('wsrep_max_ws_rows'), 0) : ($g('wsrep_max_ws_rows') ?? 'n/a'),
+                'wsrep_max_ws_size' => self::formatBytesHuman($g('wsrep_max_ws_size')),
+                'wsrep_retry_autocommit' => $g('wsrep_retry_autocommit') ?? 'n/a',
+                'wsrep_restart_slave' => self::formatGaleraBoolean($g('wsrep_restart_slave')),
+                'wsrep_recover' => self::formatGaleraBoolean($g('wsrep_recover')),
+                'wsrep_start_position' => $g('wsrep_start_position') ?: 'n/a',
+                'wsrep_data_home_dir' => $g('wsrep_data_home_dir') ?: 'n/a',
+                'wsrep_convert_lock_to_trx' => self::formatGaleraBoolean($g('wsrep_convert_lock_to_trx')),
+                'wsrep_causal_reads' => self::formatGaleraBoolean($g('wsrep_causal_reads')),
+                'wsrep_dirty_reads' => self::formatGaleraBoolean($g('wsrep_dirty_reads')),
+                'wsrep_mysql_replication_bundle' => $g('wsrep_mysql_replication_bundle') ?? 'n/a',
+                'wsrep_slave_fk_checks' => self::formatGaleraBoolean($g('wsrep_slave_fk_checks')),
+                'wsrep_slave_uk_checks' => self::formatGaleraBoolean($g('wsrep_slave_uk_checks')),
+                'wsrep_replicate_myisam' => self::formatGaleraBoolean($g('wsrep_replicate_myisam')),
+                'wsrep_osu_method' => $g('wsrep_osu_method') ?? 'n/a',
+                'wsrep_notify_cmd' => $g('wsrep_notify_cmd') ?: 'n/a',
+                'wsrep_dbug_option' => $g('wsrep_dbug_option') ?: 'n/a',
+                'wsrep_drupal_282555_workaround' => self::formatGaleraBoolean($g('wsrep_drupal_282555_workaround')),
+            ];
+
+            $incomingAddresses = (string)($g('wsrep_incoming_addresses') ?? '');
+            $clusterNodeIds = [];
+
+            if ($incomingAddresses !== '' && strpos($incomingAddresses, ':') !== false) {
+                try {
+                    $clusterNodeIds = Mysql::getIdMySQLFromGalera($incomingAddresses);
+                } catch (\Throwable $e) {
+                    $clusterNodeIds = [];
+                }
+            }
+
+            $clusterNodeIds = array_values(array_unique(array_filter(array_map('intval', (array)$clusterNodeIds))));
+
+            if (!empty($clusterNodeIds)) {
+                $nodeStateRows = Extraction2::display([
+                    'mysql_server::mysql_available',
+                    'wsrep_on',
+                    'wsrep_cluster_status',
+                    'wsrep_local_state_comment',
+                    'wsrep_ready',
+                ], $clusterNodeIds);
+
+                $dbDefault = Sgbd::sql(DB_DEFAULT);
+                $sqlNodes = "SELECT id, display_name, ip, port FROM mysql_server WHERE id IN (".implode(',', $clusterNodeIds).")";
+                $resNodes = $dbDefault->sql_query($sqlNodes);
+                $nodeMeta = [];
+
+                while ($arrNode = $dbDefault->sql_fetch_array($resNodes, MYSQLI_ASSOC)) {
+                    $nodeMeta[(int)$arrNode['id']] = $arrNode;
+                }
+
+                $hasRemoteNode = false;
+
+                foreach ($clusterNodeIds as $clusterNodeId) {
+                    if ($clusterNodeId === $id_mysql_server) {
+                        continue;
+                    }
+
+                    $hasRemoteNode = true;
+                    $node = $nodeStateRows[$clusterNodeId] ?? [];
+
+                    $nodeAvailable = (string)($node['mysql_available'] ?? $node['mysql_server::mysql_available'] ?? '0');
+                    $nodeWsrepOn = strtoupper((string)($node['wsrep_on'] ?? ''));
+                    $nodeClusterStatus = (string)($node['wsrep_cluster_status'] ?? 'n/a');
+                    $nodeState = (string)($node['wsrep_local_state_comment'] ?? 'n/a');
+                    $nodeReady = strtoupper((string)($node['wsrep_ready'] ?? ''));
+
+                    $eligibleForPrimary = (
+                        $nodeAvailable === '1'
+                        && $nodeWsrepOn === 'ON'
+                        && strcasecmp($nodeClusterStatus, 'Primary') !== 0
+                        && strcasecmp($nodeState, 'Synced') === 0
+                        && $nodeReady === 'ON'
+                    );
+
+                    $nodeIdentity = $nodeMeta[$clusterNodeId] ?? [];
+                    $nodeLabel = trim((string)($nodeIdentity['display_name'] ?? 'Node #'.$clusterNodeId));
+                    $nodeIp = (string)($nodeIdentity['ip'] ?? 'n/a');
+                    $nodePort = (string)($nodeIdentity['port'] ?? 'n/a');
+
+                    $data['galera_cluster']['Node #'.$clusterNodeId.' ('.$nodeLabel.')'] =
+                        'IP: '.$nodeIp.':'.$nodePort
+                        .' | Cluster: '.$nodeClusterStatus
+                        .' | State: '.$nodeState
+                        .' | Ready: '.($nodeReady === '' ? 'n/a' : $nodeReady)
+                        .' | MySQL available: '.($nodeAvailable === '1' ? 'YES' : 'NO');
+
+                    $data['galera_cluster']['SET primary → node #'.$clusterNodeId] = [
+                        'type' => 'action_button',
+                        'status' => $eligibleForPrimary ? self::tr('Eligible') : self::tr('Not eligible'),
+                        'status_class' => $eligibleForPrimary ? 'label label-success' : 'label label-default',
+                        'url' => $eligibleForPrimary ? LINK.'GaleraCluster/setNodeAsPrimary/'.$clusterNodeId : '',
+                        'label' => self::tr('SET PRIMARY'),
+                        'class' => $eligibleForPrimary ? 'btn btn-xs btn-danger' : 'btn btn-xs btn-default',
+                        'disabled' => !$eligibleForPrimary,
+                        'title' => $eligibleForPrimary
+                            ? self::tr('Node is Non-Primary + Synced + Ready=ON')
+                            : self::tr('Required: Non-Primary + Synced + Ready=ON + mysql_available=1'),
+                    ];
+                }
+
+                if (!$hasRemoteNode) {
+                    $data['galera_cluster']['SET primary'] = self::tr('No other node detected in wsrep_incoming_addresses.');
+                }
+            } else {
+                $data['galera_cluster']['SET primary'] = self::tr('No cluster peers detected in wsrep_incoming_addresses.');
+            }
+        } else {
+            $data['galera_cluster'] = [
+                'Mode' => '<span class="label label-default">wsrep_on=OFF</span>',
+                'Info' => self::tr('This server is not currently running as a Galera node.'),
+            ];
+
+            $data['galera_cluster_config'] = [
+                'wsrep_on' => '<span class="label label-default">OFF</span>',
+            ];
+        }
 
         $data['ssl'] = [
             'Version' => $g('ssl_version'),
@@ -1292,6 +1519,153 @@ class MysqlServer extends Controller
             'color' => $color,
             'level' => $level,
         ];
+    }
+
+    private static function formatGaleraBoolean($value, string $labelOn = 'ON', string $labelOff = 'OFF'): string
+    {
+        $normalized = strtoupper((string)($value ?? ''));
+        $isOn = in_array($normalized, ['ON', 'YES', '1', 'TRUE'], true);
+
+        if ($normalized === '' || $normalized === 'N/A') {
+            return '<span class="label label-default">n/a</span>';
+        }
+
+        return $isOn
+            ? '<span class="label label-success">'.htmlspecialchars($labelOn, ENT_QUOTES, 'UTF-8').'</span>'
+            : '<span class="label label-default">'.htmlspecialchars($labelOff, ENT_QUOTES, 'UTF-8').'</span>';
+    }
+
+    private static function formatGaleraClusterStatus($status): string
+    {
+        $text = trim((string)($status ?? ''));
+        if ($text === '') {
+            return '<span class="label label-default">n/a</span>';
+        }
+
+        $isPrimary = strcasecmp($text, 'Primary') === 0;
+        $class = $isPrimary ? 'label label-success' : 'label label-danger';
+
+        return '<span class="'.$class.'">'.htmlspecialchars($text, ENT_QUOTES, 'UTF-8').'</span>';
+    }
+
+    private static function formatGaleraNodeState($state): string
+    {
+        $text = trim((string)($state ?? ''));
+        if ($text === '') {
+            return '<span class="label label-default">n/a</span>';
+        }
+
+        $class = 'label label-default';
+        if (strcasecmp($text, 'Synced') === 0) {
+            $class = 'label label-success';
+        } elseif (stripos($text, 'Donor') !== false || stripos($text, 'Joining') !== false) {
+            $class = 'label label-warning';
+        } elseif (stripos($text, 'Initialized') !== false || stripos($text, 'Non-Primary') !== false) {
+            $class = 'label label-danger';
+        }
+
+        return '<span class="'.$class.'">'.htmlspecialchars($text, ENT_QUOTES, 'UTF-8').'</span>';
+    }
+
+    private static function formatGaleraFlowControlPaused($value): string
+    {
+        if ($value === null || $value === '' || !is_numeric($value)) {
+            return 'n/a';
+        }
+
+        $ratio = max(0, (float)$value);
+        $percent = round($ratio * 100, 4);
+
+        if ($ratio >= 0.20) {
+            $class = 'label label-danger';
+        } elseif ($ratio >= 0.05) {
+            $class = 'label label-warning';
+        } else {
+            $class = 'label label-success';
+        }
+
+        return '<span class="'.$class.'">'.$percent.'%</span>';
+    }
+
+    private static function formatGaleraQueue($value): string
+    {
+        if ($value === null || $value === '' || !is_numeric($value)) {
+            return 'n/a';
+        }
+
+        $queue = max(0, (float)$value);
+
+        if ($queue >= 5) {
+            $class = 'label label-danger';
+        } elseif ($queue > 0) {
+            $class = 'label label-warning';
+        } else {
+            $class = 'label label-success';
+        }
+
+        return '<span class="'.$class.'">'.number_format($queue, 2).'</span>';
+    }
+
+    private static function formatGaleraQueuePressure($flowPaused, $recvQueue, $sendQueue): string
+    {
+        $paused = (is_numeric($flowPaused) ? (float)$flowPaused : 0.0);
+        $recv = (is_numeric($recvQueue) ? (float)$recvQueue : 0.0);
+        $send = (is_numeric($sendQueue) ? (float)$sendQueue : 0.0);
+
+        $score = $paused + ($recv / 10) + ($send / 10);
+
+        if ($score >= 0.50) {
+            return '<span class="label label-danger">HIGH</span>';
+        }
+        if ($score >= 0.10) {
+            return '<span class="label label-warning">MEDIUM</span>';
+        }
+
+        return '<span class="label label-success">LOW</span>';
+    }
+
+    private static function parseWsrepProviderOptions(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [];
+        }
+
+        $result = [];
+        $parts = preg_split('/\s*;\s*/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($parts as $part) {
+            $eqPos = strpos($part, '=');
+            if ($eqPos === false) {
+                continue;
+            }
+
+            $key = trim(substr($part, 0, $eqPos));
+            $value = trim(substr($part, $eqPos + 1));
+
+            if ($key === '') {
+                continue;
+            }
+
+            $result[$key] = $value;
+        }
+
+        return $result;
+    }
+
+    private static function maskGaleraSecret(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return 'n/a';
+        }
+
+        if (strpos($value, ':') !== false) {
+            [$user] = explode(':', $value, 2);
+            return $user.':********';
+        }
+
+        return '********';
     }
 
     private static function formatOsWithIcon($os, $distributor): string

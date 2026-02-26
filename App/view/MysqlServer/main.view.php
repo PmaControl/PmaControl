@@ -96,6 +96,14 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
     font-family: monospace;
     font-size: 12px;
 }
+
+.btn[disabled],
+.btn.disabled {
+    cursor: not-allowed !important;
+    pointer-events: none;
+    opacity: .65;
+}
+
 </style>
 
 
@@ -136,8 +144,20 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
           $groups['Binlog'] = $data['binlog'];
       }
 
-      if (!empty($data['wsrep']) && is_array($data['wsrep'])) {
-          $groups['Réplication / WSREP'] = $data['wsrep'];
+      if (!empty($data['galera_cluster']) && is_array($data['galera_cluster'])) {
+          $groups['GaleraCluster'] = $data['galera_cluster'];
+      }
+
+      if (!empty($data['galera_cluster_flow']) && is_array($data['galera_cluster_flow'])) {
+          $groups['GaleraCluster / Flow-Control'] = $data['galera_cluster_flow'];
+      }
+
+      if (!empty($data['galera_cluster_provider']) && is_array($data['galera_cluster_provider'])) {
+          $groups['GaleraCluster / Provider'] = $data['galera_cluster_provider'];
+      }
+
+      if (!empty($data['galera_cluster_config']) && is_array($data['galera_cluster_config'])) {
+          $groups['GaleraCluster / Configuration'] = $data['galera_cluster_config'];
       }
 
       if (!empty($data['ssl']) && is_array($data['ssl'])) {
@@ -166,16 +186,20 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
     <div class="grid row grid-row-third" style="margin-top:20px;">
         <?php foreach ($groups as $title => $items): ?>
         <?php if (!is_array($items) || empty($items)) { continue; } ?>
+        <?php $isGaleraPanel = in_array($title, ['GaleraCluster', 'GaleraCluster / Flow-Control', 'GaleraCluster / Provider', 'GaleraCluster / Configuration'], true); ?>
+        <?php $panelClass = 'panel panel-default'; ?>
         <div class="col-md-4 grid-item" style="margin-bottom:0px;">
-            <div class="panel panel-default">
+            <div class="<?= $panelClass ?>">
             <div class="panel-heading"><strong><?= htmlspecialchars($title) ?></strong></div>
             <div class="panel-body" style="">
                 <table class="table table-condensed table-striped" style="margin:0">
                 <tbody>
                 <?php foreach ($items as $k => $v): ?>
+                    <?php $isGaleraCluster = $isGaleraPanel; ?>
+                    <?php $valueAlign = $isGaleraCluster ? 'left' : 'right'; ?>
                     <tr>
                     <td style="width:50%"><?= $k ?></td>
-                    <td style="width:50%; text-align:right">
+                    <td style="width:50%; text-align:<?= $valueAlign ?>">
                         <?php if (is_array($v) && ($v['type'] ?? '') === 'usage_meter'): ?>
                             <?php $percent = max(0, min(100, (float)($v['percent'] ?? 0))); ?>
                             <?php $meterColor = $v['color'] ?? '#5cb85c'; ?>
@@ -204,11 +228,31 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
                                 <button type="button" class="btn btn-xs btn-success" onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, 'UTF-8') ?>)">Copy</button>
                             </div>
                         <?php elseif (is_array($v) && ($v['type'] ?? '') === 'action_button'): ?>
+                            <?php
+                                $statusClass = (string)($v['status_class'] ?? 'label label-default');
+                                $url = (string)($v['url'] ?? '');
+                                $buttonClass = (string)($v['class'] ?? 'btn btn-xs btn-default');
+                                $disabled = !empty($v['disabled']) || $url === '' || $url === '#';
+                                $titleAttr = (string)($v['title'] ?? '');
+                            ?>
                             <div class="cmd-actions">
-                                <span class="label label-default"><?= htmlspecialchars((string)($v['status'] ?? 'n/a')) ?></span>
-                                <a href="<?= htmlspecialchars((string)($v['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars((string)($v['class'] ?? 'btn btn-xs btn-default'), ENT_QUOTES, 'UTF-8') ?>">
-                                    <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
-                                </a>
+                                <span class="<?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)($v['status'] ?? 'n/a')) ?></span>
+                                <?php if ($disabled): ?>
+                                    <button
+                                        type="button"
+                                        class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                        disabled="disabled"
+                                        title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                    </button>
+                                <?php else: ?>
+                                    <a
+                                        href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                                        class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                        title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         <?php else: ?>
                             <?= (string)$v ?>
