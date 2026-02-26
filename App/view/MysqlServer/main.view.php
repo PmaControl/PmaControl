@@ -10,6 +10,7 @@ FactoryController::addNode("MysqlServer", "menu", $param);
 //debug($data);
 /** @var array $data */
 $id = (int)$data['id_mysql_server'];
+$isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 ?>
 
 <style>
@@ -100,32 +101,39 @@ $id = (int)$data['id_mysql_server'];
 
   <?php
   // Panels simples pour chaque catégorie
-  $groups = [
-      "Résumé"        => $data['summary'],
-      "OS / Système"  => $data['os'],
-      "InnoDB"        => $data['innodb'],
-      "Aria"          => $data['aria'] ?? [],
-      "Connexions"    => $data['connections'],
-      "Binlog"        => $data['binlog'],
-      "Réplication / WSREP" => $data['wsrep'],
-      "SSL"           => $data['ssl'],
-      
-  ];
+  if ($isProxy) {
+      $groups = [
+          "Résumé"        => $data['summary'],
+          "OS / Système"  => $data['os'],
+      ];
+  } else {
+      $groups = [
+          "Résumé"        => $data['summary'],
+          "OS / Système"  => $data['os'],
+          "InnoDB"        => $data['innodb'],
+          "Aria"          => $data['aria'] ?? [],
+          "Connexions"    => $data['connections'],
+          "Binlog"        => $data['binlog'],
+          "Réplication / WSREP" => $data['wsrep'],
+          "SSL"           => $data['ssl'],
+          
+      ];
 
-  if (!empty($data['rocksdb']) && is_array($data['rocksdb'])) {
-      $groups['RocksDB'] = $data['rocksdb'];
-  }
+      if (!empty($data['rocksdb']) && is_array($data['rocksdb'])) {
+          $groups['RocksDB'] = $data['rocksdb'];
+      }
 
-  if (!empty($data['myisam']) && is_array($data['myisam'])) {
-      $groups['MyISAM'] = $data['myisam'];
-  }
+      if (!empty($data['myisam']) && is_array($data['myisam'])) {
+          $groups['MyISAM'] = $data['myisam'];
+      }
 
-  if (!empty($data['columnstore']) && is_array($data['columnstore'])) {
-      $groups['ColumnStore'] = $data['columnstore'];
-  }
+      if (!empty($data['columnstore']) && is_array($data['columnstore'])) {
+          $groups['ColumnStore'] = $data['columnstore'];
+      }
 
-  if (!empty($data['spider']) && is_array($data['spider'])) {
-      $groups['Spider'] = $data['spider'];
+      if (!empty($data['spider']) && is_array($data['spider'])) {
+          $groups['Spider'] = $data['spider'];
+      }
   }
   ?>
 
@@ -192,7 +200,7 @@ $id = (int)$data['id_mysql_server'];
 </div>
 
   <!-- DISQUES -->
-  <?php if (!empty($data['disks']) && is_array($data['disks'])): ?>
+  <?php if (!$isProxy && !empty($data['disks']) && is_array($data['disks'])): ?>
   <div class="row">
     <div class="col-md-12">
       <div class="panel panel-info">
@@ -233,7 +241,7 @@ $id = (int)$data['id_mysql_server'];
 
 
   <!-- PROCESSLIST -->
-  <?php if (!empty($data['processlist']) && is_array($data['processlist'])): ?>
+  <?php if (!$isProxy && !empty($data['processlist']) && is_array($data['processlist'])): ?>
   <div class="row">
     <div class="col-md-12">
       <div class="panel panel-warning">

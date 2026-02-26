@@ -614,6 +614,7 @@ class MysqlServer extends Controller
         $data = [];
         $data['id_mysql_server'] = $id_mysql_server;
         $credentials = self::getMysqlServerCredentials($id_mysql_server);
+        $data['is_proxy'] = !empty($credentials['is_proxy']) ? (int)$credentials['is_proxy'] : 0;
 
         $data['summary'] = [
             'Server' => Display::srv($id_mysql_server),
@@ -1521,6 +1522,7 @@ class MysqlServer extends Controller
             'login' => null,
             'password' => null,
             'is_monitored' => null,
+            'is_proxy' => 0,
         ];
 
         $sql = "SELECT * FROM mysql_server where id=".(int)$id_mysql_server;
@@ -1532,6 +1534,7 @@ class MysqlServer extends Controller
             $data['login'] = $arr['login'] ?? null;
             $data['password'] = Crypt::decrypt($arr['passwd']);
             $data['is_monitored'] = $arr['is_monitored'] ?? null;
+            $data['is_proxy'] = $arr['is_proxy'] ?? 0;
         }
 
         return $data;
