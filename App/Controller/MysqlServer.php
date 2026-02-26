@@ -8,6 +8,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Mysql;
 use \App\Library\Debug;
+use \App\Library\System;
 use App\Library\Extraction2;
 
 // ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
@@ -50,6 +51,24 @@ RENAME TABLE mysql_server2 TO mysql_server;
 class MysqlServer extends Controller
 {
     private $table_exists_cache = array();
+
+    private static function quickMysqlSilentTest($ip, $port, $user, $password)
+    {
+        $link = mysqli_init();
+        if (!$link) {
+            return 'mysqli_init failed';
+        }
+
+        @mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+        $ok = @mysqli_real_connect($link, (string)$ip, (string)$user, (string)$password, 'mysql', (int)$port);
+
+        if ($ok) {
+            @mysqli_close($link);
+            return true;
+        }
+
+        return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
+    }
 
     private static function getProcesslistConnectionMetrics($db): array
     {
@@ -157,6 +176,7 @@ class MysqlServer extends Controller
 
         //test if performance_schema activated or not
         $data['processlist'] = array();
+        $data['offline_diagnostics'] = array();
         $connectionSnapshot = [
             'threads_running' => 0,
             'threads_connected' => 0,
@@ -164,9 +184,80 @@ class MysqlServer extends Controller
             'max_connections' => 0,
         ];
 
+        $availability = Extraction2::display([
+            'mysql_server::mysql_available',
+            'mysql_server::mysql_error',
+        ], $id_mysql_servers);
+
         foreach($id_mysql_servers as $id_mysql_server)
         {
-            $db = Mysql::getDbLink(  $id_mysql_server);
+            $availableRow = $availability[$id_mysql_server] ?? [];
+            $mysqlAvailable = (string)($availableRow['mysql_available'] ?? $availableRow['mysql_server::mysql_available'] ?? '1');
+            $mysqlError = (string)($availableRow['mysql_error'] ?? $availableRow['mysql_server::mysql_error'] ?? '');
+
+            if ($mysqlAvailable === '0') {
+                $credentials = self::getMysqlServerCredentials((int)$id_mysql_server);
+                $ip = (string)($credentials['ip'] ?? '');
+                $port = (int)($credentials['port'] ?? 0);
+                $login = (string)($credentials['login'] ?? '');
+                $password = (string)($credentials['password'] ?? '');
+
+                $portOpen = false;
+                $portMessage = 'IP/Port unavailable';
+                if ($ip !== '' && $port > 0) {
+                    $portOpen = System::scanPort($ip, $port, 1);
+                    $portMessage = $portOpen
+                        ? 'IP/Port open ('.$ip.':'.$port.')'
+                        : 'IP/Port closed ('.$ip.':'.$port.')';
+                }
+
+                $mysqlTestMessage = '';
+                if ($portOpen && $ip !== '' && $port > 0 && $login !== '') {
+                    $mysqlTest = self::quickMysqlSilentTest($ip, $port, $login, $password);
+                    if ($mysqlTest === true) {
+                        $mysqlTestMessage = 'MySQL silent test: connection OK';
+                    } else {
+                        $mysqlTestMessage = 'MySQL silent test: '.$mysqlTest;
+                    }
+                }
+
+                $finalError = trim($mysqlError);
+                if ($finalError === '' && $mysqlTestMessage !== '') {
+                    $finalError = $mysqlTestMessage;
+                }
+                if ($finalError === '') {
+                    $finalError = $portMessage;
+                }
+
+                $data['offline_diagnostics'][$id_mysql_server] = [
+                    'id_mysql_server' => $id_mysql_server,
+                    'ip' => $ip,
+                    'port' => $port,
+                    'mysql_available' => 0,
+                    'mysql_error' => $finalError,
+                    'port_open' => $portOpen ? 1 : 0,
+                    'port_message' => $portMessage,
+                    'mysql_test_message' => $mysqlTestMessage,
+                ];
+
+                continue;
+            }
+
+            try {
+                $db = Mysql::getDbLink($id_mysql_server);
+            } catch (\Throwable $e) {
+                $data['offline_diagnostics'][$id_mysql_server] = [
+                    'id_mysql_server' => $id_mysql_server,
+                    'ip' => '',
+                    'port' => 0,
+                    'mysql_available' => 0,
+                    'mysql_error' => 'Unable to initialize DB link: '.$e->getMessage(),
+                    'port_open' => 0,
+                    'port_message' => 'IP/Port status unknown',
+                    'mysql_test_message' => '',
+                ];
+                continue;
+            }
 
             $metrics = self::getProcesslistConnectionMetrics($db);
             $connectionSnapshot['threads_running'] += (int)$metrics['threads_running'];

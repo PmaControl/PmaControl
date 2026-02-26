@@ -78,6 +78,26 @@ echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a><
     echo '<div id="processlist">';
 }
 
+$offlineDiagnostics = $data['offline_diagnostics'] ?? [];
+$hasOfflineServer = !empty($offlineDiagnostics) && is_array($offlineDiagnostics);
+if (!empty($offlineDiagnostics) && is_array($offlineDiagnostics)) {
+    foreach ($offlineDiagnostics as $diag) {
+        $srv = Display::srv($diag['id_mysql_server'] ?? '', false);
+        $mysqlErr = htmlspecialchars((string)($diag['mysql_error'] ?? 'Unknown MySQL error'));
+        $portMsg = htmlspecialchars((string)($diag['port_message'] ?? 'IP/Port status unknown'));
+        $mysqlTestMsg = htmlspecialchars((string)($diag['mysql_test_message'] ?? ''));
+
+        echo '<div class="alert alert-danger" style="margin:10px 10px 8px 10px">';
+        echo '<strong>Server offline</strong> - '.$srv.'<br>';
+        echo '<span>'.$mysqlErr.'</span><br>';
+        echo '<small>'.$portMsg.'</small>';
+        if ($mysqlTestMsg !== '') {
+            echo '<br><small>'.$mysqlTestMsg.'</small>';
+        }
+        echo '</div>';
+    }
+}
+
 $connectionsBar = $data['connections_bar'] ?? [];
 $maxConnections = max(0, (int)($connectionsBar['max_connections'] ?? 0));
 $threadsRunning = max(0, (int)($connectionsBar['threads_running'] ?? 0));
@@ -104,20 +124,22 @@ echo '<style>
 .processlist-conn-max{margin-left:auto;font-weight:700}
 </style>';
 
-echo '<div class="processlist-conn-wrap">';
-echo '<div class="processlist-conn-legend">';
-echo '<span><span class="processlist-conn-dot" style="background:#d9534f"></span>Threads running: '.$threadsRunning.'</span>';
-echo '<span><span class="processlist-conn-dot" style="background:#f0ad4e"></span>Threads connected: '.$threadsConnected.'</span>';
-echo '<span><span class="processlist-conn-dot" style="background:#5bc0de"></span>Max used: '.$maxUsedConnections.'</span>';
-echo '<span class="processlist-conn-max">Max connexion: '.$maxConnections.' = 100%</span>';
-echo '</div>';
+if (!$hasOfflineServer) {
+    echo '<div class="processlist-conn-wrap">';
+    echo '<div class="processlist-conn-legend">';
+    echo '<span><span class="processlist-conn-dot" style="background:#d9534f"></span>Threads running: '.$threadsRunning.'</span>';
+    echo '<span><span class="processlist-conn-dot" style="background:#f0ad4e"></span>Threads connected: '.$threadsConnected.'</span>';
+    echo '<span><span class="processlist-conn-dot" style="background:#5bc0de"></span>Max used: '.$maxUsedConnections.'</span>';
+    echo '<span class="processlist-conn-max">Max connexion: '.$maxConnections.' = 100%</span>';
+    echo '</div>';
 
-echo '<div class="processlist-conn-bar">';
-echo '<div class="processlist-conn-layer processlist-conn-max-used" style="width:'.$maxUsedPercent.'%">Max used '.$maxUsedConnections.'</div>';
-echo '<div class="processlist-conn-layer processlist-conn-connected" style="width:'.$connectedPercent.'%">Connected '.$threadsConnected.'</div>';
-echo '<div class="processlist-conn-layer processlist-conn-running" style="width:'.$runningPercent.'%">Running '.$threadsRunning.'</div>';
-echo '</div>';
-echo '</div>';
+    echo '<div class="processlist-conn-bar">';
+    echo '<div class="processlist-conn-layer processlist-conn-max-used" style="width:'.$maxUsedPercent.'%">Max used '.$maxUsedConnections.'</div>';
+    echo '<div class="processlist-conn-layer processlist-conn-connected" style="width:'.$connectedPercent.'%">Connected '.$threadsConnected.'</div>';
+    echo '<div class="processlist-conn-layer processlist-conn-running" style="width:'.$runningPercent.'%">Running '.$threadsRunning.'</div>';
+    echo '</div>';
+    echo '</div>';
+}
 
 
 
