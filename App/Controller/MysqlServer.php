@@ -591,6 +591,7 @@ class MysqlServer extends Controller
             "spider_semi_split_read","spider_semi_split_read_limit","spider_support_xa","spider_internal_xa","spider_sync_autocommit",
             "spider_sync_trx_isolation","spider_sync_time_zone","spider_remote_trx_isolation","spider_remote_autocommit","spider_general_log",
             "information_schema::engines",
+            "mysql_server::mysql_available",
             "ssh_stats::disks","ips","processlist",
         ];
 
@@ -598,8 +599,16 @@ class MysqlServer extends Controller
         Debug::debug($raw);
         //debug($raw);
 
-        // On prend la première ligne
-        $row = reset($raw);
+        // Après certaines opérations (ex: control/rebuildAll), Extraction2 peut
+        // temporairement retourner false/structure vide avant la reconstruction
+        // complète des données. On protège donc le flux pour éviter un fatal.
+        $row = [];
+        if (is_array($raw) && !empty($raw)) {
+            $tmp = reset($raw);
+            if (is_array($tmp)) {
+                $row = $tmp;
+            }
+        }
 
         // Helpers simples
         $g = function($k) use ($row) { return $row[$k] ?? null; };
@@ -686,30 +695,14 @@ class MysqlServer extends Controller
 
         $supportedEngines = self::extractSupportedEngines($g('engines'));
         $hasEnginesMetric = !empty($supportedEngines);
+        $mysqlAvailableRaw = $g('mysql_available');
+        $serverIsAvailable = in_array(strtoupper((string)$mysqlAvailableRaw), ['1', 'ON', 'YES', 'TRUE'], true);
+        $canShowStorageEngines = $hasEnginesMetric && $serverIsAvailable;
 
-        $ariaEnabled = $hasEnginesMetric
-            ? self::hasSupportedEngine($supportedEngines, 'ARIA')
-            : (
-                is_numeric($g('aria_pagecache_buffer_size'))
-                || $g('aria_recover') !== null
-                || $g('aria_page_checksum') !== null
-            );
-
-        $rocksdbEnabled = $hasEnginesMetric
-            ? self::hasSupportedEngine($supportedEngines, 'ROCKSDB')
-            : (
-                in_array(strtoupper((string)$g('have_rocksdb')), ['YES', 'ON', '1'], true)
-                || strtolower((string)$g('default_storage_engine')) === 'rocksdb'
-                || is_numeric($g('rocksdb_block_cache_size'))
-            );
-
-        $myisamEnabled = $hasEnginesMetric
-            ? self::hasSupportedEngine($supportedEngines, 'MYISAM')
-            : (
-                in_array(strtoupper((string)$g('have_myisam')), ['YES', 'ON', '1'], true)
-                || strtolower((string)$g('default_storage_engine')) === 'myisam'
-                || is_numeric($g('key_buffer_size'))
-            );
+        $innodbEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'INNODB');
+        $ariaEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'ARIA');
+        $rocksdbEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'ROCKSDB');
+        $myisamEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'MYISAM');
 
         $keyBlocksUsed = $metric('key_blocks_used');
         $keyBlocksUnused = $metric('key_blocks_unused');
@@ -733,23 +726,10 @@ class MysqlServer extends Controller
             $keyMiss = round(100 * ((float)$keyReads / (float)$keyReq), 4);
         }
 
-        $columnstoreEnabled = $hasEnginesMetric
-            ? self::hasSupportedEngine($supportedEngines, 'COLUMNSTORE')
-            : (
-                in_array(strtoupper((string)$g('have_columnstore')), ['YES', 'ON', '1'], true)
-                || strtolower((string)$g('default_storage_engine')) === 'columnstore'
-                || !empty($g('columnstore_select_handler'))
-                || !empty($g('columnstore_version'))
-            );
+        $columnstoreEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'COLUMNSTORE');
+        $spiderEnabled = $canShowStorageEngines && self::hasSupportedEngine($supportedEngines, 'SPIDER');
 
-        $spiderEnabled = $hasEnginesMetric
-            ? self::hasSupportedEngine($supportedEngines, 'SPIDER')
-            : (
-                in_array(strtoupper((string)$value('spider_use_handler')), ['ON', 'YES', '1'], true)
-                || strtolower((string)$g('default_storage_engine')) === 'spider'
-            );
-
-        if (!$spiderEnabled) {
+        if ($canShowStorageEngines && !$spiderEnabled) {
             foreach ($row as $k => $v) {
                 if (strpos((string)$k, 'spider_') !== 0) {
                     continue;
@@ -805,21 +785,23 @@ class MysqlServer extends Controller
             'Aborted connects' => $g('aborted_connects'),
         ];
 
-        $data['innodb'] = [
-            '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Buffer pool size' => self::formatBytesToMbGbTb($bp_size),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool used' => self::formatPercentUsage($bp_used_pct),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool free' => self::formatPercentUsage($bp_free_pct),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($bp_dirty_pct),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > BP hit ratio' => self::formatQualityPercent($hit),
-            'Read miss ratio' => $bp_miss_pct !== null ? $bp_miss_pct.'%' : 'n/a',
-            'Log file size' => self::formatBytesToMbGbTb($g('innodb_log_file_size')),
-            'Log buffer size' => self::formatBytesToMbGbTb($g('innodb_log_buffer_size')),
-            'Buffer pool instances' => $g('innodb_buffer_pool_instances') ?? 'n/a',
-            'Page size' => is_numeric($g('innodb_page_size')) ? number_format((float)$g('innodb_page_size'), 0).' B' : 'n/a',
-            'Read IO threads' => $g('innodb_read_io_threads') ?? 'n/a',
-            'Write IO threads' => $g('innodb_write_io_threads') ?? 'n/a',
-            'FLUSH_LOG_AT_TRX_COMMIT' => $g('innodb_flush_log_at_trx_commit') ?? 'n/a',
-        ];
+        if ($innodbEnabled) {
+            $data['innodb'] = [
+                '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Buffer pool size' => self::formatBytesToMbGbTb($bp_size),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool used' => self::formatPercentUsage($bp_used_pct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Buffer pool free' => self::formatPercentUsage($bp_free_pct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($bp_dirty_pct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > BP hit ratio' => self::formatQualityPercent($hit),
+                'Read miss ratio' => $bp_miss_pct !== null ? $bp_miss_pct.'%' : 'n/a',
+                'Log file size' => self::formatBytesToMbGbTb($g('innodb_log_file_size')),
+                'Log buffer size' => self::formatBytesToMbGbTb($g('innodb_log_buffer_size')),
+                'Buffer pool instances' => $g('innodb_buffer_pool_instances') ?? 'n/a',
+                'Page size' => is_numeric($g('innodb_page_size')) ? number_format((float)$g('innodb_page_size'), 0).' B' : 'n/a',
+                'Read IO threads' => $g('innodb_read_io_threads') ?? 'n/a',
+                'Write IO threads' => $g('innodb_write_io_threads') ?? 'n/a',
+                'FLUSH_LOG_AT_TRX_COMMIT' => $g('innodb_flush_log_at_trx_commit') ?? 'n/a',
+            ];
+        }
 
         if ($ariaEnabled) {
             $data['aria'] = [

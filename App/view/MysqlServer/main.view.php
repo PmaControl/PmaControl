@@ -102,22 +102,47 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
   <?php
   // Panels simples pour chaque catégorie
   if ($isProxy) {
-      $groups = [
-          "Résumé"        => $data['summary'],
-          "OS / Système"  => $data['os'],
-      ];
+      $groups = [];
+
+      if (!empty($data['summary']) && is_array($data['summary'])) {
+          $groups["Résumé"] = $data['summary'];
+      }
+      if (!empty($data['os']) && is_array($data['os'])) {
+          $groups["OS / Système"] = $data['os'];
+      }
   } else {
-      $groups = [
-          "Résumé"        => $data['summary'],
-          "OS / Système"  => $data['os'],
-          "InnoDB"        => $data['innodb'],
-          "Aria"          => $data['aria'] ?? [],
-          "Connexions"    => $data['connections'],
-          "Binlog"        => $data['binlog'],
-          "Réplication / WSREP" => $data['wsrep'],
-          "SSL"           => $data['ssl'],
-          
-      ];
+      $groups = [];
+
+      if (!empty($data['summary']) && is_array($data['summary'])) {
+          $groups["Résumé"] = $data['summary'];
+      }
+      if (!empty($data['os']) && is_array($data['os'])) {
+          $groups["OS / Système"] = $data['os'];
+      }
+
+      if (!empty($data['innodb']) && is_array($data['innodb'])) {
+          $groups['InnoDB'] = $data['innodb'];
+      }
+
+      if (!empty($data['aria']) && is_array($data['aria'])) {
+          $groups['Aria'] = $data['aria'];
+      }
+
+      if (!empty($data['connections']) && is_array($data['connections'])) {
+          $groups['Connexions'] = $data['connections'];
+      }
+
+      if (!empty($data['binlog']) && is_array($data['binlog'])) {
+          $groups['Binlog'] = $data['binlog'];
+      }
+
+      if (!empty($data['wsrep']) && is_array($data['wsrep'])) {
+          $groups['Réplication / WSREP'] = $data['wsrep'];
+      }
+
+      if (!empty($data['ssl']) && is_array($data['ssl'])) {
+          $groups['SSL'] = $data['ssl'];
+      }
 
       if (!empty($data['rocksdb']) && is_array($data['rocksdb'])) {
           $groups['RocksDB'] = $data['rocksdb'];
@@ -140,6 +165,7 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 <div style="padding-right:20px">
     <div class="grid row grid-row-third" style="margin-top:20px;">
         <?php foreach ($groups as $title => $items): ?>
+        <?php if (!is_array($items) || empty($items)) { continue; } ?>
         <div class="col-md-4 grid-item" style="margin-bottom:0px;">
             <div class="panel panel-default">
             <div class="panel-heading"><strong><?= htmlspecialchars($title) ?></strong></div>
