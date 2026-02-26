@@ -435,6 +435,7 @@ class MysqlServer extends Controller
             "spider_connect_error_interval","spider_net_read_timeout","spider_net_write_timeout","spider_quick_mode","spider_split_read",
             "spider_semi_split_read","spider_semi_split_read_limit","spider_support_xa","spider_internal_xa","spider_sync_autocommit",
             "spider_sync_trx_isolation","spider_sync_time_zone","spider_remote_trx_isolation","spider_remote_autocommit","spider_general_log",
+            "information_schema::engines",
             "ssh_stats::disks","ips","processlist",
         ];
 
@@ -528,13 +529,32 @@ class MysqlServer extends Controller
             $ariaHit = round(100 * (1 - ((float)$ariaReads / (float)$ariaReq)), 2);
         }
 
-        $rocksdbEnabled = in_array(strtoupper((string)$g('have_rocksdb')), ['YES', 'ON', '1'], true)
-            || strtolower((string)$g('default_storage_engine')) === 'rocksdb'
-            || is_numeric($g('rocksdb_block_cache_size'));
+        $supportedEngines = self::extractSupportedEngines($g('engines'));
+        $hasEnginesMetric = !empty($supportedEngines);
 
-        $myisamEnabled = in_array(strtoupper((string)$g('have_myisam')), ['YES', 'ON', '1'], true)
-            || strtolower((string)$g('default_storage_engine')) === 'myisam'
-            || is_numeric($g('key_buffer_size'));
+        $ariaEnabled = $hasEnginesMetric
+            ? self::hasSupportedEngine($supportedEngines, 'ARIA')
+            : (
+                is_numeric($g('aria_pagecache_buffer_size'))
+                || $g('aria_recover') !== null
+                || $g('aria_page_checksum') !== null
+            );
+
+        $rocksdbEnabled = $hasEnginesMetric
+            ? self::hasSupportedEngine($supportedEngines, 'ROCKSDB')
+            : (
+                in_array(strtoupper((string)$g('have_rocksdb')), ['YES', 'ON', '1'], true)
+                || strtolower((string)$g('default_storage_engine')) === 'rocksdb'
+                || is_numeric($g('rocksdb_block_cache_size'))
+            );
+
+        $myisamEnabled = $hasEnginesMetric
+            ? self::hasSupportedEngine($supportedEngines, 'MYISAM')
+            : (
+                in_array(strtoupper((string)$g('have_myisam')), ['YES', 'ON', '1'], true)
+                || strtolower((string)$g('default_storage_engine')) === 'myisam'
+                || is_numeric($g('key_buffer_size'))
+            );
 
         $keyBlocksUsed = $metric('key_blocks_used');
         $keyBlocksUnused = $metric('key_blocks_unused');
@@ -558,13 +578,21 @@ class MysqlServer extends Controller
             $keyMiss = round(100 * ((float)$keyReads / (float)$keyReq), 4);
         }
 
-        $columnstoreEnabled = in_array(strtoupper((string)$g('have_columnstore')), ['YES', 'ON', '1'], true)
-            || strtolower((string)$g('default_storage_engine')) === 'columnstore'
-            || !empty($g('columnstore_select_handler'))
-            || !empty($g('columnstore_version'));
+        $columnstoreEnabled = $hasEnginesMetric
+            ? self::hasSupportedEngine($supportedEngines, 'COLUMNSTORE')
+            : (
+                in_array(strtoupper((string)$g('have_columnstore')), ['YES', 'ON', '1'], true)
+                || strtolower((string)$g('default_storage_engine')) === 'columnstore'
+                || !empty($g('columnstore_select_handler'))
+                || !empty($g('columnstore_version'))
+            );
 
-        $spiderEnabled = in_array(strtoupper((string)$value('spider_use_handler')), ['ON', 'YES', '1'], true)
-            || strtolower((string)$g('default_storage_engine')) === 'spider';
+        $spiderEnabled = $hasEnginesMetric
+            ? self::hasSupportedEngine($supportedEngines, 'SPIDER')
+            : (
+                in_array(strtoupper((string)$value('spider_use_handler')), ['ON', 'YES', '1'], true)
+                || strtolower((string)$g('default_storage_engine')) === 'spider'
+            );
 
         if (!$spiderEnabled) {
             foreach ($row as $k => $v) {
@@ -630,18 +658,20 @@ class MysqlServer extends Controller
             'FLUSH_LOG_AT_TRX_COMMIT' => $g('innodb_flush_log_at_trx_commit') ?? 'n/a',
         ];
 
-        $data['aria'] = [
-            '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Aria pagecache' => self::formatBytesToMbGbTb($g('aria_pagecache_buffer_size')),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Cache used' => self::formatPercentUsage($ariaCacheUsedPct),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($ariaDirtyPct),
-            '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Hit ratio' => self::formatPercentUsage($ariaHit),
-            'Log file size' => self::formatBytesToMbGbTb($g('aria_log_file_size')),
-            'Block size' => is_numeric($g('aria_block_size')) ? number_format((float)$g('aria_block_size'), 0).' B' : 'n/a',
-            'Temp tables engine' => $g('aria_used_for_temp_tables') ?? 'n/a',
-            'Encrypt tables' => $g('aria_encrypt_tables') ?? 'n/a',
-            'Recover mode' => $g('aria_recover') ?? 'n/a',
-            'Page checksum' => $g('aria_page_checksum') ?? 'n/a',
-        ];
+        if ($ariaEnabled) {
+            $data['aria'] = [
+                '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > Aria pagecache' => self::formatBytesToMbGbTb($g('aria_pagecache_buffer_size')),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Cache used' => self::formatPercentUsage($ariaCacheUsedPct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Dirty pages' => self::formatPercentUsage($ariaDirtyPct),
+                '<img height="16px" width="16px" src="'.IMG.'icon/bar-chart-svgrepo-com.svg" > Hit ratio' => self::formatPercentUsage($ariaHit),
+                'Log file size' => self::formatBytesToMbGbTb($g('aria_log_file_size')),
+                'Block size' => is_numeric($g('aria_block_size')) ? number_format((float)$g('aria_block_size'), 0).' B' : 'n/a',
+                'Temp tables engine' => $g('aria_used_for_temp_tables') ?? 'n/a',
+                'Encrypt tables' => $g('aria_encrypt_tables') ?? 'n/a',
+                'Recover mode' => $g('aria_recover') ?? 'n/a',
+                'Page checksum' => $g('aria_page_checksum') ?? 'n/a',
+            ];
+        }
 
         if ($rocksdbEnabled) {
             $walLimitBytes = is_numeric($g('rocksdb_wal_size_limit_mb')) ? ((float)$g('rocksdb_wal_size_limit_mb') * 1024 * 1024) : null;
@@ -750,8 +780,8 @@ class MysqlServer extends Controller
         ];
         $data['os'] = [
             '<img height="16px" width="16px" src="'.IMG.'icon/hostname.svg" > Hostname' => $g('hostname'),
-            '<img height="16px" width="16px" src="'.IMG.'icon/time.svg" > Uptime' => $uptime_h,
-            '<img height="16px" width="16px" src="'.IMG.'icon/network.svg" > IPs' => self::formatJsonValue($g('ips')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/uptime.svg" > Uptime' => $uptime_h,
+            '<img height="16px" width="16px" src="'.IMG.'icon/network.svg" > IPs' => self::formatIpsValue($g('ips')),
             '<img height="16px" width="16px" src="'.IMG.'icon/linux-svgrepo-com.svg" > OS' => self::formatOsWithIcon($g('os'), $g('distributor')),
             '<img height="16px" width="16px" src="'.IMG.'icon/kernel.svg" > Kernel' => $g('kernel'),
             '<img height="16px" width="16px" src="'.IMG.'icon/64bit.svg" > Arch' => self::formatArchWithBitLabel($g('arch')),
@@ -879,6 +909,99 @@ class MysqlServer extends Controller
         }
 
         return (string) $value;
+    }
+
+    private static function formatIpsValue($value): string
+    {
+        $ips = self::extractIpv4List($value);
+
+        if (empty($ips)) {
+            return self::formatJsonValue($value);
+        }
+
+        usort($ips, [self::class, 'compareIpv4']);
+
+        return implode(' ', array_values($ips));
+    }
+
+    private static function extractIpv4List($value): array
+    {
+        if (is_array($value)) {
+            $candidates = $value;
+        } else {
+            $raw = trim((string) $value);
+            $decoded = json_decode($raw, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $candidates = $decoded;
+            } else {
+                $candidates = preg_split('/[\s,;]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+            }
+        }
+
+        $ips = [];
+        foreach ($candidates as $candidate) {
+            $ip = trim((string) $candidate);
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+                $ips[$ip] = $ip;
+            }
+        }
+
+        return array_values($ips);
+    }
+
+    private static function compareIpv4(string $a, string $b): int
+    {
+        $pa = array_map('intval', explode('.', $a));
+        $pb = array_map('intval', explode('.', $b));
+
+        for ($i = 0; $i < 4; $i++) {
+            $diff = ($pa[$i] ?? 0) <=> ($pb[$i] ?? 0);
+            if ($diff !== 0) {
+                return $diff;
+            }
+        }
+
+        return 0;
+    }
+
+    private static function extractSupportedEngines($value): array
+    {
+        $rows = [];
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $rows = $decoded;
+            }
+        } elseif (is_array($value)) {
+            $rows = $value;
+        }
+
+        $engines = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $engine = strtoupper((string)($row['engine'] ?? $row['ENGINE'] ?? ''));
+            $support = strtoupper((string)($row['support'] ?? $row['SUPPORT'] ?? ''));
+
+            if ($engine === '') {
+                continue;
+            }
+
+            if (in_array($support, ['YES', 'DEFAULT'], true)) {
+                $engines[$engine] = true;
+            }
+        }
+
+        return $engines;
+    }
+
+    private static function hasSupportedEngine(array $engines, string $engine): bool
+    {
+        return !empty($engines[strtoupper($engine)]);
     }
 
     private static function formatRamUsage($usedBytes, $totalBytes): array

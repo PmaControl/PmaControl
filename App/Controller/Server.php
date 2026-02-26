@@ -295,11 +295,28 @@ class Server extends Controller
 
         }
 
-        $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`
+        $showSessionKey = 'server_main_show_mode';
+        if (!empty($_GET['show']) && in_array($_GET['show'], ['all', 'monitored'], true)) {
+            $_SESSION[$showSessionKey] = $_GET['show'];
+        }
+
+        $showMode = $_SESSION[$showSessionKey] ?? 'monitored';
+        $data['show_mode'] = $showMode;
+
+        $effectiveMonitoredExpr = "CASE WHEN c.is_monitored = 0 THEN 0 ELSE a.is_monitored END";
+
+        $sql = "SELECT a.*, c.libelle as client,c.is_monitored as client_monitored, d.libelle as environment,d.`class`,
+                 ".$effectiveMonitoredExpr." AS effective_is_monitored
             FROM mysql_server PARTITION(pn) as a
                  INNER JOIN client c on c.id = a.id_client
                  INNER JOIN environment d on d.id = a.id_environment
-                 WHERE c.is_monitored=1 AND a.is_deleted=0 ".self::getFilter()."
+                 WHERE a.is_deleted=0 ".self::getFilter();
+
+        if ($showMode === 'monitored') {
+            $sql .= " AND ".$effectiveMonitoredExpr." = 1";
+        }
+
+        $sql .= "
                  ORDER by a.id, a.is_monitored DESC, c.is_monitored DESC, a.`is_acknowledged`, 
                  FIND_IN_SET(d.`id`, '1,19,2,16,3,7,4,6,8,5,17,18'), a.ip, a.display_name;";
 

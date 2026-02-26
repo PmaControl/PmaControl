@@ -116,6 +116,22 @@ if (empty($_GET['ajax'])){
 
     echo '<div width="100%">';
 
+    $showMode = $data['show_mode'] ?? 'monitored';
+    if ($showMode === 'all') {
+        $toggleLabel = __('Show monitored servers only');
+        $toggleUrl = LINK.'server/main/?show=monitored';
+        $toggleClass = 'btn btn-default';
+    } else {
+        $toggleLabel = __('Show all servers');
+        $toggleUrl = LINK.'server/main/?show=all';
+        $toggleClass = 'btn btn-info';
+    }
+
+    echo '<a href="'.$toggleUrl.'" class="'.$toggleClass.'" style="margin-right:10px">'
+        .'<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> '
+        .$toggleLabel
+        .'</a>';
+
 
     echo __("Refresh each :")."&nbsp;";
     echo '<div class="btn-group">';
@@ -171,6 +187,8 @@ if (!empty($data['servers'])) {
     foreach ($data['servers'] as $server) {
         $i++;
 
+        $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
+
         $style = "";
 
         $IS_AVAILABLE = true;
@@ -194,7 +212,7 @@ if (!empty($data['servers'])) {
         // cas des warning
         if (!empty($extra['mysql_available']) )
         {
-            if ($extra['mysql_available'] === "2" && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+            if ($extra['mysql_available'] === "2" && $isEffectiveMonitored) {
                 $style = 'background-color:rgb(240, 202, 78,'.$intensity.'); color:#000000'; //f0ad4e   FCF8E3
             //$style = 'gg';
             }
@@ -209,7 +227,7 @@ if (!empty($data['servers'])) {
 
         //$style = 'background-color:#EEE; color:#000';
         // cas des erreur
-        if (empty($extra['mysql_available']) && ($server['is_monitored'] === "1" && $server['client_monitored'] === "1" )) {
+        if (empty($extra['mysql_available']) && $isEffectiveMonitored) {
             $IS_AVAILABLE = false;
             $style = 'background-color:rgb(217, 83, 79,'.$intensity.'); color:#000';
         }
@@ -221,7 +239,7 @@ if (!empty($data['servers'])) {
         }
 
         // serveur non monitoré   BLUE
-        if (empty($server['is_monitored']) || empty($server['client_monitored'])) {
+        if (!$isEffectiveMonitored) {
             $style = 'background-color:rgb(91, 192, 222, '.$intensity.');  color:#666666';
         }
 
@@ -248,7 +266,7 @@ if (!empty($data['servers'])) {
         //echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1-hour/ts_variable:derivate:1">';
         echo '<td style="'.$style.'"><a href="'.LINK.'MysqlServer/main/'.$server['id'].'/pmacontrol">';
 
-        echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
+        echo '<span class="glyphicon '.(!$isEffectiveMonitored ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
         
         echo $server['display_name'];
         echo '</a></td>';
@@ -473,7 +491,7 @@ if (!empty($data['servers'])) {
             echo " pmacontrol Aspirateur tryMysqlConnection {$server['name']} {$server['id']} --debug";
         }
         
-        if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
+        if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0") {
             echo ' <a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
         }
 

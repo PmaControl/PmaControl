@@ -696,6 +696,19 @@ class Aspirateur extends Controller
             }
         }
 
+        /******************************************** engines */
+
+        if ((time()+$id_mysql_server)%(3600*$refresh) < $refresh) {
+
+            $data = array();
+            $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "engines"));
+            if ($elems != false )
+            {
+                $data['information_schema']['engines'] = json_encode($elems);
+                $this->exportData($id_mysql_server, "information_schema__engines", $data);
+            }
+        }
+
         /****************************************************************** */
 
         $data = array();
@@ -972,9 +985,10 @@ class Aspirateur extends Controller
 
         $stats['disks'] = json_encode($tmp);
 
-        $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
+        //$ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
+        $ips = trim($ssh->exec("hostname -I"));
 
-        $stats['ips'] = json_encode(explode("\n", $ips));
+        $stats['ips'] = json_encode(explode(" ", $ips));
 
 
 
@@ -1042,9 +1056,7 @@ class Aspirateur extends Controller
 
         $stats['memory_detail_kb'] = json_encode($processes);
 
-
         /* io wait */
-
         /*
           $cpu_user = trim($ssh->exec("iostat -c | tail -2 | head -n 1"));
           $cpu_user = trim(shell_exec("iostat -c | tail -2 | head -n 1"));
