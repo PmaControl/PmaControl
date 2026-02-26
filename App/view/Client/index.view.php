@@ -16,6 +16,7 @@ echo '<th>'.__('Top').'</th>';
 echo '<th>'.__('ID').'</th>';
 echo '<th>'.__('Monitored').'</th>';
 echo '<th>'.__('Libelle').'</th>';
+echo '<th>'.__('Servers').'</th>';
 echo '<th>'.__('Date').'</th>';
 echo '<th>'.__('Logo').'</th>';
 echo '</tr>';
@@ -55,6 +56,41 @@ if (!empty($data['client'])) {
 
         echo '</td>';
         echo '<td>'.$client['libelle'].'</td>';
+        echo '<td>';
+
+        $online = (int) ($client['online_servers'] ?? 0);
+        $offline = (int) ($client['offline_servers'] ?? 0);
+        $nonMonitored = (int) ($client['non_monitored_servers'] ?? 0);
+        $total = (int) ($client['total_servers'] ?? 0);
+
+        echo '<div style="display:flex;  gap:3px; min-width:170px">';
+
+        echo '<span title="'.__('Online').'">'
+            .'<svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px" aria-hidden="true">'
+            .'<circle cx="12" cy="12" r="9" fill="#28a745"></circle>'
+            .'</svg>'
+            .__('Online').' : <strong>'.$online.'</strong>'
+            .'</span>';
+
+        echo '<span title="'.__('Offline').'">'
+            .'<svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px" aria-hidden="true">'
+            .'<circle cx="12" cy="12" r="9" fill="#dc3545"></circle>'
+            .'</svg>'
+            .__('Offline').' : <strong>'.$offline.'</strong>'
+            .'</span>';
+
+        echo '<span title="'.__('Non monitored').'">'
+            .'<svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle; margin-right:4px" aria-hidden="true">'
+            .'<circle cx="12" cy="12" r="9" fill="#6c757d"></circle>'
+            .'<path d="M7 12h10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>'
+            .'</svg>'
+            .__('Non monitored').' : <strong>'.$nonMonitored.'</strong>'
+            .'</span>';
+
+        echo '<span style="color:#666">'.__('Total').' : '.$total.'</span>';
+        echo '</div>';
+
+        echo '</td>';
         echo '<td>'.$client['date'].'</td>';
         echo '<td>'.$client['logo'].'</td>';
 
