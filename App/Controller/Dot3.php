@@ -652,6 +652,10 @@ class Dot3 extends Controller
             // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
             $this->buildGaleraCluster(array($id_dot3_information, $group));
 
+            // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
+            // constraint=false pour ne pas déformer le layout du cluster.
+            $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
+
             $this->buildLink(array($id_dot3_information, $group));
             //Debug::debug($group, "GROUP");
 
@@ -983,6 +987,229 @@ class Dot3 extends Controller
 
         //Debug::debug(self::$build_ms , "LINK MASTER SLAVE");
 
+    }
+
+    /**
+     * Ajoute une flèche SST "hint" sans impacter la mise en page Graphviz.
+     *
+     * Règle métier demandée:
+     * - Si un noeud Galera actif A voit B dans wsrep_incoming_addresses
+     * - et que B existe bien côté inventaire, wsrep_on=ON mais mysql_available=0
+     * => on affiche une flèche supplémentaire A -> B (donor -> joiner)
+     *
+     * NB: l'edge est purement visuelle (constraint=false + weight=0).
+     */
+    public function buildGaleraSstHintLink($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty($dot3_information['information']['servers']) || empty($dot3_information['information']['mapping'])) {
+            return;
+        }
+
+        $servers = $dot3_information['information']['servers'];
+        $mapping = $dot3_information['information']['mapping'];
+        $alreadyBuilt = array();
+        $groupLookup = array_fill_keys(array_map('intval', $group), true);
+
+        foreach ($group as $viewerId) {
+            if (empty($servers[$viewerId])) {
+                continue;
+            }
+
+            $viewer = $servers[$viewerId];
+            $viewerClusterName = trim((string)($viewer['wsrep_cluster_name'] ?? ''));
+
+            if (empty($viewer['wsrep_on']) || strtolower((string)$viewer['wsrep_on']) !== 'on') {
+                continue;
+            }
+
+            if (empty($viewer['mysql_available']) || (string)$viewer['mysql_available'] !== '1') {
+                continue;
+            }
+
+            if (empty($viewer['wsrep_incoming_addresses'])) {
+                continue;
+            }
+
+            $incoming = self::getIdMysqlServerFromGalera((string)$viewer['wsrep_incoming_addresses']);
+
+            foreach ($incoming as $ipPort) {
+                if (empty($mapping[$ipPort])) {
+                    continue;
+                }
+
+                $offlineId = (int)$mapping[$ipPort];
+
+                if ($offlineId === (int)$viewerId) {
+                    continue;
+                }
+
+                if (empty($groupLookup[$offlineId])) {
+                    continue;
+                }
+
+                if (empty($servers[$offlineId])) {
+                    continue;
+                }
+
+                $offlineNode = $servers[$offlineId];
+                $offlineClusterName = trim((string)($offlineNode['wsrep_cluster_name'] ?? ''));
+
+                // Règle métier: on se base sur le nom de cluster (pas sur UUID pour les offline)
+                if ($viewerClusterName !== '' && $offlineClusterName !== ''
+                    && strcasecmp($viewerClusterName, $offlineClusterName) !== 0) {
+                    continue;
+                }
+
+                if (empty($offlineNode['wsrep_on']) || strtolower((string)$offlineNode['wsrep_on']) !== 'on') {
+                    continue;
+                }
+
+                if (!isset($offlineNode['mysql_available']) || (string)$offlineNode['mysql_available'] !== '0') {
+                    continue;
+                }
+
+                $edgeKey = $viewerId . '->' . $offlineId;
+                if (isset($alreadyBuilt[$edgeKey])) {
+                    continue;
+                }
+                $alreadyBuilt[$edgeKey] = true;
+
+                // Le noeud offline est considéré comme receveur SST (joiner)
+                if (!empty(self::$build_server[$offlineId])) {
+                    if (!empty(self::$config['NODE_WAITING'])) {
+                        self::setThemeToServer('NODE_WAITING', $offlineId);
+                    }
+
+                    self::$build_server[$offlineId]['galera_status_override'] = 'Joiner';
+                    self::$build_server[$offlineId]['wsrep_local_state_comment'] = 'Joiner';
+                    self::$build_server[$offlineId]['is_sst_receiver'] = '1';
+
+                    // Compléter les valeurs auto_increment manquantes du joiner
+                    // en se basant sur les autres noeuds Galera du même cluster.
+                    [$suggestedOffset, $suggestedIncrement] = $this->guessGaleraAutoIncrement(
+                        $servers,
+                        $group,
+                        $offlineId,
+                        $offlineClusterName
+                    );
+
+                    // Règle demandée: en mode joiner, on recalcule systématiquement
+                    // les paramètres auto_increment pour rester cohérent avec le cluster.
+                    if ($suggestedOffset > 0) {
+                        self::$build_server[$offlineId]['auto_increment_offset'] = (string) $suggestedOffset;
+                    }
+
+                    if ($suggestedIncrement > 0) {
+                        self::$build_server[$offlineId]['auto_increment_increment'] = (string) $suggestedIncrement;
+                    }
+                }
+
+                $tmp = self::$config['REPLICATION_SST'] ?? array(
+                    'color' => '#e3ea12',
+                    'style' => 'dashed',
+                    'options' => array(),
+                );
+
+                if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                    $tmp['options'] = array();
+                }
+
+                $tmp['arrow'] = $viewerId . ':' . self::TARGET . ' -> ' . $offlineId . ':' . self::TARGET;
+                $tmp['tooltip'] = 'SST probable : donor -> joiner';
+                //$tmp['options']['constraint'] = 'false';
+                //$tmp['options']['weight'] = '0';
+                //$tmp['options']['penwidth'] = '2';
+                $tmp['options']['arrowsize'] = '1.5';
+                $tmp['options']['style'] = $tmp['style'] ?? 'dashed';
+                $tmp['options']['label'] = 'SST';
+
+                self::$build_ms[] = $tmp;
+            }
+        }
+    }
+
+    private function guessGaleraAutoIncrement(array $servers, array $group, int $joinerId, string $clusterName): array
+    {
+        $increments = array();
+        $usedOffsets = array();
+        $onlinePeerCount = 0;
+
+        foreach ($group as $peerId) {
+            $peerId = (int)$peerId;
+            if ($peerId === $joinerId || empty($servers[$peerId])) {
+                continue;
+            }
+
+            $peer = $servers[$peerId];
+            if (empty($peer['wsrep_on']) || strtolower((string)$peer['wsrep_on']) !== 'on') {
+                continue;
+            }
+
+            // Règle métier: on se base uniquement sur les autres noeuds ONLINE
+            // pour éviter de réutiliser un offset stale d'un noeud offline.
+            if (empty($peer['mysql_available']) || (string)$peer['mysql_available'] !== '1') {
+                continue;
+            }
+
+            $peerClusterName = trim((string)($peer['wsrep_cluster_name'] ?? ''));
+            if ($clusterName !== '' && $peerClusterName !== '' && strcasecmp($clusterName, $peerClusterName) !== 0) {
+                continue;
+            }
+
+            $onlinePeerCount++;
+
+            $inc = (int)($peer['auto_increment_increment'] ?? 0);
+            if ($inc > 0) {
+                if (!isset($increments[$inc])) {
+                    $increments[$inc] = 0;
+                }
+                $increments[$inc]++;
+            }
+
+            $offset = (int)($peer['auto_increment_offset'] ?? 0);
+            if ($offset > 0) {
+                $usedOffsets[$offset] = true;
+            }
+        }
+
+        $increment = 0;
+        if (!empty($increments)) {
+            arsort($increments);
+            $increment = (int)array_key_first($increments);
+        } elseif ($onlinePeerCount > 0) {
+            // fallback: cluster courant (peers + joiner)
+            $increment = max(1, $onlinePeerCount + 1);
+        }
+
+        if ($increment <= 0) {
+            $increment = 1;
+        }
+
+        $offset = 0;
+        if ($increment > 0) {
+            for ($i = 1; $i <= $increment; $i++) {
+                if (empty($usedOffsets[$i])) {
+                    $offset = $i;
+                    break;
+                }
+            }
+
+            if ($offset === 0 && !empty($usedOffsets)) {
+                $knownOffsets = array_keys($usedOffsets);
+                sort($knownOffsets);
+                $offset = (int)$knownOffsets[0];
+            }
+        }
+
+        if ($offset <= 0) {
+            $offset = 1;
+        }
+
+        return array($offset, $increment);
     }
 
     public function buildServer($param)
@@ -1568,12 +1795,19 @@ class Dot3 extends Controller
                 
                 // if we have exact same clsuter with same IP / and Cluster_name we use wsrep_cluster_state_uuid if available
                 $cluster_uuid =  array(); 
+                $offline_or_unknown_nodes = array();
                 foreach($cluster as $id_mysql_server)
                 {
-                    if (isset($dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid']))
-                    {
-                        $server_uuid = $dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid'];
+                    $serverInfo = $dot3_information['information']['servers'][$id_mysql_server] ?? array();
+                    $isAvailable = isset($serverInfo['mysql_available']) && (string)$serverInfo['mysql_available'] === '1';
+                    $server_uuid = trim((string)($serverInfo['wsrep_cluster_state_uuid'] ?? ''));
+
+                    // Règle métier: pour un serveur offline, on ignore le UUID de cluster (souvent faux/stale)
+                    // et on le rattache ensuite à un cluster basé sur le nom.
+                    if ($isAvailable && $server_uuid !== '') {
                         $cluster_uuid[$server_uuid][] = $id_mysql_server;
+                    } else {
+                        $offline_or_unknown_nodes[] = $id_mysql_server;
                     }
                 }
 
@@ -1596,6 +1830,27 @@ class Dot3 extends Controller
 
                         foreach($cluster_uuid as $server_uuid => $sub_cluster)  {
                             $filteredClusters[$server_uuid] = $sub_cluster;
+                        }
+
+                        // Les noeuds offline/uuid inconnu sont rattachés au premier sous-cluster online
+                        // pour éviter la séparation artificielle sur UUID invalide.
+                        if (!empty($offline_or_unknown_nodes)) {
+                            $target_uuid = null;
+                            foreach ($cluster_uuid as $server_uuid => $sub_cluster) {
+                                $target_uuid = $server_uuid;
+                                break;
+                            }
+
+                            if ($target_uuid !== null) {
+                                if (empty($filteredClusters[$target_uuid])) {
+                                    $filteredClusters[$target_uuid] = array();
+                                }
+
+                                $filteredClusters[$target_uuid] = array_values(array_unique(array_merge(
+                                    $filteredClusters[$target_uuid],
+                                    $offline_or_unknown_nodes
+                                )));
+                            }
                         }
                     break;
                 }

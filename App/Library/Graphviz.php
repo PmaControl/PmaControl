@@ -528,7 +528,7 @@ class Graphviz
             //$image_logo = 'galera.svg';
         }
         
-        if ($server['mysql_available'] == "0") {
+        if ($server['mysql_available'] == "0" && empty($server['is_sst_receiver'])) {
             $server['color'] = "#FF5733";
         }
 
@@ -646,6 +646,11 @@ class Graphviz
 
                 //A déplacer dans DOT quoi que ?
                 if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+
+                    if (!empty($server['galera_status_override'])) {
+                        $server['wsrep_local_state_comment'] = $server['galera_status_override'];
+                    }
+
                     if ($server['wsrep_local_state_comment'] != "Synced") {
 
                             if ($server['wsrep_local_state'] === "2") { // Donnor / desync
@@ -671,10 +676,11 @@ class Graphviz
                     }
 
 
-                    if ($server['mysql_available'] === "0") {
+                    if (!empty($server['galera_status_override'])) {
+                        $status = $server['wsrep_cluster_status'].' (<b>'.$server['wsrep_local_state_comment'].'</b>)';
+                    } elseif ($server['mysql_available'] === "0") {
                         $status = '<b>Offline</b>';
-                    }
-                    else {
+                    } else {
                         $status = $server['wsrep_cluster_status'].' ('.$comment.')';
                     }
 
