@@ -791,6 +791,8 @@ class Aspirateur extends Controller
 
         $previous = $this->getPreviousVipDestinationState($id_mysql_server);
 
+        Debug::debug($previous, "PREVIOUS");
+
         // On conserve la date de bascule tant que la destination ne change pas.
         // Ainsi, l'empreinte MD5 reste stable (pas d'insert redondant).
         $destinationDate = date('Y-m-d H:i:s');
@@ -809,18 +811,33 @@ class Aspirateur extends Controller
             'destination_date' => $destinationDate,
         ];
 
-        Debug::debug($data, "DATA VIP");
+        $previousDestinationId = (int)($previous['destination_id'] ?? 0);
+        $previousDestinationDate = trim((string)($previous['destination_date'] ?? ''));
+        $previousPreviousId = (int)($previous['destination_previous_id'] ?? 0);
+        $previousPreviousDate = trim((string)($previous['destination_previous_date'] ?? ''));
 
-        if (
-            isset($previous['destination_id'])
-            && (int)$previous['destination_id'] !== (int)$destinationId
-        ) {
-            $data['destination_previous_id'] = (int)$previous['destination_id'];
+        // Destination inchangée => on conserve strictement le précédent historique.
+        if ($previousDestinationId === (int)$destinationId) {
+            if ($previousPreviousId > 0) {
+                $data['destination_previous_id'] = $previousPreviousId;
+            }
 
-            if (!empty($previous['destination_date'])) {
-                $data['destination_previous_date'] = $previous['destination_date'];
+            if ($previousPreviousDate !== '') {
+                $data['destination_previous_date'] = $previousPreviousDate;
             }
         }
+        // Destination changée => on décale la destination courante en "previous".
+        // On ignore volontairement les transitions depuis 0 (état inconnu/non résolu)
+        // pour éviter un rafraîchissement permanent de destination_previous_date.
+        else if ($previousDestinationId > 0) {
+            $data['destination_previous_id'] = $previousDestinationId;
+
+            if ($previousDestinationDate !== '') {
+                $data['destination_previous_date'] = $previousDestinationDate;
+            }
+        }
+
+        Debug::debug($data, "DATA VIP");
 
         return $data;
     }
@@ -999,12 +1016,16 @@ class Aspirateur extends Controller
         $ret = [
             'destination_id' => 0,
             'destination_date' => '',
+            'destination_previous_id' => 0,
+            'destination_previous_date' => '',
         ];
 
         try {
             $previous = Extraction2::display([
                 'vip::destination_id',
                 'vip::destination_date',
+                'vip::destination_previous_id',
+                'vip::destination_previous_date',
             ], [$id_mysql_server]);
 
             Debug::debug($previous, "VIP::PREVIOUS");
@@ -1014,6 +1035,8 @@ class Aspirateur extends Controller
                 $row = $previous[$id_mysql_server];
                 $ret['destination_id'] = (int)($row['destination_id'] ?? 0);
                 $ret['destination_date'] = trim((string)($row['destination_date'] ?? ''));
+                $ret['destination_previous_id'] = (int)($row['destination_previous_id'] ?? 0);
+                $ret['destination_previous_date'] = trim((string)($row['destination_previous_date'] ?? ''));
             }
         } catch (\Throwable $e) {
             $this->logger->warning(

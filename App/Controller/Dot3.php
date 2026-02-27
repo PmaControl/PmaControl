@@ -389,6 +389,56 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+    public function generateGroupVip($information)
+    {
+        $tmp_group = array();
+
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        foreach ($information['servers'] as $id_mysql_server => $server)
+        {
+            $id_source = (int) $id_mysql_server;
+
+            $vip_links = array(
+                $server['destination_id'] ?? null,
+                $server['destination_previous_id'] ?? null,
+            );
+
+            foreach ($vip_links as $id_destination)
+            {
+                if ($id_destination === null || $id_destination === '' || $id_destination === '0') {
+                    continue;
+                }
+
+                if (!is_numeric($id_destination)) {
+                    continue;
+                }
+
+                $id_destination = (int) $id_destination;
+
+                if ($id_destination <= 0) {
+                    continue;
+                }
+
+                // Keep only links pointing to known/monitored servers.
+                if (empty($information['servers'][$id_destination])) {
+                    continue;
+                }
+
+                $tmp_group[$id_source][] = $id_source;
+                $tmp_group[$id_source][] = $id_destination;
+            }
+
+            if (!empty($tmp_group[$id_source])) {
+                $tmp_group[$id_source] = array_values(array_unique($tmp_group[$id_source]));
+            }
+        }
+
+        return $tmp_group;
+    }
+
 
     public function generateGroupGalera($information)
     {
@@ -792,9 +842,11 @@ class Dot3 extends Controller
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
 
         $maxscale = $this->generateGroupMaxScale($dot3_information['information']);
+
+        $vip = $this->generateGroupVip($dot3_information['information']);
         
 
-        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale));
+        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale, $vip));
 
         //Debug::debug($group, "GROUP");
         //die();
