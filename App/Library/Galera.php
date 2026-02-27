@@ -264,11 +264,12 @@ trait Galera {
         foreach ($temp as $id_mysql_server => $servers) {
 
             $server = $servers[''];
-            if (!empty($this->servers[$id_mysql_server])) {
-                $this->servers[$id_mysql_server] = array_merge($server, $this->servers[$id_mysql_server]);
-            } else {
-                $this->servers[$id_mysql_server] = $server;
+            if (empty($this->servers[$id_mysql_server])) {
+                // On ne charge que les serveurs pré-filtrés par mappingMaster (proxy/vip exclus)
+                continue;
             }
+
+            $this->servers[$id_mysql_server] = array_merge($server, $this->servers[$id_mysql_server]);
         }
     }
 
@@ -277,7 +278,7 @@ trait Galera {
         $db = Sgbd::sql(DB_DEFAULT);
 
         // Main servers
-        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0 AND is_proxy=0";
+        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0 AND is_proxy=0 AND is_vip=0";
         $res = $db->sql_query($sql);
         while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $this->maping_master[$ar['ip'] . ":" . $ar['port']] = $ar['id'];
@@ -287,7 +288,7 @@ trait Galera {
         // Aliases from alias_dns table
         $sql_alias = "SELECT a.id_mysql_server, a.dns, a.port FROM alias_dns a
                       INNER JOIN mysql_server s ON a.id_mysql_server = s.id
-                      WHERE s.is_deleted=0";
+                      WHERE s.is_deleted=0 AND s.is_proxy=0 AND s.is_vip=0";
         $res_alias = $db->sql_query($sql_alias);
         while ($ar = $db->sql_fetch_array($res_alias, MYSQLI_ASSOC)) {
             $this->maping_master[$ar['dns'] . ":" . $ar['port']] = $ar['id_mysql_server'];

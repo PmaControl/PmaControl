@@ -209,6 +209,12 @@ if (!empty($data['servers'])) {
             $style = 'background-color:rgb(150, 150, 150, '.$intensity.'); color:#ffffff';
         }
 
+        $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
+        $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
+        $isProxyLikeServer = $isProxyServer || (!empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1");
+        $greyLatencyFields = $isVipServer || $isProxyLikeServer;
+        $greyCellStyle = 'background-color:rgb(220, 220, 220); color:#777777;';
+
         // cas des warning
         if (!empty($extra['mysql_available']) )
         {
@@ -328,17 +334,21 @@ if (!empty($data['servers'])) {
 
         $is_proxysql = (empty($extra['is_proxysql'])) ? 0 : $extra['is_proxysql'];
 
-        if (!empty($extra['version'])) {
+        if ($isVipServer) {
+            echo '<img title="VIP" alt="VIP" height="16" width="16" src="'.IMG.'/icon/vip.svg"/> VIP';
+        } elseif (!empty($extra['version'])) {
             echo Format::mysqlVersion($extra['version'], $extra['version_comment'], $is_proxysql);
         }
 
-        if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON") {
+        if (!$isVipServer && !empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON") {
             echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
         }
 
         echo '</td>';
-        echo '<td style="'.$style.'">';
-        if (!empty($extra['avg_latency'])) {
+        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
+        if ($greyLatencyFields) {
+            echo '<span class="label label-default">n/a</span>';
+        } elseif (!empty($extra['avg_latency'])) {
 
             echo format_time_ps_with_label($extra['avg_latency'],2);
 
@@ -351,7 +361,7 @@ if (!empty($data['servers'])) {
         echo '</td>';
 
 
-        echo '<td style="'.$style.'">';
+        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
 
         if (!empty($extra['general_log'])) {
 
@@ -360,6 +370,10 @@ if (!empty($data['servers'])) {
 
             if ($extra['general_log'] === "ON") {
                 $checked = array("checked" => "checked");
+            }
+
+            if ($greyLatencyFields) {
+                $checked['disabled'] = "true";
             }
             ?>
             <div class="form-group" style="margin: 0">
@@ -381,7 +395,7 @@ if (!empty($data['servers'])) {
 
         echo '</td>';
 
-        echo '<td style="'.$style.'">';
+        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
         //echo $extra['performance_schema'];
 
         if (!empty($extra['performance_schema'])) {
