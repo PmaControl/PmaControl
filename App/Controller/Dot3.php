@@ -113,7 +113,7 @@ class Dot3 extends Controller
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
-        $sql2 = "SELECT a.id, a.is_proxy
+        $sql2 = "SELECT a.id, a.is_proxy, a.is_vip
         FROM mysql_server a
         INNER JOIN client x ON x.id = a.id_client
         ".$versioning."
@@ -121,6 +121,7 @@ class Dot3 extends Controller
 
         $id_mysql_servers = [];
         $id_mysql_servers__proxy = [];
+        $id_mysql_servers__vip = [];
         $id_mysql_servers__real = [];
 
         $res2 = $db->sql_query($sql2);
@@ -131,11 +132,13 @@ class Dot3 extends Controller
             {
                 $id_mysql_servers__proxy[] = $arr['id'];
             }
+            else if ($arr['is_vip'] === "1")
+            {
+                $id_mysql_servers__vip[] = $arr['id'];
+            }
             else{
                 $id_mysql_servers__real[] = $arr['id'];
             }
-            
-
         }
 
         Debug::debug($id_mysql_servers__real, "id_mysql_servers__real");
@@ -168,62 +171,19 @@ class Dot3 extends Controller
             ),$id_mysql_servers , $date_request);
 /***/
 
-/*
-            $available = Extraction2::display([
-            "mysql_server::mysql_available",
-            "mysql_server::mysql_error",
-            "variables::version_comment",
-            "variables::version",
-            "variables::is_proxysql", 
-            "variables::is_proxy",
-            "variables::is_maxscale"
-            ],$id_mysql_servers , $date_request);
-
-
-            // variables::is_proxy", "variables::is_maxscale"
-            $mysql_servers = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone",
-                "variables::system_time_zone", "variables::port", 
-                "variables::wsrep_cluster_address","slave::connection_name",
-                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
-                "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
-                "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
-                "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
-                "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
-                "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
-                 "master_ssl_allowed", "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", 
-                 "status::wsrep_provider_version"
-            ),$id_mysql_servers__real , $date_request);
-
-
-            $proxysql = Extraction2::display(array("proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", 
-            "proxysql_runtime::mysql_galera_hostgroups", "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", 
-            "proxysql_runtime::proxysql_servers", "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
-            "proxysql_runtime::mysql_group_replication_hostgroups"
-            ),$id_mysql_servers__proxy , $date_request);
-
-
-            $maxscale = Extraction2::display(array("maxscale::maxscale_listeners", "maxscale::maxscale_servers",
-            "maxscale::maxscale_services", "maxscale::maxscale_monitors"
-            ),$id_mysql_servers__proxy , $date_request);
-
-            /**** */
-
-
 
 
         // only valid server
-        $sql = "SELECT a.id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
+        $sql = "SELECT a.id as id_mysql_server, ip, port, display_name, is_proxy, is_vip ,ip as ip_real, port as port_real
                 FROM mysql_server a
                 INNER JOIN client x ON x.id = a.id_client
                 ".$versioning."
                 AND x.is_monitored = 1 AND a.is_deleted=0
-                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
+                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy,c.is_vip, c.ip as ip_real, c.port as port_real
                 FROM alias_dns b 
                 INNER JOIN mysql_server c ON b.id_mysql_server =c.id 
                 INNER JOIN client y ON y.id = c.id_client ".$versioning2." AND y.is_monitored = 1 
-                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1,d.hostname, d.port 
+                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1, 0, d.hostname, d.port 
                 FROM proxysql_server d
                 INNER JOIN mysql_server e ON e.id = d.id_mysql_server
                 INNER JOIN client z ON z.id = e.id_client
@@ -238,7 +198,12 @@ class Dot3 extends Controller
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server_mysql[$arr['id_mysql_server']] = $arr;
 
-            //TODO add alias_dns and virtual_ip
+            //pas d'alias pour les VIP
+            if (in_array($arr['id_mysql_server'], $id_mysql_servers__vip))
+            {
+                continue;
+            }
+
             $data['mapping'][$arr['ip'].':'.$arr['port']] = $arr['id_mysql_server'];
             // add tunnel 
         }
@@ -2441,6 +2406,10 @@ class Dot3 extends Controller
 
     public function after($param)
     {
+        if (!function_exists('posix_geteuid')) {
+            function posix_geteuid(): int { return 0; }
+        }
+
         if (posix_geteuid() === 0) {
             usleep(5000);
             shell_exec("chown www-data:www-data -R ".TMP."dot");
@@ -2464,7 +2433,7 @@ class Dot3 extends Controller
     {
         $server = $information['servers'][$id_mysql_server] ?? null;
         if (!$server) {
-            throw new \Exception("Server not found", 404);
+            throw new Exception("Server not found", 404);
         }
 
         //generate next id in $information['servers']
