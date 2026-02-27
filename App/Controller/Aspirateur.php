@@ -376,12 +376,20 @@ class Aspirateur extends Controller
 
         // to make it in cache one time for all
         // To know if we use a proxy like PROXYSQL / MAXSCALE
+        $IS_PROXY = 0;
+        $IS_VIP = 0;
+        $vipConnectionHost = '';
+        $vipConnectionPort = 3306;
+
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
+        $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server WHERE id=".$id_mysql_server;
         $res = $db->sql_query($sql);
 
         while($ob = $db->sql_fetch_object($res)) {
-            $IS_PROXY = $ob->is_proxy;
+            $IS_PROXY = (int)$ob->is_proxy;
+            $IS_VIP = (int)$ob->is_vip;
+            $vipConnectionHost = trim((string)($ob->ip ?? ''));
+            $vipConnectionPort = (int)($ob->port ?? 3306);
         }
         $db->sql_close();
         //end of case of HA proxy & Maxscale
@@ -412,12 +420,13 @@ class Aspirateur extends Controller
             }
 
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
-            if (empty($IS_PROXY)) {
+            if (empty($IS_PROXY) && empty($IS_VIP)) {
 
 
             }
             else{
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
+                $error_ori = '';
                 try{
                     // hack to force read to switch back online after shunned in case of no query on proxy (reader)
                     $mysql_tested->sql_query("SELECT 1;");
@@ -457,6 +466,23 @@ class Aspirateur extends Controller
             if ($available === 0) {
                 return false;
             }
+        }
+
+        // Cas VIP : on ne collecte pas les métriques MySQL classiques.
+        // On réalise uniquement les tests de connexion ci-dessus puis on exporte
+        // les variables dédiées dans un ts_file spécifique.
+        if (!empty($IS_VIP)) {
+            $vipData = array();
+            $vipData['vip'] = $this->buildVipMetrics(
+                (int)$id_mysql_server,
+                (string)$vipConnectionHost,
+                (int)$vipConnectionPort
+            );
+
+            // check_data=true => anti-redondance via MD5
+            $this->exportData($id_mysql_server, "vip", $vipData, true);
+            $mysql_tested->sql_close();
+            return true;
         }
 
         // traitement SHOW GLOBAL VARIABLES
@@ -742,6 +768,328 @@ class Aspirateur extends Controller
         Debug::debugShowTime();
 
         return true;
+    }
+
+    private function buildVipMetrics(int $id_mysql_server, string $connectionHost, int $connectionPort): array
+    {
+        $resolvedIp = $this->resolveVipIp($connectionHost);
+
+        $vipCandidates = [];
+        foreach ([$resolvedIp, $connectionHost] as $candidate) {
+            $candidate = trim((string)$candidate);
+            if ($candidate !== '') {
+                $vipCandidates[] = $candidate;
+            }
+        }
+        $vipCandidates = array_values(array_unique($vipCandidates));
+
+        $destinationId = $this->resolveVipDestinationId(
+            $id_mysql_server,
+            $vipCandidates,
+            $connectionPort
+        );
+
+        $previous = $this->getPreviousVipDestinationState($id_mysql_server);
+
+        // On conserve la date de bascule tant que la destination ne change pas.
+        // Ainsi, l'empreinte MD5 reste stable (pas d'insert redondant).
+        $destinationDate = date('Y-m-d H:i:s');
+        if (
+            isset($previous['destination_id'])
+            && (int)$previous['destination_id'] === (int)$destinationId
+            && !empty($previous['destination_date'])
+        ) {
+            $destinationDate = $previous['destination_date'];
+        }
+
+        $data = [
+            'ip' => $resolvedIp,
+            'port' => (int)$connectionPort,
+            'destination_id' => (int)$destinationId,
+            'destination_date' => $destinationDate,
+        ];
+
+        Debug::debug($data, "DATA VIP");
+
+        if (
+            isset($previous['destination_id'])
+            && (int)$previous['destination_id'] !== (int)$destinationId
+        ) {
+            $data['destination_previous_id'] = (int)$previous['destination_id'];
+
+            if (!empty($previous['destination_date'])) {
+                $data['destination_previous_date'] = $previous['destination_date'];
+            }
+        }
+
+        return $data;
+    }
+
+    private function resolveVipIp(string $connectionHost): string
+    {
+        $connectionHost = trim($connectionHost);
+        if ($connectionHost === '') {
+            return '';
+        }
+
+        if (filter_var($connectionHost, FILTER_VALIDATE_IP)) {
+            return $connectionHost;
+        }
+
+        $ips = @gethostbynamel($connectionHost);
+        if (!empty($ips) && is_array($ips)) {
+            foreach ($ips as $ip) {
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        $ip = @gethostbyname($connectionHost);
+        if (!empty($ip) && $ip !== $connectionHost && filter_var($ip, FILTER_VALIDATE_IP)) {
+            return $ip;
+        }
+
+        return $connectionHost;
+    }
+
+    private function resolveVipDestinationId(int $id_mysql_server, array $vipCandidates, int $port): int
+    {
+        $normalizedTarget = [];
+        foreach ($vipCandidates as $candidate) {
+            $norm = $this->normalizeVipCandidate((string)$candidate);
+            if ($norm !== '') {
+                $normalizedTarget[$norm] = true;
+            }
+        }
+
+        if (empty($normalizedTarget)) {
+            return 0;
+        }
+
+        // 1) Match principal via ips (ssh_stats)
+        $destinationId = $this->resolveVipDestinationIdFromSshMetric(
+            $id_mysql_server,
+            $normalizedTarget,
+            'ips',
+            'ips'
+        );
+        if ($destinationId > 0) {
+            return $destinationId;
+        }
+
+        // 2) Compatibilité explicite avec le préfixe from (si présent)
+        $destinationId = $this->resolveVipDestinationIdFromSshMetric(
+            $id_mysql_server,
+            $normalizedTarget,
+            'ssh_stats::ips',
+            'ips'
+        );
+        if ($destinationId > 0) {
+            return $destinationId;
+        }
+
+        return $this->resolveVipDestinationIdFromAliasDns(
+            $id_mysql_server,
+            array_keys($normalizedTarget),
+            $port
+        );
+    }
+
+    private function resolveVipDestinationIdFromSshMetric(
+        int $id_mysql_server,
+        array $normalizedTarget,
+        string $metricSelector,
+        string $fieldName
+    ): int {
+        if (empty($normalizedTarget)) {
+            return 0;
+        }
+
+        try {
+            $rows = Extraction2::display([$metricSelector]);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[VIP] Unable to resolve destination via '.$metricSelector.' for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+            return 0;
+        }
+
+        if (empty($rows) || !is_array($rows)) {
+            return 0;
+        }
+
+        foreach ($rows as $serverId => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $rawValue = null;
+            if (array_key_exists($fieldName, $row)) {
+                $rawValue = $row[$fieldName];
+            } elseif (array_key_exists($metricSelector, $row)) {
+                // garde-fou si Extraction2 change la clé renvoyée
+                $rawValue = $row[$metricSelector];
+            }
+
+            if ($rawValue === null) {
+                continue;
+            }
+
+            $targetServerId = 0;
+            if (isset($row['id_mysql_server']) && is_numeric($row['id_mysql_server'])) {
+                $targetServerId = (int)$row['id_mysql_server'];
+            }
+
+            if ($targetServerId <= 0) {
+                $targetServerId = (int)$serverId;
+            }
+
+            if ($targetServerId <= 0 || $targetServerId === (int)$id_mysql_server) {
+                continue;
+            }
+
+            $sshCandidates = $this->extractVipCandidatesFromRawValue($rawValue);
+            foreach ($sshCandidates as $candidate) {
+                if (isset($normalizedTarget[$candidate])) {
+                    return $targetServerId;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    private function resolveVipDestinationIdFromAliasDns(int $id_mysql_server, array $normalizedCandidates, int $port): int
+    {
+        if (empty($normalizedCandidates)) {
+            return 0;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $in = [];
+        foreach ($normalizedCandidates as $candidate) {
+            $in[] = "'".$db->sql_real_escape_string($candidate)."'";
+        }
+
+        if (empty($in)) {
+            return 0;
+        }
+
+        $sql = "SELECT a.id_mysql_server
+        FROM alias_dns a
+        WHERE a.port = ".(int)$port."
+        AND a.id_mysql_server != ".(int)$id_mysql_server."
+        AND LOWER(a.dns) IN (".implode(',', $in).")
+        ORDER BY a.id_mysql_server ASC
+        LIMIT 1;";
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            return (int)$ob->id_mysql_server;
+        }
+
+        return 0;
+    }
+
+    private function getPreviousVipDestinationState(int $id_mysql_server): array
+    {
+        $ret = [
+            'destination_id' => 0,
+            'destination_date' => '',
+        ];
+
+        try {
+            $previous = Extraction2::display([
+                'vip::destination_id',
+                'vip::destination_date',
+            ], [$id_mysql_server]);
+
+            Debug::debug($previous, "VIP::PREVIOUS");
+
+
+            if (!empty($previous[$id_mysql_server])) {
+                $row = $previous[$id_mysql_server];
+                $ret['destination_id'] = (int)($row['destination_id'] ?? 0);
+                $ret['destination_date'] = trim((string)($row['destination_date'] ?? ''));
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[VIP] Unable to load previous destination state for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+        }
+
+        return $ret;
+    }
+
+    private function extractVipCandidatesFromRawValue($raw): array
+    {
+        $flat = [];
+
+        if (is_string($raw)) {
+            $trimmed = trim($raw);
+            if ($trimmed !== '' && ($trimmed[0] === '[' || $trimmed[0] === '{')) {
+                $decoded = json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $raw = $decoded;
+                }
+            }
+        }
+
+        $this->flattenVipRawValue($raw, $flat);
+
+        $candidates = [];
+        foreach ($flat as $value) {
+            foreach (preg_split('/[\s,;|]+/', $value) as $token) {
+                $normalized = $this->normalizeVipCandidate($token);
+                if ($normalized !== '') {
+                    $candidates[$normalized] = true;
+                }
+            }
+        }
+
+        return array_keys($candidates);
+    }
+
+    private function flattenVipRawValue($value, array &$flat): void
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $this->flattenVipRawValue($item, $flat);
+            }
+            return;
+        }
+
+        if (is_scalar($value)) {
+            $str = trim((string)$value);
+            if ($str !== '') {
+                $flat[] = $str;
+            }
+        }
+    }
+
+    private function normalizeVipCandidate(string $value): string
+    {
+        $value = trim($value);
+        $value = trim($value, "\"'");
+
+        if ($value === '') {
+            return '';
+        }
+
+        // [ipv6]:port
+        if (preg_match('/^\[(.*)\]:(\d+)$/', $value, $m)) {
+            $value = trim($m[1]);
+        }
+        // ipv4:port / dns:port
+        else if (preg_match('/^([^:]+):(\d+)$/', $value, $m)) {
+            $value = trim($m[1]);
+        }
+
+        return strtolower($value);
     }
 
     public function allocate_shared_storage($name, $separator = EngineV4::SEPERATOR)
@@ -1767,6 +2115,8 @@ GROUP BY C.ID, C.INFO;";
     */
     function after($param)
     {
+
+
         // need test if root
         //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
         if (posix_geteuid() === 0) {

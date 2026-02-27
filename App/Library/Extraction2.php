@@ -44,6 +44,7 @@ class Extraction2
         //Debug::debug($date);
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $sql3 = "";
 
         //il faudrait retirer la liste qui peut ralentir la requette quand il y a beaucoup de serveurs
         if (empty($server)) {
@@ -222,11 +223,11 @@ class Extraction2
             }
         }
         
-        Debug::sql($sql3);
-
         if (empty($sql3)) {
             return [];
         }
+
+        Debug::sql($sql3);
 
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
