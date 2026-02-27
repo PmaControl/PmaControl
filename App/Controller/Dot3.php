@@ -1011,17 +1011,18 @@ class Dot3 extends Controller
 
         $servers = $dot3_information['information']['servers'];
         $mapping = $dot3_information['information']['mapping'];
-        $alreadyBuilt = array();
         $groupLookup = array_fill_keys(array_map('intval', $group), true);
 
+        // Candidats donor par joiner (on choisira ensuite UN seul donor par joiner)
+        $candidateByJoiner = array();
+
         foreach ($group as $viewerId) {
+            $viewerId = (int)$viewerId;
             if (empty($servers[$viewerId])) {
                 continue;
             }
 
             $viewer = $servers[$viewerId];
-            $viewerClusterName = trim((string)($viewer['wsrep_cluster_name'] ?? ''));
-
             if (empty($viewer['wsrep_on']) || strtolower((string)$viewer['wsrep_on']) !== 'on') {
                 continue;
             }
@@ -1034,6 +1035,8 @@ class Dot3 extends Controller
                 continue;
             }
 
+            $viewerClusterName = trim((string)($viewer['wsrep_cluster_name'] ?? ''));
+            $viewerSegment = $this->getGaleraSegmentFromNode($viewer);
             $incoming = self::getIdMysqlServerFromGalera((string)$viewer['wsrep_incoming_addresses']);
 
             foreach ($incoming as $ipPort) {
@@ -1041,95 +1044,152 @@ class Dot3 extends Controller
                     continue;
                 }
 
-                $offlineId = (int)$mapping[$ipPort];
-
-                if ($offlineId === (int)$viewerId) {
+                $joinerId = (int)$mapping[$ipPort];
+                if ($joinerId === $viewerId) {
                     continue;
                 }
 
-                if (empty($groupLookup[$offlineId])) {
+                if (empty($groupLookup[$joinerId]) || empty($servers[$joinerId])) {
                     continue;
                 }
 
-                if (empty($servers[$offlineId])) {
+                $joiner = $servers[$joinerId];
+                if (empty($joiner['wsrep_on']) || strtolower((string)$joiner['wsrep_on']) !== 'on') {
                     continue;
                 }
 
-                $offlineNode = $servers[$offlineId];
-                $offlineClusterName = trim((string)($offlineNode['wsrep_cluster_name'] ?? ''));
-
-                // Règle métier: on se base sur le nom de cluster (pas sur UUID pour les offline)
-                if ($viewerClusterName !== '' && $offlineClusterName !== ''
-                    && strcasecmp($viewerClusterName, $offlineClusterName) !== 0) {
+                // Joiner attendu: noeud Galera offline
+                if (!isset($joiner['mysql_available']) || (string)$joiner['mysql_available'] !== '0') {
                     continue;
                 }
 
-                if (empty($offlineNode['wsrep_on']) || strtolower((string)$offlineNode['wsrep_on']) !== 'on') {
+                $joinerClusterName = trim((string)($joiner['wsrep_cluster_name'] ?? ''));
+                if ($viewerClusterName !== '' && $joinerClusterName !== ''
+                    && strcasecmp($viewerClusterName, $joinerClusterName) !== 0) {
                     continue;
                 }
 
-                if (!isset($offlineNode['mysql_available']) || (string)$offlineNode['mysql_available'] !== '0') {
+                $joinerSegment = $this->getGaleraSegmentFromNode($joiner);
+
+                // Règle métier demandée : le donor doit être dans le même segment que le joiner
+                if ($viewerSegment !== $joinerSegment) {
                     continue;
                 }
 
-                $edgeKey = $viewerId . '->' . $offlineId;
-                if (isset($alreadyBuilt[$edgeKey])) {
-                    continue;
-                }
-                $alreadyBuilt[$edgeKey] = true;
+                $score = $this->scoreSstDonorCandidate($viewer, $joinerSegment);
 
-                // Le noeud offline est considéré comme receveur SST (joiner)
-                if (!empty(self::$build_server[$offlineId])) {
-                    if (!empty(self::$config['NODE_WAITING'])) {
-                        self::setThemeToServer('NODE_WAITING', $offlineId);
-                    }
-
-                    self::$build_server[$offlineId]['galera_status_override'] = 'Joiner';
-                    self::$build_server[$offlineId]['wsrep_local_state_comment'] = 'Joiner';
-                    self::$build_server[$offlineId]['is_sst_receiver'] = '1';
-
-                    // Compléter les valeurs auto_increment manquantes du joiner
-                    // en se basant sur les autres noeuds Galera du même cluster.
-                    [$suggestedOffset, $suggestedIncrement] = $this->guessGaleraAutoIncrement(
-                        $servers,
-                        $group,
-                        $offlineId,
-                        $offlineClusterName
-                    );
-
-                    // Règle demandée: en mode joiner, on recalcule systématiquement
-                    // les paramètres auto_increment pour rester cohérent avec le cluster.
-                    if ($suggestedOffset > 0) {
-                        self::$build_server[$offlineId]['auto_increment_offset'] = (string) $suggestedOffset;
-                    }
-
-                    if ($suggestedIncrement > 0) {
-                        self::$build_server[$offlineId]['auto_increment_increment'] = (string) $suggestedIncrement;
-                    }
-                }
-
-                $tmp = self::$config['REPLICATION_SST'] ?? array(
-                    'color' => '#e3ea12',
-                    'style' => 'dashed',
-                    'options' => array(),
+                $candidateByJoiner[$joinerId][] = array(
+                    'donor_id' => $viewerId,
+                    'joiner_id' => $joinerId,
+                    'joiner_cluster_name' => $joinerClusterName,
+                    'score' => $score,
                 );
-
-                if (empty($tmp['options']) || !is_array($tmp['options'])) {
-                    $tmp['options'] = array();
-                }
-
-                $tmp['arrow'] = $viewerId . ':' . self::TARGET . ' -> ' . $offlineId . ':' . self::TARGET;
-                $tmp['tooltip'] = 'SST probable : donor -> joiner';
-                //$tmp['options']['constraint'] = 'false';
-                //$tmp['options']['weight'] = '0';
-                //$tmp['options']['penwidth'] = '2';
-                $tmp['options']['arrowsize'] = '1.5';
-                $tmp['options']['style'] = $tmp['style'] ?? 'dashed';
-                $tmp['options']['label'] = 'SST';
-
-                self::$build_ms[] = $tmp;
             }
         }
+
+        foreach ($candidateByJoiner as $joinerId => $candidates) {
+            if (empty($candidates)) {
+                continue;
+            }
+
+            usort($candidates, function ($a, $b) {
+                if ($a['score'] === $b['score']) {
+                    return $a['donor_id'] <=> $b['donor_id'];
+                }
+                return $b['score'] <=> $a['score'];
+            });
+
+            $winner = $candidates[0];
+            $donorId = (int)$winner['donor_id'];
+            $joinerId = (int)$winner['joiner_id'];
+
+            // Le noeud offline est considéré comme receveur SST (joiner)
+            if (!empty(self::$build_server[$joinerId])) {
+                if (!empty(self::$config['NODE_WAITING'])) {
+                    self::setThemeToServer('NODE_WAITING', $joinerId);
+                }
+
+                self::$build_server[$joinerId]['galera_status_override'] = 'Joiner';
+                self::$build_server[$joinerId]['wsrep_local_state_comment'] = 'Joiner';
+                self::$build_server[$joinerId]['is_sst_receiver'] = '1';
+
+                // Compléter les valeurs auto_increment manquantes du joiner
+                // en se basant sur les autres noeuds Galera du même cluster.
+                [$suggestedOffset, $suggestedIncrement] = $this->guessGaleraAutoIncrement(
+                    $servers,
+                    $group,
+                    $joinerId,
+                    $winner['joiner_cluster_name']
+                );
+
+                // Règle demandée: en mode joiner, on recalcule systématiquement
+                // les paramètres auto_increment pour rester cohérent avec le cluster.
+                if ($suggestedOffset > 0) {
+                    self::$build_server[$joinerId]['auto_increment_offset'] = (string) $suggestedOffset;
+                }
+
+                if ($suggestedIncrement > 0) {
+                    self::$build_server[$joinerId]['auto_increment_increment'] = (string) $suggestedIncrement;
+                }
+            }
+
+            $tmp = self::$config['REPLICATION_SST'] ?? array(
+                'color' => '#e3ea12',
+                'style' => 'dashed',
+                'options' => array(),
+            );
+
+            if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                $tmp['options'] = array();
+            }
+
+            $tmp['arrow'] = $donorId . ':' . self::TARGET . ' -> ' . $joinerId . ':' . self::TARGET;
+            $tmp['tooltip'] = 'SST probable : donor -> joiner';
+            //$tmp['options']['constraint'] = 'false';
+            //$tmp['options']['weight'] = '0';
+            //$tmp['options']['penwidth'] = '2';
+            $tmp['options']['arrowsize'] = '1.5';
+            $tmp['options']['style'] = $tmp['style'] ?? 'dashed';
+            $tmp['options']['label'] = 'SST';
+
+            self::$build_ms[] = $tmp;
+        }
+    }
+
+    private function getGaleraSegmentFromNode(array $node): int
+    {
+        $providerOptions = (string)($node['wsrep_provider_options'] ?? '');
+        if ($providerOptions === '') {
+            return 0;
+        }
+
+        $segment = self::extractProviderOption($providerOptions, 'gmcast.segment');
+        return (int)$segment;
+    }
+
+    private function scoreSstDonorCandidate(array $donorNode, int $joinerSegment): int
+    {
+        $score = 0;
+
+        $donorSegment = $this->getGaleraSegmentFromNode($donorNode);
+        if ($donorSegment === $joinerSegment) {
+            $score += 100;
+        }
+
+        $comment = strtolower(trim((string)($donorNode['wsrep_local_state_comment'] ?? '')));
+        if (strpos($comment, 'donor') !== false) {
+            $score += 40;
+        }
+
+        if ((string)($donorNode['wsrep_local_state'] ?? '') === '2') {
+            $score += 20;
+        }
+
+        if (strtolower((string)($donorNode['wsrep_desync'] ?? '')) === 'on') {
+            $score += 10;
+        }
+
+        return $score;
     }
 
     private function guessGaleraAutoIncrement(array $servers, array $group, int $joinerId, string $clusterName): array
