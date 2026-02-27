@@ -162,7 +162,9 @@ class Dot3 extends Controller
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
-                "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
+                "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
+                "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
+                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress"
             ),$id_mysql_servers , $date_request);
 /***/
 
@@ -1143,14 +1145,19 @@ class Dot3 extends Controller
                 $tmp['options'] = array();
             }
 
+            $sstLabel = $this->buildSstEdgeLabel($servers[$donorId] ?? array(), $servers[$joinerId] ?? array());
+
             $tmp['arrow'] = $donorId . ':' . self::TARGET . ' -> ' . $joinerId . ':' . self::TARGET;
             $tmp['tooltip'] = 'SST probable : donor -> joiner';
+            if ($sstLabel !== 'SST') {
+                $tmp['tooltip'] .= ' (' . $sstLabel . ')';
+            }
             //$tmp['options']['constraint'] = 'false';
             //$tmp['options']['weight'] = '0';
             //$tmp['options']['penwidth'] = '2';
             $tmp['options']['arrowsize'] = '1.5';
             $tmp['options']['style'] = $tmp['style'] ?? 'dashed';
-            $tmp['options']['label'] = 'SST';
+            $tmp['options']['label'] = $sstLabel;
 
             self::$build_ms[] = $tmp;
         }
@@ -1190,6 +1197,94 @@ class Dot3 extends Controller
         }
 
         return $score;
+    }
+
+    private function buildSstEdgeLabel(array $donorNode, array $joinerNode): string
+    {
+        $progress = $this->estimateSstProgressPercent($donorNode, $joinerNode);
+        $elapsedMin = $this->estimateSstElapsedMinutes($donorNode, $joinerNode);
+
+        if ($progress === null && $elapsedMin === null) {
+            return 'SST';
+        }
+
+        if ($progress !== null && $elapsedMin !== null) {
+            return 'SST ' . $progress . '% (' . $elapsedMin . 'min)';
+        }
+
+        if ($progress !== null) {
+            return 'SST ' . $progress . '%';
+        }
+
+        return 'SST (' . $elapsedMin . 'min)';
+    }
+
+    private function estimateSstProgressPercent(array $donorNode, array $joinerNode): ?int
+    {
+        $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_clean_size');
+        if ($expectedSize <= 0) {
+            $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_total_size');
+        }
+
+        $receivedSize = $this->getPositiveIntMetric($joinerNode, 'mysql_datadir_clean_size');
+        if ($receivedSize <= 0) {
+            $receivedSize = $this->getPositiveIntMetric($joinerNode, 'mysql_datadir_total_size');
+        }
+
+        if ($expectedSize <= 0 || $receivedSize < 0) {
+            return null;
+        }
+
+        $pct = (int) round(($receivedSize / $expectedSize) * 100);
+
+        if ($pct < 0) {
+            $pct = 0;
+        } elseif ($pct > 100) {
+            $pct = 100;
+        }
+
+        return $pct;
+    }
+
+    private function estimateSstElapsedMinutes(array $donorNode, array $joinerNode): ?int
+    {
+        $joinerElapsed = $this->getPositiveIntMetric($joinerNode, 'mysql_sst_elapsed_sec');
+        $donorElapsed = $this->getPositiveIntMetric($donorNode, 'mysql_sst_elapsed_sec');
+        $elapsedSec = max($joinerElapsed, $donorElapsed);
+
+        if ($elapsedSec <= 0) {
+            return null;
+        }
+
+        $minutes = (int) floor($elapsedSec / 60);
+        if ($minutes <= 0) {
+            $minutes = 1;
+        }
+
+        return $minutes;
+    }
+
+    private function getPositiveIntMetric(array $node, string $key): int
+    {
+        if (!isset($node[$key])) {
+            return 0;
+        }
+
+        $value = $node[$key];
+        if (is_array($value) && isset($value['count'])) {
+            $value = $value['count'];
+        }
+
+        if (!is_numeric($value)) {
+            return 0;
+        }
+
+        $intValue = (int)$value;
+        if ($intValue <= 0) {
+            return 0;
+        }
+
+        return $intValue;
     }
 
     private function guessGaleraAutoIncrement(array $servers, array $group, int $joinerId, string $clusterName): array

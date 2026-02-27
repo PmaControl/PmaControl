@@ -807,8 +807,10 @@ class Aspirateur extends Controller
 
             if (!empty($ssh) && $ssh !== false ) {
                 $ssh_available = 1;
+
+                $mysqlDatadirContext = $this->getMysqlDatadirContext((int)$id_mysql_server);
    
-                $stats['ssh_stats']    = $this->getStats($ssh);
+                $stats['ssh_stats']    = $this->getStats($ssh, $mysqlDatadirContext);
                 $hardware['ssh_hardware'] = $this->getHardware($ssh);
 
                 //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
@@ -932,7 +934,7 @@ class Aspirateur extends Controller
         return $hardware;
     }
 
-    public function getStats($ssh)
+    public function getStats($ssh, array $mysqlContext = array())
     {
         $stats = array();
 
@@ -1095,7 +1097,157 @@ class Aspirateur extends Controller
 //ifconfig
 
 
+        $datadirStats = $this->getMysqlDatadirStats($ssh, $mysqlContext);
+        foreach ($datadirStats as $key => $value) {
+            $stats[$key] = $value;
+        }
+
+
         return $stats;
+    }
+
+    private function getMysqlDatadirContext(int $id_mysql_server): array
+    {
+        $context = [
+            'datadir' => '',
+            'log_bin_basename' => '',
+            'relay_log_basename' => '',
+        ];
+
+        try {
+            $vars = Extraction2::display([
+                'variables::datadir',
+                'variables::log_bin_basename',
+                'variables::relay_log_basename',
+            ], [$id_mysql_server]);
+
+            if (!empty($vars[$id_mysql_server]) && is_array($vars[$id_mysql_server])) {
+                $row = $vars[$id_mysql_server];
+                $context['datadir'] = trim((string)($row['datadir'] ?? ''));
+                $context['log_bin_basename'] = trim((string)($row['log_bin_basename'] ?? ''));
+                $context['relay_log_basename'] = trim((string)($row['relay_log_basename'] ?? ''));
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[SST] Unable to load MySQL datadir context for id_mysql_server:'.$id_mysql_server
+                .' message:'.$e->getMessage()
+            );
+        }
+
+        return $context;
+    }
+
+    private function getMysqlDatadirStats($ssh, array $mysqlContext): array
+    {
+        $ret = [
+            'mysql_datadir_path' => '',
+            'mysql_datadir_total_size' => 0,
+            'mysql_datadir_clean_size' => 0,
+            'mysql_sst_elapsed_sec' => 0,
+            'mysql_sst_in_progress' => 0,
+        ];
+
+        $datadir = trim((string)($mysqlContext['datadir'] ?? ''));
+        if ($datadir !== '' && $datadir[0] === '/') {
+            $datadir = rtrim($datadir, '/');
+            if ($datadir === '') {
+                $datadir = '/';
+            }
+
+            $ret['mysql_datadir_path'] = $datadir;
+
+            $cmdTotal = "du -sb ".escapeshellarg($datadir)." 2>/dev/null | cut -f1";
+            $totalOut = trim((string)$ssh->exec($cmdTotal));
+
+            if (is_numeric($totalOut)) {
+                $ret['mysql_datadir_total_size'] = (int)$totalOut;
+            } else {
+                // Fallback (environnement sans option -b) => du -sk puis conversion en octets
+                $cmdTotalFallback = "du -sk ".escapeshellarg($datadir)." 2>/dev/null | cut -f1";
+                $totalOutKb = trim((string)$ssh->exec($cmdTotalFallback));
+
+                if (is_numeric($totalOutKb)) {
+                    $ret['mysql_datadir_total_size'] = (int)$totalOutKb * 1024;
+                }
+            }
+
+            $ret['mysql_datadir_clean_size'] = $this->getMysqlDatadirCleanSize(
+                $ssh,
+                $datadir,
+                (string)($mysqlContext['log_bin_basename'] ?? ''),
+                (string)($mysqlContext['relay_log_basename'] ?? '')
+            );
+        }
+
+        $elapsed = $this->getSstElapsedSeconds($ssh);
+        $ret['mysql_sst_elapsed_sec'] = $elapsed;
+        $ret['mysql_sst_in_progress'] = ($elapsed > 0) ? 1 : 0;
+
+        return $ret;
+    }
+
+    private function getMysqlDatadirCleanSize($ssh, string $datadir, string $logBinBasename, string $relayLogBasename): int
+    {
+        $excludeNamePatterns = [
+            'ib_logfile*',
+            'ibtmp*',
+            'aria_log*',
+        ];
+
+        $binBase = basename(trim($logBinBasename));
+        if ($binBase !== '' && $binBase !== '.' && $binBase !== '/') {
+            $excludeNamePatterns[] = $binBase.'*';
+        }
+
+        $relayBase = basename(trim($relayLogBasename));
+        if ($relayBase !== '' && $relayBase !== '.' && $relayBase !== '/') {
+            $excludeNamePatterns[] = $relayBase.'*';
+        }
+
+        // fallback patterns courants quand les basenames ne sont pas disponibles
+        $excludeNamePatterns[] = 'mysql-bin*';
+        $excludeNamePatterns[] = 'mariadb-bin*';
+        $excludeNamePatterns[] = 'relay-bin*';
+
+        $excludeNamePatterns = array_values(array_unique(array_filter($excludeNamePatterns)));
+
+        $filters = '';
+        foreach ($excludeNamePatterns as $pattern) {
+            $filters .= ' ! -name '.escapeshellarg($pattern);
+        }
+
+        $excludePathPatterns = [
+            './#innodb_redo/*',
+            './#innodb_temp/*',
+        ];
+        foreach ($excludePathPatterns as $pathPattern) {
+            $filters .= ' ! -path '.escapeshellarg($pathPattern);
+        }
+
+        $cmd = 'cd '.escapeshellarg($datadir).' 2>/dev/null && '
+            .'find . -type f'.$filters.' -printf \'%s\\n\' 2>/dev/null '
+            .'| awk \'{s+=$1} END{printf "%0.f", s+0}\'';
+
+        $out = trim((string)$ssh->exec($cmd));
+        if (!is_numeric($out)) {
+            return 0;
+        }
+
+        return (int)$out;
+    }
+
+    private function getSstElapsedSeconds($ssh): int
+    {
+        $cmd = 'ps -eo etimes,args --no-headers 2>/dev/null '
+            .'| awk \'/wsrep_sst|mariadb-backup|xtrabackup|mbstream|sst_donor|sst_joiner/ && $0 !~ /awk/ '
+            .'{ if ($1+0 > max) max=$1+0 } END { print max+0 }\'';
+
+        $out = trim((string)$ssh->exec($cmd));
+        if (!is_numeric($out)) {
+            return 0;
+        }
+
+        return (int)$out;
     }
 
 

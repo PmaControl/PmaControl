@@ -606,6 +606,11 @@ class MysqlServer extends Controller
             "information_schema::engines",
             "mysql_server::mysql_available",
             "ssh_stats::disks","ips","processlist",
+            "ssh_stats::mysql_datadir_path",
+            "ssh_stats::mysql_datadir_total_size",
+            "ssh_stats::mysql_datadir_clean_size",
+            "ssh_stats::mysql_sst_elapsed_sec",
+            "ssh_stats::mysql_sst_in_progress",
         ];
 
         $raw = Extraction2::display($keys, [$id_mysql_server]);
@@ -1227,6 +1232,45 @@ class MysqlServer extends Controller
             '<img height="16px" width="16px" src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($g('cpu_usage'), $g('cpu_thread_count')),
             '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > '.self::tr('RAM Usage') => self::formatRamUsage($g('memory_used'), $g('memory_total')),
             '<img height="16px" width="16px" src="'.IMG.'icon/swap.svg" > '.self::tr('SWAP Usage') => self::formatSwapUsage($g('swap_used'), $g('swap_total')),
+        ];
+
+        $getSshMetric = function(string $metricName) use ($value, $g) {
+            $metricValue = $value($metricName);
+
+            if ($metricValue === null || $metricValue === '') {
+                $prefixed = $g('ssh_stats::'.$metricName);
+                if (is_array($prefixed) && array_key_exists('count', $prefixed)) {
+                    $prefixed = $prefixed['count'];
+                }
+                $metricValue = $prefixed;
+            }
+
+            return $metricValue;
+        };
+
+        $toDisplayValue = function($metricValue): string {
+            if ($metricValue === null || $metricValue === '') {
+                return 'n/a';
+            }
+
+            if (is_bool($metricValue)) {
+                return $metricValue ? '1' : '0';
+            }
+
+            if (is_scalar($metricValue)) {
+                return (string)$metricValue;
+            }
+
+            $json = json_encode($metricValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return $json !== false ? $json : 'n/a';
+        };
+
+        $data['ssh_sst_metrics'] = [
+            'mysql_datadir_path' => $toDisplayValue($getSshMetric('mysql_datadir_path')),
+            'mysql_datadir_total_size' => $toDisplayValue($getSshMetric('mysql_datadir_total_size')),
+            'mysql_datadir_clean_size' => $toDisplayValue($getSshMetric('mysql_datadir_clean_size')),
+            'mysql_sst_elapsed_sec' => $toDisplayValue($getSshMetric('mysql_sst_elapsed_sec')),
+            'mysql_sst_in_progress' => $toDisplayValue($getSshMetric('mysql_sst_in_progress')),
         ];
 
 

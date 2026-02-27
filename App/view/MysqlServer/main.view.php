@@ -128,6 +128,10 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
           $groups["OS / Système"] = $data['os'];
       }
 
+      if (!empty($data['ssh_sst_metrics']) && is_array($data['ssh_sst_metrics'])) {
+          $groups['SSH / SST'] = $data['ssh_sst_metrics'];
+      }
+
       if (!empty($data['innodb']) && is_array($data['innodb'])) {
           $groups['InnoDB'] = $data['innodb'];
       }
