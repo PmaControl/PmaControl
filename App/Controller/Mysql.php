@@ -1056,8 +1056,31 @@ class Mysql extends Controller
                 }
 
 
-                $ret = $this->testMySQL($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'], $_POST['mysql_server']['login'],
-                    $_POST['mysql_server']['password']);
+                try {
+                    $ret = $this->testMySQL(
+                        $_POST['mysql_server']['ip'],
+                        $_POST['mysql_server']['port'],
+                        $_POST['mysql_server']['login'],
+                        $_POST['mysql_server']['password']
+                    );
+                } catch (\Throwable $e) {
+
+                    $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
+                    $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
+
+                    $rawError = (string) $e->getMessage();
+                    if (strpos($rawError, '1045') !== false || stripos($rawError, 'Access denied') !== false) {
+                        $msg = I18n::getTranslation(__("Access denied for this MySQL account (code 1045). Please verify login/password."));
+                    } else {
+                        $msg = $rawError;
+                    }
+
+                    $title = I18n::getTranslation(__("MySQL's connection error"));
+                    set_flash("error", $title, $msg);
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
 
                 if ($ret !== true) {
                     //debug($_POST);
@@ -1118,7 +1141,7 @@ class Mysql extends Controller
                     set_flash("success", $title, $msg);
 
                     //echo "OK !!!";
-                    header("location: ".LINK."mysql/add/");
+                    header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 }
             } else {
@@ -1171,8 +1194,8 @@ class Mysql extends Controller
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-        debug("$hostname, $port, $user, $password");
         $this->last_connection_used_ssl = 0;
+        $firstError                     = "";
 
         $link = mysqli_init();
         mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
@@ -1184,8 +1207,6 @@ class Mysql extends Controller
             if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port)) {
                 // Échec de la première tentative : on passe à la deuxième
                 $firstError = mysqli_connect_error();
-
-                debug($firstError);
                 throw new \RuntimeException("Première tentative échouée (non critique)");
             }
         } catch (\RuntimeException $e) {
