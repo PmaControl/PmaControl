@@ -675,6 +675,7 @@ class Dot3 extends Controller
             $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
 
             $this->buildLink(array($id_dot3_information, $group));
+            $this->buildLinkVIP(array($id_dot3_information, $group));
             //Debug::debug($group, "GROUP");
 
             $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
@@ -1007,6 +1008,75 @@ class Dot3 extends Controller
 
         //Debug::debug(self::$build_ms , "LINK MASTER SLAVE");
 
+    }
+
+    public function buildLinkVIP($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach ($group as $id_mysql_server)
+        {
+            if (empty($dot3_information['information']['servers'][$id_mysql_server])) {
+                continue;
+            }
+
+            $server = $dot3_information['information']['servers'][$id_mysql_server];
+
+            $vip_links = array(
+                'destination_id' => array(
+                    'theme' => 'VIP_LINK_ACTIVE',
+                    'tooltip' => 'VIP active destination',
+                    'default_style' => 'solid',
+                ),
+                'destination_previous_id' => array(
+                    'theme' => 'VIP_LINK_PREVIOUS',
+                    'tooltip' => 'VIP previous destination',
+                    'default_style' => 'dashed',
+                ),
+            );
+
+            foreach ($vip_links as $field => $settings)
+            {
+                if (!isset($server[$field])) {
+                    continue;
+                }
+
+                $id_destination = (int)$server[$field];
+                if ($id_destination <= 0) {
+                    continue;
+                }
+
+                // destination_previous_id must be ignored when equal to 0
+                if ($field === 'destination_previous_id' && $id_destination === 0) {
+                    continue;
+                }
+
+                if (empty($dot3_information['information']['servers'][$id_destination])) {
+                    continue;
+                }
+
+                $theme = $settings['theme'];
+                $tmp = self::$config[$theme] ?? array(
+                    'color' => '#008000',
+                    'style' => $settings['default_style'],
+                    'options' => array(),
+                );
+
+                if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                    $tmp['options'] = array();
+                }
+
+                $tmp['tooltip'] = $settings['tooltip'];
+                $tmp['options']['style'] = $tmp['style'] ?? $settings['default_style'];
+                $tmp['options']['arrowsize'] = '1.5';
+                $tmp['arrow'] = $id_mysql_server . ':' . self::TARGET . ' -> ' . $id_destination . ':' . self::TARGET;
+
+                self::$build_ms[] = $tmp;
+            }
+        }
     }
 
     /**
