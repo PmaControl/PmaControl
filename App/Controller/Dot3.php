@@ -1201,25 +1201,26 @@ class Dot3 extends Controller
 
     private function buildSstEdgeLabel(array $donorNode, array $joinerNode): string
     {
-        $progress = $this->estimateSstProgressPercent($donorNode, $joinerNode);
-        $elapsedMin = $this->estimateSstElapsedMinutes($donorNode, $joinerNode);
+        $elapsedSec = $this->estimateSstElapsedSeconds($donorNode, $joinerNode);
+        $progress = $this->estimateSstProgressPercent($donorNode, $joinerNode, $elapsedSec);
+        $elapsedLabel = $elapsedSec !== null ? $this->formatSstElapsedLabel($elapsedSec) : null;
 
-        if ($progress === null && $elapsedMin === null) {
+        if ($progress === null && $elapsedLabel === null) {
             return 'SST';
         }
 
-        if ($progress !== null && $elapsedMin !== null) {
-            return 'SST ' . $progress . '% (' . $elapsedMin . 'min)';
+        if ($progress !== null && $elapsedLabel !== null) {
+            return 'SST ' . $progress . '% (' . $elapsedLabel . ')';
         }
 
         if ($progress !== null) {
             return 'SST ' . $progress . '%';
         }
 
-        return 'SST (' . $elapsedMin . 'min)';
+        return 'SST (' . $elapsedLabel . ')';
     }
 
-    private function estimateSstProgressPercent(array $donorNode, array $joinerNode): ?int
+    private function estimateSstProgressPercent(array $donorNode, array $joinerNode, ?int $elapsedSec = null): ?int
     {
         $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_clean_size');
         if ($expectedSize <= 0) {
@@ -1243,10 +1244,15 @@ class Dot3 extends Controller
             $pct = 100;
         }
 
+        // Règle métier demandée : ne pas afficher 100% si on n'a pas encore de temps SST.
+        if (($elapsedSec === null || $elapsedSec <= 0) && $pct >= 100) {
+            return null;
+        }
+
         return $pct;
     }
 
-    private function estimateSstElapsedMinutes(array $donorNode, array $joinerNode): ?int
+    private function estimateSstElapsedSeconds(array $donorNode, array $joinerNode): ?int
     {
         $joinerElapsed = $this->getPositiveIntMetric($joinerNode, 'mysql_sst_elapsed_sec');
         $donorElapsed = $this->getPositiveIntMetric($donorNode, 'mysql_sst_elapsed_sec');
@@ -1256,12 +1262,26 @@ class Dot3 extends Controller
             return null;
         }
 
-        $minutes = (int) floor($elapsedSec / 60);
-        if ($minutes <= 0) {
-            $minutes = 1;
+        return $elapsedSec;
+    }
+
+    private function formatSstElapsedLabel(int $elapsedSec): string
+    {
+        if ($elapsedSec < 60) {
+            return $elapsedSec . 'sec';
         }
 
-        return $minutes;
+        if ($elapsedSec < 3600) {
+            $minutes = (int) floor($elapsedSec / 60);
+            if ($minutes <= 0) {
+                $minutes = 1;
+            }
+            return $minutes . 'min';
+        }
+
+        $hours = intdiv($elapsedSec, 3600);
+        $minutes = intdiv($elapsedSec % 3600, 60);
+        return $hours . ' h ' . $minutes . ' min';
     }
 
     private function getPositiveIntMetric(array $node, string $key): int
