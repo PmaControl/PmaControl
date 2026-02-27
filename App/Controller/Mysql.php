@@ -1113,13 +1113,42 @@ class Mysql extends Controller
                 $table['mysql_server']['is_proxy']            = empty($_POST['mysql_server']['is_proxy']) ? 0 : 1;
                 $table['mysql_server']['is_vip']              = empty($_POST['mysql_server']['is_vip']) ? 0 : 1;
 
+                $sql = "SELECT id FROM mysql_server WHERE ip = '".$db->sql_real_escape_string($table['mysql_server']['ip'])."' AND port = '".intval($table['mysql_server']['port'])."' LIMIT 1";
+                $res = $db->sql_query($sql);
+
+                if ($db->sql_num_rows($res) > 0) {
+                    $msg   = I18n::getTranslation(__("This MySQL server already exists"));
+                    $title = I18n::getTranslation(__("Warning"));
+                    set_flash("caution", $title, $msg);
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
+
                 /*
                   debug($table);
                   debug($_POST);
                   exit;
                   /** */
 
-                $ret = $db->sql_save($table);
+                try {
+                    $ret = $db->sql_save($table);
+                } catch (\Throwable $e) {
+                    $rawError = (string) $e->getMessage();
+
+                    if (strpos($rawError, '1062') !== false || stripos($rawError, 'Duplicate entry') !== false) {
+                        $msg   = I18n::getTranslation(__("This MySQL server already exists"));
+                        $title = I18n::getTranslation(__("Warning"));
+                        set_flash("warning", $title, $msg);
+                    } else {
+                        $msg   = $rawError;
+                        $title = I18n::getTranslation(__("Error"));
+                        set_flash("error", $title, $msg);
+                    }
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
 
                 if (!$ret) {
 
