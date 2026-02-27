@@ -167,7 +167,8 @@ class Dot3 extends Controller
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
                 "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
-                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress"
+                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress", 
+                "vip::destination_id", "vip::destination_date","vip::destination_previous_id", "vip::destination_previous_date",
             ),$id_mysql_servers , $date_request);
 /***/
 
