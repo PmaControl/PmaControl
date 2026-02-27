@@ -251,7 +251,7 @@ class Mysql
         $server['mysql_server']['ssh_port']        = $data['ssh_port'] ?? 22;
         $server['mysql_server']['ssh_login']       = $data['ssh_login'] ?? "root";
         $server['mysql_server']['is_proxy']        = $data['is_proxy'] ?? 0;
-        
+        $server['mysql_server']['is_vip']          = $data['is_vip'] ?? 0;
 
         $sql = "SELECT id FROM `mysql_server` WHERE `ip`='".$server['mysql_server']['ip']."' AND `port` = '".$server['mysql_server']['port']."'";
         $res = $db->sql_query($sql);

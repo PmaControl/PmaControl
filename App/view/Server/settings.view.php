@@ -40,6 +40,8 @@ echo '<th>'.__('ID').'</th>';
 echo '<th>'.__('MySQL').'</th>';
 echo '<th>'.__('SSH').'</th>';
 echo '<th><input id="checkAll" type="checkbox" onClick="toggle(this)" /> '.__("Monitored").'</th>';
+echo '<th>'.__("Proxy").'</th>';
+echo '<th>'.__("VIP").'</th>';
 
 //echo '<th>'.__('Monitored').'</th>';
 echo '<th>'.__('Client').'</th>';
@@ -91,9 +93,33 @@ foreach ($data['servers'] as $server) {
 
 
     $checked = $server['is_monitored'] == 1 ? 'checked="checked"' : '';
+    $checked_proxy = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1" ? 'checked="checked"' : '';
+    $checked_vip = !empty($server['is_vip']) && (string)$server['is_vip'] === "1" ? 'checked="checked"' : '';
 
     echo '<td style="'.$style.' '.$style2.'">'
     .'<input type="checkbox" name="mysql_server['.($i - 1).'][is_monitored]" '.$checked.' />'.'</td>';
+
+    echo '<td style="'.$style.' '.$style2.'">'
+    .'<div class="form-group" style="margin: 0">'
+    .'<div class="checkbox checbox-switch switch-success" style="margin: 0">'
+    .'<label>'
+    .'<input type="checkbox" value="1" class="form-control js-proxy-vip-proxy" data-row="'.($i - 1).'" name="mysql_server['.($i - 1).'][is_proxy]" '.$checked_proxy.' />'
+    .'<span></span>'
+    .'</label>'
+    .'</div>'
+    .'</div>'
+    .'</td>';
+
+    echo '<td style="'.$style.' '.$style2.'">'
+    .'<div class="form-group" style="margin: 0">'
+    .'<div class="checkbox checbox-switch switch-success" style="margin: 0">'
+    .'<label>'
+    .'<input type="checkbox" value="1" class="form-control js-proxy-vip-vip" data-row="'.($i - 1).'" name="mysql_server['.($i - 1).'][is_vip]" '.$checked_vip.' />'
+    .'<span></span>'
+    .'</label>'
+    .'</div>'
+    .'</div>'
+    .'</td>';
 
     echo '<td style="'.$style2.'">';
     echo Form::select("mysql_server", "id_client", $data['clients'], $server['id_client'], array("data-live-search" => "true", "class" => "selectpicker", "data-actions-box" => "true"));
@@ -158,3 +184,9 @@ echo '</table>';
 echo '<input type="hidden" name="settings" value="1" />';
 echo '<button type="submit" class="btn btn-primary">'.__("Update").'</button>';
 echo '</form>';
+
+echo '<script>
+(function () {
+    // Les checkboxes Proxy/VIP sont indépendantes (pas d\'exclusion mutuelle côté UI)
+})();
+</script>';

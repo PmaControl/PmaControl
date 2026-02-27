@@ -1,6 +1,9 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$isProxyChecked = !empty($_GET['mysql_server']['is_proxy']) && (string) $_GET['mysql_server']['is_proxy'] !== '0';
+$isVipChecked   = !empty($_GET['mysql_server']['is_vip']) && (string) $_GET['mysql_server']['is_vip'] !== '0';
 ?>
 <form action="" method="post">
     <div class="panel panel-primary">
@@ -66,6 +69,28 @@ use Glial\Html\Form\Form;
                     Form::select("mysql_server", "id_environement", $data['environment']
                         , "", array("class" => "form-control"))
                     ?></div>
+                <div class="col-md-2">
+                    <?= __("Proxy") ?>
+                    <div class="form-group" style="margin-top:5px; margin-bottom:0;">
+                        <div class="checkbox checbox-switch switch-success" style="margin:0;">
+                            <label>
+                                <input id="mysql_add_is_proxy" class="form-control js-proxy-vip-proxy" type="checkbox" name="mysql_server[is_proxy]" value="1" <?= $isProxyChecked ? 'checked="checked"' : '' ?> />
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <?= __("VIP") ?>
+                    <div class="form-group" style="margin-top:5px; margin-bottom:0;">
+                        <div class="checkbox checbox-switch switch-success" style="margin:0;">
+                            <label>
+                                <input id="mysql_add_is_vip" class="form-control js-proxy-vip-vip" type="checkbox" name="mysql_server[is_vip]" value="1" <?= $isVipChecked ? 'checked="checked"' : '' ?> />
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 <!--
                 <div class="col-md-4"><?= __("Tags") ?><?=
                 Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
@@ -83,7 +108,6 @@ use Glial\Html\Form\Form;
         </div>
     </div>
 </form>
-
 
 <!--
 <div class="row">

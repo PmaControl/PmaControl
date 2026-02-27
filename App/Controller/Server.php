@@ -833,13 +833,30 @@ var myChart = new Chart(ctx, {
                         $_POST['mysql_server'][$key]['is_monitored'] = 1;
                     }
 
+                    if (empty($_POST['mysql_server'][$key]['is_proxy'])) {
+                        $_POST['mysql_server'][$key]['is_proxy'] = 0;
+                    } else {
+                        $_POST['mysql_server'][$key]['is_proxy'] = 1;
+                    }
+
+                    if (empty($_POST['mysql_server'][$key]['is_vip'])) {
+                        $_POST['mysql_server'][$key]['is_vip'] = 0;
+                    } else {
+                        $_POST['mysql_server'][$key]['is_vip'] = 1;
+                    }
+
                     $server_main                                   = array();
                     $server_main['mysql_server']['id']             = $value;
                     $server_main['mysql_server']['display_name']   = $_POST['mysql_server'][$key]['display_name'];
                     $server_main['mysql_server']['id_client']      = $_POST['mysql_server'][$key]['id_client'];
                     $server_main['mysql_server']['id_environment'] = $_POST['mysql_server'][$key]['id_environment'];
                     $server_main['mysql_server']['is_monitored']   = $_POST['mysql_server'][$key]['is_monitored'];
+                    $server_main['mysql_server']['is_proxy']       = $_POST['mysql_server'][$key]['is_proxy'];
+                    $server_main['mysql_server']['is_vip']         = $_POST['mysql_server'][$key]['is_vip'];
 
+
+                    //debug($server_main);
+                    
                     $ret = $db->sql_save($server_main);
 
                     if (!$ret) {
@@ -847,7 +864,6 @@ var myChart = new Chart(ctx, {
                         print_r($db->sql_error());
                     }
                 }
-
                 if (!empty($_POST['link__mysql_server_tag'])) {
 
                     $sql = "BEGIN";
