@@ -457,20 +457,20 @@ class Dot3 extends Controller
             //$tmp_group[$idproxy] = array();
             if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
 
-                Debug::debug($server, "CLUSTER");
+                //Debug::debug($server, "CLUSTER");
 
                 $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
                 $servers2 = self::getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
 
-                Debug::debug($servers, "SERVERS");
+                //Debug::debug($servers, "SERVERS");
 
                 foreach($servers as $ip_port)
                 {
                     if (!empty($information['mapping'][$ip_port])) {
                         
                         $id_mysql_server_galera = $information['mapping'][$ip_port];
-                        Debug::debug($id_mysql_server_galera, "ID MYSQL SERVER GALERA ({$server['id_mysql_server']})");
-                        Debug::debug($information['servers'][$id_mysql_server_galera]['wsrep_on'], "WSREP ON");
+                        //Debug::debug($id_mysql_server_galera, "ID MYSQL SERVER GALERA ({$server['id_mysql_server']})");
+                        //Debug::debug($information['servers'][$id_mysql_server_galera]['wsrep_on'], "WSREP ON");
 
                         if ($information['servers'][$id_mysql_server_galera]['wsrep_on'] === 'ON') {
 
@@ -489,12 +489,12 @@ class Dot3 extends Controller
                     }
                 }
                 //$id_group++;
-                Debug::debug($servers2, "SERVERS2");
+                //Debug::debug($servers2, "SERVERS2");
 
 
                 foreach($servers2 as $ip_port)
                 {
-                    Debug::debug($ip_port, "IP:PORT");
+                    //Debug::debug($ip_port, "IP:PORT");
                     if ($ip_port[0] === ':') {
                         //detection arbitre
                         $id_garb = $this->createGarb($information, $id_mysql_server);
@@ -836,7 +836,7 @@ class Dot3 extends Controller
         $dot3_information = self::getInformation($id_dot3_information);
 
         $galera = $this->generateGroupGalera($dot3_information['information']);
-        Debug::debug($galera, "GALERA");
+        //Debug::debug($galera, "GALERA");
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -848,7 +848,7 @@ class Dot3 extends Controller
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale, $vip));
 
-        //Debug::debug($group, "GROUP");
+        Debug::debug($group, "GROUP");
         //die();
         return $group;
     }

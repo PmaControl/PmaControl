@@ -18,25 +18,34 @@ class Architecture extends Controller
     {
         Debug::parseDebug($param);
 
-        $selected_client = null;
+        $selected_clients = array();
 
-        // Parse URL parameters like client:libelle:["15"]
-        if (!empty($param[0]) && strpos($param[0], 'client:libelle:') === 0) {
-            $value = substr($param[0], strlen('client:libelle:'));
-            $json = json_decode($value, true);
-            if (is_array($json) && !empty($json)) {
-                $selected_client = intval($json[0]);
-                $_SESSION['architecture_client'] = $selected_client;
+        $raw_clients = $_GET['client']['libelle'] ?? $_SESSION['client']['libelle'] ?? array();
+
+        if (is_string($raw_clients)) {
+            $decoded = json_decode($raw_clients, true);
+
+            if (is_array($decoded)) {
+                $raw_clients = $decoded;
+            } elseif ($raw_clients !== '') {
+                $raw_clients = array($raw_clients);
+            } else {
+                $raw_clients = array();
             }
         }
 
-        // Handle organization selection
-        if (!empty($_POST['client']['id'])) {
-            $selected_client = intval($_POST['client']['id']);
-            $_SESSION['architecture_client'] = $selected_client;
-        } elseif (!empty($_SESSION['architecture_client'])) {
-            $selected_client = $_SESSION['architecture_client'];
+        if (!is_array($raw_clients)) {
+            $raw_clients = array();
         }
+
+        foreach ($raw_clients as $id_client) {
+            $id_client = (int) $id_client;
+            if ($id_client > 0) {
+                $selected_clients[$id_client] = $id_client;
+            }
+        }
+
+        $selected_clients = array_values($selected_clients);
 
         /*
         $this->title  = '<i class="fa fa-object-group"></i> '.__("Architecture");
@@ -59,11 +68,6 @@ class Architecture extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        // Get clients for dropdown
-        $sql_clients = "SELECT id, libelle FROM client WHERE is_monitored = 1 ORDER BY libelle";
-        $data['client'] = $db->sql_fetch_yield($sql_clients);
-        $data['selected_client'] = $selected_client;
-
         $sql = "SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
@@ -82,13 +86,14 @@ ORDER BY  height DESC, width desc;";
 */
         // Filter by selected organization if one is selected
         $filter_conditions = "";
-        if (!empty($selected_client)) {
+        if (!empty($selected_clients)) {
+            $id_clients = implode(',', $selected_clients);
             $filter_conditions = " AND EXISTS (
                 SELECT 1 FROM dot3_cluster__mysql_server dcms
                 INNER JOIN mysql_server ms ON ms.id = dcms.id_mysql_server
                 WHERE dcms.id_dot3_cluster = dc.id
-                AND ms.id_client = " . $db->sql_real_escape_string($selected_client) . "
-                AND ms.is_deleted = 0
+                AND ms.id_client IN (" . $id_clients . ")
+                AND COALESCE(ms.is_deleted, 0) = 0
             )";
         }
 
