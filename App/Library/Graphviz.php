@@ -543,7 +543,7 @@ class Graphviz
         $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">'
         .'<font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
-        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" WIDTH="16" HEIGHT="16" SRC="'.$image_server.$image_logo.'" /></td>
+        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server.$image_logo.'" /></td>
         <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
 
         $nat = '';
