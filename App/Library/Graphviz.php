@@ -501,6 +501,8 @@ class Graphviz
 
         $fork = $format['fork'];
         $number = $format['number'];
+        $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
+        $version_label = $fork.' : '.$number;
 
         //to move in dot3
         if (!empty($server['wsrep_cluster_status']) && strtolower($server['wsrep_cluster_status']) === "non-primary")
@@ -514,6 +516,11 @@ class Graphviz
         }
 
         $image_logo = strtolower($fork).'.svg';
+
+        if ($isVipServer) {
+            $image_logo = 'vip.svg';
+            $version_label = 'VIP';
+        }
 
         if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
             $image_logo = 'proxysql.png';            
@@ -544,9 +551,15 @@ class Graphviz
         .'<font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
 
         $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
+        <td bgcolor="lightgrey" width="100" align="left">'.$version_label.'</td></tr>';
 
         $nat = '';
+
+        if ($isVipServer)
+        {
+            $server['port_real'] = trim((string)($server['vip_dns_port'] ?? $server['port_real'] ?? $server['port'] ?? ''));
+            $server['ip_real'] = trim((string)($server['vip_dns_ip'] ?? $server['ip_real'] ?? $server['ip'] ?? ''));
+        }
 
 
 
@@ -600,6 +613,29 @@ class Graphviz
 
             if ($server['display_name'] !== "garb")
             {
+
+                if ($isVipServer) {
+                    $vipActive = trim((string)($server['vip_active_label'] ?? 'N/A'));
+                    if ($vipActive === '') {
+                        $vipActive = 'N/A';
+                    }
+
+                    $vipPrevious = trim((string)($server['vip_previous_label'] ?? 'N/A'));
+                    if ($vipPrevious === '') {
+                        $vipPrevious = 'N/A';
+                    }
+
+                    $vipLastSwitch = trim((string)($server['vip_last_switch'] ?? 'N/A'));
+                    if ($vipLastSwitch === '') {
+                        $vipLastSwitch = 'N/A';
+                    }
+
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_ACTIVE_PORT.'">IP active : '.$vipActive.'</td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_PREVIOUS_PORT.'">IP previous : '.$vipPrevious.'</td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">Date last switch : '.$vipLastSwitch.'</td></tr>'.PHP_EOL;
+                }
+                else
+                {
 
                 // 🇫🇷
                 $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
@@ -685,6 +721,7 @@ class Graphviz
                     }
 
                     $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
+                }
                 }
             }
             

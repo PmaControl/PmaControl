@@ -46,6 +46,8 @@ class Dot3 extends Controller
     use \App\Library\Dot;
 
     const TARGET = 'target';
+    const VIP_ACTIVE_PORT = 'vip_active';
+    const VIP_PREVIOUS_PORT = 'vip_previous';
 
 
     static $id_dot3_information;
@@ -171,6 +173,8 @@ class Dot3 extends Controller
                 "vip::destination_id", "vip::destination_date","vip::destination_previous_id", "vip::destination_previous_date",
             ),$id_mysql_servers , $date_request);
 /***/
+
+        $this->mergeVipDnsDataInInformation($all, $id_mysql_servers__vip, $date_request);
 
 
 
@@ -1024,38 +1028,51 @@ class Dot3 extends Controller
             }
 
             $server = $dot3_information['information']['servers'][$id_mysql_server];
+            $vip_destinations = $this->getVipRenderDestinations($server);
 
             $vip_links = array(
-                'destination_id' => array(
+                'active' => array(
+                    'id_destination' => $vip_destinations['active_id'],
                     'theme' => 'VIP_LINK_ACTIVE',
                     'tooltip' => 'VIP active destination',
                     'default_style' => 'solid',
+                    'source_port' => self::VIP_ACTIVE_PORT,
                 ),
-                'destination_previous_id' => array(
+                'previous' => array(
+                    'id_destination' => $vip_destinations['previous_id'],
                     'theme' => 'VIP_LINK_PREVIOUS',
                     'tooltip' => 'VIP previous destination',
                     'default_style' => 'dashed',
+                    'source_port' => self::VIP_PREVIOUS_PORT,
                 ),
             );
 
             foreach ($vip_links as $field => $settings)
             {
-                if (!isset($server[$field])) {
-                    continue;
-                }
-
-                $id_destination = (int)$server[$field];
+                $id_destination = (int)($settings['id_destination'] ?? 0);
                 if ($id_destination <= 0) {
                     continue;
                 }
 
                 // destination_previous_id must be ignored when equal to 0
-                if ($field === 'destination_previous_id' && $id_destination === 0) {
+                if ($field === 'previous' && $id_destination === 0) {
                     continue;
                 }
 
                 if (empty($dot3_information['information']['servers'][$id_destination])) {
                     continue;
+                }
+
+                $destination_server = $dot3_information['information']['servers'][$id_destination];
+                $destination_name = trim((string)($destination_server['display_name'] ?? ''));
+                if ($destination_name === '') {
+                    $destination_name = '#'.$id_destination;
+                }
+
+                $destination_port = $this->getServerPort($destination_server);
+                $destination_label = $destination_name;
+                if ($destination_port !== '') {
+                    $destination_label .= ':'.$destination_port;
                 }
 
                 $theme = $settings['theme'];
@@ -1069,10 +1086,10 @@ class Dot3 extends Controller
                     $tmp['options'] = array();
                 }
 
-                $tmp['tooltip'] = $settings['tooltip'];
+                $tmp['tooltip'] = $settings['tooltip'].' : '.$destination_label;
                 $tmp['options']['style'] = $tmp['style'] ?? $settings['default_style'];
                 $tmp['options']['arrowsize'] = '1.5';
-                $tmp['arrow'] = $id_mysql_server . ':' . self::TARGET . ' -> ' . $id_destination . ':' . self::TARGET;
+                $tmp['arrow'] = $id_mysql_server . ':' . $settings['source_port'] . ' -> ' . $id_destination . ':' . self::TARGET;
 
                 self::$build_ms[] = $tmp;
             }
@@ -1490,16 +1507,21 @@ class Dot3 extends Controller
                 continue;
             }
 
+            $server = $dot3_information['information']['servers'][$id_mysql_server];
+            $is_vip_server = $this->isVipServer($server);
+
             //consideringg if we don't have the version of server, this server is too old and we don't have fresh data to display.
-            if (empty($dot3_information['information']['servers'][$id_mysql_server]['version']))
+            if (empty($server['version']) && ! $is_vip_server)
             {
                 continue;
             }
 
+            if ($is_vip_server)
+            {
+                $server = $this->enrichVipServerForGraph($server, $dot3_information['information']['servers']);
+            }
+
             //Debug::debug($dot3_information['information']['servers'][$id_mysql_server],"INFO_SERVER");
-
-
-            $server = $dot3_information['information']['servers'][$id_mysql_server];
             $tmp = array();
 
             // to remove server with organization not monitored
@@ -1530,6 +1552,144 @@ class Dot3 extends Controller
 
             self::$build_server[$id_mysql_server] = $tmp;
         }
+    }
+
+    private function mergeVipDnsDataInInformation(array &$all, array $vipServerIds, $date_request): void
+    {
+        if (empty($vipServerIds)) {
+            return;
+        }
+
+        $vip_data = Extraction2::display(array('vip::ip', 'vip::port'), $vipServerIds, $date_request);
+
+        if (empty($vip_data) || !is_array($vip_data)) {
+            return;
+        }
+
+        foreach ($vipServerIds as $id_mysql_server) {
+            if (empty($vip_data[$id_mysql_server]) || !is_array($vip_data[$id_mysql_server])) {
+                continue;
+            }
+
+            if (empty($all[$id_mysql_server]) || !is_array($all[$id_mysql_server])) {
+                $all[$id_mysql_server] = array();
+            }
+
+            $vip_ip = trim((string)($vip_data[$id_mysql_server]['ip'] ?? ''));
+            if ($vip_ip !== '') {
+                $all[$id_mysql_server]['vip_dns_ip'] = $vip_ip;
+            }
+
+            $vip_port = trim((string)($vip_data[$id_mysql_server]['port'] ?? ''));
+            if ($vip_port !== '') {
+                $all[$id_mysql_server]['vip_dns_port'] = $vip_port;
+            }
+        }
+    }
+
+    private function isVipServer(array $server): bool
+    {
+        return !empty($server['is_vip']) && (string)$server['is_vip'] === '1';
+    }
+
+    private function enrichVipServerForGraph(array $server, array $allServers): array
+    {
+        $server['version'] = 'VIP';
+        $server['version_comment'] = 'VIP';
+
+        $vip_destinations = $this->getVipRenderDestinations($server);
+
+        if (empty($server['vip_dns_ip'])) {
+            $vip_ip = trim((string)($server['ip'] ?? ''));
+            if ($vip_ip === '') {
+                $vip_ip = trim((string)($server['ip_real'] ?? ''));
+            }
+
+            if ($vip_ip !== '') {
+                $server['vip_dns_ip'] = $vip_ip;
+            }
+        }
+
+        if (empty($server['vip_dns_port'])) {
+            $vip_port = trim((string)($server['port'] ?? ''));
+            if ($vip_port === '') {
+                $vip_port = trim((string)($server['port_real'] ?? ''));
+            }
+
+            if ($vip_port !== '') {
+                $server['vip_dns_port'] = $vip_port;
+            }
+        }
+
+        $active = $this->buildVipDestinationLabel($allServers, $vip_destinations['active_id']);
+        $previous_id = $vip_destinations['previous_id'];
+        $previous = $this->buildVipDestinationLabel($allServers, $previous_id);
+
+        $server['vip_active_label'] = $active['label'];
+        $server['vip_previous_label'] = $previous['label'];
+
+        if ($previous_id <= 0) {
+            $server['vip_previous_label'] = 'N/A';
+            $server['vip_last_switch'] = 'N/A';
+        } else {
+            $last_switch = trim((string)($server['destination_previous_date'] ?? ''));
+            $server['vip_last_switch'] = $last_switch !== '' ? $last_switch : 'N/A';
+        }
+
+        return $server;
+    }
+
+    private function getVipRenderDestinations(array $server): array
+    {
+        $active_id = (int)($server['destination_id'] ?? 0);
+        $previous_id = (int)($server['destination_previous_id'] ?? 0);
+
+        // Cas observé en production : destination_id peut repasser à 0 alors que
+        // destination_previous_id contient toujours la destination actuellement active.
+        // Dans ce cas, on promeut previous -> active pour l'affichage et le point
+        // de départ de la flèche.
+        if ($active_id <= 0 && $previous_id > 0) {
+            $active_id = $previous_id;
+            $previous_id = 0;
+        }
+
+        return array(
+            'active_id' => $active_id,
+            'previous_id' => $previous_id,
+        );
+    }
+
+    private function buildVipDestinationLabel(array $allServers, int $idDestination): array
+    {
+        if ($idDestination <= 0 || empty($allServers[$idDestination])) {
+            return array('label' => 'N/A');
+        }
+
+        $destination_server = $allServers[$idDestination];
+        $destination_name = trim((string)($destination_server['display_name'] ?? ''));
+
+        if ($destination_name === '') {
+            $destination_name = '#'.$idDestination;
+        }
+
+        $destination_port = $this->getServerPort($destination_server);
+        $label = $idDestination.' / '.$destination_name;
+
+        if ($destination_port !== '') {
+            $label .= ':'.$destination_port;
+        }
+
+        return array('label' => $label);
+    }
+
+    private function getServerPort(array $server): string
+    {
+        $port = trim((string)($server['port_real'] ?? ''));
+        if ($port !== '') {
+            return $port;
+        }
+
+        return trim((string)($server['port'] ?? ''));
     }
 
     /*
