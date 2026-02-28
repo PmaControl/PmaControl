@@ -1673,7 +1673,8 @@ class Dot3 extends Controller
         }
 
         $destination_port = $this->getServerPort($destination_server);
-        $label = $idDestination.' / '.$destination_name;
+        //$label = $idDestination.' / '.$destination_name;
+        $label = $destination_name;
 
         if ($destination_port !== '') {
             $label .= ':'.$destination_port;
