@@ -1175,7 +1175,7 @@ class Graphviz
     {
         $crc32 = crc32(json_encode($elems));
 
-        if (! in_array($type, array('galera','segment', 'group', 'xdb', 'ndb')))
+        if (! in_array($type, array('galera','segment', 'group', 'xdb', 'ndb', 'innodb')))
         {
             throw new \Exception('Impossible to find this cluster');
         }
@@ -1198,6 +1198,52 @@ class Graphviz
     static function endCluster()
     {
         $return = "}".PHP_EOL;
+        return $return;
+    }
+
+    private static function getColorByTheme($theme, $fallback)
+    {
+        if (!empty(Dot3::$config[$theme]['color'])) {
+            return Dot3::$config[$theme]['color'];
+        }
+
+        return $fallback;
+    }
+
+    static function generateInnoDBCluster($all_innodb_cluster)
+    {
+        $return = '';
+
+        foreach ($all_innodb_cluster as $cluster) {
+            $return .= self::startCluster('innodb', $cluster);
+
+            $stateColor = self::getColorByTheme((string)($cluster['config'] ?? 'INNODB_CLUSTER_OK'), '#2f855a');
+            $background = self::diluerCouleur($stateColor, 88);
+            $groupName = trim((string)($cluster['group_name'] ?? ''));
+
+            $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">';
+            $return .= '<tr><td port="'.Dot3::TARGET.'" bgcolor="#0f172a"><font color="#FFFFFF"><b>'.htmlspecialchars((string)$cluster['name'], ENT_QUOTES).'</b></font></td></tr>';
+            $return .= '<tr><td bgcolor="lightgrey" align="left">Mode : <b>'.htmlspecialchars((string)$cluster['mode'], ENT_QUOTES).'</b> - Online : <b>'.(int)$cluster['node_online'].'/'.(int)$cluster['members'].'</b></td></tr>';
+
+            if ($groupName !== '') {
+                $return .= '<tr><td bgcolor="lightgrey" align="left">Group name : '.htmlspecialchars($groupName, ENT_QUOTES).'</td></tr>';
+            }
+
+            $return .= '</table>>'.PHP_EOL;
+            $return .= 'tooltip = "InnoDB Cluster : '.addslashes((string)$cluster['name']).'";'.PHP_EOL;
+            $return .= 'penwidth = 4;'.PHP_EOL;
+            $return .= 'color = "'.$stateColor.'";'.PHP_EOL;
+            $return .= 'style = filled;'.PHP_EOL;
+            $return .= 'fillcolor = "'.$background.'"'.PHP_EOL;
+            $return .= 'href = "'.LINK.'InnoDBCluster/index/'.urlencode((string)$groupName).'";'.PHP_EOL;
+
+            foreach ($cluster['node'] as $idMysqlServer => $node) {
+                $return .= $idMysqlServer.';'.PHP_EOL;
+            }
+
+            $return .= self::endCluster();
+        }
+
         return $return;
     }
 

@@ -62,9 +62,13 @@ class Dot3 extends Controller
 
     static $build_galera = array();
 
+    static $build_innodb_cluster = array();
+
     static $config = array();
 
     static $galera = array();
+
+    static $innodb_cluster = array();
 
     static $rank_same = array();
 
@@ -166,6 +170,14 @@ class Dot3 extends Controller
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
+                "variables::group_replication_group_name", "variables::group_replication_group_seeds",
+                "variables::group_replication_local_address", "variables::group_replication_single_primary_mode",
+                "variables::group_replication_bootstrap_group", "variables::group_replication_consistency",
+                "variables::group_replication_autorejoin_tries", "variables::group_replication_member_expel_timeout",
+                "variables::group_replication_recovery_use_ssl", "variables::group_replication_ssl_mode",
+                "variables::group_replication_start_on_boot", "variables::report_host", "variables::report_port",
+                "variables::server_uuid", "variables::super_read_only", "status::group_replication_primary_member",
+                "status::group_replication_status",
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
                 "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
@@ -525,6 +537,85 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+
+
+    public function generateGroupInnoDBCluster($information)
+    {
+        $tmp_group = array();
+
+        foreach ($information['servers'] as $id_mysql_server => $server) {
+            $group_name = trim((string)($server['group_replication_group_name'] ?? ''));
+            $group_seeds = trim((string)($server['group_replication_group_seeds'] ?? ''));
+            $local_address = trim((string)($server['group_replication_local_address'] ?? ''));
+
+            if ($group_name === '' && $group_seeds === '' && $local_address === '') {
+                continue;
+            }
+
+            $tmp_group[$id_mysql_server][] = (int) $id_mysql_server;
+
+            $endpoints = [];
+            if ($group_seeds !== '') {
+                $endpoints = array_merge($endpoints, self::extractGroupReplicationEndpoints($group_seeds));
+            }
+
+            if ($local_address !== '') {
+                $endpoints = array_merge($endpoints, self::extractGroupReplicationEndpoints($local_address));
+            }
+
+            $endpoints = array_values(array_unique($endpoints));
+
+            foreach ($endpoints as $endpoint) {
+                if (!empty($information['mapping'][$endpoint])) {
+                    $tmp_group[$id_mysql_server][] = (int) $information['mapping'][$endpoint];
+                }
+            }
+
+            $tmp_group[$id_mysql_server] = array_values(array_unique(array_map('intval', $tmp_group[$id_mysql_server])));
+            self::$innodb_cluster[$id_mysql_server] = $tmp_group[$id_mysql_server];
+        }
+
+        return $tmp_group;
+    }
+
+    private static function extractGroupReplicationEndpoints($raw_endpoints)
+    {
+        $raw = trim((string) $raw_endpoints);
+
+        if ($raw === '') {
+            return array();
+        }
+
+        $parts = array_filter(array_map('trim', explode(',', $raw)), static function ($part) {
+            return $part !== '';
+        });
+
+        $result = array();
+        foreach ($parts as $part) {
+            $clean = preg_replace('/^mysqlx?:\/\//i', '', $part);
+            $chunks = explode(':', $clean);
+
+            if (count($chunks) < 2) {
+                continue;
+            }
+
+            $host = trim((string) $chunks[0]);
+            $port = trim((string) $chunks[1]);
+
+            if ($host === '') {
+                continue;
+            }
+
+            if ($port === '' || !ctype_digit($port)) {
+                $port = '3306';
+            }
+
+            $result[] = $host.':'.$port;
+        }
+
+        return array_values(array_unique($result));
+    }
+
     /*
         prend en paramètre wsrep_cluster_address ou wsrep_incoming_addresses
         a bouger dans App\Lib\Galera
@@ -662,6 +753,7 @@ class Dot3 extends Controller
 
             self::$rank_same = array();
             self::$build_galera = array();
+            self::$build_innodb_cluster = array();
             self::$build_ms = array();
             self::$build_server = array();
 
@@ -673,6 +765,7 @@ class Dot3 extends Controller
 
             // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
             $this->buildGaleraCluster(array($id_dot3_information, $group));
+            $this->buildInnoDBCluster(array($id_dot3_information, $group));
 
             // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
             // constraint=false pour ne pas déformer le layout du cluster.
@@ -784,7 +877,8 @@ class Dot3 extends Controller
         }
 
         $dot .= Graphviz::generateGalera(self::$build_galera);
-    
+        $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
+
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
         }  
@@ -840,8 +934,13 @@ class Dot3 extends Controller
         $id_dot3_information = $param[0];
         $dot3_information = self::getInformation($id_dot3_information);
 
+        self::$galera = array();
+        self::$innodb_cluster = array();
+
         $galera = $this->generateGroupGalera($dot3_information['information']);
         //Debug::debug($galera, "GALERA");
+
+        $innodb_cluster = $this->generateGroupInnoDBCluster($dot3_information['information']);
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -851,7 +950,7 @@ class Dot3 extends Controller
         $vip = $this->generateGroupVip($dot3_information['information']);
         
 
-        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale, $vip));
+        $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $master_slave, $proxysql, $maxscale, $vip));
 
         Debug::debug($group, "GROUP");
         //die();
@@ -2406,6 +2505,99 @@ class Dot3 extends Controller
 
         //Debug::debug(self::$build_galera);
         //Debug::debug(($dot3_information));
+    }
+
+
+    public function buildInnoDBCluster($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty(self::$innodb_cluster)) {
+            return;
+        }
+
+        $clusters = $this->array_merge_group(array_merge(self::$innodb_cluster));
+
+        foreach ($clusters as $cluster_members) {
+            if (empty($cluster_members) || !empty(array_diff($cluster_members, $group))) {
+                continue;
+            }
+
+            sort($cluster_members);
+            $cluster_id = 'gr_'.md5(implode('-', $cluster_members));
+            $server = $dot3_information['information']['servers'];
+            $first = $server[$cluster_members[0]] ?? array();
+
+            $group_name = trim((string)($first['group_replication_group_name'] ?? ''));
+            $cluster_name = trim((string)($first['innodb_cluster_name'] ?? ''));
+
+            if ($cluster_name === '') {
+                $cluster_name = $group_name !== '' ? $group_name : 'InnoDB Cluster';
+            }
+
+            $single_primary_mode = strtolower((string)($first['group_replication_single_primary_mode'] ?? 'off'));
+            $is_single_primary_mode = in_array($single_primary_mode, array('on', '1', 'true'), true);
+
+            $online = 0;
+            $primary_online = 0;
+
+            self::$build_innodb_cluster[$cluster_id] = array(
+                'id_cluster' => $cluster_id,
+                'name' => $cluster_name,
+                'group_name' => $group_name,
+                'mode' => $is_single_primary_mode ? 'single-primary' : 'multi-primary',
+                'members' => count($cluster_members),
+                'node' => array(),
+            );
+
+            foreach ($cluster_members as $id_mysql_server) {
+                $row = $server[$id_mysql_server] ?? array();
+
+                $is_online = (string)($row['mysql_available'] ?? '0') === '1';
+                if ($is_online) {
+                    $online++;
+                }
+
+                $server_uuid = trim((string)($row['server_uuid'] ?? ''));
+                $primary_member_uuid = trim((string)($row['group_replication_primary_member'] ?? ''));
+
+                $role = 'SECONDARY';
+                if (! $is_single_primary_mode) {
+                    $role = 'PRIMARY';
+                } elseif ($server_uuid !== '' && $primary_member_uuid !== '' && strcasecmp($server_uuid, $primary_member_uuid) === 0) {
+                    $role = 'PRIMARY';
+                } elseif (strtolower((string)($row['super_read_only'] ?? 'on')) === 'off') {
+                    $role = 'PRIMARY';
+                }
+
+                if ($role === 'PRIMARY' && $is_online) {
+                    $primary_online++;
+                }
+
+                $state = strtoupper((string)($row['group_replication_status'] ?? ''));
+                if ($state === '') {
+                    $state = $is_online ? 'ONLINE' : 'OFFLINE';
+                }
+
+                self::$build_innodb_cluster[$cluster_id]['node'][$id_mysql_server] = array(
+                    'member_state' => $state,
+                    'member_role' => $role,
+                );
+            }
+
+            self::$build_innodb_cluster[$cluster_id]['node_online'] = $online;
+            self::$build_innodb_cluster[$cluster_id]['primary_online'] = $primary_online;
+
+            if ($online === 0 || ($is_single_primary_mode && $primary_online === 0)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_CRIT';
+            } elseif ($online < count($cluster_members)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_WARN';
+            } else {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_OK';
+            }
+        }
     }
 
     //move to lib/Galera.php
