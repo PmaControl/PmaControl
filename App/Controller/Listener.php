@@ -12,6 +12,7 @@ use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
+use \App\Library\LogIngestionManager;
 
 
 
@@ -199,6 +200,9 @@ class Listener extends Controller
                 Digest::integrate([$arr['id_mysql_server'],$arr['min_date'] ]);
                 break;
 
+            case "ssh_stats":
+                LogIngestionManager::collectForServer((int) $arr['id_mysql_server']);
+                break;
 
             default:
 
