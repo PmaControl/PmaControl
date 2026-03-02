@@ -503,6 +503,9 @@ class Graphviz
         $number = $format['number'];
         $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
         $version_label = $fork.' : '.$number;
+        if (!empty($server['version_label_override'])) {
+            $version_label = $server['version_label_override'];
+        }
 
         //to move in dot3
         if (!empty($server['wsrep_cluster_status']) && strtolower($server['wsrep_cluster_status']) === "non-primary")

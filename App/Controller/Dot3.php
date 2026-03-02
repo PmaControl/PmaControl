@@ -68,6 +68,8 @@ class Dot3 extends Controller
 
     static $rank_same = array();
 
+    static $unknown_proxy_nodes = array();
+
     var $logger;
 
     public function before($param)
@@ -879,6 +881,9 @@ class Dot3 extends Controller
                   
                     $host = $slave['master_host'].':'.$slave['master_port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+                    if (empty($id_master)) {
+                        continue;
+                    }
 
                     $tmp = array();
 
@@ -1693,6 +1698,68 @@ class Dot3 extends Controller
         return trim((string)($server['port'] ?? ''));
     }
 
+    private function getOrCreateUnknownProxySqlServer(string $host, int $referenceId): string
+    {
+        $normalizedHost = strtolower(trim($host));
+        if ($normalizedHost === '') {
+            $normalizedHost = 'unknown';
+        }
+
+        if (!empty(self::$unknown_proxy_nodes[$normalizedHost])) {
+            return self::$unknown_proxy_nodes[$normalizedHost];
+        }
+
+        $placeholderId = 'unknown_proxysql_' . crc32($normalizedHost);
+        self::$unknown_proxy_nodes[$normalizedHost] = $placeholderId;
+
+        $referenceServer = self::$build_server[$referenceId] ?? array();
+        $version = $referenceServer['version'] ?? '0';
+        $versionComment = $referenceServer['version_comment'] ?? 'ProxySQL';
+        $versionLabel = $versionComment;
+        if (!empty($referenceServer['version'])) {
+            $versionLabel .= ' : '.$referenceServer['version'];
+        }
+
+        [$ip, $port] = array_pad(explode(':', $normalizedHost, 2), 2, '');
+        $ip = $ip !== '' ? $ip : $normalizedHost;
+        $port = $port !== '' ? $port : '6032';
+
+        self::$build_server[$placeholderId] = array(
+            'id_mysql_server' => $placeholderId,
+            'display_name' => 'Unknow server',
+            'color' => '#9e9e9e',
+            'version' => $version,
+            'version_comment' => $versionComment,
+            'version_label_override' => $versionLabel,
+            'is_unknown_proxysql' => '1',
+            'is_proxysql' => '1',
+            'ip_real' => $ip,
+            'port_real' => $port,
+            'ip' => $ip,
+            'port' => $port,
+            'mysql_available' => '1',
+            'mysql_servers' => array(),
+            'mysql_galera_hostgroups' => array(),
+            'mysql_replication_hostgroups' => array(),
+            'mysql_group_replication_hostgroups' => array(),
+        );
+
+        return $placeholderId;
+    }
+
+    private function isUnknownProxySqlNode($id_mysql_server): bool
+    {
+        if (is_string($id_mysql_server) && strpos($id_mysql_server, 'unknown_proxysql_') === 0) {
+            return true;
+        }
+
+        if (!empty(self::$build_server[$id_mysql_server]['is_unknown_proxysql'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     /*
      *  CALL after BuildServer
      */
@@ -1778,6 +1845,9 @@ class Dot3 extends Controller
                 }
                 
                 $id_mysql_server_target = self::findIdMysqlServer($host, $id_dot3_information);
+                if (empty($id_mysql_server_target)) {
+                    $id_mysql_server_target = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
+                }
                 //headlabel="*", taillabel="1"
                 
                 $port = crc32($hostgroup['hostgroup_id'].':'.$host);
@@ -1835,6 +1905,11 @@ class Dot3 extends Controller
 
                     
                 }
+
+                if ($this->isUnknownProxySqlNode($id_mysql_server_target)) {
+                    $tmp['color'] = '#9e9e9e';
+                    $tmp['options']['color'] = '#9e9e9e';
+                }
                 self::$build_ms[] = $tmp;
             }
         }
@@ -1884,6 +1959,9 @@ class Dot3 extends Controller
                 //Debug::debug($elem['parameters'], "SERVER");
 
                 $id_mysql_server_target = self::findIdMysqlServer($elem['parameters']['address'].":".$elem['parameters']['port'], $id_dot3_information);
+                if (empty($id_mysql_server_target)) {
+                    continue;
+                }
 
                 $tmp = [];
 
@@ -1973,12 +2051,12 @@ class Dot3 extends Controller
         if (! empty($dot_information['information']['mapping'][$host])) {
             return  $dot_information['information']['mapping'][$host];
         }
-        else {
-            //Debug::debug($dot_information, "mapping");
-            // create box => autodetect
-            echo "This master was not found : ".$host."\n";
-            //die();
-        }
+
+        //Debug::debug($dot_information, "mapping");
+        // create box => autodetect
+        echo "This master was not found : ".$host."\n";
+
+        return null;
     }
 
     private static function getInformation($id_dot3_information = '')
@@ -2512,6 +2590,9 @@ class Dot3 extends Controller
                 {
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+                    if (empty($id_master)) {
+                        $id_master = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
+                    }
 
                     $same[] = $id_master.":".self::TARGET."";
                     if ($id_mysql_server == $id_master) {
@@ -2527,6 +2608,14 @@ class Dot3 extends Controller
                     $tmp['options']['arrowsize'] = "1.5";
                     
                     $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
+
+                    if ($this->isUnknownProxySqlNode($id_master) || $this->isUnknownProxySqlNode($id_mysql_server)) {
+                        $tmp['color'] = '#9e9e9e';
+                        if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                            $tmp['options'] = array();
+                        }
+                        $tmp['options']['color'] = '#9e9e9e';
+                    }
 
                     self::$build_ms[] = $tmp;
 
