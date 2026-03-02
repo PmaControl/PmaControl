@@ -19,11 +19,12 @@
   </button>
   <ul class="dropdown-menu">
     <?php
+    $current_config_tab = $data['current_config_tab'] ?? 'MYSQL_SERVERS';
+
     foreach($data['proxysql'] as $proxysql_server)
     {
-        $data['param'][0] = $proxysql_server['id'];
-        $link = implode('/', $data['param']);
-        echo '<li><a href="'.LINK.'ProxySQL/config/'.$link.'"><img src="'.IMG.'icon/proxysql.png" height="18px" width="18px"> ';
+        $link = LINK.'ProxySQL/config/'.$proxysql_server['id'].'/'.$current_config_tab;
+        echo '<li><a href="'.$link.'"><img src="'.IMG.'icon/proxysql.png" height="18px" width="18px"> ';
         echo '<span title="Production" class="label label-danger">P</span> <b>'
         .$proxysql_server['display_name'].'</b> '.$proxysql_server['hostname'].':'.$proxysql_server['port'].' v'.$proxysql_server['version'].'</a></li>';
     }

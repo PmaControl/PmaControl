@@ -839,7 +839,6 @@ class ProxySQL extends Controller
         $param['menu_current'] = __FUNCTION__;
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
-        $data['current'] = $param[1] ?? "MYSQL SERVERS";
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
@@ -849,13 +848,34 @@ class ProxySQL extends Controller
 
         $sqls = $this->getConfigMenuDefinition();
 
+        $config_tabs = array();
+        foreach (array_keys($sqls) as $tab_name) {
+            $config_tabs[] = str_replace(' ', '_', $tab_name);
+        }
+
+        $default_config_tab = 'MYSQL_SERVERS';
+        $current_config_tab = strtoupper((string) ($param[1] ?? ''));
+
+        if (!in_array($current_config_tab, $config_tabs, true)) {
+            $session_tab = strtoupper((string) ($_SESSION['proxysql_config_tab'] ?? ''));
+
+            if (in_array($session_tab, $config_tabs, true)) {
+                $current_config_tab = $session_tab;
+            } else {
+                $current_config_tab = $default_config_tab;
+            }
+        }
+
+        $_SESSION['proxysql_config_tab'] = $current_config_tab;
+        $data['current'] = $current_config_tab;
+
         $data['table'] = array();
 
         foreach ($sqls as $name => $elem) {
 
             $key = str_replace(' ', '_', $name);
 
-            if ($data['current'] != $key) {
+            if ($data['current'] !== $key) {
                 continue;
             }
 
@@ -974,10 +994,22 @@ class ProxySQL extends Controller
             'SCHEDULER',
         );
 
-        $current_config_tab = strtoupper((string)($param[1] ?? 'MYSQL_SERVERS'));
-        if (!in_array($current_config_tab, $config_tabs, true)) {
-            $current_config_tab = 'MYSQL_SERVERS';
+        $default_config_tab = 'MYSQL_SERVERS';
+        $current_config_tab = strtoupper((string)($param[1] ?? ''));
+
+        if (in_array($current_config_tab, $config_tabs, true)) {
+            $_SESSION['proxysql_config_tab'] = $current_config_tab;
+        } else {
+            $session_tab = strtoupper((string)($_SESSION['proxysql_config_tab'] ?? ''));
+
+            if (in_array($session_tab, $config_tabs, true)) {
+                $current_config_tab = $session_tab;
+            } else {
+                $current_config_tab = $default_config_tab;
+            }
         }
+
+        $data['current_config_tab'] = $current_config_tab;
 
 
         //menu
