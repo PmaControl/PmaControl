@@ -20,10 +20,15 @@
   <ul class="dropdown-menu">
     <?php
     $current_config_tab = $data['current_config_tab'] ?? 'MYSQL_SERVERS';
+    $menu_current = strtolower((string) ($data['param']['menu_current'] ?? 'config'));
 
     foreach($data['proxysql'] as $proxysql_server)
     {
-        $link = LINK.'ProxySQL/config/'.$proxysql_server['id'].'/'.$current_config_tab;
+        if ($menu_current === 'config') {
+            $link = LINK.'ProxySQL/config/'.$proxysql_server['id'].'/'.$current_config_tab;
+        } else {
+            $link = LINK.'ProxySQL/'.$menu_current.'/'.$proxysql_server['id'];
+        }
         echo '<li><a href="'.$link.'"><img src="'.IMG.'icon/proxysql.png" height="18px" width="18px"> ';
         echo '<span title="Production" class="label label-danger">P</span> <b>'
         .$proxysql_server['display_name'].'</b> '.$proxysql_server['hostname'].':'.$proxysql_server['port'].' v'.$proxysql_server['version'].'</a></li>';

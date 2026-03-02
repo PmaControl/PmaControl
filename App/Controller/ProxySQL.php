@@ -1027,8 +1027,8 @@ class ProxySQL extends Controller
        // $data['menu']['monitor']['title'] =  __('Monitor');
         //$data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
 
-        //$data['menu']['cluster']['title'] =  __('Cluster');
-        //$data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
+        $data['menu']['cluster']['title'] =  __('Cluster');
+        $data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
 
         $data['menu']['log']['title'] =  __('Logs');
         $data['menu']['log']['link'] = LINK.'ProxySQL/log/'.$data['id_proxysql_server'];
@@ -1231,10 +1231,76 @@ class ProxySQL extends Controller
 
     public function cluster($param)
     {
+        Debug::parseDebug($param);
 
-        $data = [];
+        $id_proxysql_server = $param[0] ?? "";
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
         $param['menu_current'] = __FUNCTION__;
+
+        $data = array();
         $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+
+        $id_mysql_server = self::getIdMysqlServer(array($id_proxysql_server));
+        $data['id_mysql_server'] = $id_mysql_server;
+
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+
+        if (empty($id_mysql_server)) {
+            $this->set('data', $data);
+            return;
+        }
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT, "SVG");
+
+        $sub_query = "select max(z.id) from dot3_cluster__mysql_server z where z.id_mysql_server=".$id_mysql_server;
+
+        $sql = "SELECT c.svg FROM dot3_cluster__mysql_server a
+        INNER JOIN dot3_cluster b ON a.id_dot3_cluster = b.id
+        INNER JOIN dot3_graph c ON b.id_dot3_graph = c.id
+        WHERE a.id_mysql_server = ".$id_mysql_server." AND a.id in (".$sub_query.");";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $this->di['js']->code_javascript('
+            $(document).ready(function()
+            {
+                function refresh()
+                {
+                    var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
+                    $.ajax({
+                        url: myURL,
+                        type: "GET",
+                        success: function(data) {
+                            // Vérifier si les données ne sont pas vides
+                            if (data.trim().length > 0) {
+                                $("#graph").html(data);
+                            } else {
+                                console.log("Aucune donnée reçue.");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log("Erreur lors du chargement des données : ", error);
+                        }
+                    });
+                }
+
+                var intervalId = window.setInterval(function(){
+                    // call your function here
+                    refresh()  
+                  }, 1200);
+
+            })');
+            $data['svg'] = $ob->svg;
+        }
 
         $this->set('data', $data);
     }
