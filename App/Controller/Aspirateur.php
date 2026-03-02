@@ -619,9 +619,11 @@ class Aspirateur extends Controller
     
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            $data = array();
-            $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
-            $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
+            if (!$isSingleStore) {
+                $data = array();
+                $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
+                $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
+            }
         }
 
 
@@ -2909,6 +2911,23 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $db = Mysql::getDbLink($id_mysql_server);
+
+        $isSingleStore = false;
+        try {
+            $vars = Extraction2::display(['variables::is_single_store'], [$id_mysql_server]);
+            if (!empty($vars[$id_mysql_server]['is_single_store'])) {
+                $isSingleStore = (int)$vars[$id_mysql_server]['is_single_store'] === 1;
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[DISKS] Unable to detect SingleStore for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+        }
+
+        if ($isSingleStore) {
+            return $ret;
+        }
 
         $sql2 = "select count(1) as cpt from information_schema.plugins WHERE PLUGIN_NAME='DISKS' AND PLUGIN_STATUS='ACTIVE';";
         $res2 = $db->sql_query($sql2);
