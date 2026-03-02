@@ -8,27 +8,65 @@ use \Glial\Sgbd\Sgbd;
 
 class MysqlDatabase extends Controller
 {
+    private function addNoDatabaseCautionFlash()
+    {
+        static $is_flash_added = false;
+
+        if ($is_flash_added) {
+            return;
+        }
+
+        set_flash(
+            "caution",
+            __("Aucune base disponible"),
+            __("Aucune base n’est actuellement disponible pour ce serveur. La liste des bases est importée une fois par heure.")
+        );
+
+        $is_flash_added = true;
+    }
+
     public function menu($param)
     {
-        $id_mysql_server = $param[0];
-        $table_schema = $param[1];
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $table_schema = trim((string) ($param[1] ?? ""));
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
+        if (empty($table_schema)) {
+            $this->addNoDatabaseCautionFlash();
+            $this->set('param', $param);
+            return;
+        }
+
         $default = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT a.id, a.schema_name from mysql_database a WHERE a.schema_name ='".$table_schema."' AND id_mysql_server=".$id_mysql_server." 
-        UNION ALL SELECT max(b.id) as id, b.schema_name from mysql_database b WHERE b.id_mysql_server=".$id_mysql_server;
+        $table_schema_escaped = $default->sql_real_escape_string($table_schema);
+        $sql = "SELECT id, schema_name
+        FROM mysql_database
+        WHERE id_mysql_server = ".$id_mysql_server."
+        AND schema_name IS NOT NULL
+        AND schema_name <> ''
+        ORDER BY (schema_name = '".$table_schema_escaped."') DESC, schema_name ASC
+        LIMIT 1";
 
         $res = $default->sql_query($sql);
+        $found_schema = false;
 
         while ($ob = $default->sql_fetch_object($res)){
+            $found_schema = true;
             $_GET['mysql_database']['id'] = $ob->id;
 
-            if ($table_schema != $ob->schema_name) {
-                $url = str_replace("/$table_schema/", "/".$ob->schema_name."/", $_GET['url'] );
-                header("location: ".LINK.$url);
+            if ($table_schema !== $ob->schema_name) {
+                $url = str_replace("/".$table_schema."/", "/".$ob->schema_name."/", $_GET['url']);
+                if ($url !== $_GET['url']) {
+                    header("location: ".LINK.$url);
+                    exit;
+                }
             }
             break;
+        }
+
+        if (!$found_schema) {
+            $this->addNoDatabaseCautionFlash();
         }
 
         $this->di['js']->code_javascript('
@@ -81,22 +119,29 @@ class MysqlDatabase extends Controller
     {
         $data['param'] = $param;
 
-        $_GET['mysql_server']['id'] = $param[0] ?? 1;
+        $id_mysql_server = !empty($param[0]) ? (int) $param[0] : 1;
+        $_GET['mysql_server']['id'] = $id_mysql_server;
 
-        $database = $param[1] ?? "";
+        $database = trim((string) ($param[1] ?? ""));
 
         if (empty($database))
         {
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT id_mysql_server,schema_name FROM mysql_database WHERE id_mysql_server = '".$_GET['mysql_server']['id']. "'
-            AND schema_name NOT in ('information_schema','performance_schema')";
+            $sql = "SELECT id_mysql_server,schema_name FROM mysql_database WHERE id_mysql_server = ".$id_mysql_server."
+            AND schema_name NOT in ('information_schema','performance_schema')
+            AND schema_name IS NOT NULL
+            AND schema_name <> ''
+            ORDER BY schema_name
+            LIMIT 1";
             $res = $db->sql_query($sql);
 
             while($ob = $db->sql_fetch_object($res)) {
                 header("location: ".LINK."MysqlDatabase/mpd/".$ob->id_mysql_server."/".$ob->schema_name."/");
                 exit;
             }
+
+            $this->addNoDatabaseCautionFlash();
         }
 
         $this->set('data', $data);
