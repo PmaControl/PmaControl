@@ -192,11 +192,42 @@ class MysqlServer extends Controller
         foreach($id_mysql_servers as $id_mysql_server)
         {
             $availableRow = $availability[$id_mysql_server] ?? [];
-            $mysqlAvailable = (string)($availableRow['mysql_available'] ?? $availableRow['mysql_server::mysql_available'] ?? '1');
+            $credentials = self::getMysqlServerCredentials((int)$id_mysql_server);
+
+            $isServerMonitored = (string)($credentials['is_monitored'] ?? '0') === '1';
+            $isClientMonitored = (string)($credentials['client_is_monitored'] ?? '1') !== '0';
+            $isEffectiveMonitored = !empty($credentials['effective_is_monitored']) || ($isServerMonitored && $isClientMonitored);
+
+            $hasAvailabilityMetric = array_key_exists('mysql_available', $availableRow)
+                || array_key_exists('mysql_server::mysql_available', $availableRow);
+
+            $mysqlAvailable = (string)($availableRow['mysql_available'] ?? $availableRow['mysql_server::mysql_available'] ?? ($isEffectiveMonitored ? '1' : '0'));
             $mysqlError = (string)($availableRow['mysql_error'] ?? $availableRow['mysql_server::mysql_error'] ?? '');
 
+            if (!$isEffectiveMonitored && !$hasAvailabilityMetric) {
+                $ip = (string)($credentials['ip'] ?? '');
+                $port = (int)($credentials['port'] ?? 0);
+
+                $finalError = trim($mysqlError);
+                if ($finalError === '') {
+                    $finalError = 'Monitoring is disabled for this server (or its client); connection check skipped.';
+                }
+
+                $data['offline_diagnostics'][$id_mysql_server] = [
+                    'id_mysql_server' => $id_mysql_server,
+                    'ip' => $ip,
+                    'port' => $port,
+                    'mysql_available' => 0,
+                    'mysql_error' => $finalError,
+                    'port_open' => 0,
+                    'port_message' => 'Monitoring disabled: IP/Port check skipped',
+                    'mysql_test_message' => '',
+                ];
+
+                continue;
+            }
+
             if ($mysqlAvailable === '0') {
-                $credentials = self::getMysqlServerCredentials((int)$id_mysql_server);
                 $ip = (string)($credentials['ip'] ?? '');
                 $port = (int)($credentials['port'] ?? 0);
                 $login = (string)($credentials['login'] ?? '');
@@ -243,13 +274,24 @@ class MysqlServer extends Controller
                 continue;
             }
 
+            set_error_handler(static function ($severity, $message, $file, $line) {
+                if (!(error_reporting() & $severity)) {
+                    return false;
+                }
+
+                throw new \ErrorException($message, 0, $severity, $file, $line);
+            });
+
             try {
                 $db = Mysql::getDbLink($id_mysql_server);
             } catch (\Throwable $e) {
+                $ip = (string)($credentials['ip'] ?? '');
+                $port = (int)($credentials['port'] ?? 0);
+
                 $data['offline_diagnostics'][$id_mysql_server] = [
                     'id_mysql_server' => $id_mysql_server,
-                    'ip' => '',
-                    'port' => 0,
+                    'ip' => $ip,
+                    'port' => $port,
                     'mysql_available' => 0,
                     'mysql_error' => 'Unable to initialize DB link: '.$e->getMessage(),
                     'port_open' => 0,
@@ -257,6 +299,8 @@ class MysqlServer extends Controller
                     'mysql_test_message' => '',
                 ];
                 continue;
+            } finally {
+                restore_error_handler();
             }
 
             $metrics = self::getProcesslistConnectionMetrics($db);
@@ -2165,10 +2209,15 @@ class MysqlServer extends Controller
             'login' => null,
             'password' => null,
             'is_monitored' => null,
+            'client_is_monitored' => 1,
+            'effective_is_monitored' => 0,
             'is_proxy' => 0,
         ];
 
-        $sql = "SELECT * FROM mysql_server where id=".(int)$id_mysql_server;
+        $sql = "SELECT a.*, c.is_monitored AS client_is_monitored
+        FROM mysql_server a
+        LEFT JOIN client c ON c.id = a.id_client
+        WHERE a.id=".(int)$id_mysql_server." LIMIT 1";
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res , MYSQLI_ASSOC))
         {
@@ -2177,6 +2226,11 @@ class MysqlServer extends Controller
             $data['login'] = $arr['login'] ?? null;
             $data['password'] = Crypt::decrypt($arr['passwd']);
             $data['is_monitored'] = $arr['is_monitored'] ?? null;
+            $data['client_is_monitored'] = $arr['client_is_monitored'] ?? 1;
+            $data['effective_is_monitored'] = (
+                (string)($arr['is_monitored'] ?? '0') === '1'
+                && (string)($arr['client_is_monitored'] ?? '1') === '1'
+            ) ? 1 : 0;
             $data['is_proxy'] = $arr['is_proxy'] ?? 0;
         }
 
