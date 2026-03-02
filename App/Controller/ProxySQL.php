@@ -665,6 +665,159 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+    private function getConfigMenuDefinition()
+    {
+        $sqls = array();
+        $sqls["ADMIN VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name LIKE 'admin%' ORDER BY variable_name ASC;";
+        $sqls["ADMIN VARIABLES"]['insert_or_delete'] = "0";
+        $sqls["ADMIN VARIABLES"]['update_only'] = array("variable_value");
+        $sqls["MYSQL QUERY RULES"]['sql'] = "SELECT * FROM {PREFIX}mysql_query_rules ORDER BY rule_id ASC;";
+        $sqls["MYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_servers ORDER BY hostgroup_id, hostname, port;";
+        $sqls["MYSQL USERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_users ORDER BY default_hostgroup, username ASC;";
+
+        $sqls["MYSQL VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name NOT LIKE 'admin%' ORDER BY variable_name ASC;";
+        $sqls["MYSQL VARIABLES"]['insert_or_delete'] = "0";
+        $sqls["PROXYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}proxysql_servers ORDER BY hostname ASC, port ASC;";
+        $sqls["SCHEDULER"]['sql'] = "SELECT * FROM {PREFIX}scheduler ORDER BY id desc;";
+
+        return $sqls;
+    }
+
+    private function extractTableNameFromSqlTemplate($sql_template)
+    {
+        $sql = str_replace('{PREFIX}', '', $sql_template);
+
+        $output_array = array();
+        preg_match('/FROM\s+`?([a-zA-Z0-9_]+)`?/i', $sql, $output_array);
+
+        return $output_array[1] ?? "";
+    }
+
+    private function getSqliteCreateTableStatement($db, $table_name)
+    {
+        $table_name = str_replace("'", "''", $table_name);
+        $sql = "SELECT sql FROM sqlite_master WHERE type='table' AND name='".$table_name."' LIMIT 1;";
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (!empty($arr['sql'])) {
+                return $arr['sql'];
+            }
+        }
+
+        return "";
+    }
+
+    private function normalizeDefaultValue($default_value)
+    {
+        if ($default_value === null) {
+            return null;
+        }
+
+        $default_value = trim((string) $default_value);
+
+        if ($default_value === '' || strtoupper($default_value) === 'NULL') {
+            return null;
+        }
+
+        if (
+            (substr($default_value, 0, 1) === "'" && substr($default_value, -1) === "'")
+            || (substr($default_value, 0, 1) === '"' && substr($default_value, -1) === '"')
+        ) {
+            $default_value = substr($default_value, 1, -1);
+        }
+
+        return str_replace("''", "'", $default_value);
+    }
+
+    private function parseEnumValues($raw_values)
+    {
+        $output = array();
+
+        preg_match_all('/\'((?:\'\'|[^\'])*)\'|"((?:""|[^"])*)"|([^,]+)/', $raw_values, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $value = "";
+
+            if (isset($match[1]) && $match[1] !== "") {
+                $value = str_replace("''", "'", $match[1]);
+            } else if (isset($match[2]) && $match[2] !== "") {
+                $value = str_replace('""', '"', $match[2]);
+            } else if (isset($match[3])) {
+                $value = trim($match[3]);
+            }
+
+            $value = trim($value);
+
+            if ($value === "") {
+                continue;
+            }
+
+            $output[$value] = $value;
+        }
+
+        return array_values($output);
+    }
+
+    private function getEnumValuesByColumn($create_table_sql, $columns)
+    {
+        $enum_by_column = array();
+
+        if (empty($create_table_sql)) {
+            return $enum_by_column;
+        }
+
+        $mysql_enum = array();
+        preg_match_all('/[`"]?([a-zA-Z0-9_]+)[`"]?\s+enum\s*\(([^)]*)\)/i', $create_table_sql, $mysql_enum, PREG_SET_ORDER);
+
+        foreach ($mysql_enum as $match) {
+            $column_name = $match[1];
+            $values = $this->parseEnumValues($match[2]);
+
+            if (!empty($values)) {
+                $enum_by_column[$column_name] = $values;
+            }
+        }
+
+        foreach ($columns as $column) {
+            $column_name = $column['name'];
+
+            if (!empty($enum_by_column[$column_name])) {
+                continue;
+            }
+
+            $escaped = preg_quote($column_name, '/');
+            $regex = '/[`"]?'.$escaped.'[`"]?.*?\bCHECK\s*\(\s*\(?\s*(?:[`"]?'.$escaped.'[`"]?\s+)?IN\s*\(([^\)]*)\)\s*\)?\s*\)/is';
+
+            if (!preg_match($regex, $create_table_sql, $check_values)) {
+                continue;
+            }
+
+            $values = $this->parseEnumValues($check_values[1] ?? "");
+
+            if (!empty($values)) {
+                $enum_by_column[$column_name] = $values;
+            }
+        }
+
+        return $enum_by_column;
+    }
+
+    private function getAutoincrementByColumn($create_table_sql, $columns)
+    {
+        $autoincrement_by_column = array();
+
+        foreach ($columns as $column) {
+            $column_name = $column['name'];
+            $escaped = preg_quote($column_name, '/');
+
+            $regex = '/[`"]?'.$escaped.'[`"]?\s+[^,]*AUTOINCREMENT/i';
+            $autoincrement_by_column[$column_name] = preg_match($regex, $create_table_sql) === 1;
+        }
+
+        return $autoincrement_by_column;
+    }
+
 
     public function config($param)
     {
@@ -694,18 +847,7 @@ class ProxySQL extends Controller
 
         $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
 
-        $sqls = array();
-        $sqls["ADMIN VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name LIKE 'admin%' ORDER BY variable_name ASC;";
-        $sqls["ADMIN VARIABLES"]['insert_or_delete'] = "0";
-        $sqls["ADMIN VARIABLES"]['update_only'] = array("variable_value");
-        $sqls["MYSQL QUERY RULES"]['sql'] = "SELECT * FROM {PREFIX}mysql_query_rules ORDER BY rule_id ASC;";
-        $sqls["MYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_servers ORDER BY hostgroup_id, hostname, port;";
-        $sqls["MYSQL USERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_users ORDER BY default_hostgroup, username ASC;";
-
-        $sqls["MYSQL VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name NOT LIKE 'admin%' ORDER BY variable_name ASC;";
-        $sqls["MYSQL VARIABLES"]['insert_or_delete'] = "0";
-        $sqls["PROXYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}proxysql_servers ORDER BY hostname ASC, port ASC;";
-        $sqls["SCHEDULER"]['sql'] = "SELECT * FROM {PREFIX}scheduler ORDER BY id desc;";
+        $sqls = $this->getConfigMenuDefinition();
 
         $data['table'] = array();
 
@@ -822,6 +964,21 @@ class ProxySQL extends Controller
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
 
+        $config_tabs = array(
+            'ADMIN_VARIABLES',
+            'MYSQL_QUERY_RULES',
+            'MYSQL_SERVERS',
+            'MYSQL_USERS',
+            'MYSQL_VARIABLES',
+            'PROXYSQL_SERVERS',
+            'SCHEDULER',
+        );
+
+        $current_config_tab = strtoupper((string)($param[1] ?? 'MYSQL_SERVERS'));
+        if (!in_array($current_config_tab, $config_tabs, true)) {
+            $current_config_tab = 'MYSQL_SERVERS';
+        }
+
 
         //menu
         
@@ -829,7 +986,7 @@ class ProxySQL extends Controller
         $data['menu']['auto']['link'] = LINK.'ProxySQL/auto/'.$data['id_proxysql_server'];
         
         $data['menu']['config']['title'] =  __('Configuration');
-        $data['menu']['config']['link'] = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/MYSQL_SERVERS';
+        $data['menu']['config']['link'] = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/'.$current_config_tab;
 
 
         $data['menu']['statistic']['title'] =  __('Statistics');
@@ -1095,12 +1252,166 @@ class ProxySQL extends Controller
 
     public function addLine($param)
     {
-        $id_proxysql_server = $param[0];
-        $table_name = $param[1];
+        Debug::parseDebug($param);
 
+        $id_proxysql_server = $param[0] ?? "";
+        $current = $param[1] ?? "MYSQL_SERVERS";
 
-        
-        
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
+        $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
+        $sqls = $this->getConfigMenuDefinition();
+
+        $menu_addline = $sqls;
+        unset($menu_addline['ADMIN VARIABLES'], $menu_addline['MYSQL VARIABLES']);
+
+        $forbidden_addline = in_array($current, array('ADMIN_VARIABLES', 'MYSQL_VARIABLES'), true);
+
+        if ($forbidden_addline) {
+            set_flash(
+                "caution",
+                __("Warning"),
+                __("Impossible to add variables from this section in addLine")
+            );
+
+            $param['menu_current'] = 'config';
+
+            $data = array();
+            $data['param'] = $param;
+            $data['id_proxysql_server'] = $id_proxysql_server;
+            $data['current'] = $current;
+            $data['table_name'] = '';
+            $data['menu'] = $menu_addline;
+            $data['columns'] = array();
+            $data['post'] = array();
+            $data['is_addline_allowed'] = false;
+
+            $this->view = 'addLine';
+            $this->set('data', $data);
+            return;
+        }
+
+        $table_name = "";
+        foreach ($sqls as $name => $elem) {
+            $key = str_replace(' ', '_', $name);
+
+            if ($key !== $current) {
+                continue;
+            }
+
+            $table_name = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            break;
+        }
+
+        if (empty($table_name)) {
+            throw new \Exception('Unknown ProxySQL config section : ' . $current);
+        }
+
+        $table_name_safe = str_replace("'", "''", $table_name);
+        $sql_columns = "PRAGMA table_info('".$table_name_safe."');";
+        $res_columns = $db->sql_query($sql_columns);
+
+        $columns = array();
+        while ($arr = $db->sql_fetch_array($res_columns, MYSQLI_ASSOC)) {
+            $tmp = array();
+            $tmp['name'] = $arr['name'];
+            $tmp['type'] = strtoupper((string) ($arr['type'] ?? ''));
+            $tmp['notnull'] = !empty($arr['notnull']);
+            $tmp['pk'] = !empty($arr['pk']);
+            $tmp['default'] = $this->normalizeDefaultValue($arr['dflt_value'] ?? null);
+
+            $columns[] = $tmp;
+        }
+
+        if (count($columns) === 0) {
+            throw new \Exception('Unable to discover table structure for : ' . $table_name);
+        }
+
+        $create_table_sql = $this->getSqliteCreateTableStatement($db, $table_name);
+        $enum_by_column = $this->getEnumValuesByColumn($create_table_sql, $columns);
+        $autoincrement_by_column = $this->getAutoincrementByColumn($create_table_sql, $columns);
+
+        foreach ($columns as $key => $column) {
+            $name = $column['name'];
+
+            $columns[$key]['enum_values'] = $enum_by_column[$name] ?? array();
+            $columns[$key]['is_select'] = !empty($columns[$key]['enum_values']);
+            $columns[$key]['is_numeric'] = preg_match('/INT|REAL|DOUBLE|FLOAT|NUMERIC|DECIMAL/i', $column['type']) === 1;
+            $columns[$key]['autoincrement'] = !empty($autoincrement_by_column[$name]);
+        }
+
+        $posted_values = $_POST['proxysql_addline'] ?? array();
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $fields = array();
+            $values = array();
+            $errors = array();
+
+            foreach ($columns as $column) {
+                $column_name = $column['name'];
+                $value = trim((string)($posted_values[$column_name] ?? ""));
+
+                if ($value === "") {
+                    if (!empty($column['autoincrement'])) {
+                        continue;
+                    }
+
+                    if ($column['default'] !== null) {
+                        continue;
+                    }
+
+                    if (!empty($column['notnull'])) {
+                        $errors[] = __('Field') . " '" . $column_name . "' " . __('is required');
+                        continue;
+                    }
+
+                    $fields[] = "`" . $column_name . "`";
+                    $values[] = "NULL";
+                    continue;
+                }
+
+                $fields[] = "`" . $column_name . "`";
+                $values[] = "'" . $db->sql_real_escape_string($value) . "'";
+            }
+
+            if (count($errors) > 0) {
+                set_flash("error", __("Error"), implode('<br>', $errors));
+            } else if (count($fields) === 0) {
+                set_flash("warning", __("Warning"), __("No value to insert"));
+            } else {
+                $sql_insert = "INSERT INTO `".$table_name."` (".implode(', ', $fields).") VALUES (".implode(', ', $values).");";
+
+                try {
+                    $db->sql_query($sql_insert);
+                    set_flash("success", __("Success !"), "ProxySQL Admin [(main)]> " . $sql_insert);
+
+                    if (! IS_CLI) {
+                        header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
+                    }
+
+                    return;
+                } catch(\Exception $e) {
+                    set_flash("error", "Error", $e->getMessage());
+                }
+            }
+        }
+
+        $param['menu_current'] = 'config';
+
+        $data = array();
+        $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+        $data['current'] = $current;
+        $data['table_name'] = $table_name;
+        $data['menu'] = $menu_addline;
+        $data['columns'] = $columns;
+        $data['post'] = $posted_values;
+        $data['is_addline_allowed'] = true;
+
+        $this->view = 'addLine';
+        $this->set('data', $data);
     }
 
 

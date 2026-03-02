@@ -95,7 +95,7 @@ foreach ($data['table'] as $table_name)
 
     if (! isset($extra['insert_or_delete']))
     {
-      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addline/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
+      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addLine/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
       <span class="glyphicon glyphicon-plus"></span> Add a line</a>';
     }
     
