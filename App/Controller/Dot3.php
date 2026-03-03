@@ -1744,6 +1744,11 @@ class Dot3 extends Controller
             'mysql_group_replication_hostgroups' => array(),
         );
 
+        $this->logger->warning(
+            'ProxySQL backend missing in inventory: ' . $normalizedHost
+            . ' (linked from ProxySQL id ' . $referenceId . ')'
+        );
+
         return $placeholderId;
     }
 
