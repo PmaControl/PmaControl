@@ -818,6 +818,17 @@ class Aspirateur extends Controller
         $previousPreviousId = (int)($previous['destination_previous_id'] ?? 0);
         $previousPreviousDate = trim((string)($previous['destination_previous_date'] ?? ''));
 
+        // Toujours pré-remplir les valeurs précédentes (même si aucune modification).
+        $data['destination_previous_id'] = $previousPreviousId;
+        $data['destination_previous_date'] = $previousPreviousDate;
+
+        // Si aucune destination n'est résolue, on ne touche pas à destination_previous_*
+        // (on garde les valeurs précédentes telles quelles).
+        if ((int)$destinationId === 0) {
+            Debug::debug($data, "DATA VIP");
+            return $data;
+        }
+
         // Destination inchangée => on conserve strictement le précédent historique.
         if ($previousDestinationId === (int)$destinationId) {
             if ($previousPreviousId > 0) {
@@ -829,8 +840,6 @@ class Aspirateur extends Controller
             }
         }
         // Destination changée => on décale la destination courante en "previous".
-        // On ignore volontairement les transitions depuis 0 (état inconnu/non résolu)
-        // pour éviter un rafraîchissement permanent de destination_previous_date.
         else if ($previousDestinationId > 0) {
             $data['destination_previous_id'] = $previousDestinationId;
 

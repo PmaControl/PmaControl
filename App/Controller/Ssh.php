@@ -349,7 +349,7 @@ class Ssh extends Controller
         $sql = "WITH z as (SELECT a.id
 FROM mysql_server a
 INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
-WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
+WHERE `active`=1 AND a.is_vip=0 AND a.is_deleted=0 and b.id_ssh_key in(".$id_ssh_key."))
 SELECT b.id,b.ssh_port FROM mysql_server b, ssh_key c
 WHERE c.id in (".$id_ssh_key.")
 AND b.id NOT IN (select id from z)";
