@@ -405,11 +405,16 @@ class Dot3 extends Controller
 
         foreach ($information['servers'] as $id_mysql_server => $server)
         {
+            if (!$this->isVipServer($server)) {
+                continue;
+            }
+
             $id_source = (int) $id_mysql_server;
 
+            $vip_destinations = $this->getVipRenderDestinations($server, $information['servers']);
             $vip_links = array(
-                $server['destination_id'] ?? null,
-                $server['destination_previous_id'] ?? null,
+                $vip_destinations['active_id'],
+                $vip_destinations['previous_id'],
             );
 
             foreach ($vip_links as $id_destination)
@@ -1033,7 +1038,11 @@ class Dot3 extends Controller
             }
 
             $server = $dot3_information['information']['servers'][$id_mysql_server];
-            $vip_destinations = $this->getVipRenderDestinations($server);
+            if (!$this->isVipServer($server)) {
+                continue;
+            }
+
+            $vip_destinations = $this->getVipRenderDestinations($server, $dot3_information['information']['servers']);
 
             $vip_links = array(
                 'active' => array(
@@ -1602,7 +1611,7 @@ class Dot3 extends Controller
         $server['version'] = 'VIP';
         $server['version_comment'] = 'VIP';
 
-        $vip_destinations = $this->getVipRenderDestinations($server);
+        $vip_destinations = $this->getVipRenderDestinations($server, $allServers);
 
         if (empty($server['vip_dns_ip'])) {
             $vip_ip = trim((string)($server['ip'] ?? ''));
@@ -1644,7 +1653,7 @@ class Dot3 extends Controller
         return $server;
     }
 
-    private function getVipRenderDestinations(array $server): array
+    private function getVipRenderDestinations(array $server, array $allServers = array()): array
     {
         $active_id = (int)($server['destination_id'] ?? 0);
         $previous_id = (int)($server['destination_previous_id'] ?? 0);
@@ -1658,10 +1667,63 @@ class Dot3 extends Controller
             $previous_id = 0;
         }
 
+        if (!empty($allServers)) {
+            $active_id = $this->resolveVipDestinationId($active_id, $allServers);
+            $previous_id = $this->resolveVipDestinationId($previous_id, $allServers);
+
+            if ($active_id > 0 && $previous_id === $active_id) {
+                $previous_id = 0;
+            }
+        }
+
         return array(
             'active_id' => $active_id,
             'previous_id' => $previous_id,
         );
+    }
+
+    private function resolveVipDestinationId(int $idDestination, array $allServers, int $maxDepth = 6): int
+    {
+        if ($idDestination <= 0) {
+            return 0;
+        }
+
+        $current = $idDestination;
+        $visited = array();
+        $depth = 0;
+
+        while ($current > 0 && $depth < $maxDepth) {
+            if (!empty($visited[$current])) {
+                return 0;
+            }
+
+            $visited[$current] = true;
+
+            if (empty($allServers[$current])) {
+                return 0;
+            }
+
+            $candidate = $allServers[$current];
+            if (!$this->isVipServer($candidate)) {
+                return $current;
+            }
+
+            $nextActive = (int)($candidate['destination_id'] ?? 0);
+            $nextPrevious = (int)($candidate['destination_previous_id'] ?? 0);
+
+            if ($nextActive <= 0 && $nextPrevious > 0) {
+                $nextActive = $nextPrevious;
+            }
+
+            if ($nextActive <= 0) {
+                return 0;
+            }
+
+            $current = $nextActive;
+            $depth++;
+        }
+
+        return 0;
     }
 
     private function buildVipDestinationLabel(array $allServers, int $idDestination): array
