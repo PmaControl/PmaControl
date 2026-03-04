@@ -1022,7 +1022,7 @@ class MysqlServer extends Controller
                 'Replicated data' => self::formatBytesHuman($g('wsrep_repl_data_bytes')),
                 'Replicated keys' => $g('wsrep_repl_keys') ?? 'n/a',
                 'Replicated keys size' => self::formatBytesHuman($g('wsrep_repl_keys_bytes')),
-                'Incoming addresses' => $g('wsrep_incoming_addresses') ?: 'n/a',
+                'wsrep_incoming_addresses' => $g('wsrep_incoming_addresses') ?: 'n/a',
                 'Node address' => $g('wsrep_node_address') ?: 'n/a',
                 'Cluster UUID' => $g('wsrep_cluster_state_uuid') ?: 'n/a',
                 'Local UUID' => $g('wsrep_local_state_uuid') ?: 'n/a',

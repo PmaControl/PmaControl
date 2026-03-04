@@ -471,7 +471,17 @@ class Dot3 extends Controller
                 //Debug::debug($server, "CLUSTER");
 
                 $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
-                $servers2 = self::getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
+
+                $incoming_raw = trim((string)($server['wsrep_incoming_addresses'] ?? ''));
+                $servers2 = $incoming_raw !== ''
+                    ? self::getIdMysqlServerFromGalera($incoming_raw)
+                    : array();
+
+                $wsrep_cluster_status = strtolower(trim((string)($server['wsrep_cluster_status'] ?? '')));
+                $wsrep_local_state_comment = strtolower(trim((string)($server['wsrep_local_state_comment'] ?? '')));
+                $is_disconnected_inconsistent = ($wsrep_cluster_status === 'disconnected' && $wsrep_local_state_comment === 'inconsistent');
+                $is_available = isset($server['mysql_available']) && (string)$server['mysql_available'] === '1';
+                $allow_garb_detection = $is_available && !$is_disconnected_inconsistent && $incoming_raw !== '';
 
                 //Debug::debug($servers, "SERVERS");
 
@@ -506,7 +516,7 @@ class Dot3 extends Controller
                 foreach($servers2 as $ip_port)
                 {
                     //Debug::debug($ip_port, "IP:PORT");
-                    if ($ip_port[0] === ':') {
+                    if ($allow_garb_detection && $ip_port !== '' && $ip_port[0] === ':') {
                         //detection arbitre
                         $id_garb = $this->createGarb($information, $id_mysql_server);
                         $tmp_group[$server['id_mysql_server']][] = $id_garb;
@@ -539,26 +549,36 @@ class Dot3 extends Controller
 
     static function getIdMysqlServerFromGalera($cluster_address)
     {
-        $addresses = str_replace('gcomm://', '', $cluster_address);
-        $addressList = explode(',', $addresses);
+        $addresses = str_replace('gcomm://', '', (string)$cluster_address);
+        $addressList = array_filter(array_map('trim', explode(',', $addresses)), static function ($value) {
+            return $value !== '';
+        });
 
         // Initialiser le tableau de résultat
         $resultArray = array();
 
         // Parcourir chaque élément du tableau des adresses
-        foreach ($addressList as $key => $value) {
+        foreach ($addressList as $value) {
             // Séparer l'adresse IP du port
-            $parts = explode(':', $value);
-            $ip = $parts[0];
-            $port = isset($parts[1]) ? $parts[1] : 3306; // Définir le port à 3306 si non spécifié ou 0
+            $parts = explode(':', $value, 2);
+            $ip = trim((string)($parts[0] ?? ''));
+            $port = isset($parts[1]) ? trim((string)$parts[1]) : '';
 
-            // Remplacer le port par 3306 si c'est 0
-            if ($port == 0) {
+            if ($ip === '' && $port === '') {
+                continue;
+            }
+
+            // Remplacer le port par 3306 si c'est 0 ou non spécifié
+            if ($port === '' || $port == 0) {
                 $port = 3306;
             }
 
             // Ajouter au tableau de résultat
-            $resultArray[$key + 1] = "$ip:$port";
+            if ($ip === '') {
+                $resultArray[] = ":$port";
+            } else {
+                $resultArray[] = "$ip:$port";
+            }
         }
         //Debug::debug($resultArray);
 
