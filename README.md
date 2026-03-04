@@ -46,6 +46,7 @@ your web server (Apache `mod_php`, PHP-FPM through Nginx, etc.).
 * MariaDB 10.11 (or compatible MySQL server)
 * `graphviz` (builds replication graphs, including multi-master and Galera cluster)
 * `curl` (used for fetching translations)
+* `dos2unix` (normalize routine exports)
 * A web server such as Apache 2.4 or Nginx, configured with PHP 8.2
 
 > **Heads-up**

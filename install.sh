@@ -132,6 +132,17 @@ case "$dist" in
       *)       user="www-data" ;;
 esac
 
+# install dos2unix for routine exports
+if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -y && apt-get install -y dos2unix
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y dos2unix
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y dos2unix
+elif command -v apk >/dev/null 2>&1; then
+    apk add --no-cache dos2unix
+fi
+
 # Define correct right on tmp and data
 chown -R $user: tmp/
 chown -R $user: data/

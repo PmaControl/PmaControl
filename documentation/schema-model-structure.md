@@ -127,6 +127,19 @@ Pour les fonctions, `ROUTINE_TYPE` est remplacé par `FUNCTION` et `SHOW CREATE 
 
 ---
 
+## 6) Script d'import sélectif
+
+Une commande permet de générer un script d'import à la demande :
+
+```
+./glial schema importScript <id_mysql_server> <database> [--tables] [--views] [--procedures] [--functions] [--triggers] [--events] [--all] [--output=<file>]
+```
+
+- Sans flags, ou avec `--all` : tous les objets sont inclus.
+- Les routines sont encapsulées avec `DELIMITER //` et chaque procédure/fonction se termine par `//`.
+
+---
+
 ## 4) Migration one-shot
 
 Une méthode est disponible :

@@ -163,6 +163,296 @@ class Schema extends Controller
         echo "Schema exported in " . $basePath . PHP_EOL;
     }
 
+    /**
+     * Generate an import script for selected schema objects.
+     * Usage: ./glial schema importScript <id_mysql_server> <database> [--tables] [--views] [--procedures] [--functions] [--triggers] [--events] [--all] [--output=<file>]
+     */
+    public function importScript(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = isset($param[0]) ? (int)$param[0] : 0;
+        $database = $param[1] ?? '';
+
+        if ($id_mysql_server <= 0 || $database === '') {
+            throw new \Exception("PMACTRL-SCHEMA-200: Expected id_mysql_server and database name.");
+        }
+
+        $options = $this->parseImportScriptOptions(array_slice($param, 2));
+        if ($options['all'] || !$options['has_selection']) {
+            $options['tables'] = true;
+            $options['views'] = true;
+            $options['procedures'] = true;
+            $options['functions'] = true;
+            $options['triggers'] = true;
+            $options['events'] = true;
+        }
+
+        $basePath = DATA . "model/" . $id_mysql_server . "/databases/" . $database;
+        if (!is_dir($basePath)) {
+            throw new \Exception("PMACTRL-SCHEMA-201: Model path not found: " . $basePath);
+        }
+
+        $chunks = [];
+        if ($options['tables']) {
+            $chunks[] = $this->buildImportTables($basePath);
+        }
+        if ($options['views']) {
+            $chunks[] = $this->buildImportViews($basePath);
+        }
+        if ($options['functions']) {
+            $chunks[] = $this->buildImportFunctions($basePath);
+        }
+        if ($options['procedures']) {
+            $chunks[] = $this->buildImportProcedures($basePath);
+        }
+        if ($options['triggers']) {
+            $chunks[] = $this->buildImportTriggers($basePath);
+        }
+        if ($options['events']) {
+            $chunks[] = $this->buildImportEvents($basePath);
+        }
+
+        $script = $this->concatImportChunks($chunks);
+        if ($script === '') {
+            $script = "";
+        }
+
+        $this->view = false;
+        if (!empty($options['output'])) {
+            if (file_put_contents($options['output'], $script) === false) {
+                throw new \Exception("PMACTRL-SCHEMA-202: Unable to write import script to " . $options['output']);
+            }
+            echo "Import script written to " . $options['output'] . PHP_EOL;
+            return;
+        }
+
+        echo $script;
+    }
+
+    private function parseImportScriptOptions(array $args): array
+    {
+        $options = [
+            'tables' => false,
+            'views' => false,
+            'procedures' => false,
+            'functions' => false,
+            'triggers' => false,
+            'events' => false,
+            'all' => false,
+            'output' => '',
+            'has_selection' => false,
+        ];
+
+        for ($i = 0; $i < count($args); $i++) {
+            $arg = (string)$args[$i];
+
+            if ($arg === '--tables') {
+                $options['tables'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--views') {
+                $options['views'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--procedures') {
+                $options['procedures'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--functions') {
+                $options['functions'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--triggers') {
+                $options['triggers'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--events') {
+                $options['events'] = true;
+                $options['has_selection'] = true;
+                continue;
+            }
+
+            if ($arg === '--all') {
+                $options['all'] = true;
+                continue;
+            }
+
+            if (strpos($arg, '--output=') === 0) {
+                $options['output'] = substr($arg, strlen('--output='));
+                continue;
+            }
+
+            if ($arg === '--output' && isset($args[$i + 1])) {
+                $options['output'] = (string)$args[$i + 1];
+                $i++;
+            }
+        }
+
+        return $options;
+    }
+
+    private function buildImportTables(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/schema/tables');
+        return $this->buildSqlSection('Tables', $files);
+    }
+
+    private function buildImportViews(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/schema/views');
+        return $this->buildSqlSection('Views', $files);
+    }
+
+    private function buildImportProcedures(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/routines/procedures');
+        return $this->buildRoutineSection('Procedures', $files);
+    }
+
+    private function buildImportFunctions(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/routines/functions');
+        return $this->buildRoutineSection('Functions', $files);
+    }
+
+    private function buildImportTriggers(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/triggers');
+        return $this->buildSqlSection('Triggers', $files);
+    }
+
+    private function buildImportEvents(string $basePath): string
+    {
+        $files = $this->loadSqlFiles($basePath . '/events');
+        return $this->buildSqlSection('Events', $files);
+    }
+
+    private function concatImportChunks(array $chunks): string
+    {
+        $chunks = array_values(array_filter($chunks, function ($chunk): bool {
+            return trim((string)$chunk) !== '';
+        }));
+
+        if (empty($chunks)) {
+            return '';
+        }
+
+        return rtrim(implode("\n\n", $chunks)) . "\n";
+    }
+
+    private function loadSqlFiles(string $path): array
+    {
+        if (!is_dir($path)) {
+            return [];
+        }
+
+        $files = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*.sql') ?: [];
+        sort($files, SORT_STRING);
+        return $files;
+    }
+
+    private function buildSqlSection(string $label, array $files): string
+    {
+        if (empty($files)) {
+            return '';
+        }
+
+        $parts = ["-- " . $label];
+        foreach ($files as $file) {
+            $content = $this->readSqlFile($file);
+            if ($content === '') {
+                continue;
+            }
+            $parts[] = $content;
+        }
+
+        if (count($parts) === 1) {
+            return '';
+        }
+
+        return rtrim(implode("\n\n", $parts)) . "\n";
+    }
+
+    private function buildRoutineSection(string $label, array $files): string
+    {
+        if (empty($files)) {
+            return '';
+        }
+
+        $parts = ["-- " . $label, 'DELIMITER //'];
+        foreach ($files as $file) {
+            $content = $this->formatRoutineFile($file);
+            if ($content === '') {
+                continue;
+            }
+            $parts[] = $content;
+        }
+        $parts[] = 'DELIMITER ;';
+
+        if (count($parts) <= 2) {
+            return '';
+        }
+
+        return rtrim(implode("\n\n", $parts)) . "\n";
+    }
+
+    private function readSqlFile(string $path): string
+    {
+        if (!is_readable($path)) {
+            return '';
+        }
+
+        $content = file_get_contents($path);
+        if ($content === false) {
+            return '';
+        }
+
+        return trim($this->normalizeLineEndings($content));
+    }
+
+    private function formatRoutineFile(string $path): string
+    {
+        $content = $this->readSqlFile($path);
+        if ($content === '') {
+            return '';
+        }
+
+        $lines = explode("\n", $content);
+        $firstIndex = null;
+        foreach ($lines as $index => $line) {
+            if (trim($line) !== '') {
+                $firstIndex = $index;
+                break;
+            }
+        }
+
+        if ($firstIndex !== null) {
+            $firstLine = rtrim($lines[$firstIndex]);
+            if (substr($firstLine, -1) === ';') {
+                $lines[$firstIndex] = substr($firstLine, 0, -1) . '//';
+            }
+        }
+
+        $content = implode("\n", $lines);
+        $content = rtrim($content);
+        if (substr($content, -1) === ';') {
+            $content = substr($content, 0, -1) . '//';
+        }
+
+        return $content;
+    }
+
     private function exportRoutines(int $id_mysql_server, string $database, string $basePath, string $routineType): array
     {
         $routineType = strtoupper($routineType);
@@ -187,7 +477,7 @@ class Schema extends Controller
                 throw new \Exception("PMACTRL-SCHEMA-112: Unable to resolve routine name for " . $routineType . ".");
             }
 
-            $statement = rtrim($resShow['definition']);
+            $statement = $this->normalizeLineEndings(rtrim($resShow['definition']));
             if (substr($statement, -1) !== ';') {
                 $statement .= ';';
             }
@@ -208,6 +498,7 @@ class Schema extends Controller
             if (file_put_contents($targetFile, $statement . PHP_EOL) === false) {
                 throw new \Exception("PMACTRL-SCHEMA-111: Unable to write routine file " . $targetFile . ".");
             }
+            $this->runDos2Unix($targetFile);
         }
 
         return $names;
@@ -588,6 +879,21 @@ class Schema extends Controller
         }
 
         return preg_replace('/^\s*CREATE\s+/i', 'CREATE OR REPLACE ', $statement, 1) ?? $statement;
+    }
+
+    private function normalizeLineEndings(string $sql): string
+    {
+        return str_replace(["\r\n", "\r"], "\n", $sql);
+    }
+
+    private function runDos2Unix(string $path): void
+    {
+        $binary = trim(shell_exec('command -v dos2unix 2>/dev/null') ?? '');
+        if ($binary === '') {
+            return;
+        }
+
+        shell_exec($binary . ' ' . escapeshellarg($path));
     }
 
     private function parseGitStatus(string $status): array
