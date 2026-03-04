@@ -333,6 +333,10 @@ class Dot3 extends Controller
         {
             //Debug::debug($server, "SERVER");
 
+            if (!empty($server['is_garb'])) {
+                continue;
+            }
+
             if (empty($server['@slave'])) {
                 continue;
             }
@@ -894,6 +898,10 @@ class Dot3 extends Controller
 
         foreach($group as $id_mysql_server)
         {
+            if (!empty($dot3_information['information']['servers'][$id_mysql_server]['is_garb'])) {
+                continue;
+            }
+
             if (! empty($dot3_information['information']['servers'][$id_mysql_server]['@slave']))
             {
 
@@ -2917,6 +2925,7 @@ class Dot3 extends Controller
         $information['servers'][$next_id]['display_name'] = 'garb';
         $information['servers'][$next_id]['hostname'] = 'garb';
         $information['servers'][$next_id]['id_mysql_server'] = $next_id;
+        $information['servers'][$next_id]['is_garb'] = 1;
 
         //remplace moi le dernier xxx par *
         //$information['servers'][$next_id]['ip_real'] = preg_replace('/\d+\.\d+\.\d+\.\d+$/', '*', $server['ip_real']);
