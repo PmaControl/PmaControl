@@ -2470,6 +2470,12 @@ class Dot3 extends Controller
                     self::setThemeToServer('NODE_DONOR_DESYNCED', $id_mysql_server);
                 }
 
+                $wsrep_cluster_status = strtolower(trim((string)($elems['wsrep_cluster_status'] ?? '')));
+                $wsrep_local_state_comment = strtolower(trim((string)($elems['wsrep_local_state_comment'] ?? '')));
+                if ($wsrep_cluster_status === 'disconnected' && $wsrep_local_state_comment === 'inconsistent') {
+                    self::setThemeToServer('NODE_GALERA_DISCONNECTED', $id_mysql_server);
+                }
+
                 self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += $elems['mysql_available'];
 
                 $wsrep_slave_threads[] = $elems['wsrep_slave_threads'];
