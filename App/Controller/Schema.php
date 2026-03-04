@@ -63,9 +63,11 @@ class Schema extends Controller
         $tableColumn = "Tables_in_" . $database;
         $typeColumn  = "Table_type";
         $allowedTypes = array('BASE TABLE', 'SEQUENCE');
+        $viewTypes = array('VIEW');
 
         $resTables = $mysql->sql_query("SHOW FULL TABLES");
         $tables = [];
+        $views = [];
         while ($row = $mysql->sql_fetch_array($resTables, MYSQLI_ASSOC)) {
             $tableName = $row[$tableColumn] ?? null;
             $tableType = strtoupper($row[$typeColumn] ?? '');
@@ -76,10 +78,12 @@ class Schema extends Controller
 
             if (in_array($tableType, $allowedTypes, true)) {
                 $tables[] = $tableName;
+            } elseif (in_array($tableType, $viewTypes, true)) {
+                $views[] = $tableName;
             }
         }
 
-        if (empty($tables)) {
+        if (empty($tables) && empty($views)) {
             return;
         }
 
@@ -116,7 +120,31 @@ class Schema extends Controller
             }
         }
 
-        $this->cleanupObsoleteSchemas($basePath, $tables);
+        foreach ($views as $view) {
+            $viewEscaped = str_replace('`', '``', $view);
+            $sqlShow = "SHOW CREATE VIEW `" . $viewEscaped . "`";
+            $resShow = $mysql->sql_query($sqlShow);
+            $createRow = $mysql->sql_fetch_array($resShow, MYSQLI_ASSOC);
+
+            $createStatement = $this->extractCreateViewStatement($createRow);
+            if ($createStatement === '') {
+                Debug::debug($createRow, "SHOW CREATE VIEW result");
+                throw new \Exception("PMACTRL-SCHEMA-007: Unable to fetch CREATE VIEW for " . $view . ".");
+            }
+
+            $createStatement = rtrim($this->ensureCreateOrReplaceView($createStatement));
+            if (substr($createStatement, -1) !== ';') {
+                $createStatement .= ';';
+            }
+
+            $targetFile = $basePath . "/schema/views/" . $view . ".sql";
+            if (file_put_contents($targetFile, $createStatement . PHP_EOL) === false) {
+                throw new \Exception("PMACTRL-SCHEMA-008: Unable to write view file " . $targetFile . ".");
+            }
+        }
+
+        $this->cleanupObsoleteSchemaFiles($basePath, 'schema/tables', $tables);
+        $this->cleanupObsoleteSchemaFiles($basePath, 'schema/views', $views);
         $serverMeta = [
             'display_name' => $server['display_name'] ?? ($server['name'] ?? ''),
             'ip' => $server['ip'] ?? '',
@@ -256,14 +284,15 @@ class Schema extends Controller
         return 1;
     }
 
-    private function cleanupObsoleteSchemas(string $path, array $currentTables): void
+    private function cleanupObsoleteSchemaFiles(string $path, string $folder, array $currentObjects): void
     {
-        $existingFiles = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'schema/tables/*.sql') ?: [];
+        $folder = trim($folder, '/');
+        $existingFiles = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $folder . '/*.sql') ?: [];
         $currentFiles = array_map(
-            function ($table) use ($path) {
-                return rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'schema/tables/' . $table . '.sql';
+            function ($object) use ($path, $folder) {
+                return rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $folder . '/' . $object . '.sql';
             },
-            $currentTables
+            $currentObjects
         );
 
         foreach ($existingFiles as $file) {
@@ -271,6 +300,27 @@ class Schema extends Controller
                 unlink($file);
             }
         }
+    }
+
+    private function extractCreateViewStatement(array $createRow): string
+    {
+        foreach ($createRow as $key => $value) {
+            if (stripos($key, 'create view') !== false) {
+                return (string)$value;
+            }
+        }
+
+        return '';
+    }
+
+    private function ensureCreateOrReplaceView(string $statement): string
+    {
+        $trimmed = ltrim($statement);
+        if (stripos($trimmed, 'create or replace') === 0) {
+            return $statement;
+        }
+
+        return preg_replace('/^\s*CREATE\s+/i', 'CREATE OR REPLACE ', $statement, 1) ?? $statement;
     }
 
     private function parseGitStatus(string $status): array
