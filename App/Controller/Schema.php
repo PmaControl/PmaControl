@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Debug;
 use App\Library\Extraction2;
+use App\Library\Mysql;
 use Glial\Synapse\Controller;
 use Glial\Sgbd\Sgbd;
 use App\Controller\Telegram;
@@ -83,19 +84,9 @@ class Schema extends Controller
             }
         }
 
-        if (empty($tables) && empty($views)) {
-            return;
-        }
-
         $basePath = DATA . "model/" . $id_mysql_server . "/databases/" . $database;
-        $dirCreated = $this->ensureDirectory($basePath);
+        $this->ensureDirectory($basePath);
         $this->ensureSchemaDirectoryStructure($basePath);
-
-        if ($dirCreated) {
-            $this->initializeGitRepository($basePath);
-        } else {
-            $this->ensureGitRepository($basePath);
-        }
 
         foreach ($tables as $table) {
             $tableEscaped = str_replace('`', '``', $table);
@@ -143,18 +134,217 @@ class Schema extends Controller
             }
         }
 
+        $procedures = $this->exportRoutines($id_mysql_server, $database, $basePath, 'PROCEDURE');
+        $functions  = $this->exportRoutines($id_mysql_server, $database, $basePath, 'FUNCTION');
+        $triggers   = $this->exportTriggers($id_mysql_server, $database, $basePath);
+        $events     = $this->exportEvents($id_mysql_server, $database, $basePath);
+
         $this->cleanupObsoleteSchemaFiles($basePath, 'schema/tables', $tables);
         $this->cleanupObsoleteSchemaFiles($basePath, 'schema/views', $views);
+        $this->cleanupObsoleteSchemaFiles($basePath, 'routines/procedures', $procedures);
+        $this->cleanupObsoleteSchemaFiles($basePath, 'routines/functions', $functions);
+        $this->cleanupObsoleteSchemaFiles($basePath, 'triggers', $triggers);
+        $this->cleanupObsoleteSchemaFiles($basePath, 'events', $events);
         $serverMeta = [
             'display_name' => $server['display_name'] ?? ($server['name'] ?? ''),
             'ip' => $server['ip'] ?? '',
             'port' => $server['port'] ?? '',
         ];
 
-        $this->commitSchemaSnapshot($id_mysql_server, $database, $basePath, $serverMeta);
+        $this->commitSubDirectorySnapshot($basePath, 'schema', $database, $serverMeta, 'Schema');
+        $this->commitSubDirectorySnapshot($basePath, 'routines', $database, $serverMeta, 'Routines');
+        $this->commitSubDirectorySnapshot($basePath, 'triggers', $database, $serverMeta, 'Triggers');
+        $this->commitSubDirectorySnapshot($basePath, 'events', $database, $serverMeta, 'Events');
+        $this->commitSubDirectorySnapshot($basePath, 'data', $database, $serverMeta, 'Data');
+        $this->commitSubDirectorySnapshot($basePath, '00-pre', $database, $serverMeta, 'Pre');
+        $this->commitSubDirectorySnapshot($basePath, '99-post', $database, $serverMeta, 'Post');
 
         $this->view = false;
         echo "Schema exported in " . $basePath . PHP_EOL;
+    }
+
+    private function exportRoutines(int $id_mysql_server, string $database, string $basePath, string $routineType): array
+    {
+        $routineType = strtoupper($routineType);
+        $queries = Mysql::getRoutineShowCreateQueries([$id_mysql_server, $routineType, $database]);
+
+        if (empty($queries)) {
+            return [];
+        }
+
+        $folder = $routineType === 'FUNCTION' ? 'routines/functions' : 'routines/procedures';
+        $names = [];
+
+        foreach ($queries as $sqlShow) {
+            $resShow = $this->executeRoutineShowCreate($id_mysql_server, $sqlShow, $routineType);
+            if (empty($resShow['definition'])) {
+                Debug::debug($resShow, "SHOW CREATE " . $routineType . " result");
+                throw new \Exception("PMACTRL-SCHEMA-110: Unable to fetch CREATE " . $routineType . " for routine.");
+            }
+
+            $routineName = $resShow['name'] ?? '';
+            if ($routineName === '' || $routineName === 'unknown') {
+                throw new \Exception("PMACTRL-SCHEMA-112: Unable to resolve routine name for " . $routineType . ".");
+            }
+
+            $statement = rtrim($resShow['definition']);
+            if (substr($statement, -1) !== ';') {
+                $statement .= ';';
+            }
+
+            $databaseEscaped = str_replace('`', '``', $database);
+            $routineEscaped = str_replace('`', '``', $routineName);
+            $dropStatement = sprintf(
+                'DROP %s IF EXISTS `%s`.`%s`;',
+                $routineType,
+                $databaseEscaped,
+                $routineEscaped
+            );
+
+            $names[] = $routineName;
+
+            $statement = $dropStatement . PHP_EOL . $statement;
+            $targetFile = $basePath . '/' . $folder . '/' . $routineName . '.sql';
+            if (file_put_contents($targetFile, $statement . PHP_EOL) === false) {
+                throw new \Exception("PMACTRL-SCHEMA-111: Unable to write routine file " . $targetFile . ".");
+            }
+        }
+
+        return $names;
+    }
+
+    private function exportTriggers(int $id_mysql_server, string $database, string $basePath): array
+    {
+        $db = Mysql::getDbLink($id_mysql_server);
+        $sql = "SHOW TRIGGERS FROM `" . $db->sql_real_escape_string($database) . "`";
+        $res = $db->sql_query($sql);
+
+        $triggers = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (empty($row['Trigger'])) {
+                continue;
+            }
+
+            $triggerName = $row['Trigger'];
+            $tableName = $row['Table'] ?? '';
+            $sqlShow = "SHOW CREATE TRIGGER `" . str_replace('`', '``', $database) . "`.`" . str_replace('`', '``', $triggerName) . "`";
+            $resShow = $db->sql_query($sqlShow);
+            $createRow = $db->sql_fetch_array($resShow, MYSQLI_ASSOC);
+
+            if (empty($createRow['SQL Original Statement'])) {
+                Debug::debug($createRow, "SHOW CREATE TRIGGER result");
+                throw new \Exception("PMACTRL-SCHEMA-120: Unable to fetch CREATE TRIGGER for " . $triggerName . ".");
+            }
+
+            $statement = rtrim($createRow['SQL Original Statement']);
+            if (substr($statement, -1) !== ';') {
+                $statement .= ';';
+            }
+
+            $databaseEscaped = str_replace('`', '``', $database);
+            $triggerEscaped = str_replace('`', '``', $triggerName);
+            $dropStatement = sprintf(
+                'DROP TRIGGER IF EXISTS `%s`.`%s`;',
+                $databaseEscaped,
+                $triggerEscaped
+            );
+
+            $filePrefix = $tableName !== '' ? $tableName . '__' : '';
+            $fileName = $filePrefix . $triggerName;
+            $triggers[] = $fileName;
+
+            $targetFile = $basePath . '/triggers/' . $fileName . '.sql';
+            $payload = $dropStatement . PHP_EOL . $statement . PHP_EOL;
+            if (file_put_contents($targetFile, $payload) === false) {
+                throw new \Exception("PMACTRL-SCHEMA-121: Unable to write trigger file " . $targetFile . ".");
+            }
+        }
+
+        return $triggers;
+    }
+
+    private function exportEvents(int $id_mysql_server, string $database, string $basePath): array
+    {
+        $db = Mysql::getDbLink($id_mysql_server);
+        $sql = "SHOW EVENTS FROM `" . $db->sql_real_escape_string($database) . "`";
+        $res = $db->sql_query($sql);
+
+        $events = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $eventName = $row['Name'] ?? '';
+            if ($eventName === '') {
+                continue;
+            }
+
+            $sqlShow = "SHOW CREATE EVENT `" . str_replace('`', '``', $database) . "`.`" . str_replace('`', '``', $eventName) . "`";
+            $resShow = $db->sql_query($sqlShow);
+            $createRow = $db->sql_fetch_array($resShow, MYSQLI_ASSOC);
+
+            if (empty($createRow['Create Event'])) {
+                Debug::debug($createRow, "SHOW CREATE EVENT result");
+                throw new \Exception("PMACTRL-SCHEMA-122: Unable to fetch CREATE EVENT for " . $eventName . ".");
+            }
+
+            $statement = rtrim($createRow['Create Event']);
+            if (substr($statement, -1) !== ';') {
+                $statement .= ';';
+            }
+
+            $databaseEscaped = str_replace('`', '``', $database);
+            $eventEscaped = str_replace('`', '``', $eventName);
+            $dropStatement = sprintf(
+                'DROP EVENT IF EXISTS `%s`.`%s`;',
+                $databaseEscaped,
+                $eventEscaped
+            );
+
+            $events[] = $eventName;
+            $targetFile = $basePath . '/events/' . $eventName . '.sql';
+            $payload = $dropStatement . PHP_EOL . $statement . PHP_EOL;
+            if (file_put_contents($targetFile, $payload) === false) {
+                throw new \Exception("PMACTRL-SCHEMA-123: Unable to write event file " . $targetFile . ".");
+            }
+        }
+
+        return $events;
+    }
+
+    private function executeRoutineShowCreate(int $id_mysql_server, string $sqlShow, string $routineType): array
+    {
+        $db = Mysql::getDbLink($id_mysql_server);
+        $resShow = $db->sql_query($sqlShow);
+        $row = $db->sql_fetch_array($resShow, MYSQLI_ASSOC) ?: [];
+
+        $definitionKey = $routineType === 'FUNCTION' ? 'Create Function' : 'Create Procedure';
+
+        return [
+            'definition' => $row[$definitionKey] ?? '',
+            'name' => $this->extractRoutineName($row, $definitionKey, $routineType),
+        ];
+    }
+
+    private function extractRoutineName(array $row, string $definitionKey, string $routineType): string
+    {
+        $candidates = [];
+        if ($routineType === 'FUNCTION') {
+            $candidates[] = 'Function';
+        } elseif ($routineType === 'PROCEDURE') {
+            $candidates[] = 'Procedure';
+        }
+        $candidates[] = 'Name';
+
+        foreach ($candidates as $key) {
+            if (!empty($row[$key])) {
+                return $row[$key];
+            }
+        }
+
+        $definition = $row[$definitionKey] ?? '';
+        if ($definition !== '' && preg_match('/`([^`]+)`\.`([^`]+)`/i', $definition, $matches)) {
+            return $matches[2];
+        }
+
+        return 'unknown';
     }
 
     private function ensureDirectory(string $path): bool
@@ -221,14 +411,41 @@ class Schema extends Controller
     {
         $this->ensureGitRepository($path);
 
-        $statusOutput = trim(shell_exec("cd " . escapeshellarg($path) . " && git status --porcelain") ?? '');
+        $exclude = [
+            'schema',
+            'routines',
+            'triggers',
+            'events',
+            'data',
+            '00-pre',
+            '99-post',
+        ];
+
+        $statusOutput = $this->getGitStatus($path, $exclude);
         if ($statusOutput === '') {
             return;
         }
 
         $changeSummary = $this->parseGitStatus($statusOutput);
 
+        foreach ($exclude as $folder) {
+            shell_exec(
+                "cd " . escapeshellarg($path) . " && git reset --quiet -- \"" . $folder . "\" 2>/dev/null"
+            );
+        }
+
         shell_exec("cd " . escapeshellarg($path) . " && git add -A");
+
+        foreach ($exclude as $folder) {
+            shell_exec(
+                "cd " . escapeshellarg($path) . " && git reset --quiet -- \"" . $folder . "\" 2>/dev/null"
+            );
+        }
+
+        $stagedChanges = trim(shell_exec("cd " . escapeshellarg($path) . " && git diff --cached --name-only") ?? '');
+        if ($stagedChanges === '') {
+            return;
+        }
 
         $snapshotNumber = $this->getNextSnapshotNumber($path);
         $message = sprintf(
@@ -239,6 +456,56 @@ class Schema extends Controller
         );
 
         shell_exec("cd " . escapeshellarg($path) . " && git commit -m " . escapeshellarg($message));
+
+        $this->notifySchemaChange($database, $snapshotNumber, $changeSummary, $serverMeta);
+    }
+
+    private function getGitStatus(string $path, array $exclude = []): string
+    {
+        $cmd = "cd " . escapeshellarg($path) . " && git status --porcelain";
+        if (!empty($exclude)) {
+            $cmd .= " -- .";
+            foreach ($exclude as $folder) {
+                $cmd .= " ':(exclude)" . $folder . "'";
+            }
+        }
+
+        return trim(shell_exec($cmd) ?? '');
+    }
+
+    private function commitSubDirectorySnapshot(
+        string $basePath,
+        string $subDirectory,
+        string $database,
+        array $serverMeta,
+        string $label
+    ): void {
+        $subPath = rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $subDirectory;
+        if (!is_dir($subPath)) {
+            return;
+        }
+
+        $this->ensureGitRepository($subPath);
+
+        $statusOutput = trim(shell_exec("cd " . escapeshellarg($subPath) . " && git status --porcelain") ?? '');
+        if ($statusOutput === '') {
+            return;
+        }
+
+        $changeSummary = $this->parseGitStatus($statusOutput);
+
+        shell_exec("cd " . escapeshellarg($subPath) . " && git add -A");
+
+        $snapshotNumber = $this->getNextSnapshotNumber($subPath);
+        $message = sprintf(
+            "%s snapshot %s #%d - %s",
+            $label,
+            $database,
+            $snapshotNumber,
+            date('Y-m-d H:i:s')
+        );
+
+        shell_exec("cd " . escapeshellarg($subPath) . " && git commit -m " . escapeshellarg($message));
 
         $this->notifySchemaChange($database, $snapshotNumber, $changeSummary, $serverMeta);
     }
@@ -517,7 +784,7 @@ class Schema extends Controller
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id FROM mysql_server WHERE is_deleted = 0 and is_proxy=0";
+        $sql = "SELECT id FROM mysql_server WHERE is_deleted = 0 and is_proxy=0 and is_proxy=0";
         $res = $db->sql_query($sql);
 
         $serverIds = [];
@@ -1377,6 +1644,193 @@ class Schema extends Controller
 
         $this->view = false;
         echo $this->formatMigrationSummary($summary);
+    }
+
+    /**
+     * One-shot: move the database-level git repo into schema/.git
+     * Usage: ./glial schema migrateSchemaRepo <id_mysql_server> <database>
+     */
+    public function migrateSchemaRepo(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = isset($param[0]) ? (int)$param[0] : 0;
+        $database = $param[1] ?? '';
+
+        if ($id_mysql_server <= 0 || $database === '') {
+            throw new \Exception("PMACTRL-SCHEMA-060: Expected id_mysql_server and database.");
+        }
+
+        $basePath = DATA . "model/" . $id_mysql_server . "/databases/" . $database;
+        $sourceGit = $basePath . DIRECTORY_SEPARATOR . '.git';
+        $targetGit = $basePath . DIRECTORY_SEPARATOR . 'schema' . DIRECTORY_SEPARATOR . '.git';
+
+        if (!is_dir($sourceGit)) {
+            throw new \Exception("PMACTRL-SCHEMA-061: source .git not found at " . $sourceGit);
+        }
+
+        $this->ensureSchemaDirectoryStructure($basePath);
+
+        if (is_dir($targetGit)) {
+            throw new \Exception("PMACTRL-SCHEMA-062: target .git already exists at " . $targetGit);
+        }
+
+        $this->moveDirectory($sourceGit, $targetGit);
+
+        $this->view = false;
+        echo "Moved repo: " . $sourceGit . " -> " . $targetGit . PHP_EOL;
+    }
+
+    /**
+     * One-shot: migrate all database-level git repos into schema/.git.
+     * Usage: ./glial schema migrateSchemaReposAll [id_mysql_server]
+     */
+    public function migrateSchemaReposAll(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $serverFilter = null;
+        if (!empty($param[0]) && is_numeric($param[0])) {
+            $serverFilter = (int)$param[0];
+        }
+
+        $basePath = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'model';
+        if (!is_dir($basePath)) {
+            throw new \Exception("PMACTRL-SCHEMA-070: data/model directory not found: " . $basePath);
+        }
+
+        $servers = glob($basePath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+        $migrated = 0;
+        $skipped = 0;
+
+        foreach ($servers as $serverPath) {
+            $serverId = basename($serverPath);
+            if (!ctype_digit($serverId)) {
+                continue;
+            }
+
+            if ($serverFilter !== null && (int)$serverId !== $serverFilter) {
+                continue;
+            }
+
+            $databasesRoot = $serverPath . DIRECTORY_SEPARATOR . 'databases';
+            if (!is_dir($databasesRoot)) {
+                $databasesRoot = $serverPath;
+            }
+
+            $databaseDirs = glob($databasesRoot . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+            foreach ($databaseDirs as $databasePath) {
+                $databaseName = basename($databasePath);
+                if ($databaseName === '.' || $databaseName === '..' || $databaseName === '.git') {
+                    continue;
+                }
+
+                $sourceGit = $databasePath . DIRECTORY_SEPARATOR . '.git';
+                if (!is_dir($sourceGit)) {
+                    $skipped++;
+                    continue;
+                }
+
+                $this->ensureSchemaDirectoryStructure($databasePath);
+                $targetGit = $databasePath . DIRECTORY_SEPARATOR . 'schema' . DIRECTORY_SEPARATOR . '.git';
+
+                if (is_dir($targetGit)) {
+                    $skipped++;
+                    continue;
+                }
+
+                $this->moveDirectory($sourceGit, $targetGit);
+                $migrated++;
+            }
+        }
+
+        $this->view = false;
+        echo "Schema repo migration finished. Migrated: " . $migrated . ", skipped: " . $skipped . PHP_EOL;
+    }
+
+    /**
+     * List skipped repositories for schema repo migration.
+     * Usage: ./glial schema listSchemaRepoSkips [id_mysql_server]
+     */
+    public function listSchemaRepoSkips(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $serverFilter = null;
+        if (!empty($param[0]) && is_numeric($param[0])) {
+            $serverFilter = (int)$param[0];
+        }
+
+        $basePath = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'model';
+        if (!is_dir($basePath)) {
+            throw new \Exception("PMACTRL-SCHEMA-080: data/model directory not found: " . $basePath);
+        }
+
+        $servers = glob($basePath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+        $skipped = [
+            'missing_git' => [],
+            'already_migrated' => [],
+        ];
+        $perServer = [];
+
+        foreach ($servers as $serverPath) {
+            $serverId = basename($serverPath);
+            if (!ctype_digit($serverId)) {
+                continue;
+            }
+
+            if ($serverFilter !== null && (int)$serverId !== $serverFilter) {
+                continue;
+            }
+
+            $databasesRoot = $serverPath . DIRECTORY_SEPARATOR . 'databases';
+            if (!is_dir($databasesRoot)) {
+                $databasesRoot = $serverPath;
+            }
+
+            $databaseDirs = glob($databasesRoot . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+            foreach ($databaseDirs as $databasePath) {
+                $databaseName = basename($databasePath);
+                if ($databaseName === '.' || $databaseName === '..' || $databaseName === '.git') {
+                    continue;
+                }
+
+                $sourceGit = $databasePath . DIRECTORY_SEPARATOR . '.git';
+                $targetGit = $databasePath . DIRECTORY_SEPARATOR . 'schema' . DIRECTORY_SEPARATOR . '.git';
+
+                if (!is_dir($sourceGit)) {
+                    if (is_dir($targetGit)) {
+                        $skipped['already_migrated'][] = $serverId . '/' . $databaseName;
+                        $perServer[$serverId]['already_migrated'][] = $databaseName;
+                    } else {
+                        $skipped['missing_git'][] = $serverId . '/' . $databaseName;
+                        $perServer[$serverId]['missing_git'][] = $databaseName;
+                    }
+                    continue;
+                }
+
+                if (is_dir($targetGit)) {
+                    $skipped['already_migrated'][] = $serverId . '/' . $databaseName;
+                    $perServer[$serverId]['already_migrated'][] = $databaseName;
+                }
+            }
+        }
+
+        $this->view = false;
+        echo "Skipped (missing .git):\n";
+        echo empty($skipped['missing_git']) ? "- none\n" : "- " . implode("\n- ", $skipped['missing_git']) . "\n";
+        echo "\nSkipped (already migrated):\n";
+        echo empty($skipped['already_migrated']) ? "- none\n" : "- " . implode("\n- ", $skipped['already_migrated']) . "\n";
+
+        if (!empty($perServer)) {
+            ksort($perServer);
+            echo "\nSummary per server:\n";
+            foreach ($perServer as $serverId => $entries) {
+                $missingCount = isset($entries['missing_git']) ? count($entries['missing_git']) : 0;
+                $migratedCount = isset($entries['already_migrated']) ? count($entries['already_migrated']) : 0;
+                echo "- " . $serverId . ": missing .git=" . $missingCount . ", already migrated=" . $migratedCount . "\n";
+            }
+        }
     }
 
     private function runMigration(string $basePath, ?int $serverFilter): array

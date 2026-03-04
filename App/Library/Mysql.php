@@ -643,6 +643,59 @@ END IF;";
     }
 
     /**
+     * Retourne la liste des requêtes SHOW CREATE pour toutes les routines d'un serveur.
+     *
+     * Usage:
+     *   Mysql::getRoutineShowCreateQueries([id_mysql_server, 'PROCEDURE']);
+     *   Mysql::getRoutineShowCreateQueries([id_mysql_server, 'FUNCTION']);
+     */
+    static public function getRoutineShowCreateQueries(array $param): array
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server = isset($param[0]) ? (int)$param[0] : 0;
+        $routineType = strtoupper($param[1] ?? 'PROCEDURE');
+        $schemaFilter = $param[2] ?? '';
+
+        if ($id_mysql_server <= 0) {
+            throw new \Exception("PMACTRL-ROUTINE-001: id_mysql_server invalide.");
+        }
+
+        $allowedTypes = ['PROCEDURE', 'FUNCTION'];
+        if (!in_array($routineType, $allowedTypes, true)) {
+            throw new \Exception(
+                "PMACTRL-ROUTINE-002: routine_type invalide (" . $routineType . "). Attendu: " . implode(', ', $allowedTypes)
+            );
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        $schemaClause = '';
+        if (!empty($schemaFilter)) {
+            $schemaClause = " AND ROUTINE_SCHEMA='" . $db->sql_real_escape_string($schemaFilter) . "'";
+        }
+
+        $sql = "SELECT CONCAT(\"SHOW CREATE " . $routineType . " `\", ROUTINE_SCHEMA, \"`.`\", ROUTINE_NAME, \"`;\") AS show_create\n"
+            . "FROM INFORMATION_SCHEMA.ROUTINES\n"
+            . "WHERE ROUTINE_TYPE='" . $db->sql_real_escape_string($routineType) . "'"
+            . $schemaClause
+            . "\nORDER BY ROUTINE_SCHEMA, ROUTINE_NAME;";
+
+        Debug::sql($sql);
+
+        $res = $db->sql_query($sql);
+        $queries = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (!empty($row['show_create'])) {
+                $queries[] = $row['show_create'];
+            }
+        }
+
+        return $queries;
+    }
+
+    /**
      * Récupère le id_mysql_server depuis un slave avec mater_host // master_port
      * Si besoin on lie la table mysql_server avec alias_dns, dans les cas ou la réplication se fait par un VIP, DNS ou fqdn
      * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>

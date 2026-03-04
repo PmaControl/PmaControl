@@ -60,6 +60,70 @@ Dans `App/Controller/Schema.php` :
 - la méthode `export()` écrit maintenant les tables dans :
   - `schema/tables/<table>.sql`
 - la structure complète est créée via `ensureSchemaDirectoryStructure()`.
+- les routines (procédures / fonctions) sont exportées dans :
+  - `routines/procedures/<proc>.sql`
+  - `routines/functions/<func>.sql`
+- les triggers sont exportés dans :
+  - `triggers/<table>__<trigger>.sql`
+- les events sont exportés dans :
+  - `events/<event>.sql`
+- chaque sous-dossier dispose de son **dépôt git propre** :
+  - `00-pre/`, `schema/`, `routines/`, `triggers/`, `events/`, `data/`, `99-post/`.
+
+### One-shot : migration du repo racine vers `schema/`
+
+Si un dépôt git existe encore à la racine d’une base (`databases/<db>/.git`),
+une commande permet de le migrer dans `schema/.git` :
+
+```
+./glial schema migrateSchemaRepo <id_mysql_server> <database>
+```
+
+### One-shot (batch) : migration pour toutes les bases
+
+Pour migrer en masse tous les dépôts racine vers `schema/.git` :
+
+```
+./glial schema migrateSchemaReposAll [id_mysql_server]
+```
+
+### Liste des bases “skipped”
+
+Pour récupérer les bases sautées (pas de `.git` ou déjà migrées) :
+
+```
+./glial schema listSchemaRepoSkips [id_mysql_server]
+```
+
+La commande affiche également un résumé **par serveur** (nombre de bases manquantes ou déjà migrées)
+pour identifier rapidement les serveurs problématiques.
+
+### Routines (procédures / fonctions)
+
+Une méthode utilitaire est disponible pour récupérer la liste des routines d’un serveur
+et générer les requêtes `SHOW CREATE` associées :
+
+```php
+use App\Library\Mysql;
+
+// Procédures
+$queries = Mysql::getRoutineShowCreateQueries([12, 'PROCEDURE']);
+
+// Fonctions
+$queries = Mysql::getRoutineShowCreateQueries([12, 'FUNCTION']);
+```
+
+Cette méthode exécute la requête suivante (triée par schéma et nom) :
+
+```sql
+SELECT CONCAT(
+  'SHOW CREATE PROCEDURE `', ROUTINE_SCHEMA, '`.`', ROUTINE_NAME, '`;'
+)
+FROM INFORMATION_SCHEMA.ROUTINES
+WHERE ROUTINE_TYPE='PROCEDURE';
+```
+
+Pour les fonctions, `ROUTINE_TYPE` est remplacé par `FUNCTION` et `SHOW CREATE FUNCTION`.
 
 ---
 
