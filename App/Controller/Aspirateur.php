@@ -345,8 +345,6 @@ class Aspirateur extends Controller
             );
         }
 
-
-
         if (!is_numeric($id_mysql_server) || (int)$id_mysql_server <= 0) {
             throw new \InvalidArgumentException(
                 "Invalid parameter 'id_mysql_server': expected positive integer"
@@ -424,7 +422,7 @@ class Aspirateur extends Controller
 
 
             }
-            else{
+            else if (!empty($IS_PROXY)){
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 $error_ori = '';
                 try{
@@ -784,6 +782,9 @@ class Aspirateur extends Controller
             }
         }
         $vipCandidates = array_values(array_unique($vipCandidates));
+
+
+        Debug::debug($vipCandidates, "vipCandidates");
 
         $destinationId = $this->resolveVipDestinationId(
             $id_mysql_server,
@@ -2037,7 +2038,10 @@ GROUP BY C.ID, C.INFO;";
             //$ts_in_µs = Microsecond::timestamp();
             $ts  = time();
 
+
             $tmp[$ts][$id_mysql_server] = $data;
+
+            Debug::debug($tmp, "DATA IMPORTED");
 
             $memory = $this->allocate_shared_storage($ts_file, $separator);
             $memory->{$id_mysql_server}     = $tmp;

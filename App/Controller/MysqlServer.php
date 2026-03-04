@@ -649,6 +649,12 @@ class MysqlServer extends Controller
             "spider_sync_trx_isolation","spider_sync_time_zone","spider_remote_trx_isolation","spider_remote_autocommit","spider_general_log",
             "information_schema::engines",
             "mysql_server::mysql_available",
+            "vip::ip",
+            "vip::port",
+            "vip::destination_id",
+            "vip::destination_date",
+            "vip::destination_previous_id",
+            "vip::destination_previous_date",
             "ssh_stats::disks","ips","processlist",
             "ssh_stats::mysql_datadir_path",
             "ssh_stats::mysql_datadir_total_size",
@@ -813,6 +819,11 @@ class MysqlServer extends Controller
         $data['mysql_available'] = $serverIsAvailable ? 1 : 0;
         $credentials = self::getMysqlServerCredentials($id_mysql_server);
         $data['is_proxy'] = !empty($credentials['is_proxy']) ? (int)$credentials['is_proxy'] : 0;
+        $data['is_vip'] = !empty($credentials['is_vip']) ? (int)$credentials['is_vip'] : 0;
+
+        $isVipServer = $data['is_vip'] === 1;
+        $vipDestinationDate = $value('vip::destination_date');
+        $vipUptime = $isVipServer ? self::formatVipUptime($vipDestinationDate) : null;
 
         $data['summary'] = [
             'Server' => Display::srv($id_mysql_server),
@@ -834,11 +845,22 @@ class MysqlServer extends Controller
                 'text' => self::getTryMysqlConnectionDebugCommand((int)$id_mysql_server),
                 'icon' => '<i class="fa fa-files-o" aria-hidden="true"></i>',
             ],
-            'Version' => $g('version'),
-            'Commentaire' => $g('version_comment'),
-            'Uptime' => $uptime_h,
+            'Version' => $isVipServer ? 'VIP' : $g('version'),
+            'Commentaire' => $isVipServer ? 'VIP' : $g('version_comment'),
+            'Uptime' => $isVipServer ? ($vipUptime ?? 'n/a') : $uptime_h,
             'Cmd' => self::getAdminInformation([$id_mysql_server])
         ];
+
+        if ($isVipServer) {
+            $data['vip'] = [
+                'IP' => self::formatJsonValue($value('vip::ip')),
+                'Port' => self::formatJsonValue($value('vip::port')),
+                'Destination ID' => self::formatJsonValue($value('vip::destination_id')),
+                'Destination date' => self::formatJsonValue($value('vip::destination_date')),
+                'Destination previous ID' => self::formatJsonValue($value('vip::destination_previous_id')),
+                'Destination previous date' => self::formatJsonValue($value('vip::destination_previous_date')),
+            ];
+        }
 
         $data['connections'] = [
             'Threads running' => self::formatThreadUsage($g('threads_running'), $g('max_connections')),
@@ -1344,6 +1366,26 @@ class MysqlServer extends Controller
         if ($m || !empty($out)) $out[] = $m.'m';
         $out[] = $s.'s';
         return implode(' ', $out);
+    }
+
+    private static function formatVipUptime($destinationDate): ?string
+    {
+        $raw = trim((string)($destinationDate ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        $timestamp = strtotime($raw);
+        if ($timestamp === false) {
+            return null;
+        }
+
+        $diff = time() - $timestamp;
+        if ($diff < 0) {
+            $diff = 0;
+        }
+
+        return self::secToHuman((int)$diff);
     }
 
     private static function formatBytesToMbGb($bytes): string
@@ -2212,6 +2254,7 @@ class MysqlServer extends Controller
             'client_is_monitored' => 1,
             'effective_is_monitored' => 0,
             'is_proxy' => 0,
+            'is_vip' => 0,
         ];
 
         $sql = "SELECT a.*, c.is_monitored AS client_is_monitored
@@ -2232,6 +2275,7 @@ class MysqlServer extends Controller
                 && (string)($arr['client_is_monitored'] ?? '1') === '1'
             ) ? 1 : 0;
             $data['is_proxy'] = $arr['is_proxy'] ?? 0;
+            $data['is_vip'] = $arr['is_vip'] ?? 0;
         }
 
         return $data;

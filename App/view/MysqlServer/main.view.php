@@ -11,6 +11,7 @@ FactoryController::addNode("MysqlServer", "menu", $param);
 /** @var array $data */
 $id = (int)$data['id_mysql_server'];
 $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
+$isVip = !empty($data['is_vip']) && (string)$data['is_vip'] !== '0';
 ?>
 
 <style>
@@ -109,7 +110,7 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 
   <?php
   // Panels simples pour chaque catégorie
-  if ($isProxy) {
+  if ($isProxy || $isVip) {
       $groups = [];
 
       if (!empty($data['summary']) && is_array($data['summary'])) {
@@ -117,6 +118,9 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
       }
       if (!empty($data['os']) && is_array($data['os'])) {
           $groups["OS / Système"] = $data['os'];
+      }
+      if (!empty($data['vip']) && is_array($data['vip'])) {
+          $groups["VIP"] = $data['vip'];
       }
   } else {
       $groups = [];
@@ -280,7 +284,7 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 </div>
 
   <!-- DISQUES -->
-  <?php if (!$isProxy && !empty($data['disks']) && is_array($data['disks'])): ?>
+  <?php if (!$isProxy && !$isVip && !empty($data['disks']) && is_array($data['disks'])): ?>
   <div class="row">
     <div class="col-md-12">
       <div class="panel panel-info">
@@ -321,7 +325,7 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 
 
   <!-- PROCESSLIST -->
-  <?php if (!$isProxy && !empty($data['processlist']) && is_array($data['processlist'])): ?>
+  <?php if (!$isProxy && !$isVip && !empty($data['processlist']) && is_array($data['processlist'])): ?>
   <div class="row">
     <div class="col-md-12">
       <div class="panel panel-warning">
@@ -365,10 +369,7 @@ $isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
 
 
 <?php
-
 FactoryController::addNode("MysqlServer", "lastRefresh", $param);
-
-
 ?>
 
 <script>
