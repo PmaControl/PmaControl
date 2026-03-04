@@ -9,6 +9,9 @@ use Glial\Sgbd\Sgbd;
 use App\Controller\Telegram;
 use SebastianBergmann\Diff\Differ;
 use SebastianBergmann\Diff\Output\DiffOnlyOutputBuilder;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class Schema extends Controller
 {
@@ -80,8 +83,9 @@ class Schema extends Controller
             return;
         }
 
-        $basePath = DATA . "model/" . $id_mysql_server . "/" . $database;
+        $basePath = DATA . "model/" . $id_mysql_server . "/databases/" . $database;
         $dirCreated = $this->ensureDirectory($basePath);
+        $this->ensureSchemaDirectoryStructure($basePath);
 
         if ($dirCreated) {
             $this->initializeGitRepository($basePath);
@@ -106,7 +110,7 @@ class Schema extends Controller
                 $createStatement .= ';';
             }
 
-            $targetFile = $basePath . "/" . $table . ".sql";
+            $targetFile = $basePath . "/schema/tables/" . $table . ".sql";
             if (file_put_contents($targetFile, $createStatement . PHP_EOL) === false) {
                 throw new \Exception("PMACTRL-SCHEMA-006: Unable to write schema file " . $targetFile . ".");
             }
@@ -136,6 +140,30 @@ class Schema extends Controller
         }
 
         return true;
+    }
+
+    private function ensureSchemaDirectoryStructure(string $basePath): void
+    {
+        $subDirs = [
+            '00-pre',
+            'schema/tables',
+            'schema/views',
+            'routines/procedures',
+            'routines/functions',
+            'events',
+            'triggers',
+            'data',
+            '99-post',
+        ];
+
+        foreach ($subDirs as $dir) {
+            $fullPath = rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $dir;
+            if (!is_dir($fullPath)) {
+                if (!mkdir($fullPath, 0775, true) && !is_dir($fullPath)) {
+                    throw new \Exception("PMACTRL-SCHEMA-013: Unable to create directory " . $fullPath . ".");
+                }
+            }
+        }
     }
 
     private function initializeGitRepository(string $path): void
@@ -230,10 +258,10 @@ class Schema extends Controller
 
     private function cleanupObsoleteSchemas(string $path, array $currentTables): void
     {
-        $existingFiles = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*.sql') ?: [];
+        $existingFiles = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'schema/tables/*.sql') ?: [];
         $currentFiles = array_map(
             function ($table) use ($path) {
-                return rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $table . '.sql';
+                return rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'schema/tables/' . $table . '.sql';
             },
             $currentTables
         );
@@ -271,7 +299,8 @@ class Schema extends Controller
                 continue;
             }
 
-            $table = pathinfo($file, PATHINFO_FILENAME);
+            $file = str_replace('\\', '/', $file);
+            $table = preg_replace('/\.sql$/i', '', $file);
 
             if ($code === '??' || strpos($code, 'A') !== false) {
                 $changes['added'][] = $table;
@@ -618,6 +647,11 @@ class Schema extends Controller
     private function getModelServerPath(int $serverId): string
     {
         $path = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . "model" . DIRECTORY_SEPARATOR . $serverId;
+        $databasesPath = $path . DIRECTORY_SEPARATOR . 'databases';
+        if (is_dir($databasesPath)) {
+            return $databasesPath;
+        }
+
         if (!is_dir($path)) {
             throw new \Exception("PMACTRL-SCHEMA-042: No model found for server #" . $serverId . " in " . $path . ".");
         }
@@ -645,15 +679,41 @@ class Schema extends Controller
 
     private function listModelObjects(string $databasePath): array
     {
-        $files = glob($databasePath . DIRECTORY_SEPARATOR . '*.sql') ?: [];
-        $objects = [];
-
-        foreach ($files as $file) {
-            $name = pathinfo($file, PATHINFO_FILENAME);
-            $objects[$name] = $file;
-        }
+        $objects = $this->listModelSqlFiles($databasePath);
 
         ksort($objects);
+        return $objects;
+    }
+
+    private function listModelSqlFiles(string $databasePath): array
+    {
+        if (!is_dir($databasePath)) {
+            return [];
+        }
+
+        $objects = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($databasePath, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $fileInfo) {
+            if (!$fileInfo->isFile()) {
+                continue;
+            }
+
+            if (strtolower($fileInfo->getExtension()) !== 'sql') {
+                continue;
+            }
+
+            $fullPath = $fileInfo->getPathname();
+            if (strpos($fullPath, DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR) !== false) {
+                continue;
+            }
+
+            $relative = ltrim(str_replace($databasePath, '', $fullPath), DIRECTORY_SEPARATOR);
+            $objects[$relative] = $fullPath;
+        }
+
         return $objects;
     }
 
@@ -1226,5 +1286,212 @@ class Schema extends Controller
         } else {
             echo "DDL detected on servers: " . implode(', ', $triggered) . PHP_EOL;
         }
+    }
+
+    /**
+     * One-shot migration to move legacy exports into the new directory layout.
+     * Usage: ./glial schema migration [id_mysql_server]
+     */
+    public function migration(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $serverFilter = null;
+        $basePath = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'model';
+
+        if (!empty($param[0]) && is_numeric($param[0])) {
+            $serverFilter = (int)$param[0];
+        }
+
+        if (!empty($param[1]) && is_string($param[1])) {
+            $basePath = rtrim($param[1]);
+        }
+
+        $summary = $this->runMigration($basePath, $serverFilter);
+
+        $this->view = false;
+        echo $this->formatMigrationSummary($summary);
+    }
+
+    /**
+     * Parcourt /srv/www/pmacontrol/data/model et lance la migration
+     * pour chaque serveur trouvé.
+     * Usage: ./glial schema migrationAll
+     */
+    public function migrationAll(array $param): void
+    {
+        Debug::parseDebug($param);
+
+        $basePath = '/srv/www/pmacontrol/data/model';
+        $summary = $this->runMigration($basePath, null);
+
+        $this->view = false;
+        echo $this->formatMigrationSummary($summary);
+    }
+
+    private function runMigration(string $basePath, ?int $serverFilter): array
+    {
+        if (!is_dir($basePath)) {
+            throw new \Exception("PMACTRL-SCHEMA-050: data/model directory not found: " . $basePath);
+        }
+
+        $servers = glob(rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+
+        $summary = [
+            'servers' => 0,
+            'databases' => 0,
+            'tables' => 0,
+            'skipped' => 0,
+        ];
+
+        foreach ($servers as $serverPath) {
+            $serverId = basename($serverPath);
+            if (!ctype_digit($serverId)) {
+                continue;
+            }
+
+            if ($serverFilter !== null && (int)$serverId !== $serverFilter) {
+                continue;
+            }
+
+            $summary['servers']++;
+            $databasesRoot = $serverPath . DIRECTORY_SEPARATOR . 'databases';
+            if (!is_dir($databasesRoot)) {
+                mkdir($databasesRoot, 0775, true);
+            }
+
+            $databaseDirs = glob($serverPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+            foreach ($databaseDirs as $databasePath) {
+                $databaseName = basename($databasePath);
+                if ($databaseName === 'databases' || $databaseName === '.git') {
+                    continue;
+                }
+
+                $summary['databases']++;
+                $newBasePath = $databasesRoot . DIRECTORY_SEPARATOR . $databaseName;
+                if (!is_dir($newBasePath)) {
+                    mkdir($newBasePath, 0775, true);
+                }
+
+                $this->ensureSchemaDirectoryStructure($newBasePath);
+
+                $legacyGit = $databasePath . DIRECTORY_SEPARATOR . '.git';
+                $newGit = $newBasePath . DIRECTORY_SEPARATOR . '.git';
+                if (is_dir($legacyGit) && !is_dir($newGit)) {
+                    $this->moveDirectory($legacyGit, $newGit);
+                }
+
+                $legacyTables = glob($databasePath . DIRECTORY_SEPARATOR . '*.sql') ?: [];
+                foreach ($legacyTables as $legacyTable) {
+                    $fileName = basename($legacyTable);
+                    $targetPath = $newBasePath . DIRECTORY_SEPARATOR . 'schema' . DIRECTORY_SEPARATOR . 'tables' . DIRECTORY_SEPARATOR . $fileName;
+
+                    if (file_exists($targetPath)) {
+                        if (md5_file($legacyTable) === md5_file($targetPath)) {
+                            unlink($legacyTable);
+                        } else {
+                            $legacyTarget = $newBasePath . DIRECTORY_SEPARATOR . 'schema' . DIRECTORY_SEPARATOR . 'tables' . DIRECTORY_SEPARATOR
+                                . basename($fileName, '.sql') . '.legacy.sql';
+                            $this->moveFile($legacyTable, $legacyTarget);
+                        }
+                    } else {
+                        $this->moveFile($legacyTable, $targetPath);
+                    }
+
+                    $summary['tables']++;
+                }
+
+                $remaining = array_diff(scandir($databasePath) ?: [], ['.', '..']);
+                if (empty($remaining)) {
+                    rmdir($databasePath);
+                } else {
+                    $summary['skipped'] += count($remaining);
+                }
+            }
+        }
+
+        return $summary;
+    }
+
+    private function formatMigrationSummary(array $summary): string
+    {
+        return sprintf(
+            "Migration finished. Servers: %d, databases: %d, tables moved: %d, remaining entries: %d\n",
+            $summary['servers'] ?? 0,
+            $summary['databases'] ?? 0,
+            $summary['tables'] ?? 0,
+            $summary['skipped'] ?? 0
+        );
+    }
+
+    private function moveFile(string $source, string $destination): void
+    {
+        $targetDir = dirname($destination);
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0775, true);
+        }
+
+        if (@rename($source, $destination)) {
+            return;
+        }
+
+        if (copy($source, $destination)) {
+            unlink($source);
+            return;
+        }
+
+        throw new \RuntimeException('Unable to move file ' . $source . ' -> ' . $destination);
+    }
+
+    private function moveDirectory(string $source, string $destination): void
+    {
+        if (@rename($source, $destination)) {
+            return;
+        }
+
+        $this->copyDirectory($source, $destination);
+        $this->removeDirectory($source);
+    }
+
+    private function copyDirectory(string $source, string $destination): void
+    {
+        if (!is_dir($destination)) {
+            mkdir($destination, 0775, true);
+        }
+
+        $items = scandir($source) ?: [];
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $src = $source . DIRECTORY_SEPARATOR . $item;
+            $dst = $destination . DIRECTORY_SEPARATOR . $item;
+
+            if (is_dir($src)) {
+                $this->copyDirectory($src, $dst);
+            } else {
+                copy($src, $dst);
+            }
+        }
+    }
+
+    private function removeDirectory(string $path): void
+    {
+        $items = scandir($path) ?: [];
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $target = $path . DIRECTORY_SEPARATOR . $item;
+            if (is_dir($target)) {
+                $this->removeDirectory($target);
+            } else {
+                unlink($target);
+            }
+        }
+
+        rmdir($path);
     }
 }

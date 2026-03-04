@@ -829,23 +829,19 @@ class Aspirateur extends Controller
             return $data;
         }
 
-        // Destination inchangée => on conserve strictement le précédent historique.
-        if ($previousDestinationId === (int)$destinationId) {
-            if ($previousPreviousId > 0) {
-                $data['destination_previous_id'] = $previousPreviousId;
-            }
-
-            if ($previousPreviousDate !== '') {
-                $data['destination_previous_date'] = $previousPreviousDate;
-            }
-        }
-        // Destination changée => on décale la destination courante en "previous".
-        else if ($previousDestinationId > 0) {
+        // Règle métier: si la destination change, l'ancienne destination devient le "previous".
+        if ($previousDestinationId > 0 && $previousDestinationId !== (int)$destinationId) {
             $data['destination_previous_id'] = $previousDestinationId;
 
             if ($previousDestinationDate !== '') {
                 $data['destination_previous_date'] = $previousDestinationDate;
             }
+        }
+
+        // Garantir que destination_previous_id reste différent de destination_id.
+        if ((int)$data['destination_previous_id'] === (int)$destinationId) {
+            $data['destination_previous_id'] = 0;
+            $data['destination_previous_date'] = '';
         }
 
         Debug::debug($data, "DATA VIP");

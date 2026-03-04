@@ -1049,7 +1049,8 @@ class Dot3 extends Controller
                     'id_destination' => $vip_destinations['active_id'],
                     'theme' => 'VIP_LINK_ACTIVE',
                     'tooltip' => 'VIP active destination',
-                    'default_style' => 'solid',
+                    'default_style' => 'filled',
+                    'force_style' => 'filled',
                     'source_port' => self::VIP_ACTIVE_PORT,
                 ),
                 'previous' => array(
@@ -1057,6 +1058,7 @@ class Dot3 extends Controller
                     'theme' => 'VIP_LINK_PREVIOUS',
                     'tooltip' => 'VIP previous destination',
                     'default_style' => 'dashed',
+                    'force_style' => 'dashed',
                     'source_port' => self::VIP_PREVIOUS_PORT,
                 ),
             );
@@ -1101,7 +1103,12 @@ class Dot3 extends Controller
                 }
 
                 $tmp['tooltip'] = $settings['tooltip'].' : '.$destination_label;
-                $tmp['options']['style'] = $tmp['style'] ?? $settings['default_style'];
+                $style = $tmp['style'] ?? $settings['default_style'];
+                if (!empty($settings['force_style'])) {
+                    $style = $settings['force_style'];
+                }
+                $tmp['style'] = $style;
+                $tmp['options']['style'] = $style;
                 $tmp['options']['arrowsize'] = '1.5';
                 $tmp['arrow'] = $id_mysql_server . ':' . $settings['source_port'] . ' -> ' . $id_destination . ':' . self::TARGET;
 
