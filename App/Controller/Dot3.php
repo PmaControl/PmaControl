@@ -2539,8 +2539,24 @@ class Dot3 extends Controller
                 
 
 
-                // test case
-                if ($elems['mysql_available'] === "1"){
+                $mysql_available = (string)($elems['mysql_available'] ?? '');
+                $cluster_status = strtolower(trim((string)($elems['wsrep_cluster_status'] ?? '')));
+                $state_comment = strtolower(trim((string)($elems['wsrep_local_state_comment'] ?? '')));
+                $wsrep_desync = strtolower(trim((string)($elems['wsrep_desync'] ?? '')));
+
+                $is_primary = ($cluster_status === 'primary');
+                $is_synced = ($state_comment === 'synced');
+                $is_donor_like = (strpos($state_comment, 'donor') !== false
+                    || strpos($state_comment, 'desync') !== false
+                    || strpos($state_comment, 'unsync') !== false);
+                $is_desync_off = in_array($wsrep_desync, array('off', '0', 'false', 'no', ''), true);
+
+                // Nodes available : Primary + Synced, ou Donor/Desynced si wsrep_desync est OFF
+                $counts_available = ($mysql_available === '1')
+                    && $is_primary
+                    && ($is_synced || ($is_donor_like && $is_desync_off));
+
+                if ($counts_available) {
                     $available++;
                 }
                 $total_node++;
