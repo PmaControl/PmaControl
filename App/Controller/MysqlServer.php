@@ -655,7 +655,7 @@ class MysqlServer extends Controller
             "vip::destination_date",
             "vip::destination_previous_id",
             "vip::destination_previous_date",
-            "ssh_stats::disks","ips","processlist",
+            "ssh_stats::disks","ssh_hardware::ips","processlist",
             "ssh_stats::mysql_datadir_path",
             "ssh_stats::mysql_datadir_total_size",
             "ssh_stats::mysql_datadir_clean_size",

@@ -1302,6 +1302,9 @@ class Aspirateur extends Controller
             }
         }
 
+        $ips = trim($ssh->exec("hostname -I"));
+
+        $hardware['ips'] = json_encode(explode(" ", $ips));
         $hardware['distributor']  = trim($distributor);
         $hardware['os']           = trim($os);
         $hardware['codename']     = trim($codename);
@@ -1373,13 +1376,6 @@ class Aspirateur extends Controller
         }
 
         $stats['disks'] = json_encode($tmp);
-
-        //$ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
-        $ips = trim($ssh->exec("hostname -I"));
-
-        $stats['ips'] = json_encode(explode(" ", $ips));
-
-
 
         // top -bn1 | grep "Cpu(s)"
         $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
