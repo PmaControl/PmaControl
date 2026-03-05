@@ -477,6 +477,7 @@ class Aspirateur extends Controller
                 (int)$vipConnectionPort
             );
 
+            $vipData['vip']['is_vip'] = 1;
             // check_data=true => anti-redondance via MD5
             $this->exportData($id_mysql_server, "vip", $vipData, true);
             $mysql_tested->sql_close();
@@ -804,6 +805,11 @@ class Aspirateur extends Controller
             && (int)$previous['destination_id'] === (int)$destinationId
             && !empty($previous['destination_date'])
         ) {
+            $destinationDate = $previous['destination_date'];
+        }
+
+        if (empty($previous['destination_id']))
+        {
             $destinationDate = $previous['destination_date'];
         }
 

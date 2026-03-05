@@ -117,13 +117,16 @@ if (empty($_GET['ajax'])){
     echo '<div width="100%">';
 
     $showMode = $data['show_mode'] ?? 'monitored';
+    $typeFilter = $data['type_filter'] ?? 'all';
+    $typeFilters = $data['type_filters'] ?? ['all' => __('All types')];
+    $encodedTypeFilter = rawurlencode((string)$typeFilter);
     if ($showMode === 'all') {
         $toggleLabel = __('Show monitored servers only');
-        $toggleUrl = LINK.'server/main/?show=monitored';
+        $toggleUrl = LINK.'server/main/?show=monitored&type='.$encodedTypeFilter;
         $toggleClass = 'btn btn-default';
     } else {
         $toggleLabel = __('Show all servers');
-        $toggleUrl = LINK.'server/main/?show=all';
+        $toggleUrl = LINK.'server/main/?show=all&type='.$encodedTypeFilter;
         $toggleClass = 'btn btn-info';
     }
 
@@ -131,6 +134,22 @@ if (empty($_GET['ajax'])){
         .'<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> '
         .$toggleLabel
         .'</a>';
+
+    $typeBaseUrl = LINK.'server/main/?show='.rawurlencode((string)$showMode).'&type=';
+
+    echo '<label for="server-type-filter" style="margin-right:6px">'.__('Type').'</label>';
+    echo '<select id="server-type-filter" class="form-control input-sm" style="display:inline-block; width:190px; margin-right:10px;">';
+    foreach ($typeFilters as $typeKey => $typeLabel) {
+        $typeKey = (string)$typeKey;
+        $selected = (strtolower($typeKey) === strtolower((string)$typeFilter)) ? ' selected' : '';
+        echo '<option value="'.htmlspecialchars($typeKey, ENT_QUOTES, 'UTF-8').'"'.$selected.'>'
+            .htmlspecialchars((string)$typeLabel, ENT_QUOTES, 'UTF-8')
+            .'</option>';
+    }
+    echo '</select>';
+    echo '<script>document.getElementById("server-type-filter").addEventListener("change", function(){window.location.href = "'
+        .htmlspecialchars($typeBaseUrl, ENT_QUOTES, 'UTF-8')
+        .'" + encodeURIComponent(this.value);});</script>';
 
 
     echo __("Refresh each :")."&nbsp;";

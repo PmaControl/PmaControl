@@ -46,6 +46,41 @@ class Integrate extends Controller
         $this->logger = $monolog;
     }
 
+    /**
+     * (PmaControl) <br/>
+     * @example ./glial integrate show 1772662469::vip
+     * @description Display the raw shared memory content as JSON_PRETTY_PRINT
+     * @access public
+     */
+    public function show($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        $fileName = $param[0] ?? '';
+        if ($fileName === '') {
+            throw new Exception("Paramètre manquant : fichier tmp_file attendu (ex: 1772662469::vip)");
+        }
+
+        if (strpos($fileName, EngineV4::SEPERATOR) === false) {
+            throw new Exception("Paramètre invalide : format attendu 'timestamp::ts_file'");
+        }
+
+        $filePath = EngineV4::PATH_PIVOT_FILE.$fileName;
+        if (!file_exists($filePath)) {
+            throw new Exception("Fichier introuvable : ".$filePath);
+        }
+
+        $storage = new StorageFile($filePath);
+        $data    = new SharedMemory($storage);
+        $elems   = $data->getData();
+
+        $payload = $this->normalizeSharedMemoryPayload($elems);
+
+        echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+        return true;
+    }
+
     public function getIdTsFile($ts_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -735,6 +770,27 @@ public function integrateAll($param)
         Debug::sql($sql);
         $db->sql_query($sql);
 
+    }
+
+    private function normalizeSharedMemoryPayload($payload)
+    {
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        if (is_object($payload)) {
+            if (method_exists($payload, 'getData')) {
+                return $payload->getData();
+            }
+
+            if (property_exists($payload, 'data')) {
+                return $payload->data;
+            }
+
+            return (array) $payload;
+        }
+
+        return $payload;
     }
 
 }

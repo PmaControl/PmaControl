@@ -57,7 +57,7 @@ class Extraction2
         }
 
 
-        Debug::debug(self::$server, "SERVER");
+        //Debug::debug(self::$server, "SERVER");
 
         if (! empty($date) && $range == false 
         && count(self::$server) == 1 

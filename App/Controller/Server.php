@@ -250,7 +250,8 @@ class Server extends Controller
 
                 function refresh()
                 {
-                    var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
+                    var queryString = window.location.search || "";
+                    var myURL = GLIAL_LINK + GLIAL_URL + "/ajax:true" + queryString;
                     $("#servermain").load(myURL);
                     (function() {
 
@@ -300,8 +301,17 @@ class Server extends Controller
             $_SESSION[$showSessionKey] = $_GET['show'];
         }
 
+        $typeSessionKey = 'server_main_type_filter';
+        if (isset($_GET['type'])) {
+            $typeParam = trim((string)$_GET['type']);
+            $_SESSION[$typeSessionKey] = $typeParam === '' ? 'all' : $typeParam;
+        }
+
         $showMode = $_SESSION[$showSessionKey] ?? 'monitored';
+        $typeFilter = $_SESSION[$typeSessionKey] ?? 'all';
+
         $data['show_mode'] = $showMode;
+        $data['type_filter'] = $typeFilter;
 
         $effectiveMonitoredExpr = "CASE WHEN c.is_monitored = 0 THEN 0 ELSE a.is_monitored END";
 
@@ -323,9 +333,14 @@ class Server extends Controller
         $res = $db->sql_query($sql);
 
         $servers = array();
+        $typeIndexMap = [];
+        $typeFilters = [];
+        $typeFilters['all'] = __('All types');
+
         while ($arr     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][] = $arr;
             $servers[]         = $arr['id'];
+            $typeIndexMap[(int)$arr['id']] = count($data['servers']) - 1;
         }
 
         $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
@@ -335,6 +350,49 @@ class Server extends Controller
         $data['last_date'] = Extraction2::display(array("mysql_available"));
 
         //debug($data);
+
+        if (!empty($data['servers'])) {
+            $filteredServers = [];
+
+            foreach ($data['servers'] as $server) {
+                $serverId = (int)$server['id'];
+                $extra = $data['extra'][$serverId] ?? [];
+
+                $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
+                $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
+                $isProxySql = !empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1";
+
+                $typeLabel = 'MySQL';
+                if ($isVipServer) {
+                    $typeLabel = 'VIP';
+                } elseif ($isProxyServer || $isProxySql) {
+                    $typeLabel = 'ProxySQL';
+                } elseif (!empty($extra['version'])) {
+                    $versionInfo = \App\Library\Format::getMySQLNumVersion((string)$extra['version'], (string)($extra['version_comment'] ?? ''));
+                    if (!empty($versionInfo['fork'])) {
+                        $typeLabel = ucfirst(strtolower((string)$versionInfo['fork']));
+                    }
+                }
+
+                $filterKey = strtolower($typeLabel);
+                $typeFilters[$filterKey] = $typeLabel;
+
+                if (isset($typeIndexMap[$serverId])) {
+                    $data['servers'][$typeIndexMap[$serverId]]['type_label'] = $typeLabel;
+                    $data['servers'][$typeIndexMap[$serverId]]['type_filter_key'] = $filterKey;
+                }
+
+                if ($typeFilter !== 'all' && $filterKey !== strtolower($typeFilter)) {
+                    continue;
+                }
+
+                $filteredServers[] = $server;
+            }
+
+            $data['servers'] = $filteredServers;
+        }
+
+        $data['type_filters'] = $typeFilters;
 
         // get Tag
         $sql          = "SELECT * FROM link__mysql_server__tag a

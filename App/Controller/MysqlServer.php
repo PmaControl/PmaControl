@@ -185,7 +185,7 @@ class MysqlServer extends Controller
         ];
 
         $availability = Extraction2::display([
-            'mysql_server::mysql_available',
+            "mysql_server::mysql_available","is_vip",
             'mysql_server::mysql_error',
         ], $id_mysql_servers);
 
@@ -648,7 +648,7 @@ class MysqlServer extends Controller
             "spider_semi_split_read","spider_semi_split_read_limit","spider_support_xa","spider_internal_xa","spider_sync_autocommit",
             "spider_sync_trx_isolation","spider_sync_time_zone","spider_remote_trx_isolation","spider_remote_autocommit","spider_general_log",
             "information_schema::engines",
-            "mysql_server::mysql_available",
+            "mysql_server::mysql_available","is_vip",
             "vip::ip",
             "vip::port",
             "vip::destination_id",
@@ -665,7 +665,6 @@ class MysqlServer extends Controller
 
         $raw = Extraction2::display($keys, [$id_mysql_server]);
         Debug::debug($raw);
-        //debug($raw);
 
         // Après certaines opérations (ex: control/rebuildAll), Extraction2 peut
         // temporairement retourner false/structure vide avant la reconstruction
@@ -821,8 +820,25 @@ class MysqlServer extends Controller
         $data['is_proxy'] = !empty($credentials['is_proxy']) ? (int)$credentials['is_proxy'] : 0;
         $data['is_vip'] = !empty($credentials['is_vip']) ? (int)$credentials['is_vip'] : 0;
 
-        $isVipServer = $data['is_vip'] === 1;
-        $vipDestinationDate = $value('vip::destination_date');
+        $extractedIsVip = $value('is_vip');
+        if ($data['is_vip'] === 0 && $extractedIsVip !== null && $extractedIsVip !== '') {
+            $data['is_vip'] = (int)$extractedIsVip;
+        }
+
+        $vipIp = $value('vip::ip') ?? $value('ip');
+        $vipPort = $value('vip::port') ?? $value('port');
+        $vipDestinationId = $value('vip::destination_id') ?? $value('destination_id');
+        $vipDestinationDate = $value('vip::destination_date') ?? $value('destination_date');
+        $vipPreviousId = $value('vip::destination_previous_id') ?? $value('destination_previous_id');
+        $vipPreviousDate = $value('vip::destination_previous_date') ?? $value('destination_previous_date');
+
+        $isVipServer = $data['is_vip'] === 1
+            || $vipIp !== null
+            || $vipPort !== null
+            || $vipDestinationId !== null
+            || $vipDestinationDate !== null
+            || $vipPreviousId !== null
+            || $vipPreviousDate !== null;
         $vipUptime = $isVipServer ? self::formatVipUptime($vipDestinationDate) : null;
 
         $data['summary'] = [
@@ -853,12 +869,12 @@ class MysqlServer extends Controller
 
         if ($isVipServer) {
             $data['vip'] = [
-                'IP' => self::formatJsonValue($value('vip::ip')),
-                'Port' => self::formatJsonValue($value('vip::port')),
-                'Destination ID' => self::formatJsonValue($value('vip::destination_id')),
-                'Destination date' => self::formatJsonValue($value('vip::destination_date')),
-                'Destination previous ID' => self::formatJsonValue($value('vip::destination_previous_id')),
-                'Destination previous date' => self::formatJsonValue($value('vip::destination_previous_date')),
+                'IP' => self::formatJsonValue($vipIp),
+                'Port' => self::formatJsonValue($vipPort),
+                'Destination ID' => self::formatJsonValue($vipDestinationId),
+                'Destination date' => self::formatJsonValue($vipDestinationDate),
+                'Destination previous ID' => self::formatJsonValue($vipPreviousId),
+                'Destination previous date' => self::formatJsonValue($vipPreviousDate),
             ];
         }
 
