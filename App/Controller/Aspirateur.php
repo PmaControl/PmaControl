@@ -467,21 +467,41 @@ class Aspirateur extends Controller
         }
 
         // Cas VIP : on ne collecte pas les métriques MySQL classiques.
-        // On réalise uniquement les tests de connexion ci-dessus puis on exporte
-        // les variables dédiées dans un ts_file spécifique.
+        // On réalise uniquement les tests de connexion ci-dessus puis on
+        // persiste la route VIP directement dans vip_server.
         if (!empty($IS_VIP)) {
-            $vipData = array();
-            $vipData['vip'] = $this->buildVipMetrics(
+            $resolvedIp = $this->resolveVipIp((string)$vipConnectionHost);
+
+            $vipCandidates = [];
+            foreach ([$resolvedIp, $vipConnectionHost] as $candidate) {
+                $candidate = trim((string)$candidate);
+                if ($candidate !== '') {
+                    $vipCandidates[] = $candidate;
+                }
+            }
+
+            $vipCandidates = array_values(array_unique($vipCandidates));
+
+            $newActual = $this->resolveVipDestinationId(
                 (int)$id_mysql_server,
-                (string)$vipConnectionHost,
+                $vipCandidates,
                 (int)$vipConnectionPort
             );
 
-            $vipData['vip']['is_vip'] = 1;
-            // check_data=true => anti-redondance via MD5
-            $this->exportData($id_mysql_server, "vip", $vipData, true);
+            $resolvedIpForStorage = '';
+            if (filter_var($resolvedIp, FILTER_VALIDATE_IP)) {
+                $resolvedIpForStorage = $resolvedIp;
+            }
+
+            $saved = $this->upsertVipServerRoute(
+                (int)$id_mysql_server,
+                (string)$vipConnectionHost,
+                (string)$resolvedIpForStorage,
+                (int)$newActual
+            );
+
             $mysql_tested->sql_close();
-            return true;
+            return $saved;
         }
 
         // traitement SHOW GLOBAL VARIABLES
@@ -771,89 +791,131 @@ class Aspirateur extends Controller
         return true;
     }
 
-    private function buildVipMetrics(int $id_mysql_server, string $connectionHost, int $connectionPort): array
+    private function upsertVipServerRoute(int $id_mysql_server, string $dns, string $ip, int $newActual): bool
     {
-        $resolvedIp = $this->resolveVipIp($connectionHost);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-        $vipCandidates = [];
-        foreach ([$resolvedIp, $connectionHost] as $candidate) {
-            $candidate = trim((string)$candidate);
-            if ($candidate !== '') {
-                $vipCandidates[] = $candidate;
+        $dns = trim($dns);
+        $ip = trim($ip);
+
+        $dnsSql = "'".$db->sql_real_escape_string($dns)."'";
+        $ipSql = "NULL";
+        if ($ip !== '') {
+            $ipSql = "'".$db->sql_real_escape_string($ip)."'";
+        }
+
+        try {
+            $db->sql_query("START TRANSACTION;");
+
+            $sql = "SELECT id, id_mysql_server__actual
+            FROM vip_server
+            WHERE id_mysql_server = ".(int)$id_mysql_server."
+            FOR UPDATE;";
+
+            $res = $db->sql_query($sql);
+
+            $rowExists = false;
+            $currentActualRaw = null;
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                $rowExists = true;
+                if (
+                    isset($ob->id_mysql_server__actual)
+                    && $ob->id_mysql_server__actual !== null
+                    && $ob->id_mysql_server__actual !== ''
+                ) {
+                    $currentActualRaw = (int)$ob->id_mysql_server__actual;
+                }
+                break;
             }
-        }
-        $vipCandidates = array_values(array_unique($vipCandidates));
 
+            if (!$rowExists) {
+                if ($newActual > 0) {
+                    $sql = "INSERT INTO vip_server
+                    (`id_mysql_server`, `dns`, `ip`, `id_mysql_server__actual`, `date__actual`)
+                    VALUES
+                    (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.", ".(int)$newActual.", NOW());";
+                } else {
+                    $sql = "INSERT INTO vip_server
+                    (`id_mysql_server`, `dns`, `ip`)
+                    VALUES
+                    (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.");";
+                }
 
-        Debug::debug($vipCandidates, "vipCandidates");
-
-        $destinationId = $this->resolveVipDestinationId(
-            $id_mysql_server,
-            $vipCandidates,
-            $connectionPort
-        );
-
-        $previous = $this->getPreviousVipDestinationState($id_mysql_server);
-
-        Debug::debug($previous, "PREVIOUS");
-
-        // On conserve la date de bascule tant que la destination ne change pas.
-        // Ainsi, l'empreinte MD5 reste stable (pas d'insert redondant).
-        $destinationDate = date('Y-m-d H:i:s');
-        if (
-            isset($previous['destination_id'])
-            && (int)$previous['destination_id'] === (int)$destinationId
-            && !empty($previous['destination_date'])
-        ) {
-            $destinationDate = $previous['destination_date'];
-        }
-
-        if (empty($previous['destination_id']))
-        {
-            $destinationDate = $previous['destination_date'];
-        }
-
-        $data = [
-            'ip' => $resolvedIp,
-            'port' => (int)$connectionPort,
-            'destination_id' => (int)$destinationId,
-            'destination_date' => $destinationDate,
-        ];
-
-        $previousDestinationId = (int)($previous['destination_id'] ?? 0);
-        $previousDestinationDate = trim((string)($previous['destination_date'] ?? ''));
-        $previousPreviousId = (int)($previous['destination_previous_id'] ?? 0);
-        $previousPreviousDate = trim((string)($previous['destination_previous_date'] ?? ''));
-
-        // Toujours pré-remplir les valeurs précédentes (même si aucune modification).
-        $data['destination_previous_id'] = $previousPreviousId;
-        $data['destination_previous_date'] = $previousPreviousDate;
-
-        // Si aucune destination n'est résolue, on ne touche pas à destination_previous_*
-        // (on garde les valeurs précédentes telles quelles).
-        if ((int)$destinationId === 0) {
-            Debug::debug($data, "DATA VIP");
-            return $data;
-        }
-
-        // Règle métier: si la destination change, l'ancienne destination devient le "previous".
-        if ($previousDestinationId > 0 && $previousDestinationId !== (int)$destinationId) {
-            $data['destination_previous_id'] = $previousDestinationId;
-
-            if ($previousDestinationDate !== '') {
-                $data['destination_previous_date'] = $previousDestinationDate;
+                $db->sql_query($sql);
+                $db->sql_query("COMMIT;");
+                return true;
             }
+
+            $currentActual = (int)$currentActualRaw;
+
+            if ($newActual <= 0 || $newActual === $currentActual) {
+                // Aucun changement de destination (ou destination inconnue)
+                // => on ne touche qu'à dns/ip.
+                $sql = "UPDATE vip_server
+                SET dns = ".$dnsSql.",
+                    ip = ".$ipSql."
+                WHERE id_mysql_server = ".(int)$id_mysql_server.";";
+
+                $db->sql_query($sql);
+                $db->sql_query("COMMIT;");
+                return true;
+            }
+
+            if ($currentActual <= 0) {
+                // Première destination détectée sur une ligne déjà existante
+                // (créée précédemment sans destination).
+                $sql = "UPDATE vip_server
+                SET dns = ".$dnsSql.",
+                    ip = ".$ipSql.",
+                    id_mysql_server__actual = ".(int)$newActual.",
+                    date__actual = NOW()
+                WHERE id_mysql_server = ".(int)$id_mysql_server.";";
+
+                $db->sql_query($sql);
+                $db->sql_query("COMMIT;");
+                return true;
+            }
+
+            $previousActualSql = "NULL";
+            if ($currentActualRaw !== null && (int)$currentActualRaw > 0) {
+                $previousActualSql = (int)$currentActualRaw;
+            }
+
+            // Changement de cible :
+            // 1) previous = actual
+            // 2) date__previous = NOW()
+            // 3) actual = newActual
+            // 4) date__actual = NOW()
+            $sql = "UPDATE vip_server
+            SET dns = ".$dnsSql.",
+                ip = ".$ipSql.",
+                id_mysql_server__previous = ".$previousActualSql.",
+                date__previous = NOW(),
+                id_mysql_server__actual = ".(int)$newActual.",
+                date__actual = NOW()
+            WHERE id_mysql_server = ".(int)$id_mysql_server.";";
+
+            $db->sql_query($sql);
+            $db->sql_query("COMMIT;");
+
+            return true;
+        } catch (\Throwable $e) {
+            try {
+                $db->sql_query("ROLLBACK;");
+            } catch (\Throwable $e2) {
+                // ignore rollback error
+            }
+
+            $this->logger->error(
+                '[VIP] Failed to upsert vip_server route for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+
+            return false;
+        } finally {
+            $db->sql_close();
         }
-
-        // Garantir que destination_previous_id reste différent de destination_id.
-        if ((int)$data['destination_previous_id'] === (int)$destinationId) {
-            $data['destination_previous_id'] = 0;
-            $data['destination_previous_date'] = '';
-        }
-
-        Debug::debug($data, "DATA VIP");
-
-        return $data;
     }
 
     private function resolveVipIp(string $connectionHost): string
@@ -913,7 +975,7 @@ class Aspirateur extends Controller
         $destinationId = $this->resolveVipDestinationIdFromSshMetric(
             $id_mysql_server,
             $normalizedTarget,
-            'ssh_stats::ips',
+            'ssh_hardware::ips',
             'ips'
         );
         if ($destinationId > 0) {
@@ -1023,43 +1085,6 @@ class Aspirateur extends Controller
         }
 
         return 0;
-    }
-
-    private function getPreviousVipDestinationState(int $id_mysql_server): array
-    {
-        $ret = [
-            'destination_id' => 0,
-            'destination_date' => '',
-            'destination_previous_id' => 0,
-            'destination_previous_date' => '',
-        ];
-
-        try {
-            $previous = Extraction2::display([
-                'vip::destination_id',
-                'vip::destination_date',
-                'vip::destination_previous_id',
-                'vip::destination_previous_date',
-            ], [$id_mysql_server]);
-
-            Debug::debug($previous, "VIP::PREVIOUS");
-
-
-            if (!empty($previous[$id_mysql_server])) {
-                $row = $previous[$id_mysql_server];
-                $ret['destination_id'] = (int)($row['destination_id'] ?? 0);
-                $ret['destination_date'] = trim((string)($row['destination_date'] ?? ''));
-                $ret['destination_previous_id'] = (int)($row['destination_previous_id'] ?? 0);
-                $ret['destination_previous_date'] = trim((string)($row['destination_previous_date'] ?? ''));
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                '[VIP] Unable to load previous destination state for id_mysql_server:'
-                .$id_mysql_server.' message:'.$e->getMessage()
-            );
-        }
-
-        return $ret;
     }
 
     private function extractVipCandidatesFromRawValue($raw): array

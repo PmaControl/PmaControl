@@ -11,6 +11,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Debug;
 use App\Library\Extraction;
+use App\Library\Extraction2;
 use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Color;
@@ -101,10 +102,26 @@ class Alias extends Controller
         $this->addHostname($param);
         $this->addAliasFromHostname($param);
         $this->addAliasFromWsrepNodeAddress($param);
+        $this->addAliasFromSshIps($param);
 
         if (!IS_CLI) {
             header("location: ".LINK."alias/index");
         }
+    }
+
+    public function delete($param)
+    {
+        $this->view = false;
+
+        $id_alias_dns = (int)($param[0] ?? 0);
+
+        if ($id_alias_dns > 0) {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "DELETE FROM alias_dns WHERE id = ".$id_alias_dns." LIMIT 1;";
+            $db->sql_query($sql);
+        }
+
+        header("location: ".LINK."alias/index");
     }
 
     public function getExtraction($param)
@@ -256,10 +273,15 @@ class Alias extends Controller
     }
     public static function upsertAliasDns(array $param): void
     {
-        // $param = [dns, port, id_mysql_server]
+        // $param = [dns, port, id_mysql_server, is_from_ssh]
         $dns = $param[0] ?? null;
         $port = $param[1] ?? null;
         $id_mysql_server = $param[2] ?? null;
+        $is_from_ssh = isset($param[3]) ? (int)$param[3] : 0;
+
+        if (!in_array($is_from_ssh, [0, 1], true)) {
+            $is_from_ssh = 0;
+        }
 
         if (!$dns || !$port || !$id_mysql_server) {
             return; // paramètre manquant
@@ -270,32 +292,148 @@ class Alias extends Controller
         // clé pour le cache
         $key = "$dns:$port";
 
-        // si déjà en cache et différent, update
+        // si déjà en cache et identique, on n'update pas
         if (isset(self::$alias_dns_cache[$key])) {
-            if (self::$alias_dns_cache[$key] !== $id_mysql_server) {
-                $sqlUpsert = sprintf(
-                    "INSERT INTO alias_dns (dns, port, id_mysql_server) VALUES ('%s', %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = %d",
-                    $db->sql_real_escape_string($dns),
-                    $port,
-                    $id_mysql_server,
-                    $id_mysql_server
-                );
-                $db->sql_query($sqlUpsert);
-                self::$alias_dns_cache[$key] = $id_mysql_server;
+            $cached = self::$alias_dns_cache[$key];
+            $cached_server = (int)($cached['id_mysql_server'] ?? 0);
+            $cached_is_from_ssh = (int)($cached['is_from_ssh'] ?? 0);
+
+            if (
+                $cached_server === (int)$id_mysql_server
+                && $cached_is_from_ssh === $is_from_ssh
+            ) {
+                return;
             }
-            return;
         }
 
         // éviter les doublons avec INSERT ... ON DUPLICATE KEY UPDATE (assurant que dns et port sont uniques)
         $sqlUpsert = sprintf(
-            "INSERT INTO alias_dns (dns, port, id_mysql_server) VALUES ('%s', %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = %d",
+            "INSERT INTO alias_dns (dns, port, id_mysql_server, is_from_ssh) VALUES ('%s', %d, %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = VALUES(id_mysql_server), is_from_ssh = VALUES(is_from_ssh)",
             $db->sql_real_escape_string($dns),
             $port,
             $id_mysql_server,
-            $id_mysql_server
+            $is_from_ssh
         );
         $db->sql_query($sqlUpsert);
-        self::$alias_dns_cache[$key] = $id_mysql_server;
+        self::$alias_dns_cache[$key] = [
+            'id_mysql_server' => (int)$id_mysql_server,
+            'is_from_ssh' => $is_from_ssh,
+        ];
+    }
+
+    public function addAliasFromSshIps($param)
+    {
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // id_mysql_server => port
+        $port_by_server = [];
+        $sql = "SELECT id, port FROM mysql_server WHERE is_deleted = 0";
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $port_by_server[(int)$ob['id']] = (int)$ob['port'];
+        }
+
+        $ssh_ips = Extraction2::display(array("ssh_hardware::ips"));
+
+        // clé = dns:port
+        $current_aliases_from_ssh = [];
+
+        foreach ($ssh_ips as $id_mysql_server => $row) {
+            $id_mysql_server = (int)$id_mysql_server;
+
+            if (empty($port_by_server[$id_mysql_server])) {
+                continue;
+            }
+
+            $port = (int)$port_by_server[$id_mysql_server];
+            $ips = self::extractIpList($row['ips'] ?? []);
+
+            foreach ($ips as $ip) {
+                $key = strtolower($ip).":".$port;
+                $current_aliases_from_ssh[$key] = [
+                    'dns' => $ip,
+                    'port' => $port,
+                    'id_mysql_server' => $id_mysql_server,
+                ];
+            }
+        }
+
+        foreach ($current_aliases_from_ssh as $alias) {
+            self::upsertAliasDns([
+                $alias['dns'],
+                $alias['port'],
+                $alias['id_mysql_server'],
+                1,
+            ]);
+        }
+
+        // purge les entrées ssh obsolètes (plus présentes dans ssh_hardware::ips)
+        $sql = "SELECT id, dns, port FROM alias_dns WHERE is_from_ssh = 1";
+        $res = $db->sql_query($sql);
+
+        $to_delete = [];
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $key = strtolower($ob['dns']).":".(int)$ob['port'];
+
+            if (!isset($current_aliases_from_ssh[$key])) {
+                $to_delete[] = (int)$ob['id'];
+            }
+        }
+
+        if (!empty($to_delete)) {
+            $sql = "DELETE FROM alias_dns WHERE id IN (".implode(',', $to_delete).")";
+            $db->sql_query($sql);
+        }
+    }
+
+    private static function extractIpList($raw): array
+    {
+        $list = [];
+
+        $flatten = function ($value) use (&$flatten, &$list): void {
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    $flatten($item);
+                }
+                return;
+            }
+
+            $value = trim((string)$value);
+            if ($value === '') {
+                return;
+            }
+
+            foreach (preg_split('/[\s,;|]+/', $value) as $candidate) {
+                $candidate = trim($candidate);
+
+                if ($candidate === '') {
+                    continue;
+                }
+
+                if (str_contains($candidate, '/')) {
+                    $candidate = explode('/', $candidate)[0];
+                }
+
+                if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                    $list[$candidate] = $candidate;
+                }
+            }
+        };
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $raw = $decoded;
+            }
+        }
+
+        $flatten($raw);
+
+        return array_values($list);
     }
 
     public function addAliasFromWsrepNodeAddress($param)

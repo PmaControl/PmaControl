@@ -19,7 +19,9 @@ echo '<th>#</th>';
 echo '<th>DNS</th>';
 echo '<th>Port</th>';
 echo '<th>'.__('Linked to').'</th>';
+echo '<th>'.__('Source').'</th>';
 echo '<th>'.__('Since').'</th>';
+echo '<th>'.__('Action').'</th>';
 echo '</tr>';
 
 $i = 0;
@@ -33,9 +35,26 @@ foreach ($data['alia_dns'] as $alias) {
     echo '<td>'.$alias['port'].'</td>';
     echo '<td>'.Display::srv($alias['id_mysql_server']);
 
+    if (!empty($alias['is_from_ssh']) && (int)$alias['is_from_ssh'] === 1) {
+        echo '<td><span class="label label-info">SSH</span></td>';
+    } else {
+        echo '<td><span class="label label-default">Manual / Auto</span></td>';
+    }
+
     $date_start = explode(".", $alias['ROW_START'])[0];
 
     echo '<td>'.$date_start.'</td>';
+
+    $msg = strip_tags(__('Delete this alias?'));
+
+    echo '<td class="text-center">'
+        .'<a href="'.LINK.'alias/delete/'.$alias['id'].'" '
+        .'class="btn btn-danger btn-xs" '
+        .'onclick="return confirm(\''.$msg.'\');">'
+        .'<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>'
+        .'</a>'
+        .'</td>';
+
     echo '</tr>';
 }
 
