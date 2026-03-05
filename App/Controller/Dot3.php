@@ -1888,9 +1888,10 @@ class Dot3 extends Controller
                     //Debug::debug($proxysql['id_mysql_server']." == ". $id_mysql_server, "TEST OK ?");
                     if ($proxysql['id_mysql_server'] == $id_mysql_server){
                         self::$build_server[$id_mysql_server]['proxysql'] = $proxysql;
-                        //Debug::debug(self::$build_server);
+                        Debug::debug(self::$build_server);
                     }
                 }
+                Debug::debug(self::$build_server);
             }
         }
     }

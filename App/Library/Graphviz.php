@@ -706,62 +706,67 @@ class Graphviz
                 else
                 {
 
-                // 🇫🇷
-                $server_id = $server['server_id'] ?? 'N/A';
-                $auto_increment_offset = $server['auto_increment_offset'] ?? 'N/A';
-                $auto_increment_increment = $server['auto_increment_increment'] ?? 'N/A';
+                $is_single_store = strtolower((string)$fork) === 'singlestore';
 
                 $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server_id.' - Auto Inc : '.$auto_increment_offset.'/'.$auto_increment_increment.'</td></tr>'.PHP_EOL;
 
-                $debug = '';
-                //Debug::$debug = true;
+                if (!$is_single_store) {
+                    // 🇫🇷
+                    $server_id = $server['server_id'] ?? 'N/A';
+                    $auto_increment_offset = $server['auto_increment_offset'] ?? 'N/A';
+                    $auto_increment_increment = $server['auto_increment_increment'] ?? 'N/A';
 
-                //force le refresh du DOT
-                if (Debug::$debug === true) {
-                    $rand = rand(1,100);
-                    $debug  = ' (Debug : '.$rand.')';
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server_id.' - Auto Inc : '.$auto_increment_offset.'/'.$auto_increment_increment.'</td></tr>'.PHP_EOL;
+
+                    $debug = '';
+                    //Debug::$debug = true;
+
+                    //force le refresh du DOT
+                    if (Debug::$debug === true) {
+                        $rand = rand(1,100);
+                        $debug  = ' (Debug : '.$rand.')';
+                    }
+
+                    $ROW = '';
+                    $binlog_format = strtolower((string)($server['binlog_format'] ?? ''));
+                    if ($binlog_format === "row")
+                    {
+                        $ROW = "(".($server['binlog_row_image'] ?? 'N/A').")";
+                    }
+
+                    $binlog_display = $server['binlog_format'] ?? 'N/A';
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$binlog_display.' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
+
+                    if (empty($server['log_slave_updates']))
+                    {
+                        //Debug::debug($server, "SERVER");
+                        //die();
+                        //return "";
+                    }
+
+                    $read_only = strtolower((string)($server['read_only'] ?? ''));
+                    if ($read_only === "on")
+                    {
+                        //$server['read_only'] = '🅞🅝';
+                        $server['read_only'] = '✅ ON';
+
+                    }
+
+                    if (empty($server['read_only'])) {
+                        $server['read_only'] = 'N/A';
+                    }
+
+                    if (($server['log_slave_updates'] ?? '') === "OFF")
+                    {
+                        $server['log_slave_updates'] = "⚫ OFF";
+                    }
+
+                    if (empty($server['log_slave_updates'])) {
+                        $server['log_slave_updates'] = 'N/A';
+                    }
+
+                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
                 }
-
-                $ROW = '';
-                $binlog_format = strtolower((string)($server['binlog_format'] ?? ''));
-                if ($binlog_format === "row")
-                {
-                    $ROW = "(".($server['binlog_row_image'] ?? 'N/A').")";
-                }
-
-                $binlog_display = $server['binlog_format'] ?? 'N/A';
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$binlog_display.' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
-                
-                if (empty($server['log_slave_updates']))
-                {
-                    //Debug::debug($server, "SERVER");
-                    //die();
-                    //return "";
-                }
-                
-                $read_only = strtolower((string)($server['read_only'] ?? ''));
-                if ($read_only === "on")
-                {
-                    //$server['read_only'] = '🅞🅝';
-                    $server['read_only'] = '✅ ON';
-                    
-                }
-
-                if (empty($server['read_only'])) {
-                    $server['read_only'] = 'N/A';
-                }
-
-                if (($server['log_slave_updates'] ?? '') === "OFF")
-                {
-                    $server['log_slave_updates'] = "⚫ OFF";
-                }
-
-                if (empty($server['log_slave_updates'])) {
-                    $server['log_slave_updates'] = 'N/A';
-                }
-
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
                 
 
                 //A déplacer dans DOT quoi que ?
