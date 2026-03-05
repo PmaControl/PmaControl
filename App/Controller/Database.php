@@ -1251,7 +1251,7 @@ END;";
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT b.*,a.display_name FROM mysql_server a
-        INNER JOIN mysql_database b ON a.id = b.id_mysql_server WHERE is_proxy = 0;";
+        INNER JOIN mysql_database b ON a.id = b.id_mysql_server WHERE is_proxy = 0 and schema_name !='';";
 
         $res = $db->sql_query($sql);
 

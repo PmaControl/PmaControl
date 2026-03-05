@@ -91,6 +91,7 @@ FROM
 class Digest extends Controller
 {
     static $database = [];
+    static $database_loaded = false;
 
     static $cache_dispatch = [];
 
@@ -298,14 +299,34 @@ class Digest extends Controller
         $id_mysql_server = $param[0];
         $database = $param[1];
 
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        if (empty($database))
+        {
+            $database = '';
+        }
+
+        if (!self::$database_loaded)
+        {
+            $sql = "SELECT id, id_mysql_server, schema_name FROM mysql_database";
+            Debug::sql($sql);
+            $res = $db->sql_query($sql);
+
+            while($ob = $db->sql_fetch_object($res))
+            {
+                self::$database[$ob->id_mysql_server][$ob->schema_name] = $ob->id;
+            }
+
+            self::$database_loaded = true;
+        }
+
         if (empty(self::$database[$id_mysql_server][$database]))
         {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            if (empty($database))
-            {
-                $database = '';
-            }
+            $sql = "INSERT INTO mysql_database (schema_name, id_mysql_server) 
+            VALUES ('".$db->sql_real_escape_string($database)."', ".$db->sql_real_escape_string($id_mysql_server).")
+            ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)";
+            Debug::sql($sql);
+            $db->sql_query($sql);
 
             $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
             Debug::sql($sql);
@@ -314,17 +335,8 @@ class Digest extends Controller
             while($ob = $db->sql_fetch_object($res))
             {
                 self::$database[$id_mysql_server][$database] = $ob->id;
-                //Debug::debug($ob->id, "id_mysql_database");
-                return $ob->id;
+                break;
             }
-
-            $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
-            Debug::sql($sql);
-            $db->sql_query($sql);
-            
-            $id_mysql_database = $db->sql_insert_id();
-
-            self::$database[$id_mysql_server][$database] = $id_mysql_database;
         }
 
         return self::$database[$id_mysql_server][$database];
