@@ -66,8 +66,10 @@ class Client extends Controller
                     WHERE tv.name = 'mysql_available'
                         AND tv.`from` = 'mysql_server'
                 ) avail ON avail.id_mysql_server = ms.id
+                WHERE ms.is_deleted = 0
                 GROUP BY ms.id_client
             ) stats ON stats.id_client = c.id
+            WHERE c.is_display = 1
             ORDER BY c.libelle";
         $data['client'] = $db->sql_fetch_yield($sql);
 
@@ -148,5 +150,58 @@ class Client extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "UPDATE client SET `is_monitored` = '".$result."' WHERE id = ".intval($param[0])."";
         $db->sql_query($sql);
+    }
+
+    public function delete($param)
+    {
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $id_client = (int) ($param[0] ?? 0);
+        if ($id_client <= 0) {
+            set_flash("error", __("Error"), __("Invalid client id"));
+            header("location: ".LINK."client/index");
+            exit;
+        }
+
+        if ($id_client == "99") {
+            set_flash("error", __("Error"), __("Invalid client id"));
+            header("location: ".LINK."client/index");
+            exit;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT
+                    SUM(CASE WHEN COALESCE(is_deleted, 0) = 0 THEN 1 ELSE 0 END) AS active_servers,
+                    SUM(CASE WHEN COALESCE(is_deleted, 0) = 1 THEN 1 ELSE 0 END) AS deleted_servers
+                FROM mysql_server
+                WHERE id_client = ".$id_client;
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $active_servers = (int) ($row['active_servers'] ?? 0);
+        $deleted_servers = (int) ($row['deleted_servers'] ?? 0);
+
+        if ($active_servers !== 0) {
+            set_flash(
+                "error",
+                I18n::getTranslation(__("Error")),
+                I18n::getTranslation(__("Impossible to delete this organization, first you have to move the serveur to an other organization"))
+            );
+            header("location: ".LINK."client/index");
+            exit;
+        }
+
+        if ($deleted_servers !== 0) {
+            $sql = "UPDATE mysql_server SET id_client = 99 WHERE id_client = ".$id_client." AND COALESCE(is_deleted, 0) = 1";
+            $db->sql_query($sql);
+        }
+
+        $sql = "DELETE FROM client WHERE id = ".$id_client."";
+        $db->sql_query($sql);
+
+        set_flash("success", I18n::getTranslation(__("Success")), I18n::getTranslation(__("Organization deleted")));
+        header("location: ".LINK."client/index");
+        exit;
     }
 }

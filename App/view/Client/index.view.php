@@ -19,6 +19,7 @@ echo '<th>'.__('Libelle').'</th>';
 echo '<th>'.__('Servers').'</th>';
 echo '<th>'.__('Date').'</th>';
 echo '<th>'.__('Logo').'</th>';
+echo '<th>'.__('Delete').'</th>';
 echo '</tr>';
 
 
@@ -93,6 +94,13 @@ if (!empty($data['client'])) {
         echo '</td>';
         echo '<td>'.$client['date'].'</td>';
         echo '<td>'.$client['logo'].'</td>';
+        echo '<td>'
+            .'<a href="'.LINK.'client/delete/'.$client['id'].'" '
+            .'class="btn btn-danger btn-xs" '
+            .'onclick="return confirm(\''.__('Confirmation de supression : Yes/No').'\');">'
+            .'<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>'
+            .'</a>'
+            .'</td>';
 
         echo '</tr>';
     }

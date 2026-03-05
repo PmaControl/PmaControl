@@ -49,9 +49,8 @@ class Extraction2
         //il faudrait retirer la liste qui peut ralentir la requette quand il y a beaucoup de serveurs
         if (empty($server)) {
             $server = self::getServerList();
-        }
-        else
-        {
+        } else {
+            $server = self::filterServerList($server);
             sort($server);
             self::$server = $server;
         }
@@ -271,6 +270,31 @@ class Extraction2
         }
 
         return self::$server;
+    }
+
+    static private function filterServerList(array $server)
+    {
+        if (empty($server)) {
+            return $server;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT a.id FROM mysql_server a WHERE a.is_deleted=0 ".self::getFilter($server, 'a');
+        Debug::sql($sql, "FILTER SERVER LIST");
+
+        $res = $db->sql_query($sql);
+
+        $filtered = array();
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $filtered[] = $ob['id'];
+        }
+
+        if (count($filtered) === 0) { // int negatif pour être sur de rien remonté
+            $filtered[] = "-999";
+        }
+
+        return $filtered;
     }
 
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
@@ -567,9 +591,11 @@ class Extraction2
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        self::$server = $server;
         if (empty($server)) {
             $server = self::getServerList();
+        } else {
+            $server = self::filterServerList($server);
+            self::$server = $server;
         }
 
         // 1. Variables avec radical / type / id_ts_file
