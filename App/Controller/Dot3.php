@@ -145,7 +145,7 @@ class Dot3 extends Controller
             }
         }
 
-        Debug::debug($id_mysql_servers__real, "id_mysql_servers__real");
+       //Debug::debug($id_mysql_servers__real, "id_mysql_servers__real");
 
         //$id_mysql_servers = [87,88,116];
         // "status::wsrep_cluster_status"  => not exist anymore ?
@@ -233,7 +233,7 @@ class Dot3 extends Controller
         // ca sert a rien en fait car on recupère les élements du serveur mysql_server associé
         // just interessant pour faire des traitements spécifique
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning AND a.id_mysql_server IS NOT NULL;";
-        Debug::debug($sql);
+       //Debug::debug($sql);
 
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -364,7 +364,7 @@ class Dot3 extends Controller
                 }
                 else {
                     echo "SCRIPT KILLED [ERROR] This master was not found : ".$master."\n";
-                    Debug::debug($information['mapping'], "MAPPING");
+                    //Debug::debug($information['mapping'], "MAPPING");
                     
                 }
                 $id_group++;
@@ -508,12 +508,11 @@ class Dot3 extends Controller
                         if ($information['servers'][$id_mysql_server_galera]['wsrep_on'] === 'ON') {
 
                             $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
-                            //generate Alert 
-                            Debug::debug("WARNING: The server $ip_port (ID: $id_mysql_server_galera) 
-                            is part of the Galera cluster but has wsrep_on set to OFF.", "GALERA CONFIGURATION WARNING");
+                            //TODO generate Alert instead of a debug 
+                            //Debug::debug("WARNING: The server $ip_port (ID: $id_mysql_server_galera) is part of the Galera cluster but has wsrep_on set to OFF.", "GALERA CONFIGURATION WARNING");
                         }
 
-                        Debug::debug($information['mapping'][$ip_port], "MAPPING");
+                        //Debug::debug($information['mapping'][$ip_port], "MAPPING");
 
                         
                     }
@@ -617,7 +616,7 @@ class Dot3 extends Controller
             $tmp_group[$id_mysql_server][] = $id_mysql_server;
             $maxcale_ip_port = trim($server['ip_real']).":".trim($server['port_real']);
 
-            Debug::debug($maxcale_ip_port, "IP:PORT");
+            //Debug::debug($maxcale_ip_port, "IP:PORT");
 
             $maxscale = MaxScale::rewriteJson($server);
 
@@ -633,7 +632,7 @@ class Dot3 extends Controller
                     //Debug::debug(maxScale::removeArraysDeeperThan($maxscale,3), "MAXSCALE");
                     //Debug::debug(maxScale::removeArraysDeeperThan($server,2), "SERVER");
                     //Debug::debug($maxscale, "maxscale");
-                    Debug::debug($maxcale_ip_port, "IP REAL");
+                    //Debug::debug($maxcale_ip_port, "IP REAL");
 
                     throw new Exception(
                     "[PMACONTROL-4001] No 'servers' section found for listener '$maxcale_ip_port' in the MaxScale response. "
@@ -892,7 +891,7 @@ class Dot3 extends Controller
 
         $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale, $vip));
 
-        Debug::debug($group, "GROUP");
+       //Debug::debug($group, "GROUP");
         //die();
         return $group;
     }
@@ -1918,8 +1917,8 @@ class Dot3 extends Controller
             if (empty($server['mysql_servers']))
             {
                 //throw new Exception("Impossible to find server");
-                Debug::debug($server, "PROBLEM PROCYSQL");
-                Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
+               //Debug::debug($server, "PROBLEM PROCYSQL");
+               //Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
             }
 
             //Debug::debug($server,"PROXYSQL -------------");
@@ -2058,7 +2057,7 @@ class Dot3 extends Controller
 
             if (empty($ret_max[$listener_maxscale]))
             {
-                Debug::debug($ret_max, "MAXSCALE");
+               //Debug::debug($ret_max, "MAXSCALE");
                 $this->logger->warning($server['display_name']. "[$listener_maxscale] Impossible to find informations from Maxscale Admin (empty)");
 
                 continue;
@@ -2647,12 +2646,12 @@ class Dot3 extends Controller
 
         $tmp = self::$config[$theme];
 
-        Debug::debug($tmp, "COLOR");
+       //Debug::debug($tmp, "COLOR");
 
         $tmp2 = array_merge( self::$build_server[$id_mysql_server], $tmp);
         self::$build_server[$id_mysql_server] = $tmp2;
 
-        Debug::debug($tmp2, "COLOR_GOOD");
+       //Debug::debug($tmp2, "COLOR_GOOD");
 
     }
 
@@ -2660,7 +2659,7 @@ class Dot3 extends Controller
     {
         $var_to_keep = array("mysql-interfaces", "admin-version");
 
-        Debug::debug($variables, "VARIABLE PROXY");
+       //Debug::debug($variables, "VARIABLE PROXY");
 
         $data = array();
         foreach($variables as $variable)
@@ -2681,7 +2680,7 @@ class Dot3 extends Controller
             }
         }
 
-        Debug::debug($data, "NEW VERSION");
+       //Debug::debug($data, "NEW VERSION");
         
         return $data;
     }
@@ -2699,7 +2698,7 @@ class Dot3 extends Controller
             }
         }
         $data[100] = "mirroring";
-        Debug::debug($data, "HOSTGROUP FLIP");
+       //Debug::debug($data, "HOSTGROUP FLIP");
 
         return $data;
     }
