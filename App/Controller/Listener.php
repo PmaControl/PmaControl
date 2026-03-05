@@ -71,6 +71,7 @@ class Listener extends Controller
         self::$load_listener['mysql_schemata']['mysql_database'] = "Listerner::updateDatabase";
         self::$load_listener['mysql_global_variable']['variables'] = "Listerner::afterUpdateVariable";
         self::$load_listener['performance_schema']['performance_schema'] = "Digest::integrate";
+        self::$load_listener['ssh_hardware']['ssh_hardware'] = "Alias::updateAlias";
     }
 
     public static function init($param)
@@ -197,6 +198,11 @@ class Listener extends Controller
 
             case "performance_schema":
                 Digest::integrate([$arr['id_mysql_server'],$arr['min_date'] ]);
+                break;
+
+            case "ssh_hardware":
+                $alias = new Alias("","",[]);
+                $alias->updateAlias($arr);
                 break;
 
 
