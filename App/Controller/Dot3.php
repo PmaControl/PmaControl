@@ -70,6 +70,8 @@ class Dot3 extends Controller
 
     static $unknown_proxy_nodes = array();
 
+    static $missing_mapping = array();
+
     var $logger;
 
     public function before($param)
@@ -239,6 +241,27 @@ class Dot3 extends Controller
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][$arr['id_mysql_server']] = array_merge($arr, $data['servers'][$arr['id_mysql_server']]);
 
+            // Keep an explicit mapping for ProxySQL admin endpoints (typically :6032)
+            // because mysql_server.ip:port may now point to the client/listener endpoint.
+            $admin_port = trim((string)($arr['port'] ?? ''));
+            if ($admin_port !== '') {
+                $admin_hosts = array(
+                    $arr['hostname'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['hostname'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['ip'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['ip_real'] ?? '',
+                );
+
+                foreach ($admin_hosts as $admin_host) {
+                    $admin_host = trim((string)$admin_host);
+                    if ($admin_host === '') {
+                        continue;
+                    }
+
+                    $data['mapping'][$admin_host.':'.$admin_port] = $arr['id_mysql_server'];
+                }
+            }
+
             if (! empty($data['servers'][$arr['id_mysql_server']]['global_variables']))
             {
                 //data['servers'][$arr['id_mysql_server']]['global_variables'] = 
@@ -252,6 +275,10 @@ class Dot3 extends Controller
             //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
             //exit;
             //$data['servers'][$arr['id_mysql_server']]['mysql_servers'] = json_decode($data['servers'][$arr['id_mysql_server']]['mysql_servers'], true);
+        }
+
+        if (!empty($data['mapping']) && is_array($data['mapping'])) {
+            ksort($data['mapping']);
         }
 
         //TO REMOVE just for TEST proxysql
@@ -676,6 +703,10 @@ class Dot3 extends Controller
     {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
+
+        // reset volatile cache for each run
+        self::$unknown_proxy_nodes = array();
+        self::$missing_mapping = array();
 
         $id_dot3_information = $this->generateInformation($param);
         
@@ -2149,7 +2180,7 @@ class Dot3 extends Controller
         //die('wdfgdf');
     }
 
-    private static function findIdMysqlServer($host, $id_dot3_information)
+    private static function findIdMysqlServer($host, $id_dot3_information, $silent = false)
     {        
         $dot_information = self::getInformation($id_dot3_information);
 
@@ -2162,9 +2193,48 @@ class Dot3 extends Controller
             return  $dot_information['information']['mapping'][$host];
         }
 
+
+
+        // TO DELETE (have to test before)
+        // Fallback for ProxySQL peers discovered via admin endpoint (6032)
+        // when the inventory key is stored with another port (mysql-interfaces).
+        [$target_host, $target_port] = self::splitAddressPort((string)$host);
+
+        if (!empty($target_host) && (string)$target_port === '6032' && !empty($dot_information['information']['servers'])) {
+            foreach ($dot_information['information']['servers'] as $id_mysql_server => $server) {
+                if (empty($server['is_proxysql']) || (string)$server['is_proxysql'] !== '1') {
+                    continue;
+                }
+
+                $candidate_hosts = array(
+                    $server['hostname'] ?? '',
+                    $server['ip'] ?? '',
+                    $server['ip_real'] ?? '',
+                );
+
+                foreach ($candidate_hosts as $candidate_host) {
+                    $candidate_host = trim((string)$candidate_host);
+                    if ($candidate_host === '') {
+                        continue;
+                    }
+
+                    if (strtolower($candidate_host) === strtolower((string)$target_host)) {
+                        Debug::debug($candidate_host, "CANDIDATE");
+
+                        self::$information[$id_dot3_information]['information']['mapping'][$host] = $id_mysql_server;
+                        return $id_mysql_server;
+                    }
+                }
+            }
+        }
+        //End
+
         //Debug::debug($dot_information, "mapping");
         // create box => autodetect
-        echo "This master was not found : ".$host."\n";
+        if (!$silent && empty(self::$missing_mapping[$host])) {
+            self::$missing_mapping[$host] = true;
+            echo "This master was not found : ".$host."\n";
+        }
 
         return null;
     }
@@ -2720,7 +2790,7 @@ class Dot3 extends Controller
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers'] as $proxysql_servers)
                 {
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
-                    $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+                    $id_master = self::findIdMysqlServer($host, $id_dot3_information, true);
                     if (empty($id_master)) {
                         $id_master = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
                     }
