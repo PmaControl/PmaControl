@@ -200,7 +200,7 @@ class Dot3 extends Controller
                 INNER JOIN client z ON z.id = e.id_client
                 ".$versioning3.";";
 
-        Debug::sql($sql, "GET SERVER LIST");
+        //Debug::sql($sql, "GET SERVER LIST");
 
         $res = $db->sql_query($sql);
 
@@ -1888,7 +1888,7 @@ class Dot3 extends Controller
                     //Debug::debug($proxysql['id_mysql_server']." == ". $id_mysql_server, "TEST OK ?");
                     if ($proxysql['id_mysql_server'] == $id_mysql_server){
                         self::$build_server[$id_mysql_server]['proxysql'] = $proxysql;
-                        Debug::debug(self::$build_server);
+                        //Debug::debug(self::$build_server);
                     }
                 }
             }
@@ -2184,7 +2184,7 @@ class Dot3 extends Controller
 
         $sql = "SELECT * FROM `dot3_information` where `id` in (".$id_dot3_information.");";
         
-        Debug::sql($sql);
+        //Debug::sql($sql);
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
@@ -2195,7 +2195,6 @@ class Dot3 extends Controller
 
         return array();
     }
-
 
     /*
     TO MOVE

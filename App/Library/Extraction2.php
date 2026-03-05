@@ -131,7 +131,7 @@ class Extraction2
             $WINDOW   = "";
 
             $variable = self::getIdVariable($var);
-            Debug::debug($variable);
+            //Debug::debug($variable);
 
             foreach ($variable as $radical => $data_type) {
                 foreach ($data_type as $type => $tab_ids) {
@@ -226,7 +226,7 @@ class Extraction2
             return [];
         }
 
-        Debug::sql($sql3);
+        //Debug::sql($sql3);
 
 
         $db->sql_query('SET SESSION group_concat_max_len = 100000000');
@@ -281,7 +281,7 @@ class Extraction2
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT a.id FROM mysql_server a WHERE a.is_deleted=0 ".self::getFilter($server, 'a');
-        Debug::sql($sql, "FILTER SERVER LIST");
+        //Debug::sql($sql, "FILTER SERVER LIST");
 
         $res = $db->sql_query($sql);
 
@@ -401,7 +401,7 @@ class Extraction2
         }
 
         $sql = implode(' UNION ALL ', $sqls);
-        Debug::sql($sql);
+        //Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
@@ -461,7 +461,7 @@ class Extraction2
 
         // AND b.date != b.date_p4 => empeche de ramener unitilement la premiere partition dans le cas ou il y a jamais eu de données.
 
-        Debug::debug($sql, "PARTITIONS");
+        //Debug::debug($sql, "PARTITIONS");
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)){
