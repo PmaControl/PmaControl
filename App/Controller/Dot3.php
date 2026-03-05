@@ -189,8 +189,12 @@ class Dot3 extends Controller
                 UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy,c.is_vip, c.ip as ip_real, c.port as port_real
                 FROM alias_dns b 
                 INNER JOIN mysql_server c ON b.id_mysql_server =c.id 
-                INNER JOIN client y ON y.id = c.id_client ".$versioning2." AND y.is_monitored = 1 
-                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1, 0, d.hostname, d.port 
+                INNER JOIN client y ON y.id = c.id_client ".$versioning2." AND y.is_monitored = 1 and c.is_deleted = 0
+                UNION select d.id_mysql_server,
+                    e.ip, e.port,e.display_name,
+                    e.is_proxy, e.is_vip,
+                    e.hostname,
+                    e.port as port_real
                 FROM proxysql_server d
                 INNER JOIN mysql_server e ON e.id = d.id_mysql_server
                 INNER JOIN client z ON z.id = e.id_client
