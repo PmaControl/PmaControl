@@ -477,6 +477,24 @@ class Listener extends Controller
         }
         Debug::debug($data , "VARIABLES");
 
+        // normalize values to strings to avoid array/object values reaching sql_real_escape_string
+        foreach ($data as $id_mysql_server => $variables) {
+            foreach ($variables as $variable => $value) {
+                if (is_array($value) || is_object($value)) {
+                    $data[$id_mysql_server][$variable] = json_encode(
+                        $value,
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                    );
+                } elseif (is_bool($value)) {
+                    $data[$id_mysql_server][$variable] = $value ? '1' : '0';
+                } elseif ($value === null) {
+                    $data[$id_mysql_server][$variable] = '';
+                } else {
+                    $data[$id_mysql_server][$variable] = (string) $value;
+                }
+            }
+        }
+
         //to upgrade 
         //        => SELECT if different update and then update
 

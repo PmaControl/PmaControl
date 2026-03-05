@@ -141,6 +141,59 @@ if (!$hasOfflineServer) {
     echo '</div>';
 }
 
+$metadataEnabled = !empty($data['metadata_lock_enabled']);
+$metadataRows = $data['metadata_lock_info'] ?? [];
+if ($metadataEnabled) {
+    echo '<div class="panel panel-primary" style="margin:10px 10px 0 10px">';
+    echo '<div class="panel-heading">';
+    echo '<h3 class="panel-title">Metadata Lock Info</h3>';
+    echo '</div>';
+    echo '<div class="panel-body" style="padding:0; overflow:auto">';
+
+    echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px;">';
+    echo '<tr>';
+    echo '<th width="6%">'.__("Server").'</th>';
+    echo '<th width="6%">'.__("Thread ID").'</th>';
+    echo '<th width="10%">'.__("Lock mode").'</th>';
+    echo '<th width="8%">'.__("Duration").'</th>';
+    echo '<th width="8%">'.__("Time (ms)").'</th>';
+    echo '<th width="12%">'.__("Type").'</th>';
+    echo '<th width="8%">'.__("Catalog").'</th>';
+    echo '<th width="12%">'.__("Schema").'</th>';
+    echo '<th>'.__("Table").'</th>';
+    echo '</tr>';
+
+    if (!empty($metadataRows) && is_array($metadataRows)) {
+        foreach ($metadataRows as $row) {
+            $lockMode = $row['lock_mode'] ?? '';
+            $lockDuration = $row['lock_duration'] ?? '';
+            $lockTime = $row['lock_time_ms'] ?? '';
+            $lockType = $row['lock_type'] ?? '';
+            $tableCatalog = $row['table_catalog'] ?? '';
+            $tableSchema = $row['table_schema'] ?? '';
+            $tableName = $row['table_name'] ?? '';
+
+            echo '<tr>';
+            echo '<td>'.Display::srv($row['id_mysql_server'] ?? '', false).'</td>';
+            echo '<td>'.htmlspecialchars((string)($row['thread_id'] ?? '')).'</td>';
+            echo '<td>'.htmlspecialchars((string)$lockMode).'</td>';
+            echo '<td>'.htmlspecialchars((string)$lockDuration).'</td>';
+            echo '<td>'.htmlspecialchars((string)$lockTime).'</td>';
+            echo '<td>'.htmlspecialchars((string)$lockType).'</td>';
+            echo '<td>'.htmlspecialchars((string)$tableCatalog).'</td>';
+            echo '<td>'.htmlspecialchars((string)$tableSchema).'</td>';
+            echo '<td>'.htmlspecialchars((string)$tableName).'</td>';
+            echo '</tr>';
+        }
+    } else {
+        echo '<tr><td colspan="9" style="text-align:center">'.__("No metadata locks detected").'</td></tr>';
+    }
+
+    echo '</table>';
+    echo '</div>';
+    echo '</div>';
+}
+
 
 
 echo '<table class="table table-condensed table-bordered table-striped" id="table" style="margin-bottom:0px; margin-top:10px">';

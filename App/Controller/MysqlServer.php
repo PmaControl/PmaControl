@@ -155,8 +155,19 @@ class MysqlServer extends Controller
         $id_mysql_server = $param[0];
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
-        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true"){
+        $isAjax = !empty($_GET['ajax']) && $_GET['ajax'] === "true";
+        if ($isAjax){
             $this->layout_name = false;
+        }
+
+        $metadataLockInfo = [];
+        $metadataLockServers = [];
+        $metadataLockServerIds = [];
+        $checkMetadataLockPlugin = !$isAjax;
+
+        if (!$checkMetadataLockPlugin) {
+            $metadataLockServerIds = self::parseIdList($_GET['metadata_lock_servers'] ?? '');
+            $metadataLockServers = $metadataLockServerIds;
         }
 
         $id_mysql_servers = array();
@@ -313,6 +324,16 @@ class MysqlServer extends Controller
             $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads');
             $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist');
 
+            $metadataLockEnabled = false;
+            if ($checkMetadataLockPlugin) {
+                $metadataLockEnabled = $this->hasMetadataLockInfoPlugin($db);
+                if ($metadataLockEnabled) {
+                    $metadataLockServers[] = $id_mysql_server;
+                }
+            } else {
+                $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
+            }
+
             if ($db->checkVersion(array('MySQL' => '8.0')) && $has_perf_threads)
             {
                 if ($has_innodb_trx) {
@@ -459,6 +480,13 @@ class MysqlServer extends Controller
                 continue;
             }
 
+            if ($metadataLockEnabled) {
+                $metadataLockInfo = array_merge(
+                    $metadataLockInfo,
+                    $this->fetchMetadataLockInfo($db, (int)$id_mysql_server)
+                );
+            }
+
             if ($sql === "SHOW FULL PROCESSLIST") {
                 while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
                     $command = $arr['Command'] ?? $arr['COMMAND'] ?? '';
@@ -520,6 +548,12 @@ class MysqlServer extends Controller
             return $b['time'] <=> $a['time'];
         });
 
+        if (!empty($metadataLockInfo)) {
+            usort($metadataLockInfo, function($a, $b) {
+                return ((int)($b['lock_time_ms'] ?? 0)) <=> ((int)($a['lock_time_ms'] ?? 0));
+            });
+        }
+
         $maxConnections = max(0, (int)$connectionSnapshot['max_connections']);
         $running = max(0, (int)$connectionSnapshot['threads_running']);
         $connected = max(0, (int)$connectionSnapshot['threads_connected']);
@@ -535,6 +569,18 @@ class MysqlServer extends Controller
             'max_used_percent' => $maxConnections > 0 ? round(($maxUsed / $maxConnections) * 100, 2) : 0,
         ];
 
+        $metadataLockServers = array_values(array_unique(array_map('intval', $metadataLockServers)));
+        $data['metadata_lock_info'] = $metadataLockInfo;
+        $data['metadata_lock_enabled'] = !empty($metadataLockServers);
+        $data['metadata_lock_servers'] = $metadataLockServers;
+
+        $metadataLockQuery = '';
+        if (!empty($metadataLockServers)) {
+            $metadataLockQuery = '?metadata_lock_servers=' . implode(',', $metadataLockServers);
+        }
+
+        $metadataLockQueryJs = json_encode($metadataLockQuery);
+
         //debug($data['processlist']);
 
         $time = $nb_server * 500;
@@ -544,10 +590,11 @@ class MysqlServer extends Controller
         {
             var intervalId;
             var refreshInterval = 1000; // Intervalle par défaut de 1 secondes
+            var metadataLockQuery = '.$metadataLockQueryJs.';
 
             function refresh()
             {
-                var myURL = GLIAL_LINK+GLIAL_URL+"ajax:true";
+                var myURL = GLIAL_LINK+GLIAL_URL+"ajax:true"+metadataLockQuery;
                 $("#processlist").load(myURL);
             }
 
@@ -593,6 +640,77 @@ class MysqlServer extends Controller
         }
 
         return '';
+    }
+
+    private static function parseIdList($raw): array
+    {
+        if (is_array($raw)) {
+            $raw = implode(',', $raw);
+        }
+
+        $raw = (string) $raw;
+        if ($raw === '') {
+            return [];
+        }
+
+        $ids = [];
+        foreach (preg_split('/[\s,;]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) as $token) {
+            if (!ctype_digit($token)) {
+                continue;
+            }
+
+            $id = (int) $token;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        return array_values($ids);
+    }
+
+    private function hasMetadataLockInfoPlugin($db): bool
+    {
+        $sql = "SELECT 1
+            FROM information_schema.plugins
+            WHERE PLUGIN_NAME = 'METADATA_LOCK_INFO'
+              AND PLUGIN_STATUS = 'ACTIVE'
+            LIMIT 1";
+
+        $res = $db->sql_query_silent($sql);
+        if (!$res) {
+            return false;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_NUM);
+        return !empty($row);
+    }
+
+    private function fetchMetadataLockInfo($db, int $id_mysql_server): array
+    {
+        $sql = "SELECT
+                THREAD_ID,
+                LOCK_MODE,
+                LOCK_DURATION,
+                LOCK_TIME_MS,
+                LOCK_TYPE,
+                TABLE_CATALOG,
+                TABLE_SCHEMA,
+                TABLE_NAME
+            FROM information_schema.METADATA_LOCK_INFO";
+
+        $res = $db->sql_query_silent($sql);
+        if (!$res) {
+            return [];
+        }
+
+        $rows = [];
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $row = array_change_key_case($arr, CASE_LOWER);
+            $row['id_mysql_server'] = $id_mysql_server;
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
 
