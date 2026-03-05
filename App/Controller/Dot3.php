@@ -271,7 +271,11 @@ class Dot3 extends Controller
         //stats_mysql_processlist
         //end
 
-        $sql = "select * from mysql_database WHERE schema_name not in ('performance_schema','information_schema')";
+        $sql = "select * from mysql_database a
+        INNER JOIN mysql_server b ON b.id = a.id_mysql_server
+        WHERE a.schema_name not in ('performance_schema','information_schema')
+        AND b.is_deleted = 0 AND b.is_vip = 0 AND b.is_proxy = 0 AND b.is_monitored
+        AND schema_name not in ('performance_schema','information_schema')";
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
