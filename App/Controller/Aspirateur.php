@@ -1402,27 +1402,31 @@ class Aspirateur extends Controller
 
         $stats['disks'] = json_encode($tmp);
 
-        // top -bn1 | grep "Cpu(s)"
-        $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
-        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
-
-        $cpu_lines = explode("\n", $cpus);
-
-        $i = 0;
-        foreach ($cpu_lines as $line) {
-
-            $elems = preg_split('/\s+/', $line);
-
-            //debug($elems);
-            //system + user + idle
-            if ($i === 0) {
-                $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
-            } else {
-                $cpu[$elems[0]] = ($elems[1] + $elems[3]) * 100 / ($elems[1] + $elems[3] + $elems[4]);
+        $cpu_usage = $this->getInstantCpuUsage($ssh);
+        if (!empty($cpu_usage)) {
+            $stats['cpu_usage'] = $cpu_usage['cpu'] ?? 0;
+            unset($cpu_usage['cpu']);
+            $stats['cpu_detail'] = json_encode($cpu_usage);
+        } else {
+            // fallback snapshot (legacy behavior if delta-based approach fails)
+            $cpus = trim($ssh->exec("grep 'cpu' /proc/stat"));
+            $cpu_lines = explode("\n", $cpus);
+            $i = 0;
+            foreach ($cpu_lines as $line) {
+                $elems = preg_split('/\s+/', $line);
+                if ($i === 0) {
+                    $total = array_sum(array_map('intval', array_slice($elems, 1)));
+                    $idle = ((int)($elems[4] ?? 0)) + ((int)($elems[5] ?? 0));
+                    $stats['cpu_usage'] = $total > 0 ? (100 - (($idle / $total) * 100)) : 0;
+                } else {
+                    $total = array_sum(array_map('intval', array_slice($elems, 1)));
+                    $idle = ((int)($elems[4] ?? 0)) + ((int)($elems[5] ?? 0));
+                    $cpu[$elems[0]] = $total > 0 ? (100 - (($idle / $total) * 100)) : 0;
+                }
+                $i++;
             }
-            $i++;
+            $stats['cpu_detail'] = json_encode($cpu ?? []);
         }
-        $stats['cpu_detail'] = json_encode($cpu);
 
 
 
@@ -1510,6 +1514,88 @@ class Aspirateur extends Controller
 
 
         return $stats;
+    }
+
+    private function getInstantCpuUsage($ssh, float $intervalSeconds = 0.5): array
+    {
+        $intervalSeconds = max(0.1, $intervalSeconds);
+
+        $startSnapshot = $ssh->exec('cat /proc/stat');
+        if (empty($startSnapshot)) {
+            return [];
+        }
+
+        usleep((int)round($intervalSeconds * 1000000));
+
+        $endSnapshot = $ssh->exec('cat /proc/stat');
+        if (empty($endSnapshot)) {
+            return [];
+        }
+
+        $start = $this->parseProcStatSnapshot($startSnapshot);
+        $end = $this->parseProcStatSnapshot($endSnapshot);
+        if (empty($start) || empty($end)) {
+            return [];
+        }
+
+        return $this->computeCpuUsageDelta($start, $end);
+    }
+
+    private function parseProcStatSnapshot(string $raw): array
+    {
+        $lines = preg_split('/\r?\n/', trim($raw));
+        $stats = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, 'cpu') !== 0) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            $cpu = array_shift($parts);
+            if ($cpu === '') {
+                continue;
+            }
+
+            $values = array_map('intval', $parts);
+            if (count($values) < 4) {
+                continue;
+            }
+
+            $idle = ($values[3] ?? 0) + ($values[4] ?? 0);
+            $total = array_sum($values);
+            $stats[$cpu] = [
+                'total' => $total,
+                'idle' => $idle,
+            ];
+        }
+
+        return $stats;
+    }
+
+    private function computeCpuUsageDelta(array $start, array $end): array
+    {
+        $usage = [];
+
+        foreach ($end as $cpu => $endStat) {
+            if (!isset($start[$cpu])) {
+                continue;
+            }
+
+            $totalDelta = ($endStat['total'] ?? 0) - ($start[$cpu]['total'] ?? 0);
+            $idleDelta = ($endStat['idle'] ?? 0) - ($start[$cpu]['idle'] ?? 0);
+
+            if ($totalDelta <= 0) {
+                $usage[$cpu] = 0;
+                continue;
+            }
+
+            $busy = (1 - ($idleDelta / $totalDelta)) * 100;
+            $usage[$cpu] = max(0, min(100, $busy));
+        }
+
+        return $usage;
     }
 
     private function getMysqlDatadirContext(int $id_mysql_server): array

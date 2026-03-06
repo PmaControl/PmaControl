@@ -749,7 +749,7 @@ class MysqlServer extends Controller
             "wsrep_slave_uk_checks","wsrep_replicate_myisam","wsrep_patch_version","wsrep_dbug_option",
             "ssl_version","ssl_cipher","ssl_server_not_before","ssl_server_not_after",
             "Ssl_version","Ssl_cipher","Ssl_server_not_before","Ssl_server_not_after",
-            "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","memory_total","memory_used","swap_total","swap_used",
+            "hostname","os","distributor","kernel","arch","cpu_thread_count","cpu_usage","cpu_detail","memory_total","memory_used","swap_total","swap_used",
             "buffer_pool_size","buffer_pool_bytes_data","buffer_pool_pages_total","buffer_pool_pages_free","buffer_pool_pages_dirty","buffer_pool_read_requests","buffer_pool_reads",
             "aria_pagecache_buffer_size","aria_log_file_size","aria_block_size","aria_used_for_temp_tables","aria_encrypt_tables","aria_recover","aria_page_checksum",
             "aria_pagecache_blocks_used","aria_pagecache_blocks_unused","aria_pagecache_blocks_not_flushed","aria_pagecache_reads","aria_pagecache_read_requests",
@@ -1422,6 +1422,11 @@ class MysqlServer extends Controller
             'Valid from' => $sslValidFrom ?? 'n/a',
             'Valid to' => $sslValidTo ?? 'n/a',
         ];
+        $resolvedCpuUsage = $g('cpu_usage');
+        if (!is_numeric($resolvedCpuUsage)) {
+            $resolvedCpuUsage = $this->resolveCpuUsageFromDetail($g('cpu_detail'));
+        }
+
         $data['os'] = [
             '<img height="16px" width="16px" src="'.IMG.'icon/hostname.svg" > Hostname' => $g('hostname'),
             '<img height="16px" width="16px" src="'.IMG.'icon/uptime.svg" > Uptime' => $uptime_h,
@@ -1429,7 +1434,7 @@ class MysqlServer extends Controller
             '<img height="16px" width="16px" src="'.IMG.'icon/linux-svgrepo-com.svg" > OS' => self::formatOsWithIcon($g('os'), $g('distributor')),
             '<img height="16px" width="16px" src="'.IMG.'icon/kernel.svg" > Kernel' => $g('kernel'),
             '<img height="16px" width="16px" src="'.IMG.'icon/64bit.svg" > Arch' => self::formatArchWithBitLabel($g('arch')),
-            '<img height="16px" width="16px" src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($g('cpu_usage'), $g('cpu_thread_count')),
+            '<img height="16px" width="16px" src="'.IMG.'icon/cpu.svg" > CPU Usage' => self::formatCpuUsage($resolvedCpuUsage, $g('cpu_thread_count')),
             '<img height="16px" width="16px" src="'.IMG.'icon/ram.svg" > '.self::tr('RAM Usage') => self::formatRamUsage($g('memory_used'), $g('memory_total')),
             '<img height="16px" width="16px" src="'.IMG.'icon/swap.svg" > '.self::tr('SWAP Usage') => self::formatSwapUsage($g('swap_used'), $g('swap_total')),
         ];
@@ -2114,6 +2119,49 @@ class MysqlServer extends Controller
             'color' => $usageColor['color'],
             'level' => $usageColor['level'],
         ];
+    }
+
+    private function resolveCpuUsageFromDetail($cpuDetail)
+    {
+        if ($cpuDetail === null || $cpuDetail === '') {
+            return null;
+        }
+
+        if (is_string($cpuDetail)) {
+            $decoded = json_decode($cpuDetail, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $cpuDetail = $decoded;
+            }
+        }
+
+        if (!is_array($cpuDetail)) {
+            return null;
+        }
+
+        $values = [];
+        foreach ($cpuDetail as $label => $value) {
+            if (!is_string($label) || strpos($label, 'cpu') !== 0) {
+                continue;
+            }
+
+            if (!is_numeric($value)) {
+                continue;
+            }
+
+            if ($label === 'cpu') {
+                return (float)$value;
+            }
+
+            if (preg_match('/^cpu\d+$/', $label)) {
+                $values[] = (float)$value;
+            }
+        }
+
+        if (empty($values)) {
+            return null;
+        }
+
+        return array_sum($values) / count($values);
     }
 
     /**

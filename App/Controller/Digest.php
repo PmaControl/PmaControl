@@ -107,7 +107,7 @@ class Digest extends Controller
         $date = $param[1];
 
         if (empty($id_mysql_server)) {
-            throw new \Exception("Impossible to get id_mysql_server : '".$id_mysql_server."'");
+            throw new Exception("Impossible to get id_mysql_server : '".$id_mysql_server."'");
         }
 
         $queries = Extraction2::display(array("performance_schema::events_statements_summary_by_digest"), 
