@@ -20,6 +20,20 @@ use \Monolog\Handler\StreamHandler;
 //require ROOT."/application/library/Filter.php";
 // ./glial control rebuildAll --debug
 
+/**
+ * Class responsible for integrate workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Integrate extends Controller
 {
     use \App\Library\Filter;
@@ -28,15 +42,64 @@ class Integrate extends Controller
 
     const VARIABLES = "mysql_global_variable";
 
+/**
+ * Stores `$shared` for shared.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $shared;
     //var $memory_file = "answer";
+/**
+ * Stores `$files` for files.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $files = array();
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
     // on list ici les serveurs pour lequel il faut purger les fichiers de md5 pour forcer le rafraichissement
+/**
+ * Stores `$id_mysql_server__to_refresh` for id mysql server  to refresh.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $id_mysql_server__to_refresh = array();
 
+/**
+ * Prepare integrate state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/integrate/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Integrate");
@@ -81,6 +144,27 @@ class Integrate extends Controller
         return true;
     }
 
+/**
+ * Retrieve integrate state through `getIdTsFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @return mixed Returned value for getIdTsFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdTsFile()
+ * @example /fr/integrate/getIdTsFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getIdTsFile($ts_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -106,6 +190,24 @@ class Integrate extends Controller
     }
 
 
+/**
+ * Retrieve integrate state through `get_variable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_variable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::get_variable()
+ * @example /fr/integrate/get_variable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_variable()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -122,6 +224,27 @@ class Integrate extends Controller
         return $variables;
     }
 
+/**
+ * Handle integrate state through `isFloat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return mixed Returned value for isFloat.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isFloat()
+ * @example /fr/integrate/isFloat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function isFloat($value)
     {
         // test before => must be numeric first
@@ -172,6 +295,28 @@ class Integrate extends Controller
         return self::convert($val);
     }
 
+/**
+ * Handle integrate state through `insert_variable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $variables_to_insert Input value for `variables_to_insert`.
+ * @phpstan-param mixed $variables_to_insert
+ * @psalm-param mixed $variables_to_insert
+ * @return void Returned value for insert_variable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::insert_variable()
+ * @example /fr/integrate/insert_variable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_variable($variables_to_insert)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -191,6 +336,27 @@ class Integrate extends Controller
         }
     }
 
+/**
+ * Handle integrate state through `insert_value`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $values Input value for `values`.
+ * @phpstan-param mixed $values
+ * @psalm-param mixed $values
+ * @return mixed Returned value for insert_value.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::insert_value()
+ * @example /fr/integrate/insert_value
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_value($values)
     {
         //Debug::debug($values);
@@ -223,6 +389,30 @@ class Integrate extends Controller
     }
 
 
+/**
+ * Handle integrate state through `insert_slave_value`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $values Input value for `values`.
+ * @phpstan-param mixed $values
+ * @psalm-param mixed $values
+ * @param mixed $val Input value for `val`.
+ * @phpstan-param mixed $val
+ * @psalm-param mixed $val
+ * @return mixed Returned value for insert_slave_value.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::insert_slave_value()
+ * @example /fr/integrate/insert_slave_value
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_slave_value($values, $val = "slave")
     {
         Debug::debug($val, "VAL");
@@ -274,6 +464,30 @@ class Integrate extends Controller
         }
     }
 
+/**
+ * Handle integrate state through `linkServerVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $history Input value for `history`.
+ * @phpstan-param mixed $history
+ * @psalm-param mixed $history
+ * @param mixed $memory_file Input value for `memory_file`.
+ * @phpstan-param mixed $memory_file
+ * @psalm-param mixed $memory_file
+ * @return void Returned value for linkServerVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkServerVariable()
+ * @example /fr/integrate/linkServerVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function linkServerVariable($history, $memory_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -324,6 +538,30 @@ class Integrate extends Controller
         $db->sql_query($sql4);
     }
 
+/**
+ * Handle integrate state through `convert`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $id Input value for `id`.
+ * @phpstan-param mixed $id
+ * @psalm-param mixed $id
+ * @param mixed $revert Input value for `revert`.
+ * @phpstan-param mixed $revert
+ * @psalm-param mixed $revert
+ * @return mixed Returned value for convert.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::convert()
+ * @example /fr/integrate/convert
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function convert($id, $revert = false)
     {
         $gg[1] = "INT";
@@ -338,6 +576,27 @@ class Integrate extends Controller
         return $gg[$id];
     }
 
+/**
+ * Retrieve integrate state through `getIdMemoryFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $memory_file Input value for `memory_file`.
+ * @phpstan-param mixed $memory_file
+ * @psalm-param mixed $memory_file
+ * @return mixed Returned value for getIdMemoryFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMemoryFile()
+ * @example /fr/integrate/getIdMemoryFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getIdMemoryFile($memory_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -367,6 +626,27 @@ class Integrate extends Controller
     }
 
 
+/**
+ * Handle integrate state through `integrateAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for integrateAll.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::integrateAll()
+ * @example /fr/integrate/integrateAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 public function integrateAll($param)
 {
     Debug::parseDebug($param);
@@ -424,6 +704,28 @@ public function integrateAll($param)
     return true;
 }
     // move to other place ?
+/**
+ * Handle integrate state through `isJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for isJson.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isJson()
+ * @example /fr/integrate/isJson
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function isJson($string) {
         
         if ($string == "NULL") {
@@ -440,6 +742,28 @@ public function integrateAll($param)
     }
 
 
+/**
+ * Handle integrate state through `evaluate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for evaluate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::evaluate()
+ * @example /fr/integrate/evaluate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function evaluate($param)
     {
 
@@ -753,6 +1077,27 @@ public function integrateAll($param)
         Debug::debugQueriesOff();
     }
 
+/**
+ * Handle integrate state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/integrate/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function purgeAll($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -772,6 +1117,27 @@ public function integrateAll($param)
 
     }
 
+/**
+ * Handle integrate state through `normalizeSharedMemoryPayload`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $payload Input value for `payload`.
+ * @phpstan-param mixed $payload
+ * @psalm-param mixed $payload
+ * @return mixed Returned value for normalizeSharedMemoryPayload.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::normalizeSharedMemoryPayload()
+ * @example /fr/integrate/normalizeSharedMemoryPayload
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function normalizeSharedMemoryPayload($payload)
     {
         if (is_array($payload)) {

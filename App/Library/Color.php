@@ -7,9 +7,30 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for color workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Color
 {
 
+/**
+ * Stores `$colorMap` for color map.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $colorMap = [
     'aliceblue' => '#F0F8FF',
     'antiquewhite' => '#FAEBD7',
@@ -411,6 +432,27 @@ class Color
     'orchid3' => '#CD69C9',
     'orchid4' => '#8B4789'];
 
+/**
+ * Handle color state through `setFontColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for setFontColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::setFontColor()
+ * @example /fr/color/setFontColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function setFontColor($type)
     {
         $hex = substr(md5($type), 0, 6);
@@ -420,6 +462,27 @@ class Color
         //return $hex['background'];
     }
 
+/**
+ * Handle color state through `setBackgroundColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for setBackgroundColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::setBackgroundColor()
+ * @example /fr/color/setBackgroundColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function setBackgroundColor($type)
     {
         /*
@@ -437,6 +500,27 @@ class Color
         //return $hex['background'];
     }
 
+/**
+ * Handle color state through `testColor`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testColor.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testColor()
+ * @example /fr/color/testColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testColor($param)
     {
         $text = $param[0];
@@ -444,6 +528,27 @@ class Color
         echo $text." : #".$this->setFontColor($text)." : #".$this->setBackgroundColor($text)."\n";
     }
 
+/**
+ * Retrieve color state through `getFontColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $b_color Input value for `b_color`.
+ * @phpstan-param mixed $b_color
+ * @psalm-param mixed $b_color
+ * @return mixed Returned value for getFontColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFontColor()
+ * @example /fr/color/getFontColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFontColor($b_color)
     {
 
@@ -520,6 +625,24 @@ class Color
         return $f_color; //on retourne la couleur de police appropriée
     }
 
+/**
+ * Handle color state through `isDark`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for isDark.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::isDark()
+ * @example /fr/color/isDark
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function isDark()
     {
         //0.3*(couleur_rouge) + 0.59*(couleur_verte) +(0.11*(couleur_bleue)

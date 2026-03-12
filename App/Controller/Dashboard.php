@@ -16,8 +16,43 @@ use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
 
+/**
+ * Class responsible for dashboard workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Dashboard extends Controller
 {
+/**
+ * Handle dashboard state through `json`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for json.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::json()
+ * @example /fr/dashboard/json
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function json($param)
     {
         $this->di['js']->addJavascript(array(
@@ -108,6 +143,27 @@ class Dashboard extends Controller
     }
 
 
+/**
+ * Handle dashboard state through `hitRatio`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for hitRatio.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::hitRatio()
+ * @example /fr/dashboard/hitRatio
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function hitRatio($param)
     {
         Debug::parseDebug($param);
@@ -181,6 +237,27 @@ class Dashboard extends Controller
     }
 
 
+/**
+ * Handle dashboard state through `ratioTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ratioTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ratioTable()
+ * @example /fr/dashboard/ratioTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ratioTable($param)
     {
         Debug::parseDebug($param);
@@ -194,6 +271,27 @@ class Dashboard extends Controller
         Debug::debug($data);
     }
 
+/**
+ * Handle dashboard state through `ratioLockTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ratioLockTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ratioLockTable()
+ * @example /fr/dashboard/ratioLockTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ratioLockTable($param)
     {
         Debug::parseDebug($param);
@@ -208,6 +306,27 @@ class Dashboard extends Controller
     }
 
 
+/**
+ * Handle dashboard state through `ratioThreadCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ratioThreadCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ratioThreadCache()
+ * @example /fr/dashboard/ratioThreadCache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ratioThreadCache($param)
     {
         Debug::parseDebug($param);
@@ -221,6 +340,27 @@ class Dashboard extends Controller
         Debug::debug($data);
     }
 
+/**
+ * Handle dashboard state through `ratioOpenFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ratioOpenFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ratioOpenFile()
+ * @example /fr/dashboard/ratioOpenFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ratioOpenFile($param)
     {
         Debug::parseDebug($param);

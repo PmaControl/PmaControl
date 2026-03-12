@@ -6,16 +6,87 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for crontab workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Crontab extends Controller {
 
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group = "Administration";
+/**
+ * Stores `$debut` for debut.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $debut = '#Les lignes suivantes sont gerees automatiquement via un script PHP. - Merci de ne pas editer manuellement';
+/**
+ * Stores `$fin` for fin.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $fin = '#Les lignes suivantes ne sont plus gerees automatiquement';
 
+/**
+ * Render crontab state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/crontab/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index() {
         
     }
 
+/**
+ * Handle crontab state through `admin_crontab`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for admin_crontab.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::admin_crontab()
+ * @example /fr/crontab/admin_crontab
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function admin_crontab() {
         $module['picture'] = "administration/iconAttendance.gif";
         $module['name'] = __("Crontab");
@@ -77,6 +148,24 @@ class Crontab extends Controller {
         return $module;
     }
 
+/**
+ * Handle crontab state through `view`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for view.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::view()
+ * @example /fr/crontab/view
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function view() {
         $isSection = false;
         exec('crontab -l', $oldCrontab);  /* on récupère l'ancienne crontab dans $oldCrontab */
@@ -111,6 +200,27 @@ class Crontab extends Controller {
         return ($tab);
     }
 
+/**
+ * Handle crontab state through `monitor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for monitor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::monitor()
+ * @example /fr/crontab/monitor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function monitor($param) {
         $this->view = false;
 
@@ -124,3 +234,4 @@ class Crontab extends Controller {
     }
 
 }
+

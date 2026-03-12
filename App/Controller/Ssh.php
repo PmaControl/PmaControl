@@ -17,13 +17,52 @@ use \phpseclib3\Math\BigInteger;
 use \phpseclib3\Crypt\RSA;
 use \phpseclib3\Net\SSH2;
 
+/**
+ * Class responsible for ssh workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Ssh extends Controller
 {
     const KEY_WORKER_ASSOCIATE = 435665;
     const NB_WORKER            = 10;
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $logger;
 
+/**
+ * Handle ssh state through `keys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for keys.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::keys()
+ * @example /fr/ssh/keys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function keys()
     {
         //https://guacamole.apache.org/releases/
@@ -31,6 +70,27 @@ class Ssh extends Controller
     }
 
 
+/**
+ * Prepare ssh state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/ssh/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $logger       = new Logger('Daemon');
@@ -41,6 +101,27 @@ class Ssh extends Controller
         $this->logger = $logger;
     }
 
+/**
+ * Create ssh state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/ssh/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $this->title = '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>'." ".__("Add a key SSH");
@@ -113,6 +194,28 @@ class Ssh extends Controller
          */
     }
 
+/**
+ * Update ssh state through `save`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $keys Input value for `keys`.
+ * @phpstan-param mixed $keys
+ * @psalm-param mixed $keys
+ * @return void Returned value for save.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::save()
+ * @example /fr/ssh/save
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function save($keys)
     {
         if (!empty($keys)) {
@@ -228,6 +331,28 @@ class Ssh extends Controller
         }
     }
 
+/**
+ * Handle ssh state through `parseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $configFile Input value for `configFile`.
+ * @phpstan-param mixed $configFile
+ * @psalm-param mixed $configFile
+ * @return mixed Returned value for parseConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::parseConfig()
+ * @example /fr/ssh/parseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseConfig($configFile)
     {
 
@@ -267,6 +392,24 @@ class Ssh extends Controller
         throw new \Exception("PMACTRL-254 : JSON : ".$error, 80);
     }
 
+/**
+ * Render ssh state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/ssh/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -311,6 +454,27 @@ class Ssh extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Delete ssh state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/ssh/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         $this->view = false;
@@ -327,6 +491,27 @@ class Ssh extends Controller
         header("location: ".LINK.$this->getClass()."/index");
     }
 
+/**
+ * Handle ssh state through `associate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for associate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::associate()
+ * @example /fr/ssh/associate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function associate($param)
     {
         $this->view = false;
@@ -467,6 +652,27 @@ AND b.id NOT IN (select id from z)";
         }
     }
 
+/**
+ * Retrieve ssh state through `getSshKeys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_ssh_key Input value for `id_ssh_key`.
+ * @phpstan-param int $id_ssh_key
+ * @psalm-param int $id_ssh_key
+ * @return mixed Returned value for getSshKeys.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSshKeys()
+ * @example /fr/ssh/getSshKeys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getSshKeys($id_ssh_key = "")
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -489,6 +695,27 @@ AND b.id NOT IN (select id from z)";
         return $key;
     }
 
+/**
+ * Handle ssh state through `tryAssociate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for tryAssociate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::tryAssociate()
+ * @example /fr/ssh/tryAssociate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tryAssociate($param)
     {
         if (! defined('NET_SSH2_LOGGING'))
@@ -590,6 +817,27 @@ echo $ssh->getLog();
         }
     }
 
+/**
+ * Handle ssh state through `display_public`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for display_public.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::display_public()
+ * @example /fr/ssh/display_public
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function display_public($param)
     {
         $id_ssh_key = $param[0];
@@ -608,6 +856,27 @@ echo $ssh->getLog();
         }
     }
 
+/**
+ * Handle ssh state through `test_key`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test_key.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test_key()
+ * @example /fr/ssh/test_key
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test_key($param)
     {
         Debug::parseDebug($param);
@@ -644,6 +913,27 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         Debug::debug($ret);
     }
 
+/**
+ * Handle ssh state through `test2_key`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2_key.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2_key()
+ * @example /fr/ssh/test2_key
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2_key($param)
     {
         Debug::parseDebug($param);
@@ -654,6 +944,27 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         Debug::debug($ret);
     }
 
+/**
+ * Handle ssh state through `generate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for generate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generate()
+ * @example /fr/ssh/generate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generate($param)
     {
 
@@ -726,6 +1037,27 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         }
     }
 
+/**
+ * Handle ssh state through `edit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for edit.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::edit()
+ * @example /fr/ssh/edit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function edit($param)
     {
         $id_ssh_key            = $param[0];

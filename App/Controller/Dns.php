@@ -15,8 +15,43 @@ use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction2;
 
+/**
+ * Class responsible for dns workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Dns extends Controller
 {
+/**
+ * Handle dns state through `check`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for check.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check()
+ * @example /fr/dns/check
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check($param)
     {
         Debug::parseDebug($param);

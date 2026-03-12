@@ -34,10 +34,42 @@ maxctrl create user MONUSER 'MONPASSWORD' --type=admin
 
 class MaxScale extends Controller {
 
+/**
+ * Stores `$version_api` for version api.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     static $version_api = "v1";
 
+/**
+ * Stores `$maxscale_cache` for maxscale cache.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $maxscale_cache = array();
 
+/**
+ * Render max scale state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/maxscale/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         $this->di['js']->addJavascript(array('clipboard.min.js', 'Client/index.js', 'Server/main.js'));
@@ -103,6 +135,28 @@ class MaxScale extends Controller {
     }
 
 
+/**
+ * Handle max scale state through `curl`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for curl.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::curl()
+ * @example /fr/maxscale/curl
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function curl($param)
     {
 
@@ -180,6 +234,26 @@ class MaxScale extends Controller {
         throw new \Exception("[PMACONTROL-2003] Unable to connect to MaxScale at {$host}:{$port}. Last error: " . $lastError->getMessage());
     }
 
+/**
+ * Retrieve `getIdMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getIdMysqlServer(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getIdMysqlServer($param)
     {
         Debug::parseDebug($param);
@@ -247,6 +321,26 @@ class MaxScale extends Controller {
     }
 
 
+/**
+ * Retrieve `getVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getVersion.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getVersion(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getVersion($param)
     {
         Debug::parseDebug($param);
@@ -264,6 +358,27 @@ class MaxScale extends Controller {
     }
 
 
+/**
+ * Retrieve `getMainInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getMainInfo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example getMainInfo(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getMainInfo($param)
     {
         Debug::parseDebug($param);
@@ -296,6 +411,26 @@ class MaxScale extends Controller {
 
     }
 
+/**
+ * Handle `rewriteJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $servers Input value for `servers`.
+ * @phpstan-param mixed $servers
+ * @psalm-param mixed $servers
+ * @return mixed Returned value for rewriteJson.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example rewriteJson(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function rewriteJson($servers = array())
     {
         /*
@@ -412,6 +547,26 @@ class MaxScale extends Controller {
     }
 
 
+/**
+ * Handle `servers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for servers.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example servers(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function servers($param)
     {
 
@@ -419,6 +574,26 @@ class MaxScale extends Controller {
     }
 
 
+/**
+ * Retrieve `getErrors`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getErrors.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example getErrors(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getErrors($param)
     {
         Debug::parseDebug($param);
@@ -433,6 +608,32 @@ class MaxScale extends Controller {
 
 
 
+/**
+ * Delete `removeArraysDeeperThan`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $array Input value for `array`.
+ * @phpstan-param array $array
+ * @psalm-param array $array
+ * @param int $maxDepth Input value for `maxDepth`.
+ * @phpstan-param int $maxDepth
+ * @psalm-param int $maxDepth
+ * @param int $currentDepth Input value for `currentDepth`.
+ * @phpstan-param int $currentDepth
+ * @psalm-param int $currentDepth
+ * @return array Returned value for removeArraysDeeperThan.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example removeArraysDeeperThan(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function removeArraysDeeperThan(array $array, int $maxDepth = 4, int $currentDepth = 1): array {
     foreach ($array as $key => $value) {
         if (is_array($value)) {

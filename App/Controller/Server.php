@@ -36,10 +36,45 @@ class Server extends Controller
 {
 
     use \App\Library\Filter;
+/**
+ * Stores `$clip` for clip.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $clip = 0;
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Prepare server state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/server/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Server");
@@ -50,6 +85,24 @@ class Server extends Controller
     }
 
 //dba_source
+/**
+ * Handle server state through `hardware`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for hardware.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::hardware()
+ * @example /fr/server/hardware
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function hardware()
     {
         $db           = Sgbd::sql(DB_DEFAULT);
@@ -411,6 +464,24 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `database`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for database.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::database()
+ * @example /fr/server/database
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function database()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -436,6 +507,24 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `statistics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for statistics.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::statistics()
+ * @example /fr/server/statistics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistics()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -461,11 +550,50 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `logs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for logs.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logs()
+ * @example /fr/server/logs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function logs()
     {
 //used with recursive
     }
 
+/**
+ * Handle server state through `buildQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $fields Input value for `fields`.
+ * @phpstan-param mixed $fields
+ * @psalm-param mixed $fields
+ * @return mixed Returned value for buildQuery.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::buildQuery()
+ * @example /fr/server/buildQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildQuery($fields)
     {
         $sql = 'select a.ip, a.port, a.id, a.name,';
@@ -502,6 +630,24 @@ class Server extends Controller
         return $sql;
     }
 
+/**
+ * Handle server state through `memory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for memory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::memory()
+ * @example /fr/server/memory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function memory()
     {
         $this->title  = __("Memory");
@@ -521,6 +667,24 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Render server state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/server/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $this->title  = __("Index usage");
@@ -873,6 +1037,24 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/server/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function settings()
     {
 
@@ -990,6 +1172,24 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve server state through `getClients`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getClients.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getClients()
+ * @example /fr/server/getClients
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getClients()
     {
 
@@ -1011,6 +1211,24 @@ var myChart = new Chart(ctx, {
         return $data['client'];
     }
 
+/**
+ * Retrieve server state through `getEnvironments`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getEnvironments.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getEnvironments()
+ * @example /fr/server/getEnvironments
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getEnvironments()
     {
 
@@ -1032,11 +1250,47 @@ var myChart = new Chart(ctx, {
         return $data['environment'];
     }
 
+/**
+ * Create server state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/server/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add()
     {
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
+/**
+ * Handle server state through `cache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for cache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cache()
+ * @example /fr/server/cache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cache()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1044,6 +1298,27 @@ var myChart = new Chart(ctx, {
 // Qcache_hits / (Qcache_hits + Com_select )
     }
 
+/**
+ * Handle server state through `passwd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for passwd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::passwd()
+ * @example /fr/server/passwd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function passwd($param)
     {
 
@@ -1063,11 +1338,50 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/server/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function show($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
+/**
+ * Update server state through `updateHostname`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for updateHostname.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateHostname()
+ * @example /fr/server/updateHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateHostname()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1083,6 +1397,24 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle server state through `box`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for box.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::box()
+ * @example /fr/server/box
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function box()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -1113,6 +1445,28 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `password`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for password.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::password()
+ * @example /fr/server/password
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function password($param)
     {
         $id_server = $param[0];
@@ -1162,6 +1516,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle server state through `acknowledge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for acknowledge.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::acknowledge()
+ * @example /fr/server/acknowledge
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function acknowledge($param)
     {
         $this->view = false;
@@ -1176,6 +1551,27 @@ var myChart = new Chart(ctx, {
         header("location: ".LINK.$this->getClass()."/main/");
     }
 
+/**
+ * Delete server state through `remove`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for remove.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::remove()
+ * @example /fr/server/remove
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function remove($param)
     {
 
@@ -1201,11 +1597,53 @@ var myChart = new Chart(ctx, {
         header("location: ".LINK.$this->getClass()."/settings/");
     }
 
+/**
+ * Handle server state through `acknowledgedBy`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for acknowledgedBy.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::acknowledgedBy()
+ * @example /fr/server/acknowledgedBy
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function acknowledgedBy($param)
     {
         
     }
 
+/**
+ * Toggle server state through `toggleGeneralLog`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for toggleGeneralLog.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::toggleGeneralLog()
+ * @example /fr/server/toggleGeneralLog
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function toggleGeneralLog($param)
     {
         $this->view = false;
@@ -1303,6 +1741,27 @@ var myChart = new Chart(ctx, {
     }
 
 
+/**
+ * Handle server state through `testGetDaemonRunning`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testGetDaemonRunning.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testGetDaemonRunning()
+ * @example /fr/server/testGetDaemonRunning
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function testGetDaemonRunning($param)
     {
         define('EngineV4_PATH_LOCK', __DIR__ . '/tmp/lock/');
@@ -1340,6 +1799,27 @@ var myChart = new Chart(ctx, {
         sleep(3);
     }
 
+/**
+ * Handle server state through `retract`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for retract.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::retract()
+ * @example /fr/server/retract
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function retract($param)
     {
         $this->view = false;
@@ -1355,6 +1835,27 @@ var myChart = new Chart(ctx, {
     }
 
 
+/**
+ * Retrieve server state through `getFlag`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getFlag.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getFlag()
+ * @example /fr/server/getFlag
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getFlag($param)
     {
         $reader = new Reader('/path/to/maxmind-database.mmdb');
@@ -1366,6 +1867,27 @@ var myChart = new Chart(ctx, {
 
     }
 
+/**
+ * Handle server state through `ssl`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ssl.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ssl()
+ * @example /fr/server/ssl
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ssl($param)
     {
         Debug::parseDebug($param);

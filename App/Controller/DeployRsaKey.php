@@ -18,6 +18,20 @@ use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for deploy rsa key workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class DeployRsaKey extends Controller {
 
     const KEY_WORKER_DEPLOY = 148759;
@@ -25,6 +39,24 @@ class DeployRsaKey extends Controller {
     const KEY_PRIVATE = "private_key";
     const NB_WORKER = 10;
 
+/**
+ * Render deploy rsa key state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/deployrsakey/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         //Debug::$debug = true;
@@ -311,11 +343,53 @@ $("#ssh_key-id").change(function() {
         return true;
     }
 
+/**
+ * Handle deploy rsa key state through `dropKeySsh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for dropKeySsh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropKeySsh()
+ * @example /fr/deployrsakey/dropKeySsh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropKeySsh($params) {
 //drop des clef ssh sur tout les serveur ou sur un
 //a coder
     }
 
+/**
+ * Handle deploy rsa key state through `testkey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testkey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testkey()
+ * @example /fr/deployrsakey/testkey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testkey($param) {
 
         Debug::parseDebug($param);
@@ -568,6 +642,24 @@ $("#ssh_key-id").change(function() {
         return $data;
     }
 
+/**
+ * Handle deploy rsa key state through `testParseUserKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for testParseUserKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testParseUserKey()
+ * @example /fr/deployrsakey/testParseUserKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testParseUserKey() {
         Debug::$debug = true;
 
@@ -576,6 +668,27 @@ $("#ssh_key-id").change(function() {
         Debug::debug($ret);
     }
 
+/**
+ * Handle deploy rsa key state through `queue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for queue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::queue()
+ * @example /fr/deployrsakey/queue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function queue($param) {
 
         // system de queue
@@ -665,3 +778,4 @@ $("#ssh_key-id").change(function() {
     }
 
 }
+

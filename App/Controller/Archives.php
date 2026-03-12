@@ -15,6 +15,20 @@ use \App\Library\Debug;
 use \App\Library\System;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for archives workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Archives extends Controller
 {
 
@@ -22,12 +36,61 @@ class Archives extends Controller
     use \App\Library\Filter;
     use \App\Library\Scp;
     use \App\Library\File;
+/**
+ * Stores `$id_user_main` for id user main.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $id_user_main    = 0;
+/**
+ * Stores `$id_archive_load` for id archive load.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $id_archive_load = 0;
+/**
+ * Stores `$user` for user.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $user            = array();
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Render archives state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/archives/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -154,6 +217,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `file_available`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for file_available.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::file_available()
+ * @example /fr/archives/file_available
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function file_available($param)
     {
         $this->title  = '<span class="glyphicon glyphicon-book" aria-hidden="true"></span> '.__("Archives");
@@ -507,6 +591,27 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle archives state through `history`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for history.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::history()
+ * @example /fr/archives/history
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function history($param)
     {
         $_GET['path'] = __FUNCTION__;
@@ -542,6 +647,27 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `restore`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for restore.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::restore()
+ * @example /fr/archives/restore
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function restore($param)
     {
 
@@ -561,6 +687,27 @@ ORDER BY a.id DESC";
         }
     }
 
+/**
+ * Handle archives state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/archives/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         if (empty($_GET['path'])) {
@@ -594,6 +741,24 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `testPid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for testPid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testPid()
+ * @example /fr/archives/testPid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testPid()
     {
 
@@ -614,6 +779,27 @@ ORDER BY a.id DESC";
         }
     }
 
+/**
+ * Prepare archives state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/archives/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $logger       = new Logger('archive');
@@ -624,6 +810,34 @@ ORDER BY a.id DESC";
         $this->logger = $logger;
     }
 
+/**
+ * Handle archives state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $level Input value for `level`.
+ * @phpstan-param mixed $level
+ * @psalm-param mixed $level
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::log()
+ * @example /fr/archives/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($level, $type, $msg)
     {
         if (empty($this->id_user_main)) {
@@ -640,6 +854,24 @@ ORDER BY a.id DESC";
             .$user['firstname']." ".$user['name']." (id:".$user['id'].")");
     }
 
+/**
+ * Retrieve archives state through `getUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getUser.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getUser()
+ * @example /fr/archives/getUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getUser()
     {
         if (empty($this->user[$this->id_user_main])) {
@@ -661,6 +893,27 @@ ORDER BY a.id DESC";
         return $this->user[$this->id_user_main];
     }
 
+/**
+ * Handle archives state through `detail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for detail.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::detail()
+ * @example /fr/archives/detail
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function detail($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -705,6 +958,27 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `load_archive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for load_archive.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::load_archive()
+ * @example /fr/archives/load_archive
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function load_archive($param)
     {
         Debug::parseDebug($param);
@@ -780,6 +1054,30 @@ ORDER BY a.id DESC";
     }
 
     // to move in class logs
+/**
+ * Handle archives state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $lines Input value for `lines`.
+ * @phpstan-param mixed $lines
+ * @psalm-param mixed $lines
+ * @param int $id_cleaner Input value for `id_cleaner`.
+ * @phpstan-param int $id_cleaner
+ * @psalm-param int $id_cleaner
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/archives/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function format($lines, $id_cleaner)
     {
         // cette fonction a besoin d'être optimisé !!
@@ -826,6 +1124,27 @@ ORDER BY a.id DESC";
         return $data;
     }
 
+/**
+ * Handle archives state through `setColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for setColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::setColor()
+ * @example /fr/archives/setColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setColor($type)
     {
         $hex = substr(md5($type), 0, 6);
@@ -835,6 +1154,27 @@ ORDER BY a.id DESC";
         //return $hex['background'];
     }
 
+/**
+ * Handle archives state through `hexToRgb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $colorName Input value for `colorName`.
+ * @phpstan-param mixed $colorName
+ * @psalm-param mixed $colorName
+ * @return mixed Returned value for hexToRgb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::hexToRgb()
+ * @example /fr/archives/hexToRgb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function hexToRgb($colorName)
     {
         list($r, $g, $b) = array_map(

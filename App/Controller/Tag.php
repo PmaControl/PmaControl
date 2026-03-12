@@ -14,6 +14,27 @@ use \Glial\Sgbd\Sgbd;
  */
 class Tag extends Controller {
 
+/**
+ * Render tag state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/tag/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index($params) {
 
 
@@ -44,6 +65,24 @@ class Tag extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Create tag state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/tag/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add() {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -80,6 +119,24 @@ class Tag extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Update tag state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/tag/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update() {
 
         $this->view = false;
@@ -100,3 +157,4 @@ class Tag extends Controller {
     }
 
 }
+

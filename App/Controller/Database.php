@@ -25,10 +25,49 @@ use \Glial\Synapse\FactoryController;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
+/**
+ * Class responsible for database workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Database extends Controller
 {
+/**
+ * Stores `$log_file` for log file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $log_file = TMP."log/";
 
+/**
+ * Render database state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/database/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -52,6 +91,24 @@ class Database extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Create database state through `create`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for create.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::create()
+ * @example /fr/database/create
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -146,6 +203,27 @@ class Database extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle database state through `generatePassword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for generatePassword.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generatePassword()
+ * @example /fr/database/generatePassword
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function generatePassword($length = 32)
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -159,6 +237,27 @@ class Database extends Controller
         return $result;
     }
 
+/**
+ * Handle database state through `refresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::refresh()
+ * @example /fr/database/refresh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function refresh($param)
     {
 
@@ -361,6 +460,27 @@ class Database extends Controller
         throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
     }
 
+/**
+ * Handle database state through `rename`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rename.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rename()
+ * @example /fr/database/rename
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rename($param)
     {
 
@@ -760,6 +880,24 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
         return $nb_renamed;
     }
 
+/**
+ * Create database state through `create_trigger`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for create_trigger.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::create_trigger()
+ * @example /fr/database/create_trigger
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create_trigger()
     {
 
@@ -783,6 +921,27 @@ END;";
 
     }
 
+/**
+ * Handle database state through `testu`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testu()
+ * @example /fr/database/testu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testu($param)
     {
         Debug::parseDebug($param);
@@ -803,6 +962,33 @@ END;";
         Debug::debug($users);
     }
 
+/**
+ * Retrieve database state through `getChangeGrant`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param mixed $OLD_DB Input value for `OLD_DB`.
+ * @phpstan-param mixed $OLD_DB
+ * @psalm-param mixed $OLD_DB
+ * @param mixed $NEW_DB Input value for `NEW_DB`.
+ * @phpstan-param mixed $NEW_DB
+ * @psalm-param mixed $NEW_DB
+ * @return mixed Returned value for getChangeGrant.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getChangeGrant()
+ * @example /fr/database/getChangeGrant
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getChangeGrant($db_link, $OLD_DB, $NEW_DB)
     {
         // to upgrade to do with `mariadb.sys`@`localhost`
@@ -831,6 +1017,27 @@ END;";
         return $data;
     }
 
+/**
+ * Create database state through `addRefresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addRefresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addRefresh()
+ * @example /fr/database/addRefresh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addRefresh($param)
     {
         Debug::parseDebug($param);
@@ -872,6 +1079,27 @@ END;";
         }
     }
 
+/**
+ * Handle database state through `analyze`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for analyze.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::analyze()
+ * @example /fr/database/analyze
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function analyze($param)
     {
 
@@ -976,6 +1204,27 @@ END;";
         }
     }
 
+/**
+ * Handle database state through `compare`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for compare.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compare()
+ * @example /fr/database/compare
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compare($param)
     {
         Debug::parseDebug($param);
@@ -1066,6 +1315,27 @@ END;";
         $this->set('data', $data);
     }
 
+/**
+ * Handle database state through `analyse`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for analyse.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::analyse()
+ * @example /fr/database/analyse
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function analyse($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1149,11 +1419,62 @@ END;";
         return $data;
     }
 
+/**
+ * Prepare database state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/database/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         Debug::parseDebug($param);
     }
 
+/**
+ * Handle database state through `checkConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_server1 Input value for `id_server1`.
+ * @phpstan-param int $id_server1
+ * @psalm-param int $id_server1
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param int $id_server2 Input value for `id_server2`.
+ * @phpstan-param int $id_server2
+ * @psalm-param int $id_server2
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @return mixed Returned value for checkConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::checkConfig()
+ * @example /fr/database/checkConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function checkConfig($id_server1, $db1, $id_server2, $db2)
     {
         $db    = Sgbd::sql(DB_DEFAULT);
@@ -1243,6 +1564,27 @@ END;";
         return $data;
     }
 
+/**
+ * Handle database state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/database/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function show($param)
     {
 
@@ -1264,6 +1606,27 @@ END;";
         $this->set("data", $data);
     }
 
+/**
+ * Handle database state through `size`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for size.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::size()
+ * @example /fr/database/size
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function size($param)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -1277,6 +1640,27 @@ END;";
         $this->set("data", $data);
     }
 
+/**
+ * Handle database state through `data`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for data.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::data()
+ * @example /fr/database/data
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function data($param)
     {
         Debug::parseDebug($param);
@@ -1367,6 +1751,27 @@ END;";
         $this->set('data', $data);
     }
 
+/**
+ * Handle database state through `dataCompate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dataCompate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dataCompate()
+ * @example /fr/database/dataCompate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dataCompate($param)
     {
         Debug::parseDebug($param);
@@ -1565,6 +1970,27 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         );
     }
 
+/**
+ * Retrieve database state through `getTableInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableInfo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableInfo()
+ * @example /fr/database/getTableInfo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableInfo($param)
     {
 
@@ -1618,6 +2044,27 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         return $ret;
     }
 
+/**
+ * Retrieve database state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPrimaryKey()
+ * @example /fr/database/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($param)
     {
         Debug::parseDebug($param);
@@ -1664,6 +2111,28 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve database state through `getObject`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getObject.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getObject()
+ * @example /fr/database/getObject
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getObject($param)
     {
 
@@ -1722,6 +2191,27 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         return $data;
     }
 
+/**
+ * Handle database state through `dot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dot()
+ * @example /fr/database/dot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dot($param)
     {
         Debug::parseDebug($param);

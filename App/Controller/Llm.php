@@ -38,9 +38,44 @@ use Glial\Synapse\Controller;
 use App\Library\Debug;
 
 
+/**
+ * Class responsible for llm workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Llm extends Controller{
 
 
+/**
+ * Handle llm state through `analyze`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for analyze.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::analyze()
+ * @example /fr/llm/analyze
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function analyze($param)
     {
         Debug::parseDebug($param);
@@ -172,6 +207,24 @@ class Llm extends Controller{
         return $json['response'] ?? null;
     }
 
+/**
+ * Handle llm state through `buildSystemPrompt`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for buildSystemPrompt.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::buildSystemPrompt()
+ * @example /fr/llm/buildSystemPrompt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildSystemPrompt()
     {
         return <<<SYS
@@ -219,6 +272,27 @@ SYS;
         return $data;
     }
 
+/**
+ * Handle llm state through `handleNonOkStatus`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array $parsed Input value for `parsed`.
+ * @phpstan-param array $parsed
+ * @psalm-param array $parsed
+ * @return void Returned value for handleNonOkStatus.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::handleNonOkStatus()
+ * @example /fr/llm/handleNonOkStatus
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function handleNonOkStatus(array $parsed)
     {
         echo "⚠️ Status: {$parsed['status']}\n";
@@ -255,6 +329,26 @@ SYS;
         }
     }
 
+/**
+ * Handle `generateAlterSQL`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array $indexes Input value for `indexes`.
+ * @phpstan-param array $indexes
+ * @psalm-param array $indexes
+ * @return void Returned value for generateAlterSQL.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example generateAlterSQL(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateAlterSQL(array $indexes)
     {
         echo "\n🛠 ALTER TABLE statements:\n";
@@ -268,3 +362,4 @@ SYS;
     
 
 }
+

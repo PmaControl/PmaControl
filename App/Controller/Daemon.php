@@ -14,9 +14,44 @@ use \App\Library\Microsecond;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for daemon workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Daemon extends Controller
 {
 
+/**
+ * Render daemon state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/daemon/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -76,18 +111,81 @@ class Daemon extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle daemon state through `startAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for startAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::startAll()
+ * @example /fr/daemon/startAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function startAll($param)
     {
         Debug::parseDebug($param);
         $this->manageDaemon("start");
     }
 
+/**
+ * Handle daemon state through `stopAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for stopAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::stopAll()
+ * @example /fr/daemon/stopAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function stopAll($param)
     {
         Debug::parseDebug($param);
         $this->manageDaemon("stop");
     }
 
+/**
+ * Handle daemon state through `manageDaemon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $commande Input value for `commande`.
+ * @phpstan-param mixed $commande
+ * @psalm-param mixed $commande
+ * @return void Returned value for manageDaemon.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::manageDaemon()
+ * @example /fr/daemon/manageDaemon
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function manageDaemon($commande)
     {
 
@@ -136,6 +234,24 @@ class Daemon extends Controller
         }
     }
 
+/**
+ * Update daemon state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/daemon/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update()
     {
 
@@ -156,6 +272,27 @@ class Daemon extends Controller
         }
     }
 
+/**
+ * Handle daemon state through `refresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::refresh()
+ * @example /fr/daemon/refresh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function refresh($param)
     {
 
@@ -196,6 +333,27 @@ class Daemon extends Controller
         }
     }
 
+/**
+ * Retrieve daemon state through `getStatitics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getStatitics.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getStatitics()
+ * @example /fr/daemon/getStatitics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getStatitics($param = array())
     {
 
@@ -246,6 +404,27 @@ class Daemon extends Controller
     }
 
 
+/**
+ * Retrieve daemon state through `getAllProcessPhp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getAllProcessPhp.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getAllProcessPhp()
+ * @example /fr/daemon/getAllProcessPhp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getAllProcessPhp($param)
     {
 

@@ -11,10 +11,45 @@ use \App\Library\Extraction2;
 
 
 
+/**
+ * Class responsible for mysql user workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class MysqlUser extends Controller
 {
     const USER_DIR = "/srv/www/pmacontrol/data/backup/user";
 
+/**
+ * Render mysql user state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/mysqluser/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -214,11 +249,50 @@ class MysqlUser extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql user state through `backup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for backup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backup()
+ * @example /fr/mysqluser/backup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backup()
     {
 
     }
 
+/**
+ * Handle mysql user state through `cmpHost`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cmpHost.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cmpHost()
+ * @example /fr/mysqluser/cmpHost
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmpHost($param)
     {
         Debug::parseDebug($param);
@@ -271,6 +345,27 @@ class MysqlUser extends Controller
         
     }
 
+/**
+ * Handle mysql user state through `security`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for security.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::security()
+ * @example /fr/mysqluser/security
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function security($param)
     {
         Debug::parseDebug($param);
@@ -382,6 +477,27 @@ SQL;
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql user state through `role`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for role.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::role()
+ * @example /fr/mysqluser/role
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function role($param) {
 
         Debug::parseDebug($param);
@@ -399,6 +515,27 @@ SQL;
     }
 
 
+/**
+ * Handle mysql user state through `export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export()
+ * @example /fr/mysqluser/export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function export($param)
     {
 
@@ -467,3 +604,4 @@ SQL;
 
 
 }
+

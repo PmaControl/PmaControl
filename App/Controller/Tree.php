@@ -9,9 +9,44 @@ use \Glial\Sgbd\Sgbd;
 
 // https://codepen.io/gab/pen/Bxpwi
 
+/**
+ * Class responsible for tree workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Tree extends Controller
 {
 
+/**
+ * Render tree state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/tree/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
@@ -72,6 +107,27 @@ class Tree extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Delete tree state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/tree/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -85,6 +141,27 @@ class Tree extends Controller
         header("location: ".LINK."tree/index/".$id_menu);
     }
 
+/**
+ * Create tree state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/tree/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -101,6 +178,27 @@ class Tree extends Controller
         }
     }
 
+/**
+ * Handle tree state through `up`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for up.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::up()
+ * @example /fr/tree/up
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function up($param)
     {
 
@@ -118,6 +216,27 @@ class Tree extends Controller
         header("location: ".LINK."tree/index/".$id_menu);
     }
 
+/**
+ * Update tree state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/tree/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param)
     {
         $this->view        = false;
@@ -135,6 +254,27 @@ class Tree extends Controller
         }
     }
 
+/**
+ * Retrieve tree state through `getCountFather`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getCountFather.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getCountFather()
+ * @example /fr/tree/getCountFather
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getCountFather($param)
     {
 
@@ -152,6 +292,27 @@ class Tree extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle tree state through `left`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for left.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::left()
+ * @example /fr/tree/left
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function left($param)
     {
         $id_menu = $param[0];

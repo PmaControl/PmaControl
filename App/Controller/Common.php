@@ -10,15 +10,54 @@ use \Glial\Sgbd\Sgbd;
 //use \Glial\Cli\Color;
 
 
+/**
+ * Class responsible for common workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Common extends Controller
 {
 
     use \App\Library\Filter;
     //list des tag pour eviter de faire la requete a chaque fois
+/**
+ * Stores `$tags` for tags.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $tags = array();
 
     //dba_source
 
+/**
+ * Render common state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/common/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -125,6 +164,27 @@ class Common extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Delete common state through `remove`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for remove.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::remove()
+ * @example /fr/common/remove
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function remove($array)
     {
 
@@ -212,6 +272,28 @@ class Common extends Controller
         return $data;
     }
 
+/**
+ * Retrieve common state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getDbLinkFromId()
+ * @example /fr/common/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db)
     {
         if (IS_AJAX) {
@@ -233,6 +315,27 @@ class Common extends Controller
         return $db_link;
     }
 
+/**
+ * Retrieve common state through `getTableByServerAndDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableByServerAndDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableByServerAndDatabase()
+ * @example /fr/common/getTableByServerAndDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTableByServerAndDatabase($param)
     {
         if (IS_AJAX) {
@@ -388,6 +491,27 @@ class Common extends Controller
         return $data['list_server'];
     }
 
+/**
+ * Retrieve common state through `getTsVariables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTsVariables.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTsVariables()
+ * @example /fr/common/getTsVariables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTsVariables($param = array())
     {
         
@@ -439,6 +563,27 @@ class Common extends Controller
 
 
 
+/**
+ * Retrieve common state through `getTsVariableJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTsVariableJson.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTsVariableJson()
+ * @example /fr/common/getTsVariableJson
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTsVariableJson($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -495,6 +640,27 @@ class Common extends Controller
 
 
 
+/**
+ * Retrieve common state through `getTagByServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTagByServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTagByServer()
+ * @example /fr/common/getTagByServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTagByServer($param)
     {
 
@@ -540,6 +706,27 @@ class Common extends Controller
         return $data;
     }
 
+/**
+ * Retrieve common state through `getTagArray`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return mixed Returned value for getTagArray.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTagArray()
+ * @example /fr/common/getTagArray
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getTagArray($db)
     {
         if (empty(self::$tags)) {
@@ -566,6 +753,27 @@ class Common extends Controller
     }
 
 
+/**
+ * Retrieve common state through `getAvailable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getAvailable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getAvailable()
+ * @example /fr/common/getAvailable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getAvailable($param = array())
     {
 

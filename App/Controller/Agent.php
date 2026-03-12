@@ -19,14 +19,63 @@ use \App\Library\Microsecond;
 use \App\Library\System;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for agent workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Agent extends Controller {
 
     use \App\Library\Decoupage;
 
+/**
+ * Stores `$debug` for debug.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     var $debug = false;
+/**
+ * Stores `$url` for url.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $url = "Daemon/index/";
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
+/**
+ * Stores `$log_file` for log file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $log_file = LOG_FILE;
+/**
+ * Stores `$loop` for loop.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $loop = 0;
     
     /*
@@ -393,6 +442,27 @@ class Agent extends Controller {
 
 
 
+/**
+ * Handle agent state through `logs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for logs.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logs()
+ * @example /fr/agent/logs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function logs($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -535,6 +605,24 @@ class Agent extends Controller {
         return trim($output);
     }
 
+/**
+ * Handle agent state through `check_daemon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for check_daemon.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check_daemon()
+ * @example /fr/agent/check_daemon
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check_daemon() {
 
         $this->view = false;

@@ -54,20 +54,76 @@ class ProxySQL extends Controller
 
     const DB_STATS = 'stats';
 
+/**
+ * Stores `$clip` for clip.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $clip = 0;
 
     //var $database = array('main', )
     //var $exclude_table = array('reset');
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Stores `$log` for log.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $log;
 
 
+/**
+ * Stores `$proxysql_server` for proxysql server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $proxysql_server = array();
 
+/**
+ * Stores `$proxysql_list` for proxysql list.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $proxysql_list = array();
 
+/**
+ * Prepare proxy s q l state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/proxysql/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("ProxySQL");
@@ -79,6 +135,27 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Render proxy s q l state through `main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for main.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::main()
+ * @example /fr/proxysql/main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function main($param)
     {
 
@@ -380,6 +457,36 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Retrieve proxy s q l state through `getServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for getServers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServers()
+ * @example /fr/proxysql/getServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getServers($hostname, $port, $login, $password)
     {
         $link = mysqli_connect($hostname . ":" . $port, $login, trim($password));
@@ -508,6 +615,27 @@ class ProxySQL extends Controller
         }
     }
 
+/**
+ * Handle proxy s q l state through `statistic`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for statistic.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::statistic()
+ * @example /fr/proxysql/statistic
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistic($param)
     {
         Debug::parseDebug($param);
@@ -555,6 +683,28 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Retrieve proxy s q l state through `getErrorConnect`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getErrorConnect.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getErrorConnect()
+ * @example /fr/proxysql/getErrorConnect
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getErrorConnect($param)
     {
         Debug::parseDebug($param);
@@ -623,6 +773,28 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Handle proxy s q l state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for import.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::import()
+ * @example /fr/proxysql/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import($param)
     {
         Debug::parseDebug($param);
@@ -652,6 +824,27 @@ class ProxySQL extends Controller
         return $import;
     }
 
+/**
+ * Handle proxy s q l state through `auto`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for auto.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::auto()
+ * @example /fr/proxysql/auto
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function auto($param)
     {
 
@@ -665,6 +858,24 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve proxy s q l state through `getConfigMenuDefinition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getConfigMenuDefinition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getConfigMenuDefinition()
+ * @example /fr/proxysql/getConfigMenuDefinition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getConfigMenuDefinition()
     {
         $sqls = array();
@@ -683,6 +894,27 @@ class ProxySQL extends Controller
         return $sqls;
     }
 
+/**
+ * Handle proxy s q l state through `extractTableNameFromSqlTemplate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $sql_template Input value for `sql_template`.
+ * @phpstan-param mixed $sql_template
+ * @psalm-param mixed $sql_template
+ * @return mixed Returned value for extractTableNameFromSqlTemplate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extractTableNameFromSqlTemplate()
+ * @example /fr/proxysql/extractTableNameFromSqlTemplate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractTableNameFromSqlTemplate($sql_template)
     {
         $sql = str_replace('{PREFIX}', '', $sql_template);
@@ -693,6 +925,30 @@ class ProxySQL extends Controller
         return $output_array[1] ?? "";
     }
 
+/**
+ * Retrieve proxy s q l state through `getSqliteCreateTableStatement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @return mixed Returned value for getSqliteCreateTableStatement.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSqliteCreateTableStatement()
+ * @example /fr/proxysql/getSqliteCreateTableStatement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getSqliteCreateTableStatement($db, $table_name)
     {
         $table_name = str_replace("'", "''", $table_name);
@@ -708,6 +964,27 @@ class ProxySQL extends Controller
         return "";
     }
 
+/**
+ * Handle proxy s q l state through `normalizeDefaultValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $default_value Input value for `default_value`.
+ * @phpstan-param mixed $default_value
+ * @psalm-param mixed $default_value
+ * @return mixed Returned value for normalizeDefaultValue.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::normalizeDefaultValue()
+ * @example /fr/proxysql/normalizeDefaultValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function normalizeDefaultValue($default_value)
     {
         if ($default_value === null) {
@@ -730,6 +1007,27 @@ class ProxySQL extends Controller
         return str_replace("''", "'", $default_value);
     }
 
+/**
+ * Handle proxy s q l state through `parseEnumValues`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw_values Input value for `raw_values`.
+ * @phpstan-param mixed $raw_values
+ * @psalm-param mixed $raw_values
+ * @return mixed Returned value for parseEnumValues.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseEnumValues()
+ * @example /fr/proxysql/parseEnumValues
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseEnumValues($raw_values)
     {
         $output = array();
@@ -759,6 +1057,30 @@ class ProxySQL extends Controller
         return array_values($output);
     }
 
+/**
+ * Retrieve proxy s q l state through `getEnumValuesByColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $create_table_sql Input value for `create_table_sql`.
+ * @phpstan-param mixed $create_table_sql
+ * @psalm-param mixed $create_table_sql
+ * @param mixed $columns Input value for `columns`.
+ * @phpstan-param mixed $columns
+ * @psalm-param mixed $columns
+ * @return mixed Returned value for getEnumValuesByColumn.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getEnumValuesByColumn()
+ * @example /fr/proxysql/getEnumValuesByColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getEnumValuesByColumn($create_table_sql, $columns)
     {
         $enum_by_column = array();
@@ -803,6 +1125,30 @@ class ProxySQL extends Controller
         return $enum_by_column;
     }
 
+/**
+ * Retrieve proxy s q l state through `getAutoincrementByColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $create_table_sql Input value for `create_table_sql`.
+ * @phpstan-param mixed $create_table_sql
+ * @psalm-param mixed $create_table_sql
+ * @param mixed $columns Input value for `columns`.
+ * @phpstan-param mixed $columns
+ * @psalm-param mixed $columns
+ * @return mixed Returned value for getAutoincrementByColumn.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getAutoincrementByColumn()
+ * @example /fr/proxysql/getAutoincrementByColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getAutoincrementByColumn($create_table_sql, $columns)
     {
         $autoincrement_by_column = array();
@@ -819,6 +1165,28 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Handle proxy s q l state through `config`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for config.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::config()
+ * @example /fr/proxysql/config
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function config($param)
     {
         $data = array();
@@ -914,6 +1282,28 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Update proxy s q l state through `update`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::update()
+ * @example /fr/proxysql/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param)
     {
         Debug::parseDebug($param);
@@ -966,6 +1356,27 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Handle proxy s q l state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/proxysql/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         Debug::parseDebug($param);
@@ -1069,6 +1480,27 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle proxy s q l state through `ifProxySqlExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for ifProxySqlExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::ifProxySqlExist()
+ * @example /fr/proxysql/ifProxySqlExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ifProxySqlExist($param)
     {
         Debug::parseDebug($param);
@@ -1096,6 +1528,27 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Handle proxy s q l state through `insertProxySqlAdmin`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for insertProxySqlAdmin.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::insertProxySqlAdmin()
+ * @example /fr/proxysql/insertProxySqlAdmin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function insertProxySqlAdmin($param)
     {
         $param[4] ?? "ProxySQL Admin";
@@ -1143,6 +1596,27 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Update proxy s q l state through `updateField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateField.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateField()
+ * @example /fr/proxysql/updateField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateField($param)
     {
 
@@ -1178,6 +1652,27 @@ class ProxySQL extends Controller
         }
     }
 
+/**
+ * Delete proxy s q l state through `deleteLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deleteLine.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::deleteLine()
+ * @example /fr/proxysql/deleteLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deleteLine($param)
     {
         $id_proxysql_server = $param[0];
@@ -1219,6 +1714,27 @@ class ProxySQL extends Controller
 
     }
 
+/**
+ * Handle proxy s q l state through `monitor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for monitor.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::monitor()
+ * @example /fr/proxysql/monitor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function monitor($param)
     {
 
@@ -1229,6 +1745,28 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle proxy s q l state through `cluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cluster()
+ * @example /fr/proxysql/cluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cluster($param)
     {
         Debug::parseDebug($param);
@@ -1306,6 +1844,27 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Handle proxy s q l state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/proxysql/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function log($param)
     {
 
@@ -1316,6 +1875,27 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve proxy s q l state through `getIdMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMysqlServer()
+ * @example /fr/proxysql/getIdMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getIdMysqlServer($param)
     {
         Debug::parseDebug($param);
@@ -1348,6 +1928,28 @@ class ProxySQL extends Controller
 
     }
 
+/**
+ * Create proxy s q l state through `addLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addLine.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::addLine()
+ * @example /fr/proxysql/addLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addLine($param)
     {
         Debug::parseDebug($param);

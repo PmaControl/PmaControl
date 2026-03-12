@@ -6,8 +6,40 @@ use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for mysql database workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class MysqlDatabase extends Controller
 {
+/**
+ * Create mysql database state through `addNoDatabaseCautionFlash`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for addNoDatabaseCautionFlash.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addNoDatabaseCautionFlash()
+ * @example /fr/mysqldatabase/addNoDatabaseCautionFlash
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function addNoDatabaseCautionFlash()
     {
         static $is_flash_added = false;
@@ -25,6 +57,27 @@ class MysqlDatabase extends Controller
         $is_flash_added = true;
     }
 
+/**
+ * Handle mysql database state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/mysqldatabase/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $id_mysql_server = (int) ($param[0] ?? 0);
@@ -85,6 +138,27 @@ class MysqlDatabase extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Retrieve mysql database state through `getDatabaseByServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabaseByServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabaseByServer()
+ * @example /fr/mysqldatabase/getDatabaseByServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getDatabaseByServer($param)
     {
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
@@ -115,6 +189,27 @@ class MysqlDatabase extends Controller
         return $data;
     }
 
+/**
+ * Handle mysql database state through `mpd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for mpd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mpd()
+ * @example /fr/mysqldatabase/mpd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function mpd($param)
     {
         $data['param'] = $param;
@@ -148,6 +243,27 @@ class MysqlDatabase extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Handle mysql database state through `foreignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for foreignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::foreignKey()
+ * @example /fr/mysqldatabase/foreignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function foreignKey($param)
     {
         $data = array();
@@ -160,6 +276,27 @@ class MysqlDatabase extends Controller
     }
 
 
+/**
+ * Handle mysql database state through `table`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for table.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::table()
+ * @example /fr/mysqldatabase/table
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function table($param)
     {
         $id_mysql_server = $param[0];

@@ -18,17 +18,99 @@ namespace App\Library;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 
+/**
+ * Class responsible for extraction2 workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Extraction2
 {
     use \App\Library\Filter;
+/**
+ * Stores `$variable` for variable.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $variable   = array();
+/**
+ * Stores `$server` for server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $server     = array();
+/**
+ * Stores `$groupbyday` for groupbyday.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     static $groupbyday = false;
+/**
+ * Stores `$ts_file` for ts file.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $ts_file = array();
 
 
+/**
+ * Stores `$partition` for partition.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $partition = array();
 
+/**
+ * Handle extraction2 state through `extract`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param mixed $range Input value for `range`.
+ * @phpstan-param mixed $range
+ * @psalm-param mixed $range
+ * @param mixed $graph Input value for `graph`.
+ * @phpstan-param mixed $graph
+ * @psalm-param mixed $graph
+ * @return mixed Returned value for extract.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extract()
+ * @example /fr/extraction2/extract
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function extract($var = array(),array $server = array(), $date = "", $range = false, $graph = false)
     {
         /*
@@ -246,6 +328,24 @@ class Extraction2
         return $res2;
     }
 
+/**
+ * Retrieve extraction2 state through `getServerList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getServerList.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServerList()
+ * @example /fr/extraction2/getServerList
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getServerList()
     {
 
@@ -272,6 +372,27 @@ class Extraction2
         return self::$server;
     }
 
+/**
+ * Handle extraction2 state through `filterServerList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @return mixed Returned value for filterServerList.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::filterServerList()
+ * @example /fr/extraction2/filterServerList
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function filterServerList(array $server)
     {
         if (empty($server)) {
@@ -297,6 +418,39 @@ class Extraction2
         return $filtered;
     }
 
+/**
+ * Handle extraction2 state through `display`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param mixed $range Input value for `range`.
+ * @phpstan-param mixed $range
+ * @psalm-param mixed $range
+ * @param mixed $graph Input value for `graph`.
+ * @phpstan-param mixed $graph
+ * @psalm-param mixed $graph
+ * @return mixed Returned value for display.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::display()
+ * @example /fr/extraction2/display
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -368,6 +522,28 @@ class Extraction2
         return $table;
     }
 
+/**
+ * Retrieve extraction2 state through `getIdVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return mixed Returned value for getIdVariable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getIdVariable()
+ * @example /fr/extraction2/getIdVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIdVariable($var)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -433,6 +609,27 @@ class Extraction2
     }
 
 
+/**
+ * Retrieve extraction2 state through `getPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $ids_variable Input value for `ids_variable`.
+ * @phpstan-param array $ids_variable
+ * @psalm-param array $ids_variable
+ * @return mixed Returned value for getPartition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPartition()
+ * @example /fr/extraction2/getPartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getPartition(array $ids_variable)
     {
 
@@ -472,6 +669,27 @@ class Extraction2
     }
 
 
+/**
+ * Retrieve extraction2 state through `getPartitionFrom`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getPartitionFrom.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getPartitionFrom()
+ * @example /fr/extraction2/getPartitionFrom
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getPartitionFrom($param)
     {
         $id_mysql_server = $param[0];
@@ -488,6 +706,27 @@ class Extraction2
     }
 
 
+/**
+ * Retrieve extraction2 state through `getPartitionFromDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @return mixed Returned value for getPartitionFromDate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPartitionFromDate()
+ * @example /fr/extraction2/getPartitionFromDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getPartitionFromDate($date)
     {
         //$date = $param[0];
@@ -505,6 +744,26 @@ class Extraction2
 
     // trick to optimze query when 1 server with one date !
 
+/**
+ * Retrieve `getQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getQuery.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getQuery(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getQuery($param)
     {
         $variables = $param[0];
@@ -544,6 +803,23 @@ class Extraction2
 
     }
 
+/**
+ * Retrieve `getLastPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getLastPartition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getLastPartition(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getLastPartition()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -686,3 +962,4 @@ class Extraction2
     }
 
 }
+

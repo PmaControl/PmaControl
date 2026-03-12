@@ -31,9 +31,37 @@ namespace App\Library;
 
 trait Decoupage {
 
+/**
+ * Stores `$table_bame` for table bame.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $table_bame = "sharding";
+/**
+ * Stores `$spider` for spider.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     var $spider = true;
+/**
+ * Stores `$type_data` for type data.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $type_data = array("int" => "bigint(20) unsigned", "double" => "double", "text" => "text");
+/**
+ * Stores `$engine_bigdata` for engine bigdata.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $engine_bigdata = "TokuDB";
 
     /*
@@ -69,6 +97,27 @@ trait Decoupage {
         }
     }
 
+/**
+ * Handle decoupage state through `OnRemServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for OnRemServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::OnRemServer()
+ * @example /fr/decoupage/OnRemServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function OnRemServer($param) {
 
         $fields = array("int", "double", "text");
@@ -91,16 +140,79 @@ trait Decoupage {
         }
     }
 
+/**
+ * Handle decoupage state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/decoupage/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install() {
         
     }
 
+/**
+ * Handle decoupage state through `buildRootTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_table Input value for `name_table`.
+ * @phpstan-param mixed $name_table
+ * @psalm-param mixed $name_table
+ * @param mixed $table_link Input value for `table_link`.
+ * @phpstan-param mixed $table_link
+ * @psalm-param mixed $table_link
+ * @return void Returned value for buildRootTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildRootTable()
+ * @example /fr/decoupage/buildRootTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildRootTable($name_table, $table_link) {
 
         $this->buildTableName($name_table);
         $this->buildTableLink($name_table, $table_link);
     }
 
+/**
+ * Handle decoupage state through `buildTableName`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_table Input value for `name_table`.
+ * @phpstan-param mixed $name_table
+ * @psalm-param mixed $name_table
+ * @return void Returned value for buildTableName.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildTableName()
+ * @example /fr/decoupage/buildTableName
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildTableName($name_table) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -116,6 +228,30 @@ trait Decoupage {
         $db->sql_query($sql);
     }
 
+/**
+ * Handle decoupage state through `buildTableLink`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_table Input value for `name_table`.
+ * @phpstan-param mixed $name_table
+ * @psalm-param mixed $name_table
+ * @param mixed $table_link Input value for `table_link`.
+ * @phpstan-param mixed $table_link
+ * @psalm-param mixed $table_link
+ * @return void Returned value for buildTableLink.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildTableLink()
+ * @example /fr/decoupage/buildTableLink
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildTableLink($name_table, $table_link) {
         $db = Sgbd::sql(DB_DEFAULT);
         $link_to = explode('__', $table_link)[0];
@@ -131,6 +267,33 @@ trait Decoupage {
         $db->sql_query($sql);
     }
 
+/**
+ * Handle decoupage state through `buildTablePartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_table Input value for `name_table`.
+ * @phpstan-param mixed $name_table
+ * @psalm-param mixed $name_table
+ * @param mixed $table_link Input value for `table_link`.
+ * @phpstan-param mixed $table_link
+ * @psalm-param mixed $table_link
+ * @param int $id_server Input value for `id_server`.
+ * @phpstan-param int $id_server
+ * @psalm-param int $id_server
+ * @return void Returned value for buildTablePartition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildTablePartition()
+ * @example /fr/decoupage/buildTablePartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildTablePartition($name_table, $table_link, $id_server) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -161,6 +324,33 @@ trait Decoupage {
         }
     }
 
+/**
+ * Handle decoupage state through `buildMainTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $prefix Input value for `prefix`.
+ * @phpstan-param mixed $prefix
+ * @psalm-param mixed $prefix
+ * @param mixed $table_link Input value for `table_link`.
+ * @phpstan-param mixed $table_link
+ * @psalm-param mixed $table_link
+ * @param int $id_servers Input value for `id_servers`.
+ * @phpstan-param int $id_servers
+ * @psalm-param int $id_servers
+ * @return void Returned value for buildMainTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildMainTable()
+ * @example /fr/decoupage/buildMainTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildMainTable($prefix, $table_link, $id_servers) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -220,6 +410,33 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         }
     }
 
+/**
+ * Handle decoupage state through `buildTableHistory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $prefix Input value for `prefix`.
+ * @phpstan-param mixed $prefix
+ * @psalm-param mixed $prefix
+ * @param mixed $table_link Input value for `table_link`.
+ * @phpstan-param mixed $table_link
+ * @psalm-param mixed $table_link
+ * @param int $id_servers Input value for `id_servers`.
+ * @phpstan-param int $id_servers
+ * @psalm-param int $id_servers
+ * @return void Returned value for buildTableHistory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildTableHistory()
+ * @example /fr/decoupage/buildTableHistory
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildTableHistory($prefix, $table_link, $id_servers) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -257,6 +474,24 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         }
     }
 
+/**
+ * Retrieve decoupage state through `getIdservers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getIdservers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdservers()
+ * @example /fr/decoupage/getIdservers
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getIdservers() {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -269,6 +504,24 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         return $id_servers;
     }
 
+/**
+ * Handle decoupage state through `tryRocksDb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for tryRocksDb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::tryRocksDb()
+ * @example /fr/decoupage/tryRocksDb
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function tryRocksDb() {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -284,6 +537,27 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         }
     }
 
+/**
+ * Handle decoupage state through `rebuildAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rebuildAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rebuildAll()
+ * @example /fr/decoupage/rebuildAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rebuildAll($param) {
         $this->view = false;
         Debug::parseDebug($param);
@@ -292,6 +566,27 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         $this->init($param);
     }
 
+/**
+ * Handle decoupage state through `init`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for init.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::init()
+ * @example /fr/decoupage/init
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function init($param) {
 
         Debug::parseDebug($param);
@@ -314,6 +609,27 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         $this->init_variables();
     }
 
+/**
+ * Handle decoupage state through `dropAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropAll()
+ * @example /fr/decoupage/dropAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropAll($param) {
 
         $this->view = false;
@@ -353,6 +669,24 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
         }
     }
 
+/**
+ * Handle decoupage state through `init_variables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for init_variables.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::init_variables()
+ * @example /fr/decoupage/init_variables
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function init_variables() {
         /*
          * bigint : 0
@@ -1355,3 +1689,4 @@ KEY `id_" . $prefix . "_name_" . $prefix . "_" . $name . "` (`id_" . $prefix . "
     }
 
 }
+

@@ -7,6 +7,20 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for system workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class System
 {
     /*
@@ -88,6 +102,27 @@ class System
         }
     }
 
+/**
+ * Retrieve system state through `getIp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @return mixed Returned value for getIp.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIp()
+ * @example /fr/system/getIp
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIp($hostname)
     {
 
@@ -105,6 +140,33 @@ class System
         return trim($ip);
     }
 
+/**
+ * Handle system state through `scanPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $timeOut Input value for `timeOut`.
+ * @phpstan-param mixed $timeOut
+ * @psalm-param mixed $timeOut
+ * @return mixed Returned value for scanPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::scanPort()
+ * @example /fr/system/scanPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function scanPort($ip, $port, $timeOut = 1)
     {
         $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);

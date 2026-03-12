@@ -16,8 +16,40 @@ use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Chiffrement;
 
+/**
+ * Class responsible for demo workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Demo extends Controller {
 
+/**
+ * Render demo state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/demo/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
         
 
@@ -63,6 +95,27 @@ class Demo extends Controller {
         return $data;
     }
 
+/**
+ * Handle demo state through `AssociateServerByLevel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for AssociateServerByLevel.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::AssociateServerByLevel()
+ * @example /fr/demo/AssociateServerByLevel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function AssociateServerByLevel($param = array())
     {
         Debug::parseDebug($param);
@@ -115,12 +168,60 @@ class Demo extends Controller {
     }
 
     // Fonction de comparaison personnalisée pour trier par 'version'
+/**
+ * Handle demo state through `compareVersions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $a Input value for `a`.
+ * @phpstan-param mixed $a
+ * @psalm-param mixed $a
+ * @param mixed $b Input value for `b`.
+ * @phpstan-param mixed $b
+ * @psalm-param mixed $b
+ * @return mixed Returned value for compareVersions.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareVersions()
+ * @example /fr/demo/compareVersions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compareVersions($a, $b) {
         // Utilisez la fonction version_compare pour comparer les versions
         return version_compare($a['version'], $b['version']);
     }
 
 
+/**
+ * Handle demo state through `compareDigit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $a Input value for `a`.
+ * @phpstan-param mixed $a
+ * @psalm-param mixed $a
+ * @param mixed $b Input value for `b`.
+ * @phpstan-param mixed $b
+ * @psalm-param mixed $b
+ * @return mixed Returned value for compareDigit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareDigit()
+ * @example /fr/demo/compareDigit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compareDigit($a, $b) {
         // Utilisez la fonction version_compare pour comparer les versions
         return version_compare($a['used_as_master'], $b['used_as_master']);
@@ -143,6 +244,27 @@ class Demo extends Controller {
     }
 
     // each server got 2 slaves
+/**
+ * Handle demo state through `generatePair`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generatePair.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generatePair()
+ * @example /fr/demo/generatePair
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generatePair($param = array())
     {
         $nb_slave = 2;
@@ -235,6 +357,28 @@ class Demo extends Controller {
         return $master_slave;
     }
 
+/**
+ * Handle demo state through `configMasterSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for configMasterSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::configMasterSlave()
+ * @example /fr/demo/configMasterSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function configMasterSlave($param)
     {
         Debug::parseDebug($param);
@@ -374,6 +518,24 @@ class Demo extends Controller {
         }
     }
 
+/**
+ * Handle demo state through `randomPassword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for randomPassword.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::randomPassword()
+ * @example /fr/demo/randomPassword
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function randomPassword() {
         $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
         $pass = array(); //remember to declare $pass as an array
@@ -385,6 +547,27 @@ class Demo extends Controller {
         return implode($pass); //turn the array into a string
     }
 
+/**
+ * Handle demo state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/demo/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install($param)
     {
         Debug::parseDebug($param);
@@ -400,6 +583,27 @@ class Demo extends Controller {
     }
 
 
+/**
+ * Create demo state through `createSakila`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createSakila.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createSakila()
+ * @example /fr/demo/createSakila
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createSakila($param)
     {
         Debug::parseDebug($param);
@@ -412,6 +616,27 @@ class Demo extends Controller {
         Mysql::execute($id_mysql_server, ROOT.'/test/sakila/sakila-data.sql');
     }
 
+/**
+ * Create demo state through `createInstanceMariaDB`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createInstanceMariaDB.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createInstanceMariaDB()
+ * @example /fr/demo/createInstanceMariaDB
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createInstanceMariaDB($param)
     {
         $id_docker_server = $param[0];
@@ -420,6 +645,27 @@ class Demo extends Controller {
 
     }
 
+/**
+ * Handle demo state through `dropDemo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropDemo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropDemo()
+ * @example /fr/demo/dropDemo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropDemo($param)
     {
         Debug::parseDebug($param);

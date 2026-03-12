@@ -28,54 +28,327 @@ use App\Library\Display;
 use App\Controller\Test\CleanerTest;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for cleaner workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Cleaner extends Controller
 {
 
     use \App\Library\Scp;
     use \App\Library\Filter;
+/**
+ * Stores `$id_cleaner` for id cleaner.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $id_cleaner  = 0;
 //status to check
+/**
+ * Stores `$com_status` for com status.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $com_status = array();
 
     const FIELD_LOOP = "pmactrol_purge_loop";
 
+/**
+ * Stores `$color` for color.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     public $color                  = true;
+/**
+ * Stores `$prefix` for prefix.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $prefix                 = "DELETE_";
+/**
+ * Stores `$link_to_purge` for link to purge.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $link_to_purge;
+/**
+ * Stores `$libelle` for libelle.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $libelle; //name of cleaner
+/**
+ * Stores `$schema_to_purge` for schema to purge.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $schema_to_purge;
+/**
+ * Stores `$schema_main` for schema main.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $schema_main;
+/**
+ * Stores `$schema_delete` for schema delete.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $schema_delete          = "CLEANER";
+/**
+ * Stores `$table_to_purge` for table to purge.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $table_to_purge         = array();
+/**
+ * Stores `$main_field` for main field.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $main_field             = array(); // => needed
+/**
+ * Stores `$main_table` for main table.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $main_table;
+/**
+ * Stores `$init_where` for init where.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $init_where;
+/**
+ * Stores `$table_in_error` for table in error.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $table_in_error        = array();
+/**
+ * Stores `$rows_to_delete` for rows to delete.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $rows_to_delete        = array();
+/**
+ * Stores `$foreign_keys` for foreign keys.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $foreign_keys           = array();
+/**
+ * Stores `$table_impacted` for table impacted.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $table_impacted        = array();
+/**
+ * Stores `$backup_dir` for backup dir.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $backup_dir             = DATA."cleaner/";
+/**
+ * Stores `$path_to_orderby_tmp` for path to orderby tmp.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     private $path_to_orderby_tmp   = "";
+/**
+ * Stores `$orderby` for orderby.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $orderby               = array();
+/**
+ * Stores `$id_backup_storage_area` for id backup storage area.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     public $id_backup_storage_area = 0;
+/**
+ * Stores `$sql_hex_for_binary` for sql hex for binary.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     private $sql_hex_for_binary    = false;
+/**
+ * Stores `$fk_circulaire` for fk circulaire.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $fk_circulaire         = array();
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
+/**
+ * Stores `$cache_table` for cache table.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $cache_table           = array();
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $primary_key           = array();
+/**
+ * Stores `$com_to_check` for com to check.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $com_to_check          = array("Com_create_table", "Com_alter_table", "Com_rename_table", "Com_drop_table");
+/**
+ * Stores `$id_mysql_server` for id mysql server.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     private $id_mysql_server       = 0;
+/**
+ * Stores `$limit` for limit.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     private $limit                 = 1000;
+/**
+ * Stores `$table_filter` for table filter.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $table_filter          = array();
+/**
+ * Stores `$children` for children.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $children              = array();
+/**
+ * Stores `$wait_time` for wait time.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     private $wait_time             = 1;
+/**
+ * Stores `$db` for db.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $db;
+/**
+ * Stores `$testfk` for testfk.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $testfk                 = array();
 
     //public $ariane_module = '<i class="glyphicon glyphicon-trash"></i> '.__("Cleaner");
     //pblic $ariane = '> <a href="'.LINK.'setting/plugin"><i class="fa fa-puzzle-piece"></i> '.__('Plugins').'</a> > ';
 
 
+/**
+ * Handle cleaner state through `statistics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for statistics.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::statistics()
+ * @example /fr/cleaner/statistics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistics($param)
     {
         $this->title = '<i class="fa fa-area-chart" aria-hidden="true"></i> '.__("Statistics");
@@ -290,6 +563,24 @@ var myChart = new Chart(ctx, {
         echo $table->display();
     }
 
+/**
+ * Handle cleaner state through `showDaemon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for showDaemon.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::showDaemon()
+ * @example /fr/cleaner/showDaemon
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function showDaemon()
     {
         $db            = Sgbd::sql(DB_DEFAULT);
@@ -299,6 +590,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Render cleaner state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/cleaner/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -326,6 +638,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `treatment`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for treatment.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::treatment()
+ * @example /fr/cleaner/treatment
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function treatment($param)
     {
 
@@ -337,6 +670,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `detail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for detail.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::detail()
+ * @example /fr/cleaner/detail
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function detail($param)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -356,6 +710,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Create cleaner state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for add.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::add()
+ * @example /fr/cleaner/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
 
@@ -557,6 +932,27 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
+/**
+ * Retrieve cleaner state through `getColumnByTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getColumnByTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getColumnByTable()
+ * @example /fr/cleaner/getColumnByTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getColumnByTable($param)
     {
 
@@ -588,6 +984,27 @@ var myChart = new Chart(ctx, {
         $this->set("data", $data);
     }
 
+/**
+ * Delete cleaner state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/cleaner/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delete($param)
     {
 
@@ -619,6 +1036,27 @@ var myChart = new Chart(ctx, {
         header("location: ".LINK."cleaner/index");
     }
 
+/**
+ * Handle cleaner state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/cleaner/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function settings($param)
     {
 
@@ -680,6 +1118,28 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `launch`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for launch.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::launch()
+ * @example /fr/cleaner/launch
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function launch($param)
     {
         Debug::parseDebug($param);
@@ -811,6 +1271,27 @@ var myChart = new Chart(ctx, {
         } // end while
     }
 
+/**
+ * Handle cleaner state through `start`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for start.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::start()
+ * @example /fr/cleaner/start
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function start($param)
     {
         
@@ -870,6 +1351,28 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle cleaner state through `stop`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for stop.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::stop()
+ * @example /fr/cleaner/stop
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function stop($param)
     {
 
@@ -940,6 +1443,27 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle cleaner state through `restart`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for restart.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::restart()
+ * @example /fr/cleaner/restart
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function restart($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -957,6 +1481,27 @@ var myChart = new Chart(ctx, {
         $this->start(array($id_cleaner));
     }
 
+/**
+ * Handle cleaner state through `isRunning`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $pid Input value for `pid`.
+ * @phpstan-param mixed $pid
+ * @psalm-param mixed $pid
+ * @return mixed Returned value for isRunning.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isRunning()
+ * @example /fr/cleaner/isRunning
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isRunning($pid)
     {
 
@@ -973,6 +1518,27 @@ var myChart = new Chart(ctx, {
         return false;
     }
 
+/**
+ * Handle cleaner state through `stats_for_log`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return void Returned value for stats_for_log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::stats_for_log()
+ * @example /fr/cleaner/stats_for_log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function stats_for_log($data)
     {
         $table = new Table(0);
@@ -1021,6 +1587,27 @@ var myChart = new Chart(ctx, {
         return $this->getImpactedTable();
     }
 
+/**
+ * Handle cleaner state through `checkFileToPush`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $path Input value for `path`.
+ * @phpstan-param mixed $path
+ * @psalm-param mixed $path
+ * @return mixed Returned value for checkFileToPush.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::checkFileToPush()
+ * @example /fr/cleaner/checkFileToPush
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function checkFileToPush($path)
     {
         $files = glob($path."/*_log.sql");
@@ -1035,6 +1622,30 @@ var myChart = new Chart(ctx, {
         return $files;
     }
 
+/**
+ * Handle cleaner state through `compressAndCrypt`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @param bool $is_cryted Input value for `is_cryted`.
+ * @phpstan-param bool $is_cryted
+ * @psalm-param bool $is_cryted
+ * @return mixed Returned value for compressAndCrypt.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compressAndCrypt()
+ * @example /fr/cleaner/compressAndCrypt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compressAndCrypt($file, $is_cryted = true)
     {
         $stats['normal'] = $this->getFileinfo($file);
@@ -1064,6 +1675,27 @@ var myChart = new Chart(ctx, {
         return $stats;
     }
 
+/**
+ * Retrieve cleaner state through `getFileinfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return mixed Returned value for getFileinfo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFileinfo()
+ * @example /fr/cleaner/getFileinfo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getFileinfo($filename)
     {
         $data['size'] = filesize($filename);
@@ -1072,6 +1704,27 @@ var myChart = new Chart(ctx, {
         return $data;
     }
 
+/**
+ * Handle cleaner state through `cryptFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return mixed Returned value for cryptFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::cryptFile()
+ * @example /fr/cleaner/cryptFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cryptFile($file_name)
     {
         $this->view = false;
@@ -1080,6 +1733,27 @@ var myChart = new Chart(ctx, {
         return $file_name;
     }
 
+/**
+ * Handle cleaner state through `decryptFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return mixed Returned value for decryptFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::decryptFile()
+ * @example /fr/cleaner/decryptFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function decryptFile($file_name)
     {
         $this->view = false;
@@ -1089,6 +1763,27 @@ var myChart = new Chart(ctx, {
         return $file_name;
     }
 
+/**
+ * Handle cleaner state through `compressFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $path_file Input value for `path_file`.
+ * @phpstan-param mixed $path_file
+ * @psalm-param mixed $path_file
+ * @return mixed Returned value for compressFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compressFile()
+ * @example /fr/cleaner/compressFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compressFile($path_file)
     {
         $path      = pathinfo($path_file)['dirname'];
@@ -1099,6 +1794,27 @@ var myChart = new Chart(ctx, {
         return $path."/".$file_name.".gz";
     }
 
+/**
+ * Handle cleaner state through `unCompressFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $path_file Input value for `path_file`.
+ * @phpstan-param mixed $path_file
+ * @psalm-param mixed $path_file
+ * @return mixed Returned value for unCompressFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::unCompressFile()
+ * @example /fr/cleaner/unCompressFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function unCompressFile($path_file)
     {
         $path      = pathinfo($path_file)['dirname'];
@@ -1109,6 +1825,27 @@ var myChart = new Chart(ctx, {
         return substr($path_file, 0, -3);
     }
 
+/**
+ * Handle cleaner state through `uncc`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for uncc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uncc()
+ * @example /fr/cleaner/uncc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function uncc($param)
     {
         if (IS_CLI) {
@@ -1123,6 +1860,27 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle cleaner state through `purge_clean_db`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purge_clean_db.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purge_clean_db()
+ * @example /fr/cleaner/purge_clean_db
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function purge_clean_db($param = array())
     {
         Debug::parseDebug($param);
@@ -1168,6 +1926,27 @@ var myChart = new Chart(ctx, {
     }
 
 // gestionnaire de signaux système
+/**
+ * Handle cleaner state through `sig_handler`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $signo Input value for `signo`.
+ * @phpstan-param mixed $signo
+ * @psalm-param mixed $signo
+ * @return void Returned value for sig_handler.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sig_handler()
+ * @example /fr/cleaner/sig_handler
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function sig_handler($signo)
     {
 
@@ -1220,6 +1999,28 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Retrieve cleaner state through `get_id_cleaner`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for get_id_cleaner.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::get_id_cleaner()
+ * @example /fr/cleaner/get_id_cleaner
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_id_cleaner($param)
     {
         if (empty($param[0])) {
@@ -1412,6 +2213,28 @@ var myChart = new Chart(ctx, {
         return $this->rows_to_delete;
     }
 
+/**
+ * Create cleaner state through `createTemporaryTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for createTemporaryTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::createTemporaryTable()
+ * @example /fr/cleaner/createTemporaryTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createTemporaryTable($table)
     {
         $db = Sgbd::sql($this->link_to_purge,'purge');
@@ -1449,6 +2272,25 @@ var myChart = new Chart(ctx, {
         $db->sql_query($sql);
     }
 
+/**
+ * Handle cleaner state through `feedDeleteTableWithFk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for feedDeleteTableWithFk.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::feedDeleteTableWithFk()
+ * @example /fr/cleaner/feedDeleteTableWithFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function feedDeleteTableWithFk()
     {
         Debug::checkPoint("FEED FROM FK");
@@ -1622,6 +2464,24 @@ var myChart = new Chart(ctx, {
         Debug::checkPoint("Feed delete tables from FKs");
     }
 
+/**
+ * Create cleaner state through `createAllTemporaryTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for createAllTemporaryTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createAllTemporaryTable()
+ * @example /fr/cleaner/createAllTemporaryTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createAllTemporaryTable()
     {
         $db     = Sgbd::sql($this->link_to_purge,'purge');
@@ -1637,11 +2497,47 @@ var myChart = new Chart(ctx, {
         Debug::debug("Create all temporary tables.");
     }
 
+/**
+ * Retrieve cleaner state through `getTableError`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getTableError.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableError()
+ * @example /fr/cleaner/getTableError
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableError()
     {
         return $this->table_in_error;
     }
 
+/**
+ * Retrieve cleaner state through `getRealForeignKeys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getRealForeignKeys.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKeys()
+ * @example /fr/cleaner/getRealForeignKeys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getRealForeignKeys()
     {
 //get list of FK and put in array
@@ -1673,6 +2569,25 @@ var myChart = new Chart(ctx, {
         return $order_to_feed;
     }
 
+/**
+ * Retrieve cleaner state through `getVirtualForeignKeys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getVirtualForeignKeys.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getVirtualForeignKeys()
+ * @example /fr/cleaner/getVirtualForeignKeys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getVirtualForeignKeys()
     {
 
@@ -1899,6 +2814,25 @@ var myChart = new Chart(ctx, {
         return $this->orderby;
     }
 
+/**
+ * Delete cleaner state through `delete_rows`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for delete_rows.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::delete_rows()
+ * @example /fr/cleaner/delete_rows
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function delete_rows()
     {
         
@@ -1985,6 +2919,27 @@ var myChart = new Chart(ctx, {
         Debug::checkPoint("On efface les données et on purge les tables de travail");
     }
 
+/**
+ * Handle cleaner state through `setAffectedRows`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return void Returned value for setAffectedRows.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setAffectedRows()
+ * @example /fr/cleaner/setAffectedRows
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setAffectedRows($table)
     {
         $db = Sgbd::sql($this->link_to_purge,'purge');
@@ -2014,6 +2969,27 @@ var myChart = new Chart(ctx, {
         return $this->table_impacted;
     }
 
+/**
+ * Delete cleaner state through `removeTableNotImpacted`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $fks Input value for `fks`.
+ * @phpstan-param mixed $fks
+ * @psalm-param mixed $fks
+ * @return mixed Returned value for removeTableNotImpacted.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::removeTableNotImpacted()
+ * @example /fr/cleaner/removeTableNotImpacted
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function removeTableNotImpacted($fks)
     {
         do {
@@ -2046,6 +3022,27 @@ var myChart = new Chart(ctx, {
         return $tmp2;
     }
 
+/**
+ * Handle cleaner state through `exportToFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return void Returned value for exportToFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::exportToFile()
+ * @example /fr/cleaner/exportToFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function exportToFile($table)
     {
         if (!empty($this->id_backup_storage_area)) {
@@ -2251,6 +3248,24 @@ var myChart = new Chart(ctx, {
         return $printable;
     }
 
+/**
+ * Retrieve cleaner state through `getImpactedTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getImpactedTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getImpactedTable()
+ * @example /fr/cleaner/getImpactedTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getImpactedTable()
     {
         $list = $this->getOrderBy2(array($this->getForeignKeys(), $this->main_table));
@@ -2298,6 +3313,27 @@ var myChart = new Chart(ctx, {
     }
 
 // move to archive controller ? avec toute les fonctions qui sont appeller dedant
+/**
+ * Handle cleaner state through `pushArchive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for pushArchive.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::pushArchive()
+ * @example /fr/cleaner/pushArchive
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function pushArchive($param = array())
     {
         $this->view = false;
@@ -2381,6 +3417,27 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Retrieve cleaner state through `getIdStorageArea`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_cleaner Input value for `id_cleaner`.
+ * @phpstan-param int $id_cleaner
+ * @psalm-param int $id_cleaner
+ * @return mixed Returned value for getIdStorageArea.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdStorageArea()
+ * @example /fr/cleaner/getIdStorageArea
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getIdStorageArea($id_cleaner)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -2395,6 +3452,24 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle cleaner state through `init`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for init.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::init()
+ * @example /fr/cleaner/init
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function init()
     {
 
@@ -2430,6 +3505,24 @@ var myChart = new Chart(ctx, {
         $this->initDdlOnDisk();
     }
 
+/**
+ * Handle cleaner state through `generateCreateTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for generateCreateTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateCreateTable()
+ * @example /fr/cleaner/generateCreateTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateCreateTable()
     {
 
@@ -2554,6 +3647,24 @@ var myChart = new Chart(ctx, {
         return trim($new_table);
     }
 
+/**
+ * Handle cleaner state through `cacheComStatus`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for cacheComStatus.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::cacheComStatus()
+ * @example /fr/cleaner/cacheComStatus
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function cacheComStatus()
     {
 
@@ -2571,6 +3682,24 @@ var myChart = new Chart(ctx, {
         return json_encode($this->com_status);
     }
 
+/**
+ * Handle cleaner state through `compareComStatus`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for compareComStatus.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compareComStatus()
+ * @example /fr/cleaner/compareComStatus
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compareComStatus()
     {
         $db = Sgbd::sql($this->link_to_purge,'purge');
@@ -2610,6 +3739,24 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle cleaner state through `sighup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for sighup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sighup()
+ * @example /fr/cleaner/sighup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sighup()
     {
         $pid = getmypid();
@@ -2629,6 +3776,31 @@ var myChart = new Chart(ctx, {
         shell_exec($cmd);
     }
 
+/**
+ * Retrieve cleaner state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getPrimaryKey()
+ * @example /fr/cleaner/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($table, $database)
     {
         $db = Sgbd::sql($this->link_to_purge, 'purge');
@@ -2653,6 +3825,24 @@ var myChart = new Chart(ctx, {
         return $this->primary_key[$database][$table];
     }
 
+/**
+ * Handle cleaner state through `end_loop`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for end_loop.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::end_loop()
+ * @example /fr/cleaner/end_loop
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function end_loop()
     {
         $db = Sgbd::sql($this->link_to_purge, 'purge');
@@ -2679,6 +3869,24 @@ var myChart = new Chart(ctx, {
         $this->compareComStatus();
     }
 
+/**
+ * Handle cleaner state through `compareDdl`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for compareDdl.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compareDdl()
+ * @example /fr/cleaner/compareDdl
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compareDdl()
     {
         $path_dir = $this->backup_dir."/DDL";
@@ -2719,6 +3927,24 @@ var myChart = new Chart(ctx, {
         $this->cacheDdlOnDisk();
     }
 
+/**
+ * Handle cleaner state through `compareTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for compareTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareTables()
+ * @example /fr/cleaner/compareTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compareTables()
     {
 
@@ -2731,6 +3957,27 @@ var myChart = new Chart(ctx, {
         return $sql;
     }
 
+/**
+ * Handle cleaner state through `compareTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for compareTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareTable()
+ * @example /fr/cleaner/compareTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compareTable($table)
     {
         $path_dir = $this->backup_dir."/DDL";
@@ -2748,6 +3995,27 @@ var myChart = new Chart(ctx, {
         return $sql;
     }
 
+/**
+ * Handle cleaner state through `edit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for edit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::edit()
+ * @example /fr/cleaner/edit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function edit($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2792,16 +4060,73 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/cleaner/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install()
     {
 
     }
 
+/**
+ * Handle cleaner state through `uninstall`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for uninstall.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uninstall()
+ * @example /fr/cleaner/uninstall
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function uninstall()
     {
 
     }
 
+/**
+ * Handle cleaner state through `view`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for view.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::view()
+ * @example /fr/cleaner/view
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function view($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2905,6 +4230,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `logs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for logs.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::logs()
+ * @example /fr/cleaner/logs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function logs($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2934,6 +4280,27 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `details`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for details.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::details()
+ * @example /fr/cleaner/details
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function details($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2965,6 +4332,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/cleaner/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $id_cleaner = $this->get_id_cleaner($param);
@@ -2981,6 +4369,30 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $lines Input value for `lines`.
+ * @phpstan-param mixed $lines
+ * @psalm-param mixed $lines
+ * @param int $id_cleaner Input value for `id_cleaner`.
+ * @phpstan-param int $id_cleaner
+ * @psalm-param int $id_cleaner
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/cleaner/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function format($lines, $id_cleaner)
     {
         // cette fonction a besoin d'être optimisé !!
@@ -3037,6 +4449,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $data;
     }
 
+/**
+ * Handle cleaner state through `setColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for setColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::setColor()
+ * @example /fr/cleaner/setColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setColor($type)
     {
         $hex = substr(md5($type), 0, 6);
@@ -3046,6 +4479,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         //return $hex['background'];
     }
 
+/**
+ * Handle cleaner state through `label`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $text Input value for `text`.
+ * @phpstan-param mixed $text
+ * @psalm-param mixed $text
+ * @return mixed Returned value for label.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::label()
+ * @example /fr/cleaner/label
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function label($text)
     {
         $hex = $this->setColor($text);
@@ -3053,6 +4507,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return '<span class="label" style="background:rgb('.$hex[0].', '.$hex[1].', '.$hex[2].',0.1);">'.$text.'</span>';
     }
 
+/**
+ * Handle cleaner state through `hexToRgb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $colorName Input value for `colorName`.
+ * @phpstan-param mixed $colorName
+ * @psalm-param mixed $colorName
+ * @return mixed Returned value for hexToRgb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::hexToRgb()
+ * @example /fr/cleaner/hexToRgb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function hexToRgb($colorName)
     {
         list($r, $g, $b) = array_map(
@@ -3064,6 +4539,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return array($r, $g, $b);
     }
 
+/**
+ * Retrieve cleaner state through `getUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $id Input value for `id`.
+ * @phpstan-param mixed $id
+ * @psalm-param mixed $id
+ * @return mixed Returned value for getUser.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getUser()
+ * @example /fr/cleaner/getUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getUser($id)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -3079,6 +4575,34 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
     }
 
+/**
+ * Handle cleaner state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $level Input value for `level`.
+ * @phpstan-param mixed $level
+ * @psalm-param mixed $level
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::log()
+ * @example /fr/cleaner/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($level, $type, $msg)
     {
         if (empty($this->id_cleaner)) {
@@ -3093,12 +4617,57 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
     }
 
+/**
+ * Retrieve cleaner state through `getrgba`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $label Input value for `label`.
+ * @phpstan-param mixed $label
+ * @psalm-param mixed $label
+ * @param mixed $alpha Input value for `alpha`.
+ * @phpstan-param mixed $alpha
+ * @psalm-param mixed $alpha
+ * @return mixed Returned value for getrgba.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getrgba()
+ * @example /fr/cleaner/getrgba
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getrgba($label, $alpha)
     {
         list($r, $g, $b) = $this->setColor($label);
         return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
     }
 
+/**
+ * Handle cleaner state through `impacted`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for impacted.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::impacted()
+ * @example /fr/cleaner/impacted
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function impacted($param)
     {
 
@@ -3130,6 +4699,24 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $this->set('data', $data);
     }
 
+/**
+ * Handle cleaner state through `setCacheFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for setCacheFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setCacheFile()
+ * @example /fr/cleaner/setCacheFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setCacheFile()
     {
         $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".ser";
@@ -3174,6 +4761,30 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
     }
 
+/**
+ * Handle cleaner state through `filterFkWithChildren`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $children Input value for `children`.
+ * @phpstan-param mixed $children
+ * @psalm-param mixed $children
+ * @param mixed $foreign_keys Input value for `foreign_keys`.
+ * @phpstan-param mixed $foreign_keys
+ * @psalm-param mixed $foreign_keys
+ * @return mixed Returned value for filterFkWithChildren.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::filterFkWithChildren()
+ * @example /fr/cleaner/filterFkWithChildren
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function filterFkWithChildren($children, $foreign_keys)
     {
         foreach ($foreign_keys as $parent => $childs) {
@@ -3185,6 +4796,24 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $foreign_keys;
     }
 
+/**
+ * Retrieve cleaner state through `getForeignKeys`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return mixed Returned value for getForeignKeys.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getForeignKeys()
+ * @example /fr/cleaner/getForeignKeys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getForeignKeys()
     {
 
@@ -3219,6 +4848,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $fks;
     }
 
+/**
+ * Handle cleaner state through `generateMock`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for generateMock.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateMock()
+ * @example /fr/cleaner/generateMock
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateMock($param)
     {
         Debug::parseDebug($param);
@@ -3252,6 +4902,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
     }
 
+/**
+ * Handle cleaner state through `skipReplication`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return mixed Returned value for skipReplication.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::skipReplication()
+ * @example /fr/cleaner/skipReplication
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function skipReplication($db)
     {
 
@@ -3271,6 +4942,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         }
     }
 
+/**
+ * Handle cleaner state through `testOrder`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testOrder.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testOrder()
+ * @example /fr/cleaner/testOrder
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testOrder($param)
     {
 
@@ -3281,6 +4973,28 @@ objDiv.scrollTop = objDiv.scrollHeight;
         CleanerTest::testGetOrderBy();
     }
 
+/**
+ * Retrieve cleaner state through `getOrderBy2`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getOrderBy2.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getOrderBy2()
+ * @example /fr/cleaner/getOrderBy2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getOrderBy2($param)
     {
 
@@ -3479,11 +5193,56 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $this->orderby;
     }
 
+/**
+ * Handle cleaner state through `dropFk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $child Input value for `child`.
+ * @phpstan-param mixed $child
+ * @psalm-param mixed $child
+ * @param mixed $parent Input value for `parent`.
+ * @phpstan-param mixed $parent
+ * @psalm-param mixed $parent
+ * @return void Returned value for dropFk.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropFk()
+ * @example /fr/cleaner/dropFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropFk($child, $parent)
     {
 
     }
 
+/**
+ * Handle cleaner state through `detectCircularDefinition`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for detectCircularDefinition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::detectCircularDefinition()
+ * @example /fr/cleaner/detectCircularDefinition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function detectCircularDefinition($param)
     {
 
@@ -3587,6 +5346,27 @@ objDiv.scrollTop = objDiv.scrollHeight;
         return $to_drop;
     }
 
+/**
+ * Retrieve cleaner state through `getCircularMulti`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getCircularMulti.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getCircularMulti()
+ * @example /fr/cleaner/getCircularMulti
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getCircularMulti($param)
     {
 
@@ -3700,6 +5480,30 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         return $rows;
     }
 
+/**
+ * Handle cleaner state through `testOneToOne`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $way Input value for `way`.
+ * @phpstan-param mixed $way
+ * @psalm-param mixed $way
+ * @param mixed $order Input value for `order`.
+ * @phpstan-param mixed $order
+ * @psalm-param mixed $order
+ * @return void Returned value for testOneToOne.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testOneToOne()
+ * @example /fr/cleaner/testOneToOne
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testOneToOne($way, $order = 'ASC')
     {
         if (count($way) > 0) {
@@ -3714,6 +5518,30 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         }
     }
 
+/**
+ * Handle cleaner state through `testFk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table_a Input value for `table_a`.
+ * @phpstan-param mixed $table_a
+ * @psalm-param mixed $table_a
+ * @param mixed $table_b Input value for `table_b`.
+ * @phpstan-param mixed $table_b
+ * @psalm-param mixed $table_b
+ * @return void Returned value for testFk.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testFk()
+ * @example /fr/cleaner/testFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testFk($table_a, $table_b)
     {
 
@@ -3766,6 +5594,27 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         }
     }
 
+/**
+ * Handle cleaner state through `comptage`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for comptage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::comptage()
+ * @example /fr/cleaner/comptage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function comptage($param)
     {
         Debug::parseDebug($param);
@@ -3801,6 +5650,27 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
         echo implode("','", $tables);
     }
 
+/**
+ * Handle cleaner state through `feedCircularFk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return void Returned value for feedCircularFk.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::feedCircularFk()
+ * @example /fr/cleaner/feedCircularFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function feedCircularFk($table)
     {
 
@@ -3808,6 +5678,28 @@ SELECT * FROM paths where cur_dest = '".$table2."';";
 
 
 
+/**
+ * Handle cleaner state through `setDebug`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for setDebug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::setDebug()
+ * @example /fr/cleaner/setDebug
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function setDebug($param)
     {
         $id_cleaner_main = (int)$param[0] ?? "";

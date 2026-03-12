@@ -7,8 +7,29 @@
 
 namespace App\Library;
 
+/**
+ * Trait responsible for os workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Os
 {
+/**
+ * Stores `$os` for os.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $os = array(
   "aix"=> array(
     "icon"=> "aix",
@@ -762,6 +783,24 @@ trait Os
 
 
 
+/**
+ * Handle os state through `uaDetection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for uaDetection.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uaDetection()
+ * @example /fr/os/uaDetection
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function uaDetection()
     {
         
@@ -770,6 +809,7 @@ trait Os
     }
 
 }
+
 
 
 

@@ -11,9 +11,44 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Debug;
 
+/**
+ * Class responsible for alter workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Alter extends Controller
 {
 
+/**
+ * Handle alter state through `dropsp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropsp.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropsp()
+ * @example /fr/alter/dropsp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropsp($param)
     {
         Debug::parseDebug($param);
@@ -29,6 +64,27 @@ class Alter extends Controller
         }
     }
 
+/**
+ * Handle alter state through `slave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for slave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::slave()
+ * @example /fr/alter/slave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function slave($param)
     {
         Debug::parseDebug($param);
@@ -55,6 +111,27 @@ class Alter extends Controller
         }
     }
 
+/**
+ * Handle alter state through `user`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for user.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::user()
+ * @example /fr/alter/user
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function user($param)
     {
         Debug::parseDebug($param);
@@ -90,6 +167,27 @@ class Alter extends Controller
         }
     }
 
+/**
+ * Handle alter state through `dropRoot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropRoot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropRoot()
+ * @example /fr/alter/dropRoot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropRoot($param)
     {
         Debug::parseDebug($param);

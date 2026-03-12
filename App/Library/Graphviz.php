@@ -16,6 +16,20 @@ use \App\Controller\Dot3;
 use \Glial\Sgbd\Sgbd;
 
 use \Glial\Extract\Grabber;
+/**
+ * Class responsible for graphviz workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Graphviz
 {
     // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
@@ -23,6 +37,13 @@ class Graphviz
 
     //max char for type, to prevent really big table with enum
     const MAX_LENGTH = 25;
+/**
+ * Stores `$color` for color.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $color = array('aliceblue', 'antiquewhite', 'antiquewhite1', 'antiquewhite2', 'antiquewhite3', 'antiquewhite4', 'aquamarine', 'aquamarine1', 'aquamarine2', 'aquamarine3', 'aquamarine4', 'azure',
         'azure1', 'azure2', 'azure3', 'azure4', 'beige', 'bisque', 'bisque1', 'bisque2', 'bisque3', 'bisque4', 'black', 'blanchedalmond', 'blue', 'blue1', 'blue2', 'blue3', 'blue4', 'blueviolet', 'brown',
         'brown1',
@@ -73,12 +94,57 @@ class Graphviz
         'grey78', 'grey79', 'grey8', 'grey80', 'grey81', 'grey82', 'grey83', 'grey84', 'grey85', 'grey86', 'grey87', 'grey88', 'grey89', 'grey9', 'grey90', 'grey91', 'grey92', 'grey93', 'grey94', 'grey95',
         'grey96', 'grey97', 'grey98', 'grey99');
 
+/**
+ * Stores `$table_count` for table count.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
         static $table_count = 1;
 
+/**
+ * Stores `$subgraph_number` for subgraph number.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
         static $subgraph_number = 0;
 
+/**
+ * Stores `$edge` for edge.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
         static $edge = array();
 
+/**
+ * Handle graphviz state through `generateTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @param mixed $underline Input value for `underline`.
+ * @phpstan-param mixed $underline
+ * @psalm-param mixed $underline
+ * @return mixed Returned value for generateTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateTable()
+ * @example /fr/graphviz/generateTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function generateTable(array $param, $underline =array())
     {
         $id_mysql_server = $param[0];
@@ -290,6 +356,27 @@ class Graphviz
     }
 
 
+/**
+ * Retrieve graphviz state through `getColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for getColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getColor()
+ * @example /fr/graphviz/getColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getColor($string)
     {
         $color = self::$color[hexdec(substr(md5($string), 0, 2))];
@@ -303,6 +390,27 @@ class Graphviz
         return "#".$color;
     }
 
+/**
+ * Handle graphviz state through `generateStart`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateStart.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateStart()
+ * @example /fr/graphviz/generateStart
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateStart($param=array())
     {
         //margin="0.104,0.0'.$rand.'";
@@ -316,6 +424,27 @@ class Graphviz
         return $ret;
     }
     
+/**
+ * Handle graphviz state through `generateEnd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateEnd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateEnd()
+ * @example /fr/graphviz/generateEnd
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateEnd($param = array())
     {
         $ret = "".PHP_EOL;
@@ -409,6 +538,27 @@ class Graphviz
         return $file_name;
     }
 
+/**
+ * Handle graphviz state through `generateEdge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $edge Input value for `edge`.
+ * @phpstan-param mixed $edge
+ * @psalm-param mixed $edge
+ * @return mixed Returned value for generateEdge.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateEdge()
+ * @example /fr/graphviz/generateEdge
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateEdge($edge)
     {
         if (empty($edge['options'])){
@@ -440,6 +590,28 @@ class Graphviz
         return $return;
     }
 
+/**
+ * Retrieve graphviz state through `getBrightness`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hex Input value for `hex`.
+ * @phpstan-param mixed $hex
+ * @psalm-param mixed $hex
+ * @return mixed Returned value for getBrightness.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getBrightness()
+ * @example /fr/graphviz/getBrightness
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getBrightness($hex) {
         // returns brightness value from 0 to 255
         // strip off any leading #
@@ -457,6 +629,27 @@ class Graphviz
         return (($c_r * 299) + ($c_g * 587) + ($c_b * 114)) / 1000;
     }
 
+/**
+ * Delete graphviz state through `removeBackground`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return void Returned value for removeBackground.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::removeBackground()
+ * @example /fr/graphviz/removeBackground
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function removeBackground($file_name)
     {
         if (!is_string($file_name) || $file_name === '' || !file_exists($file_name)) {
@@ -508,6 +701,27 @@ class Graphviz
 
 
 
+/**
+ * Handle graphviz state through `generateHiddenEdge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hidden_edge Input value for `hidden_edge`.
+ * @phpstan-param mixed $hidden_edge
+ * @psalm-param mixed $hidden_edge
+ * @return mixed Returned value for generateHiddenEdge.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateHiddenEdge()
+ * @example /fr/graphviz/generateHiddenEdge
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateHiddenEdge($hidden_edge)
     {
         $ret = '';
@@ -516,6 +730,27 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `openSubgraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for openSubgraph.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::openSubgraph()
+ * @example /fr/graphviz/openSubgraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function openSubgraph($param)
     {
         self::$subgraph_number++;
@@ -530,6 +765,27 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `closeSubgraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for closeSubgraph.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::closeSubgraph()
+ * @example /fr/graphviz/closeSubgraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function closeSubgraph($param)
     {
         self::$subgraph_number++;
@@ -539,6 +795,27 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `generateServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @return mixed Returned value for generateServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateServer()
+ * @example /fr/graphviz/generateServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateServer($server)
     { 
 
@@ -1229,6 +1506,39 @@ class Graphviz
     }
 
 
+/**
+ * Handle graphviz state through `buildBox`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $body Input value for `body`.
+ * @phpstan-param mixed $body
+ * @psalm-param mixed $body
+ * @param int $id_box Input value for `id_box`.
+ * @phpstan-param int $id_box
+ * @psalm-param int $id_box
+ * @param mixed $link Input value for `link`.
+ * @phpstan-param mixed $link
+ * @psalm-param mixed $link
+ * @param mixed $display_name Input value for `display_name`.
+ * @phpstan-param mixed $display_name
+ * @psalm-param mixed $display_name
+ * @param mixed $box_color Input value for `box_color`.
+ * @phpstan-param mixed $box_color
+ * @psalm-param mixed $box_color
+ * @return mixed Returned value for buildBox.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::buildBox()
+ * @example /fr/graphviz/buildBox
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function buildBox($body, $id_box, $link, $display_name, $box_color)
     {
 
@@ -1247,6 +1557,30 @@ class Graphviz
     }
 
 
+/**
+ * Handle graphviz state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/graphviz/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function format($bytes, $decimals = 2)
     {
         // && $bytes != 0
@@ -1260,6 +1594,30 @@ class Graphviz
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
+/**
+ * Handle `startCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $elems Input value for `elems`.
+ * @phpstan-param mixed $elems
+ * @psalm-param mixed $elems
+ * @return mixed Returned value for startCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example startCluster(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function startCluster($type, $elems )
     {
         $crc32 = crc32(json_encode($elems));
@@ -1284,12 +1642,49 @@ class Graphviz
     }
 
 
+/**
+ * Handle `endCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for endCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example endCluster(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function endCluster()
     {
         $return = "}".PHP_EOL;
         return $return;
     }
 
+/**
+ * Handle `generateGalera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $all_galera Input value for `all_galera`.
+ * @phpstan-param mixed $all_galera
+ * @psalm-param mixed $all_galera
+ * @return mixed Returned value for generateGalera.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example generateGalera(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function generateGalera($all_galera)
     {
         //Debug::debug($all_galera, "ALL GALERA");
@@ -1397,6 +1792,29 @@ class Graphviz
         return $return;
     }
 
+/**
+ * Handle `diluerCouleur`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hex Input value for `hex`.
+ * @phpstan-param mixed $hex
+ * @psalm-param mixed $hex
+ * @param mixed $percent Input value for `percent`.
+ * @phpstan-param mixed $percent
+ * @psalm-param mixed $percent
+ * @return mixed Returned value for diluerCouleur.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example diluerCouleur(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function diluerCouleur($hex, $percent) {
         // Assurez-vous que le format hexadécimal est valide
         if (strlen($hex) != 7 || $hex[0] != '#') {
@@ -1419,3 +1837,4 @@ class Graphviz
         return $nouveau_hex;
     }
 }
+

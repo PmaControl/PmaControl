@@ -7,9 +7,41 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for git workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Git
 {
 
+/**
+ * Retrieve git state through `getCurrentCommit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getCurrentCommit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCurrentCommit()
+ * @example /fr/git/getCurrentCommit
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getCurrentCommit(){
         $commit=array();
         $commit['build'] = trim(shell_exec("git rev-parse HEAD"));
@@ -31,6 +63,27 @@ class Git
         return $commit;
     }
 
+/**
+ * Retrieve git state through `getNewCommit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $build Input value for `build`.
+ * @phpstan-param mixed $build
+ * @psalm-param mixed $build
+ * @return mixed Returned value for getNewCommit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNewCommit()
+ * @example /fr/git/getNewCommit
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getNewCommit($build){
         
         

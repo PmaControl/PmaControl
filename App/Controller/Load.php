@@ -8,12 +8,68 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for load workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Load extends Controller {
 
+/**
+ * Stores `$repertoire_source` for repertoire source.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $repertoire_source = '/data/backup/ozitem';
+/**
+ * Stores `$sql_server` for sql server.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $sql_server = 'default';
+/**
+ * Stores `$debug` for debug.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     var $debug = false;
 
+/**
+ * Handle load state through `exec`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for exec.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::exec()
+ * @example /fr/load/exec
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function exec($param = array()) {
         $this->view = false;
 
@@ -101,6 +157,33 @@ class Load extends Controller {
         $this->install($all_dbs);
     }
 
+/**
+ * Handle load state through `waitPosition`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @param mixed $position Input value for `position`.
+ * @phpstan-param mixed $position
+ * @psalm-param mixed $position
+ * @return mixed Returned value for waitPosition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::waitPosition()
+ * @example /fr/load/waitPosition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function waitPosition($db, $file, $position) {
         $db = Sgbd::sql($this->sql_server);
 
@@ -161,6 +244,27 @@ class Load extends Controller {
         } while ($file != $Relay_Master_Log_File || $position != $Exec_Master_Log_Pos);
     }
 
+/**
+ * Handle load state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_order Input value for `db_order`.
+ * @phpstan-param mixed $db_order
+ * @psalm-param mixed $db_order
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/load/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install($db_order) {
 
         $db = Sgbd::sql($this->sql_server);
@@ -242,10 +346,53 @@ class Load extends Controller {
         $this->log($sql);
     }
 
+/**
+ * Handle load state through `log`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $sql Input value for `sql`.
+ * @phpstan-param mixed $sql
+ * @psalm-param mixed $sql
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/load/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function log($sql) {
         echo \SqlFormatter::highlight($sql);
     }
 
+/**
+ * Retrieve load state through `getLogAndPos`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return mixed Returned value for getLogAndPos.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getLogAndPos()
+ * @example /fr/load/getLogAndPos
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getLogAndPos($filename) {
         $handle = fopen($filename, "r");
         if ($handle) {
@@ -269,6 +416,28 @@ class Load extends Controller {
         }
     }
 
+/**
+ * Handle load state through `cmd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return mixed Returned value for cmd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cmd()
+ * @example /fr/load/cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmd($cmd) {
         $code_retour = 0;
 
@@ -286,3 +455,4 @@ class Load extends Controller {
     }
 
 }
+

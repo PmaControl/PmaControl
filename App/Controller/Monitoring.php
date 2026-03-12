@@ -7,11 +7,63 @@ use \Glial\Html\Pagination\Pagination;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 
+/**
+ * Class responsible for monitoring workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Monitoring extends Controller
 {
+/**
+ * Stores `$previous_data` for previous data.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $previous_data = array();
+/**
+ * Stores `$actual_data` for actual data.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $actual_data   = array();
 
+/**
+ * Handle monitoring state through `arrays_are_similar`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $a Input value for `a`.
+ * @phpstan-param mixed $a
+ * @psalm-param mixed $a
+ * @param mixed $b Input value for `b`.
+ * @phpstan-param mixed $b
+ * @psalm-param mixed $b
+ * @return mixed Returned value for arrays_are_similar.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::arrays_are_similar()
+ * @example /fr/monitoring/arrays_are_similar
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function arrays_are_similar($a, $b)
     {
         // if the indexes don't match, return immediately
@@ -29,6 +81,30 @@ class Monitoring extends Controller
         return true;
     }
 
+/**
+ * Handle monitoring state through `compare`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $tab_from Input value for `tab_from`.
+ * @phpstan-param mixed $tab_from
+ * @psalm-param mixed $tab_from
+ * @param mixed $tab_to Input value for `tab_to`.
+ * @phpstan-param mixed $tab_to
+ * @psalm-param mixed $tab_to
+ * @return mixed Returned value for compare.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compare()
+ * @example /fr/monitoring/compare
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compare($tab_from = array(), $tab_to=array())
     {
         $tab_update = array_intersect_key($tab_from, $tab_to);
@@ -61,6 +137,27 @@ class Monitoring extends Controller
         return serialize($param);
     }
 
+/**
+ * Handle monitoring state through `query`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for query.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::query()
+ * @example /fr/monitoring/query
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function query($param)
     {
 
@@ -346,6 +443,24 @@ class Monitoring extends Controller
 
 
 
+/**
+ * Retrieve monitoring state through `getServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServer()
+ * @example /fr/monitoring/getServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getServer()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -361,3 +476,4 @@ class Monitoring extends Controller
         return $remote;
     }
 }
+

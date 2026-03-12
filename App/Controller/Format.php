@@ -9,9 +9,44 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 
+/**
+ * Class responsible for format workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Format extends Controller
 {
 
+/**
+ * Render format state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/format/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -44,12 +79,54 @@ class Format extends Controller
         }
     }
 
+/**
+ * Handle format state through `base64url_encode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for base64url_encode.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::base64url_encode()
+ * @example /fr/format/base64url_encode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function base64url_encode($data)
     {
         return strtr(base64_encode($val), '+/=', '-_,');
         //return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
+/**
+ * Handle format state through `base64url_decode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for base64url_decode.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::base64url_decode()
+ * @example /fr/format/base64url_decode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function base64url_decode($data)
     {
         return base64_decode(strtr($val, '-_,', '+/='));

@@ -14,8 +14,29 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
+/**
+ * Class responsible for schema workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Schema extends Controller
 {
+/**
+ * Stores `$differ` for differ.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $differ;
 
     /**
@@ -230,6 +251,27 @@ class Schema extends Controller
         echo $script;
     }
 
+/**
+ * Handle schema state through `parseImportScriptOptions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $args Input value for `args`.
+ * @phpstan-param array $args
+ * @psalm-param array $args
+ * @return array Returned value for parseImportScriptOptions.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::parseImportScriptOptions()
+ * @example /fr/schema/parseImportScriptOptions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseImportScriptOptions(array $args): array
     {
         $options = [
@@ -302,42 +344,189 @@ class Schema extends Controller
         return $options;
     }
 
+/**
+ * Handle schema state through `buildImportTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportTables.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportTables()
+ * @example /fr/schema/buildImportTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportTables(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/schema/tables');
         return $this->buildSqlSection('Tables', $files);
     }
 
+/**
+ * Handle schema state through `buildImportViews`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportViews.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportViews()
+ * @example /fr/schema/buildImportViews
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportViews(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/schema/views');
         return $this->buildSqlSection('Views', $files);
     }
 
+/**
+ * Handle schema state through `buildImportProcedures`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportProcedures.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportProcedures()
+ * @example /fr/schema/buildImportProcedures
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportProcedures(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/routines/procedures');
         return $this->buildRoutineSection('Procedures', $files);
     }
 
+/**
+ * Handle schema state through `buildImportFunctions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportFunctions.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportFunctions()
+ * @example /fr/schema/buildImportFunctions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportFunctions(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/routines/functions');
         return $this->buildRoutineSection('Functions', $files);
     }
 
+/**
+ * Handle schema state through `buildImportTriggers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportTriggers.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportTriggers()
+ * @example /fr/schema/buildImportTriggers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportTriggers(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/triggers');
         return $this->buildSqlSection('Triggers', $files);
     }
 
+/**
+ * Handle schema state through `buildImportEvents`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return string Returned value for buildImportEvents.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildImportEvents()
+ * @example /fr/schema/buildImportEvents
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildImportEvents(string $basePath): string
     {
         $files = $this->loadSqlFiles($basePath . '/events');
         return $this->buildSqlSection('Events', $files);
     }
 
+/**
+ * Handle schema state through `concatImportChunks`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $chunks Input value for `chunks`.
+ * @phpstan-param array $chunks
+ * @psalm-param array $chunks
+ * @return string Returned value for concatImportChunks.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::concatImportChunks()
+ * @example /fr/schema/concatImportChunks
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function concatImportChunks(array $chunks): string
     {
         $chunks = array_values(array_filter($chunks, function ($chunk): bool {
@@ -351,6 +540,27 @@ class Schema extends Controller
         return rtrim(implode("\n\n", $chunks)) . "\n";
     }
 
+/**
+ * Handle schema state through `loadSqlFiles`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return array Returned value for loadSqlFiles.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::loadSqlFiles()
+ * @example /fr/schema/loadSqlFiles
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function loadSqlFiles(string $path): array
     {
         if (!is_dir($path)) {
@@ -362,6 +572,30 @@ class Schema extends Controller
         return $files;
     }
 
+/**
+ * Handle schema state through `buildSqlSection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $label Input value for `label`.
+ * @phpstan-param string $label
+ * @psalm-param string $label
+ * @param array $files Input value for `files`.
+ * @phpstan-param array $files
+ * @psalm-param array $files
+ * @return string Returned value for buildSqlSection.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildSqlSection()
+ * @example /fr/schema/buildSqlSection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildSqlSection(string $label, array $files): string
     {
         if (empty($files)) {
@@ -384,6 +618,30 @@ class Schema extends Controller
         return rtrim(implode("\n\n", $parts)) . "\n";
     }
 
+/**
+ * Handle schema state through `buildRoutineSection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $label Input value for `label`.
+ * @phpstan-param string $label
+ * @psalm-param string $label
+ * @param array $files Input value for `files`.
+ * @phpstan-param array $files
+ * @psalm-param array $files
+ * @return string Returned value for buildRoutineSection.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildRoutineSection()
+ * @example /fr/schema/buildRoutineSection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildRoutineSection(string $label, array $files): string
     {
         if (empty($files)) {
@@ -407,6 +665,27 @@ class Schema extends Controller
         return rtrim(implode("\n\n", $parts)) . "\n";
     }
 
+/**
+ * Handle schema state through `readSqlFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return string Returned value for readSqlFile.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::readSqlFile()
+ * @example /fr/schema/readSqlFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function readSqlFile(string $path): string
     {
         if (!is_readable($path)) {
@@ -421,6 +700,27 @@ class Schema extends Controller
         return trim($this->normalizeLineEndings($content));
     }
 
+/**
+ * Handle schema state through `formatRoutineFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return string Returned value for formatRoutineFile.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatRoutineFile()
+ * @example /fr/schema/formatRoutineFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatRoutineFile(string $path): string
     {
         $content = $this->readSqlFile($path);
@@ -453,6 +753,37 @@ class Schema extends Controller
         return $content;
     }
 
+/**
+ * Handle schema state through `exportRoutines`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @param string $routineType Input value for `routineType`.
+ * @phpstan-param string $routineType
+ * @psalm-param string $routineType
+ * @return array Returned value for exportRoutines.
+ * @phpstan-return array
+ * @psalm-return array
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportRoutines()
+ * @example /fr/schema/exportRoutines
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function exportRoutines(int $id_mysql_server, string $database, string $basePath, string $routineType): array
     {
         $routineType = strtoupper($routineType);
@@ -504,6 +835,34 @@ class Schema extends Controller
         return $names;
     }
 
+/**
+ * Handle schema state through `exportTriggers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return array Returned value for exportTriggers.
+ * @phpstan-return array
+ * @psalm-return array
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportTriggers()
+ * @example /fr/schema/exportTriggers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function exportTriggers(int $id_mysql_server, string $database, string $basePath): array
     {
         $db = Mysql::getDbLink($id_mysql_server);
@@ -554,6 +913,34 @@ class Schema extends Controller
         return $triggers;
     }
 
+/**
+ * Handle schema state through `exportEvents`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return array Returned value for exportEvents.
+ * @phpstan-return array
+ * @psalm-return array
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportEvents()
+ * @example /fr/schema/exportEvents
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function exportEvents(int $id_mysql_server, string $database, string $basePath): array
     {
         $db = Mysql::getDbLink($id_mysql_server);
@@ -600,6 +987,33 @@ class Schema extends Controller
         return $events;
     }
 
+/**
+ * Handle schema state through `executeRoutineShowCreate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $sqlShow Input value for `sqlShow`.
+ * @phpstan-param string $sqlShow
+ * @psalm-param string $sqlShow
+ * @param string $routineType Input value for `routineType`.
+ * @phpstan-param string $routineType
+ * @psalm-param string $routineType
+ * @return array Returned value for executeRoutineShowCreate.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::executeRoutineShowCreate()
+ * @example /fr/schema/executeRoutineShowCreate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function executeRoutineShowCreate(int $id_mysql_server, string $sqlShow, string $routineType): array
     {
         $db = Mysql::getDbLink($id_mysql_server);
@@ -614,6 +1028,33 @@ class Schema extends Controller
         ];
     }
 
+/**
+ * Handle schema state through `extractRoutineName`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $row Input value for `row`.
+ * @phpstan-param array $row
+ * @psalm-param array $row
+ * @param string $definitionKey Input value for `definitionKey`.
+ * @phpstan-param string $definitionKey
+ * @psalm-param string $definitionKey
+ * @param string $routineType Input value for `routineType`.
+ * @phpstan-param string $routineType
+ * @psalm-param string $routineType
+ * @return string Returned value for extractRoutineName.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::extractRoutineName()
+ * @example /fr/schema/extractRoutineName
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractRoutineName(array $row, string $definitionKey, string $routineType): string
     {
         $candidates = [];
@@ -638,6 +1079,28 @@ class Schema extends Controller
         return 'unknown';
     }
 
+/**
+ * Handle schema state through `ensureDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return bool Returned value for ensureDirectory.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::ensureDirectory()
+ * @example /fr/schema/ensureDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function ensureDirectory(string $path): bool
     {
         if (is_dir($path)) {
@@ -651,6 +1114,28 @@ class Schema extends Controller
         return true;
     }
 
+/**
+ * Handle schema state through `ensureSchemaDirectoryStructure`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @return void Returned value for ensureSchemaDirectoryStructure.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::ensureSchemaDirectoryStructure()
+ * @example /fr/schema/ensureSchemaDirectoryStructure
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function ensureSchemaDirectoryStructure(string $basePath): void
     {
         $subDirs = [
@@ -675,6 +1160,28 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Handle schema state through `initializeGitRepository`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return void Returned value for initializeGitRepository.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::initializeGitRepository()
+ * @example /fr/schema/initializeGitRepository
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function initializeGitRepository(string $path): void
     {
         if (!is_dir($path)) {
@@ -687,6 +1194,27 @@ class Schema extends Controller
         shell_exec($cmd);
     }
 
+/**
+ * Handle schema state through `ensureGitRepository`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return void Returned value for ensureGitRepository.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ensureGitRepository()
+ * @example /fr/schema/ensureGitRepository
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function ensureGitRepository(string $path): void
     {
         $gitDir = $path . DIRECTORY_SEPARATOR . '.git';
@@ -698,6 +1226,36 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Handle schema state through `commitSchemaSnapshot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $idMysqlServer Input value for `idMysqlServer`.
+ * @phpstan-param int $idMysqlServer
+ * @psalm-param int $idMysqlServer
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @param array $serverMeta Input value for `serverMeta`.
+ * @phpstan-param array $serverMeta
+ * @psalm-param array $serverMeta
+ * @return void Returned value for commitSchemaSnapshot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::commitSchemaSnapshot()
+ * @example /fr/schema/commitSchemaSnapshot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function commitSchemaSnapshot(int $idMysqlServer, string $database, string $path, array $serverMeta): void
     {
         $this->ensureGitRepository($path);
@@ -751,6 +1309,30 @@ class Schema extends Controller
         $this->notifySchemaChange($database, $snapshotNumber, $changeSummary, $serverMeta);
     }
 
+/**
+ * Retrieve schema state through `getGitStatus`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @param array $exclude Input value for `exclude`.
+ * @phpstan-param array $exclude
+ * @psalm-param array $exclude
+ * @return string Returned value for getGitStatus.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getGitStatus()
+ * @example /fr/schema/getGitStatus
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getGitStatus(string $path, array $exclude = []): string
     {
         $cmd = "cd " . escapeshellarg($path) . " && git status --porcelain";
@@ -764,6 +1346,39 @@ class Schema extends Controller
         return trim(shell_exec($cmd) ?? '');
     }
 
+/**
+ * Handle schema state through `commitSubDirectorySnapshot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @param string $subDirectory Input value for `subDirectory`.
+ * @phpstan-param string $subDirectory
+ * @psalm-param string $subDirectory
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param array $serverMeta Input value for `serverMeta`.
+ * @phpstan-param array $serverMeta
+ * @psalm-param array $serverMeta
+ * @param string $label Input value for `label`.
+ * @phpstan-param string $label
+ * @psalm-param string $label
+ * @return void Returned value for commitSubDirectorySnapshot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::commitSubDirectorySnapshot()
+ * @example /fr/schema/commitSubDirectorySnapshot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function commitSubDirectorySnapshot(
         string $basePath,
         string $subDirectory,
@@ -801,6 +1416,27 @@ class Schema extends Controller
         $this->notifySchemaChange($database, $snapshotNumber, $changeSummary, $serverMeta);
     }
 
+/**
+ * Handle schema state through `ensureGitSafeDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return void Returned value for ensureGitSafeDirectory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ensureGitSafeDirectory()
+ * @example /fr/schema/ensureGitSafeDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function ensureGitSafeDirectory(string $path): void
     {
         $path = rtrim($path, DIRECTORY_SEPARATOR);
@@ -821,11 +1457,53 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Delete schema state through `removeAutoIncrement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $createStatement Input value for `createStatement`.
+ * @phpstan-param string $createStatement
+ * @psalm-param string $createStatement
+ * @return string Returned value for removeAutoIncrement.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::removeAutoIncrement()
+ * @example /fr/schema/removeAutoIncrement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function removeAutoIncrement(string $createStatement): string
     {
         return preg_replace('/\sAUTO_INCREMENT=\d+/i', '', $createStatement);
     }
 
+/**
+ * Retrieve schema state through `getNextSnapshotNumber`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return int Returned value for getNextSnapshotNumber.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getNextSnapshotNumber()
+ * @example /fr/schema/getNextSnapshotNumber
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getNextSnapshotNumber(string $path): int
     {
         $log = trim(shell_exec("cd " . escapeshellarg($path) . " && git log -1 --pretty=%B 2>/dev/null") ?? '');
@@ -842,6 +1520,33 @@ class Schema extends Controller
         return 1;
     }
 
+/**
+ * Handle schema state through `cleanupObsoleteSchemaFiles`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @param string $folder Input value for `folder`.
+ * @phpstan-param string $folder
+ * @psalm-param string $folder
+ * @param array $currentObjects Input value for `currentObjects`.
+ * @phpstan-param array $currentObjects
+ * @psalm-param array $currentObjects
+ * @return void Returned value for cleanupObsoleteSchemaFiles.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cleanupObsoleteSchemaFiles()
+ * @example /fr/schema/cleanupObsoleteSchemaFiles
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function cleanupObsoleteSchemaFiles(string $path, string $folder, array $currentObjects): void
     {
         $folder = trim($folder, '/');
@@ -860,6 +1565,27 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Handle schema state through `extractCreateViewStatement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $createRow Input value for `createRow`.
+ * @phpstan-param array $createRow
+ * @psalm-param array $createRow
+ * @return string Returned value for extractCreateViewStatement.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::extractCreateViewStatement()
+ * @example /fr/schema/extractCreateViewStatement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractCreateViewStatement(array $createRow): string
     {
         foreach ($createRow as $key => $value) {
@@ -871,6 +1597,27 @@ class Schema extends Controller
         return '';
     }
 
+/**
+ * Handle schema state through `ensureCreateOrReplaceView`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $statement Input value for `statement`.
+ * @phpstan-param string $statement
+ * @psalm-param string $statement
+ * @return string Returned value for ensureCreateOrReplaceView.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::ensureCreateOrReplaceView()
+ * @example /fr/schema/ensureCreateOrReplaceView
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function ensureCreateOrReplaceView(string $statement): string
     {
         $trimmed = ltrim($statement);
@@ -881,11 +1628,53 @@ class Schema extends Controller
         return preg_replace('/^\s*CREATE\s+/i', 'CREATE OR REPLACE ', $statement, 1) ?? $statement;
     }
 
+/**
+ * Handle schema state through `normalizeLineEndings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return string Returned value for normalizeLineEndings.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalizeLineEndings()
+ * @example /fr/schema/normalizeLineEndings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function normalizeLineEndings(string $sql): string
     {
         return str_replace(["\r\n", "\r"], "\n", $sql);
     }
 
+/**
+ * Handle schema state through `runDos2Unix`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return void Returned value for runDos2Unix.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::runDos2Unix()
+ * @example /fr/schema/runDos2Unix
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function runDos2Unix(string $path): void
     {
         $binary = trim(shell_exec('command -v dos2unix 2>/dev/null') ?? '');
@@ -896,6 +1685,27 @@ class Schema extends Controller
         shell_exec($binary . ' ' . escapeshellarg($path));
     }
 
+/**
+ * Handle schema state through `parseGitStatus`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $status Input value for `status`.
+ * @phpstan-param string $status
+ * @psalm-param string $status
+ * @return array Returned value for parseGitStatus.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::parseGitStatus()
+ * @example /fr/schema/parseGitStatus
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseGitStatus(string $status): array
     {
         $changes = [
@@ -941,6 +1751,36 @@ class Schema extends Controller
         return $changes;
     }
 
+/**
+ * Handle schema state through `notifySchemaChange`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $database Input value for `database`.
+ * @phpstan-param string $database
+ * @psalm-param string $database
+ * @param int $snapshotNumber Input value for `snapshotNumber`.
+ * @phpstan-param int $snapshotNumber
+ * @psalm-param int $snapshotNumber
+ * @param array $changes Input value for `changes`.
+ * @phpstan-param array $changes
+ * @psalm-param array $changes
+ * @param array $serverMeta Input value for `serverMeta`.
+ * @phpstan-param array $serverMeta
+ * @psalm-param array $serverMeta
+ * @return void Returned value for notifySchemaChange.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::notifySchemaChange()
+ * @example /fr/schema/notifySchemaChange
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function notifySchemaChange(string $database, int $snapshotNumber, array $changes, array $serverMeta): void
     {
         if (empty($changes['added']) && empty($changes['modified']) && empty($changes['deleted'])) {
@@ -974,6 +1814,27 @@ class Schema extends Controller
         //Telegram::broadcast($message);
     }
 
+/**
+ * Handle schema state through `formatChangeList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $items Input value for `items`.
+ * @phpstan-param array $items
+ * @psalm-param array $items
+ * @return string Returned value for formatChangeList.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatChangeList()
+ * @example /fr/schema/formatChangeList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatChangeList(array $items): string
     {
         $maxItems = 10;
@@ -988,6 +1849,27 @@ class Schema extends Controller
         return implode(', ', $items);
     }
 
+/**
+ * Handle schema state through `formatServerLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $meta Input value for `meta`.
+ * @phpstan-param array $meta
+ * @psalm-param array $meta
+ * @return string Returned value for formatServerLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatServerLabel()
+ * @example /fr/schema/formatServerLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatServerLabel(array $meta): string
     {
         $ip = $meta['ip'] ?? '';
@@ -1009,6 +1891,27 @@ class Schema extends Controller
         return "🖥️ " . htmlspecialchars($socket, ENT_QUOTES, 'UTF-8');
     }
 
+/**
+ * Handle schema state through `isUnknownDatabaseError`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param \Throwable $exception Input value for `exception`.
+ * @phpstan-param \Throwable $exception
+ * @psalm-param \Throwable $exception
+ * @return bool Returned value for isUnknownDatabaseError.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isUnknownDatabaseError()
+ * @example /fr/schema/isUnknownDatabaseError
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isUnknownDatabaseError(\Throwable $exception): bool
     {
         if ($exception instanceof \mysqli_sql_exception && (int)$exception->getCode() === 1049) {
@@ -1018,6 +1921,28 @@ class Schema extends Controller
         return stripos($exception->getMessage(), 'unknown database') !== false;
     }
 
+/**
+ * Handle schema state through `exportAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for exportAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportAll()
+ * @example /fr/schema/exportAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function exportAll(array $param): void
     {
         Debug::parseDebug($param);
@@ -1036,6 +1961,28 @@ class Schema extends Controller
         $this->view = false;
     }
 
+/**
+ * Handle schema state through `exportSchemasForServer`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return void Returned value for exportSchemasForServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportSchemasForServer()
+ * @example /fr/schema/exportSchemasForServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function exportSchemasForServer(int $id_mysql_server): void
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1079,6 +2026,27 @@ class Schema extends Controller
         echo "All schemas exported for server " . $id_mysql_server . PHP_EOL;
     }
 
+/**
+ * Retrieve schema state through `getEligibleServerIds`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return array Returned value for getEligibleServerIds.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getEligibleServerIds()
+ * @example /fr/schema/getEligibleServerIds
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getEligibleServerIds($param): array
     {
         debug::parseDebug($param);
@@ -1153,6 +2121,24 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Handle schema state through `loadDdlState`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return array Returned value for loadDdlState.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::loadDdlState()
+ * @example /fr/schema/loadDdlState
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function loadDdlState(): array
     {
         $file = $this->getDdlStateFile();
@@ -1169,17 +2155,77 @@ class Schema extends Controller
         return is_array($data) ? $data : [];
     }
 
+/**
+ * Update schema state through `saveDdlState`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $state Input value for `state`.
+ * @phpstan-param array $state
+ * @psalm-param array $state
+ * @return void Returned value for saveDdlState.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::saveDdlState()
+ * @example /fr/schema/saveDdlState
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function saveDdlState(array $state): void
     {
         $file = $this->getDdlStateFile();
         file_put_contents($file, json_encode($state, JSON_PRETTY_PRINT));
     }
 
+/**
+ * Retrieve schema state through `getDdlStateFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return string Returned value for getDdlStateFile.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getDdlStateFile()
+ * @example /fr/schema/getDdlStateFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDdlStateFile(): string
     {
         return DATA . "schema_watch_state.json";
     }
 
+/**
+ * Handle schema state through `toInt`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return int Returned value for toInt.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::toInt()
+ * @example /fr/schema/toInt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function toInt($value): int
     {
         if (is_array($value) && isset($value['value'])) {
@@ -1189,6 +2235,30 @@ class Schema extends Controller
         return (int)$value;
     }
 
+/**
+ * Handle schema state through `computeDelta`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $previous Input value for `previous`.
+ * @phpstan-param int $previous
+ * @psalm-param int $previous
+ * @param int $current Input value for `current`.
+ * @phpstan-param int $current
+ * @psalm-param int $current
+ * @return int Returned value for computeDelta.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::computeDelta()
+ * @example /fr/schema/computeDelta
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function computeDelta(int $previous, int $current): int
     {
         if ($current < $previous) {
@@ -1223,6 +2293,33 @@ class Schema extends Controller
         echo $this->formatModelComparison($comparison) . PHP_EOL;
     }
 
+/**
+ * Handle schema state through `diffModelServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $leftId Input value for `leftId`.
+ * @phpstan-param int $leftId
+ * @psalm-param int $leftId
+ * @param int $rightId Input value for `rightId`.
+ * @phpstan-param int $rightId
+ * @psalm-param int $rightId
+ * @param array $options Input value for `options`.
+ * @phpstan-param array $options
+ * @psalm-param array $options
+ * @return array Returned value for diffModelServers.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::diffModelServers()
+ * @example /fr/schema/diffModelServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function diffModelServers(int $leftId, int $rightId, array $options = []): array
     {
         $ignoreColumnOrder = !empty($options['ignore_column_order']);
@@ -1267,6 +2364,28 @@ class Schema extends Controller
         ];
     }
 
+/**
+ * Retrieve schema state through `getModelServerPath`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $serverId Input value for `serverId`.
+ * @phpstan-param int $serverId
+ * @psalm-param int $serverId
+ * @return string Returned value for getModelServerPath.
+ * @phpstan-return string
+ * @psalm-return string
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getModelServerPath()
+ * @example /fr/schema/getModelServerPath
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getModelServerPath(int $serverId): string
     {
         $path = rtrim(DATA, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . "model" . DIRECTORY_SEPARATOR . $serverId;
@@ -1282,6 +2401,27 @@ class Schema extends Controller
         return $path;
     }
 
+/**
+ * Retrieve schema state through `listModelDatabases`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $serverPath Input value for `serverPath`.
+ * @phpstan-param string $serverPath
+ * @psalm-param string $serverPath
+ * @return array Returned value for listModelDatabases.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::listModelDatabases()
+ * @example /fr/schema/listModelDatabases
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function listModelDatabases(string $serverPath): array
     {
         $paths = glob($serverPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
@@ -1300,6 +2440,27 @@ class Schema extends Controller
         return $result;
     }
 
+/**
+ * Retrieve schema state through `listModelObjects`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $databasePath Input value for `databasePath`.
+ * @phpstan-param string $databasePath
+ * @psalm-param string $databasePath
+ * @return array Returned value for listModelObjects.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::listModelObjects()
+ * @example /fr/schema/listModelObjects
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function listModelObjects(string $databasePath): array
     {
         $objects = $this->listModelSqlFiles($databasePath);
@@ -1308,6 +2469,27 @@ class Schema extends Controller
         return $objects;
     }
 
+/**
+ * Retrieve schema state through `listModelSqlFiles`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $databasePath Input value for `databasePath`.
+ * @phpstan-param string $databasePath
+ * @psalm-param string $databasePath
+ * @return array Returned value for listModelSqlFiles.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::listModelSqlFiles()
+ * @example /fr/schema/listModelSqlFiles
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function listModelSqlFiles(string $databasePath): array
     {
         if (!is_dir($databasePath)) {
@@ -1340,6 +2522,33 @@ class Schema extends Controller
         return $objects;
     }
 
+/**
+ * Handle schema state through `diffModelDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $leftDatabasePath Input value for `leftDatabasePath`.
+ * @phpstan-param string $leftDatabasePath
+ * @psalm-param string $leftDatabasePath
+ * @param string $rightDatabasePath Input value for `rightDatabasePath`.
+ * @phpstan-param string $rightDatabasePath
+ * @psalm-param string $rightDatabasePath
+ * @param bool $ignoreColumnOrder Input value for `ignoreColumnOrder`.
+ * @phpstan-param bool $ignoreColumnOrder
+ * @psalm-param bool $ignoreColumnOrder
+ * @return array Returned value for diffModelDatabase.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::diffModelDatabase()
+ * @example /fr/schema/diffModelDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function diffModelDatabase(string $leftDatabasePath, string $rightDatabasePath, bool $ignoreColumnOrder = false): array
     {
         $leftObjects  = $this->listModelObjects($leftDatabasePath);
@@ -1373,6 +2582,27 @@ class Schema extends Controller
         ];
     }
 
+/**
+ * Handle schema state through `formatModelComparison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $comparison Input value for `comparison`.
+ * @phpstan-param array $comparison
+ * @psalm-param array $comparison
+ * @return string Returned value for formatModelComparison.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatModelComparison()
+ * @example /fr/schema/formatModelComparison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatModelComparison(array $comparison): string
     {
         $lines = [];
@@ -1423,6 +2653,27 @@ class Schema extends Controller
         return implode("\n", $lines);
     }
 
+/**
+ * Handle schema state through `compareModelsUi`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for compareModelsUi.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compareModelsUi()
+ * @example /fr/schema/compareModelsUi
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compareModelsUi(array $param): void
     {
         $this->title = __("Compare schema exports");
@@ -1463,6 +2714,30 @@ class Schema extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle schema state through `buildComparisonDetails`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $differences Input value for `differences`.
+ * @phpstan-param array $differences
+ * @psalm-param array $differences
+ * @param bool $ignoreColumnOrder Input value for `ignoreColumnOrder`.
+ * @phpstan-param bool $ignoreColumnOrder
+ * @psalm-param bool $ignoreColumnOrder
+ * @return array Returned value for buildComparisonDetails.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::buildComparisonDetails()
+ * @example /fr/schema/buildComparisonDetails
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildComparisonDetails(array $differences, bool $ignoreColumnOrder): array
     {
         $result = [];
@@ -1492,6 +2767,33 @@ class Schema extends Controller
         return $result;
     }
 
+/**
+ * Handle schema state through `renderDiffTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $leftFile Input value for `leftFile`.
+ * @phpstan-param string $leftFile
+ * @psalm-param string $leftFile
+ * @param string $rightFile Input value for `rightFile`.
+ * @phpstan-param string $rightFile
+ * @psalm-param string $rightFile
+ * @param bool $ignoreColumnOrder Input value for `ignoreColumnOrder`.
+ * @phpstan-param bool $ignoreColumnOrder
+ * @psalm-param bool $ignoreColumnOrder
+ * @return string Returned value for renderDiffTable.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::renderDiffTable()
+ * @example /fr/schema/renderDiffTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function renderDiffTable(string $leftFile, string $rightFile, bool $ignoreColumnOrder = false): string
     {
         $left = $this->readFileContent($leftFile);
@@ -1532,6 +2834,27 @@ class Schema extends Controller
         return '<table class="diff-table">' . implode('', $rows) . '</table>';
     }
 
+/**
+ * Retrieve schema state through `getDiffClass`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $type Input value for `type`.
+ * @phpstan-param int $type
+ * @psalm-param int $type
+ * @return string Returned value for getDiffClass.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getDiffClass()
+ * @example /fr/schema/getDiffClass
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDiffClass(int $type): string
     {
         if ($type === Differ::ADDED) {
@@ -1545,6 +2868,27 @@ class Schema extends Controller
         return 'same';
     }
 
+/**
+ * Retrieve schema state through `getDiffPrefix`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $type Input value for `type`.
+ * @phpstan-param int $type
+ * @psalm-param int $type
+ * @return string Returned value for getDiffPrefix.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getDiffPrefix()
+ * @example /fr/schema/getDiffPrefix
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDiffPrefix(int $type): string
     {
         if ($type === Differ::ADDED) {
@@ -1558,6 +2902,27 @@ class Schema extends Controller
         return '  ';
     }
 
+/**
+ * Handle schema state through `readFileContent`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return string Returned value for readFileContent.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::readFileContent()
+ * @example /fr/schema/readFileContent
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function readFileContent(string $path): string
     {
         if (!is_readable($path)) {
@@ -1568,6 +2933,33 @@ class Schema extends Controller
         return $content === false ? '' : $content;
     }
 
+/**
+ * Handle schema state through `areModelFilesIdentical`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $fileA Input value for `fileA`.
+ * @phpstan-param string $fileA
+ * @psalm-param string $fileA
+ * @param string $fileB Input value for `fileB`.
+ * @phpstan-param string $fileB
+ * @psalm-param string $fileB
+ * @param bool $ignoreColumnOrder Input value for `ignoreColumnOrder`.
+ * @phpstan-param bool $ignoreColumnOrder
+ * @psalm-param bool $ignoreColumnOrder
+ * @return bool Returned value for areModelFilesIdentical.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::areModelFilesIdentical()
+ * @example /fr/schema/areModelFilesIdentical
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function areModelFilesIdentical(string $fileA, string $fileB, bool $ignoreColumnOrder = false): bool
     {
         if (!is_readable($fileA) || !is_readable($fileB)) {
@@ -1584,6 +2976,27 @@ class Schema extends Controller
         return md5($contentA) === md5($contentB);
     }
 
+/**
+ * Handle schema state through `normalizeCreateTableStatement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return string Returned value for normalizeCreateTableStatement.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalizeCreateTableStatement()
+ * @example /fr/schema/normalizeCreateTableStatement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function normalizeCreateTableStatement(string $sql): string
     {
         $sql = str_replace(["\r\n", "\r"], "\n", trim($sql));
@@ -1680,6 +3093,27 @@ class Schema extends Controller
         return $normalized;
     }
 
+/**
+ * Handle schema state through `splitSqlDefinitionList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $body Input value for `body`.
+ * @phpstan-param string $body
+ * @psalm-param string $body
+ * @return array Returned value for splitSqlDefinitionList.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::splitSqlDefinitionList()
+ * @example /fr/schema/splitSqlDefinitionList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function splitSqlDefinitionList(string $body): array
     {
         $length = strlen($body);
@@ -1748,12 +3182,54 @@ class Schema extends Controller
         return $entries;
     }
 
+/**
+ * Handle schema state through `isColumnDefinitionLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $definition Input value for `definition`.
+ * @phpstan-param string $definition
+ * @psalm-param string $definition
+ * @return bool Returned value for isColumnDefinitionLine.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isColumnDefinitionLine()
+ * @example /fr/schema/isColumnDefinitionLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isColumnDefinitionLine(string $definition): bool
     {
         $definition = ltrim($definition);
         return isset($definition[0]) && $definition[0] === '`';
     }
 
+/**
+ * Handle schema state through `isIndexDefinitionLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $definition Input value for `definition`.
+ * @phpstan-param string $definition
+ * @psalm-param string $definition
+ * @return bool Returned value for isIndexDefinitionLine.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isIndexDefinitionLine()
+ * @example /fr/schema/isIndexDefinitionLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isIndexDefinitionLine(string $definition): bool
     {
         $definition = ltrim($definition);
@@ -1781,6 +3257,27 @@ class Schema extends Controller
         return false;
     }
 
+/**
+ * Handle schema state through `extractColumnName`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $definition Input value for `definition`.
+ * @phpstan-param string $definition
+ * @psalm-param string $definition
+ * @return string Returned value for extractColumnName.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::extractColumnName()
+ * @example /fr/schema/extractColumnName
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractColumnName(string $definition): string
     {
         if (preg_match('/^`([^`]+)`/', $definition, $matches)) {
@@ -1790,6 +3287,27 @@ class Schema extends Controller
         return $definition;
     }
 
+/**
+ * Handle schema state through `extractIndexName`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $definition Input value for `definition`.
+ * @phpstan-param string $definition
+ * @psalm-param string $definition
+ * @return string Returned value for extractIndexName.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::extractIndexName()
+ * @example /fr/schema/extractIndexName
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractIndexName(string $definition): string
     {
         $definition = ltrim($definition);
@@ -1813,6 +3331,30 @@ class Schema extends Controller
         return strtolower(preg_replace('/\s+/', ' ', $definition));
     }
 
+/**
+ * Handle schema state through `isEscapedByBackslash`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $subject Input value for `subject`.
+ * @phpstan-param string $subject
+ * @psalm-param string $subject
+ * @param int $position Input value for `position`.
+ * @phpstan-param int $position
+ * @psalm-param int $position
+ * @return bool Returned value for isEscapedByBackslash.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isEscapedByBackslash()
+ * @example /fr/schema/isEscapedByBackslash
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isEscapedByBackslash(string $subject, int $position): bool
     {
         $backslashes = 0;
@@ -1827,6 +3369,24 @@ class Schema extends Controller
         return ($backslashes % 2) === 1;
     }
 
+/**
+ * Retrieve schema state through `getDiffTableCss`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return string Returned value for getDiffTableCss.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getDiffTableCss()
+ * @example /fr/schema/getDiffTableCss
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDiffTableCss(): string
     {
         return '<style>
@@ -1841,6 +3401,24 @@ class Schema extends Controller
 </style>';
     }
 
+/**
+ * Retrieve schema state through `getDiffer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return Differ Returned value for getDiffer.
+ * @phpstan-return Differ
+ * @psalm-return Differ
+ * @see self::getDiffer()
+ * @example /fr/schema/getDiffer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDiffer(): Differ
     {
         if (!$this->differ instanceof Differ) {
@@ -1850,6 +3428,28 @@ class Schema extends Controller
         return $this->differ;
     }
 
+/**
+ * Handle schema state through `watch`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for watch.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::watch()
+ * @example /fr/schema/watch
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function watch(array $param): void
     {
         Debug::parseDebug($param);
@@ -2139,6 +3739,31 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Handle schema state through `runMigration`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $basePath Input value for `basePath`.
+ * @phpstan-param string $basePath
+ * @psalm-param string $basePath
+ * @param ?int $serverFilter Input value for `serverFilter`.
+ * @phpstan-param ?int $serverFilter
+ * @psalm-param ?int $serverFilter
+ * @return array Returned value for runMigration.
+ * @phpstan-return array
+ * @psalm-return array
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::runMigration()
+ * @example /fr/schema/runMigration
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function runMigration(string $basePath, ?int $serverFilter): array
     {
         if (!is_dir($basePath)) {
@@ -2223,6 +3848,27 @@ class Schema extends Controller
         return $summary;
     }
 
+/**
+ * Handle schema state through `formatMigrationSummary`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $summary Input value for `summary`.
+ * @phpstan-param array $summary
+ * @psalm-param array $summary
+ * @return string Returned value for formatMigrationSummary.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatMigrationSummary()
+ * @example /fr/schema/formatMigrationSummary
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatMigrationSummary(array $summary): string
     {
         return sprintf(
@@ -2234,6 +3880,31 @@ class Schema extends Controller
         );
     }
 
+/**
+ * Handle schema state through `moveFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $source Input value for `source`.
+ * @phpstan-param string $source
+ * @psalm-param string $source
+ * @param string $destination Input value for `destination`.
+ * @phpstan-param string $destination
+ * @psalm-param string $destination
+ * @return void Returned value for moveFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::moveFile()
+ * @example /fr/schema/moveFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function moveFile(string $source, string $destination): void
     {
         $targetDir = dirname($destination);
@@ -2253,6 +3924,30 @@ class Schema extends Controller
         throw new \RuntimeException('Unable to move file ' . $source . ' -> ' . $destination);
     }
 
+/**
+ * Handle schema state through `moveDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $source Input value for `source`.
+ * @phpstan-param string $source
+ * @psalm-param string $source
+ * @param string $destination Input value for `destination`.
+ * @phpstan-param string $destination
+ * @psalm-param string $destination
+ * @return void Returned value for moveDirectory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::moveDirectory()
+ * @example /fr/schema/moveDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function moveDirectory(string $source, string $destination): void
     {
         if (@rename($source, $destination)) {
@@ -2263,6 +3958,30 @@ class Schema extends Controller
         $this->removeDirectory($source);
     }
 
+/**
+ * Handle schema state through `copyDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $source Input value for `source`.
+ * @phpstan-param string $source
+ * @psalm-param string $source
+ * @param string $destination Input value for `destination`.
+ * @phpstan-param string $destination
+ * @psalm-param string $destination
+ * @return void Returned value for copyDirectory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::copyDirectory()
+ * @example /fr/schema/copyDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function copyDirectory(string $source, string $destination): void
     {
         if (!is_dir($destination)) {
@@ -2286,6 +4005,27 @@ class Schema extends Controller
         }
     }
 
+/**
+ * Delete schema state through `removeDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $path Input value for `path`.
+ * @phpstan-param string $path
+ * @psalm-param string $path
+ * @return void Returned value for removeDirectory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::removeDirectory()
+ * @example /fr/schema/removeDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function removeDirectory(string $path): void
     {
         $items = scandir($path) ?: [];
@@ -2305,3 +4045,4 @@ class Schema extends Controller
         rmdir($path);
     }
 }
+

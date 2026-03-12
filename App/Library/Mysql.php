@@ -15,15 +15,85 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use App\Controller\Dot3;
 
+/**
+ * Class responsible for mysql workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Mysql
 {
+/**
+ * Stores `$master` for master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $master               = array();
+/**
+ * Stores `$return` for return.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $return;
+/**
+ * Stores `$mysql_server` for mysql server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $mysql_server         = array();
+/**
+ * Stores `$mysql_server_by_host` for mysql server by host.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $mysql_server_by_host = array();
 
+/**
+ * Stores `$db_link` for db link.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $db_link = array();
 
+/**
+ * Handle mysql state through `exportAllUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @return mixed Returned value for exportAllUser.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::exportAllUser()
+ * @example /fr/mysql/exportAllUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function exportAllUser($db_link)
     {
         $sql1 = "select user as user, host as host from mysql.user;";
@@ -43,6 +113,27 @@ class Mysql
         return $users;
     }
 
+/**
+ * Handle mysql state through `exportUserByUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @return mixed Returned value for exportUserByUser.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::exportUserByUser()
+ * @example /fr/mysql/exportUserByUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function exportUserByUser($db_link)
     {
         $sql1 = "select User as user, Host as host from mysql.user;";
@@ -63,6 +154,27 @@ class Mysql
         return $users;
     }
 
+/**
+ * Handle mysql state through `onAddMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return void Returned value for onAddMysqlServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::onAddMysqlServer()
+ * @example /fr/mysql/onAddMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function onAddMysqlServer($id_mysql_server = "")
     {
 
@@ -74,6 +186,24 @@ class Mysql
 //startAll daemon
     }
 
+/**
+ * Handle mysql state through `generateMySQLConfig`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for generateMySQLConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateMySQLConfig()
+ * @example /fr/mysql/generateMySQLConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateMySQLConfig()
     {
 
@@ -144,6 +274,30 @@ class Mysql
 
     }
 
+/**
+ * Retrieve mysql state through `getMaster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $connection_name Input value for `connection_name`.
+ * @phpstan-param mixed $connection_name
+ * @psalm-param mixed $connection_name
+ * @return mixed Returned value for getMaster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getMaster()
+ * @example /fr/mysql/getMaster
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getMaster($id_mysql_server, $connection_name = '')
     {
 
@@ -171,6 +325,31 @@ class Mysql
     }
 
     //deprecated
+/**
+ * Retrieve mysql state through `getDbLink`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $name Input value for `name`.
+ * @phpstan-param mixed $name
+ * @psalm-param mixed $name
+ * @return mixed Returned value for getDbLink.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getDbLink()
+ * @example /fr/mysql/getDbLink
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getDbLink($id_mysql_server, $name ='1')
     {
         if (!is_int(intval($id_mysql_server))) {
@@ -197,6 +376,27 @@ class Mysql
         }
     }
 
+/**
+ * Create mysql state through `addMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for addMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::addMysqlServer()
+ * @example /fr/mysql/addMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function addMysqlServer($data)
     {
         Debug::debug($data);
@@ -392,6 +592,30 @@ END IF;";
 //throw new \Exception('PMACTRL-059 : impossible to find table and/or field');
     }
 
+/**
+ * Handle mysql state through `isPmaControl`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @return mixed Returned value for isPmaControl.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isPmaControl()
+ * @example /fr/mysql/isPmaControl
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function isPmaControl($ip, $port)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -408,6 +632,30 @@ END IF;";
         return false;
     }
 
+/**
+ * Retrieve mysql state through `getHostname`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name Input value for `name`.
+ * @phpstan-param mixed $name
+ * @psalm-param mixed $name
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for getHostname.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getHostname()
+ * @example /fr/mysql/getHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getHostname($name, $data)
     {
 
@@ -496,6 +744,27 @@ END IF;";
         return $id;
     }
 
+/**
+ * Retrieve mysql state through `getServerInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getServerInfo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServerInfo()
+ * @example /fr/mysql/getServerInfo
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getServerInfo($id_mysql_server)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -510,6 +779,31 @@ END IF;";
         return $ob;
     }
 
+/**
+ * Handle mysql state through `execMulti`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $queries Input value for `queries`.
+ * @phpstan-param mixed $queries
+ * @psalm-param mixed $queries
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @return mixed Returned value for execMulti.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::execMulti()
+ * @example /fr/mysql/execMulti
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function execMulti($queries, $db_link)
     {
         if (!is_array($queries)) {
@@ -541,6 +835,34 @@ END IF;";
         return $ret;
     }
 
+/**
+ * Retrieve mysql state through `getListObject`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $type_object Input value for `type_object`.
+ * @phpstan-param mixed $type_object
+ * @psalm-param mixed $type_object
+ * @return mixed Returned value for getListObject.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getListObject()
+ * @example /fr/mysql/getListObject
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getListObject($db_link, $database, $type_object)
     {
         $query['TRIGGER']['query']   = "select trigger_schema, trigger_name, action_statement from `information_schema`.`triggers` where trigger_schema ='{DB}';";
@@ -590,6 +912,36 @@ END IF;";
         return $ob_a->db;
     }
 
+/**
+ * Retrieve mysql state through `getStructure`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @param mixed $object Input value for `object`.
+ * @phpstan-param mixed $object
+ * @psalm-param mixed $object
+ * @return mixed Returned value for getStructure.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getStructure()
+ * @example /fr/mysql/getStructure
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getStructure($db_link, $database, $data, $object)
     {
         $query['TRIGGER']['query']   = "SHOW CREATE TRIGGER `{DB}`.`{OBJECT}`;";
@@ -732,6 +1084,27 @@ END IF;";
         return false;
     }
 
+/**
+ * Handle mysql state through `testMySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for testMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testMySQL()
+ * @example /fr/mysql/testMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function testMySQL($param)
     {
         Debug::parseDebug($param);
@@ -758,6 +1131,27 @@ END IF;";
 
 
 
+/**
+ * Retrieve mysql state through `getRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRealForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKey()
+ * @example /fr/mysql/getRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getRealForeignKey($param)
     {
 
@@ -793,6 +1187,27 @@ END IF;";
         return $foreign_key;
     }
 
+/**
+ * Retrieve mysql state through `getEmptyDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getEmptyDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getEmptyDatabase()
+ * @example /fr/mysql/getEmptyDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getEmptyDatabase($param)
     {
         Debug::parseDebug($param);
@@ -839,6 +1254,27 @@ END IF;";
         return static::$mysql_server[$id_mysql_server];
     }
 
+/**
+ * Create mysql state through `createSelectAccount`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for createSelectAccount.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::createSelectAccount()
+ * @example /fr/mysql/createSelectAccount
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function createSelectAccount($param)
     {
         Debug::parseDebug($param);
@@ -892,6 +1328,27 @@ END IF;";
         }
     }
 
+/**
+ * Retrieve mysql state through `getRoles`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRoles.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRoles()
+ * @example /fr/mysql/getRoles
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getRoles($param)
     {
         Debug::parseDebug($param);
@@ -916,6 +1373,27 @@ END IF;";
         return $data;
     }
 
+/**
+ * Retrieve mysql state through `getCreateRoles`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getCreateRoles.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCreateRoles()
+ * @example /fr/mysql/getCreateRoles
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getCreateRoles($param)
     {
 
@@ -966,6 +1444,28 @@ END IF;";
         return $export;
     }
 
+/**
+ * Retrieve mysql state through `getSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getSlave.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getSlave()
+ * @example /fr/mysql/getSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getSlave($param)
     {
         $id_mysql_server = $param[0];
@@ -1011,6 +1511,24 @@ END IF;";
         return $data;
     }
 
+/**
+ * Handle mysql state through `generateProxySQLConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for generateProxySQLConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateProxySQLConfig()
+ * @example /fr/mysql/generateProxySQLConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateProxySQLConfig()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1036,6 +1554,30 @@ END IF;";
         return $config;
     }
 
+/**
+ * Handle mysql state through `execute`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return mixed Returned value for execute.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::execute()
+ * @example /fr/mysql/execute
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function execute($id_mysql_server, $file_name)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1053,6 +1595,36 @@ END IF;";
         }
     }
 
+/**
+ * Handle mysql state through `test`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for test.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::test()
+ * @example /fr/mysql/test
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function test($hostname, $port, $user, $password)
     {
         $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
@@ -1065,6 +1637,36 @@ END IF;";
         }
     }
 
+/**
+ * Handle mysql state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for test2.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::test2()
+ * @example /fr/mysql/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function test2($hostname, $port, $user, $password)
     {
         $link = mysqli_init();
@@ -1081,6 +1683,27 @@ END IF;";
     }
 
 
+/**
+ * Retrieve mysql state through `getIdMySQLFromGalera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $wsrep_incoming_addresses Input value for `wsrep_incoming_addresses`.
+ * @phpstan-param mixed $wsrep_incoming_addresses
+ * @psalm-param mixed $wsrep_incoming_addresses
+ * @return mixed Returned value for getIdMySQLFromGalera.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMySQLFromGalera()
+ * @example /fr/mysql/getIdMySQLFromGalera
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getIdMySQLFromGalera($wsrep_incoming_addresses)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1109,6 +1732,30 @@ END IF;";
     }
 
 
+/**
+ * Retrieve mysql state through `getIdMysqlServerFromIpPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @return mixed Returned value for getIdMysqlServerFromIpPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMysqlServerFromIpPort()
+ * @example /fr/mysql/getIdMysqlServerFromIpPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getIdMysqlServerFromIpPort($ip , $port)
     {
         // with cache ?
@@ -1135,6 +1782,30 @@ END IF;";
     }
     
 
+/**
+ * Retrieve mysql state through `getNameMysqlServerFromIpPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @return mixed Returned value for getNameMysqlServerFromIpPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNameMysqlServerFromIpPort()
+ * @example /fr/mysql/getNameMysqlServerFromIpPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getNameMysqlServerFromIpPort($ip , $port)
     {
         // with cache ?

@@ -9,10 +9,55 @@ namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for util workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Util
 {
+/**
+ * Stores `$server` for server.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $server;
 
+/**
+ * Retrieve util state through `getFilter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $alias Input value for `alias`.
+ * @phpstan-param mixed $alias
+ * @psalm-param mixed $alias
+ * @return mixed Returned value for getFilter.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFilter()
+ * @example /fr/util/getFilter
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
 
@@ -47,6 +92,27 @@ class Util
         return $where;
     }
 
+/**
+ * Retrieve util state through `getServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServer()
+ * @example /fr/util/getServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getServer($id_mysql_server = 0)
     {
 

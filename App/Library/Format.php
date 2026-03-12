@@ -7,9 +7,47 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for format workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Format
 {
 
+/**
+ * Handle format state through `bytes`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for bytes.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::bytes()
+ * @example /fr/format/bytes
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function bytes($bytes, $decimals = 2)
     {
         $sz     = array(' ', 'K', 'M', 'G', 'T', 'P');
@@ -17,6 +55,32 @@ class Format
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
+/**
+ * Handle `mysqlVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $version Input value for `version`.
+ * @phpstan-param mixed $version
+ * @psalm-param mixed $version
+ * @param mixed $comment Input value for `comment`.
+ * @phpstan-param mixed $comment
+ * @psalm-param mixed $comment
+ * @param bool $is_proxysql Input value for `is_proxysql`.
+ * @phpstan-param bool $is_proxysql
+ * @psalm-param bool $is_proxysql
+ * @return mixed Returned value for mysqlVersion.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example mysqlVersion(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function mysqlVersion($version, $comment, $is_proxysql=0)
     {
         $format = self::getMySQLNumVersion($version, $comment);
@@ -67,6 +131,26 @@ class Format
     }
 
 
+/**
+ * Retrieve `getLogo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $fork Input value for `fork`.
+ * @phpstan-param mixed $fork
+ * @psalm-param mixed $fork
+ * @return mixed Returned value for getLogo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getLogo(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getLogo($fork)
     {
 
@@ -100,6 +184,29 @@ class Format
         return $logo;
     }
 
+/**
+ * Handle `ping`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $microtime Input value for `microtime`.
+ * @phpstan-param mixed $microtime
+ * @psalm-param mixed $microtime
+ * @param mixed $precision Input value for `precision`.
+ * @phpstan-param mixed $precision
+ * @psalm-param mixed $precision
+ * @return mixed Returned value for ping.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example ping(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function ping($microtime, $precision = 2)
     {
         $units = array('ms', 's');
@@ -116,6 +223,29 @@ class Format
         return round($microtime, $precision).' '.$units[$pow];
     }
 
+/**
+ * Retrieve `getMySQLNumVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $version Input value for `version`.
+ * @phpstan-param mixed $version
+ * @psalm-param mixed $version
+ * @param mixed $comment Input value for `comment`.
+ * @phpstan-param mixed $comment
+ * @psalm-param mixed $comment
+ * @return mixed Returned value for getMySQLNumVersion.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getMySQLNumVersion(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getMySQLNumVersion($version, $comment)
     {
         //10.6.19-15-MariaDB-enterprise-log
@@ -158,3 +288,4 @@ class Format
         return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);
     }
 }
+

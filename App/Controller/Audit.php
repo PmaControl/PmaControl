@@ -14,14 +14,70 @@ use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\FactoryController;
 use \App\Library\Mysql;
 
+/**
+ * Class responsible for audit workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Audit extends Controller {
 
     use \App\Library\Filter;
 
+/**
+ * Stores `$log_files` for log files.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $log_files = array("/data/www/pmacontrol/data/general.log");
+/**
+ * Stores `$granted` for granted.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $granted = array();
+/**
+ * Stores `$denied` for denied.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $denied = array();
 
+/**
+ * Retrieve audit state through `getuser`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getuser.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getuser()
+ * @example /fr/audit/getuser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getuser($param) {
         Debug::parseDebug($param);
 
@@ -100,6 +156,27 @@ class Audit extends Controller {
         Debug::debug($tab2, "denied");
     }
 
+/**
+ * Handle audit state through `general_log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for general_log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::general_log()
+ * @example /fr/audit/general_log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function general_log($param) {
         Debug::parseDebug($param);
 
@@ -130,6 +207,27 @@ class Audit extends Controller {
         }
     }
 
+/**
+ * Handle audit state through `scp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for scp.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::scp()
+ * @example /fr/audit/scp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function scp($param) {
 
         Debug::parseDebug($param);
@@ -159,12 +257,54 @@ class Audit extends Controller {
     }
 
 
+/**
+ * Handle audit state through `export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export()
+ * @example /fr/audit/export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function export($param)
     {
         $this->layout_name = false;
         $_GET['ajax'] = true;
     }
 
+/**
+ * Handle audit state through `server`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for server.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::server()
+ * @example /fr/audit/server
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function server($param)
     {
         $this->layout_name = false;
@@ -219,6 +359,28 @@ class Audit extends Controller {
 
 
 
+/**
+ * Handle audit state through `upload`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for upload.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::upload()
+ * @example /fr/audit/upload
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function upload($param)
     {
 
@@ -306,6 +468,33 @@ class Audit extends Controller {
         
     }
 
+/**
+ * Handle audit state through `callXmlRpc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $xmlContent Input value for `xmlContent`.
+ * @phpstan-param mixed $xmlContent
+ * @psalm-param mixed $xmlContent
+ * @param mixed $xmlrpcUrl Input value for `xmlrpcUrl`.
+ * @phpstan-param mixed $xmlrpcUrl
+ * @psalm-param mixed $xmlrpcUrl
+ * @param mixed $cookieJar Input value for `cookieJar`.
+ * @phpstan-param mixed $cookieJar
+ * @psalm-param mixed $cookieJar
+ * @return mixed Returned value for callXmlRpc.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::callXmlRpc()
+ * @example /fr/audit/callXmlRpc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function callXmlRpc($xmlContent, $xmlrpcUrl, $cookieJar) {
         $ch = curl_init($xmlrpcUrl);
         curl_setopt_array($ch, [
@@ -328,6 +517,27 @@ class Audit extends Controller {
 
 
 
+/**
+ * Handle audit state through `recommandation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for recommandation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::recommandation()
+ * @example /fr/audit/recommandation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function recommandation($param)
     {
         /*
@@ -492,6 +702,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Handle audit state through `queryCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for queryCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::queryCache()
+ * @example /fr/audit/queryCache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function queryCache($param)
     {
         Debug::parseDebug($param);
@@ -549,6 +780,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Handle audit state through `all`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for all.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::all()
+ * @example /fr/audit/all
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function all($param)
     {
         $this->view = false;
@@ -576,6 +828,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Handle audit state through `cluster`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cluster()
+ * @example /fr/audit/cluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cluster($param)
     {
 
@@ -684,6 +957,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Handle audit state through `byCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for byCluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::byCluster()
+ * @example /fr/audit/byCluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function byCluster($param)
     {
         $this->view = false;
@@ -739,6 +1033,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Retrieve audit state through `get_common_parts`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $servers Input value for `servers`.
+ * @phpstan-param array $servers
+ * @psalm-param array $servers
+ * @return array Returned value for get_common_parts.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::get_common_parts()
+ * @example /fr/audit/get_common_parts
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function get_common_parts(array $servers): array {
         if (empty($servers)) return [];
 
@@ -774,6 +1089,27 @@ performance_schema_digests_size
         ];
     }
 
+/**
+ * Handle audit state through `retirerChiffreEtSeparateurFin`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $chaine Input value for `chaine`.
+ * @phpstan-param mixed $chaine
+ * @psalm-param mixed $chaine
+ * @return mixed Returned value for retirerChiffreEtSeparateurFin.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::retirerChiffreEtSeparateurFin()
+ * @example /fr/audit/retirerChiffreEtSeparateurFin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function retirerChiffreEtSeparateurFin($chaine) {
         $gg =  preg_replace('/\d{1}$/', '', $chaine);
         return trim($gg, "-");
@@ -869,6 +1205,27 @@ performance_schema_digests_size
     }
 
 
+/**
+ * Retrieve audit state through `getTableWithoutFk`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTableWithoutFk.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTableWithoutFk()
+ * @example /fr/audit/getTableWithoutFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTableWithoutFk($param)
     {
 
@@ -917,6 +1274,27 @@ WHERE
     }
 
 
+/**
+ * Handle audit state through `displayTable`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for displayTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::displayTable()
+ * @example /fr/audit/displayTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function displayTable($param)
     {
 
@@ -954,6 +1332,27 @@ WHERE
 
 
 
+/**
+ * Handle audit state through `aggregate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for aggregate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::aggregate()
+ * @example /fr/audit/aggregate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function aggregate($param)
     {
         $data = $param[0];
@@ -1003,6 +1402,27 @@ WHERE
     }
 
 
+/**
+ * Retrieve audit state through `getAutoInc`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getAutoInc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getAutoInc()
+ * @example /fr/audit/getAutoInc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getAutoInc($param)
     {
 
@@ -1035,6 +1455,27 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
     }
 
 
+/**
+ * Retrieve audit state through `getIndex`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getIndex.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getIndex()
+ * @example /fr/audit/getIndex
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getIndex($param)
     {
 
@@ -1048,6 +1489,27 @@ echo "\nOn affiche ici uniquement les valeurs dépassant les 50% de remplissage 
         
     }
 
+/**
+ * Retrieve audit state through `getRedundantIndex`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getRedundantIndex.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getRedundantIndex()
+ * @example /fr/audit/getRedundantIndex
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getRedundantIndex($param)
     {
 
@@ -1090,6 +1552,27 @@ De plus, éviter les index trop larges ou inutiles contribue à une meilleure pe
 
 
 
+/**
+ * Retrieve audit state through `getRedundantAlter`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getRedundantAlter.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getRedundantAlter()
+ * @example /fr/audit/getRedundantAlter
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getRedundantAlter($param)
     {
 
@@ -1115,6 +1598,27 @@ De plus, éviter les index trop larges ou inutiles contribue à une meilleure pe
         }
     }
 
+/**
+ * Retrieve audit state through `getUnusedIndex`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getUnusedIndex.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getUnusedIndex()
+ * @example /fr/audit/getUnusedIndex
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getUnusedIndex($param)
     {
 
@@ -1161,6 +1665,27 @@ La suppression des index inutilisés permet donc d’améliorer les performances
     }
 
 
+/**
+ * Retrieve audit state through `getConfig`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getConfig()
+ * @example /fr/audit/getConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getConfig($param)
     {
         echo "==== Difference de configuration entre les serveurs ====\n";
@@ -1236,3 +1761,4 @@ GROUP BY ENGINE
 ORDER BY data_gb DESC;
         */
 }
+

@@ -24,12 +24,51 @@ use \Glial\I18n\I18n;
 use \Glial\Security\Crypt\Crypt;
 use \App\Library\Ssh;
 
+/**
+ * Class responsible for docker workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Docker extends Controller
 {
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public static $logger;
     
     public const PMACONTROL_CNF = '.pamcontrol.cnf';
 
+/**
+ * Handle docker state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/docker/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install()
     {
         //require apt install jq skopeo docker kubs ?
@@ -37,6 +76,24 @@ class Docker extends Controller
     }
 
 
+/**
+ * Handle docker state through `uninstall`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for uninstall.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uninstall()
+ * @example /fr/docker/uninstall
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function uninstall()
     {
 
@@ -46,6 +103,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Retrieve docker state through `getTag`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTag.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTag()
+ * @example /fr/docker/getTag
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTag($param)
     {
         Debug::parseDebug($param);
@@ -98,6 +176,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Retrieve docker state through `getImage`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getImage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getImage()
+ * @example /fr/docker/getImage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getImage($param)
     {
 
@@ -119,6 +218,27 @@ class Docker extends Controller
 
     }
 
+/**
+ * Render docker state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/docker/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -197,6 +317,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Create docker state through `createInstance`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createInstance.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createInstance()
+ * @example /fr/docker/createInstance
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createInstance($param)
     {
 
@@ -205,6 +346,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Handle docker state through `linkTagAndImage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for linkTagAndImage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkTagAndImage()
+ * @example /fr/docker/linkTagAndImage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function linkTagAndImage($param)
     {
         
@@ -243,6 +405,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Create docker state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/docker/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         // includes / autoload assumed (composer)
@@ -408,6 +591,27 @@ class Docker extends Controller
 
     }
 
+/**
+ * Handle docker state through `installMariadb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for installMariadb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::installMariadb()
+ * @example /fr/docker/installMariadb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function installMariadb($param)
     {
 
@@ -490,6 +694,27 @@ class Docker extends Controller
         return true;
     }
 
+/**
+ * Prepare docker state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/docker/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Docker");
@@ -507,6 +732,27 @@ class Docker extends Controller
     }
 
 
+/**
+ * Handle docker state through `password`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for password.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::password()
+ * @example /fr/docker/password
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function password($length = 32)
     {
         $lower = 'abcdefghijklmnopqrstuvwxyz';
@@ -540,6 +786,27 @@ class Docker extends Controller
 
 
 
+/**
+ * Retrieve docker state through `getCredentials`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return array Returned value for getCredentials.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getCredentials()
+ * @example /fr/docker/getCredentials
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getCredentials(array $param): array
     {
         Debug::parseDebug($param);
@@ -700,6 +967,26 @@ class Docker extends Controller
     }
 
 
+/**
+ * Handle `pushConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return bool Returned value for pushConfig.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @example pushConfig(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function pushConfig($param): bool
     {
         Debug::parseDebug($param);
@@ -791,6 +1078,26 @@ class Docker extends Controller
     }
 
 
+/**
+ * Delete `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example delete(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         Debug::parseDebug($param);
@@ -828,6 +1135,26 @@ class Docker extends Controller
 
 
 
+/**
+ * Handle `server`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for server.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example server(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function server($param)
     {
         Debug::parseDebug($param);
@@ -866,6 +1193,26 @@ class Docker extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Create `addContainer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addContainer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example addContainer(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addContainer($param)
     {
         $id_docker_server = $param[0] ?? '';
@@ -1008,6 +1355,26 @@ class Docker extends Controller
 
 
 
+/**
+ * Create `create`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for create.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example create(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create($param)
     {
         Debug::parseDebug($param);
@@ -1117,6 +1484,26 @@ CMD;
 
 
 
+/**
+ * Retrieve `getImageAvailable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getImageAvailable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example getImageAvailable(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getImageAvailable($param)
     {
         Debug::parseDebug($param);
@@ -1189,6 +1576,26 @@ CMD;
     }
 
 
+/**
+ * Handle `imageAvailable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for imageAvailable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example imageAvailable(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function imageAvailable($param)
     {
         Debug::parseDebug($param);
@@ -1240,6 +1647,26 @@ CMD;
     }
 
 
+/**
+ * Create `createDocker`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createDocker.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example createDocker(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createDocker($param)
     {
         Debug::parseDebug($param);
@@ -1298,6 +1725,23 @@ CMD;
     }
 
 
+/**
+ * Retrieve `getIdContener`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getIdContener.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getIdContener(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getIdContener()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1314,3 +1758,4 @@ CMD;
     }
 
 }
+

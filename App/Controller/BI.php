@@ -10,12 +10,54 @@ use \App\Library\Mysql;
 
 //use \App\Library\System;
 
+/**
+ * Class responsible for b i workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class BI extends Controller
 {
+/**
+ * Stores `$server` for server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $server = array(3, 24, 33, 173, 167, 21, 157);
 
     const DATABASE = 'spider';
 
+/**
+ * Handle b i state through `searchField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for searchField.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::searchField()
+ * @example /fr/bi/searchField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function searchField($param)
     {
 
@@ -89,6 +131,27 @@ class BI extends Controller
         return $data;
     }
 
+/**
+ * Create b i state through `createServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createServer()
+ * @example /fr/bi/createServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createServer($param)
     {
 
@@ -116,6 +179,27 @@ class BI extends Controller
         }
     }
 
+/**
+ * Handle b i state through `rapport`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rapport.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rapport()
+ * @example /fr/bi/rapport
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rapport($param)
     {
         Debug::parseDebug($param);
@@ -127,6 +211,27 @@ class BI extends Controller
         $this->createTableSpider(array($data['field']));
     }
 
+/**
+ * Create b i state through `createTableSpider`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createTableSpider.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createTableSpider()
+ * @example /fr/bi/createTableSpider
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createTableSpider($param)
     {
         Debug::parseDebug($param);
@@ -156,6 +261,27 @@ class BI extends Controller
         }
     }
 
+/**
+ * Retrieve b i state through `getBackend`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getBackend.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getBackend()
+ * @example /fr/bi/getBackend
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getBackend($param)
     {
         Debug::parseDebug($param);
@@ -168,6 +294,27 @@ class BI extends Controller
         return $server_name;
     }
 
+/**
+ * Retrieve b i state through `getCreateTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getCreateTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCreateTable()
+ * @example /fr/bi/getCreateTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getCreateTable($param)
     {
         Debug::parseDebug($param);
@@ -191,6 +338,27 @@ class BI extends Controller
         return $create_table;
     }
 
+/**
+ * Handle b i state through `changeToSpider`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for changeToSpider.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::changeToSpider()
+ * @example /fr/bi/changeToSpider
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function changeToSpider($param)
     {
         Debug::parseDebug($param);

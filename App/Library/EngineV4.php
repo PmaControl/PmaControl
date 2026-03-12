@@ -12,6 +12,20 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
 
+/**
+ * Class responsible for engine v4 workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class EngineV4
 {
     const PATH_MD5 = TMP."md5/";
@@ -42,21 +56,117 @@ class EngineV4
 	const FILE_TO_LISTEN = self::FILE_MYSQL_VARIABLE .",".self::FILE_MYSQL_DATABASE;
 
 
+/**
+ * Retrieve engine v4 state through `getFileLock`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @param mixed $pid Input value for `pid`.
+ * @phpstan-param mixed $pid
+ * @psalm-param mixed $pid
+ * @param mixed $const Input value for `const`.
+ * @phpstan-param mixed $const
+ * @psalm-param mixed $const
+ * @return mixed Returned value for getFileLock.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFileLock()
+ * @example /fr/enginev4/getFileLock
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFileLock($ts_file, $pid, $const=self::FILE_LOCK)
     {
         return str_replace(array('{TS_FILE}','{PID}'), array($ts_file, $pid), $const);
     }
 
+/**
+ * Retrieve engine v4 state through `getFileMd5`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @param mixed $pid Input value for `pid`.
+ * @phpstan-param mixed $pid
+ * @psalm-param mixed $pid
+ * @return mixed Returned value for getFileMd5.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFileMd5()
+ * @example /fr/enginev4/getFileMd5
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFileMd5($ts_file, $pid)
     {
         return self::getFileLock($ts_file, $pid, self::FILE_MD5);
     }
 
+/**
+ * Retrieve engine v4 state through `getFilePid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @param mixed $pid Input value for `pid`.
+ * @phpstan-param mixed $pid
+ * @psalm-param mixed $pid
+ * @return mixed Returned value for getFilePid.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFilePid()
+ * @example /fr/enginev4/getFilePid
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFilePid($ts_file, $pid)
     {
         return self::getFileLock($ts_file, $pid, self::FILE_PID);
     }
 
+/**
+ * Retrieve engine v4 state through `getPid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return mixed Returned value for getPid.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPid()
+ * @example /fr/enginev4/getPid
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 	static function getPid($file_name)
 	{
 		$part2 = explode(self::SEPERATOR, $file_name)[1];
@@ -64,6 +174,27 @@ class EngineV4
 	}
 
 
+/**
+ * Handle engine v4 state through `cleanMd5`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $md5 Input value for `md5`.
+ * @phpstan-param array $md5
+ * @psalm-param array $md5
+ * @return void Returned value for cleanMd5.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cleanMd5()
+ * @example /fr/enginev4/cleanMd5
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 	static function cleanMd5(array $md5 )
 	{
 		$db = Sgbd::sql(DB_DEFAULT);
@@ -99,6 +230,24 @@ class EngineV4
 		}
 	}
 
+/**
+ * Handle engine v4 state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for log.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::log()
+ * @example /fr/enginev4/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 	static public function log()
     {
         $monolog       = new Logger("EngineV4");

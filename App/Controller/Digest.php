@@ -90,15 +90,65 @@ FROM
 
 class Digest extends Controller
 {
+/**
+ * Stores `$database` for database.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $database = [];
+/**
+ * Stores `$database_loaded` for database loaded.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     static $database_loaded = false;
 
+/**
+ * Stores `$cache_dispatch` for cache dispatch.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $cache_dispatch = [];
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $logger;
 
 
 
+/**
+ * Handle digest state through `integrate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for integrate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::integrate()
+ * @example /fr/digest/integrate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function integrate($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -214,6 +264,27 @@ class Digest extends Controller
         }
     }
 
+/**
+ * Handle digest state through `insertDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for insertDigest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::insertDigest()
+ * @example /fr/digest/insertDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function insertDigest($param)
     {
         list($id_mysql_server,$date, $queries ) = $param;
@@ -274,6 +345,27 @@ class Digest extends Controller
         return $register;
     }
 
+/**
+ * Handle digest state through `selectIdfromDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for selectIdfromDigest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::selectIdfromDigest()
+ * @example /fr/digest/selectIdfromDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function selectIdfromDigest($param)
     {
         Debug::parseDebug($param);
@@ -293,6 +385,26 @@ class Digest extends Controller
         return $data;
     }
 
+/**
+ * Retrieve `getIdDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getIdDatabase(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getIdDatabase($param)
     {
         Debug::parseDebug($param);
@@ -369,6 +481,26 @@ class Digest extends Controller
     }
 
 
+/**
+ * Retrieve `getDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDigest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getDigest(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getDigest($param)
     {
         Debug::parseDebug($param);
@@ -404,6 +536,26 @@ class Digest extends Controller
     }
 
 
+/**
+ * Retrieve `getHash`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getHash.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getHash(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getHash($param)
     {
         Debug::parseDebug($param);
@@ -415,6 +567,27 @@ class Digest extends Controller
 
 
 
+/**
+ * Retrieve `getIdCacheDispatch`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $query Input value for `query`.
+ * @phpstan-param mixed $query
+ * @psalm-param mixed $query
+ * @return mixed Returned value for getIdCacheDispatch.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example getIdCacheDispatch(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIdCacheDispatch($query)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -477,6 +650,29 @@ class Digest extends Controller
         return self::$cache_dispatch[$uuid];
     }
 
+/**
+ * Handle `insert`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $tables Input value for `tables`.
+ * @phpstan-param array $tables
+ * @psalm-param array $tables
+ * @param int $batchSize Input value for `batchSize`.
+ * @phpstan-param int $batchSize
+ * @psalm-param int $batchSize
+ * @return array Returned value for insert.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example insert(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function insert(array $tables, int $batchSize = 1000) : array
     {
         $sql_list = [];

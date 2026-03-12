@@ -8,9 +8,47 @@ use App\Library\Extraction;
 use App\Library\Display;
 use App\Library\Debug;
 
+/**
+ * Class responsible for post mortem workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class PostMortem extends Controller
 {
 
+/**
+ * Handle post mortem state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/postmortem/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function format($bytes, $decimals = 2)
     {
         // && $bytes != 0
@@ -24,6 +62,26 @@ class PostMortem extends Controller
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
     }
 
+/**
+ * Handle `item`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for item.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example item(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function item($param)
     {
         Debug::parseDebug($param);

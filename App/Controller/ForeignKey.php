@@ -17,14 +17,56 @@ use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 
+/**
+ * Class responsible for foreign key workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class ForeignKey extends Controller
 {
 
     CONST BEGIN = "id%";
     CONST END = "%id";
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $primary_key = array();
 
+/**
+ * Handle foreign key state through `autoDetect`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for autoDetect.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::autoDetect()
+ * @example /fr/foreignkey/autoDetect
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function autoDetect($param)
     {
         $this->view = false;
@@ -41,6 +83,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for import.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::import()
+ * @example /fr/foreignkey/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import($param)
     {
         $this->view = false;
@@ -57,6 +120,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `autoId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for autoId.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::autoId()
+ * @example /fr/foreignkey/autoId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function autoId($param)
     {
         Debug::parseDebug($param);
@@ -188,6 +272,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `isTableExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for isTableExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isTableExist()
+ * @example /fr/foreignkey/isTableExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function isTableExist($param)
     {
 
@@ -217,6 +322,27 @@ class ForeignKey extends Controller
         return false;
     }
 
+/**
+ * Handle foreign key state through `cleanUp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cleanUp.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cleanUp()
+ * @example /fr/foreignkey/cleanUp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cleanUp($param)
     {
 
@@ -228,6 +354,27 @@ class ForeignKey extends Controller
         Debug::sql($sql);
     }
 
+/**
+ * Handle foreign key state through `findField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for findField.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::findField()
+ * @example /fr/foreignkey/findField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function findField($param)
     {
         Debug::parseDebug($param);
@@ -247,6 +394,27 @@ class ForeignKey extends Controller
         AND COLUMN_NAME = '".$field_name."';";
     }
 
+/**
+ * Retrieve foreign key state through `getAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getAll()
+ * @example /fr/foreignkey/getAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getAll($param)
     {
 
@@ -262,6 +430,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `fill`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for fill.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::fill()
+ * @example /fr/foreignkey/fill
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function fill($param)
     {
         Debug::parseDebug($param);
@@ -370,6 +559,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Retrieve foreign key state through `getConbinaison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getConbinaison.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getConbinaison()
+ * @example /fr/foreignkey/getConbinaison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getConbinaison($param)
     {
         Debug::parseDebug($param);
@@ -398,6 +608,27 @@ class ForeignKey extends Controller
         return false;
     }
 
+/**
+ * Retrieve foreign key state through `getDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabase()
+ * @example /fr/foreignkey/getDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabase($param)
     {
         Debug::parseDebug($param);
@@ -419,6 +650,27 @@ class ForeignKey extends Controller
         return $databases;
     }
 
+/**
+ * Handle foreign key state through `sort_and_count_array`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_arr Input value for `name_arr`.
+ * @phpstan-param mixed $name_arr
+ * @psalm-param mixed $name_arr
+ * @return mixed Returned value for sort_and_count_array.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::sort_and_count_array()
+ * @example /fr/foreignkey/sort_and_count_array
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sort_and_count_array($name_arr)
     {
         $new_arr = array_count_values($name_arr);
@@ -428,6 +680,33 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Retrieve foreign key state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPrimaryKey()
+ * @example /fr/foreignkey/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($id_mysql_server, $database, $table)
     {
         $db = Mysql::getDbLink($id_mysql_server);
@@ -458,6 +737,27 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Retrieve foreign key state through `getIdFromComposedPk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdFromComposedPk.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdFromComposedPk()
+ * @example /fr/foreignkey/getIdFromComposedPk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getIdFromComposedPk($param)
     {
         Debug::parseDebug($param);
@@ -559,6 +859,27 @@ class ForeignKey extends Controller
         return $resultat;
     }
 
+/**
+ * Create foreign key state through `createVirtualForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createVirtualForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createVirtualForeignKey()
+ * @example /fr/foreignkey/createVirtualForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createVirtualForeignKey($param)
     {
         $this->view = false;
@@ -579,6 +900,27 @@ class ForeignKey extends Controller
         $res = $db->sql_query($sql);
     }
 
+/**
+ * Create foreign key state through `addForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addForeignKey()
+ * @example /fr/foreignkey/addForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addForeignKey($param)
     {
         $this->view = false;
@@ -606,6 +948,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `settingPrefix`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settingPrefix.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settingPrefix()
+ * @example /fr/foreignkey/settingPrefix
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function settingPrefix($param)
     {
 
@@ -624,6 +987,27 @@ class ForeignKey extends Controller
 
     }
 
+/**
+ * Create foreign key state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/foreignkey/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $this->di['js']->code_javascript('$("#foreign_key_remove_prefix-id_mysql_server").change(function () {
@@ -645,6 +1029,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `dropForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropForeignKey()
+ * @example /fr/foreignkey/dropForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropForeignKey($param)
     {
         $this->view = false;
@@ -663,6 +1068,27 @@ class ForeignKey extends Controller
 
     }
 
+/**
+ * Handle foreign key state through `rmForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rmForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rmForeignKey()
+ * @example /fr/foreignkey/rmForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rmForeignKey($param)
     {
         $this->view = false;
@@ -681,6 +1107,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Retrieve foreign key state through `getRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRealForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKey()
+ * @example /fr/foreignkey/getRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getRealForeignKey($param)
     {
 
@@ -763,6 +1210,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/foreignkey/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $data = array();
@@ -772,6 +1240,27 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Render foreign key state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/foreignkey/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $data = array();
@@ -785,6 +1274,27 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Handle foreign key state through `virtual`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for virtual.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::virtual()
+ * @example /fr/foreignkey/virtual
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function virtual($param)
     {
         $data = array();
@@ -814,6 +1324,27 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `real`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for real.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::real()
+ * @example /fr/foreignkey/real
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function real($param)
     {
         $data = array();
@@ -845,6 +1376,27 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `proposal`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for proposal.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::proposal()
+ * @example /fr/foreignkey/proposal
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function proposal($param)
     {
 
@@ -875,6 +1427,27 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Handle foreign key state through `blackList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for blackList.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::blackList()
+ * @example /fr/foreignkey/blackList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function blackList($param)
     {
         $data = array();
@@ -903,6 +1476,27 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `custom`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for custom.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::custom()
+ * @example /fr/foreignkey/custom
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function custom($param)
     {
         Debug::parseDebug($param);

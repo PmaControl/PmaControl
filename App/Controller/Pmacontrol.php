@@ -4,14 +4,76 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 
+/**
+ * Class responsible for pmacontrol workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Pmacontrol extends Controller
 {
+/**
+ * Prepare pmacontrol state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/pmacontrol/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $this->layout_name = 'pmacontrol';
         $this->di['js']->addJavascript(array('pmacontrol-marketing.js'));
     }
 
+/**
+ * Handle pmacontrol state through `setPageMeta`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $title Input value for `title`.
+ * @phpstan-param mixed $title
+ * @psalm-param mixed $title
+ * @param mixed $ariane Input value for `ariane`.
+ * @phpstan-param mixed $ariane
+ * @psalm-param mixed $ariane
+ * @param array $meta Input value for `meta`.
+ * @phpstan-param array $meta
+ * @psalm-param array $meta
+ * @return void Returned value for setPageMeta.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setPageMeta()
+ * @example /fr/pmacontrol/setPageMeta
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setPageMeta($title, $ariane, array $meta)
     {
         $this->title = $title;
@@ -19,6 +81,24 @@ class Pmacontrol extends Controller
         $this->set('meta', $meta);
     }
 
+/**
+ * Render pmacontrol state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/pmacontrol/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $this->setPageMeta(__('PmaControl marketing'), __('PmaControl marketing'), array(
@@ -30,6 +110,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `product`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for product.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::product()
+ * @example /fr/pmacontrol/product
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function product()
     {
         $this->setPageMeta(__('Product overview'), __('Product overview'), array(
@@ -41,6 +139,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `monitoring`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for monitoring.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::monitoring()
+ * @example /fr/pmacontrol/monitoring
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function monitoring()
     {
         $this->setPageMeta(__('Monitoring'), __('Monitoring'), array(
@@ -52,6 +168,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `performance`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for performance.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::performance()
+ * @example /fr/pmacontrol/performance
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function performance()
     {
         $this->setPageMeta(__('Performance'), __('Performance'), array(
@@ -63,6 +197,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `backups`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for backups.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backups()
+ * @example /fr/pmacontrol/backups
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backups()
     {
         $this->setPageMeta(__('Backups & recovery'), __('Backups & recovery'), array(
@@ -74,6 +226,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `galera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for galera.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::galera()
+ * @example /fr/pmacontrol/galera
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function galera()
     {
         $this->setPageMeta(__('Galera operations'), __('Galera operations'), array(
@@ -85,6 +255,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `proxysql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for proxysql.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::proxysql()
+ * @example /fr/pmacontrol/proxysql
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function proxysql()
     {
         $this->setPageMeta(__('ProxySQL operations'), __('ProxySQL operations'), array(
@@ -96,6 +284,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `schema`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for schema.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::schema()
+ * @example /fr/pmacontrol/schema
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function schema()
     {
         $this->setPageMeta(__('Schema drift & diff'), __('Schema drift & diff'), array(
@@ -107,6 +313,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `security`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for security.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::security()
+ * @example /fr/pmacontrol/security
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function security()
     {
         $this->setPageMeta(__('Security & RBAC'), __('Security & RBAC'), array(
@@ -118,6 +342,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `automation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for automation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::automation()
+ * @example /fr/pmacontrol/automation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function automation()
     {
         $this->setPageMeta(__('Automation & runbooks'), __('Automation & runbooks'), array(
@@ -129,6 +371,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `solutions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for solutions.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::solutions()
+ * @example /fr/pmacontrol/solutions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function solutions()
     {
         $this->setPageMeta(__('Solutions'), __('Solutions'), array(
@@ -140,6 +400,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `integrations`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for integrations.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::integrations()
+ * @example /fr/pmacontrol/integrations
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function integrations()
     {
         $this->setPageMeta(__('Integrations'), __('Integrations'), array(
@@ -151,6 +429,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `pricing`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for pricing.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::pricing()
+ * @example /fr/pmacontrol/pricing
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function pricing()
     {
         $this->setPageMeta(__('Pricing'), __('Pricing'), array(
@@ -162,6 +458,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `docs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for docs.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::docs()
+ * @example /fr/pmacontrol/docs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function docs()
     {
         $this->setPageMeta(__('Docs'), __('Docs'), array(
@@ -173,6 +487,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `resources`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for resources.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::resources()
+ * @example /fr/pmacontrol/resources
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function resources()
     {
         $this->setPageMeta(__('Resources'), __('Resources'), array(
@@ -184,6 +516,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `blog`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for blog.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::blog()
+ * @example /fr/pmacontrol/blog
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function blog()
     {
         $this->setPageMeta(__('Blog'), __('Blog'), array(
@@ -195,6 +545,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `blog_article`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for blog_article.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::blog_article()
+ * @example /fr/pmacontrol/blog_article
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function blog_article()
     {
         $this->setPageMeta(__('Blog article'), __('Blog article'), array(
@@ -206,6 +574,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `case_studies`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for case_studies.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::case_studies()
+ * @example /fr/pmacontrol/case_studies
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function case_studies()
     {
         $this->setPageMeta(__('Case studies'), __('Case studies'), array(
@@ -217,6 +603,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `whitepapers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for whitepapers.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::whitepapers()
+ * @example /fr/pmacontrol/whitepapers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function whitepapers()
     {
         $this->setPageMeta(__('Whitepapers'), __('Whitepapers'), array(
@@ -228,6 +632,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `webinars`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for webinars.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::webinars()
+ * @example /fr/pmacontrol/webinars
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function webinars()
     {
         $this->setPageMeta(__('Webinars & workshops'), __('Webinars & workshops'), array(
@@ -239,6 +661,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `company`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for company.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::company()
+ * @example /fr/pmacontrol/company
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function company()
     {
         $this->setPageMeta(__('Company'), __('Company'), array(
@@ -250,6 +690,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `roadmap`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for roadmap.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::roadmap()
+ * @example /fr/pmacontrol/roadmap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function roadmap()
     {
         $this->setPageMeta(__('Public roadmap'), __('Public roadmap'), array(
@@ -261,6 +719,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `security_page`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for security_page.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::security_page()
+ * @example /fr/pmacontrol/security_page
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function security_page()
     {
         $this->setPageMeta(__('Security'), __('Security'), array(
@@ -272,6 +748,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `contact`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for contact.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::contact()
+ * @example /fr/pmacontrol/contact
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function contact()
     {
         $this->setPageMeta(__('Contact'), __('Contact'), array(
@@ -283,6 +777,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `privacy`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for privacy.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::privacy()
+ * @example /fr/pmacontrol/privacy
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function privacy()
     {
         $this->setPageMeta(__('Privacy policy'), __('Privacy policy'), array(
@@ -294,6 +806,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `terms`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for terms.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::terms()
+ * @example /fr/pmacontrol/terms
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function terms()
     {
         $this->setPageMeta(__('Terms of service'), __('Terms of service'), array(
@@ -305,6 +835,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `cookies`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for cookies.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cookies()
+ * @example /fr/pmacontrol/cookies
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cookies()
     {
         $this->setPageMeta(__('Cookie policy'), __('Cookie policy'), array(
@@ -316,6 +864,24 @@ class Pmacontrol extends Controller
         ));
     }
 
+/**
+ * Handle pmacontrol state through `ai`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for ai.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ai()
+ * @example /fr/pmacontrol/ai
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ai()
     {
         $this->setPageMeta(__('AI features'), __('AI features'), array(
@@ -327,3 +893,4 @@ class Pmacontrol extends Controller
         ));
     }
 }
+

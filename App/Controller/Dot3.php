@@ -36,6 +36,20 @@ use \Glial\Sgbd\Sgbd;
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
+/**
+ * Class responsible for dot3 workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Dot3 extends Controller
 {
 
@@ -50,30 +64,128 @@ class Dot3 extends Controller
     const VIP_PREVIOUS_PORT = 'vip_previous';
 
 
+/**
+ * Stores `$id_dot3_information` for id dot3 information.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $id_dot3_information;
 
+/**
+ * Stores `$information` for information.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $information = array();
 
     // build link MasterSlave
+/**
+ * Stores `$build_ms` for build ms.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_ms = array();
 
     // build server
+/**
+ * Stores `$build_server` for build server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_server = array();
 
+/**
+ * Stores `$build_galera` for build galera.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_galera = array();
 
+/**
+ * Stores `$config` for config.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $config = array();
 
+/**
+ * Stores `$galera` for galera.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $galera = array();
 
+/**
+ * Stores `$rank_same` for rank same.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $rank_same = array();
 
+/**
+ * Stores `$unknown_proxy_nodes` for unknown proxy nodes.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $unknown_proxy_nodes = array();
 
+/**
+ * Stores `$missing_mapping` for missing mapping.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $missing_mapping = array();
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Prepare dot3 state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/dot3/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $this->loadConfigColor();
@@ -84,6 +196,27 @@ class Dot3 extends Controller
         $this->logger = $monolog;
     }
 
+/**
+ * Handle dot3 state through `generateInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateInformation.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateInformation()
+ * @example /fr/dot3/generateInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateInformation($param)
     {
         
@@ -359,6 +492,27 @@ class Dot3 extends Controller
         return $id_dot3_information;
     }
 
+/**
+ * Handle dot3 state through `generateGroupMasterSlave`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupMasterSlave.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupMasterSlave()
+ * @example /fr/dot3/generateGroupMasterSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupMasterSlave($information)
     {
         $id_group = 1;
@@ -404,6 +558,27 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+/**
+ * Handle dot3 state through `generateGroupProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupProxySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupProxySQL()
+ * @example /fr/dot3/generateGroupProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupProxySQL($information)
     {
         $tmp_group = array();
@@ -434,6 +609,27 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+/**
+ * Handle dot3 state through `generateGroupVip`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupVip.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupVip()
+ * @example /fr/dot3/generateGroupVip
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupVip($information)
     {
         $tmp_group = array();
@@ -490,6 +686,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `generateGroupGalera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupGalera.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupGalera()
+ * @example /fr/dot3/generateGroupGalera
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupGalera($information)
     {
         $tmp_group = array();
@@ -625,6 +842,28 @@ class Dot3 extends Controller
 
 
 
+/**
+ * Handle dot3 state through `generateGroupMaxScale`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupMaxScale.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::generateGroupMaxScale()
+ * @example /fr/dot3/generateGroupMaxScale
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupMaxScale($information)
     {
         $tmp_group = array();
@@ -691,6 +930,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/dot3/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -699,6 +959,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `run`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for run.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::run()
+ * @example /fr/dot3/run
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function run($param)
     {
         Debug::parseDebug($param);
@@ -769,6 +1050,36 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Update dot3 state through `saveGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @param mixed $dot Input value for `dot`.
+ * @phpstan-param mixed $dot
+ * @psalm-param mixed $dot
+ * @param mixed $group Input value for `group`.
+ * @phpstan-param mixed $group
+ * @psalm-param mixed $group
+ * @return void Returned value for saveGraph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::saveGraph()
+ * @example /fr/dot3/saveGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function saveGraph($id_dot3_information, $file_name, $dot, $group)
     {
         $db = Sgbd::sql(DB_DEFAULT, "RUN");
@@ -838,6 +1149,24 @@ class Dot3 extends Controller
         $res = $db->sql_query($sql);
     }
 
+/**
+ * Handle dot3 state through `writeDot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for writeDot.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::writeDot()
+ * @example /fr/dot3/writeDot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function writeDot()
     {
         $dot = '';
@@ -847,6 +1176,11 @@ class Dot3 extends Controller
         //Debug::debug(self::$build_server, "BUILD_SERVER");
 
         foreach(self::$build_server as $server) {
+
+            if (! empty($server['is_proxysql']) && empty($server['mysql_servers'])) {
+                $this->logMissingProxySqlMysqlServers($server, 'writeDot');
+                $server['mysql_servers'] = array();
+            }
 
             //Debug::debug($server);
             $dot .= Graphviz::generateServer($server);
@@ -870,6 +1204,65 @@ class Dot3 extends Controller
 
     }
 
+/**
+ * Handle dot3 state through `logMissingProxySqlMysqlServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param string $context Input value for `context`.
+ * @phpstan-param string $context
+ * @psalm-param string $context
+ * @return void Returned value for logMissingProxySqlMysqlServers.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logMissingProxySqlMysqlServers()
+ * @example /fr/dot3/logMissingProxySqlMysqlServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function logMissingProxySqlMysqlServers(array $server, string $context)
+    {
+        $idMysqlServer = $server['id_mysql_server'] ?? 'N/A';
+        $displayName = $server['display_name'] ?? ($server['name'] ?? 'N/A');
+        $host = ($server['hostname'] ?? $server['ip'] ?? 'N/A') . ':' . ($server['port'] ?? 'N/A');
+
+        $this->logger->emergency(
+            '[Dot3][' . $context . '] Missing ProxySQL runtime mysql_servers for '
+            . 'id_mysql_server:' . $idMysqlServer
+            . ' display_name:' . $displayName
+            . ' endpoint:' . $host
+        );
+    }
+
+/**
+ * Handle dot3 state through `array_merge_group`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for array_merge_group.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::array_merge_group()
+ * @example /fr/dot3/array_merge_group
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function array_merge_group($array)
     {
         $all_values  = $this->array_values_recursive($array);
@@ -888,6 +1281,27 @@ class Dot3 extends Controller
         return $array;
     }
 
+/**
+ * Handle dot3 state through `array_values_recursive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ary Input value for `ary`.
+ * @phpstan-param mixed $ary
+ * @psalm-param mixed $ary
+ * @return mixed Returned value for array_values_recursive.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::array_values_recursive()
+ * @example /fr/dot3/array_values_recursive
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function array_values_recursive($ary)
     {
         $lst = array();
@@ -902,6 +1316,27 @@ class Dot3 extends Controller
         return $lst;
     }
 
+/**
+ * Retrieve dot3 state through `getGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getGroup.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getGroup()
+ * @example /fr/dot3/getGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getGroup($param)
     {
         //Debug::parseDebug($param);
@@ -927,6 +1362,27 @@ class Dot3 extends Controller
         return $group;
     }
 
+/**
+ * Handle dot3 state through `buildLink`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLink.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLink()
+ * @example /fr/dot3/buildLink
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildLink($param)
     {
         $id_dot3_information = $param[0];
@@ -1090,6 +1546,27 @@ class Dot3 extends Controller
 
     }
 
+/**
+ * Handle dot3 state through `buildLinkVIP`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLinkVIP.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLinkVIP()
+ * @example /fr/dot3/buildLinkVIP
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildLinkVIP($param)
     {
         $id_dot3_information = $param[0];
@@ -1355,6 +1832,27 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Retrieve dot3 state through `getGaleraSegmentFromNode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $node Input value for `node`.
+ * @phpstan-param array $node
+ * @psalm-param array $node
+ * @return int Returned value for getGaleraSegmentFromNode.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getGaleraSegmentFromNode()
+ * @example /fr/dot3/getGaleraSegmentFromNode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getGaleraSegmentFromNode(array $node): int
     {
         $providerOptions = (string)($node['wsrep_provider_options'] ?? '');
@@ -1366,6 +1864,30 @@ class Dot3 extends Controller
         return (int)$segment;
     }
 
+/**
+ * Handle dot3 state through `scoreSstDonorCandidate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param int $joinerSegment Input value for `joinerSegment`.
+ * @phpstan-param int $joinerSegment
+ * @psalm-param int $joinerSegment
+ * @return int Returned value for scoreSstDonorCandidate.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::scoreSstDonorCandidate()
+ * @example /fr/dot3/scoreSstDonorCandidate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function scoreSstDonorCandidate(array $donorNode, int $joinerSegment): int
     {
         $score = 0;
@@ -1391,6 +1913,30 @@ class Dot3 extends Controller
         return $score;
     }
 
+/**
+ * Handle dot3 state through `buildSstEdgeLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @return string Returned value for buildSstEdgeLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildSstEdgeLabel()
+ * @example /fr/dot3/buildSstEdgeLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildSstEdgeLabel(array $donorNode, array $joinerNode): string
     {
         $elapsedSec = $this->estimateSstElapsedSeconds($donorNode, $joinerNode);
@@ -1412,6 +1958,33 @@ class Dot3 extends Controller
         return 'SST (' . $elapsedLabel . ')';
     }
 
+/**
+ * Handle dot3 state through `estimateSstProgressPercent`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @param ?int|null $elapsedSec Input value for `elapsedSec`.
+ * @phpstan-param ?int|null $elapsedSec
+ * @psalm-param ?int|null $elapsedSec
+ * @return ?int Returned value for estimateSstProgressPercent.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @see self::estimateSstProgressPercent()
+ * @example /fr/dot3/estimateSstProgressPercent
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function estimateSstProgressPercent(array $donorNode, array $joinerNode, ?int $elapsedSec = null): ?int
     {
         $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_clean_size');
@@ -1444,6 +2017,30 @@ class Dot3 extends Controller
         return $pct;
     }
 
+/**
+ * Handle dot3 state through `estimateSstElapsedSeconds`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @return ?int Returned value for estimateSstElapsedSeconds.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @see self::estimateSstElapsedSeconds()
+ * @example /fr/dot3/estimateSstElapsedSeconds
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function estimateSstElapsedSeconds(array $donorNode, array $joinerNode): ?int
     {
         $joinerElapsed = $this->getPositiveIntMetric($joinerNode, 'mysql_sst_elapsed_sec');
@@ -1457,6 +2054,27 @@ class Dot3 extends Controller
         return $elapsedSec;
     }
 
+/**
+ * Handle dot3 state through `formatSstElapsedLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $elapsedSec Input value for `elapsedSec`.
+ * @phpstan-param int $elapsedSec
+ * @psalm-param int $elapsedSec
+ * @return string Returned value for formatSstElapsedLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatSstElapsedLabel()
+ * @example /fr/dot3/formatSstElapsedLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function formatSstElapsedLabel(int $elapsedSec): string
     {
         if ($elapsedSec < 60) {
@@ -1476,6 +2094,30 @@ class Dot3 extends Controller
         return $hours . ' h ' . $minutes . ' min';
     }
 
+/**
+ * Retrieve dot3 state through `getPositiveIntMetric`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $node Input value for `node`.
+ * @phpstan-param array $node
+ * @psalm-param array $node
+ * @param string $key Input value for `key`.
+ * @phpstan-param string $key
+ * @psalm-param string $key
+ * @return int Returned value for getPositiveIntMetric.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getPositiveIntMetric()
+ * @example /fr/dot3/getPositiveIntMetric
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getPositiveIntMetric(array $node, string $key): int
     {
         if (!isset($node[$key])) {
@@ -1499,6 +2141,36 @@ class Dot3 extends Controller
         return $intValue;
     }
 
+/**
+ * Handle dot3 state through `guessGaleraAutoIncrement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $servers Input value for `servers`.
+ * @phpstan-param array $servers
+ * @psalm-param array $servers
+ * @param array $group Input value for `group`.
+ * @phpstan-param array $group
+ * @psalm-param array $group
+ * @param int $joinerId Input value for `joinerId`.
+ * @phpstan-param int $joinerId
+ * @psalm-param int $joinerId
+ * @param string $clusterName Input value for `clusterName`.
+ * @phpstan-param string $clusterName
+ * @psalm-param string $clusterName
+ * @return array Returned value for guessGaleraAutoIncrement.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::guessGaleraAutoIncrement()
+ * @example /fr/dot3/guessGaleraAutoIncrement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function guessGaleraAutoIncrement(array $servers, array $group, int $joinerId, string $clusterName): array
     {
         $increments = array();
@@ -1579,6 +2251,27 @@ class Dot3 extends Controller
         return array($offset, $increment);
     }
 
+/**
+ * Handle dot3 state through `buildServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildServer()
+ * @example /fr/dot3/buildServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildServer($param)
     {
         $id_dot3_information = $param[0];
@@ -1641,6 +2334,33 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle dot3 state through `mergeVipDnsDataInInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array & $all Input value for `all`.
+ * @phpstan-param array & $all
+ * @psalm-param array & $all
+ * @param array $vipServerIds Input value for `vipServerIds`.
+ * @phpstan-param array $vipServerIds
+ * @psalm-param array $vipServerIds
+ * @param mixed $date_request Input value for `date_request`.
+ * @phpstan-param mixed $date_request
+ * @psalm-param mixed $date_request
+ * @return void Returned value for mergeVipDnsDataInInformation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mergeVipDnsDataInInformation()
+ * @example /fr/dot3/mergeVipDnsDataInInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function mergeVipDnsDataInInformation(array &$all, array $vipServerIds, $date_request): void
     {
         if (empty($vipServerIds)) {
@@ -1674,11 +2394,56 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle dot3 state through `isVipServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @return bool Returned value for isVipServer.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isVipServer()
+ * @example /fr/dot3/isVipServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isVipServer(array $server): bool
     {
         return !empty($server['is_vip']) && (string)$server['is_vip'] === '1';
     }
 
+/**
+ * Handle dot3 state through `enrichVipServerForGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @return array Returned value for enrichVipServerForGraph.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::enrichVipServerForGraph()
+ * @example /fr/dot3/enrichVipServerForGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function enrichVipServerForGraph(array $server, array $allServers): array
     {
         $server['version'] = 'VIP';
@@ -1726,6 +2491,30 @@ class Dot3 extends Controller
         return $server;
     }
 
+/**
+ * Retrieve dot3 state through `getVipRenderDestinations`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @return array Returned value for getVipRenderDestinations.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getVipRenderDestinations()
+ * @example /fr/dot3/getVipRenderDestinations
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getVipRenderDestinations(array $server, array $allServers = array()): array
     {
         $active_id = (int)($server['destination_id'] ?? 0);
@@ -1755,6 +2544,33 @@ class Dot3 extends Controller
         );
     }
 
+/**
+ * Handle dot3 state through `resolveVipDestinationId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $idDestination Input value for `idDestination`.
+ * @phpstan-param int $idDestination
+ * @psalm-param int $idDestination
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @param int $maxDepth Input value for `maxDepth`.
+ * @phpstan-param int $maxDepth
+ * @psalm-param int $maxDepth
+ * @return int Returned value for resolveVipDestinationId.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationId()
+ * @example /fr/dot3/resolveVipDestinationId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveVipDestinationId(int $idDestination, array $allServers, int $maxDepth = 6): int
     {
         if ($idDestination <= 0) {
@@ -1799,6 +2615,30 @@ class Dot3 extends Controller
         return 0;
     }
 
+/**
+ * Handle dot3 state through `buildVipDestinationLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @param int $idDestination Input value for `idDestination`.
+ * @phpstan-param int $idDestination
+ * @psalm-param int $idDestination
+ * @return array Returned value for buildVipDestinationLabel.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::buildVipDestinationLabel()
+ * @example /fr/dot3/buildVipDestinationLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function buildVipDestinationLabel(array $allServers, int $idDestination): array
     {
         if ($idDestination <= 0 || empty($allServers[$idDestination])) {
@@ -1823,6 +2663,27 @@ class Dot3 extends Controller
         return array('label' => $label);
     }
 
+/**
+ * Retrieve dot3 state through `getServerPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @return string Returned value for getServerPort.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getServerPort()
+ * @example /fr/dot3/getServerPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getServerPort(array $server): string
     {
         $port = trim((string)($server['port_real'] ?? ''));
@@ -1833,6 +2694,30 @@ class Dot3 extends Controller
         return trim((string)($server['port'] ?? ''));
     }
 
+/**
+ * Retrieve dot3 state through `getOrCreateUnknownProxySqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $host Input value for `host`.
+ * @phpstan-param string $host
+ * @psalm-param string $host
+ * @param int $referenceId Input value for `referenceId`.
+ * @phpstan-param int $referenceId
+ * @psalm-param int $referenceId
+ * @return string Returned value for getOrCreateUnknownProxySqlServer.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getOrCreateUnknownProxySqlServer()
+ * @example /fr/dot3/getOrCreateUnknownProxySqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getOrCreateUnknownProxySqlServer(string $host, int $referenceId): string
     {
         $normalizedHost = strtolower(trim($host));
@@ -1887,6 +2772,27 @@ class Dot3 extends Controller
         return $placeholderId;
     }
 
+/**
+ * Handle dot3 state through `isUnknownProxySqlNode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return bool Returned value for isUnknownProxySqlNode.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isUnknownProxySqlNode()
+ * @example /fr/dot3/isUnknownProxySqlNode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function isUnknownProxySqlNode($id_mysql_server): bool
     {
         if (is_string($id_mysql_server) && strpos($id_mysql_server, 'unknown_proxysql_') === 0) {
@@ -1927,6 +2833,27 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle dot3 state through `linkHostGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for linkHostGroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkHostGroup()
+ * @example /fr/dot3/linkHostGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function linkHostGroup($param)
     {
         $id_dot3_information = $param[0];
@@ -1948,9 +2875,8 @@ class Dot3 extends Controller
 
             if (empty($server['mysql_servers']))
             {
-                //throw new Exception("Impossible to find server");
-               //Debug::debug($server, "PROBLEM PROCYSQL");
-               //Debug::debug($id_mysql_server, "PROBLEM PROCYSQL");
+                $this->logMissingProxySqlMysqlServers($server, 'linkHostGroup');
+                continue;
             }
 
             //Debug::debug($server,"PROXYSQL -------------");
@@ -2059,6 +2985,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `linkMaxScale`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for linkMaxScale.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkMaxScale()
+ * @example /fr/dot3/linkMaxScale
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function linkMaxScale($param)
     {
         Debug::parseDebug($param);
@@ -2146,6 +3093,24 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle dot3 state through `loadConfigColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for loadConfigColor.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::loadConfigColor()
+ * @example /fr/dot3/loadConfigColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function loadConfigColor()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -2180,6 +3145,34 @@ class Dot3 extends Controller
         //die('wdfgdf');
     }
 
+/**
+ * Handle dot3 state through `findIdMysqlServer`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $host Input value for `host`.
+ * @phpstan-param mixed $host
+ * @psalm-param mixed $host
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @param mixed $silent Input value for `silent`.
+ * @phpstan-param mixed $silent
+ * @psalm-param mixed $silent
+ * @return mixed Returned value for findIdMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::findIdMysqlServer()
+ * @example /fr/dot3/findIdMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function findIdMysqlServer($host, $id_dot3_information, $silent = false)
     {        
         $dot_information = self::getInformation($id_dot3_information);
@@ -2239,6 +3232,27 @@ class Dot3 extends Controller
         return null;
     }
 
+/**
+ * Retrieve dot3 state through `getInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @return mixed Returned value for getInformation.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getInformation()
+ * @example /fr/dot3/getInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getInformation($id_dot3_information = '')
     {
         //Debug::debug($id_dot3_information, "id_dot3_information");
@@ -2365,6 +3379,27 @@ class Dot3 extends Controller
         //https://dreampuf.github.io/GraphvizOnline/
     }
 
+/**
+ * Handle dot3 state through `download`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for download.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::download()
+ * @example /fr/dot3/download
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function download($param)
     {
         $info = self::getInformation();
@@ -2404,6 +3439,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/dot3/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function purgeAll($param)
     {
         Debug::parseDebug($param);
@@ -2441,6 +3497,27 @@ class Dot3 extends Controller
 
     // for DEBUG ONLY
 
+/**
+ * Handle dot3 state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/dot3/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function show($param)
     {
         $id_dot3_information = 2356819;
@@ -2450,6 +3527,27 @@ class Dot3 extends Controller
         $this->run($id_dot3_information);
     }
 
+/**
+ * Handle dot3 state through `buildGaleraCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildGaleraCluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildGaleraCluster()
+ * @example /fr/dot3/buildGaleraCluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildGaleraCluster($param)
     {
         $id_dot3_information = $param[0];
@@ -2689,6 +3787,30 @@ class Dot3 extends Controller
     }
 
     //move to lib/Galera.php
+/**
+ * Handle dot3 state through `extractProviderOption`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $wsrep_provider_options Input value for `wsrep_provider_options`.
+ * @phpstan-param mixed $wsrep_provider_options
+ * @psalm-param mixed $wsrep_provider_options
+ * @param mixed $variable Input value for `variable`.
+ * @phpstan-param mixed $variable
+ * @psalm-param mixed $variable
+ * @return mixed Returned value for extractProviderOption.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extractProviderOption()
+ * @example /fr/dot3/extractProviderOption
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function extractProviderOption($wsrep_provider_options, $variable)
     {
         preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
@@ -2703,6 +3825,31 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle dot3 state through `setThemeToServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $theme Input value for `theme`.
+ * @phpstan-param mixed $theme
+ * @psalm-param mixed $theme
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return void Returned value for setThemeToServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::setThemeToServer()
+ * @example /fr/dot3/setThemeToServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function setThemeToServer($theme, $id_mysql_server)
     {
         if (empty(self::$config[$theme])) {
@@ -2725,6 +3872,30 @@ class Dot3 extends Controller
 
     }
 
+/**
+ * Handle dot3 state through `reOrderVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $variables Input value for `variables`.
+ * @phpstan-param mixed $variables
+ * @psalm-param mixed $variables
+ * @param mixed $filter Input value for `filter`.
+ * @phpstan-param mixed $filter
+ * @psalm-param mixed $filter
+ * @return mixed Returned value for reOrderVariable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::reOrderVariable()
+ * @example /fr/dot3/reOrderVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function reOrderVariable($variables, $filter = true)
     {
         $var_to_keep = array("mysql-interfaces", "admin-version");
@@ -2756,6 +3927,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Retrieve dot3 state through `getHostGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostgroups Input value for `hostgroups`.
+ * @phpstan-param mixed $hostgroups
+ * @psalm-param mixed $hostgroups
+ * @return mixed Returned value for getHostGroup.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getHostGroup()
+ * @example /fr/dot3/getHostGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getHostGroup($hostgroups)
     {
         $data = array();
@@ -2774,6 +3966,27 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `buildLinkBetweenProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLinkBetweenProxySQL.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLinkBetweenProxySQL()
+ * @example /fr/dot3/buildLinkBetweenProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildLinkBetweenProxySQL($param)
     {
         $id_dot3_information = $param[0];
@@ -2834,6 +4047,30 @@ class Dot3 extends Controller
 
 
 
+/**
+ * Handle dot3 state through `resolveMaxScaleConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $maxscale Input value for `maxscale`.
+ * @phpstan-param array $maxscale
+ * @psalm-param array $maxscale
+ * @param string $maxscale_ip_port Input value for `maxscale_ip_port`.
+ * @phpstan-param string $maxscale_ip_port
+ * @psalm-param string $maxscale_ip_port
+ * @return array Returned value for resolveMaxScaleConnection.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::resolveMaxScaleConnection()
+ * @example /fr/dot3/resolveMaxScaleConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function resolveMaxScaleConnection(array $maxscale, string $maxscale_ip_port): array
     {
         //Debug::debug(self::$id_dot3_information, "id_dot3_information");
@@ -2898,6 +4135,27 @@ class Dot3 extends Controller
         return $resolved;
     }
 
+/**
+ * Handle dot3 state through `splitAddressPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $value Input value for `value`.
+ * @phpstan-param string $value
+ * @psalm-param string $value
+ * @return array Returned value for splitAddressPort.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::splitAddressPort()
+ * @example /fr/dot3/splitAddressPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function splitAddressPort(string $value): array
     {
         $value = trim($value);
@@ -2928,6 +4186,28 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Retrieve dot3 state through `getTunnel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTunnel.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getTunnel()
+ * @example /fr/dot3/getTunnel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getTunnel($param)
     {
         // Vérifie que l’identifiant d’information Dot3 est défini
@@ -2978,9 +4258,46 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for after.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example after(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function after($param)
     {
         if (!function_exists('posix_geteuid')) {
+/**
+ * Handle `posix_geteuid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return int Returned value for posix_geteuid.
+ * @phpstan-return int
+ * @psalm-return int
+ * @example posix_geteuid(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
             function posix_geteuid(): int { return 0; }
         }
 
@@ -2990,6 +4307,26 @@ class Dot3 extends Controller
         }
     }
 
+/**
+ * Handle `generateGroupByServerId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupByServerId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example generateGroupByServerId(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupByServerId($information)
     {
         $tmp_group = array();
@@ -3003,6 +4340,30 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+/**
+ * Create `createGarb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for createGarb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example createGarb(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createGarb($information, $id_mysql_server)
     {
         $server = $information['servers'][$id_mysql_server] ?? null;
@@ -3034,3 +4395,4 @@ class Dot3 extends Controller
         // Logique de création de l'arbitre
     }
 }
+

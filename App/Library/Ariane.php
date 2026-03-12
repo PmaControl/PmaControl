@@ -7,18 +7,105 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for ariane workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Ariane
 {
+/**
+ * Stores `$db` for db.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $db;
+/**
+ * Stores `$class` for class.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $class;
+/**
+ * Stores `$method` for method.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $method;
+/**
+ * Stores `$title` for title.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $title;
 
+/**
+ * Handle ariane state through `__construct`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return void Returned value for __construct.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::__construct()
+ * @example /fr/ariane/__construct
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function __construct($db)
     {
         $this->db = $db;
     }
 
+/**
+ * Handle ariane state through `buildAriane`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $method Input value for `method`.
+ * @phpstan-param mixed $method
+ * @psalm-param mixed $method
+ * @param mixed $title Input value for `title`.
+ * @phpstan-param mixed $title
+ * @psalm-param mixed $title
+ * @return mixed Returned value for buildAriane.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::buildAriane()
+ * @example /fr/ariane/buildAriane
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildAriane($method, $title = "")
     {
 

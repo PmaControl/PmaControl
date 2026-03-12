@@ -21,14 +21,56 @@ for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 
 class Export extends Controller
 {
+/**
+ * Stores `$table_with_data` for table with data.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $table_with_data        = array("translation_main", "geolocalisation_city",
         "geolocalisation_continent", "geolocalisation_country");
+/**
+ * Stores `$table_with_data_expand` for table with data expand.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $table_with_data_expand = array("menu", "menu_group", "history_etat", "ts_file","ts_variable","tag", "mysqlsys_config_export",
         "group", "environment", "daemon_main", "sharding", "ts_variable", "dot3_legend","worker_queue","docker_software",
         "home_box", "backup_type", "export_option", "database_size", "mysql_type", "translation_google", "translation_glial", "benchmark_config",
     "ts_type_override");
+/**
+ * Stores `$exlude_table` for exlude table.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $exlude_table = array("translation_*", "slave_*", "master_*", "variables_*", "status_*", "ts_value_*", "ts_date_by_server");
 
+/**
+ * Handle export state through `generateDump`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for generateDump.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateDump()
+ * @example /fr/export/generateDump
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function generateDump($param)
     {
         Debug::parseDebug($param);
@@ -106,6 +148,24 @@ class Export extends Controller
         shell_exec($cmd);
     }
 
+/**
+ * Render export state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/export/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index()
     {
 
@@ -134,6 +194,24 @@ $("#export_all-all2").click(function(){
         $this->set('data', $data);
     }
 
+/**
+ * Handle export state through `export_conf`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for export_conf.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export_conf()
+ * @example /fr/export/export_conf
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function export_conf()
     {
 
@@ -166,6 +244,27 @@ $("#export_all-all2").click(function(){
         }
     }
 
+/**
+ * Handle export state through `import_conf`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for import_conf.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::import_conf()
+ * @example /fr/export/import_conf
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import_conf($param)
     {
         $this->view = false;
@@ -258,6 +357,27 @@ $("#export_all-all2").click(function(){
         $this->set('data', $data);
     }
 
+/**
+ * Handle export state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for import.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::import()
+ * @example /fr/export/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import($param)
     {
         //$param[] = "--debug";
@@ -413,6 +533,27 @@ $("#export_all-all2").click(function(){
         $this->import($json);
     }
 
+/**
+ * Handle export state through `_export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $options Input value for `options`.
+ * @phpstan-param mixed $options
+ * @psalm-param mixed $options
+ * @return mixed Returned value for _export.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::_export()
+ * @example /fr/export/_export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function _export($options = array())
     {
         $db     = Sgbd::sql(DB_DEFAULT);
@@ -502,6 +643,27 @@ $("#export_all-all2").click(function(){
         return $backup;
     }
 
+/**
+ * Handle export state through `test_export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test_export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test_export()
+ * @example /fr/export/test_export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test_export($param)
     {
 
@@ -512,6 +674,25 @@ $("#export_all-all2").click(function(){
         Debug::debug(json_encode($backup, JSON_PRETTY_PRINT));
     }
 
+/**
+ * Retrieve export state through `getExportOption`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getExportOption.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getExportOption()
+ * @example /fr/export/getExportOption
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getExportOption()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -546,6 +727,27 @@ $("#export_all-all2").click(function(){
         return $export_option;
     }
 
+/**
+ * Retrieve export state through `getUniqueKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @return mixed Returned value for getUniqueKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getUniqueKey()
+ * @example /fr/export/getUniqueKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getUniqueKey($table_name)
     {
 
@@ -563,6 +765,24 @@ $("#export_all-all2").click(function(){
         return $unique;
     }
 
+/**
+ * Handle export state through `encrypt`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for encrypt.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::encrypt()
+ * @example /fr/export/encrypt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function encrypt()
     {
 
@@ -578,6 +798,24 @@ $("#export_all-all2").click(function(){
         }
     }
 
+/**
+ * Handle export state through `option`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for option.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::option()
+ * @example /fr/export/option
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function option()
     {
 
@@ -599,6 +837,27 @@ $("#export_all-all2").click(function(){
 //a mettre dans une librairy
 
 
+/**
+ * Handle export state through `test_dechiffrement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test_dechiffrement.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test_dechiffrement()
+ * @example /fr/export/test_dechiffrement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test_dechiffrement($param)
     {
         if (IS_CLI) {
@@ -658,6 +917,27 @@ $("#export_all-all2").click(function(){
         $this->set('data', $data);
     }
 
+/**
+ * Handle export state through `is_gzipped`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $in Input value for `in`.
+ * @phpstan-param mixed $in
+ * @psalm-param mixed $in
+ * @return mixed Returned value for is_gzipped.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::is_gzipped()
+ * @example /fr/export/is_gzipped
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function is_gzipped($in)
     {
 
@@ -675,3 +955,4 @@ $("#export_all-all2").click(function(){
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);
   echo $uncompressed; */
+

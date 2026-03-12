@@ -12,8 +12,43 @@ use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for plugin workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Plugin extends Controller {
 
+/**
+ * Render plugin state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/plugin/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param) {
         $LOCALJSONFILE = ROOT . "/plugins/plugin.json";
         $PMAPLUGINURL = "http://localhost/plugins/"; //Il faut mettre dans un fichier de conf
@@ -72,6 +107,27 @@ class Plugin extends Controller {
         $this->set('param', $param);
     }
 
+/**
+ * Handle plugin state through `jsontodatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $jsonInText Input value for `jsonInText`.
+ * @phpstan-param mixed $jsonInText
+ * @psalm-param mixed $jsonInText
+ * @return void Returned value for jsontodatabase.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::jsontodatabase()
+ * @example /fr/plugin/jsontodatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function jsontodatabase($jsonInText) {
         $Array = json_decode($jsonInText, true);
 
@@ -100,6 +156,28 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         endforeach;
     }
 
+/**
+ * Handle plugin state through `install`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::install()
+ * @example /fr/plugin/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install($param) {
         if (!isset($param[0])) {
             Throw new \Exception("No plugin Id provided");
@@ -214,6 +292,36 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         echo '<SCRIPT type="text/javascript">window.location.replace("' . str_replace("{LINK}", LINK, $lastinstallmenu) . '")</SCRIPT>';
     }
 
+/**
+ * Handle plugin state through `copyfile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @param mixed $source Input value for `source`.
+ * @phpstan-param mixed $source
+ * @psalm-param mixed $source
+ * @param mixed $target Input value for `target`.
+ * @phpstan-param mixed $target
+ * @psalm-param mixed $target
+ * @param mixed $nest Input value for `nest`.
+ * @phpstan-param mixed $nest
+ * @psalm-param mixed $nest
+ * @return mixed Returned value for copyfile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::copyfile()
+ * @example /fr/plugin/copyfile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function copyfile($file, $source, $target, $nest = 1) {
         $Return = array();
         $Return[0] = true;
@@ -264,6 +372,36 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         return $Return;
     }
 
+/**
+ * Handle plugin state through `logpluginfile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $handle Input value for `handle`.
+ * @phpstan-param mixed $handle
+ * @psalm-param mixed $handle
+ * @param mixed $pluginid Input value for `pluginid`.
+ * @phpstan-param mixed $pluginid
+ * @psalm-param mixed $pluginid
+ * @param mixed $source Input value for `source`.
+ * @phpstan-param mixed $source
+ * @psalm-param mixed $source
+ * @param mixed $target Input value for `target`.
+ * @phpstan-param mixed $target
+ * @psalm-param mixed $target
+ * @return void Returned value for logpluginfile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logpluginfile()
+ * @example /fr/plugin/logpluginfile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function logpluginfile($handle, $pluginid, $source, $target) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -282,6 +420,27 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         }
     }
 
+/**
+ * Handle plugin state through `sqlexecute`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return void Returned value for sqlexecute.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sqlexecute()
+ * @example /fr/plugin/sqlexecute
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function sqlexecute($filename) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -289,6 +448,28 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $db->sql_query($sql);
     }
 
+/**
+ * Delete plugin state through `remove`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for remove.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::remove()
+ * @example /fr/plugin/remove
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function remove($param) {
         if (!isset($param[0])) {
             Throw new \Exception("No plugin Id provided");
@@ -361,3 +542,4 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
     }
 
 }
+

@@ -8,6 +8,20 @@ use \Glial\Sgbd\Sgbd;
 
 
 // https://chatgpt.com/c/691b9112-ebcc-8329-a0cd-9cfcea9a3bee
+/**
+ * Class responsible for query graph extractor workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class QueryGraphExtractor extends Controller
 {
     
@@ -22,11 +36,56 @@ class QueryGraphExtractor extends Controller
         return trim($m[1] ?? '');
     }
 
+/**
+ * Handle query graph extractor state through `splitSelectFields`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $selectBlock Input value for `selectBlock`.
+ * @phpstan-param string $selectBlock
+ * @psalm-param string $selectBlock
+ * @return array Returned value for splitSelectFields.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::splitSelectFields()
+ * @example /fr/querygraphextractor/splitSelectFields
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function splitSelectFields(string $selectBlock): array
     {
         return preg_split('/,(?![^()]*\))/s', $selectBlock);
     }
 
+/**
+ * Handle query graph extractor state through `normalizeSelectField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $field Input value for `field`.
+ * @phpstan-param string $field
+ * @psalm-param string $field
+ * @param int $order Input value for `order`.
+ * @phpstan-param int $order
+ * @psalm-param int $order
+ * @return array Returned value for normalizeSelectField.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::normalizeSelectField()
+ * @example /fr/querygraphextractor/normalizeSelectField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function normalizeSelectField(string $field, int $order): array
     {
         $field = trim($field);
@@ -56,6 +115,27 @@ class QueryGraphExtractor extends Controller
         ];
     }
 
+/**
+ * Handle query graph extractor state through `extractSelectFields`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractSelectFields.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractSelectFields()
+ * @example /fr/querygraphextractor/extractSelectFields
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function extractSelectFields(string $sql): array
     {
         $block  = $this->extractSelectBlock($sql);
@@ -117,6 +197,27 @@ class QueryGraphExtractor extends Controller
         return $matches;
     }
 
+/**
+ * Handle query graph extractor state through `extractJoinConditions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $condBlock Input value for `condBlock`.
+ * @phpstan-param string $condBlock
+ * @psalm-param string $condBlock
+ * @return array Returned value for extractJoinConditions.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractJoinConditions()
+ * @example /fr/querygraphextractor/extractJoinConditions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function extractJoinConditions(string $condBlock): array
     {
         preg_match_all(
@@ -140,6 +241,27 @@ class QueryGraphExtractor extends Controller
         return $result;
     }
 
+/**
+ * Handle query graph extractor state through `extractJoins`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractJoins.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractJoins()
+ * @example /fr/querygraphextractor/extractJoins
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function extractJoins(string $sql): array
     {
         $result = [];
@@ -176,6 +298,27 @@ class QueryGraphExtractor extends Controller
         return trim($m[1] ?? '');
     }
 
+/**
+ * Handle query graph extractor state through `extractWhereConditions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractWhereConditions.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractWhereConditions()
+ * @example /fr/querygraphextractor/extractWhereConditions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function extractWhereConditions(string $sql): array
     {
         $block = $this->extractWhereBlock($sql);
@@ -297,3 +440,4 @@ class QueryGraphExtractor extends Controller
     }
 
 }
+

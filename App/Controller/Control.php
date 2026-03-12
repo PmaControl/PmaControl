@@ -22,16 +22,51 @@ use \App\Controller\Listener;
 
 class Control extends Controller
 {
+/**
+ * Stores `$tables` for tables.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_calculated");
+/**
+ * Stores `$ext` for ext.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $ext                   = array("int", "double", "text", "json");
+/**
+ * Stores `$field_value` for field value.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
      "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`, `connection_name`)",
      "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
     "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`digest` )");
 
+/**
+ * Stores `$index` for index.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $index                 = [
         "ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
@@ -39,15 +74,50 @@ class Control extends Controller
         "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)",
     ];
     //=> TODO a voir pour delete
+/**
+ * Stores `$engine` for engine.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     private $engine               = "rocksdb";
+/**
+ * Stores `$engine_preference` for engine preference.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $engine_preference    = array("ROCKSDB");
+/**
+ * Stores `$extra_field` for extra field.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,");
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
+/**
+ * Stores `$partition_to_keep` for partition to keep.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     public $partition_to_keep     = 90;
 
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $logger;
 
     /*
@@ -105,6 +175,27 @@ class Control extends Controller
         return $percent;
     }
 
+/**
+ * Prepare control state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/control/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param = "")
     {
         $logger       = new Logger("Control");
@@ -117,6 +208,25 @@ class Control extends Controller
         $this->selectEngine();
     }
 
+/**
+ * Handle control state through `selectEngine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for selectEngine.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::selectEngine()
+ * @example /fr/control/selectEngine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function selectEngine()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -139,6 +249,27 @@ class Control extends Controller
         throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '".implode(",", $this->engine_preference)."'", 80);
     }
 
+/**
+ * Create control state through `addPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addPartition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addPartition()
+ * @example /fr/control/addPartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addPartition($param)
     {
         $partition_number = $param[0];
@@ -155,6 +286,24 @@ class Control extends Controller
         }
     }
 
+/**
+ * Handle control state through `makeCombinaison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for makeCombinaison.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::makeCombinaison()
+ * @example /fr/control/makeCombinaison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function makeCombinaison()
     {
         $combinaisons = array();
@@ -169,6 +318,27 @@ class Control extends Controller
         return $combinaisons;
     }
 
+/**
+ * Handle control state through `dropPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropPartition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropPartition()
+ * @example /fr/control/dropPartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropPartition($param)
     {
         $partition_number = $param[0];
@@ -215,6 +385,27 @@ class Control extends Controller
         return $older_partition;
     }
 
+/**
+ * Retrieve control state through `getToDays`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getToDays.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getToDays()
+ * @example /fr/control/getToDays
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getToDays($param)
     {
         $date = $param[0];
@@ -313,6 +504,27 @@ class Control extends Controller
 
     }
 
+/**
+ * Handle control state through `dropTsTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropTsTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropTsTable()
+ * @example /fr/control/dropTsTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropTsTable($param = array())
     {
         Debug::parseDebug($param);
@@ -337,6 +549,24 @@ class Control extends Controller
         //System::deleteFiles("server");
     }
 
+/**
+ * Create control state through `createTsTable`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for createTsTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createTsTable()
+ * @example /fr/control/createTsTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createTsTable()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -406,6 +636,27 @@ PARTITION BY RANGE (to_days(`date`))
         $db->sql_query($sql);
     }
 
+/**
+ * Handle control state through `rebuildAll`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rebuildAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rebuildAll()
+ * @example /fr/control/rebuildAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rebuildAll($param = "")
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -445,6 +696,27 @@ PARTITION BY RANGE (to_days(`date`))
         shell_exec($cmd);
     }
 
+/**
+ * Handle control state through `statistique`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for statistique.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::statistique()
+ * @example /fr/control/statistique
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistique($param = "")
     {
         Debug::parseDebug($param);
@@ -459,6 +731,24 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::sql($sql);
     }
 
+/**
+ * Retrieve control state through `getDates`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getDates.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDates()
+ * @example /fr/control/getDates
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDates()
     {
         $today = date("Y-m-d");
@@ -473,6 +763,27 @@ PARTITION BY RANGE (to_days(`date`))
     }
 
 
+/**
+ * Handle control state through `dropFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $diretory Input value for `diretory`.
+ * @phpstan-param mixed $diretory
+ * @psalm-param mixed $diretory
+ * @return void Returned value for dropFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropFile()
+ * @example /fr/control/dropFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function dropFile($diretory)
     {
         Debug::parseDebug($param);
@@ -489,6 +800,27 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
+/**
+ * Handle control state through `dropAllFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropAllFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropAllFile()
+ * @example /fr/control/dropAllFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropAllFile($param = "")
     {
         Debug::parseDebug($param);
@@ -536,6 +868,27 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         }
     }
 
+/**
+ * Handle control state through `purgefrm`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgefrm.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgefrm()
+ * @example /fr/control/purgefrm
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function purgefrm($param)
     {
         Debug::parseDebug($param);
@@ -585,6 +938,24 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         shell_exec($cmd2);
     }
 
+/**
+ * Handle control state through `truncateTsVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsVariable()
+ * @example /fr/control/truncateTsVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsVariable()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -599,6 +970,24 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     }
 
+/**
+ * Handle control state through `truncateTsMaxDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsMaxDate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsMaxDate()
+ * @example /fr/control/truncateTsMaxDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsMaxDate()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -607,6 +996,24 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     }
 
+/**
+ * Handle control state through `truncateTsFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsFile()
+ * @example /fr/control/truncateTsFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsFile()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -658,6 +1065,27 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         
     }
 
+/**
+ * Handle control state through `generateAllTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateAllTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateAllTables()
+ * @example /fr/control/generateAllTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateAllTables($param)
     {
         Debug::parseDebug($param);
@@ -676,6 +1104,27 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
     }
 
 
+/**
+ * Handle control state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/control/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function purgeAll($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -697,3 +1146,4 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
 
 }
+

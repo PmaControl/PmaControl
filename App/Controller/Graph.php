@@ -7,10 +7,42 @@ use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for graph workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Graph extends Controller {
 
     use \App\Mutual\Bigdata;
 
+/**
+ * Render graph state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/graph/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         $this->di['js']->addJavascript(array("Chart.min.js"));
@@ -154,6 +186,24 @@ class Graph extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Handle graph state through `cache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for cache.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::cache()
+ * @example /fr/graph/cache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cache() {
         $graph[1]['Title'] = "Percentage of full table scans";
         $graph[1]['Formula'][] = "(Handler_read_rnd_next + Handler_read_rnd) / (Handler_read_rnd_next + Handler_read_rnd + Handler_read_first + Handler_read_next + Handler_read_key + Handler_read_prev)";
@@ -165,22 +215,112 @@ class Graph extends Controller {
         return $graph;
     }
 
+/**
+ * Handle graph state through `innodb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for innodb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::innodb()
+ * @example /fr/graph/innodb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function innodb() {
         
     }
 
+/**
+ * Handle graph state through `galera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for galera.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::galera()
+ * @example /fr/graph/galera
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function galera() {
         
     }
 
+/**
+ * Handle graph state through `myisam`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for myisam.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::myisam()
+ * @example /fr/graph/myisam
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function myisam() {
         
     }
 
+/**
+ * Handle graph state through `engine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for engine.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::engine()
+ * @example /fr/graph/engine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function engine() {
         
     }
 
+/**
+ * Render graph state through `main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for main.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::main()
+ * @example /fr/graph/main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function main() {
         $graph[1]['Title'] = "Select";
         $graph[1]['Formula'][] = "Com_select";
@@ -192,6 +332,27 @@ class Graph extends Controller {
         return $graph;
     }
 
+/**
+ * Handle graph state through `gg`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for gg.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::gg()
+ * @example /fr/graph/gg
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function gg($param) {
         Debug::parseDebug($param);
         $this->view = false;
@@ -222,6 +383,27 @@ class Graph extends Controller {
         Debug::debug(SqlFormatter::format($sql));
     }
 
+/**
+ * Retrieve graph state through `getElems`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for getElems.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getElems()
+ * @example /fr/graph/getElems
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getElems($string) {
         $remove_operator = str_replace(array('+', '*', '-', '/', '(', ')'), array(' ', ' ', ' ', ' ', ' ', ' '), $string);
 
@@ -234,6 +416,27 @@ class Graph extends Controller {
         return $elems;
     }
 
+/**
+ * Handle graph state through `generateGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return void Returned value for generateGraph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateGraph()
+ * @example /fr/graph/generateGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGraph($data) {
         $date = implode('","', $dates);
         $vals = implode(',', $val);
@@ -270,6 +473,27 @@ var myChart = new Chart(ctx, {
     }
 
 
+/**
+ * Handle graph state through `agregate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for agregate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::agregate()
+ * @example /fr/graph/agregate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function agregate($param)
     {
         Debug::parseDebug($param);
@@ -330,3 +554,4 @@ var myChart = new Chart(ctx, {
     }
 
 }
+

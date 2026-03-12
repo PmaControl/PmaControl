@@ -11,12 +11,54 @@ use \Monolog\Handler\StreamHandler;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for ldap workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Ldap extends Controller
 {
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group          = "Ldap";
+/**
+ * Stores `$method_administration` for method administration.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $method_administration = array('Ldap', "roles");
+/**
+ * Stores `$without_quote` for without quote.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $without_quote         = array('LDAP_CHECK', 'LDAP_PORT');
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $logger;
 
     const LDAP_CONFIG = ROOT."/configuration/ldap.config.php";
@@ -44,6 +86,27 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Render ldap state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/ldap/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index($param)
     {
 
@@ -226,6 +289,30 @@ class Ldap extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle ldap state through `testLdap`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $url Input value for `url`.
+ * @phpstan-param mixed $url
+ * @psalm-param mixed $url
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @return mixed Returned value for testLdap.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testLdap()
+ * @example /fr/ldap/testLdap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testLdap($url, $port)
     {
         $fp = @fsockopen($url, $port, $errno, $errstr, 1);
@@ -236,6 +323,30 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Handle ldap state through `postToGet`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $post Input value for `post`.
+ * @phpstan-param mixed $post
+ * @psalm-param mixed $post
+ * @param mixed $exclude Input value for `exclude`.
+ * @phpstan-param mixed $exclude
+ * @psalm-param mixed $exclude
+ * @return mixed Returned value for postToGet.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::postToGet()
+ * @example /fr/ldap/postToGet
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function postToGet($post, $exclude = array())
     {
         global $ret, $way;
@@ -252,6 +363,36 @@ class Ldap extends Controller
         return implode('/', $ret);
     }
 
+/**
+ * Handle ldap state through `testLdapCredential`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $url Input value for `url`.
+ * @phpstan-param mixed $url
+ * @psalm-param mixed $url
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $bind_dn Input value for `bind_dn`.
+ * @phpstan-param mixed $bind_dn
+ * @psalm-param mixed $bind_dn
+ * @param mixed $bind_passwd Input value for `bind_passwd`.
+ * @phpstan-param mixed $bind_passwd
+ * @psalm-param mixed $bind_passwd
+ * @return mixed Returned value for testLdapCredential.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testLdapCredential()
+ * @example /fr/ldap/testLdapCredential
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testLdapCredential($url, $port, $bind_dn, $bind_passwd)
     {
         if ($this->testLdap($url, $port)) {
@@ -273,6 +414,27 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Handle ldap state through `putUl`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $error Input value for `error`.
+ * @phpstan-param mixed $error
+ * @psalm-param mixed $error
+ * @return mixed Returned value for putUl.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::putUl()
+ * @example /fr/ldap/putUl
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function putUl($error)
     {
         $ret = "<ul>";
@@ -284,6 +446,27 @@ class Ldap extends Controller
         return $ret;
     }
 
+/**
+ * Prepare ldap state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/ldap/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $logger       = new Logger('ldap');
@@ -294,6 +477,33 @@ class Ldap extends Controller
         $this->logger = $logger;
     }
 
+/**
+ * Handle ldap state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $level Input value for `level`.
+ * @phpstan-param mixed $level
+ * @psalm-param mixed $level
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/ldap/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($level, $type, $msg)
     {
 
@@ -374,6 +584,24 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Handle ldap state through `change`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for change.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::change()
+ * @example /fr/ldap/change
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function change()
     {
         $this->update_group(1);
@@ -394,6 +622,24 @@ class Ldap extends Controller
         $this->getHightestRank();
     }
 
+/**
+ * Handle ldap state through `obtenirRangLePlusHaut`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for obtenirRangLePlusHaut.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::obtenirRangLePlusHaut()
+ * @example /fr/ldap/obtenirRangLePlusHaut
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function obtenirRangLePlusHaut()
     {
         $acl = $this->di['acl'];
@@ -413,6 +659,24 @@ class Ldap extends Controller
         //debug($tree);
     }
 
+/**
+ * Handle ldap state through `OraganiseNiveau`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for OraganiseNiveau.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::OraganiseNiveau()
+ * @example /fr/ldap/OraganiseNiveau
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function OraganiseNiveau()
     {
         $tree = $this->di['acl']->obtenirHierarchie();
@@ -421,6 +685,27 @@ class Ldap extends Controller
         //foreach($tree as )
     }
 
+/**
+ * Handle ldap state through `UpdateConfigFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return void Returned value for UpdateConfigFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::UpdateConfigFile()
+ * @example /fr/ldap/UpdateConfigFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function UpdateConfigFile($var)
     {
 
@@ -593,12 +878,54 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Handle ldap state through `parseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $configFile Input value for `configFile`.
+ * @phpstan-param mixed $configFile
+ * @psalm-param mixed $configFile
+ * @return mixed Returned value for parseConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseConfig()
+ * @example /fr/ldap/parseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function parseConfig($configFile)
     {
         $config = json_decode(file_get_contents($configFile), true);
         return $config;
     }
 
+/**
+ * Handle ldap state through `requestLdap`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $command Input value for `command`.
+ * @phpstan-param mixed $command
+ * @psalm-param mixed $command
+ * @return mixed Returned value for requestLdap.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::requestLdap()
+ * @example /fr/ldap/requestLdap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function requestLdap($command)
     {
 
@@ -637,6 +964,23 @@ class Ldap extends Controller
         }
     }
 
+/**
+ * Retrieve `getGroupFromUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for getGroupFromUser.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example getGroupFromUser(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getGroupFromUser()
     {
         $data = array();

@@ -281,17 +281,52 @@ class Aspirateur extends Controller
 {
     //use \App\Library\Filter;
 
+/**
+ * Stores `$timestamp_config_file` for timestamp config file.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     static $timestamp_config_file = "";
 
     //log with monolog
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
     //store if table exist or not to prevent ask each time
+/**
+ * Stores `$cache` for cache.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $cache = array();
 
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $primary_key = array();
 
 
+/**
+ * Stores `$time_ns` for time ns.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     static $time_ns = 0;
 
     /*
@@ -791,6 +826,36 @@ class Aspirateur extends Controller
         return true;
     }
 
+/**
+ * Handle aspirateur state through `upsertVipServerRoute`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $dns Input value for `dns`.
+ * @phpstan-param string $dns
+ * @psalm-param string $dns
+ * @param string $ip Input value for `ip`.
+ * @phpstan-param string $ip
+ * @psalm-param string $ip
+ * @param int $newActual Input value for `newActual`.
+ * @phpstan-param int $newActual
+ * @psalm-param int $newActual
+ * @return bool Returned value for upsertVipServerRoute.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::upsertVipServerRoute()
+ * @example /fr/aspirateur/upsertVipServerRoute
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function upsertVipServerRoute(int $id_mysql_server, string $dns, string $ip, int $newActual): bool
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -918,6 +983,27 @@ class Aspirateur extends Controller
         }
     }
 
+/**
+ * Handle aspirateur state through `resolveVipIp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $connectionHost Input value for `connectionHost`.
+ * @phpstan-param string $connectionHost
+ * @psalm-param string $connectionHost
+ * @return string Returned value for resolveVipIp.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::resolveVipIp()
+ * @example /fr/aspirateur/resolveVipIp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveVipIp(string $connectionHost): string
     {
         $connectionHost = trim($connectionHost);
@@ -946,6 +1032,33 @@ class Aspirateur extends Controller
         return $connectionHost;
     }
 
+/**
+ * Handle aspirateur state through `resolveVipDestinationId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $vipCandidates Input value for `vipCandidates`.
+ * @phpstan-param array $vipCandidates
+ * @psalm-param array $vipCandidates
+ * @param int $port Input value for `port`.
+ * @phpstan-param int $port
+ * @psalm-param int $port
+ * @return int Returned value for resolveVipDestinationId.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationId()
+ * @example /fr/aspirateur/resolveVipDestinationId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveVipDestinationId(int $id_mysql_server, array $vipCandidates, int $port): int
     {
         $normalizedTarget = [];
@@ -989,6 +1102,36 @@ class Aspirateur extends Controller
         );
     }
 
+/**
+ * Handle aspirateur state through `resolveVipDestinationIdFromSshMetric`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $normalizedTarget Input value for `normalizedTarget`.
+ * @phpstan-param array $normalizedTarget
+ * @psalm-param array $normalizedTarget
+ * @param string $metricSelector Input value for `metricSelector`.
+ * @phpstan-param string $metricSelector
+ * @psalm-param string $metricSelector
+ * @param string $fieldName Input value for `fieldName`.
+ * @phpstan-param string $fieldName
+ * @psalm-param string $fieldName
+ * @return int Returned value for resolveVipDestinationIdFromSshMetric.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationIdFromSshMetric()
+ * @example /fr/aspirateur/resolveVipDestinationIdFromSshMetric
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveVipDestinationIdFromSshMetric(
         int $id_mysql_server,
         array $normalizedTarget,
@@ -1054,6 +1197,33 @@ class Aspirateur extends Controller
         return 0;
     }
 
+/**
+ * Handle aspirateur state through `resolveVipDestinationIdFromAliasDns`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $normalizedCandidates Input value for `normalizedCandidates`.
+ * @phpstan-param array $normalizedCandidates
+ * @psalm-param array $normalizedCandidates
+ * @param int $port Input value for `port`.
+ * @phpstan-param int $port
+ * @psalm-param int $port
+ * @return int Returned value for resolveVipDestinationIdFromAliasDns.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationIdFromAliasDns()
+ * @example /fr/aspirateur/resolveVipDestinationIdFromAliasDns
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveVipDestinationIdFromAliasDns(int $id_mysql_server, array $normalizedCandidates, int $port): int
     {
         if (empty($normalizedCandidates)) {
@@ -1087,6 +1257,27 @@ class Aspirateur extends Controller
         return 0;
     }
 
+/**
+ * Handle aspirateur state through `extractVipCandidatesFromRawValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw Input value for `raw`.
+ * @phpstan-param mixed $raw
+ * @psalm-param mixed $raw
+ * @return array Returned value for extractVipCandidatesFromRawValue.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractVipCandidatesFromRawValue()
+ * @example /fr/aspirateur/extractVipCandidatesFromRawValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractVipCandidatesFromRawValue($raw): array
     {
         $flat = [];
@@ -1116,6 +1307,30 @@ class Aspirateur extends Controller
         return array_keys($candidates);
     }
 
+/**
+ * Handle aspirateur state through `flattenVipRawValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @param array & $flat Input value for `flat`.
+ * @phpstan-param array & $flat
+ * @psalm-param array & $flat
+ * @return void Returned value for flattenVipRawValue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::flattenVipRawValue()
+ * @example /fr/aspirateur/flattenVipRawValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function flattenVipRawValue($value, array &$flat): void
     {
         if (is_array($value)) {
@@ -1133,6 +1348,27 @@ class Aspirateur extends Controller
         }
     }
 
+/**
+ * Handle aspirateur state through `normalizeVipCandidate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $value Input value for `value`.
+ * @phpstan-param string $value
+ * @psalm-param string $value
+ * @return string Returned value for normalizeVipCandidate.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalizeVipCandidate()
+ * @example /fr/aspirateur/normalizeVipCandidate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function normalizeVipCandidate(string $value): string
     {
         $value = trim($value);
@@ -1154,6 +1390,30 @@ class Aspirateur extends Controller
         return strtolower($value);
     }
 
+/**
+ * Handle aspirateur state through `allocate_shared_storage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name Input value for `name`.
+ * @phpstan-param mixed $name
+ * @psalm-param mixed $name
+ * @param mixed $separator Input value for `separator`.
+ * @phpstan-param mixed $separator
+ * @psalm-param mixed $separator
+ * @return mixed Returned value for allocate_shared_storage.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::allocate_shared_storage()
+ * @example /fr/aspirateur/allocate_shared_storage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function allocate_shared_storage($name, $separator = EngineV4::SEPERATOR)
     {
         //storage shared
@@ -1165,6 +1425,27 @@ class Aspirateur extends Controller
         return $SHARED_MEMORY;
     }
 
+/**
+ * Handle aspirateur state through `trySshConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for trySshConnection.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::trySshConnection()
+ * @example /fr/aspirateur/trySshConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function trySshConnection($param)
     {
         $this->view      = false;
@@ -1247,6 +1528,27 @@ class Aspirateur extends Controller
         $db->sql_close();
     }
 
+/**
+ * Retrieve aspirateur state through `getHardware`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @return mixed Returned value for getHardware.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getHardware()
+ * @example /fr/aspirateur/getHardware
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getHardware($ssh)
     {
 
@@ -1347,6 +1649,30 @@ class Aspirateur extends Controller
         return $hardware;
     }
 
+/**
+ * Retrieve aspirateur state through `getStats`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param array $mysqlContext Input value for `mysqlContext`.
+ * @phpstan-param array $mysqlContext
+ * @psalm-param array $mysqlContext
+ * @return mixed Returned value for getStats.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getStats()
+ * @example /fr/aspirateur/getStats
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getStats($ssh, array $mysqlContext = array())
     {
         $stats = array();
@@ -1516,6 +1842,30 @@ class Aspirateur extends Controller
         return $stats;
     }
 
+/**
+ * Retrieve aspirateur state through `getInstantCpuUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param float $intervalSeconds Input value for `intervalSeconds`.
+ * @phpstan-param float $intervalSeconds
+ * @psalm-param float $intervalSeconds
+ * @return array Returned value for getInstantCpuUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getInstantCpuUsage()
+ * @example /fr/aspirateur/getInstantCpuUsage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getInstantCpuUsage($ssh, float $intervalSeconds = 0.5): array
     {
         $intervalSeconds = max(0.1, $intervalSeconds);
@@ -1541,6 +1891,27 @@ class Aspirateur extends Controller
         return $this->computeCpuUsageDelta($start, $end);
     }
 
+/**
+ * Handle aspirateur state through `parseProcStatSnapshot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $raw Input value for `raw`.
+ * @phpstan-param string $raw
+ * @psalm-param string $raw
+ * @return array Returned value for parseProcStatSnapshot.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::parseProcStatSnapshot()
+ * @example /fr/aspirateur/parseProcStatSnapshot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseProcStatSnapshot(string $raw): array
     {
         $lines = preg_split('/\r?\n/', trim($raw));
@@ -1574,6 +1945,30 @@ class Aspirateur extends Controller
         return $stats;
     }
 
+/**
+ * Handle aspirateur state through `computeCpuUsageDelta`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $start Input value for `start`.
+ * @phpstan-param array $start
+ * @psalm-param array $start
+ * @param array $end Input value for `end`.
+ * @phpstan-param array $end
+ * @psalm-param array $end
+ * @return array Returned value for computeCpuUsageDelta.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::computeCpuUsageDelta()
+ * @example /fr/aspirateur/computeCpuUsageDelta
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function computeCpuUsageDelta(array $start, array $end): array
     {
         $usage = [];
@@ -1598,6 +1993,27 @@ class Aspirateur extends Controller
         return $usage;
     }
 
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirContext`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return array Returned value for getMysqlDatadirContext.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getMysqlDatadirContext()
+ * @example /fr/aspirateur/getMysqlDatadirContext
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getMysqlDatadirContext(int $id_mysql_server): array
     {
         $context = [
@@ -1629,6 +2045,30 @@ class Aspirateur extends Controller
         return $context;
     }
 
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirStats`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param array $mysqlContext Input value for `mysqlContext`.
+ * @phpstan-param array $mysqlContext
+ * @psalm-param array $mysqlContext
+ * @return array Returned value for getMysqlDatadirStats.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getMysqlDatadirStats()
+ * @example /fr/aspirateur/getMysqlDatadirStats
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getMysqlDatadirStats($ssh, array $mysqlContext): array
     {
         $ret = [
@@ -1678,6 +2118,36 @@ class Aspirateur extends Controller
         return $ret;
     }
 
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirCleanSize`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param string $datadir Input value for `datadir`.
+ * @phpstan-param string $datadir
+ * @psalm-param string $datadir
+ * @param string $logBinBasename Input value for `logBinBasename`.
+ * @phpstan-param string $logBinBasename
+ * @psalm-param string $logBinBasename
+ * @param string $relayLogBasename Input value for `relayLogBasename`.
+ * @phpstan-param string $relayLogBasename
+ * @psalm-param string $relayLogBasename
+ * @return int Returned value for getMysqlDatadirCleanSize.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getMysqlDatadirCleanSize()
+ * @example /fr/aspirateur/getMysqlDatadirCleanSize
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getMysqlDatadirCleanSize($ssh, string $datadir, string $logBinBasename, string $relayLogBasename): int
     {
         $excludeNamePatterns = [
@@ -1728,6 +2198,27 @@ class Aspirateur extends Controller
         return (int)$out;
     }
 
+/**
+ * Retrieve aspirateur state through `getSstElapsedSeconds`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @return int Returned value for getSstElapsedSeconds.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getSstElapsedSeconds()
+ * @example /fr/aspirateur/getSstElapsedSeconds
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getSstElapsedSeconds($ssh): int
     {
         $cmd = 'ps -eo etimes,args --no-headers 2>/dev/null '
@@ -1743,6 +2234,27 @@ class Aspirateur extends Controller
     }
 
 
+/**
+ * Handle aspirateur state through `binaryLog`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for binaryLog.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::binaryLog()
+ * @example /fr/aspirateur/binaryLog
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function binaryLog($param)
     {
         Debug::parseDebug($param);
@@ -1785,6 +2297,24 @@ class Aspirateur extends Controller
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getArbitrator`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for getArbitrator.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getArbitrator()
+ * @example /fr/aspirateur/getArbitrator
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getArbitrator()
     {
 // cat error.log | grep -oE 'tcp://[0-9]+.[0-9]+.[0-9]+.[0-9]+:4567' | sort -d | uniq -c | grep -v '0.0.0.0'
@@ -1793,6 +2323,27 @@ class Aspirateur extends Controller
 
 
 
+/**
+ * Retrieve aspirateur state through `getDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $mysql_tested Input value for `mysql_tested`.
+ * @phpstan-param mixed $mysql_tested
+ * @psalm-param mixed $mysql_tested
+ * @return mixed Returned value for getDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabase()
+ * @example /fr/aspirateur/getDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabase($mysql_tested)
     {
 //$grants = $this->getGrants();
@@ -1838,6 +2389,27 @@ class Aspirateur extends Controller
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getSwap`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $membrut Input value for `membrut`.
+ * @phpstan-param mixed $membrut
+ * @psalm-param mixed $membrut
+ * @return mixed Returned value for getSwap.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSwap()
+ * @example /fr/aspirateur/getSwap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSwap($membrut)
     {
         Debug::debug($membrut);
@@ -1934,6 +2506,27 @@ class Aspirateur extends Controller
 //$sql2 = "SELECT * FROM wsrep_cluster_members;";
     }
 
+/**
+ * Retrieve aspirateur state through `getLockingQueries`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getLockingQueries.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getLockingQueries()
+ * @example /fr/aspirateur/getLockingQueries
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getLockingQueries($param = array())
     {
 
@@ -1973,6 +2566,27 @@ GROUP BY C.ID, C.INFO;";
         }
     }
 
+/**
+ * Retrieve aspirateur state through `getProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getProxySQL.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getProxySQL()
+ * @example /fr/aspirateur/getProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getProxySQL($param = array())
     {
         Debug::parseDebug($param);
@@ -1982,6 +2596,27 @@ GROUP BY C.ID, C.INFO;";
 
 
 
+/**
+ * Handle aspirateur state through `testProxy`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testProxy.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testProxy()
+ * @example /fr/aspirateur/testProxy
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testProxy($param)
     {
         Debug::parseDebug($param);
@@ -2017,6 +2652,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `debug`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for debug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debug()
+ * @example /fr/aspirateur/debug
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function debug($param)
     {
         Debug::parseDebug($param);
@@ -2029,6 +2685,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getSchema`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getSchema.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSchema()
+ * @example /fr/aspirateur/getSchema
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSchema($id_mysql_server)
     {
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
@@ -2088,6 +2765,27 @@ GROUP BY C.ID, C.INFO;";
 
 
     // Dans le cas des worker pour eviter de les relancer on recharge la configuation des serveurs MySQL, lorsque un nouveau server est ajouté.
+/**
+ * Handle aspirateur state through `keepConfigFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for keepConfigFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::keepConfigFile()
+ * @example /fr/aspirateur/keepConfigFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function keepConfigFile($param)
     {
         Debug::parseDebug($param);
@@ -2110,6 +2808,27 @@ GROUP BY C.ID, C.INFO;";
 
 
 
+/**
+ * Handle aspirateur state through `testproxysql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testproxysql.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testproxysql()
+ * @example /fr/aspirateur/testproxysql
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testproxysql($param)
     {
         $db = Sgbd::sql('server_6612a9fcb1641');
@@ -2162,6 +2881,34 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `isDataModified`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for isDataModified.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isDataModified()
+ * @example /fr/aspirateur/isDataModified
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function isDataModified($id_mysql_server, $ts_file, $data)
     {
         self::isValidStruc($data);
@@ -2195,6 +2942,27 @@ GROUP BY C.ID, C.INFO;";
         return $export;
     }
 
+/**
+ * Handle aspirateur state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/aspirateur/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -2287,6 +3055,28 @@ GROUP BY C.ID, C.INFO;";
 
     }
 
+/**
+ * Handle aspirateur state through `isValidStruc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for isValidStruc.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isValidStruc()
+ * @example /fr/aspirateur/isValidStruc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function isValidStruc($array) {
         // Vérifier si le tableau est un tableau à deux niveaux
         foreach ($array as $key => $value) {
@@ -2320,6 +3110,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getMysqlLatencyByQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getMysqlLatencyByQuery.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getMysqlLatencyByQuery()
+ * @example /fr/aspirateur/getMysqlLatencyByQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getMysqlLatencyByQuery($name_server)
     {
         
@@ -2393,6 +3204,27 @@ GROUP BY C.ID, C.INFO;";
         return $data;
     }
 
+/**
+ * Retrieve aspirateur state through `getInnodbMetrics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getInnodbMetrics.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getInnodbMetrics()
+ * @example /fr/aspirateur/getInnodbMetrics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getInnodbMetrics($name_server)
     {
         $db = Sgbd::sql($name_server);
@@ -2415,6 +3247,28 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `tryProxySqlConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tryProxySqlConnection.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::tryProxySqlConnection()
+ * @example /fr/aspirateur/tryProxySqlConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tryProxySqlConnection($param)
     {
         Debug::parseDebug($param);
@@ -2701,6 +3555,33 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getTableElems`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getTableElems.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableElems()
+ * @example /fr/aspirateur/getTableElems
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableElems($id_mysql_server, $database, $table)
     {
         if ($id_mysql_server == (int)$id_mysql_server){
@@ -2740,6 +3621,33 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getTableExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getTableExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableExist()
+ * @example /fr/aspirateur/getTableExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableExist($id_mysql_server, $database, $table)
     {
         //better with cache =)
@@ -2767,6 +3675,27 @@ GROUP BY C.ID, C.INFO;";
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getTableFromProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_proxysql Input value for `id_proxysql`.
+ * @phpstan-param int $id_proxysql
+ * @psalm-param int $id_proxysql
+ * @return mixed Returned value for getTableFromProxySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableFromProxySQL()
+ * @example /fr/aspirateur/getTableFromProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableFromProxySQL($id_proxysql)
     {
         $mysql_tested = Sgbd::sql($id_proxysql);
@@ -2794,6 +3723,27 @@ GROUP BY C.ID, C.INFO;";
     }
     
 
+/**
+ * Retrieve aspirateur state through `getPsMemory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getPsMemory.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPsMemory()
+ * @example /fr/aspirateur/getPsMemory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPsMemory($id_mysql_server)
     {
         if ($id_mysql_server == (int)$id_mysql_server){
@@ -2818,6 +3768,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDigest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDigest()
+ * @example /fr/aspirateur/getDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDigest($param)
     {
         Debug::parseDebug($param);
@@ -2858,6 +3829,30 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getProcesslist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param bool $isSingleStore Input value for `isSingleStore`.
+ * @phpstan-param bool $isSingleStore
+ * @psalm-param bool $isSingleStore
+ * @return mixed Returned value for getProcesslist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getProcesslist()
+ * @example /fr/aspirateur/getProcesslist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getProcesslist($db_link, bool $isSingleStore = false)
     {
         $time = 0;
@@ -2924,6 +3919,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `array_values_to_lowercase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $array Input value for `array`.
+ * @phpstan-param array $array
+ * @psalm-param array $array
+ * @return array Returned value for array_values_to_lowercase.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::array_values_to_lowercase()
+ * @example /fr/aspirateur/array_values_to_lowercase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function array_values_to_lowercase(array $array): array {
         return array_map(function($value) {
             return is_string($value) ? strtolower($value) : $value;
@@ -2931,6 +3947,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTables()
+ * @example /fr/aspirateur/getTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTables($param)
     {
         $id_mysql_server = $param[0];
@@ -2963,6 +4000,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getCreateTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getCreateTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCreateTables()
+ * @example /fr/aspirateur/getCreateTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getCreateTables($param)
     {
         Debug::parseDebug($param);
@@ -2986,6 +4044,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `eachHour`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for eachHour.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::eachHour()
+ * @example /fr/aspirateur/eachHour
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function eachHour($param)
     {
         Debug::parseDebug($param);
@@ -3020,6 +4099,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getDisks`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDisks.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDisks()
+ * @example /fr/aspirateur/getDisks
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDisks($param)
     {
         Debug::parseDebug($param);
@@ -3078,6 +4178,27 @@ GROUP BY C.ID, C.INFO;";
         return $ret;
     }
 
+/**
+ * Retrieve aspirateur state through `getVelocity`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getVelocity.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getVelocity()
+ * @example /fr/aspirateur/getVelocity
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getVelocity($name_server)
     {
 
@@ -3117,12 +4238,54 @@ GROUP BY C.ID, C.INFO;";
         return $data;
     }
 
+/**
+ * Handle aspirateur state through `detectDouble`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for detectDouble.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::detectDouble()
+ * @example /fr/aspirateur/detectDouble
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function detectDouble($param)
     {
         Debug::parseDebug($param);
 
         $servers = Extraction2::display(array("variables::hostname","variables::port","variables::server_uid" , "variables::is_proxysql" ));
 
+/**
+ * Handle aspirateur state through `find_duplicate_server_uids`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $servers Input value for `servers`.
+ * @phpstan-param array $servers
+ * @psalm-param array $servers
+ * @return array Returned value for find_duplicate_server_uids.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::find_duplicate_server_uids()
+ * @example /fr/aspirateur/find_duplicate_server_uids
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
         function find_duplicate_server_uids(array $servers): array {
             $map = [];
             foreach ($servers as $entry) {
@@ -3154,34 +4317,33 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
-    public function gg($param)
-    {
-        Debug::parseDebug($param);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT a.id_mysql_server, a.date, a.date_p1, a.date_p2,a.date_p3,a.date_p4 FROM ts_max_date a
-        INNER JOIN ts_file b ON a.id_ts_file = b.id
-        INNER JOIN ts_variable c on c.id_ts_file = b.id
-        WHERE `name` = 'server_uid' and a.id_mysql_server in(89);";
-
-        $res = $db->sql_query($sql);
-
-        while($ob = $db->sql_fetch_object($res))
-        {
-            $date = [$ob->date, $ob->date_p1, $ob->date_p2, $ob->date_p4, $ob->date_p4];
-        }
-
-        $ret= Extraction2::display(array("server_uid"), array(), $date, false);
-        Debug::debug($ret);
-    }
-
+/**
+ * Handle aspirateur state through `tryMaxScaleConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tryMaxScaleConnection.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::tryMaxScaleConnection()
+ * @example /fr/aspirateur/tryMaxScaleConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tryMaxScaleConnection($param)
     {
         Debug::parseDebug($param);
         $this->view = false;
 
-        
         //$this->logger->notice("##################".json_encode($param));
         
         $list_id_mysql_server = $param[0];
@@ -3294,6 +4456,35 @@ GROUP BY C.ID, C.INFO;";
     }
 
     
+/**
+ * Handle `runEachMinuteAtBalancedSecond`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param int $interval Input value for `interval`.
+ * @phpstan-param int $interval
+ * @psalm-param int $interval
+ * @param string $file_key Input value for `file_key`.
+ * @phpstan-param string $file_key
+ * @psalm-param string $file_key
+ * @param callable $callback Input value for `callback`.
+ * @phpstan-param callable $callback
+ * @psalm-param callable $callback
+ * @return bool Returned value for runEachMinuteAtBalancedSecond.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @example runEachMinuteAtBalancedSecond(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function runEachMinuteAtBalancedSecond(int $id_mysql_server,int $interval, string $file_key, callable $callback): bool
     {
          // 1 minute
@@ -3357,3 +4548,4 @@ GROUP BY
   `DIGEST`, 
   `SQL_TEXT`
 */
+

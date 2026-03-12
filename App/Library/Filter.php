@@ -10,9 +10,47 @@ namespace App\Library;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Trait responsible for filter workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Filter
 {
 
+/**
+ * Retrieve filter state through `getFilter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $alias Input value for `alias`.
+ * @phpstan-param mixed $alias
+ * @psalm-param mixed $alias
+ * @return mixed Returned value for getFilter.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFilter()
+ * @example /fr/filter/getFilter
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
 
@@ -50,6 +88,24 @@ trait Filter
 
     
 
+/**
+ * Retrieve filter state through `getServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServer()
+ * @example /fr/filter/getServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getServer()
     {
 
@@ -77,6 +133,27 @@ trait Filter
 
 
 
+/**
+ * Handle filter state through `generateServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for generateServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateServer()
+ * @example /fr/filter/generateServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateServer($id_mysql_server)
     {
 

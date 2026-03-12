@@ -12,13 +12,76 @@ use \Glial\Cli\Table;
 
 use \Glial\Synapse\FactoryController;
 
+/**
+ * Class responsible for debug workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Debug
 {
+/**
+ * Stores `$debug` for debug.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     static $debug       = false;
+/**
+ * Stores `$count` for count.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     static $count       = 0;
+/**
+ * Stores `$microtime` for microtime.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $microtime   = array();
+/**
+ * Stores `$display_sql` for display sql.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     static $display_sql = true;
 
+/**
+ * Handle debug state through `parseDebug`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param & $param Route parameters forwarded by the router.
+ * @phpstan-param & $param
+ * @psalm-param & $param
+ * @return void Returned value for parseDebug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::parseDebug()
+ * @example /fr/debug/parseDebug
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function parseDebug(& $param)
     {
         if (!empty($param)) {
@@ -41,6 +104,27 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `debugShowQueries`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $di_link Input value for `di_link`.
+ * @phpstan-param mixed $di_link
+ * @psalm-param mixed $di_link
+ * @return void Returned value for debugShowQueries.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debugShowQueries()
+ * @example /fr/debug/debugShowQueries
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function debugShowQueries($di_link)
     {
         if (self::$debug) {
@@ -85,6 +169,27 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `checkPoint`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name Input value for `name`.
+ * @phpstan-param mixed $name
+ * @psalm-param mixed $name
+ * @return void Returned value for checkPoint.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::checkPoint()
+ * @example /fr/debug/checkPoint
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function checkPoint($name = "")
     {
         if (self::$debug) {
@@ -96,6 +201,24 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `debugShowTime`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for debugShowTime.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debugShowTime()
+ * @example /fr/debug/debugShowTime
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function debugShowTime()
     {
         if (self::$debug) {
@@ -138,16 +261,82 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `debugPurge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for debugPurge.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debugPurge()
+ * @example /fr/debug/debugPurge
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function debugPurge()
     {
         self::$microtime = array();
     }
 
+/**
+ * Handle debug state through `debugQueriesOff`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for debugQueriesOff.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debugQueriesOff()
+ * @example /fr/debug/debugQueriesOff
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function debugQueriesOff()
     {
         self::$display_sql = false;
     }
 
+/**
+ * Handle debug state through `debug`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $font_color Input value for `font_color`.
+ * @phpstan-param mixed $font_color
+ * @psalm-param mixed $font_color
+ * @param mixed $background_color Input value for `background_color`.
+ * @phpstan-param mixed $background_color
+ * @psalm-param mixed $background_color
+ * @return void Returned value for debug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debug()
+ * @example /fr/debug/debug
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function debug($string, $var = "", $font_color="grey", $background_color="blue")
     {
         if (self::$debug) {
@@ -189,6 +378,30 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `sql`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return void Returned value for sql.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sql()
+ * @example /fr/debug/sql
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function sql(string $sql, $var = "")
     {
         if (self::$debug) {
@@ -215,6 +428,24 @@ class Debug
         }
     }
 
+/**
+ * Retrieve debug state through `getDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getDate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDate()
+ * @example /fr/debug/getDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getDate()
     {
         if (IS_CLI) {
@@ -224,6 +455,30 @@ class Debug
         }
     }
 
+/**
+ * Handle debug state through `warning`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return void Returned value for warning.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::warning()
+ * @example /fr/debug/warning
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function warning($string, $var = "")
     {
         //self::head();
@@ -231,18 +486,84 @@ class Debug
 
     }
 
+/**
+ * Handle debug state through `error`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return void Returned value for error.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::error()
+ * @example /fr/debug/error
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function error($string, $var = "")
     {
         //self::head();
         self::debug($string, $var, "grey", "red");
     }
 
+/**
+ * Handle debug state through `success`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return void Returned value for success.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::success()
+ * @example /fr/debug/success
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function success($string, $var = "")
     {
         //self::head();
         self::debug($string, $var, "grey", "green");
     }
 
+/**
+ * Handle debug state through `head`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for head.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::head()
+ * @example /fr/debug/head
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function head()
     {
         $calledFrom = debug_backtrace();
@@ -258,3 +579,4 @@ class Debug
         //echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
     }
 }
+

@@ -8,12 +8,68 @@ use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for check data on cluster workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class CheckDataOnCluster extends Controller {
 
+/**
+ * Stores `$should_be_different` for should be different.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $should_be_different = array("server_id", "report_host", "wsrep_node_name");
+/**
+ * Stores `$not_important` for not important.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $not_important = array("general_log_file", "gtid_binlog_state");
+/**
+ * Stores `$master_master` for master master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $master_master = array("");
 
+/**
+ * Render check data on cluster state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/checkdataoncluster/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param) {
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'CheckDataOnCluster/index.js'));
@@ -168,6 +224,27 @@ class CheckDataOnCluster extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve check data on cluster state through `getDatabasesByServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabasesByServers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabasesByServers()
+ * @example /fr/checkdataoncluster/getDatabasesByServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabasesByServers($param) {
 
         $this->layout_name = false;
@@ -207,6 +284,27 @@ class CheckDataOnCluster extends Controller {
         return $data;
     }
 
+/**
+ * Retrieve check data on cluster state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDbLinkFromId()
+ * @example /fr/checkdataoncluster/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db) {
 
         if (IS_AJAX) {
@@ -224,6 +322,30 @@ class CheckDataOnCluster extends Controller {
         return $db_link;
     }
 
+/**
+ * Handle check data on cluster state through `array_diff_assoc_recursive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array1 Input value for `array1`.
+ * @phpstan-param mixed $array1
+ * @psalm-param mixed $array1
+ * @param mixed $array2 Input value for `array2`.
+ * @phpstan-param mixed $array2
+ * @psalm-param mixed $array2
+ * @return mixed Returned value for array_diff_assoc_recursive.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::array_diff_assoc_recursive()
+ * @example /fr/checkdataoncluster/array_diff_assoc_recursive
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function array_diff_assoc_recursive($array1, $array2) {
         $difference = array();
         foreach ($array1 as $key => $value) {
@@ -243,6 +365,27 @@ class CheckDataOnCluster extends Controller {
         return $difference;
     }
 
+/**
+ * Retrieve check data on cluster state through `liste_combinaison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $list Input value for `list`.
+ * @phpstan-param array<int|string,mixed> $list
+ * @psalm-param array<int|string,mixed> $list
+ * @return void Returned value for liste_combinaison.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::liste_combinaison()
+ * @example /fr/checkdataoncluster/liste_combinaison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function liste_combinaison($list) {
         $count = count($list);
 
@@ -280,6 +423,27 @@ class CheckDataOnCluster extends Controller {
         return $ret;
     }
 
+/**
+ * Handle check data on cluster state through `see`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for see.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::see()
+ * @example /fr/checkdataoncluster/see
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function see($param) {
         $db = Sgbd::sql(DB_DEFAULT);
         $display_name = $param[0];
@@ -311,3 +475,4 @@ class CheckDataOnCluster extends Controller {
     }
 
 }
+

@@ -7,14 +7,42 @@ use Glial\Cli\Table;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for myxplain workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Myxplain extends Controller
 {
+/**
+ * Stores `$id` for id.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $id            = '<p>This is <b>the query identifier</b>, this column <B>shows the number of SELECTs</B> (This is not the identifier of a join)</p>
 	<p>Therefore, in the case of a simple SELECT query, this identifier will always be equal to 1 for each row of the EXPLAIN output</p>
 	<p>Other values are possible when using <a href="'.LINK.'Myxplain/index/id/18">subqueries</a>, '
         .'<a href="'.LINK.'Myxplain/index/id/16">derived tables</a> or <a href="'.LINK.'Myxplain/index/id/18">UNION</a></p>
 	<p>NULL value will be displayed for the results of an UNION of two (or more) SELECTs of the EXPLAIN output</p>
 	<p>In our example, the column <i>table</i> looks like that : &lt;union1,2&gt;, where 1 and 2 are the two SELECT of the EXPLAIN plan</p>';
+/**
+ * Stores `$select_type` for select type.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $select_type   = "This column indicates if you run a simple or a complex query
 
 This is an informative column related to the id column
@@ -36,6 +64,13 @@ For complex queries, the main SELECT will always labeled PRIMARY and the other s
 Note that converting subqueries or derived tables to JOINs is better for performance
 
 Subqueries runs as part of explain execution, pay attention to this if you love your tranquility";
+/**
+ * Stores `$table` for table.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $table         = "This column simply displays the name of the table (or its alias) being accessed for the specified row
 
 For complex queries, the output of this column can be <unionM,N> or <derivedN>
@@ -46,6 +81,13 @@ This column is also useful to see what was the optimizer choices about the join 
 
 NULL value is also possible in the case of an impossible query or for queries with no table
 ";
+/**
+ * Stores `$type` for type.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $type          = "The join type shows how data is accessed
 
 This is an important information about the query optimization, it must be as good as possible
@@ -73,6 +115,13 @@ It is important to note that access via an index does not necessarily means a fa
 However a full table scan is generally not recommended (except for particular cases)
 
 Take a look at the key, row and extra columns for details about how data are processed";
+/**
+ * Stores `$possible_keys` for possible keys.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $possible_keys = "Which indexes could be used to perform the query, these are the potential indexes
 
 Note that some of the indexes listed there could be useless because optimizer ignores the tables order displayed in the EXPLAIN output
@@ -86,6 +135,13 @@ If this is not the case, the trouble begins... hey, it's your job!
 If NULL value is displayed, it is possible that an index is missing (or it means that you are looking to an UNION or a DERIVED TABLE row)
 
 Remember to take a look at the where clause of the query to understand the optimizer choice";
+/**
+ * Stores `$key` for key.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $key           = "This is the key that the optimizer decided to use to access to the data and minimize the query cost
 
 This is one of the most important column related to the query optimization
@@ -99,6 +155,13 @@ But the most important is to have an index name in this column
 Use the show index command to show the indexes declared for the tables listed in the explain plan
 
 It's possible to force the optimizer to use or ignore an index with hints";
+/**
+ * Stores `$key_len` for key len.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $key_len       = "This is the length of the index that the optimizer decided to use
 
 This information allows you to know how many parts of a multiple-part index are used
@@ -114,11 +177,25 @@ In this second example, the two parts of the primary key are used, you can read 
 These 8 bytes corresponds to the sum of the size of an integer type and the size of a timestamp type (4 bytes + 4 bytes)
 
 Note that if the column is nullable, the key length is incremented by 1. UTF8 character set can also affect this size";
+/**
+ * Stores `$ref` for ref.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $ref           = "Which columns or constants were compared with index in the key column
 
 This column allows you to see what is compared
 
 In this example, the id values of the table t3 are compared with the values of the idx1 index";
+/**
+ * Stores `$row` for row.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $row           = "This is the estimated amount of rows that the optimizer have to examine to retrieve the result of the query
 
 This is not the number of rows of the result set
@@ -136,6 +213,13 @@ If this difference is significant, it's time to analyze your where clause dude
 type and key columns may help to diagnose a potential problem
 
 Note that run an analyze table command before the explain command may help the optimizer to estimate a more accurate number of rows";
+/**
+ * Stores `$filtered` for filtered.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $filtered      = "This column is specific with EXPLAIN EXTENDED command
 
 It corresponds to an estimated percentage of rows filtered by the table condition
@@ -145,6 +229,13 @@ In other words, it is the number of rows which will be joined with previous tabl
 These information may be a very valuable addition to EXPLAIN for performance troubleshooting
 
 See documentation for more details about special markers that can appear in EXTENDED output";
+/**
+ * Stores `$extra` for extra.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $extra         = "The Extra column provides additinal informations about how MySQL resolves the query
 
 It can be a concatenation of multiple informations
@@ -163,6 +254,27 @@ The most common values for this colomn are the following :
 
 See documentation for more details about other possible values";
 
+/**
+ * Render myxplain state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/myxplain/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $colonne = $param[0] ?? "id";
@@ -223,6 +335,24 @@ See documentation for more details about other possible values";
         $this->set('data', $data);
     }
 
+/**
+ * Handle myxplain state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for import.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::import()
+ * @example /fr/myxplain/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import()
     {
         $db = Sgbd::sql(DB_DEFAULT);

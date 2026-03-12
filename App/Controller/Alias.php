@@ -16,12 +16,51 @@ use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Color;
 
+/**
+ * Class responsible for alias workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Alias extends Controller
 {
+/**
+ * Stores `$hostname` for hostname.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $hostname = array();
 
     private static array $alias_dns_cache = [];
 
+/**
+ * Render alias state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/alias/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -109,6 +148,27 @@ class Alias extends Controller
         }
     }
 
+/**
+ * Delete alias state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/alias/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         $this->view = false;
@@ -124,6 +184,27 @@ class Alias extends Controller
         header("location: ".LINK."alias/index");
     }
 
+/**
+ * Retrieve alias state through `getExtraction`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getExtraction.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getExtraction()
+ * @example /fr/alias/getExtraction
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getExtraction($param)
     {
         $var_host = $param[0];
@@ -237,6 +318,27 @@ class Alias extends Controller
     }
 
 
+/**
+ * Create alias state through `addHostname`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addHostname.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addHostname()
+ * @example /fr/alias/addHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addHostname($param)
     {
         $this->view = false;
@@ -255,6 +357,27 @@ class Alias extends Controller
 
     }
 
+/**
+ * Create alias state through `addAliasFromHostname`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromHostname.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromHostname()
+ * @example /fr/alias/addAliasFromHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addAliasFromHostname($param)
     {
         $this->view = false;
@@ -271,6 +394,27 @@ class Alias extends Controller
             self::upsertAliasDns([$hostname['_HOST'], $hostname['_PORT'], $hostname['id_mysql_server']]);
         }
     }
+/**
+ * Handle alias state through `upsertAliasDns`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for upsertAliasDns.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::upsertAliasDns()
+ * @example /fr/alias/upsertAliasDns
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function upsertAliasDns(array $param): void
     {
         // $param = [dns, port, id_mysql_server, is_from_ssh]
@@ -321,6 +465,27 @@ class Alias extends Controller
         ];
     }
 
+/**
+ * Create alias state through `addAliasFromSshIps`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromSshIps.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromSshIps()
+ * @example /fr/alias/addAliasFromSshIps
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addAliasFromSshIps($param)
     {
         $this->view = false;
@@ -390,6 +555,27 @@ class Alias extends Controller
         }
     }
 
+/**
+ * Handle alias state through `extractIpList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw Input value for `raw`.
+ * @phpstan-param mixed $raw
+ * @psalm-param mixed $raw
+ * @return array Returned value for extractIpList.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractIpList()
+ * @example /fr/alias/extractIpList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function extractIpList($raw): array
     {
         $list = [];
@@ -436,6 +622,27 @@ class Alias extends Controller
         return array_values($list);
     }
 
+/**
+ * Create alias state through `addAliasFromWsrepNodeAddress`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromWsrepNodeAddress.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromWsrepNodeAddress()
+ * @example /fr/alias/addAliasFromWsrepNodeAddress
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addAliasFromWsrepNodeAddress($param)
     {
         $this->view = false;
@@ -464,8 +671,27 @@ class Alias extends Controller
         }
     }
 
+/**
+ * Handle alias state through `clearAliasDnsCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for clearAliasDnsCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::clearAliasDnsCache()
+ * @example /fr/alias/clearAliasDnsCache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function clearAliasDnsCache(): void
     {
         self::$alias_dns_cache = [];
     }
 }
+

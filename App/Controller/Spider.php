@@ -6,6 +6,20 @@ use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\Controller;
 //use \Glial\Cli\Color;
 
+/**
+ * Class responsible for spider workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Spider extends Controller {
 
     //dba_source
@@ -13,6 +27,24 @@ class Spider extends Controller {
 
     use \App\Library\Filter;
 
+/**
+ * Render spider state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/spider/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
         $this->title = '<img src="/pmacontrol/image/main/spider-icon32.png" height="16" width="16px">' . "Spider";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title;
@@ -91,6 +123,27 @@ class Spider extends Controller {
         return Sgbd::sql($name_id);
     }
 
+/**
+ * Handle spider state through `extractSpiderInfoFromCreateTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $createTable Input value for `createTable`.
+ * @phpstan-param mixed $createTable
+ * @psalm-param mixed $createTable
+ * @return mixed Returned value for extractSpiderInfoFromCreateTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extractSpiderInfoFromCreateTable()
+ * @example /fr/spider/extractSpiderInfoFromCreateTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractSpiderInfoFromCreateTable($createTable) {
         $comment = stristr($createTable, 'COMMENT=');
         $main = substr($comment, 8, 1);
@@ -109,6 +162,24 @@ class Spider extends Controller {
         return $tmp;
     }
 
+/**
+ * Create spider state through `create`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for create.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::create()
+ * @example /fr/spider/create
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create() {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -136,6 +207,27 @@ class Spider extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Create spider state through `addLinkDb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addLinkDb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addLinkDb()
+ * @example /fr/spider/addLinkDb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addLinkDb($param) {
         $id_mysql_source = $param[0];
         $database_source = $param[1];
@@ -155,3 +247,4 @@ class Spider extends Controller {
 
 
 }
+

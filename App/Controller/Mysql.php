@@ -13,14 +13,70 @@ use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for mysql workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Mysql extends Controller
 {
     const DEBUG = true;
 
+/**
+ * Stores `$foreign_key` for foreign key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $foreign_key = array();
+/**
+ * Stores `$columns` for columns.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $columns     = array();
+/**
+ * Stores `$last_connection_used_ssl` for last connection used ssl.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     private $last_connection_used_ssl = 0;
 
+/**
+ * Handle mysql state through `generate_passswd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for generate_passswd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generate_passswd()
+ * @example /fr/mysql/generate_passswd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generate_passswd($length)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -32,6 +88,25 @@ class Mysql extends Controller
     }
 
 //depracated !!
+/**
+ * Retrieve mysql state through `get_server`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_server.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::get_server()
+ * @example /fr/mysql/get_server
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_server()
     {
         $server = array();
@@ -58,6 +133,30 @@ class Mysql extends Controller
     }
 
 
+/**
+ * Handle mysql state through `shell_cmd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $stdio Input value for `stdio`.
+ * @phpstan-param mixed $stdio
+ * @psalm-param mixed $stdio
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return void Returned value for shell_cmd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::shell_cmd()
+ * @example /fr/mysql/shell_cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function shell_cmd($stdio, $cmd)
     {
         fwrite($stdio, $cmd."\n");
@@ -68,6 +167,24 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `after_edit_db`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for after_edit_db.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after_edit_db()
+ * @example /fr/mysql/after_edit_db
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function after_edit_db()
     {
         $this->view = false;
@@ -96,6 +213,27 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `user`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for user.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::user()
+ * @example /fr/mysql/user
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function user($params)
     {
         $this->view = false;
@@ -163,6 +301,27 @@ class Mysql extends Controller
         echo $table2->Display();
     }
 
+/**
+ * Handle mysql state through `passwd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for passwd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::passwd()
+ * @example /fr/mysql/passwd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function passwd($params)
     {
         $this->view        = false;
@@ -229,6 +388,27 @@ class Mysql extends Controller
         echo $table2->Display();
     }
 
+/**
+ * Handle mysql state through `extract_query`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $Last_Error Input value for `Last_Error`.
+ * @phpstan-param mixed $Last_Error
+ * @psalm-param mixed $Last_Error
+ * @return mixed Returned value for extract_query.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extract_query()
+ * @example /fr/mysql/extract_query
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extract_query($Last_Error)
     {
         $sep = "Default database: 'PRODUCTION'. Query: '";
@@ -247,6 +427,28 @@ class Mysql extends Controller
         return $query;
     }
 
+/**
+ * Handle mysql state through `del`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for del.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::del()
+ * @example /fr/mysql/del
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function del($param)
     {
 
@@ -285,6 +487,28 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `exportUser`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for exportUser.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportUser()
+ * @example /fr/mysql/exportUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function exportUser($param)
     {
         Debug::parseDebug($param);
@@ -353,6 +577,24 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `uncrypt`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for uncrypt.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uncrypt()
+ * @example /fr/mysql/uncrypt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function uncrypt()
     {
         $this->view = false;
@@ -411,6 +653,24 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `clusterDisplay`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for clusterDisplay.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::clusterDisplay()
+ * @example /fr/mysql/clusterDisplay
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function clusterDisplay()
     {
 
@@ -447,6 +707,24 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `playskool`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for playskool.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::playskool()
+ * @example /fr/mysql/playskool
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function playskool()
     {
         $data['dbs'] = Sgbd::getAll();
@@ -463,6 +741,27 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `mpd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for mpd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mpd()
+ * @example /fr/mysql/mpd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function mpd($param)
     {
 
@@ -669,6 +968,24 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Create mysql state through `addnagios`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for addnagios.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addnagios()
+ * @example /fr/mysql/addnagios
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addnagios()
     {
 //photoways
@@ -690,6 +1007,27 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `thread`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for thread.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::thread()
+ * @example /fr/mysql/thread
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function thread($param)
     {
         $db = Sgbd::sql(str_replace('-', '_', $param[0]));
@@ -770,6 +1108,28 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `load_db`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for load_db.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::load_db()
+ * @example /fr/mysql/load_db
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function load_db($param)
     {
         $this->layout_name = false;
@@ -943,6 +1303,28 @@ class Mysql extends Controller
         Debug::sql($sql);
     }
 
+/**
+ * Retrieve mysql state through `getLogAndPos`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return mixed Returned value for getLogAndPos.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getLogAndPos()
+ * @example /fr/mysql/getLogAndPos
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getLogAndPos($filename)
     {
         $handle = fopen($filename, "r");
@@ -973,6 +1355,28 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `cmd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return mixed Returned value for cmd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cmd()
+ * @example /fr/mysql/cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmd($cmd)
     {
         $code_retour = 0;
@@ -986,6 +1390,34 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `waitPosition`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @param mixed $position Input value for `position`.
+ * @phpstan-param mixed $position
+ * @psalm-param mixed $position
+ * @return void Returned value for waitPosition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::waitPosition()
+ * @example /fr/mysql/waitPosition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function waitPosition($db, $file, $position)
     {
         $MS = new MasterSlave();
@@ -1020,11 +1452,50 @@ class Mysql extends Controller
         } while ($file != $Relay_Master_Log_File || $position != $Exec_Master_Log_Pos);
     }
 
+/**
+ * Handle mysql state through `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for after.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after()
+ * @example /fr/mysql/after
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function after($param)
     {
 
     }
 
+/**
+ * Handle mysql state through `generate_config`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for generate_config.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generate_config()
+ * @example /fr/mysql/generate_config
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generate_config()
     {
         $db               = Sgbd::sql(DB_DEFAULT);
@@ -1033,6 +1504,27 @@ class Mysql extends Controller
         $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
     }
 
+/**
+ * Create mysql state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/mysql/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1220,6 +1712,37 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `testMySQL`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for testMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::testMySQL()
+ * @example /fr/mysql/testMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testMySQL($hostname, $port, $user, $password)
     {
 
@@ -1293,6 +1816,27 @@ class Mysql extends Controller
     }
 
 
+/**
+ * Handle mysql state through `aa`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for aa.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::aa()
+ * @example /fr/mysql/aa
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function aa($param)
     {
         Debug::parseDebug($param);
@@ -1303,6 +1847,27 @@ class Mysql extends Controller
 
     }
 
+/**
+ * Handle mysql state through `bb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for bb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::bb()
+ * @example /fr/mysql/bb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function bb($param)
     {
         Debug::parseDebug($param);
@@ -1315,6 +1880,33 @@ class Mysql extends Controller
 
 
 
+/**
+ * Handle mysql state through `scanPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $timeOut Input value for `timeOut`.
+ * @phpstan-param mixed $timeOut
+ * @psalm-param mixed $timeOut
+ * @return mixed Returned value for scanPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::scanPort()
+ * @example /fr/mysql/scanPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function scanPort($ip, $port, $timeOut = 1)
     {
         $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);
@@ -1328,6 +1920,24 @@ class Mysql extends Controller
         return false;
     }
 
+/**
+ * Retrieve mysql state through `getPost`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getPost.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPost()
+ * @example /fr/mysql/getPost
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getPost()
     {
         $ret = [];
@@ -1341,6 +1951,27 @@ class Mysql extends Controller
         return implode('/', $ret);
     }
 
+/**
+ * Handle mysql state through `reverseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reverseConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reverseConfig()
+ * @example /fr/mysql/reverseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reverseConfig($param)
     {
         $this->view = false;
@@ -1350,6 +1981,24 @@ class Mysql extends Controller
         Mysql2::generateMySQLConfig();
     }
 
+/**
+ * Handle mysql state through `parsecnf`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for parsecnf.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::parsecnf()
+ * @example /fr/mysql/parsecnf
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function parsecnf()
     {
 
@@ -1445,6 +2094,27 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Retrieve mysql state through `getColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for getColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getColor()
+ * @example /fr/mysql/getColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getColor($string)
     {
 
@@ -1460,11 +2130,53 @@ class Mysql extends Controller
     }
 
 
+/**
+ * Create mysql state through `addDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addDate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addDate()
+ * @example /fr/mysql/addDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addDate($param = array())
     {
         Mysql2::addMaxDate($param);
     }
 
+/**
+ * Handle mysql state through `tableListLinked`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tableListLinked.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::tableListLinked()
+ * @example /fr/mysql/tableListLinked
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tableListLinked($param)
     {
         Debug::parseDebug($param);
@@ -1517,6 +2229,27 @@ class Mysql extends Controller
         return $liste_table_connected;
     }
 
+/**
+ * Retrieve mysql state through `getVirtualForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getVirtualForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getVirtualForeignKey()
+ * @example /fr/mysql/getVirtualForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getVirtualForeignKey($param)
     {
         Debug::parseDebug($param);
@@ -1550,6 +2283,27 @@ class Mysql extends Controller
         return $foreign_key;
     }
 
+/**
+ * Retrieve mysql state through `getRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRealForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKey()
+ * @example /fr/mysql/getRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getRealForeignKey($param)
     {
 
@@ -1584,6 +2338,27 @@ class Mysql extends Controller
         return $foreign_key;
     }
 
+/**
+ * Retrieve mysql state through `getForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getForeignKey()
+ * @example /fr/mysql/getForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getForeignKey($param)
     {
         Debug::parseDebug($param);
@@ -1601,6 +2376,27 @@ class Mysql extends Controller
         return $fks;
     }
 
+/**
+ * Handle mysql state through `audit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for audit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::audit()
+ * @example /fr/mysql/audit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function audit($param)
     {
 
@@ -1657,3 +2453,4 @@ class Mysql extends Controller
     }
     
 }
+

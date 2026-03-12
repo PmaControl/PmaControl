@@ -15,9 +15,44 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 
+/**
+ * Class responsible for chemin workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Chemin extends Controller
 {
 
+/**
+ * Handle chemin state through `possibilite`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for possibilite.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::possibilite()
+ * @example /fr/chemin/possibilite
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function possibilite($param)
     {
         Debug::parseDebug($param);
@@ -77,6 +112,28 @@ where REFERENCED_TABLE_SCHEMA='".$database."' and REFERENCED_TABLE_NAME is not n
         }
     }
 
+/**
+ * Retrieve chemin state through `getNameMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $id Input value for `id`.
+ * @phpstan-param mixed $id
+ * @psalm-param mixed $id
+ * @return mixed Returned value for getNameMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getNameMysqlServer()
+ * @example /fr/chemin/getNameMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getNameMysqlServer($id)
     {
 
@@ -94,6 +151,33 @@ where REFERENCED_TABLE_SCHEMA='".$database."' and REFERENCED_TABLE_NAME is not n
         return $name;
     }
 
+/**
+ * Retrieve chemin state through `getPaths`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @param mixed $table2 Input value for `table2`.
+ * @phpstan-param mixed $table2
+ * @psalm-param mixed $table2
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @return mixed Returned value for getPaths.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPaths()
+ * @example /fr/chemin/getPaths
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPaths($table, $table2, $database)
     {
         $sql = "WITH RECURSIVE paths (cur_path, cur_dest) AS (

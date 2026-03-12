@@ -23,13 +23,62 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+/**
+ * Class responsible for worker workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Worker extends Controller
 {
 
+/**
+ * Stores `$timestamp_config_file` for timestamp config file.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     static $timestamp_config_file = "";
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Prepare worker state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/worker/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Worker");
@@ -39,6 +88,27 @@ class Worker extends Controller
         $this->logger = $monolog;
     }
 
+/**
+ * Handle worker state through `logger`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for logger.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logger()
+ * @example /fr/worker/logger
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function logger($param)
     {
         $monolog       = new Logger("Worker");
@@ -50,6 +120,27 @@ class Worker extends Controller
 
 
 
+/**
+ * Handle worker state through `run`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for run.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::run()
+ * @example /fr/worker/run
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function run($param)
     {
         $id_worker_queue = $param[0];
@@ -148,6 +239,27 @@ class Worker extends Controller
         $this->logger->warning("We not wait waited next msg in queue ($queue_key)");
     }
 
+/**
+ * Handle worker state through `keepConfigFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for keepConfigFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::keepConfigFile()
+ * @example /fr/worker/keepConfigFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function keepConfigFile($param)
     {
         Debug::parseDebug($param);
@@ -169,6 +281,27 @@ class Worker extends Controller
     }
 
 
+/**
+ * Handle worker state through `adaptNumberWorker`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for adaptNumberWorker.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::adaptNumberWorker()
+ * @example /fr/worker/adaptNumberWorker
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function adaptNumberWorker($param)
     {
         Debug::parseDebug($param);
@@ -214,6 +347,27 @@ class Worker extends Controller
 
     }
 
+/**
+ * Handle worker state through `summarizeAvailability`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $data Input value for `data`.
+ * @phpstan-param array $data
+ * @psalm-param array $data
+ * @return array Returned value for summarizeAvailability.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::summarizeAvailability()
+ * @example /fr/worker/summarizeAvailability
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function summarizeAvailability(array $data): array
     {
         $result = [];
@@ -248,6 +402,27 @@ class Worker extends Controller
         return $result;
     }
 
+/**
+ * Handle worker state through `generateWorkerUpdateQueries`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $availability Input value for `availability`.
+ * @phpstan-param array $availability
+ * @psalm-param array $availability
+ * @return array Returned value for generateWorkerUpdateQueries.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::generateWorkerUpdateQueries()
+ * @example /fr/worker/generateWorkerUpdateQueries
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function generateWorkerUpdateQueries(array $availability): array
     {
         // Correspondance entre les clés *_available et la colonne `table` de worker_queue
@@ -283,6 +458,27 @@ class Worker extends Controller
         return $queries;
     }
 
+/**
+ * Handle worker state through `test`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test()
+ * @example /fr/worker/test
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test($param)
     {
 
@@ -300,6 +496,27 @@ class Worker extends Controller
     }
 
 
+/**
+ * Render worker state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/worker/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         Debug::parseDebug($param);
@@ -369,6 +586,27 @@ class Worker extends Controller
 
     }
 
+/**
+ * Handle worker state through `checkAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for checkAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::checkAll()
+ * @example /fr/worker/checkAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkAll($param)
     {
         Debug::parseDebug($param);
@@ -388,6 +626,28 @@ class Worker extends Controller
 
 
 
+/**
+ * Handle worker state through `check`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for check.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::check()
+ * @example /fr/worker/check
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check($param)
     {
         $id_worker_queue = intval($param[0]);
@@ -501,6 +761,28 @@ class Worker extends Controller
     
     }
 
+/**
+ * Create worker state through `addWorker`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addWorker.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::addWorker()
+ * @example /fr/worker/addWorker
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addWorker($param)
     {
         Debug::parseDebug($param);
@@ -540,6 +822,27 @@ class Worker extends Controller
         $db->sql_query($sql);
     }
 
+/**
+ * Delete worker state through `removeWorker`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for removeWorker.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::removeWorker()
+ * @example /fr/worker/removeWorker
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function removeWorker($param)
     {
         Debug::parseDebug($param);
@@ -578,6 +881,27 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Handle worker state through `killAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for killAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::killAll()
+ * @example /fr/worker/killAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function killAll($param)
     {
         Debug::parseDebug($param);
@@ -609,6 +933,28 @@ class Worker extends Controller
     }
 
 
+/**
+ * Create worker state through `addToQueue`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addToQueue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::addToQueue()
+ * @example /fr/worker/addToQueue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addToQueue($param)
     {
 
@@ -805,6 +1151,24 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Update worker state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/worker/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update()
     {
 
@@ -825,6 +1189,27 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Handle worker state through `dropAllQueue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropAllQueue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropAllQueue()
+ * @example /fr/worker/dropAllQueue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropAllQueue($param)
     {
         Debug::parseDebug($param);
@@ -855,6 +1240,27 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Handle worker state through `file`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for file.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::file()
+ * @example /fr/worker/file
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function file($param)
     {
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
@@ -875,11 +1281,53 @@ class Worker extends Controller
     }
 
 
+/**
+ * Retrieve worker state through `getPidWorking`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getPidWorking.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getPidWorking()
+ * @example /fr/worker/getPidWorking
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPidWorking($param)
     {
         $data['ls'] = shell_exec("ls -lh ". TMP."tmp_file");
     }
 
+/**
+ * Handle worker state through `checkPid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for checkPid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::checkPid()
+ * @example /fr/worker/checkPid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkPid($param)
     {
         Debug::parseDebug($param);
@@ -901,6 +1349,27 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Delete worker state through `deleteWorkerPid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deleteWorkerPid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::deleteWorkerPid()
+ * @example /fr/worker/deleteWorkerPid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deleteWorkerPid($param)
     {
         $pid = $param[0];
@@ -908,6 +1377,27 @@ class Worker extends Controller
     }
 
 
+/**
+ * Retrieve worker state through `getRunningId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getRunningId.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getRunningId()
+ * @example /fr/worker/getRunningId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getRunningId($param)
     {
         Debug::parseDebug($param);
@@ -915,6 +1405,27 @@ class Worker extends Controller
 
 
 
+/**
+ * Retrieve worker state through `getListofWorkingServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getListofWorkingServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getListofWorkingServer()
+ * @example /fr/worker/getListofWorkingServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getListofWorkingServer($param)
     {
         Debug::parseDebug($param);
@@ -1016,6 +1527,26 @@ class Worker extends Controller
     }
 
 
+/**
+ * Handle `refresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example refresh(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function refresh($param)
     {
         Debug::parseDebug($param);
@@ -1048,6 +1579,26 @@ class Worker extends Controller
         }
     }
 
+/**
+ * Handle `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example purgeAll(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function purgeAll($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1069,3 +1620,4 @@ class Worker extends Controller
         $db->sql_query($sql);
     }
 }
+

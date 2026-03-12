@@ -7,17 +7,87 @@ use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for user workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class User extends Controller {
 
     use \Glial\Neuron\MailBox\MailBox;
 
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group = "Users & access management";
+/**
+ * Stores `$method_administration` for method administration.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $method_administration = array("user", "roles");
 
+/**
+ * Prepare user state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/user/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function before($param) {
         
     }
 
+/**
+ * Handle user state through `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for after.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after()
+ * @example /fr/user/after
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function after($param) {
         if (!IS_CLI) {
 
@@ -25,6 +95,24 @@ class User extends Controller {
         }
     }
 
+/**
+ * Render user state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/user/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index() {
         //$this->di['js']->addJavascript(array("jquery-latest.min.js"));
         $this->title = __("Members");
@@ -58,6 +146,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `is_logged`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for is_logged.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::is_logged()
+ * @example /fr/user/is_logged
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function is_logged() {
 
         die(); // voir dans le boot.php
@@ -98,6 +204,24 @@ class User extends Controller {
         $this->set("_SITE", $_SITE);
     }
 
+/**
+ * Handle user state through `block_newsletter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for block_newsletter.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::block_newsletter()
+ * @example /fr/user/block_newsletter
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function block_newsletter() {
         //Vous Ã¯Â¿Â½tes maintenant abonnÃ¯Â¿Â½ Ã¯Â¿Â½ la lettre d'information.
         //Veuillez renseigner le champ correctement...
@@ -132,6 +256,24 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `city`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for city.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::city()
+ * @example /fr/user/city
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function city() {
         /*
           [path] => en/user/city/
@@ -157,6 +299,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `author`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for author.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::author()
+ * @example /fr/user/author
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function author() {
         /*
           [path] => en/user/city/
@@ -177,6 +337,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `register`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for register.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::register()
+ * @example /fr/user/register
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function register() {
         $this->title = __("Registration");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
@@ -325,6 +503,24 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `lost_password`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for lost_password.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::lost_password()
+ * @example /fr/user/lost_password
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function lost_password() {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
@@ -400,6 +596,27 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `password_recover`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for password_recover.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::password_recover()
+ * @example /fr/user/password_recover
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function password_recover($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -476,6 +693,24 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `block_last_registered`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for block_last_registered.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::block_last_registered()
+ * @example /fr/user/block_last_registered
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function block_last_registered() {
 
 
@@ -487,6 +722,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `block_last_online`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for block_last_online.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::block_last_online()
+ * @example /fr/user/block_last_online
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function block_last_online() {
 
 
@@ -498,6 +751,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `admin_user`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for admin_user.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::admin_user()
+ * @example /fr/user/admin_user
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function admin_user() {
         $module = array();
         $module['picture'] = "administration/ico-users.gif";
@@ -507,6 +778,27 @@ class User extends Controller {
         return $module;
     }
 
+/**
+ * Handle user state through `confirmation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return void Returned value for confirmation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::confirmation()
+ * @example /fr/user/confirmation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function confirmation($data) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -525,6 +817,30 @@ class User extends Controller {
                 $sql = "UPDATE user_main SET is_valid = 1, key_auth ='',id_group=2  WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
                 $db->sql_query($sql);
 
+/**
+ * Handle user state through `login`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return void Returned value for login.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::login()
+ * @example /fr/user/login
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
                 function login($login, $password) {
                     $_POST['user_main']['login'] = $login;
                     $_POST['user_main']['password'] = $password;
@@ -562,6 +878,30 @@ class User extends Controller {
         exit;
     }
 
+/**
+ * Handle user state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_user Input value for `id_user`.
+ * @phpstan-param int $id_user
+ * @psalm-param int $id_user
+ * @param mixed $success Input value for `success`.
+ * @phpstan-param mixed $success
+ * @psalm-param mixed $success
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/user/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($id_user, $success) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -581,6 +921,27 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `profil`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for profil.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::profil()
+ * @example /fr/user/profil
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function profil($param) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -653,6 +1014,24 @@ GROUP BY d.id";
         $this->set("data", $this->data);
     }
 
+/**
+ * Handle user state through `user_main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for user_main.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::user_main()
+ * @example /fr/user/user_main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function user_main() {
         /*
           [path] => en/user/city/
@@ -677,6 +1056,27 @@ GROUP BY d.id";
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/user/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function settings($param) {
 
         $this->data['request'] = $param[0];
@@ -713,6 +1113,27 @@ GROUP BY d.id";
         $this->set("data", $this->data);
     }
 
+/**
+ * Handle user state through `photo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for photo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::photo()
+ * @example /fr/user/photo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function photo($param) {
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -720,6 +1141,24 @@ GROUP BY d.id";
         }
     }
 
+/**
+ * Retrieve user state through `get_new_mail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_new_mail.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::get_new_mail()
+ * @example /fr/user/get_new_mail
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_new_mail() {
 
 
@@ -734,6 +1173,24 @@ GROUP BY d.id";
         return $data[0]["cpt"];
     }
 
+/**
+ * Handle user state through `send_confirmation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for send_confirmation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::send_confirmation()
+ * @example /fr/user/send_confirmation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function send_confirmation() {
 
         include_once(LIBRARY . "Glial/user/user.php");
@@ -743,6 +1200,24 @@ GROUP BY d.id";
         exit;
     }
 
+/**
+ * Handle user state through `connection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for connection.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::connection()
+ * @example /fr/user/connection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function connection() {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
@@ -787,6 +1262,24 @@ GROUP BY d.id";
         }
     }
 
+/**
+ * Handle user state through `logout`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for logout.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logout()
+ * @example /fr/user/logout
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function logout() {
         $this->di['auth']->logout();
 
@@ -794,6 +1287,24 @@ GROUP BY d.id";
         exit;
     }
 
+/**
+ * Update user state through `updateGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for updateGroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateGroup()
+ * @example /fr/user/updateGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function updateGroup() {
 
         $roles = $this->di['acl']->getAlias();
@@ -811,6 +1322,30 @@ GROUP BY d.id";
         //$db->sql_multi_query($sql);
     }
 
+/**
+ * Handle user state through `login`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return void Returned value for login.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::login()
+ * @example /fr/user/login
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function login($login, $password) {
         $_POST['user_main']['login'] = $login;
         $_POST['user_main']['password'] = $password;
@@ -824,6 +1359,24 @@ GROUP BY d.id";
         }
     }
 
+/**
+ * Update user state through `update_idgroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for update_idgroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update_idgroup()
+ * @example /fr/user/update_idgroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update_idgroup() {
         $this->layout = false;
         $this->view = false;
@@ -861,3 +1414,4 @@ GROUP BY d.id";
     }
 
 }
+

@@ -15,8 +15,40 @@ use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Chiffrement;
 
+/**
+ * Class responsible for master slave workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class MasterSlave extends Controller {
 
+/**
+ * Render master slave state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/masterslave/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
 
@@ -62,6 +94,27 @@ class MasterSlave extends Controller {
         return $data;
     }
 
+/**
+ * Handle master slave state through `AssociateServerByLevel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for AssociateServerByLevel.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::AssociateServerByLevel()
+ * @example /fr/masterslave/AssociateServerByLevel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function AssociateServerByLevel($param = array())
     {
         Debug::parseDebug($param);
@@ -114,12 +167,60 @@ class MasterSlave extends Controller {
     }
 
     // Fonction de comparaison personnalisée pour trier par 'version'
+/**
+ * Handle master slave state through `compareVersions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $a Input value for `a`.
+ * @phpstan-param mixed $a
+ * @psalm-param mixed $a
+ * @param mixed $b Input value for `b`.
+ * @phpstan-param mixed $b
+ * @psalm-param mixed $b
+ * @return mixed Returned value for compareVersions.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareVersions()
+ * @example /fr/masterslave/compareVersions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compareVersions($a, $b) {
         // Utilisez la fonction version_compare pour comparer les versions
         return version_compare($a['version'], $b['version']);
     }
 
 
+/**
+ * Handle master slave state through `compareDigit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $a Input value for `a`.
+ * @phpstan-param mixed $a
+ * @psalm-param mixed $a
+ * @param mixed $b Input value for `b`.
+ * @phpstan-param mixed $b
+ * @psalm-param mixed $b
+ * @return mixed Returned value for compareDigit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareDigit()
+ * @example /fr/masterslave/compareDigit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compareDigit($a, $b) {
         // Utilisez la fonction version_compare pour comparer les versions
         return version_compare($a['used_as_master'], $b['used_as_master']);
@@ -142,6 +243,27 @@ class MasterSlave extends Controller {
     }
 
     // each server got 2 slaves
+/**
+ * Handle master slave state through `generatePair`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generatePair.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generatePair()
+ * @example /fr/masterslave/generatePair
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generatePair($param = array())
     {
         $nb_slave = 2;
@@ -234,6 +356,27 @@ class MasterSlave extends Controller {
         return $master_slave;
     }
 
+/**
+ * Handle master slave state through `configMasterSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for configMasterSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::configMasterSlave()
+ * @example /fr/masterslave/configMasterSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function configMasterSlave($param)
     {
         Debug::parseDebug($param);
@@ -303,6 +446,24 @@ class MasterSlave extends Controller {
         }
     }
 
+/**
+ * Handle master slave state through `randomPassword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for randomPassword.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::randomPassword()
+ * @example /fr/masterslave/randomPassword
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function randomPassword() {
         $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
         $pass = array(); //remember to declare $pass as an array
@@ -315,6 +476,27 @@ class MasterSlave extends Controller {
     }
 
 
+/**
+ * Handle master slave state through `setUpDemo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for setUpDemo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setUpDemo()
+ * @example /fr/masterslave/setUpDemo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function setUpDemo($param)
     {
         Debug::parseDebug($param);

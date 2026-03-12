@@ -7,6 +7,20 @@ use Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
 use App\Library\Debug;
 
+/**
+ * Class responsible for event workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Event extends Controller
 {
     public function list($param)
@@ -27,6 +41,27 @@ class Event extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle event state through `gg`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for gg.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::gg()
+ * @example /fr/event/gg
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function gg($param)
     {
         Debug::parseDebug($param);

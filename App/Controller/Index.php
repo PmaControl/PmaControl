@@ -11,10 +11,38 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 
 
+/**
+ * Class responsible for index workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Index extends Controller {
 
 
+/**
+ * Stores `$redundant_indexes` for redundant indexes.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $redundant_indexes = array();
+/**
+ * Stores `$unused_indexes` for unused indexes.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $unused_indexes = array();
 
 /*
@@ -145,6 +173,36 @@ class Index extends Controller {
         
     }
 
+/**
+ * Handle index state through `IsRedundantIndexes`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $schema_name Input value for `schema_name`.
+ * @phpstan-param mixed $schema_name
+ * @psalm-param mixed $schema_name
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @param mixed $index_name Input value for `index_name`.
+ * @phpstan-param mixed $index_name
+ * @psalm-param mixed $index_name
+ * @return mixed Returned value for IsRedundantIndexes.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::IsRedundantIndexes()
+ * @example /fr/index/IsRedundantIndexes
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function IsRedundantIndexes($id_mysql_server, $schema_name, $table_name, $index_name)
     {
         $db = Mysql::getDbLink($id_mysql_server, "IMPORT");
@@ -173,6 +231,36 @@ class Index extends Controller {
     }
 
 
+/**
+ * Handle index state through `IsUnusedIndexes`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $schema_name Input value for `schema_name`.
+ * @phpstan-param mixed $schema_name
+ * @psalm-param mixed $schema_name
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @param mixed $index_name Input value for `index_name`.
+ * @phpstan-param mixed $index_name
+ * @psalm-param mixed $index_name
+ * @return mixed Returned value for IsUnusedIndexes.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::IsUnusedIndexes()
+ * @example /fr/index/IsUnusedIndexes
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function IsUnusedIndexes($id_mysql_server, $schema_name, $table_name, $index_name)
     {
         $db = Mysql::getDbLink($id_mysql_server, "IMPORT");
@@ -203,6 +291,27 @@ class Index extends Controller {
     }
 
 
+/**
+ * Handle index state through `dashboard`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dashboard.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dashboard()
+ * @example /fr/index/dashboard
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dashboard($param)
     {
         $data['dashboard'] = array();
@@ -237,4 +346,5 @@ class Index extends Controller {
         $this->set('data',$data);
     }
 }
+
 

@@ -9,18 +9,82 @@ use \App\Library\Debug;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+/**
+ * Class responsible for translation workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Translation extends Controller
 {
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group = "Other";
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $logger;
 
+/**
+ * Render translation state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/translation/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index()
     {
         $this->title  = __("Translations");
         $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
     }
 
+/**
+ * Handle translation state through `admin_translation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for admin_translation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::admin_translation()
+ * @example /fr/translation/admin_translation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function admin_translation()
     {
 
@@ -210,6 +274,24 @@ class Translation extends Controller
         }
     }
 
+/**
+ * Delete translation state through `delete_tmp_files`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for delete_tmp_files.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete_tmp_files()
+ * @example /fr/translation/delete_tmp_files
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delete_tmp_files()
     {
         $cmd = "cd ".TMP."translations; rm *.csv";
@@ -236,6 +318,24 @@ class Translation extends Controller
         exit;
     }
 
+/**
+ * Delete translation state through `delete_table_cach`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for delete_table_cach.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete_table_cach()
+ * @example /fr/translation/delete_table_cach
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delete_table_cach()
     {
         $sql = "SHOW TABLES";
@@ -270,6 +370,27 @@ class Translation extends Controller
         exit;
     }
 
+/**
+ * Retrieve translation state through `getNew`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getNew.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getNew()
+ * @example /fr/translation/getNew
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getNew($param)
     {
 
@@ -321,6 +442,27 @@ GROUP by a.`text`, a.`language`;";
         }
     }
 
+/**
+ * Handle translation state through `askApiGoogle`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for askApiGoogle.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::askApiGoogle()
+ * @example /fr/translation/askApiGoogle
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function askApiGoogle($param)
     {
         $from   = $param[0];
@@ -352,6 +494,27 @@ GROUP by a.`text`, a.`language`;";
         
     }
 
+/**
+ * Handle translation state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/translation/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function settings($param)
     {
 

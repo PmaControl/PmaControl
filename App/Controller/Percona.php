@@ -9,12 +9,54 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for percona workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Percona extends Controller
 {
+/**
+ * Stores `$mysql_server` for mysql server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $mysql_server = array();
 
     const MAX_SIZE_TABLE = 10737418240; //10G
 
+/**
+ * Handle percona state through `execQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for execQuery.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::execQuery()
+ * @example /fr/percona/execQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function execQuery($param)
     {
         Debug::parseDebug($param);
@@ -51,6 +93,27 @@ class Percona extends Controller
     }
 
 // to export somewhere
+/**
+ * Retrieve percona state through `getServeAvailable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getServeAvailable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServeAvailable()
+ * @example /fr/percona/getServeAvailable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getServeAvailable($param)
     {
         Debug::parseDebug($param);
@@ -78,11 +141,53 @@ class Percona extends Controller
         return $this->mysql_server;
     }
 
+/**
+ * Handle percona state through `ptOsc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for ptOsc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::ptOsc()
+ * @example /fr/percona/ptOsc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ptOsc($param)
     {
 
     }
 
+/**
+ * Update percona state through `updateOsc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateOsc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateOsc()
+ * @example /fr/percona/updateOsc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateOsc($param)
     {
 
@@ -120,6 +225,27 @@ class Percona extends Controller
         }
     }
 
+/**
+ * Handle percona state through `delOldOscTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delOldOscTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delOldOscTable()
+ * @example /fr/percona/delOldOscTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delOldOscTable($param)
     {
         $this->view = false;
@@ -158,6 +284,27 @@ class Percona extends Controller
         }
     }
 
+/**
+ * Handle percona state through `displayOsc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for displayOsc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::displayOsc()
+ * @example /fr/percona/displayOsc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function displayOsc($param)
     {
         Debug::parseDebug($param);
@@ -200,6 +347,27 @@ class Percona extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle percona state through `delAllOldOscTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delAllOldOscTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delAllOldOscTable()
+ * @example /fr/percona/delAllOldOscTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delAllOldOscTable($param)
     {
         Debug::parseDebug($param);

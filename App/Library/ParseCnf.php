@@ -2,12 +2,57 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for parse cnf workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class ParseCnf
 {
+/**
+ * Stores `$var_to_merge` for var to merge.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $var_to_merge = array("replicate_annotate_row_events", "replicate_ignore_db",
         "replicate_rewrite_db", "replicate_do_db", "replicate_do_table", "replicate_events_marked_for_skip",
         "replicate_ignore_table", "replicate_wild_do_table", "replicate_wild_ignore_table");
 
+/**
+ * Handle parse cnf state through `parseCnf`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $path Input value for `path`.
+ * @phpstan-param mixed $path
+ * @psalm-param mixed $path
+ * @param mixed $parsed Input value for `parsed`.
+ * @phpstan-param mixed $parsed
+ * @psalm-param mixed $parsed
+ * @return mixed Returned value for parseCnf.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseCnf()
+ * @example /fr/parsecnf/parseCnf
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function parseCnf($path, $parsed = array())
     {
         $path_parts = pathinfo($path);
@@ -106,6 +151,27 @@ class ParseCnf
         return $parsed;
     }
 
+/**
+ * Retrieve parse cnf state through `getCnf`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $mycnf Input value for `mycnf`.
+ * @phpstan-param mixed $mycnf
+ * @psalm-param mixed $mycnf
+ * @return mixed Returned value for getCnf.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCnf()
+ * @example /fr/parsecnf/getCnf
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getCnf($mycnf)
     {
 

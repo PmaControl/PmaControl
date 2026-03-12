@@ -13,12 +13,51 @@ use \Monolog\Handler\StreamHandler;
 
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for log workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Log
 {
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $logger = array();
 
 
+/**
+ * Retrieve log state through `get`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::get()
+ * @example /fr/log/get
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function get()
     {
         $ret = self::from();
@@ -58,6 +97,24 @@ class Log
         return self::$logger[$class_name][$function];
     }
 
+/**
+ * Handle log state through `from`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for from.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::from()
+ * @example /fr/log/from
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function from()
     {
         $calledFrom = debug_backtrace();

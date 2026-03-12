@@ -7,6 +7,20 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Mysql;
 use App\Library\Debug;
 
+/**
+ * Class responsible for partition workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Partition extends Controller
 {
     /**
@@ -50,6 +64,26 @@ class Partition extends Controller
         $this->saveSQLToFile($sqlAlter, $params['table_target']);
     }
 
+/**
+ * Handle `extractParameters`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for extractParameters.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example extractParameters(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extractParameters($param)
     {
         $id_mysql_server = isset($param[0]) ? $param[0] : null;
@@ -78,6 +112,26 @@ class Partition extends Controller
         return compact('id_mysql_server', 'database', 'table_target', 'field', 'nb_partitions', 'sample_ratio');
     }
 
+/**
+ * Handle `detectField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return mixed Returned value for detectField.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example detectField(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function detectField($params)
     {
         $db = Mysql::getDbLink($params['id_mysql_server']);
@@ -117,6 +171,26 @@ class Partition extends Controller
         return $field;
     }
 
+/**
+ * Retrieve `getDataDistribution`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return mixed Returned value for getDataDistribution.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getDataDistribution(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDataDistribution($params)
     {
         $db = Mysql::getDbLink($params['id_mysql_server']);
@@ -155,6 +229,32 @@ class Partition extends Controller
         return $data;
     }
 
+/**
+ * Handle `calculatePartitionLimits`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @param int $nb_partitions Input value for `nb_partitions`.
+ * @phpstan-param int $nb_partitions
+ * @psalm-param int $nb_partitions
+ * @param bool $is_numeric Input value for `is_numeric`.
+ * @phpstan-param bool $is_numeric
+ * @psalm-param bool $is_numeric
+ * @return mixed Returned value for calculatePartitionLimits.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example calculatePartitionLimits(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function calculatePartitionLimits($data, $nb_partitions, $is_numeric)
     {
         $cuts_needed = $nb_partitions - 1;
@@ -191,6 +291,35 @@ class Partition extends Controller
         return $partitions_limits;
     }
 
+/**
+ * Handle `generatePartitionSQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @param mixed $field Input value for `field`.
+ * @phpstan-param mixed $field
+ * @psalm-param mixed $field
+ * @param mixed $limits Input value for `limits`.
+ * @phpstan-param mixed $limits
+ * @psalm-param mixed $limits
+ * @param bool $is_numeric Input value for `is_numeric`.
+ * @phpstan-param bool $is_numeric
+ * @psalm-param bool $is_numeric
+ * @return mixed Returned value for generatePartitionSQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example generatePartitionSQL(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generatePartitionSQL($table, $field, $limits, $is_numeric)
     {
         $sql = "ALTER TABLE `$table`\nPARTITION BY RANGE (`$field`) (\n";
@@ -201,6 +330,29 @@ class Partition extends Controller
         return $sql;
     }
 
+/**
+ * Update `saveSQLToFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $sql Input value for `sql`.
+ * @phpstan-param mixed $sql
+ * @psalm-param mixed $sql
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return void Returned value for saveSQLToFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example saveSQLToFile(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function saveSQLToFile($sql, $table)
     {
         $outputFile = "/tmp/partition_" . $table . "_" . date('Ymd_His') . ".sql";
@@ -208,3 +360,4 @@ class Partition extends Controller
         echo "💾 Sauvegardé dans : $outputFile\n";
     }
 }
+

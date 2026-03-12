@@ -59,8 +59,22 @@ MariaDB [pmacontrol]> select b.file_name, `from`, count(1) from ts_variable a in
 
 class Listener extends Controller
 {
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Stores `$load_listener` for load listener.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $load_listener = [];
 
     /*
@@ -74,6 +88,27 @@ class Listener extends Controller
         self::$load_listener['ssh_hardware']['ssh_hardware'] = "Alias::updateAlias";
     }
 
+/**
+ * Handle listener state through `init`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for init.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::init()
+ * @example /fr/listener/init
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function init($param)
     {
         Debug::parseDebug($param);
@@ -109,6 +144,27 @@ class Listener extends Controller
 
     }
 
+/**
+ * Prepare listener state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/listener/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Listener");
@@ -118,6 +174,27 @@ class Listener extends Controller
         $this->logger = $monolog;
     }
 
+/**
+ * Handle listener state through `checkAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for checkAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::checkAll()
+ * @example /fr/listener/checkAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkAll($param)
     {
         Debug::parseDebug($param);
@@ -125,6 +202,27 @@ class Listener extends Controller
         $this->check(array());
     }
 
+/**
+ * Handle listener state through `check`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for check.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check()
+ * @example /fr/listener/check
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check($param)
     {
         Debug::parseDebug($param);
@@ -143,6 +241,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Retrieve listener state through `getUpdateTodo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getUpdateTodo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getUpdateTodo()
+ * @example /fr/listener/getUpdateTodo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getUpdateTodo($param)
     {
         Debug::parseDebug($param);
@@ -180,6 +299,27 @@ class Listener extends Controller
         }
     }
 
+/**
+ * Handle listener state through `dispatch`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $arr Input value for `arr`.
+ * @phpstan-param mixed $arr
+ * @psalm-param mixed $arr
+ * @return void Returned value for dispatch.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dispatch()
+ * @example /fr/listener/dispatch
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function dispatch($arr )
     {
 
@@ -216,6 +356,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Update listener state through `updateListener`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateListener.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateListener()
+ * @example /fr/listener/updateListener
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateListener($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -383,6 +544,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Handle listener state through `test1`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test1.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test1()
+ * @example /fr/listener/test1
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test1($param)
     {
         Debug::parseDebug($param);
@@ -391,6 +573,27 @@ class Listener extends Controller
         Debug::debug($res);
     }
 
+/**
+ * Handle listener state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/listener/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -423,6 +626,27 @@ class Listener extends Controller
         }
     }
 
+/**
+ * Handle listener state through `test4`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test4.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test4()
+ * @example /fr/listener/test4
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test4($param)
     {
         Debug::parseDebug($param);
@@ -447,6 +671,27 @@ class Listener extends Controller
 
     //TODO to move on Variable.php
     //after upgrading mysql_global_variable
+/**
+ * Handle listener state through `afterUpdateVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for afterUpdateVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::afterUpdateVariable()
+ * @example /fr/listener/afterUpdateVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function afterUpdateVariable($param)
     {
         Debug::parseDebug($param);
@@ -607,6 +852,27 @@ class Listener extends Controller
 
 
 
+/**
+ * Handle listener state through `resetAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for resetAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::resetAll()
+ * @example /fr/listener/resetAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function resetAll($param)
     {
         Debug::parseDebug($parma);
@@ -628,6 +894,27 @@ class Listener extends Controller
 
     }
 
+/**
+ * Handle listener state through `status`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for status.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::status()
+ * @example /fr/listener/status
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function status($param)
     {
   
@@ -668,6 +955,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Handle listener state through `splitAndFormat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $text Input value for `text`.
+ * @phpstan-param mixed $text
+ * @psalm-param mixed $text
+ * @return mixed Returned value for splitAndFormat.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::splitAndFormat()
+ * @example /fr/listener/splitAndFormat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function splitAndFormat($text)
     {
         $data = array();
@@ -702,6 +1010,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Handle listener state through `test5`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test5.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test5()
+ * @example /fr/listener/test5
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test5( $param )
     {
         Debug::parseDebug($param);
@@ -712,6 +1041,27 @@ class Listener extends Controller
         Debug::debug($gg);
     }
 
+/**
+ * Handle listener state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/listener/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function purgeAll($param)
     {
         Debug::parseDebug($param);
@@ -776,3 +1126,4 @@ ORDER BY t.date DESC
 LIMIT 100;
 
 */
+

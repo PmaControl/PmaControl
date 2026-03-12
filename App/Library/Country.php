@@ -10,9 +10,45 @@ namespace App\Library;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for country workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Country
 {
 
+/**
+ * Retrieve country state through `getFlag`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $flag Input value for `flag`.
+ * @phpstan-param mixed $flag
+ * @psalm-param mixed $flag
+ * @return mixed Returned value for getFlag.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getFlag()
+ * @example /fr/country/getFlag
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getFlag($flag)
     {
         $letters = mb_str_split($flag);
@@ -30,6 +66,27 @@ class Country
     }
 
 
+/**
+ * Retrieve country state through `getLetter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $letter Input value for `letter`.
+ * @phpstan-param mixed $letter
+ * @psalm-param mixed $letter
+ * @return mixed Returned value for getLetter.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getLetter()
+ * @example /fr/country/getLetter
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function getLetter($letter)
     {
         $db = Sgbd::sql(DB_DEFAULT);

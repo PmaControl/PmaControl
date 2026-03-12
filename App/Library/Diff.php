@@ -17,6 +17,20 @@
 namespace App\Library;
 
 // A class containing functions for computing diffs and formatting the output.
+/**
+ * Class responsible for diff workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Diff
 {
     // define the constants
@@ -358,6 +372,33 @@ class Diff
         return $html;
     }
 
+/**
+ * Handle diff state through `toSql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $diff Input value for `diff`.
+ * @phpstan-param mixed $diff
+ * @psalm-param mixed $diff
+ * @param mixed $indentation Input value for `indentation`.
+ * @phpstan-param mixed $indentation
+ * @psalm-param mixed $indentation
+ * @param mixed $separator Input value for `separator`.
+ * @phpstan-param mixed $separator
+ * @psalm-param mixed $separator
+ * @return mixed Returned value for toSql.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::toSql()
+ * @example /fr/diff/toSql
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function toSql($diff, $indentation = '', $separator = '<br>')
     {
 
@@ -388,6 +429,30 @@ class Diff
         return $table;
     }
 
+/**
+ * Create diff state through `addFormat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $sql Input value for `sql`.
+ * @phpstan-param mixed $sql
+ * @psalm-param mixed $sql
+ * @param mixed $diff Input value for `diff`.
+ * @phpstan-param mixed $diff
+ * @psalm-param mixed $diff
+ * @return mixed Returned value for addFormat.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::addFormat()
+ * @example /fr/diff/addFormat
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function addFormat($sql, $diff)
     {
 
@@ -486,6 +551,33 @@ class Diff
     }
 
 
+/**
+ * Retrieve diff state through `getNext`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $diff Input value for `diff`.
+ * @phpstan-param mixed $diff
+ * @psalm-param mixed $diff
+ * @param mixed $index Input value for `index`.
+ * @phpstan-param mixed $index
+ * @psalm-param mixed $index
+ * @param mixed $k Input value for `k`.
+ * @phpstan-param mixed $k
+ * @psalm-param mixed $k
+ * @return mixed Returned value for getNext.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNext()
+ * @example /fr/diff/getNext
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function getNext($diff, $index, $k)
     {
         $start = $index;

@@ -6,6 +6,20 @@ namespace App\Library;
 use App\Library\Extraction2;
 
 
+/**
+ * Class responsible for available workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Available
 {
     const MYSQL_AVAILABLE = "mysql_available";
@@ -17,6 +31,27 @@ class Available
     static array $engines = array();
 
 
+/**
+ * Retrieve available state through `getMySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getMySQL()
+ * @example /fr/available/getMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getMySQL($id_mysql_server = 0)
     {
         if (empty(self::$mysql_available))
@@ -49,6 +84,27 @@ class Available
         }
     }
 
+/**
+ * Retrieve available state through `getPS`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getPS.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPS()
+ * @example /fr/available/getPS
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getPS($id_mysql_server = 0)
     {
         if (empty(self::$performance_schema))
@@ -85,6 +141,30 @@ class Available
     }
 
 
+/**
+ * Handle available state through `hasEngine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $engine Input value for `engine`.
+ * @phpstan-param mixed $engine
+ * @psalm-param mixed $engine
+ * @return mixed Returned value for hasEngine.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::hasEngine()
+ * @example /fr/available/hasEngine
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function hasEngine($id_mysql_server, $engine)
     {
         $engine = strtoupper($engine);

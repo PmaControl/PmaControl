@@ -26,7 +26,21 @@ class Row
      * @var Row
      */
     private $_previous_row = null;
+/**
+ * Stores `$_explainer` for explainer.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $_explainer = null;
+/**
+ * Stores `$uses_table` for uses table.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     public $uses_table = false;
 
     /**

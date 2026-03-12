@@ -10,8 +10,40 @@ use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for job workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Job extends Controller {
 
+/**
+ * Render job state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/job/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * from `job` ORDER BY date_start DESC LIMIT 20;";
@@ -59,6 +91,27 @@ class Job extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Handle job state through `callback`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for callback.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::callback()
+ * @example /fr/job/callback
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function callback($param) {
 
         usleep(1000);
@@ -89,6 +142,27 @@ class Job extends Controller {
         }
     }
 
+/**
+ * Create job state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for add.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::add()
+ * @example /fr/job/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param) {
 
         Debug::parseDebug($param);
@@ -124,11 +198,53 @@ class Job extends Controller {
         return $id_job;
     }
 
+/**
+ * Handle job state through `gg`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for gg.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::gg()
+ * @example /fr/job/gg
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function gg($param) {
 
         $this->add($param);
     }
 
+/**
+ * Handle job state through `restart`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for restart.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::restart()
+ * @example /fr/job/restart
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function restart($param) {
 
         $this->view = false;
@@ -170,3 +286,4 @@ class Job extends Controller {
     }
 
 }
+

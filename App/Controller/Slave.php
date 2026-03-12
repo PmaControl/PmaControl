@@ -13,12 +13,44 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
 use \App\Library\DryRun;
 
+/**
+ * Class responsible for slave workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Slave extends Controller
 {
 
     use \App\Library\Filter;
     const BACKUP_TEMP = "/backup/";
 
+/**
+ * Render slave state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/slave/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -96,6 +128,27 @@ class Slave extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle slave state through `generateGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $slaves Input value for `slaves`.
+ * @phpstan-param mixed $slaves
+ * @psalm-param mixed $slaves
+ * @return void Returned value for generateGraph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateGraph()
+ * @example /fr/slave/generateGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateGraph($slaves)
     {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
@@ -183,6 +236,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
     }
 
+/**
+ * Handle slave state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/slave/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function show($param)
     {
 
@@ -322,6 +396,24 @@ if (!empty($_GET['mysql_server']['id'])) {
         $this->set('data', $data);
     }
 
+/**
+ * Handle slave state through `box`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for box.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::box()
+ * @example /fr/slave/box
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function box()
     {
 
@@ -387,6 +479,27 @@ if (!empty($_GET['mysql_server']['id'])) {
 //debug($data['box']);
     }
 
+/**
+ * Handle slave state through `generateGraphSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $slaves Input value for `slaves`.
+ * @phpstan-param mixed $slaves
+ * @psalm-param mixed $slaves
+ * @return void Returned value for generateGraphSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateGraphSlave()
+ * @example /fr/slave/generateGraphSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateGraphSlave($slaves)
     {
         $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
@@ -465,6 +578,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
     }
 
+/**
+ * Handle slave state through `startSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for startSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::startSlave()
+ * @example /fr/slave/startSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function startSlave($param)
     {
         $this->view = false;
@@ -495,6 +629,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
     }
 
+/**
+ * Handle slave state through `stopSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for stopSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::stopSlave()
+ * @example /fr/slave/stopSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function stopSlave($param)
     {
 
@@ -527,6 +682,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         
     }
 
+/**
+ * Handle slave state through `setSlave`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for setSlave.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setSlave()
+ * @example /fr/slave/setSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function setSlave($param)
     {
         //add param force
@@ -656,6 +832,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         // set up replication
     }
 
+/**
+ * Retrieve slave state through `getInfoServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getInfoServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getInfoServer()
+ * @example /fr/slave/getInfoServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getInfoServer($id_mysql_server)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -673,6 +870,33 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         return $data;
     }
 
+/**
+ * Handle slave state through `runInBackground`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $command Input value for `command`.
+ * @phpstan-param mixed $command
+ * @psalm-param mixed $command
+ * @param mixed $log Input value for `log`.
+ * @phpstan-param mixed $log
+ * @psalm-param mixed $log
+ * @param mixed $priority Input value for `priority`.
+ * @phpstan-param mixed $priority
+ * @psalm-param mixed $priority
+ * @return mixed Returned value for runInBackground.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::runInBackground()
+ * @example /fr/slave/runInBackground
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function runInBackground($command, $log, $priority = 0)
     {
         if ($priority) {
@@ -685,6 +909,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         return($PID);
     }
 
+/**
+ * Handle slave state through `isProcessRunning`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $PID Input value for `PID`.
+ * @phpstan-param mixed $PID
+ * @psalm-param mixed $PID
+ * @return mixed Returned value for isProcessRunning.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isProcessRunning()
+ * @example /fr/slave/isProcessRunning
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function isProcessRunning($PID)
     {
 
@@ -737,6 +982,28 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         return $data;
     }
 
+/**
+ * Handle slave state through `switchOver`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for switchOver.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::switchOver()
+ * @example /fr/slave/switchOver
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function switchOver($param)
     {
         Debug::parseDebug($param);
@@ -786,6 +1053,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     }
 
 
+/**
+ * Handle slave state through `activateGtid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for activateGtid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::activateGtid()
+ * @example /fr/slave/activateGtid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function activateGtid($param)
     {
         $id_mysql_server = $param[0];
@@ -820,6 +1108,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     }
 
 
+/**
+ * Handle slave state through `deactivateGtid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deactivateGtid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::deactivateGtid()
+ * @example /fr/slave/deactivateGtid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deactivateGtid($param)
     {
         $id_mysql_server = $param[0];
@@ -853,6 +1162,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         
     }
 
+/**
+ * Handle slave state through `skipCounter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for skipCounter.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::skipCounter()
+ * @example /fr/slave/skipCounter
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function skipCounter($param)
     {
         $this->view = false;
@@ -941,6 +1271,28 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 
+/**
+ * Handle slave state through `processBinlogFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for processBinlogFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::processBinlogFile()
+ * @example /fr/slave/processBinlogFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function processBinlogFile($param) {
 
         Debug::parseDebug($param);
@@ -965,6 +1317,27 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     }
 
 
+/**
+ * Handle slave state through `generateCmd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for generateCmd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateCmd()
+ * @example /fr/slave/generateCmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateCmd($param)
     {
         Debug::parseDebug($param);
@@ -989,6 +1362,33 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $slave = Mysql::getDbLink($id_mysql_server__slave);
         }
 
+/**
+ * Handle slave state through `execute`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $sql Input value for `sql`.
+ * @phpstan-param mixed $sql
+ * @psalm-param mixed $sql
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $DRY_RUN Input value for `DRY_RUN`.
+ * @phpstan-param mixed $DRY_RUN
+ * @psalm-param mixed $DRY_RUN
+ * @return void Returned value for execute.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::execute()
+ * @example /fr/slave/execute
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
         function execute($sql, $db, $DRY_RUN)
         {
             if ($DRY_RUN === true) {
@@ -1202,3 +1602,4 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 }
+

@@ -21,6 +21,27 @@ use \Glial\Sgbd\Sgbd;
 
 class StorageArea extends Controller {
 
+/**
+ * Render storage area state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/storagearea/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -44,6 +65,27 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Create storage area state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/storagearea/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param) {
         //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
@@ -171,6 +213,24 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve storage area state through `listStorage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for listStorage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::listStorage()
+ * @example /fr/storagearea/listStorage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function listStorage() {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -196,6 +256,27 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve storage area state through `getStorageSpace`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getStorageSpace.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getStorageSpace()
+ * @example /fr/storagearea/getStorageSpace
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getStorageSpace($param) {
 
         Debug::parseDebug($param);
@@ -278,6 +359,27 @@ class StorageArea extends Controller {
         return true;
     }
 
+/**
+ * Delete storage area state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/storagearea/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param) {
         
         $this->view = false;
@@ -291,6 +393,27 @@ class StorageArea extends Controller {
         exit;
     }
 
+/**
+ * Handle storage area state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/storagearea/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param) {
 
         if (empty($param[0])) {
@@ -302,6 +425,27 @@ class StorageArea extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Update storage area state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/storagearea/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param) {
 
         $this->view = false;
@@ -319,3 +463,4 @@ class StorageArea extends Controller {
         }
     }
 }
+

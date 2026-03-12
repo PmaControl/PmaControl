@@ -13,16 +13,79 @@ use phpseclib3\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
 
+/**
+ * Class responsible for transfer workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Transfer
 {
     /* used for link MySQL */
     static $db;
 
+/**
+ * Handle transfer state through `setDb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return void Returned value for setDb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setDb()
+ * @example /fr/transfer/setDb
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function setDb($db)
     {
         self::$db = $db;
     }
 
+/**
+ * Handle transfer state through `sendFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param int $id_backup_storage_area Input value for `id_backup_storage_area`.
+ * @phpstan-param int $id_backup_storage_area
+ * @psalm-param int $id_backup_storage_area
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for sendFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::sendFile()
+ * @example /fr/transfer/sendFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sendFile($id_backup_storage_area, $src, $dst)
     {
 
@@ -113,6 +176,34 @@ class Transfer
         } //end while
     }
 
+/**
+ * Retrieve transfer state through `getFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for getFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getFile()
+ * @example /fr/transfer/getFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getFile($server, $src, $dst)
     {
         $start = microtime(true);
@@ -159,6 +250,33 @@ class Transfer
         return $data;
     }
 
+/**
+ * Retrieve transfer state through `getFileFromMysql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for getFileFromMysql.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFileFromMysql()
+ * @example /fr/transfer/getFileFromMysql
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFileFromMysql($id_mysql_server, $src, $dst)
     {
 
@@ -184,3 +302,4 @@ class Transfer
         return $ret;
     }
 }
+

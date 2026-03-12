@@ -11,13 +11,76 @@ use App\Library\Extraction;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Trait responsible for galera workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Galera {
 
+/**
+ * Stores `$galera_cluster` for galera cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $galera_cluster = array();
+/**
+ * Stores `$servers` for servers.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $servers = array();
+/**
+ * Stores `$graph_arbitrator` for graph arbitrator.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $graph_arbitrator = array(); // containt all id of arbitrator
+/**
+ * Stores `$maping_master` for maping master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $maping_master = array(); 
 
+/**
+ * Retrieve galera state through `getGaleraCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getGaleraCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getGaleraCluster()
+ * @example /fr/galera/getGaleraCluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getGaleraCluster($param) {
 
         foreach ($this->servers as $server) {
@@ -93,6 +156,27 @@ trait Galera {
         return $group_galera;
     }
 
+/**
+ * Handle galera state through `deduplicateGaleraClustersByNodeId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $clusters Input value for `clusters`.
+ * @phpstan-param array $clusters
+ * @psalm-param array $clusters
+ * @return array Returned value for deduplicateGaleraClustersByNodeId.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::deduplicateGaleraClustersByNodeId()
+ * @example /fr/galera/deduplicateGaleraClustersByNodeId
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function deduplicateGaleraClustersByNodeId(array $clusters): array
     {
         $clusterScore = [];
@@ -273,6 +357,24 @@ trait Galera {
         }
     }
 
+/**
+ * Handle galera state through `mappingMaster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for mappingMaster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::mappingMaster()
+ * @example /fr/galera/mappingMaster
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function mappingMaster() {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -297,6 +399,24 @@ trait Galera {
         return $this->maping_master;
     }
 
+/**
+ * Create galera state through `createArbitrator`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for createArbitrator.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::createArbitrator()
+ * @example /fr/galera/createArbitrator
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function createArbitrator() {
         $id_arbitrator = $this->getNewId();
 
@@ -315,6 +435,24 @@ trait Galera {
         return $id_arbitrator;
     }
 
+/**
+ * Retrieve galera state through `getNewId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getNewId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNewId()
+ * @example /fr/galera/getNewId
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getNewId() {
 
         $servers = $this->servers;
@@ -330,3 +468,4 @@ trait Galera {
     }
 
 }
+

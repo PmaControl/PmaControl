@@ -12,6 +12,20 @@ use \App\Library\Debug;
 use \Glial\Cli\SetTimeLimit;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for query workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Query extends Controller {
 
     const TABLE_NAME = 'tmp_setdefault';
@@ -19,11 +33,42 @@ class Query extends Controller {
     const LOG_FILE = TMP . "log/query.log";
 
             // ajouter tout mot-clé à exclure
+/**
+ * Stores `$exceptions` for exceptions.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $exceptions = ['ALL','AND','AS','CAST','COALESCE','COUNT', 'CURRENT_USER','DATE','DATE_ADD','DATE_SUB','DECIMAL','FROM',
     'GROUP_CONCAT','IF','IN','JOIN','NOW', 'MAX', 'MIN', 'PARTITION',
         'PASSWORD','SCHEMA','SUBSTRING','SUM','TIMESTAMPDIFF','UNION','USING','VALUES','WARNINGS', 'WHERE']; 
 
 
+/**
+ * Retrieve query state through `getFielsWithoutDefault`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $databases Input value for `databases`.
+ * @phpstan-param array<int|string,mixed> $databases
+ * @psalm-param array<int|string,mixed> $databases
+ * @return void Returned value for getFielsWithoutDefault.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getFielsWithoutDefault()
+ * @example /fr/query/getFielsWithoutDefault
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getFielsWithoutDefault($id_mysql_server, $databases = "") {
         /*
          * If a field is NULLABLE we will not get it there.
@@ -69,6 +114,31 @@ SQL;
         }
     }
 
+/**
+ * Retrieve query state through `getDefaultValueByType`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $typeExtra Input value for `typeExtra`.
+ * @phpstan-param mixed $typeExtra
+ * @psalm-param mixed $typeExtra
+ * @return mixed Returned value for getDefaultValueByType.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getDefaultValueByType()
+ * @example /fr/query/getDefaultValueByType
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDefaultValueByType($type, $typeExtra = '') {
         // All default values below have been tested in current engine (DEV environment)
         // They are default values forced by the current engine (DEV environment)
@@ -176,6 +246,27 @@ SQL;
         return $default;
     }
 
+/**
+ * Handle query state through `dropDefault`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropDefault.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropDefault()
+ * @example /fr/query/dropDefault
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropDefault($param) {
 
         Debug::parseDebug($param);
@@ -198,6 +289,27 @@ SQL;
         }
     }
 
+/**
+ * Handle query state through `runSetDefault`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for runSetDefault.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::runSetDefault()
+ * @example /fr/query/runSetDefault
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function runSetDefault($param) {
 
         Debug::parseDebug($param);
@@ -281,6 +393,28 @@ SQL;
         } while ($cpt > 0);
     }
 
+/**
+ * Handle query state through `runQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for runQuery.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::runQuery()
+ * @example /fr/query/runQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function runQuery($param) {
         Debug::parseDebug($param);
 
@@ -314,6 +448,27 @@ SQL;
         $db->sql_close();
     }
 
+/**
+ * Create query state through `createWorkTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for createWorkTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::createWorkTable()
+ * @example /fr/query/createWorkTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createWorkTable($param) {
         Debug::parseDebug($param);
 
@@ -363,6 +518,28 @@ SQL;
         $db->sql_query($sql3);
     }
 
+/**
+ * Delete query state through `deleteWorkTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deleteWorkTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::deleteWorkTable()
+ * @example /fr/query/deleteWorkTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deleteWorkTable($param) {
 
         Debug::parseDebug($param);
@@ -387,6 +564,27 @@ SQL;
     }
 
 // gestionnaire de signaux système
+/**
+ * Handle query state through `sigHandler`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $signo Input value for `signo`.
+ * @phpstan-param mixed $signo
+ * @psalm-param mixed $signo
+ * @return void Returned value for sigHandler.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sigHandler()
+ * @example /fr/query/sigHandler
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function sigHandler($signo) {
         switch ($signo) {
             case SIGTERM:
@@ -417,6 +615,27 @@ SQL;
         }
     }
 
+/**
+ * Retrieve query state through `getMaxRun`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getMaxRun.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getMaxRun()
+ * @example /fr/query/getMaxRun
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getMaxRun($param) {
 
         $id_mysql_server = $param[0];
@@ -436,6 +655,27 @@ SQL;
 
 
 
+/**
+ * Handle query state through `byDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for byDigest.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::byDigest()
+ * @example /fr/query/byDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function byDigest($param)
     {
         Debug::parseDebug($param);
@@ -469,6 +709,27 @@ SQL;
 
 
 
+/**
+ * Handle query state through `extractTablesFromSQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractTablesFromSQL.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractTablesFromSQL()
+ * @example /fr/query/extractTablesFromSQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function extractTablesFromSQL(string $sql): array {
         $tables = [];
 
@@ -516,6 +777,27 @@ SQL;
 
 
 
+/**
+ * Handle query state through `extractTablesAndAliases`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractTablesAndAliases.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractTablesAndAliases()
+ * @example /fr/query/extractTablesAndAliases
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function extractTablesAndAliases(string $sql): array {
         $tables = [];
 
@@ -553,6 +835,27 @@ SQL;
     }
 
 
+/**
+ * Handle query state through `extractTablesWithOffsets`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return array Returned value for extractTablesWithOffsets.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractTablesWithOffsets()
+ * @example /fr/query/extractTablesWithOffsets
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function extractTablesWithOffsets(string $sql): array {
         $results = [];
 
@@ -619,6 +922,27 @@ SQL;
         return $results;
     }
 
+/**
+ * Handle query state through `extract`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for extract.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::extract()
+ * @example /fr/query/extract
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function extract($param)
     {
         Debug::parseDebug($param);
@@ -759,6 +1083,30 @@ SQL;
 
 
 
+/**
+ * Handle query state through `normalize_sql_strict`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @param bool $ansi_quotes Input value for `ansi_quotes`.
+ * @phpstan-param bool $ansi_quotes
+ * @psalm-param bool $ansi_quotes
+ * @return string Returned value for normalize_sql_strict.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalize_sql_strict()
+ * @example /fr/query/normalize_sql_strict
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function normalize_sql_strict(string $sql, bool $ansi_quotes = false): string {
         // 1) Supprimer tous les commentaires
         $sql = preg_replace('#/\*.*?\*/#s', ' ', $sql);
@@ -832,6 +1180,36 @@ SQL;
 
 
 
+/**
+ * Handle query state through `statement_digest_text_strict`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @param int $max_digest_length Input value for `max_digest_length`.
+ * @phpstan-param int $max_digest_length
+ * @psalm-param int $max_digest_length
+ * @param int $show_length Input value for `show_length`.
+ * @phpstan-param int $show_length
+ * @psalm-param int $show_length
+ * @param bool $ansi_quotes Input value for `ansi_quotes`.
+ * @phpstan-param bool $ansi_quotes
+ * @psalm-param bool $ansi_quotes
+ * @return string Returned value for statement_digest_text_strict.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::statement_digest_text_strict()
+ * @example /fr/query/statement_digest_text_strict
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function statement_digest_text_strict(string $sql, int $max_digest_length = 1024, int $show_length = 1024, bool $ansi_quotes = false): string {
         $norm = self::normalize_sql_strict($sql, $ansi_quotes);
         // maintenir la version pour affichage (troncature moins stricte)
@@ -839,6 +1217,33 @@ SQL;
         return $visible;
     }
 
+/**
+ * Handle query state through `statement_digest_strict`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @param int $max_digest_length Input value for `max_digest_length`.
+ * @phpstan-param int $max_digest_length
+ * @psalm-param int $max_digest_length
+ * @param bool $ansi_quotes Input value for `ansi_quotes`.
+ * @phpstan-param bool $ansi_quotes
+ * @psalm-param bool $ansi_quotes
+ * @return string Returned value for statement_digest_strict.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::statement_digest_strict()
+ * @example /fr/query/statement_digest_strict
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function statement_digest_strict(string $sql, int $max_digest_length = 1024, bool $ansi_quotes = false): string {
         $norm = self::normalize_sql_strict($sql, $ansi_quotes);
         $forHash = (mb_strlen($norm, '8bit') > $max_digest_length) ? mb_substr($norm, 0, $max_digest_length, '8bit') : $norm;
@@ -849,6 +1254,27 @@ SQL;
     }
 
 
+/**
+ * Handle query state through `testDigest`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testDigest.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testDigest()
+ * @example /fr/query/testDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testDigest($param)
     {
         Debug::parseDebug($param);
@@ -904,16 +1330,79 @@ SQL;
 
 
     // old digest
+/**
+ * Handle query state through `digest2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $query Input value for `query`.
+ * @phpstan-param string $query
+ * @psalm-param string $query
+ * @return string Returned value for digest2.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::digest2()
+ * @example /fr/query/digest2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function digest2(string $query): string {
         $normalized = self::normalize($query);
         // MariaDB digest est 16 octets hex (md5-like)
         return md5($normalized);
     }
 
+/**
+ * Handle query state through `digestText`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $query Input value for `query`.
+ * @phpstan-param string $query
+ * @psalm-param string $query
+ * @return string Returned value for digestText.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::digestText()
+ * @example /fr/query/digestText
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function digestText(string $query): string {
         return self::normalize($query);
     }
 
+/**
+ * Handle query state through `normalize`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $query Input value for `query`.
+ * @phpstan-param string $query
+ * @psalm-param string $query
+ * @return string Returned value for normalize.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalize()
+ * @example /fr/query/normalize
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function normalize(string $query): string {
 
         $q = $query;
@@ -1068,6 +1557,27 @@ SQL;
     }
 
 
+/**
+ * Handle query state through `isKeyword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $word Input value for `word`.
+ * @phpstan-param string $word
+ * @psalm-param string $word
+ * @return bool Returned value for isKeyword.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isKeyword()
+ * @example /fr/query/isKeyword
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function isKeyword(string $word): bool {
         $keywords = [
             "SELECT","FROM","WHERE","AND","OR","NOT","AS","ON","JOIN",
@@ -1128,6 +1638,27 @@ SQL;
         return in_array(strtoupper($word), $keywords, true);
     }
 
+/**
+ * Handle query state through `replaceAlias`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for replaceAlias.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::replaceAlias()
+ * @example /fr/query/replaceAlias
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function replaceAlias($string)
     {
         // add space between to be sur to match a token
@@ -1190,6 +1721,27 @@ SQL;
         // storage/perfschema/pfs_events_statements.h
         // #define MAX_SQLTEXT_LENGTH 1024
         // #define MAX_DIGEST_TEXT_LENGTH 1024
+/**
+ * Handle query state through `collectDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for collectDigest.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::collectDigest()
+ * @example /fr/query/collectDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function collectDigest($param)
     {
    
@@ -1245,6 +1797,27 @@ SQL;
     }
     
 
+/**
+ * Handle query state through `collectAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for collectAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::collectAll()
+ * @example /fr/query/collectAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function collectAll($param)
     {
         Debug::parseDebug($param);
@@ -1265,6 +1838,27 @@ SQL;
         }
     }
 
+/**
+ * Handle query state through `degradeMariaDB`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for degradeMariaDB.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::degradeMariaDB()
+ * @example /fr/query/degradeMariaDB
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function degradeMariaDB($string)
     {
         // Regex pour capturer le mot avant la parenthèse
@@ -1288,6 +1882,26 @@ SQL;
 
     }
 
+/**
+ * Handle `all2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for all2.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example all2(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function all2($param)
     {
         Debug::parseDebug($param);
@@ -1385,6 +1999,26 @@ SQL;
         $this->set('order', $order);
     }
 
+/**
+ * Handle `digest_old`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for digest_old.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example digest_old(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function digest_old($param)
     {
         Debug::parseDebug($parma);
@@ -1489,6 +2123,27 @@ ORDER BY date;
 
 
     
+/**
+ * Handle `digest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for digest.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example digest(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 public function digest($param)
 {
     Debug::parseDebug($param);
@@ -1641,6 +2296,26 @@ public function digest($param)
 
 
 
+/**
+ * Handle `parseExplainJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $json Input value for `json`.
+ * @phpstan-param array $json
+ * @psalm-param array $json
+ * @return mixed Returned value for parseExplainJson.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example parseExplainJson(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function parseExplainJson(array $json)
     {
         // Path change selon version MariaDB/MySQL
@@ -2109,3 +2784,4 @@ GROUP BY CURRENT_SCHEMA, DIGEST, SQL_TEXT
 
 
 */
+

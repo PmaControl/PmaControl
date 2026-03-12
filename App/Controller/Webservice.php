@@ -14,10 +14,52 @@ use App\Library\Mysql;
 use App\Library\Json;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for webservice workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Webservice extends Controller
 {
+/**
+ * Stores `$return` for return.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $return = array();
 
+/**
+ * Handle webservice state through `pushServer`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for pushServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::pushServer()
+ * @example /fr/webservice/pushServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function pushServer($param)
     {
         $this->view        = false;
@@ -75,6 +117,27 @@ class Webservice extends Controller
         //Debug::debug($this->return);
     }
 
+/**
+ * Handle webservice state through `importFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for importFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::importFile()
+ * @example /fr/webservice/importFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function importFile($param)
     {
         Debug::parseDebug($param);
@@ -83,6 +146,30 @@ class Webservice extends Controller
         $this->parseServer($filename);
     }
 
+/**
+ * Handle webservice state through `checkCredentials`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for checkCredentials.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::checkCredentials()
+ * @example /fr/webservice/checkCredentials
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function checkCredentials($user, $password)
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -107,6 +194,27 @@ class Webservice extends Controller
         return false;
     }
 
+/**
+ * Handle webservice state through `parseServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return mixed Returned value for parseServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseServer()
+ * @example /fr/webservice/parseServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseServer($filename)
     {
         $data = Json::getDataFromFile($filename);
@@ -147,6 +255,30 @@ class Webservice extends Controller
         //$this->parseServer($json);
     }
 
+/**
+ * Update webservice state through `saveHistory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_user_main Input value for `id_user_main`.
+ * @phpstan-param int $id_user_main
+ * @psalm-param int $id_user_main
+ * @param mixed $json Input value for `json`.
+ * @phpstan-param mixed $json
+ * @psalm-param mixed $json
+ * @return void Returned value for saveHistory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::saveHistory()
+ * @example /fr/webservice/saveHistory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function saveHistory($id_user_main, $json)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -237,11 +369,50 @@ class Webservice extends Controller
         }
     }
 
+/**
+ * Render webservice state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/webservice/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         //ecran pour gérer les webservice // password
     }
 
+/**
+ * Handle webservice state through `parseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $configFile Input value for `configFile`.
+ * @phpstan-param mixed $configFile
+ * @psalm-param mixed $configFile
+ * @return mixed Returned value for parseConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseConfig()
+ * @example /fr/webservice/parseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseConfig($configFile)
     {
         $config = json_decode(file_get_contents($configFile), true);
@@ -249,12 +420,54 @@ class Webservice extends Controller
         return $config;
     }
 
+/**
+ * Handle webservice state through `decrypt`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for decrypt.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::decrypt()
+ * @example /fr/webservice/decrypt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function decrypt($param)
     {
         echo Crypt::decrypt($param[0], CRYPT_KEY);
     }
 
 
+/**
+ * Handle webservice state through `isJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for isJson.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isJson()
+ * @example /fr/webservice/isJson
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function isJson($string) {
         json_decode($string);
         return json_last_error() === JSON_ERROR_NONE;

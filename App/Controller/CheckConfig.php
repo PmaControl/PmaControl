@@ -11,15 +11,78 @@ use \App\Library\Extraction;
 //version de 14 octobre 2020, comparaison de tableau multidimensions avec agregation des entetes
 //ne servait a rien ici car chaque serveur au moins un element different
 
+/**
+ * Class responsible for check config workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class CheckConfig extends Controller
 {
+/**
+ * Stores `$should_be_different` for should be different.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $should_be_different = array("server_id", "report_host", "wsrep_node_name");
+/**
+ * Stores `$not_important` for not important.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $not_important       = array("general_log_file", "gtid_binlog_state");
+/**
+ * Stores `$master_master` for master master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $master_master       = array("");
+/**
+ * Stores `$human_readable` for human readable.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $human_readable      = array("aria_log_file_size", "aria_pagecache_buffer_size", "aria_max_sort_file_size", "binlog_cache_size", "innodb_buffer_pool_size", "innodb_log_file_size", "max_heap_table_size",
         "query_cache_size",
         "tmp_memory_table_size", "tmp_table_size");
 
+/**
+ * Render check config state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/checkconfig/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -274,6 +337,27 @@ class CheckConfig extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve check config state through `getDatabasesByServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabasesByServers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabasesByServers()
+ * @example /fr/checkconfig/getDatabasesByServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabasesByServers($param)
     {
 
@@ -314,6 +398,27 @@ class CheckConfig extends Controller
         return $data;
     }
 
+/**
+ * Retrieve check config state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDbLinkFromId()
+ * @example /fr/checkconfig/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db)
     {
 
@@ -332,6 +437,27 @@ class CheckConfig extends Controller
         return $db_link;
     }
 
+/**
+ * Handle check config state through `see`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for see.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::see()
+ * @example /fr/checkconfig/see
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function see($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);

@@ -23,6 +23,20 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
 
+/**
+ * Class responsible for binlog workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Binlog extends Controller {
 
     use \App\Library\Filter;
@@ -30,13 +44,59 @@ class Binlog extends Controller {
     CONST DELAIS_DE_RETENTION = 172800; //48 heures en secondes
     CONST DIRECTORY_BACKUP = '/data/backup/binlog';
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Render binlog state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/binlog/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
         $data = array();
         $this->set('data', $data);
     }
 
+/**
+ * Prepare binlog state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/binlog/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Binlog");
@@ -46,6 +106,24 @@ class Binlog extends Controller {
         $this->logger = $monolog;
     }
 
+/**
+ * Create binlog state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/binlog/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add() {
         $this->di['js']->addJavascript(array('Binlog/index.js'));
 
@@ -99,6 +177,24 @@ class Binlog extends Controller {
         }
     }
 
+/**
+ * Handle binlog state through `max`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for max.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::max()
+ * @example /fr/binlog/max
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function max() {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -115,6 +211,27 @@ class Binlog extends Controller {
         }
     }
 
+/**
+ * Retrieve binlog state through `getMaxBinlogSize`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getMaxBinlogSize.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getMaxBinlogSize()
+ * @example /fr/binlog/getMaxBinlogSize
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getMaxBinlogSize($param) {
 
         Debug::parseDebug($param);
@@ -139,6 +256,27 @@ class Binlog extends Controller {
         }
     }
 
+/**
+ * Handle binlog state through `view`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for view.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::view()
+ * @example /fr/binlog/view
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function view($param) {
 
         Debug::parseDebug($param);
@@ -194,18 +332,102 @@ class Binlog extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Handle binlog state through `search`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for search.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::search()
+ * @example /fr/binlog/search
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function search($param) {
         
     }
 
+/**
+ * Handle binlog state through `backupAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for backupAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backupAll()
+ * @example /fr/binlog/backupAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backupAll($param) {
         
     }
 
+/**
+ * Handle binlog state through `backup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for backup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backup()
+ * @example /fr/binlog/backup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backup($param) {
         
     }
 
+/**
+ * Handle binlog state through `backupServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for backupServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backupServer()
+ * @example /fr/binlog/backupServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backupServer($param) {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
@@ -316,6 +538,27 @@ class Binlog extends Controller {
         }
     }
 
+/**
+ * Handle binlog state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/binlog/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function purgeAll($param) {
         Debug::parseDebug($param);
 
@@ -405,6 +648,27 @@ class Binlog extends Controller {
         }
     }
 
+/**
+ * Retrieve binlog state through `liste`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for liste.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::liste()
+ * @example /fr/binlog/liste
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function liste($param) {
 
         Debug::parseDebug($param);
@@ -482,10 +746,52 @@ class Binlog extends Controller {
         //
     }
 
+/**
+ * Handle binlog state through `binlog2sql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for binlog2sql.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::binlog2sql()
+ * @example /fr/binlog/binlog2sql
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function binlog2sql($param) {
         
     }
 
+/**
+ * Retrieve binlog state through `getLastSqlError`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getLastSqlError.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getLastSqlError()
+ * @example /fr/binlog/getLastSqlError
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getLastSqlError($param) {
         
     }
@@ -493,3 +799,4 @@ class Binlog extends Controller {
 }
 
 //glyphicon glyphicon-list
+

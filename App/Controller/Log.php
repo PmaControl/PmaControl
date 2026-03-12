@@ -17,6 +17,20 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+/**
+ * Class responsible for log workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Log extends Controller {
 
 
@@ -27,8 +41,33 @@ class Log extends Controller {
     const EXT_OLD = ".1";
     const EXT_LOG = ".log";
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Render log state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/log/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         // http://eonasdan.github.io/bootstrap-datetimepicker/  <= date time picker
@@ -81,6 +120,27 @@ class Log extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Prepare log state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/log/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Aspirateur");
@@ -90,6 +150,27 @@ class Log extends Controller {
         $this->logger = $monolog;
     }
 
+/**
+ * Handle log state through `rotate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rotate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rotate()
+ * @example /fr/log/rotate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rotate($param)
     {
         Debug::parseDebug($param);
@@ -115,6 +196,27 @@ class Log extends Controller {
         }
     }
 
+/**
+ * Handle log state through `formatFileSize`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $size Input value for `size`.
+ * @phpstan-param mixed $size
+ * @psalm-param mixed $size
+ * @return mixed Returned value for formatFileSize.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::formatFileSize()
+ * @example /fr/log/formatFileSize
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function formatFileSize($size) {
         if ($size < 1024) {
             return $size . ' octets';
@@ -127,3 +229,4 @@ class Log extends Controller {
         }
     }
 }
+

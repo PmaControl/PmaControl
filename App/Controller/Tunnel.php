@@ -7,6 +7,20 @@ use App\Library\Tree as TreeInterval;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for tunnel workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Tunnel extends Controller
 {
     static array $mysql_server_cache = [];
@@ -166,6 +180,26 @@ class Tunnel extends Controller
         self::syncMysqlServerForTunnels($param);
     }
 
+/**
+ * Retrieve `getTunnel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return array Returned value for getTunnel.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example getTunnel(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getTunnel($param): array
     {
         Debug::parseDebug($param);
@@ -192,6 +226,26 @@ class Tunnel extends Controller
         return $output;
     }
     
+/**
+ * Handle `parseDateInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return array Returned value for parseDateInfo.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example parseDateInfo(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function parseDateInfo(array $param): array
     {
         $start_time = $param[0];
@@ -214,6 +268,26 @@ class Tunnel extends Controller
         ];
     }
 
+/**
+ * Handle `parse`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return mixed Returned value for parse.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example parse(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function parse(array $param)
     {
         Debug::parseDebug($param);
@@ -321,6 +395,26 @@ class Tunnel extends Controller
         return $return;
     }
 
+/**
+ * Retrieve `getIdMysqlServerByIpPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return ?int Returned value for getIdMysqlServerByIpPort.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @example getIdMysqlServerByIpPort(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getIdMysqlServerByIpPort(array $param): ?int
     {
         $ip = $param[0];
@@ -335,6 +429,23 @@ class Tunnel extends Controller
         
     }
 
+/**
+ * Handle `preloadMysqlServerCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for preloadMysqlServerCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example preloadMysqlServerCache(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function preloadMysqlServerCache(): void
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -349,6 +460,26 @@ class Tunnel extends Controller
         }
     }
 
+/**
+ * Render `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example index(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -384,6 +515,26 @@ class Tunnel extends Controller
     }
 
 
+/**
+ * Handle `assignMysqlServerToTunnel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return ?int Returned value for assignMysqlServerToTunnel.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @example assignMysqlServerToTunnel(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function assignMysqlServerToTunnel(array $param): ?int
     {
         // $param = [ip, port, pid (optionnel)]
@@ -416,6 +567,26 @@ class Tunnel extends Controller
     }
 
 
+/**
+ * Handle `syncMysqlServerForTunnels`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for syncMysqlServerForTunnels.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example syncMysqlServerForTunnels(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function syncMysqlServerForTunnels($param): void
     {
         Debug::parseDebug($param);
@@ -455,6 +626,26 @@ class Tunnel extends Controller
 
 
     //only for maxscale 
+/**
+ * Retrieve `getFinalRemoteByLocal`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return ?string Returned value for getFinalRemoteByLocal.
+ * @phpstan-return ?string
+ * @psalm-return ?string
+ * @example getFinalRemoteByLocal(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getFinalRemoteByLocal(array $param): ?string
     {
         Debug::parseDebug($param);
@@ -524,6 +715,26 @@ class Tunnel extends Controller
 
 
 
+/**
+ * Retrieve `getTunnelsMapping`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return array Returned value for getTunnelsMapping.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example getTunnelsMapping(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getTunnelsMapping(array $param = []): array
     {
         Debug::parseDebug($param);
@@ -559,6 +770,26 @@ class Tunnel extends Controller
     }
 
 
+/**
+ * Handle `syncServersForTunnelsGeneric`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for syncServersForTunnelsGeneric.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example syncServersForTunnelsGeneric(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function syncServersForTunnelsGeneric(array $param = []): void
     {
         Debug::parseDebug($param);

@@ -6,6 +6,20 @@ use \Glial\Synapse\Controller;
 use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for chartjs workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Chartjs extends Controller
 {
 /*

@@ -50,8 +50,45 @@ RENAME TABLE mysql_server2 TO mysql_server;
 
 class MysqlServer extends Controller
 {
+/**
+ * Stores `$table_exists_cache` for table exists cache.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $table_exists_cache = array();
 
+/**
+ * Handle mysql server state through `quickMysqlSilentTest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for quickMysqlSilentTest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::quickMysqlSilentTest()
+ * @example /fr/mysqlserver/quickMysqlSilentTest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function quickMysqlSilentTest($ip, $port, $user, $password)
     {
         $link = mysqli_init();
@@ -70,6 +107,27 @@ class MysqlServer extends Controller
         return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
     }
 
+/**
+ * Retrieve mysql server state through `getProcesslistConnectionMetrics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return array Returned value for getProcesslistConnectionMetrics.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getProcesslistConnectionMetrics()
+ * @example /fr/mysqlserver/getProcesslistConnectionMetrics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getProcesslistConnectionMetrics($db): array
     {
         $metrics = [
@@ -107,6 +165,33 @@ class MysqlServer extends Controller
         return $metrics;
     }
 
+/**
+ * Handle mysql server state through `informationSchemaTableExists`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $schema Input value for `schema`.
+ * @phpstan-param mixed $schema
+ * @psalm-param mixed $schema
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for informationSchemaTableExists.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::informationSchemaTableExists()
+ * @example /fr/mysqlserver/informationSchemaTableExists
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function informationSchemaTableExists($db, $schema, $table)
     {
         $cache_key = $db->host.":".$db->port.":".$schema.".".$table;
@@ -131,6 +216,27 @@ class MysqlServer extends Controller
         return $exists;
     }
 
+/**
+ * Handle mysql server state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/mysqlserver/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $this->di['js']->code_javascript('
@@ -150,6 +256,28 @@ class MysqlServer extends Controller
     }
 
 
+/**
+ * Handle mysql server state through `processlist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for processlist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::processlist()
+ * @example /fr/mysqlserver/processlist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function processlist($param)
     {
         $id_mysql_server = $param[0];
@@ -622,6 +750,27 @@ class MysqlServer extends Controller
 
     }
 
+/**
+ * Retrieve mysql server state through `getProcesslistClass`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $time Input value for `time`.
+ * @phpstan-param mixed $time
+ * @psalm-param mixed $time
+ * @return string Returned value for getProcesslistClass.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getProcesslistClass()
+ * @example /fr/mysqlserver/getProcesslistClass
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getProcesslistClass($time): string
     {
         $time = (int) $time;
@@ -642,6 +791,27 @@ class MysqlServer extends Controller
         return '';
     }
 
+/**
+ * Handle mysql server state through `parseIdList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw Input value for `raw`.
+ * @phpstan-param mixed $raw
+ * @psalm-param mixed $raw
+ * @return array Returned value for parseIdList.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::parseIdList()
+ * @example /fr/mysqlserver/parseIdList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function parseIdList($raw): array
     {
         if (is_array($raw)) {
@@ -668,6 +838,27 @@ class MysqlServer extends Controller
         return array_values($ids);
     }
 
+/**
+ * Handle mysql server state through `hasMetadataLockInfoPlugin`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return bool Returned value for hasMetadataLockInfoPlugin.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::hasMetadataLockInfoPlugin()
+ * @example /fr/mysqlserver/hasMetadataLockInfoPlugin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function hasMetadataLockInfoPlugin($db): bool
     {
         $sql = "SELECT 1
@@ -685,6 +876,30 @@ class MysqlServer extends Controller
         return !empty($row);
     }
 
+/**
+ * Retrieve mysql server state through `fetchMetadataLockInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return array Returned value for fetchMetadataLockInfo.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::fetchMetadataLockInfo()
+ * @example /fr/mysqlserver/fetchMetadataLockInfo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function fetchMetadataLockInfo($db, int $id_mysql_server): array
     {
         $sql = "SELECT
@@ -714,6 +929,28 @@ class MysqlServer extends Controller
     }
 
 
+/**
+ * Render mysql server state through `main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for main.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::main()
+ * @example /fr/mysqlserver/main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function main($param)
     {
         Debug::parseDebug($param);
@@ -1494,6 +1731,27 @@ class MysqlServer extends Controller
 
 
 
+/**
+ * Handle mysql server state through `secToHuman`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $s Input value for `s`.
+ * @phpstan-param int $s
+ * @psalm-param int $s
+ * @return string Returned value for secToHuman.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::secToHuman()
+ * @example /fr/mysqlserver/secToHuman
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function secToHuman(int $s): string
     {
         $d = intdiv($s, 86400); $s %= 86400;
@@ -1507,6 +1765,27 @@ class MysqlServer extends Controller
         return implode(' ', $out);
     }
 
+/**
+ * Handle mysql server state through `formatVipUptime`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $destinationDate Input value for `destinationDate`.
+ * @phpstan-param mixed $destinationDate
+ * @psalm-param mixed $destinationDate
+ * @return ?string Returned value for formatVipUptime.
+ * @phpstan-return ?string
+ * @psalm-return ?string
+ * @see self::formatVipUptime()
+ * @example /fr/mysqlserver/formatVipUptime
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatVipUptime($destinationDate): ?string
     {
         $raw = trim((string)($destinationDate ?? ''));
@@ -1527,6 +1806,27 @@ class MysqlServer extends Controller
         return self::secToHuman((int)$diff);
     }
 
+/**
+ * Handle mysql server state through `formatBytesToMbGb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @return string Returned value for formatBytesToMbGb.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatBytesToMbGb()
+ * @example /fr/mysqlserver/formatBytesToMbGb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatBytesToMbGb($bytes): string
     {
         if ($bytes === null || $bytes === '') {
@@ -1545,6 +1845,27 @@ class MysqlServer extends Controller
         return number_format($bytes / $oneMb, 2).' MB';
     }
 
+/**
+ * Handle mysql server state through `formatBytesToMbGbTb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @return string Returned value for formatBytesToMbGbTb.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatBytesToMbGbTb()
+ * @example /fr/mysqlserver/formatBytesToMbGbTb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatBytesToMbGbTb($bytes): string
     {
         if ($bytes === null || $bytes === '') {
@@ -1573,6 +1894,27 @@ class MysqlServer extends Controller
         return number_format($bytes / $oneKb, 2).' KB';
     }
 
+/**
+ * Handle mysql server state through `formatBytesHuman`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @return string Returned value for formatBytesHuman.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatBytesHuman()
+ * @example /fr/mysqlserver/formatBytesHuman
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatBytesHuman($bytes): string
     {
         if ($bytes === null || $bytes === '' || !is_numeric($bytes)) {
@@ -1605,6 +1947,27 @@ class MysqlServer extends Controller
         return number_format($bytes, 0).' B';
     }
 
+/**
+ * Handle mysql server state through `formatJsonValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return string Returned value for formatJsonValue.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatJsonValue()
+ * @example /fr/mysqlserver/formatJsonValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatJsonValue($value): string
     {
         if ($value === null || $value === '') {
@@ -1619,6 +1982,27 @@ class MysqlServer extends Controller
         return (string) $value;
     }
 
+/**
+ * Handle mysql server state through `firstNonEmpty`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param ... $values Input value for `values`.
+ * @phpstan-param ... $values
+ * @psalm-param ... $values
+ * @return mixed Returned value for firstNonEmpty.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::firstNonEmpty()
+ * @example /fr/mysqlserver/firstNonEmpty
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function firstNonEmpty(...$values)
     {
         foreach ($values as $value) {
@@ -1640,6 +2024,27 @@ class MysqlServer extends Controller
         return null;
     }
 
+/**
+ * Handle mysql server state through `formatIpsValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return string Returned value for formatIpsValue.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatIpsValue()
+ * @example /fr/mysqlserver/formatIpsValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatIpsValue($value): string
     {
         $ips = self::extractIpv4List($value);
@@ -1648,11 +2053,46 @@ class MysqlServer extends Controller
             return self::formatJsonValue($value);
         }
 
+/**
+ * Class responsible for implode workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
         usort($ips, [self::class, 'compareIpv4']);
 
         return implode(' ', array_values($ips));
     }
 
+/**
+ * Handle implode state through `extractIpv4List`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return array Returned value for extractIpv4List.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractIpv4List()
+ * @example /fr/implode/extractIpv4List
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function extractIpv4List($value): array
     {
         if (is_array($value)) {
@@ -1679,6 +2119,29 @@ class MysqlServer extends Controller
         return array_values($ips);
     }
 
+/**
+ * Handle `compareIpv4`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $a Input value for `a`.
+ * @phpstan-param string $a
+ * @psalm-param string $a
+ * @param string $b Input value for `b`.
+ * @phpstan-param string $b
+ * @psalm-param string $b
+ * @return int Returned value for compareIpv4.
+ * @phpstan-return int
+ * @psalm-return int
+ * @example compareIpv4(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function compareIpv4(string $a, string $b): int
     {
         $pa = array_map('intval', explode('.', $a));
@@ -1694,6 +2157,26 @@ class MysqlServer extends Controller
         return 0;
     }
 
+/**
+ * Handle `extractSupportedEngines`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return array Returned value for extractSupportedEngines.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example extractSupportedEngines(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function extractSupportedEngines($value): array
     {
         $rows = [];
@@ -1728,21 +2211,113 @@ class MysqlServer extends Controller
         return $engines;
     }
 
+/**
+ * Handle `hasSupportedEngine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $engines Input value for `engines`.
+ * @phpstan-param array $engines
+ * @psalm-param array $engines
+ * @param string $engine Input value for `engine`.
+ * @phpstan-param string $engine
+ * @psalm-param string $engine
+ * @return bool Returned value for hasSupportedEngine.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @example hasSupportedEngine(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function hasSupportedEngine(array $engines, string $engine): bool
     {
         return !empty($engines[strtoupper($engine)]);
     }
 
+/**
+ * Handle `formatRamUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $usedBytes Input value for `usedBytes`.
+ * @phpstan-param mixed $usedBytes
+ * @psalm-param mixed $usedBytes
+ * @param mixed $totalBytes Input value for `totalBytes`.
+ * @phpstan-param mixed $totalBytes
+ * @psalm-param mixed $totalBytes
+ * @return array Returned value for formatRamUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatRamUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatRamUsage($usedBytes, $totalBytes): array
     {
         return self::formatUsageFromBytes(self::tr('RAM usage'), 'ram', $usedBytes, $totalBytes);
     }
 
+/**
+ * Handle `formatSwapUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $usedBytes Input value for `usedBytes`.
+ * @phpstan-param mixed $usedBytes
+ * @psalm-param mixed $usedBytes
+ * @param mixed $totalBytes Input value for `totalBytes`.
+ * @phpstan-param mixed $totalBytes
+ * @psalm-param mixed $totalBytes
+ * @return array Returned value for formatSwapUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatSwapUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatSwapUsage($usedBytes, $totalBytes): array
     {
         return self::formatUsageFromBytes(self::tr('Swap usage'), 'swap', $usedBytes, $totalBytes);
     }
 
+/**
+ * Handle `formatCpuUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cpuPercent Input value for `cpuPercent`.
+ * @phpstan-param mixed $cpuPercent
+ * @psalm-param mixed $cpuPercent
+ * @param mixed|null $cpuThreads Input value for `cpuThreads`.
+ * @phpstan-param mixed|null $cpuThreads
+ * @psalm-param mixed|null $cpuThreads
+ * @return array Returned value for formatCpuUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatCpuUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatCpuUsage($cpuPercent, $cpuThreads = null): array
     {
         $percent = is_numeric($cpuPercent) ? (float) $cpuPercent : 0;
@@ -1765,6 +2340,29 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `formatConnectionUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $maxUsed Input value for `maxUsed`.
+ * @phpstan-param mixed $maxUsed
+ * @psalm-param mixed $maxUsed
+ * @param mixed $maxTotal Input value for `maxTotal`.
+ * @phpstan-param mixed $maxTotal
+ * @psalm-param mixed $maxTotal
+ * @return array Returned value for formatConnectionUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatConnectionUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatConnectionUsage($maxUsed, $maxTotal): array
     {
         $used = is_numeric($maxUsed) ? (float) $maxUsed : 0;
@@ -1795,6 +2393,29 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `formatThreadUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $current Input value for `current`.
+ * @phpstan-param mixed $current
+ * @psalm-param mixed $current
+ * @param mixed $maxTotal Input value for `maxTotal`.
+ * @phpstan-param mixed $maxTotal
+ * @psalm-param mixed $maxTotal
+ * @return array Returned value for formatThreadUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatThreadUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatThreadUsage($current, $maxTotal): array
     {
         $value = is_numeric($current) ? (float) $current : 0;
@@ -1825,6 +2446,26 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `formatPercentUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $percent Input value for `percent`.
+ * @phpstan-param mixed $percent
+ * @psalm-param mixed $percent
+ * @return array Returned value for formatPercentUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatPercentUsage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatPercentUsage($percent): array
     {
         $value = is_numeric($percent) ? (float)$percent : 0;
@@ -1841,6 +2482,26 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `formatQualityPercent`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $percent Input value for `percent`.
+ * @phpstan-param mixed $percent
+ * @psalm-param mixed $percent
+ * @return array Returned value for formatQualityPercent.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatQualityPercent(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatQualityPercent($percent): array
     {
         $value = is_numeric($percent) ? (float)$percent : 0;
@@ -1878,6 +2539,32 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `formatGaleraBoolean`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @param string $labelOn Input value for `labelOn`.
+ * @phpstan-param string $labelOn
+ * @psalm-param string $labelOn
+ * @param string $labelOff Input value for `labelOff`.
+ * @phpstan-param string $labelOff
+ * @psalm-param string $labelOff
+ * @return string Returned value for formatGaleraBoolean.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraBoolean(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraBoolean($value, string $labelOn = 'ON', string $labelOff = 'OFF'): string
     {
         $normalized = strtoupper((string)($value ?? ''));
@@ -1892,6 +2579,26 @@ class MysqlServer extends Controller
             : '<span class="label label-default">'.htmlspecialchars($labelOff, ENT_QUOTES, 'UTF-8').'</span>';
     }
 
+/**
+ * Handle `formatGaleraClusterStatus`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $status Input value for `status`.
+ * @phpstan-param mixed $status
+ * @psalm-param mixed $status
+ * @return string Returned value for formatGaleraClusterStatus.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraClusterStatus(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraClusterStatus($status): string
     {
         $text = trim((string)($status ?? ''));
@@ -1905,6 +2612,26 @@ class MysqlServer extends Controller
         return '<span class="'.$class.'">'.htmlspecialchars($text, ENT_QUOTES, 'UTF-8').'</span>';
     }
 
+/**
+ * Handle `formatGaleraNodeState`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $state Input value for `state`.
+ * @phpstan-param mixed $state
+ * @psalm-param mixed $state
+ * @return string Returned value for formatGaleraNodeState.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraNodeState(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraNodeState($state): string
     {
         $text = trim((string)($state ?? ''));
@@ -1924,6 +2651,26 @@ class MysqlServer extends Controller
         return '<span class="'.$class.'">'.htmlspecialchars($text, ENT_QUOTES, 'UTF-8').'</span>';
     }
 
+/**
+ * Handle `formatGaleraFlowControlPaused`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return string Returned value for formatGaleraFlowControlPaused.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraFlowControlPaused(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraFlowControlPaused($value): string
     {
         if ($value === null || $value === '' || !is_numeric($value)) {
@@ -1944,6 +2691,26 @@ class MysqlServer extends Controller
         return '<span class="'.$class.'">'.$percent.'%</span>';
     }
 
+/**
+ * Handle `formatGaleraQueue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return string Returned value for formatGaleraQueue.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraQueue(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraQueue($value): string
     {
         if ($value === null || $value === '' || !is_numeric($value)) {
@@ -1963,6 +2730,32 @@ class MysqlServer extends Controller
         return '<span class="'.$class.'">'.number_format($queue, 2).'</span>';
     }
 
+/**
+ * Handle `formatGaleraQueuePressure`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $flowPaused Input value for `flowPaused`.
+ * @phpstan-param mixed $flowPaused
+ * @psalm-param mixed $flowPaused
+ * @param mixed $recvQueue Input value for `recvQueue`.
+ * @phpstan-param mixed $recvQueue
+ * @psalm-param mixed $recvQueue
+ * @param mixed $sendQueue Input value for `sendQueue`.
+ * @phpstan-param mixed $sendQueue
+ * @psalm-param mixed $sendQueue
+ * @return string Returned value for formatGaleraQueuePressure.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatGaleraQueuePressure(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatGaleraQueuePressure($flowPaused, $recvQueue, $sendQueue): string
     {
         $paused = (is_numeric($flowPaused) ? (float)$flowPaused : 0.0);
@@ -1981,6 +2774,26 @@ class MysqlServer extends Controller
         return '<span class="label label-success">LOW</span>';
     }
 
+/**
+ * Handle `parseWsrepProviderOptions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $raw Input value for `raw`.
+ * @phpstan-param string $raw
+ * @psalm-param string $raw
+ * @return array Returned value for parseWsrepProviderOptions.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example parseWsrepProviderOptions(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function parseWsrepProviderOptions(string $raw): array
     {
         $raw = trim($raw);
@@ -2010,6 +2823,26 @@ class MysqlServer extends Controller
         return $result;
     }
 
+/**
+ * Handle `maskGaleraSecret`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $value Input value for `value`.
+ * @phpstan-param string $value
+ * @psalm-param string $value
+ * @return string Returned value for maskGaleraSecret.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example maskGaleraSecret(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function maskGaleraSecret(string $value): string
     {
         $value = trim($value);
@@ -2025,6 +2858,29 @@ class MysqlServer extends Controller
         return '********';
     }
 
+/**
+ * Handle `formatOsWithIcon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $os Input value for `os`.
+ * @phpstan-param mixed $os
+ * @psalm-param mixed $os
+ * @param mixed $distributor Input value for `distributor`.
+ * @phpstan-param mixed $distributor
+ * @psalm-param mixed $distributor
+ * @return string Returned value for formatOsWithIcon.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatOsWithIcon(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatOsWithIcon($os, $distributor): string
     {
         $osLabel = (string)($os ?? 'n/a');
@@ -2038,6 +2894,26 @@ class MysqlServer extends Controller
         return $icon.$osLabel;
     }
 
+/**
+ * Handle `formatArchWithBitLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $arch Input value for `arch`.
+ * @phpstan-param mixed $arch
+ * @psalm-param mixed $arch
+ * @return string Returned value for formatArchWithBitLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example formatArchWithBitLabel(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatArchWithBitLabel($arch): string
     {
         if ($arch === null || $arch === '') {
@@ -2055,6 +2931,26 @@ class MysqlServer extends Controller
         //return $archStr.' ('.$bits.' BIT)';
     }
 
+/**
+ * Handle `detectArchitectureBits`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $arch Input value for `arch`.
+ * @phpstan-param string $arch
+ * @psalm-param string $arch
+ * @return ?int Returned value for detectArchitectureBits.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @example detectArchitectureBits(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function detectArchitectureBits(string $arch): ?int
     {
         $patterns64 = [
@@ -2090,6 +2986,35 @@ class MysqlServer extends Controller
         return null;
     }
 
+/**
+ * Handle `formatUsageFromBytes`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $label Input value for `label`.
+ * @phpstan-param string $label
+ * @psalm-param string $label
+ * @param string $metric Input value for `metric`.
+ * @phpstan-param string $metric
+ * @psalm-param string $metric
+ * @param mixed $usedBytes Input value for `usedBytes`.
+ * @phpstan-param mixed $usedBytes
+ * @psalm-param mixed $usedBytes
+ * @param mixed $totalBytes Input value for `totalBytes`.
+ * @phpstan-param mixed $totalBytes
+ * @psalm-param mixed $totalBytes
+ * @return array Returned value for formatUsageFromBytes.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example formatUsageFromBytes(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function formatUsageFromBytes(string $label, string $metric, $usedBytes, $totalBytes): array
     {
         $used = is_numeric($usedBytes) ? (float) $usedBytes : 0;
@@ -2121,6 +3046,26 @@ class MysqlServer extends Controller
         ];
     }
 
+/**
+ * Handle `resolveCpuUsageFromDetail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cpuDetail Input value for `cpuDetail`.
+ * @phpstan-param mixed $cpuDetail
+ * @psalm-param mixed $cpuDetail
+ * @return mixed Returned value for resolveCpuUsageFromDetail.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example resolveCpuUsageFromDetail(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function resolveCpuUsageFromDetail($cpuDetail)
     {
         if ($cpuDetail === null || $cpuDetail === '') {
@@ -2185,6 +3130,26 @@ class MysqlServer extends Controller
         return ['color' => '#5cb85c', 'level' => 'ok'];
     }
 
+/**
+ * Handle `tr`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $text Input value for `text`.
+ * @phpstan-param string $text
+ * @psalm-param string $text
+ * @return string Returned value for tr.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example tr(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function tr(string $text): string
     {
         if (function_exists('_')) {
@@ -2199,6 +3164,27 @@ class MysqlServer extends Controller
     }
 
 
+/**
+ * Handle `lastRefresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for lastRefresh.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example lastRefresh(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function lastRefresh($param)
     {
         Debug::parseDebug($param);
@@ -2218,6 +3204,29 @@ class MysqlServer extends Controller
 
 
 
+/**
+ * Handle `human_time_diff_dec`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $date_start Input value for `date_start`.
+ * @phpstan-param mixed $date_start
+ * @psalm-param mixed $date_start
+ * @param mixed $precision Input value for `precision`.
+ * @phpstan-param mixed $precision
+ * @psalm-param mixed $precision
+ * @return mixed Returned value for human_time_diff_dec.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example human_time_diff_dec(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
         function human_time_diff_dec($date_start, $precision = 1) {
 
             if (empty($date_start)) {
@@ -2300,6 +3309,27 @@ class MysqlServer extends Controller
 
 
     
+/**
+ * Handle `refresh`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example refresh(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function refresh($param)
     {
         if (empty($param[0]) || !ctype_digit((string)$param[0])) {
@@ -2331,6 +3361,27 @@ class MysqlServer extends Controller
         exit;
     }
 
+/**
+ * Handle `refreshMetric`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refreshMetric.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example refreshMetric(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function refreshMetric($param)
     {
         if (empty($param[0]) || !ctype_digit((string)$param[0]) || empty($param[1])) {
@@ -2361,6 +3412,27 @@ class MysqlServer extends Controller
         exit;
     }
 
+/**
+ * Toggle `toggleMonitored`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for toggleMonitored.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example toggleMonitored(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function toggleMonitored($param)
     {
         if (empty($param[0]) || !ctype_digit((string)$param[0])) {
@@ -2382,6 +3454,26 @@ class MysqlServer extends Controller
 
 
 
+/**
+ * Retrieve `getAdminInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getAdminInformation.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getAdminInformation(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getAdminInformation($param)
     {
         $id_mysql_server= $param[0];
@@ -2395,6 +3487,26 @@ class MysqlServer extends Controller
         return "mysql -A -P".$credentials['port']." -h ".$credentials['ip']." -u ".$credentials['login']." -p'".$credentials['password']."'";
     }
 
+/**
+ * Retrieve `getTryMysqlConnectionDebugCommand`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return string Returned value for getTryMysqlConnectionDebugCommand.
+ * @phpstan-return string
+ * @psalm-return string
+ * @example getTryMysqlConnectionDebugCommand(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getTryMysqlConnectionDebugCommand(int $id_mysql_server): string
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -2423,6 +3535,26 @@ class MysqlServer extends Controller
         return "pmacontrol Aspirateur tryMysqlConnection ".$serverName." ".$id_mysql_server." ".$refresh." --debug";
     }
 
+/**
+ * Retrieve `getMysqlServerCredentials`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return array Returned value for getMysqlServerCredentials.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example getMysqlServerCredentials(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getMysqlServerCredentials(int $id_mysql_server): array
     {
 
@@ -2464,3 +3596,4 @@ class MysqlServer extends Controller
     }
 
 }
+

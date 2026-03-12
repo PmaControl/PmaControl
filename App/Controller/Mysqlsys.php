@@ -10,10 +10,42 @@ use App\Library\Mysql;
 use App\Library\Debug;
 
 
+/**
+ * Class responsible for mysqlsys workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Mysqlsys extends Controller {
 
     use \App\Library\Filter;
 
+/**
+ * Render mysqlsys state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/mysqlsys/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
@@ -108,6 +140,24 @@ class Mysqlsys extends Controller {
     }
 
 
+/**
+ * Handle mysqlsys state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/mysqlsys/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install() {
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title . ' > <i style="font-size: 16px" class="fa fa-upload"></i> Install';
@@ -152,6 +202,27 @@ class Mysqlsys extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Create mysqlsys state through `addFormat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $tab Input value for `tab`.
+ * @phpstan-param mixed $tab
+ * @psalm-param mixed $tab
+ * @return void Returned value for addFormat.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addFormat()
+ * @example /fr/mysqlsys/addFormat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addFormat($tab) {
         foreach ($tab as $key => $elem) {
             if ($key == "value") {
@@ -160,6 +231,27 @@ class Mysqlsys extends Controller {
         }
     }
 
+/**
+ * Handle mysqlsys state through `reset`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reset.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reset()
+ * @example /fr/mysqlsys/reset
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reset($param) {
 
         $this->view = false;
@@ -194,6 +286,27 @@ class Mysqlsys extends Controller {
         header("location: " . $_SERVER['HTTP_REFERER']);
     }
 
+/**
+ * Handle mysqlsys state through `drop`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for drop.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::drop()
+ * @example /fr/mysqlsys/drop
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function drop($param) {
 
         $this->view = false;
@@ -224,6 +337,27 @@ class Mysqlsys extends Controller {
         header("location: " . $_SERVER['HTTP_REFERER']);
     }
 
+/**
+ * Update mysqlsys state through `updateConfig`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateConfig()
+ * @example /fr/mysqlsys/updateConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateConfig($param) {
         $this->view = false;
         $this->layout_name = false;
@@ -245,6 +379,27 @@ class Mysqlsys extends Controller {
     }
 
 
+/**
+ * Handle mysqlsys state through `export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export()
+ * @example /fr/mysqlsys/export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function export($param)
     {
         //$this->view = true;
@@ -378,3 +533,4 @@ LIMIT 10;";
 
 
 }
+

@@ -7,8 +7,43 @@ use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
 use Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for telegram workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Telegram extends Controller
 {
+/**
+ * Render telegram state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/telegram/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -25,6 +60,24 @@ class Telegram extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Create telegram state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/telegram/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -81,6 +134,27 @@ class Telegram extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle telegram state through `view`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for view.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::view()
+ * @example /fr/telegram/view
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function view($param)
     {
         $bot = $this->getBotFromParam($param);
@@ -92,6 +166,27 @@ class Telegram extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Delete telegram state through `delete`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/telegram/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         $this->view = false;
@@ -128,6 +223,27 @@ class Telegram extends Controller
         exit;
     }
 
+/**
+ * Retrieve `getBotFromParam`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return array Returned value for getBotFromParam.
+ * @phpstan-return array
+ * @psalm-return array
+ * @throws \Throwable When the underlying operation fails.
+ * @example getBotFromParam(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getBotFromParam($param): array
     {
         $id = intval($param[0] ?? 0);
@@ -149,6 +265,29 @@ class Telegram extends Controller
         return $bot;
     }
 
+/**
+ * Handle `validateTelegramCredentials`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $token Input value for `token`.
+ * @phpstan-param string $token
+ * @psalm-param string $token
+ * @param string $chatId Input value for `chatId`.
+ * @phpstan-param string $chatId
+ * @psalm-param string $chatId
+ * @return mixed Returned value for validateTelegramCredentials.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example validateTelegramCredentials(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function validateTelegramCredentials(string $token, string $chatId)
     {
         if (!function_exists('curl_init')) {
@@ -190,6 +329,29 @@ class Telegram extends Controller
         return true;
     }
 
+/**
+ * Handle `broadcast`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $message Input value for `message`.
+ * @phpstan-param string $message
+ * @psalm-param string $message
+ * @param string $parseMode Input value for `parseMode`.
+ * @phpstan-param string $parseMode
+ * @psalm-param string $parseMode
+ * @return void Returned value for broadcast.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example broadcast(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function broadcast(string $message, string $parseMode = 'HTML'): void
     {
         $text = trim($message);
@@ -203,6 +365,23 @@ class Telegram extends Controller
         }
     }
 
+/**
+ * Retrieve `getAllBots`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return array Returned value for getAllBots.
+ * @phpstan-return array
+ * @psalm-return array
+ * @example getAllBots(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getAllBots(): array
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -219,6 +398,35 @@ class Telegram extends Controller
         return $bots;
     }
 
+/**
+ * Handle `sendTelegramMessage`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param string $token Input value for `token`.
+ * @phpstan-param string $token
+ * @psalm-param string $token
+ * @param string $chatId Input value for `chatId`.
+ * @phpstan-param string $chatId
+ * @psalm-param string $chatId
+ * @param string $text Input value for `text`.
+ * @phpstan-param string $text
+ * @psalm-param string $text
+ * @param string $parseMode Input value for `parseMode`.
+ * @phpstan-param string $parseMode
+ * @psalm-param string $parseMode
+ * @return void Returned value for sendTelegramMessage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example sendTelegramMessage(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function sendTelegramMessage(string $token, string $chatId, string $text, string $parseMode = 'HTML'): void
     {
         if (!function_exists('curl_init')) {
@@ -255,3 +463,4 @@ class Telegram extends Controller
         }
     }
 }
+

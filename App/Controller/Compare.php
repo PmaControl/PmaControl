@@ -16,17 +16,80 @@ use \Glial\Sgbd\Sgbd;
 
 //&lrarr;
 
+/**
+ * Class responsible for compare workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Compare extends Controller {
 
     use \App\Library\Filter;
 
     //use \App\Library\
 
+/**
+ * Stores `$db_origin` for db origin.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $db_origin;
+/**
+ * Stores `$db_target` for db target.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $db_target;
+/**
+ * Stores `$db_default` for db default.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $db_default;
+/**
+ * Stores `$object` for object.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $object = array("TABLE", "VIEW", "TRIGGER", "FUNCTION", "PROCEDURE", "EVENT");
 
+/**
+ * Render compare state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/compare/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index($params) {
 
 
@@ -103,6 +166,36 @@ class Compare extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Handle compare state through `checkConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_server1 Input value for `id_server1`.
+ * @phpstan-param int $id_server1
+ * @psalm-param int $id_server1
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param int $id_server2 Input value for `id_server2`.
+ * @phpstan-param int $id_server2
+ * @psalm-param int $id_server2
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @return mixed Returned value for checkConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::checkConfig()
+ * @example /fr/compare/checkConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function checkConfig($id_server1, $db1, $id_server2, $db2) {
         $db = Sgbd::sql(DB_DEFAULT);
         $error = array();
@@ -161,6 +254,36 @@ class Compare extends Controller {
         }
     }
 
+/**
+ * Handle compare state through `analyse`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_server1 Input value for `id_server1`.
+ * @phpstan-param int $id_server1
+ * @psalm-param int $id_server1
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param int $id_server2 Input value for `id_server2`.
+ * @phpstan-param int $id_server2
+ * @psalm-param int $id_server2
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @return mixed Returned value for analyse.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::analyse()
+ * @example /fr/compare/analyse
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function analyse($id_server1, $db1, $id_server2, $db2) {
         $db_original = $this->getDbLinkFromId($id_server1);
         $db_compare = $this->getDbLinkFromId($id_server2);
@@ -179,6 +302,33 @@ class Compare extends Controller {
         return $data;
     }
 
+/**
+ * Handle compare state through `compareTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $original Input value for `original`.
+ * @phpstan-param mixed $original
+ * @psalm-param mixed $original
+ * @param mixed $compare Input value for `compare`.
+ * @phpstan-param mixed $compare
+ * @psalm-param mixed $compare
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for compareTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::compareTable()
+ * @example /fr/compare/compareTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function compareTable($original, $compare, $data) {
         //$dbs = [$this->db_origin, $this->db_target];
 
@@ -246,6 +396,31 @@ class Compare extends Controller {
         //check engine
     }
 
+/**
+ * Handle compare state through `execMulti`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $queries Input value for `queries`.
+ * @phpstan-param mixed $queries
+ * @psalm-param mixed $queries
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @return mixed Returned value for execMulti.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::execMulti()
+ * @example /fr/compare/execMulti
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function execMulti($queries, $db_link) {
         if (IS_CLI) {
             $this->view = false;
@@ -281,6 +456,34 @@ class Compare extends Controller {
         return $ret;
     }
 
+/**
+ * Handle compare state through `compareListObject`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @param mixed $type_object Input value for `type_object`.
+ * @phpstan-param mixed $type_object
+ * @psalm-param mixed $type_object
+ * @return mixed Returned value for compareListObject.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::compareListObject()
+ * @example /fr/compare/compareListObject
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function compareListObject($db1, $db2, $type_object) {
         $query['TRIGGER']['query'] = "select trigger_schema, trigger_name, action_statement from information_schema.triggers where trigger_schema ='{DB}'";
         $query['FUNCTION']['query'] = "show function status WHERE Db ='{DB}';";
@@ -327,6 +530,27 @@ class Compare extends Controller {
         return $data;
     }
 
+/**
+ * Handle compare state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for menu.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::menu()
+ * @example /fr/compare/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param) {
 
         $data['menu']['TABLE']['name'] = __("Tables");
@@ -365,6 +589,24 @@ class Compare extends Controller {
         return $data;
     }
 
+/**
+ * Handle compare state through `generateGet`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for generateGet.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGet()
+ * @example /fr/compare/generateGet
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGet() {
 
         $url = array();
@@ -375,6 +617,27 @@ class Compare extends Controller {
         return implode('/', $url) . "/";
     }
 
+/**
+ * Retrieve compare state through `getObjectDiff`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getObjectDiff.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getObjectDiff()
+ * @example /fr/compare/getObjectDiff
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getObjectDiff($param) {
 
         $this->db_origin = $this->getDbLinkFromId($_GET['compare_main']['id_mysql_server__original']);
@@ -407,6 +670,34 @@ class Compare extends Controller {
         $this->set('menu', $param[1]);
     }
 
+/**
+ * Handle compare state through `compareObject`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for compareObject.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::compareObject()
+ * @example /fr/compare/compareObject
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compareObject($db1, $db2, $data) {
         $query['TRIGGER']['query'] = "SHOW CREATE TRIGGER `{DB}`.`{OBJECT}`";
         $query['FUNCTION']['query'] = "SHOW CREATE FUNCTION `{DB}`.`{OBJECT}`";
@@ -531,6 +822,27 @@ class Compare extends Controller {
         return $data;
     }
 
+/**
+ * Retrieve compare state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDbLinkFromId()
+ * @example /fr/compare/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db) {
         if (IS_AJAX) {
             $this->layout_name = false;
@@ -548,3 +860,4 @@ class Compare extends Controller {
     }
 
 }
+

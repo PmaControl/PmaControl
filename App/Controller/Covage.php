@@ -7,6 +7,20 @@ use \App\Library\Debug;
 use App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for covage workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Covage extends Controller
 {
     /*
@@ -58,7 +72,21 @@ class Covage extends Controller
      * Liste des backends
      */
     var $source          = 'fiber_qualif2';
+/**
+ * Stores `$destination` for destination.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $destination     = 'fiber_prod';
+/**
+ * Stores `$base_de_travail` for base de travail.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $base_de_travail = 'reprise';
 
     /*
@@ -70,14 +98,60 @@ class Covage extends Controller
     var $tables = array('CrStoc');
     //  NotifReprovisionning  flux_commande_acces
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $primary_key    = array('');
+/**
+ * Stores `$diff` for diff.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $diff           = array('');
+/**
+ * Stores `$table_rename` for table rename.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $table_rename   = array('action', 'cassette', 'cassette_modele', 'cassette_modele_equipement_modele', 'champs', 'commande_acces', 'constructeur', 'corbeille', 'couleur',
         'couleur_table_couleur', 'droit', 'emplacement_cassette', 'enregistrement', 'etape', 'extraction', 'fibre', 'HistoriqueOntEligibilite', 'ipe', 'lien_optique', 'lien_route_optique',
         'objet', 'OntEligibilite', 'otelligibiliteservice', 'parametres', 'planning', 'port', 'reporting', 'reporting_data', 'reseau_users',
         'service_corbeille', 'table_couleur', 'type_cable', 'type_erreur', 'type_lien_optique', 'valeur', 'type_planning');
+/**
+ * Stores `$table_rollback` for table rollback.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $table_rollback = array('task');
 
+/**
+ * Handle covage state through `creationTableSpider`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for creationTableSpider.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::creationTableSpider()
+ * @example /fr/covage/creationTableSpider
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function creationTableSpider()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -103,6 +177,27 @@ class Covage extends Controller
         return array($this->source, $this->destination);
     }
 
+/**
+ * Handle covage state through `all`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for all.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::all()
+ * @example /fr/covage/all
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function all($param)
     {
 
@@ -117,6 +212,24 @@ class Covage extends Controller
         Debug::debugShowQueries($db);
     }
 
+/**
+ * Handle covage state through `drop`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for drop.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::drop()
+ * @example /fr/covage/drop
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function drop()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -126,6 +239,27 @@ class Covage extends Controller
         Debug::sql($sql);
     }
 
+/**
+ * Handle covage state through `diff`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for diff.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::diff()
+ * @example /fr/covage/diff
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function diff($param)
     {
 
@@ -163,6 +297,31 @@ class Covage extends Controller
         print_r($this->diff);
     }
 
+/**
+ * Retrieve covage state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getPrimaryKey()
+ * @example /fr/covage/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($database, $table)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -187,6 +346,27 @@ class Covage extends Controller
         return $this->primary_key[$database][$table];
     }
 
+/**
+ * Handle covage state through `reprise`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reprise.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reprise()
+ * @example /fr/covage/reprise
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reprise($param)
     {
         Debug::parseDebug($param);
@@ -211,6 +391,24 @@ class Covage extends Controller
         }
     }
 
+/**
+ * Update covage state through `saveRef`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for saveRef.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::saveRef()
+ * @example /fr/covage/saveRef
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function saveRef()
     {
 
@@ -249,6 +447,30 @@ class Covage extends Controller
         }
     }
 
+/**
+ * Retrieve covage state through `getFields`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getFields.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFields()
+ * @example /fr/covage/getFields
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getFields($database, $table)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -269,6 +491,27 @@ class Covage extends Controller
         return $fields;
     }
 
+/**
+ * Create covage state through `createTableSpider`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createTableSpider.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createTableSpider()
+ * @example /fr/covage/createTableSpider
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createTableSpider($param)
     {
 
@@ -290,6 +533,27 @@ class Covage extends Controller
         $db->sql_query($sql);
     }
 
+/**
+ * Create covage state through `createDbLink`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createDbLink.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createDbLink()
+ * @example /fr/covage/createDbLink
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createDbLink($param)
     {
 
@@ -334,6 +598,31 @@ class Covage extends Controller
         }
     }
 
+/**
+ * Retrieve covage state through `getInfoFromBackend`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $backend Input value for `backend`.
+ * @phpstan-param mixed $backend
+ * @psalm-param mixed $backend
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getInfoFromBackend.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getInfoFromBackend()
+ * @example /fr/covage/getInfoFromBackend
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getInfoFromBackend($backend, $id_mysql_server)
     {
 
@@ -355,6 +644,27 @@ class Covage extends Controller
         throw new \Exception("PMACTRL-581 : Impossible to find this backend : '".$backend."'");
     }
 
+/**
+ * Handle covage state through `toRename`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for toRename.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::toRename()
+ * @example /fr/covage/toRename
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function toRename($param)
     {
         Debug::parseDebug($param);
@@ -377,6 +687,27 @@ class Covage extends Controller
         }
     }
 
+/**
+ * Handle covage state through `toRenameRollback`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for toRenameRollback.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::toRenameRollback()
+ * @example /fr/covage/toRenameRollback
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function toRenameRollback($param)
     {
         Debug::parseDebug($param);
@@ -396,6 +727,27 @@ class Covage extends Controller
         }
     }
 
+/**
+ * Handle covage state through `convertToUtf8`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for convertToUtf8.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::convertToUtf8()
+ * @example /fr/covage/convertToUtf8
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function convertToUtf8($param)
     {
 
