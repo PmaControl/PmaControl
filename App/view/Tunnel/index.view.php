@@ -41,6 +41,38 @@ th {
 .closed {
     background-color: #f8d7da;
 }
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+.status-up {
+    background: #28a745;
+}
+.status-down {
+    background: #dc3545;
+}
+.duplicate-help {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+.duplicate-help--keep {
+    background: #dff0d8;
+    color: #3c763d;
+}
+.duplicate-help--purge {
+    background: #f2dede;
+    color: #a94442;
+}
+.duplicate-command {
+    margin-top: 6px;
+}
 </style>
 
 <table>
@@ -49,6 +81,8 @@ th {
             <th><?=__('ID') ?></th>
             <th><?=__('Local') ?></th>
             <th><?=__('Remote') ?></th>
+            <th><?=__('Duplicate') ?></th>
+            <th><?=__('Reachable') ?></th>
             <th><?=__('Server') ?></th>
             <th><?=__('Jump Hosts') ?></th>
             <th><?=__('Pid') ?></th>
@@ -70,6 +104,34 @@ th {
                 }
                 ?></td>
                 <td>
+                    <?php if (($tunnel['duplicate_status'] ?? 'unique') === 'keep'): ?>
+                        <span class="label label-success"><?= __('KEEP') ?></span>
+                        <div><small><?= htmlspecialchars($tunnel['duplicate_reason'] ?? '') ?></small></div>
+                        <?php if (!empty($tunnel['duplicate_action'])): ?>
+                            <div class="duplicate-help duplicate-help--keep"><?= htmlspecialchars($tunnel['duplicate_action']) ?></div>
+                        <?php endif; ?>
+                    <?php elseif (($tunnel['duplicate_status'] ?? 'unique') === 'purge'): ?>
+                        <span class="label label-danger"><?= __('PURGE') ?></span>
+                        <div><small><?= htmlspecialchars($tunnel['duplicate_reason'] ?? '') ?></small></div>
+                        <?php if (!empty($tunnel['duplicate_action'])): ?>
+                            <div class="duplicate-help duplicate-help--purge"><?= htmlspecialchars($tunnel['duplicate_action']) ?></div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <span class="label label-default"><?= __('UNIQUE') ?></span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if (!empty($tunnel['is_reachable'])): ?>
+                        <span title="<?= __('Online') ?>">
+                            <span class="status-dot status-up"></span><?= __('Online') ?>
+                        </span>
+                    <?php else: ?>
+                        <span title="<?= __('Offline') ?>">
+                            <span class="status-dot status-down"></span><?= __('Offline') ?>
+                        </span>
+                    <?php endif; ?>
+                </td>
+                <td>
                     <?php if ($tunnel['id_mysql_server'] === null && $tunnel['id_maxscale_server'] === null && $tunnel['id_proxysql_server'] === null): ?>
                         <?php 
                             
@@ -83,7 +145,7 @@ th {
                         <?php 
 
                         if (!empty($tunnel['id_mysql_server'])) {
-                            echo Display::srv($tunnel['id_mysql_server']);
+                            echo Display::srv($tunnel['id_mysql_server'], true, LINK.'MysqlServer/main/'.$tunnel['id_mysql_server'].'/');
                         }
                         if (!empty($tunnel['id_maxscale_server'])) {
                             echo '<img title="MaxScale Server" alt="MaxScale Server" height="16" width="16" src="'.IMG.'/icon/maxscale.svg">';
@@ -131,10 +193,17 @@ foreach ($data as $tunnel) {
 }
 $pids = array_values(array_unique(array_filter($pids)));
 $killCommand = !empty($pids) ? 'kill -9 ' . implode(' ', $pids) : '';
+$purgePids = array_values(array_unique(array_filter($pids_to_purge ?? [])));
+$purgeKillCommand = !empty($purgePids) ? 'kill -9 ' . implode(' ', $purgePids) : '';
 ?>
 
 <div class="text-right" style="margin-top: 15px; margin-bottom: 15px;">
-    <button id="copy-kill-command" type="button" class="btn btn-danger" onclick="copyKillTunnelCommand()" <?= empty($killCommand) ? 'disabled' : '' ?>>
+    <button id="copy-purge-kill-command" type="button" class="btn btn-warning js-copy-kill-command" data-command="<?= htmlspecialchars($purgeKillCommand, ENT_QUOTES, 'UTF-8') ?>" data-feedback="copy-purge-feedback" <?= empty($purgeKillCommand) ? 'disabled' : '' ?>>
+        <span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span>
+        <?= __('Copier la commande kill des tunnels à purger') ?>
+    </button>
+    <small id="copy-purge-feedback" class="text-success" style="margin-left: 10px; display: none;"><?= __('Commande copiée dans le presse-papiers') ?></small>
+    <button id="copy-kill-command" type="button" class="btn btn-danger js-copy-kill-command" data-command="<?= htmlspecialchars($killCommand, ENT_QUOTES, 'UTF-8') ?>" data-feedback="copy-kill-feedback" <?= empty($killCommand) ? 'disabled' : '' ?>>
         <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
         <?= __('Copier la commande kill de tous les tunnels') ?>
     </button>
@@ -142,13 +211,12 @@ $killCommand = !empty($pids) ? 'kill -9 ' . implode(' ', $pids) : '';
 </div>
 
 <script>
-function copyKillTunnelCommand() {
-    var command = <?= json_encode($killCommand) ?>;
+function copyKillTunnelCommand(command, feedbackId) {
     if (!command) {
         return;
     }
 
-    var feedback = document.getElementById('copy-kill-feedback');
+    var feedback = document.getElementById(feedbackId || 'copy-kill-feedback');
 
     function showCopiedMessage() {
         if (!feedback) {
@@ -180,5 +248,13 @@ function copyKillTunnelCommand() {
         document.body.removeChild(textarea);
     }
 }
-</script>
 
+document.addEventListener('click', function (event) {
+    var button = event.target.closest('.js-copy-kill-command');
+    if (!button) {
+        return;
+    }
+
+    copyKillTunnelCommand(button.getAttribute('data-command') || '', button.getAttribute('data-feedback') || 'copy-kill-feedback');
+});
+</script>

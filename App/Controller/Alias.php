@@ -64,6 +64,20 @@ class Alias extends Controller
     public function index()
     {
         $db = Sgbd::sql(DB_DEFAULT);
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $dns = trim((string)($_POST['alias_dns']['dns'] ?? ''));
+            $port = (int)($_POST['alias_dns']['port'] ?? 0);
+            $id_mysql_server = (int)($_POST['alias_dns']['id_mysql_server'] ?? 0);
+
+            if ($dns !== '' && $port > 0 && $id_mysql_server > 0) {
+                self::upsertAliasDns([$dns, $port, $id_mysql_server]);
+            }
+
+            header("location: ".LINK."alias/index");
+            return;
+        }
 
         $sql = "SELECT *,ROW_START,ROW_END FROM alias_dns a
         ORDER BY dns, port";
@@ -75,6 +89,8 @@ class Alias extends Controller
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['alia_dns'][] = $ob;
         }
+
+        $data['pending_aliases'] = $this->getPendingAliasesFromSlaveIndex();
 
         $this->set('data', $data);
     }
@@ -693,5 +709,210 @@ class Alias extends Controller
     {
         self::$alias_dns_cache = [];
     }
-}
 
+    private function getPendingAliasesFromSlaveIndex(): array
+    {
+        $slaves = Extraction::display(array("slave::master_host", "slave::master_port"));
+        $infoServer = Extraction::display(array("variables::hostname", "variables::is_proxysql"));
+        $candidates = $this->getAliasServerCandidates();
+
+        $pending = [];
+
+        foreach ($slaves as $slaveGroup) {
+            foreach ($slaveGroup as $slave) {
+                $id_mysql_server = (int)($slave['id_mysql_server'] ?? 0);
+
+                if (!empty($infoServer[$id_mysql_server]['']['is_proxysql']) && $infoServer[$id_mysql_server]['']['is_proxysql'] === "1") {
+                    continue;
+                }
+
+                $dns = trim((string)($slave['master_host'] ?? ''));
+                $port = (int)($slave['master_port'] ?? 0);
+
+                if ($dns === '' || $port <= 0) {
+                    continue;
+                }
+
+                if (Mysql::getIdFromDns($dns.':'.$port)) {
+                    continue;
+                }
+
+                $key = strtolower($dns).':'.$port;
+
+                if (!isset($pending[$key])) {
+                    $pending[$key] = [
+                        'dns' => $dns,
+                        'port' => $port,
+                        'sources' => [],
+                        'source_count' => 0,
+                    ];
+                }
+
+                $sourceHostname = trim((string)($infoServer[$id_mysql_server]['']['hostname'] ?? 'server #'.$id_mysql_server));
+
+                if ($sourceHostname !== '' && !in_array($sourceHostname, $pending[$key]['sources'], true)) {
+                    $pending[$key]['sources'][] = $sourceHostname;
+                }
+
+                $pending[$key]['source_count']++;
+            }
+        }
+
+        foreach ($pending as &$alias) {
+            $alias['candidates'] = $this->rankAliasServerCandidates($alias['dns'], (int)$alias['port'], $candidates);
+            $alias['suggested_id_mysql_server'] = 0;
+
+            if (!empty($alias['candidates']) && (int)$alias['candidates'][0]['match_score'] > 0) {
+                $alias['suggested_id_mysql_server'] = (int)$alias['candidates'][0]['id'];
+            }
+        }
+        unset($alias);
+
+        usort($pending, static function (array $left, array $right): int {
+            return strcmp($left['dns'].':'.$left['port'], $right['dns'].':'.$right['port']);
+        });
+
+        return array_values($pending);
+    }
+
+    private function getAliasServerCandidates(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $tunnelMapping = Tunnel::getTunnelsMapping();
+
+        $sql = "SELECT id, name, display_name, hostname, ip, port
+                FROM mysql_server
+                WHERE is_deleted = 0
+                ORDER BY display_name, ip, port";
+
+        $res = $db->sql_query($sql);
+        $servers = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $localEndpoint = trim((string)$row['ip']).':'.(int)$row['port'];
+            $realEndpoint = trim((string)($tunnelMapping[$localEndpoint] ?? ''));
+            $remoteHost = '';
+            $remotePort = null;
+
+            if ($realEndpoint !== '' && str_contains($realEndpoint, ':')) {
+                $parts = explode(':', $realEndpoint);
+                $remotePort = (int)array_pop($parts);
+                $remoteHost = implode(':', $parts);
+            }
+
+            $row['remote_host'] = $remoteHost;
+            $row['remote_port'] = $remotePort;
+            $row['display_label'] = $row['display_name'].' ('.$row['ip'].':'.$row['port'];
+
+            if ($realEndpoint !== '') {
+                $row['display_label'] .= ' => '.$realEndpoint;
+            }
+
+            $row['display_label'] .= ')';
+
+            $servers[] = $row;
+        }
+
+        return $servers;
+    }
+
+    private function rankAliasServerCandidates(string $dns, int $port, array $candidates): array
+    {
+        $ranked = [];
+
+        foreach ($candidates as $candidate) {
+            $candidate['match_score'] = $this->computeAliasMatchScore($dns, $port, $candidate);
+            $candidate['match_color'] = $this->getAliasMatchColor((int)$candidate['match_score']);
+            $ranked[] = $candidate;
+        }
+
+        usort($ranked, static function (array $left, array $right): int {
+            if ((int)$left['match_score'] === (int)$right['match_score']) {
+                return strcmp((string)$left['display_label'], (string)$right['display_label']);
+            }
+
+            return (int)$right['match_score'] <=> (int)$left['match_score'];
+        });
+
+        return $ranked;
+    }
+
+    private function computeAliasMatchScore(string $dns, int $port, array $candidate): int
+    {
+        $dns = strtolower(trim($dns));
+        $displayName = strtolower(trim((string)($candidate['display_name'] ?? '')));
+        $serverName = strtolower(trim((string)($candidate['name'] ?? '')));
+        $hostname = strtolower(trim((string)($candidate['hostname'] ?? '')));
+        $ip = strtolower(trim((string)($candidate['ip'] ?? '')));
+        $candidatePort = (int)($candidate['port'] ?? 0);
+        $remoteHost = strtolower(trim((string)($candidate['remote_host'] ?? '')));
+        $remotePort = (int)($candidate['remote_port'] ?? 0);
+
+        $score = 0;
+
+        if ($dns === $ip && $port === $candidatePort) {
+            $score = max($score, 100);
+        }
+
+        if ($remoteHost !== '' && $dns === $remoteHost && $port === $remotePort) {
+            $score = max($score, 98);
+        }
+
+        if ($hostname !== '' && $dns === $hostname && $port === $candidatePort) {
+            $score = max($score, 96);
+        }
+
+        if ($displayName !== '' && $dns === $displayName) {
+            $score = max($score, $port === $candidatePort ? 94 : 74);
+        }
+
+        if ($serverName !== '' && $dns === $serverName) {
+            $score = max($score, $port === $candidatePort ? 90 : 70);
+        }
+
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $displayName, $candidatePort, 82, 62));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $serverName, $candidatePort, 78, 58));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $hostname, $candidatePort, 76, 56));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $ip, $candidatePort, 72, 52));
+
+        if ($remoteHost !== '') {
+            $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $remoteHost, $remotePort, 80, 60));
+        }
+
+        return $score;
+    }
+
+    private function computePartialAliasMatchScore(string $dns, int $port, string $candidateValue, int $candidatePort, int $samePortScore, int $differentPortScore): int
+    {
+        if ($candidateValue === '' || $dns === '') {
+            return 0;
+        }
+
+        if (!str_contains($dns, $candidateValue) && !str_contains($candidateValue, $dns)) {
+            return 0;
+        }
+
+        return $port === $candidatePort ? $samePortScore : $differentPortScore;
+    }
+
+    private function getAliasMatchColor(int $score): string
+    {
+        if ($score >= 95) {
+            return '#b7efc5';
+        }
+
+        if ($score >= 80) {
+            return '#d8f3dc';
+        }
+
+        if ($score >= 65) {
+            return '#ecf9ee';
+        }
+
+        if ($score >= 50) {
+            return '#f6fcf7';
+        }
+
+        return '#ffffff';
+    }
+}

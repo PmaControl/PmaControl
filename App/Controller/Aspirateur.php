@@ -4485,31 +4485,29 @@ GROUP BY C.ID, C.INFO;";
  * @since 5.0
  * @version 1.0
  */
-    private function runEachMinuteAtBalancedSecond(int $id_mysql_server,int $interval, string $file_key, callable $callback): bool
+    private function runEachMinuteAtBalancedSecond(int $id_mysql_server, int $interval, string $file_key, callable $callback): bool
     {
-         // 1 minute
-        $offset = crc32((string)$id_mysql_server) % $interval; // seconde cible dans la minute
+        $offset = crc32((string)$id_mysql_server) % $interval;
         $now = time();
         $sec = $now % $interval;
-        $minute = intdiv($now, $interval);
+        $bucket = intdiv($now, $interval);
 
-        // Tolérance de ±2 s
-        $delta = abs($sec - $offset);
-        if ($delta > 2 && $delta < ($interval - 2)) {
+        // On autorise l'execution une fois par bucket, a partir de la seconde cible.
+        // Si le worker passe apres l'offset (ex: :57 pour un offset a :51), on execute.
+        if ($sec < $offset) {
             return false;
         }
 
-        // Fichier d’état anti-double-run
         $cache_file = "/tmp/pmacontrol_last_run_{$file_key}_{$id_mysql_server}";
         $fp = fopen($cache_file, 'c+');
         if ($fp === false) {
-            $last_minute_run = null;
+            $last_bucket_run = null;
         } else {
             flock($fp, LOCK_EX);
-            $last_minute_run = trim(stream_get_contents($fp));
+            $last_bucket_run = trim(stream_get_contents($fp));
         }
 
-        if ($last_minute_run == $minute) {
+        if ((string)$last_bucket_run === (string)$bucket) {
             if ($fp !== false) {
                 flock($fp, LOCK_UN);
                 fclose($fp);
@@ -4520,7 +4518,7 @@ GROUP BY C.ID, C.INFO;";
         if ($fp !== false) {
             ftruncate($fp, 0);
             rewind($fp);
-            fwrite($fp, (string)$minute);
+            fwrite($fp, (string)$bucket);
             flock($fp, LOCK_UN);
             fclose($fp);
         }
@@ -4548,4 +4546,3 @@ GROUP BY
   `DIGEST`, 
   `SQL_TEXT`
 */
-

@@ -3,6 +3,7 @@
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
+use App\Library\Display;
 use App\Library\Format;
 use App\Library\Debug;
 
@@ -203,6 +204,8 @@ $i = 0;
 
 if (!empty($data['servers'])) {
 
+
+
     foreach ($data['servers'] as $server) {
         $i++;
 
@@ -294,7 +297,15 @@ if (!empty($data['servers'])) {
         echo '<span class="glyphicon '.(!$isEffectiveMonitored ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
         
         echo $server['display_name'];
-        echo '</a></td>';
+        echo '</a>';
+        
+        /* A GARDER POUR DEBUG
+        if (empty($server['is_proxy']) && empty($server['is_vip']))
+        {
+            echo ' ('.$extra['hostname'].')';
+        }*/
+        
+        echo '</td>';
         echo '<td style="'.$style.'">';
 
         if (!empty($data['tag'][$server['id']])) {
@@ -324,12 +335,27 @@ if (!empty($data['servers'])) {
 
 
 
-        echo $flag."&nbsp;";
         
+        
+        $localEndpoint = trim((string)$server['ip']).':'.trim((string)$server['port']);
+        $tunnelInfo = Display::getTunnelInfoForEndpoint((string)$server['ip'], (int)$server['port']);
+        $remoteEndpoint = $tunnelInfo['remote'] ?? $localEndpoint;
         $displayHost = shorten_host_for_display($server['ip'], 32);
-        echo '<span title="'.htmlspecialchars($server['ip'].':'.$server['port'], ENT_QUOTES, 'UTF-8').'">'
+        $endpointTitle = $tunnelInfo['info'] ?? $localEndpoint;
+
+
+
+        if ($remoteEndpoint !== '' && $remoteEndpoint !== $localEndpoint) {
+            echo ' <span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES, 'UTF-8').'" class="text-muted">🔀'
+                .htmlspecialchars($remoteEndpoint, ENT_QUOTES, 'UTF-8')
+                .'</span>';
+        }
+        else{
+            echo $flag."&nbsp;";
+            echo '<span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES, 'UTF-8').'">'
             .htmlspecialchars($displayHost, ENT_QUOTES, 'UTF-8').':'.$server['port']
             .'</span>';
+        }
 
         if (!empty($server['is_ssl']) && strtolower($server['is_ssl']) === "1")
         {

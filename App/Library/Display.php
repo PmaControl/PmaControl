@@ -8,6 +8,7 @@
 namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
+use App\Controller\Tunnel;
 
 /**
  * Class responsible for display workflows.
@@ -33,6 +34,8 @@ class Display
  * @psalm-var array<int|string,mixed>
  */
     static $server      = array();
+    static $tunnel      = array();
+    static $info_bubble_loaded = false;
 /**
  * Stores `$ts_variable` for ts variable.
  *
@@ -113,6 +116,14 @@ class Display
             }
         }
 
+        if (empty(self::$server[$id_mysql_server])) {
+            return '';
+        }
+
+        if (empty(self::$tunnel)) {
+            self::$tunnel = self::getTunnelDetails();
+        }
+
         $url1 = '';
         $url2 = '';
 
@@ -121,14 +132,103 @@ class Display
             $url2 = '</a>';
         }
 
-        $ret = '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
-            ." ".$url1.self::$server[$id_mysql_server]['display_name'].$url2.' ';
+        $server = self::$server[$id_mysql_server];
+        $localEndpoint = trim((string)$server['ip']).':'.trim((string)$server['port']);
+        $tunnel = self::$tunnel[$localEndpoint] ?? null;
+        $realEndpoint = $tunnel['remote'] ?? $localEndpoint;
+        $dataInfo = htmlspecialchars(self::buildTunnelInfo($localEndpoint, $tunnel), ENT_QUOTES, 'UTF-8');
+        $script = self::renderInfoBubbleAssets();
+
+        $ret = $script.'<span title="'.$server['libelle'].'" class="label label-'.$server['class'].'">'.$server['letter'].'</span> ';
+
+        $ret .= $url1.'<span data-info="'.$dataInfo.'">'.$server['display_name'].'</span>'.$url2.' ';
 
         if ($withip) {
-            $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].':'.self::$server[$id_mysql_server]['port'].'</small> ';
+            $ret .= $url1.'<small class="text-muted" data-info="'.$dataInfo.'">'.$realEndpoint.'</small>'.$url2.' ';
         }
 
         return $ret;
+    }
+
+    static public function renderInfoBubbleAssets(): string
+    {
+        return '';
+    }
+
+    static public function getTunnelInfoForEndpoint(string $ip, int $port): array
+    {
+        if (empty(self::$tunnel)) {
+            self::$tunnel = self::getTunnelDetails();
+        }
+
+        $localEndpoint = trim($ip).':'.$port;
+        $tunnel = self::$tunnel[$localEndpoint] ?? null;
+
+        return [
+            'local' => $localEndpoint,
+            'remote' => $tunnel['remote'] ?? $localEndpoint,
+            'info' => self::buildTunnelInfo($localEndpoint, $tunnel),
+        ];
+    }
+
+    static private function getTunnelDetails(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT local_host, local_port, remote_host, remote_port, servers_jump
+                FROM ssh_tunnel
+                WHERE date_end IS NULL";
+
+        $res = $db->sql_query($sql);
+        $details = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $local = trim((string)$row['local_host']).':'.(int)$row['local_port'];
+            $remote = trim((string)$row['remote_host']).':'.(int)$row['remote_port'];
+            $jumps = json_decode((string)$row['servers_jump'], true);
+            $hops = [];
+
+            if (is_array($jumps)) {
+                foreach ($jumps as $jump) {
+                    if (!is_array($jump)) {
+                        continue;
+                    }
+
+                    $jumpHost = trim((string)($jump['ip'] ?? $jump['host'] ?? $jump['remote_host'] ?? ''));
+                    $jumpPort = (int)($jump['port'] ?? 22);
+
+                    if ($jumpHost === '') {
+                        continue;
+                    }
+
+                    $hops[] = $jumpHost.':'.$jumpPort;
+                }
+            }
+
+            $details[$local] = [
+                'remote' => $remote,
+                'hops' => $hops,
+            ];
+        }
+
+        return $details;
+    }
+
+    static private function buildTunnelInfo(string $localEndpoint, ?array $tunnel): string
+    {
+        if (empty($tunnel['remote'])) {
+            return $localEndpoint;
+        }
+
+        $parts = [$localEndpoint];
+
+        foreach (($tunnel['hops'] ?? []) as $hop) {
+            $parts[] = (string)$hop;
+        }
+
+        $parts[] = (string)$tunnel['remote'];
+
+        return implode(' 🔀 ', $parts);
     }
 
 /**

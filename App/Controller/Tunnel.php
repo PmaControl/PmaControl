@@ -114,8 +114,12 @@ class Tunnel extends Controller
         return $result;
     }/**** */
 
-    public static function agent(array $param = []): void
+    public static function agent($param = []): void
     {
+        if (!is_array($param)) {
+            $param = $param === null || $param === '' ? [] : [$param];
+        }
+
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -143,9 +147,9 @@ class Tunnel extends Controller
 
         // 3. Ajouter les tunnels actifs non présents
         foreach ($activeTunnels as $pid => $tunnel) {
-            if (!isset($existingTunnels[$pid])) {
-                $servers_jump = json_encode($tunnel['jump_hosts'], JSON_UNESCAPED_UNICODE);
+            $servers_jump = json_encode($tunnel['jump_hosts'], JSON_UNESCAPED_UNICODE);
 
+            if (!isset($existingTunnels[$pid])) {
                 $sqlInsert = "INSERT INTO ssh_tunnel 
                     (id_mysql_server, date_created, local_host, local_port, servers_jump, remote_host, remote_port, pid, user, command)
                     VALUES (
@@ -162,6 +166,19 @@ class Tunnel extends Controller
                     )";
 
                 $db->sql_query($sqlInsert);
+            } else {
+                $sqlUpdate = "UPDATE ssh_tunnel SET
+                        local_host = '" . addslashes($tunnel['local_host']) . "',
+                        local_port = {$tunnel['local_port']},
+                        servers_jump = '" . addslashes($servers_jump) . "',
+                        remote_host = '" . addslashes($tunnel['remote_host']) . "',
+                        remote_port = {$tunnel['remote_port']},
+                        user = '" . addslashes($tunnel['user']) . "',
+                        command = '" . addslashes($tunnel['command']) . "',
+                        date_end = NULL
+                    WHERE pid = {$tunnel['pid']}";
+
+                $db->sql_query($sqlUpdate);
             }
         }
 
@@ -321,20 +338,27 @@ class Tunnel extends Controller
         $local_host = $remote_host = null;
         $local_port = $remote_port = null;
 
-        if ($type === 'L' && preg_match('/-L\s*(\d+):([^:]+):(\d+)/', $command, $m)) {
-            $local_port  = (int)$m[1];
-            $possible_host = $m[2];
-            $remote_port = (int)$m[3];
-            $local_host  = '127.0.0.1'; // par défaut, on écoute localement
-
-            // Si l'hôte indiqué dans -L n'est pas 127.0.0.1, c'est notre vraie cible
-            if ($possible_host !== '127.0.0.1') {
-                $remote_host = $possible_host;
+        if ($type === 'L') {
+            $forward = self::extractForwardSpec($command, 'L');
+            if ($forward === null) {
+                Debug::debug("NOT FOUND");
+                return null;
             }
-        } elseif ($type === 'R' && preg_match('/-R\s*(\d+):([^:]+):(\d+)/', $command, $m)) {
-            $remote_port = (int)$m[1];
-            $remote_host = $m[2];
-            $local_port  = (int)$m[3];
+
+            $local_host  = $forward['bind_host'] ?? '127.0.0.1';
+            $local_port  = (int) $forward['bind_port'];
+            $remote_host = $forward['target_host'] ?? null;
+            $remote_port = (int) $forward['target_port'];
+        } elseif ($type === 'R') {
+            $forward = self::extractForwardSpec($command, 'R');
+            if ($forward === null) {
+                Debug::debug("NOT FOUND");
+                return null;
+            }
+
+            $remote_port = (int) $forward['bind_port'];
+            $remote_host = $forward['target_host'] ?? null;
+            $local_port  = (int) $forward['target_port'];
         } elseif ($type === 'D' && preg_match('/-D\s*(\d+)/', $command, $m)) {
             $local_port = (int)$m[1];
             $local_host = '127.0.0.1';
@@ -343,19 +367,7 @@ class Tunnel extends Controller
             return null;
         }
 
-        // Extraction des rebonds (-J)
-        $jump_hosts = [];
-        if (preg_match('/-J\s+([^\s]+)/', $command, $jm)) {
-            $jump_parts = explode(',', $jm[1]);
-            foreach ($jump_parts as $j) {
-                if (preg_match('/@([\d\.]+)(?::(\d+))?/', $j, $m2)) {
-                    $jump_hosts[] = [
-                        'ip'   => $m2[1],
-                        'port' => isset($m2[2]) ? (int)$m2[2] : 22
-                    ];
-                }
-            }
-        }
+        $jump_hosts = self::extractSshRouteHosts($command);
 
         Debug::debug($jump_hosts, "REBOND");
 
@@ -393,6 +405,109 @@ class Tunnel extends Controller
 
         Debug::debug($return, "RETURN");
         return $return;
+    }
+
+    private static function extractForwardSpec(string $command, string $flag): ?array
+    {
+        if (!preg_match('/-' . preg_quote($flag, '/') . '\s+(\S+)/', $command, $match)) {
+            return null;
+        }
+
+        return self::parseForwardSpecToken($match[1]);
+    }
+
+    private static function parseForwardSpecToken(string $spec): ?array
+    {
+        $parts = explode(':', trim($spec));
+        $count = count($parts);
+
+        if ($count === 3) {
+            return array(
+                'bind_host'   => '127.0.0.1',
+                'bind_port'   => self::normalizePortValue($parts[0]),
+                'target_host' => $parts[1],
+                'target_port' => self::normalizePortValue($parts[2]),
+            );
+        }
+
+        if ($count === 4) {
+            return array(
+                'bind_host'   => $parts[0],
+                'bind_port'   => self::normalizePortValue($parts[1]),
+                'target_host' => $parts[2],
+                'target_port' => self::normalizePortValue($parts[3]),
+            );
+        }
+
+        return null;
+    }
+
+    private static function normalizePortValue(string $port): ?int
+    {
+        $port = trim($port);
+
+        if ($port === '' || !ctype_digit($port)) {
+            return null;
+        }
+
+        return (int) $port;
+    }
+
+    private static function extractSshRouteHosts(string $command): array
+    {
+        $jump_hosts = [];
+
+        if (preg_match('/-J\s+([^\s]+)/', $command, $jm)) {
+            $jump_parts = explode(',', $jm[1]);
+            foreach ($jump_parts as $j) {
+                $host = self::parseSshHostToken($j);
+                if ($host !== null) {
+                    $jump_hosts[] = $host;
+                }
+            }
+
+            $destination = self::extractSshDestinationHost($command);
+            if ($destination !== null) {
+                $last = end($jump_hosts);
+                if ($last === false || $last['ip'] !== $destination['ip'] || $last['port'] !== $destination['port']) {
+                    $jump_hosts[] = $destination;
+                }
+            }
+        }
+
+        return $jump_hosts;
+    }
+
+    private static function extractSshDestinationHost(string $command): ?array
+    {
+        $tokens = preg_split('/\s+/', trim($command));
+        if (empty($tokens)) {
+            return null;
+        }
+
+        $lastToken = end($tokens);
+        if ($lastToken === false || str_starts_with($lastToken, '-')) {
+            return null;
+        }
+
+        return self::parseSshHostToken($lastToken);
+    }
+
+    private static function parseSshHostToken(string $token): ?array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[^@\s]+@)?([\d\.]+)(?::(\d+))?$/', $token, $match)) {
+            return [
+                'ip' => $match[1],
+                'port' => isset($match[2]) ? (int) $match[2] : 22,
+            ];
+        }
+
+        return null;
     }
 
 /**
@@ -484,6 +599,16 @@ class Tunnel extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
+        $mysqlServerIpById = [];
+        $mysqlServerIps = [];
+
+        $sqlMysql = "SELECT id, ip FROM mysql_server WHERE is_deleted = 0";
+        $resMysql = $db->sql_query($sqlMysql);
+        while ($rowMysql = $db->sql_fetch_array($resMysql, MYSQLI_ASSOC)) {
+            $mysqlServerIpById[(int)$rowMysql['id']] = (string)$rowMysql['ip'];
+            $mysqlServerIps[(string)$rowMysql['ip']] = true;
+        }
+
         // Récupérer tous les tunnels
         $sql = "SELECT t.*, m.display_name AS mysql_display_name
                 FROM ssh_tunnel t
@@ -493,25 +618,228 @@ class Tunnel extends Controller
 
         $data = [];
         $doublon = [];
+        $duplicateGroups = [];
 
 
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $row['servers_jump'] = json_decode($row['servers_jump'], true) ?: [];
+            $row['is_reachable'] = self::isEndpointReachable([
+                $row['local_host'],
+                (int) $row['local_port'],
+                0.3,
+            ]);
 
             $key = crc32(trim($row['remote_host']).":".trim($row['remote_port']));
             
             $doublon[$key] = ($doublon[$key] ?? 0) + 1;
+            $duplicateGroups[$key][] = $row;
+            $row['duplicate_status'] = 'unique';
+            $row['duplicate_reason'] = '';
+            $row['duplicate_action'] = '';
+            $row['command_source'] = self::extractTunnelCommandSource((string)($row['command'] ?? ''));
 
             $data[] = $row;
         }
 
+        $duplicateStatusById = [];
+        $pidsToPurge = [];
+
+        foreach ($duplicateGroups as $rows) {
+            if (count($rows) <= 1) {
+                continue;
+            }
+
+            $keepId = self::chooseTunnelToKeep($rows, $mysqlServerIpById, $mysqlServerIps);
+
+            foreach ($rows as $row) {
+                $id = (int)$row['id'];
+                $localHost = (string)$row['local_host'];
+                $reason = isset($mysqlServerIps[$localHost])
+                    ? "local_host matches mysql_server.ip"
+                    : "duplicate remote endpoint";
+
+                if ($id === $keepId) {
+                    $duplicateStatusById[$id] = [
+                        'status' => 'keep',
+                        'reason' => $reason,
+                        'action' => self::buildDuplicateAction($row, 'keep'),
+                    ];
+                    continue;
+                }
+
+                $duplicateStatusById[$id] = [
+                    'status' => 'purge',
+                    'reason' => $reason,
+                    'action' => self::buildDuplicateAction($row, 'purge'),
+                ];
+
+                if (!empty($row['pid'])) {
+                    $pidsToPurge[] = (int)$row['pid'];
+                }
+            }
+        }
+
+        foreach ($data as &$row) {
+            $id = (int)$row['id'];
+            if (isset($duplicateStatusById[$id])) {
+                $row['duplicate_status'] = $duplicateStatusById[$id]['status'];
+                $row['duplicate_reason'] = $duplicateStatusById[$id]['reason'];
+                $row['duplicate_action'] = $duplicateStatusById[$id]['action'];
+            }
+        }
+        unset($row);
 
 
 
 
         // Envoyer à la vue
         $this->set('doublon', $doublon);
+        $this->set('pids_to_purge', array_values(array_unique($pidsToPurge)));
         $this->set('data', $data);
+    }
+
+    private static function chooseTunnelToKeep(array $rows, array $mysqlServerIpById, array $mysqlServerIps): int
+    {
+        usort($rows, static function (array $left, array $right) use ($mysqlServerIpById, $mysqlServerIps): int {
+            return self::scoreTunnelDuplicateCandidate($right, $mysqlServerIpById, $mysqlServerIps)
+                <=> self::scoreTunnelDuplicateCandidate($left, $mysqlServerIpById, $mysqlServerIps);
+        });
+
+        return (int)$rows[0]['id'];
+    }
+
+    private static function scoreTunnelDuplicateCandidate(array $row, array $mysqlServerIpById, array $mysqlServerIps): int
+    {
+        $score = 0;
+        $localHost = (string)($row['local_host'] ?? '');
+        $idMysqlServer = (int)($row['id_mysql_server'] ?? 0);
+
+        if ($idMysqlServer > 0 && !empty($mysqlServerIpById[$idMysqlServer]) && $mysqlServerIpById[$idMysqlServer] === $localHost) {
+            $score += 1000;
+        }
+
+        if (isset($mysqlServerIps[$localHost])) {
+            $score += 500;
+        }
+
+        if ($idMysqlServer > 0) {
+            $score += 100;
+        }
+
+        if (!empty($row['is_reachable'])) {
+            $score += 20;
+        }
+
+        if (!empty($row['date_created'])) {
+            $score += strtotime((string)$row['date_created']) ?: 0;
+        }
+
+        return $score;
+    }
+
+    private static function extractTunnelCommandSource(string $command): array
+    {
+        $source = [
+            'script' => '',
+            'config' => '',
+        ];
+
+        if ($command === '') {
+            return $source;
+        }
+
+        if (preg_match('~(^|/)(tunnel\.sh)\b~', $command, $match)) {
+            $source['script'] = $match[2];
+        }
+
+        if (preg_match('~(\.tunnel\.[A-Za-z0-9._-]+)~', $command, $match)) {
+            $source['config'] = $match[1];
+        }
+
+        return $source;
+    }
+
+    private static function buildDuplicateAction(array $row, string $status): string
+    {
+        $source = $row['command_source'] ?? ['script' => '', 'config' => ''];
+        $parts = [];
+
+        if ($status === 'keep') {
+            $parts[] = 'Keep this tunnel as the reference.';
+        } else {
+            $parts[] = 'Kill this PID and purge the duplicate tunnel.';
+        }
+
+        if (!empty($source['script']) || !empty($source['config'])) {
+            $target = trim(($source['script'] ?: '').' '.($source['config'] ?: ''));
+            $parts[] = 'Then fix '.$target.' to stop recreating it.';
+        } else {
+            $parts[] = 'Then fix the launcher that recreates this SSH tunnel.';
+        }
+
+        return implode(' ', $parts);
+    }
+
+/**
+ * Check whether a TCP endpoint is reachable.
+ *
+ * @param array<int,mixed> $param [host, port, timeout?]
+ * @return bool
+ */
+    public static function isEndpointReachable(array $param): bool
+    {
+        $host = $param[0] ?? '';
+        $port = isset($param[1]) ? (int) $param[1] : 0;
+        $timeout = isset($param[2]) ? (float) $param[2] : 0.5;
+        $connector = $param[3] ?? null;
+
+        if ($host === '' || $port <= 0) {
+            return false;
+        }
+
+        if (is_callable($connector)) {
+            return (bool) $connector($host, $port, $timeout);
+        }
+
+        $errno = 0;
+        $errstr = '';
+        $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+
+        if (!is_resource($socket)) {
+            return false;
+        }
+
+        $seconds = (int) $timeout;
+        $microseconds = (int) (($timeout - $seconds) * 1000000);
+
+        stream_set_timeout($socket, $seconds, $microseconds);
+
+        $read = [$socket];
+        $write = null;
+        $except = null;
+        $changed = @stream_select($read, $write, $except, $seconds, $microseconds);
+
+        if ($changed === false) {
+            fclose($socket);
+            return false;
+        }
+
+        if ($changed > 0) {
+            $probe = @fread($socket, 1);
+            $meta  = stream_get_meta_data($socket);
+            fclose($socket);
+
+            if ($probe !== false && $probe !== '') {
+                return true;
+            }
+
+            return empty($meta['eof']);
+        }
+
+        $meta = stream_get_meta_data($socket);
+        fclose($socket);
+
+        return empty($meta['eof']);
     }
 
 
@@ -674,8 +1002,10 @@ class Tunnel extends Controller
         $jump_hosts = $tunnel['jump_hosts'] ?? [];
         if (!empty($jump_hosts)) {
             $last_jump = end($jump_hosts);
-            if (!empty($last_jump['remote_host']) && !empty($last_jump['remote_port'])) {
-                return $last_jump['remote_host'] . ':' . $last_jump['remote_port'];
+            $jump_host = $last_jump['remote_host'] ?? ($last_jump['ip'] ?? null);
+            $jump_port = $last_jump['remote_port'] ?? ($last_jump['port'] ?? null);
+            if (!empty($jump_host) && !empty($jump_port)) {
+                return $jump_host . ':' . $jump_port;
             }
         }
 

@@ -9,6 +9,54 @@ use App\Library\Available;
 use App\Library\Mysql;
 use App\Library\Display;
 
+function slave_h($value)
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function slave_random_hop_emoji()
+{
+    static $emojis = ['🎲', '🛰️', '🚇', '🪃', '🔀', '🌉', '🛸', '🎯'];
+
+    return $emojis[array_rand($emojis)];
+}
+
+function slave_render_real_endpoint(array $slave, array $data)
+{
+    $localEndpoint = trim((string)$slave['master_host']).':'.(int)$slave['master_port'];
+    $tunnel = $data['tunnel_details'][$localEndpoint] ?? null;
+
+    if (empty($tunnel['remote'])) {
+        return slave_h($localEndpoint);
+    }
+
+    $path = [];
+    $hops = $tunnel['hops'] ?? [];
+    $count = count($hops);
+
+    for ($idx = 0; $idx < $count; $idx++) {
+        $path[] = slave_h($hops[$idx]);
+
+        if ($idx < $count - 1) {
+            $path[] = slave_random_hop_emoji();
+        }
+    }
+
+    return '<span data-html="true" data-toggle="tooltip" data-placement="top" title="'.implode(' ', $path).'">'.slave_h($tunnel['remote']).'</span>';
+}
+
+function slave_get_real_endpoint_from_local(string $host, int $port, array $data): string
+{
+    $localEndpoint = trim($host).':'.$port;
+    $tunnel = $data['tunnel_details'][$localEndpoint] ?? null;
+
+    if (!empty($tunnel['remote'])) {
+        return (string)$tunnel['remote'];
+    }
+
+    return $localEndpoint;
+}
+
 function display_db($dbs)
 {
     if (empty($dbs)) {
@@ -89,14 +137,14 @@ foreach ($data['slave'] as $slaves) {
 
         $uniq            = $slave['master_host'].':'.$slave['master_port'];
         $id_mysql_server = Mysql::getIdFromDns($uniq);
+        $realEndpoint = slave_render_real_endpoint($slave, $data);
 
         if ($id_mysql_server) {
-
-            echo Display::srv($id_mysql_server);
+            echo Display::srv($id_mysql_server, true, LINK.'MysqlServer/main/'.$id_mysql_server.'/');
         } else {
 
             //updateAlias
-            echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
+            echo $realEndpoint.' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }
 
         echo '</td>';
@@ -111,14 +159,7 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
 
-        $s_env = $data['server']['slave'][$slave['id_mysql_server']]['environment'];
-
-        echo '<span data-toggle="tooltip" data-placement="right" title="'.$s_env.'" class="label label-'.$data['server']['slave'][$slave['id_mysql_server']]['class'].'">'
-        .substr($s_env, 0, 1).'</span> ';
-        //echo $data['server']['slave'][]['display_name'];
-        //        echo $slave['id_mysql_server'];
-        echo '<a href="">'.$data['info_server'][$slave['id_mysql_server']]['']['hostname'].'</a>';
-        echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
+        echo Display::srv($slave['id_mysql_server'], true, LINK.'MysqlServer/main/'.$slave['id_mysql_server'].'/');
         echo '</td>';
 
         echo '<td>';
@@ -227,4 +268,3 @@ foreach ($data['slave'] as $slaves) {
 }
 
 echo '</table>';
-

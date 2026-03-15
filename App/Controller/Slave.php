@@ -9,6 +9,7 @@ use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Mysql;
 use App\Library\Debug;
+use App\Controller\Tunnel;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
 use \App\Library\DryRun;
@@ -104,6 +105,8 @@ class Slave extends Controller
             $data['server']['slave'][$arr['id']]                   = $arr;
         }
 
+        $data['tunnel_details'] = $this->getTunnelDetails();
+
         /*
           $res2 = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
           $slaves = array();
@@ -122,10 +125,63 @@ class Slave extends Controller
                 $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]             = $slave;
                 $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]['id_graph'] = $slave['id_mysql_server'].crc32($slave['connection_name']);
                 $data['server']['idgraph'][$slave['id_mysql_server']][$slave['connection_name']] = $slave['id_mysql_server'].crc32($slave['connection_name']);
+
+                $this->hydrateMasterFromAliasDns($data, $slave);
             }
         }
 
         $this->set('data', $data);
+    }
+
+    private function getTunnelDetails(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT local_host, local_port, remote_host, remote_port, servers_jump
+                FROM ssh_tunnel
+                WHERE date_end IS NULL";
+
+        $res = $db->sql_query($sql);
+        $details = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $local = trim((string)$row['local_host']).':'.(int)$row['local_port'];
+            $remote = trim((string)$row['remote_host']).':'.(int)$row['remote_port'];
+            $jumps = json_decode((string)$row['servers_jump'], true);
+
+            if (!is_array($jumps)) {
+                $jumps = [];
+            }
+
+            $hops = [$local];
+
+            foreach ($jumps as $jump) {
+                if (!is_array($jump)) {
+                    continue;
+                }
+
+                $jumpHost = trim((string)($jump['ip'] ?? $jump['host'] ?? $jump['remote_host'] ?? ''));
+                $jumpPort = (int)($jump['port'] ?? 22);
+
+                if ($jumpHost === '') {
+                    continue;
+                }
+
+                $hops[] = $jumpHost.':'.$jumpPort;
+            }
+
+            if (empty($hops) || end($hops) !== $remote) {
+                $hops[] = $remote;
+            }
+
+            $details[$local] = [
+                'local' => $local,
+                'remote' => $remote,
+                'hops' => $hops,
+            ];
+        }
+
+        return $details;
     }
 
 /**
@@ -444,6 +500,8 @@ if (!empty($_GET['mysql_server']['id'])) {
 
         foreach ($data['slave'] as $id_mysql_server => $slaves) {
             foreach ($slaves as $connect_name => $slave) {
+                $this->hydrateMasterFromAliasDns($data, $slave);
+
                 if ($slave['slave_sql_running'] !== "Yes" || $slave['slave_io_running'] !== "Yes" || $slave['seconds_behind_master'] !== "0"
                 ) {
                     $export = array();
@@ -477,6 +535,26 @@ if (!empty($_GET['mysql_server']['id'])) {
 
         $this->set('data', $data);
 //debug($data['box']);
+    }
+
+    private function hydrateMasterFromAliasDns(array &$data, array $slave): void
+    {
+        if (empty($slave['master_host']) || empty($slave['master_port'])) {
+            return;
+        }
+
+        $masterKey = $slave['master_host'].':'.$slave['master_port'];
+
+        if (!empty($data['server']['master'][$masterKey])) {
+            return;
+        }
+
+        $id_mysql_server = Mysql::getIdFromDns($masterKey);
+        if (empty($id_mysql_server) || empty($data['server']['master'][$id_mysql_server])) {
+            return;
+        }
+
+        $data['server']['master'][$masterKey] = $data['server']['master'][$id_mysql_server];
     }
 
 /**
@@ -1602,4 +1680,3 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 
 }
-

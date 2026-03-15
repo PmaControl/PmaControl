@@ -40,6 +40,87 @@ echo "<title>".strip_tags($GLIALE_TITLE)." - ".SITE_NAME." ".SITE_VERSION."</tit
 
 
 <link href="<?= CSS ?>font-awesome.min.css" rel="stylesheet">
+<style>
+.pmacontrol-info-bubble {
+    position: fixed;
+    z-index: 99999;
+    max-width: 480px;
+    padding: 6px 10px;
+    background: rgba(20, 20, 20, 0.96);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    display: none;
+    white-space: nowrap;
+}
+</style>
+<script>
+(function () {
+    if (window.__pmacontrolInfoBubbleLoaded) {
+        return;
+    }
+    window.__pmacontrolInfoBubbleLoaded = true;
+
+    function ensureBubble() {
+        var bubble = document.querySelector(".pmacontrol-info-bubble");
+        if (bubble) {
+            return bubble;
+        }
+
+        bubble = document.createElement("div");
+        bubble.className = "pmacontrol-info-bubble";
+        document.body.appendChild(bubble);
+        return bubble;
+    }
+
+    function hideBubble() {
+        var bubble = document.querySelector(".pmacontrol-info-bubble");
+        if (bubble) {
+            bubble.style.display = "none";
+        }
+    }
+
+    document.addEventListener("mouseover", function (event) {
+        var target = event.target.closest("[data-info]");
+        if (!target) {
+            hideBubble();
+            return;
+        }
+
+        var info = target.getAttribute("data-info") || "";
+        if (!info) {
+            hideBubble();
+            return;
+        }
+
+        var bubble = ensureBubble();
+        bubble.textContent = info;
+        bubble.style.display = "block";
+        bubble.style.left = (event.clientX + 14) + "px";
+        bubble.style.top = (event.clientY + 14) + "px";
+    });
+
+    document.addEventListener("mousemove", function (event) {
+        var bubble = document.querySelector(".pmacontrol-info-bubble");
+        if (!bubble || bubble.style.display !== "block") {
+            return;
+        }
+
+        bubble.style.left = (event.clientX + 14) + "px";
+        bubble.style.top = (event.clientY + 14) + "px";
+    });
+
+    document.addEventListener("mouseout", function (event) {
+        if (!event.target.closest("[data-info]")) {
+            return;
+        }
+        hideBubble();
+    });
+})();
+</script>
 </head>
 <body>
 
