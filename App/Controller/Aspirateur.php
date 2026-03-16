@@ -5,6 +5,7 @@ namespace App\Controller;
 use Exception;
 use App\Controller\ProxySQL;
 use App\Controller\MaxScale;
+use App\Controller\MysqlRouter;
 use App\Library\Available;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
@@ -2640,7 +2641,7 @@ GROUP BY C.ID, C.INFO;";
      */
     public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
     {
-        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale', 'maxscale_service'))) {
+        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale', 'maxscale_service', 'mysqlrouter'))) {
             die('error');
         }
 
@@ -4469,6 +4470,117 @@ GROUP BY C.ID, C.INFO;";
             }
         }
         
+        $db->sql_close();
+    }
+
+    public function tryMysqlRouterConnection($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        $list_id_mysql_server = $param[0];
+        $id_mysql_servers = explode(',', $list_id_mysql_server);
+        $id_mysqlrouter_server = $param[1];
+
+        if (empty($id_mysqlrouter_server)) {
+            throw new Exception(__function__ . ' should have id_mysqlrouter_server in parameter');
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `hostname`, `is_ssl`, `port`, `login`, `password` FROM mysqlrouter_server WHERE `id` = " . (int) $id_mysqlrouter_server;
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) == 0) {
+            throw new Exception("[PMACONTROL-2001] No MySQL Router server found with id '{$id_mysqlrouter_server}'. Check configuration or connection settings.");
+        }
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $mysqlrouter = $arr;
+        }
+
+        try {
+            $error_msg = '';
+            $time_start = microtime(true);
+
+            set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+                throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            });
+
+            $connection = fsockopen($mysqlrouter[0], $mysqlrouter[2], $errno, $errstr, 3);
+            if ($connection) {
+                fclose($connection);
+            }
+        } catch (\Throwable $e) {
+            $error_msg = $e->getMessage();
+            $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_mysqlrouter_server:$id_mysqlrouter_server");
+        } finally {
+            restore_error_handler();
+
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+            $matchReport = MysqlRouter::getMysqlServerMatches([(int) $id_mysqlrouter_server]);
+            $resolvedMysqlServerIds = $matchReport['matched_ids'] ?? [];
+
+            if (!empty($this->logger)) {
+                foreach (($matchReport['listeners'] ?? []) as $listenerReport) {
+                    $endpoint = $listenerReport['endpoint'] ?? 'n/a';
+                    $matchedIds = implode(',', $listenerReport['matched_ids'] ?? []);
+                    $reason = $listenerReport['reason'] ?? 'n/a';
+
+                    if ($matchedIds === '') {
+                        $this->logger->warning("[MYSQLROUTER-MATCH] listener=" . $endpoint . " matched_ids=none reason=" . $reason . " id_mysqlrouter_server=" . $id_mysqlrouter_server);
+                        continue;
+                    }
+
+                    $this->logger->info("[MYSQLROUTER-MATCH] listener=" . $endpoint . " matched_ids=" . $matchedIds . " reason=" . $reason . " id_mysqlrouter_server=" . $id_mysqlrouter_server);
+                }
+            }
+
+            $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
+
+            foreach ($id_mysql_servers as $id_mysql_server) {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysqlrouter');
+            }
+
+            if (empty($available)) {
+                return false;
+            }
+        }
+
+        try {
+            $config = [
+                'hostname' => $mysqlrouter[0],
+                'is_ssl' => $mysqlrouter[1],
+                'port' => $mysqlrouter[2],
+                'login' => $mysqlrouter[3],
+                'password' => $mysqlrouter[4],
+            ];
+
+            $routeDefinitions = MysqlRouter::fetchRouteDefinitions($config);
+            $routesPayload = ['mysqlrouter' => ['mysqlrouter_routes' => json_encode(['items' => $routeDefinitions])]];
+
+            foreach ($id_mysql_servers as $id_mysql_server) {
+                $this->exportData($id_mysql_server, 'mysqlrouter_routes', $routesPayload);
+            }
+
+            $metadataNames = MysqlRouter::fetchMetadataNames($config);
+            foreach ($metadataNames as $metadataName) {
+                $metadataConfig = MysqlRouter::curl([$config['hostname'], $config['is_ssl'], $config['port'], $config['login'], $config['password'], 'metadata/' . $metadataName . '/config']);
+                $metadataStatus = MysqlRouter::curl([$config['hostname'], $config['is_ssl'], $config['port'], $config['login'], $config['password'], 'metadata/' . $metadataName . '/status']);
+
+                $metadataConfigPayload = ['mysqlrouter' => ['mysqlrouter_metadata_config' => json_encode([$metadataName => $metadataConfig])]];
+                $metadataStatusPayload = ['mysqlrouter' => ['mysqlrouter_metadata_status' => json_encode([$metadataName => $metadataStatus])]];
+
+                foreach ($id_mysql_servers as $id_mysql_server) {
+                    $this->exportData($id_mysql_server, 'mysqlrouter_metadata_config', $metadataConfigPayload);
+                    $this->exportData($id_mysql_server, 'mysqlrouter_metadata_status', $metadataStatusPayload);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning($e->getMessage() . " id_mysqlrouter_server:$id_mysqlrouter_server");
+        }
+
         $db->sql_close();
     }
 
