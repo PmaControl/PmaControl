@@ -3323,6 +3323,142 @@ class MysqlServer extends Controller
 
     }
 
+    public function runDetail($param)
+    {
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $dateToken = (string) ($param[1] ?? '');
+        $date = '';
+
+        if ($id_mysql_server <= 0) {
+            throw new \Exception("Missing id_mysql_server");
+        }
+
+        if (preg_match('/^\d{14}$/', $dateToken)) {
+            $date = substr($dateToken, 0, 4) . '-'
+                . substr($dateToken, 4, 2) . '-'
+                . substr($dateToken, 6, 2) . ' '
+                . substr($dateToken, 8, 2) . ':'
+                . substr($dateToken, 10, 2) . ':'
+                . substr($dateToken, 12, 2);
+        } elseif (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', urldecode($dateToken))) {
+            $date = urldecode($dateToken);
+        }
+
+        if ($date === '') {
+            throw new \Exception("Invalid date format");
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $escapedDate = $db->sql_real_escape_string($date);
+
+        $sqlServer = "SELECT id, display_name, name, ip, port
+            FROM mysql_server
+            WHERE id = " . $id_mysql_server . " LIMIT 1";
+        $resServer = $db->sql_query($sqlServer);
+        $server = $db->sql_fetch_array($resServer, MYSQLI_ASSOC);
+
+        if (empty($server)) {
+            throw new \Exception("Unknown mysql server");
+        }
+
+        $sqlFiles = "SELECT f.file_name
+            FROM ts_date_by_server a
+            INNER JOIN ts_file f ON f.id = a.id_ts_file
+            WHERE a.id_mysql_server = " . $id_mysql_server . "
+              AND a.date = '" . $escapedDate . "'
+            ORDER BY f.file_name";
+        $resFiles = $db->sql_query($sqlFiles);
+        $files = [];
+        while ($row = $db->sql_fetch_array($resFiles, MYSQLI_ASSOC)) {
+            $files[] = $row['file_name'];
+        }
+
+        $queries = [];
+        $definitions = [
+            ['general', 'int', ''],
+            ['general', 'double', ''],
+            ['general', 'text', ''],
+            ['general', 'json', ''],
+            ['slave', 'int', 'a.connection_name'],
+            ['slave', 'double', 'a.connection_name'],
+            ['slave', 'text', 'a.connection_name'],
+            ['slave', 'json', 'a.connection_name'],
+            ['digest', 'int', 'CAST(a.id_ts_mysql_query AS CHAR)'],
+            ['digest', 'double', 'CAST(a.id_ts_mysql_query AS CHAR)'],
+            ['digest', 'text', 'CAST(a.id_ts_mysql_query AS CHAR)'],
+            ['digest', 'json', 'CAST(a.id_ts_mysql_query AS CHAR)'],
+        ];
+
+        foreach ($definitions as $definition) {
+            [$scopeType, $metricType, $scopeExpr] = $definition;
+
+            $table = "ts_value_" . $scopeType . "_" . $metricType;
+            $scopeSql = $scopeExpr === '' ? "''" : $scopeExpr;
+            $digestJoin = $scopeType === 'digest'
+                ? "LEFT JOIN ts_mysql_query q ON q.id = a.id_ts_mysql_query"
+                : "";
+            $digestTextSql = $scopeType === 'digest'
+                ? "q.digest_text"
+                : "''";
+
+            $queries[] = "
+                SELECT
+                    '" . $scopeType . "' AS scope_type,
+                    '" . strtoupper($metricType) . "' AS metric_type,
+                    " . $scopeSql . " AS scope_name,
+                    a.id_ts_variable,
+                    f.file_name,
+                    v.name AS metric_name,
+                    v.`from` AS metric_source,
+                    v.radical,
+                    a.`date`,
+                    CAST(a.`value` AS CHAR) AS metric_value,
+                    " . $digestTextSql . " AS digest_text
+                FROM " . $table . " a
+                INNER JOIN ts_variable v ON v.id = a.id_ts_variable
+                INNER JOIN ts_file f ON f.id = v.id_ts_file
+                " . $digestJoin . "
+                WHERE a.id_mysql_server = " . $id_mysql_server . "
+                  AND a.`date` = '" . $escapedDate . "'
+            ";
+        }
+
+        $sqlMetrics = implode("\nUNION ALL\n", $queries) . "\nORDER BY scope_type, scope_name, file_name, metric_name";
+        $resMetrics = $db->sql_query($sqlMetrics);
+
+        $sections = [];
+        $totalMetrics = 0;
+        while ($row = $db->sql_fetch_array($resMetrics, MYSQLI_ASSOC)) {
+            $scopeType = $row['scope_type'];
+            $scopeName = trim((string) ($row['scope_name'] ?? ''));
+
+            if ($scopeType === 'general') {
+                $groupKey = 'General';
+                $subgroupKey = (string) $row['file_name'];
+            } elseif ($scopeType === 'slave') {
+                $groupKey = 'Slave';
+                $subgroupKey = $scopeName !== '' ? $scopeName : 'default';
+            } else {
+                $groupKey = 'Digest';
+                $subgroupKey = $scopeName !== '' ? ('query #' . $scopeName) : 'query';
+            }
+
+            $sections[$groupKey][$subgroupKey][] = $row;
+            $totalMetrics++;
+        }
+
+        $data = [
+            'server' => $server,
+            'date' => $date,
+            'files' => $files,
+            'sections' => $sections,
+            'total_metrics' => $totalMetrics,
+        ];
+
+        $this->set('data', $data);
+        $this->set('title', 'Run Detail ' . $server['display_name'] . ' @ ' . $date);
+    }
+
 
     
 /**

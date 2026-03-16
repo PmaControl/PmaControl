@@ -14,6 +14,9 @@ FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_se
   <?php
 
 $node = FactoryController::getRootNode();
+$serverId = (int) ($param[0] ?? 0);
+$routeExtra = isset($param[1]) && $param[1] !== '' ? '/'.$param[1] : '';
+$runDateLabel = (string) ($param[2] ?? '');
 
 $menu= array();
 $menu['MysqlServer']['main'] = __('Info');
@@ -27,17 +30,20 @@ foreach($menu as $controller => $views)
 {
   foreach($views as $view => $title)
   {
-    if (($node[0] === "$controller" && $node[1] === "$view") || strtolower($node[0]) == strtolower($view)){
+    if (($node[0] === "$controller" && $node[1] === "$view") || strtolower($node[0]) == strtolower($view) || ($node[0] === 'MysqlServer' && $node[1] === 'runDetail' && $controller === 'MysqlServer' && $view === 'main')){
       $active ='active';
     }
     else{
       $active ='';
     }
-    echo '<a href="'.LINK.$controller.'/'.$view.'/'.$param[0].'/'.$param[1].'/" type="button" class="btn btn-primary '.$active.'">'.$title.'</a>'."\n";
+    echo '<a href="'.LINK.$controller.'/'.$view.'/'.$serverId.$routeExtra.'/" type="button" class="btn btn-primary '.$active.'">'.$title.'</a>'."\n";
   }
+}
+
+if ($node[0] === 'MysqlServer' && $node[1] === 'runDetail' && $runDateLabel !== '') {
+  echo '<a href="#" type="button" class="btn btn-default active">'.__('Run').' '.htmlspecialchars($runDateLabel, ENT_QUOTES, 'UTF-8').'</a>'."\n";
 }
 
 ?>
 
 </div>
-

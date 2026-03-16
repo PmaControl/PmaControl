@@ -30,6 +30,18 @@ function age_color($date) {
     if ($seconds < 3600) return 'label-warning';
     return 'label-danger';
 }
+
+function render_run_detail_link($id_mysql_server, $date) {
+    if (empty($date)) {
+        return '';
+    }
+
+    $safeDateToken = preg_replace('/[^0-9]/', '', (string) $date);
+    $url = LINK . 'MysqlServer/runDetail/' . (int) $id_mysql_server . '/' . $safeDateToken;
+    $escapedDate = htmlspecialchars((string) $date, ENT_QUOTES, 'UTF-8');
+
+    return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . $escapedDate . '</a>';
+}
 ?>
 
 <table class="table table-condensed table-bordered table-striped">
@@ -64,27 +76,27 @@ function age_color($date) {
             <?= human_time_diff_dec($row['date']); ?>
         </span>
     </td>
-  <td><?= $row['date'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date']) ?>
       <small class="text-muted">(<?= $row['diff_date'] ?>)</small>
   </td>
 
-  <td><?= $row['date_p1'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p1']) ?>
       <small class="text-muted">(<?= $row['diff_date_p1'] ?>)</small>
   </td>
 
-  <td><?= $row['date_p2'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p2']) ?>
       <small class="text-muted">(<?= $row['diff_date_p2'] ?>)</small>
   </td>
 
-  <td><?= $row['date_p3'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p3']) ?>
       <small class="text-muted">(<?= $row['diff_date_p3'] ?>)</small>
   </td>
 
-  <td><?= $row['date_p4'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p4']) ?>
       <small class="text-muted">(<?= $row['diff_date_p4'] ?>)</small>
   </td>
 
-  <td><?= $row['last_date_listener'] ?>
+  <td><?= render_run_detail_link($id_mysql_server, $row['last_date_listener']) ?>
       <small class="text-muted">(<?= $row['diff_last_listener'] ?>)</small>
   </td>
 
