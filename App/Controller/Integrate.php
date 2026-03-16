@@ -36,6 +36,9 @@ use \Monolog\Handler\StreamHandler;
  */
 class Integrate extends Controller
 {
+    private const MAX_UNSIGNED_BIGINT = '18446744073709551615';
+    private array $mysqlServerDisplayCache = [];
+
     use \App\Library\Filter;
     const MAX_FILE_AT_ONCE = 10;
     //advice *2 of or result from select count(1) from ts_file;
@@ -241,6 +244,91 @@ class Integrate extends Controller
         }
 
         return $variables;
+    }
+
+    private function getMysqlServerDisplayName(int $idMysqlServer): string
+    {
+        if (isset($this->mysqlServerDisplayCache[$idMysqlServer])) {
+            return $this->mysqlServerDisplayCache[$idMysqlServer];
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT display_name FROM mysql_server WHERE id = " . $idMysqlServer . " LIMIT 1";
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $this->mysqlServerDisplayCache[$idMysqlServer] = $row['display_name'] ?? ('id:' . $idMysqlServer);
+
+        return $this->mysqlServerDisplayCache[$idMysqlServer];
+    }
+
+    private function isGreaterThanUnsignedBigint(string $value): bool
+    {
+        $value = ltrim($value, '0');
+        if ($value === '') {
+            return false;
+        }
+
+        $max = self::MAX_UNSIGNED_BIGINT;
+
+        if (strlen($value) !== strlen($max)) {
+            return strlen($value) > strlen($max);
+        }
+
+        return strcmp($value, $max) > 0;
+    }
+
+    private function getUnsignedBigintOverflowFactor(string $value): string
+    {
+        $normalized = ltrim($value, '0');
+        if ($normalized === '') {
+            return '0.00x';
+        }
+
+        $toScientificFloat = static function (string $number): float {
+            $number = ltrim($number, '0');
+            if ($number === '') {
+                return 0.0;
+            }
+
+            $scale = min(15, strlen($number));
+            $mantissa = (float) substr($number, 0, $scale);
+            $exponent = strlen($number) - $scale;
+
+            return $mantissa * (10 ** $exponent);
+        };
+
+        $valueFloat = $toScientificFloat($normalized);
+        $maxFloat = $toScientificFloat(self::MAX_UNSIGNED_BIGINT);
+
+        if ($maxFloat <= 0.0) {
+            return 'n/a';
+        }
+
+        return number_format($valueFloat / $maxFloat, 2, '.', '') . 'x';
+    }
+
+    private function clampUnsignedBigintOverflow($value, int $idMysqlServer, string $metricName, string $date)
+    {
+        $valueAsString = trim((string) $value);
+
+        if ($valueAsString === '' || strtoupper($valueAsString) === 'NULL' || !preg_match('/^[0-9]+$/', $valueAsString)) {
+            return $value;
+        }
+
+        if (! $this->isGreaterThanUnsignedBigint($valueAsString)) {
+            return $valueAsString;
+        }
+
+        $server = $this->getMysqlServerDisplayName($idMysqlServer);
+        $overflowFactor = $this->getUnsignedBigintOverflowFactor($valueAsString);
+        $this->logger->warning(
+            "[PMACONTROL-OVERFLOW] server_id={$idMysqlServer} server={$server} metric={$metricName} original_value={$valueAsString} clamped_value="
+            . self::MAX_UNSIGNED_BIGINT
+            . " overflow_factor={$overflowFactor} reason=out_of_range_for_unsigned_bigint date={$date}"
+        );
+
+        return self::MAX_UNSIGNED_BIGINT;
     }
 
 /**
@@ -932,6 +1020,14 @@ public function integrateAll($param)
                                                     } else {
                                                         if ($slave_value == "") $slave_value = 'NULL';
                                                         if ($varType == "DOUBLE" && $slave_value === "") $slave_value = 0;
+                                                        if ($varType === "INT") {
+                                                            $slave_value = $this->clampUnsignedBigintOverflow(
+                                                                $slave_value,
+                                                                (int) $id_server,
+                                                                (string) $slave_variable,
+                                                                (string) $date
+                                                            );
+                                                        }
                                                         $slave[$varType][] = '(' . $id_server . ','
                                                             . '"' . $connection_name . '", '
                                                             . $variables[$type_metrics][$slave_variable]['id'] . ', "'
@@ -982,6 +1078,14 @@ public function integrateAll($param)
                                                     } else {
                                                         if ($digest_value === "") $digest_value = 'NULL';
                                                         if ($varType == "DOUBLE" && $digest_value === "") $digest_value = 0;
+                                                        if ($varType === "INT") {
+                                                            $digest_value = $this->clampUnsignedBigintOverflow(
+                                                                $digest_value,
+                                                                (int) $id_server,
+                                                                (string) $digest_variable,
+                                                                (string) $date
+                                                            );
+                                                        }
                                                         $digest_insert[$varType][] = '(' . $id_server . ','
                                                             . '"' . $id_ts_mysql_query . '", '
                                                             . $variables[$type_metrics][$digest_variable]['id'] . ', "'
@@ -1013,6 +1117,15 @@ public function integrateAll($param)
                                                     if ($value === "") {
                                                         $value = 0;
                                                     }
+                                                }
+
+                                                if ($variables[$type_metrics][$variable]['type'] === 'INT') {
+                                                    $value = $this->clampUnsignedBigintOverflow(
+                                                        $value,
+                                                        (int) $id_server,
+                                                        (string) $variable,
+                                                        (string) $date
+                                                    );
                                                 }
 
                                                 $insert[$variables[$type_metrics][$variable]['type']][] = '(' . $id_server . ','
