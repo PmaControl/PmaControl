@@ -65,4 +65,3 @@ if (!empty($data['graphs'])
         echo '<div style="float:right;">'.__("Date de rafraichissement :", "fr")." ".$date['date'][0]."</div>";
     }
 }
-

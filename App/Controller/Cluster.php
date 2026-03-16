@@ -10,6 +10,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
 use \App\Library\Debug;
+use App\Library\Graphviz;
 
 /**
  * Class responsible for cluster workflows.
@@ -27,6 +28,41 @@ use \App\Library\Debug;
  */
 class Cluster extends Controller
 {
+
+    private static function formatDotSource(string $dot): string
+    {
+        $lines = preg_split('/\R/', $dot) ?: [];
+        $formatted = [];
+        $indentLevel = 0;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                if (!empty($formatted) && end($formatted) !== '') {
+                    $formatted[] = '';
+                }
+                continue;
+            }
+
+            $prefixClosers = 0;
+            while (isset($trimmed[$prefixClosers]) && $trimmed[$prefixClosers] === '}') {
+                $prefixClosers++;
+            }
+
+            if ($prefixClosers > 0) {
+                $indentLevel = max(0, $indentLevel - $prefixClosers);
+            }
+
+            $formatted[] = str_repeat('    ', $indentLevel) . $trimmed;
+
+            $opens = substr_count($trimmed, '{');
+            $closes = substr_count($trimmed, '}');
+            $indentLevel += max(0, $opens - $closes + $prefixClosers);
+        }
+
+        return trim(implode(PHP_EOL, $formatted)) . PHP_EOL;
+    }
 
 /**
  * Stores `$logger` for logger.
@@ -162,6 +198,66 @@ class Cluster extends Controller
         $this->set('param', $param);
     }
 
+    public function viewDot($param)
+    {
+        $id_mysql_server = (int) ($param[0] ?? 0);
+
+        if ($id_mysql_server <= 0) {
+            header("location: " . LINK . "Cluster/svg/1/");
+            exit;
+        }
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT, "SVG");
+        $sub_query = "select max(z.id) from dot3_cluster__mysql_server z where z.id_mysql_server=".$id_mysql_server;
+        $sql = "SELECT c.dot, c.svg, c.filename, c.md5, b.date_inserted
+                FROM dot3_cluster__mysql_server a
+                INNER JOIN dot3_cluster b ON a.id_dot3_cluster = b.id
+                INNER JOIN dot3_graph c ON b.id_dot3_graph = c.id
+                WHERE a.id_mysql_server = ".$id_mysql_server." AND a.id in (".$sub_query.")
+                LIMIT 1;";
+
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if (empty($row)) {
+            throw new \Exception("No DOT graph found for this server");
+        }
+
+        $sourceDot = (string) ($row['dot'] ?? '');
+        $previewSvg = (string) ($row['svg'] ?? '');
+        $renderError = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dot_preview']['dot'])) {
+            $sourceDot = (string) $_POST['dot_preview']['dot'];
+            $reference = 'view-dot-' . md5($sourceDot);
+            $generatedFile = Graphviz::generateDot($reference, $sourceDot);
+            $renderedSvg = @file_get_contents($generatedFile);
+
+            if ($renderedSvg === false || stripos(ltrim((string) $renderedSvg), '<svg') !== 0) {
+                $renderError = __('Unable to render DOT as SVG.');
+            } else {
+                $previewSvg = $renderedSvg;
+            }
+        }
+
+        $data = [
+            'param' => [$id_mysql_server],
+            'id_mysql_server' => $id_mysql_server,
+            'date_inserted' => $row['date_inserted'] ?? '',
+            'filename' => $row['filename'] ?? '',
+            'md5' => $row['md5'] ?? '',
+            'dot' => self::formatDotSource($sourceDot),
+            'dot_length' => strlen($sourceDot),
+            'svg' => $previewSvg,
+            'render_error' => $renderError,
+        ];
+
+        $this->set('data', $data);
+        $this->set('param', [$id_mysql_server]);
+    }
+
     /*
 
     Enterprise
@@ -293,4 +389,3 @@ class Cluster extends Controller
         $this->set('data', $data);
    }
 }
-

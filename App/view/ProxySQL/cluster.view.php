@@ -2,8 +2,6 @@
 
 use \Glial\Synapse\FactoryController;
 
-
-
 if (empty($_GET['ajax'])) {
     FactoryController::addNode("ProxySQL", "menu", $data['param']);
     echo "<br />";

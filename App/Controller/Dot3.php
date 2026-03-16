@@ -304,6 +304,7 @@ class Dot3 extends Controller
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
+                "mysqlrouter::mysqlrouter_routes", "mysqlrouter::mysqlrouter_metadata_config", "mysqlrouter::mysqlrouter_metadata_status",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
                 "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
                 "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress", 
@@ -871,6 +872,9 @@ class Dot3 extends Controller
         
         foreach($information['servers'] as $id_mysql_server => $server)
         {
+            if (self::isMysqlRouterNode($server)) {
+                continue;
+            }
             
             if ( empty($server['is_maxscale']) ) {
                 continue;
@@ -1110,10 +1114,23 @@ class Dot3 extends Controller
 
             $width= $images[0];
             $height= $images[1];
+            $svgPayload = file_get_contents($file_name);
+
+            if ($svgPayload === false || $svgPayload === '') {
+                $this->logger->emergency('[DOT3-SVG-EMPTY] Graphviz returned an empty payload for a supposed SVG file: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+                $svgPayload = '';
+            } elseif (strncmp($svgPayload, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                $this->logger->emergency('[DOT3-SVG-PNG-MISMATCH] PNG binary detected in SVG pipeline: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+            } elseif (stripos(ltrim($svgPayload), '<svg') !== 0) {
+                $this->logger->emergency('[DOT3-SVG-INVALID] Non-SVG payload detected in SVG pipeline: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+            }
 
             $dot3_graph['dot3_graph']['filename'] = $file_name;
             $dot3_graph['dot3_graph']['dot'] = $dot;
-            $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
+            $dot3_graph['dot3_graph']['svg'] = $svgPayload;
             $dot3_graph['dot3_graph']['md5'] = $md5;
             $dot3_graph['dot3_graph']['width'] = $width;
             $dot3_graph['dot3_graph']['height'] = $height;
@@ -3016,6 +3033,10 @@ class Dot3 extends Controller
 
         foreach(self::$build_server as $id_mysql_server => $server)
         {
+            if (self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
             if (empty($server['is_maxscale']))
             {
                 continue;
@@ -4135,6 +4156,55 @@ class Dot3 extends Controller
         return $resolved;
     }
 
+    public static function isMysqlRouterNode(array $server): bool
+    {
+        if (!empty($server['is_proxysql']) && (string) $server['is_proxysql'] === '1') {
+            return false;
+        }
+
+        foreach (['mysqlrouter_routes', 'mysqlrouter_metadata_config', 'mysqlrouter_metadata_status'] as $field) {
+            if (!empty($server[$field])) {
+                return true;
+            }
+        }
+
+        foreach (['port', 'port_real', 'virtual_port'] as $portField) {
+            $port = (int) ($server[$portField] ?? 0);
+            if (in_array($port, [6446, 6447, 6450, 64460, 64470], true)) {
+                return true;
+            }
+        }
+
+        $labels = [
+            (string) ($server['display_name'] ?? ''),
+            (string) ($server['name'] ?? ''),
+            (string) ($server['hostname'] ?? ''),
+            (string) ($server['version_comment'] ?? ''),
+            (string) ($server['comment'] ?? ''),
+        ];
+
+        $haystack = strtolower(implode(' ', $labels));
+        if (str_contains($haystack, 'mysql router') || str_contains($haystack, 'mysqlrouter')) {
+            return true;
+        }
+
+        if (preg_match('/(^|[^a-z])router([^a-z]|$)/', $haystack) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function decodeMysqlRouterJson(array $server, string $field): array
+    {
+        if (empty($server[$field]) || !is_string($server[$field])) {
+            return [];
+        }
+
+        $decoded = json_decode($server[$field], true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
 /**
  * Handle dot3 state through `splitAddressPort`.
  *
@@ -4395,4 +4465,3 @@ class Dot3 extends Controller
         // Logique de création de l'arbitre
     }
 }
-

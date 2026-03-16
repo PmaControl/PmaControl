@@ -2,6 +2,7 @@
 
 use \Glial\Synapse\FactoryController;
 use phpseclib3\File\ASN1\Maps\ExtKeyUsageSyntax;
+
 if (empty($_GET['ajax'])){
 
         ?>
@@ -28,6 +29,9 @@ if (empty($_GET['ajax'])){
                 <h3 class="panel-title">
 
                     <?= __("Cluster") ?>
+                    <a style="float:right; margin-left:8px;" href="<?= LINK ?>Cluster/viewDot/<?= (int) ($param[0] ?? 0) ?>/" class="btn btn-default btn-xs" role="button">
+                        View DOT
+                    </a>
                     </h3>
             </div>
             <div class="mpd">

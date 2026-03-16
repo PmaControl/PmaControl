@@ -877,6 +877,11 @@ class Graphviz
             $image_logo = 'maxscale.png';            
         }
 
+        if (Dot3::isMysqlRouterNode($server)) {
+            $image_logo = 'router.svg';
+            $version_label = 'MySQL Router';
+        }
+
 
         if (!empty($server['wsrep_on']) && strtolower((string)$server['wsrep_on']) == "on" ) {
             //$image_logo = 'galera.svg';
@@ -1022,14 +1027,15 @@ class Graphviz
                     }
 
                     $read_only = strtolower((string)($server['read_only'] ?? ''));
-                    if ($read_only === "on")
+                    if ($read_only === "on" || $read_only === "1")
                     {
-                        //$server['read_only'] = '🅞🅝';
                         $server['read_only'] = '✅ ON';
-
                     }
-
-                    if (empty($server['read_only'])) {
+                    elseif ($read_only === "off" || $read_only === "0")
+                    {
+                        $server['read_only'] = '❌ OFF';
+                    }
+                    else {
                         $server['read_only'] = 'N/A';
                     }
 
@@ -1251,6 +1257,75 @@ class Graphviz
 
 
 
+        }elseif (Dot3::isMysqlRouterNode($server))
+        {
+            $background = Dot3::$config['SERVER_CONFIG']['background'];
+            $color = Dot3::$config['SERVER_CONFIG']['color'];
+
+            $routesPayload = Dot3::decodeMysqlRouterJson($server, 'mysqlrouter_routes');
+            $metadataConfig = Dot3::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+            $metadataStatus = Dot3::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_status');
+
+            $routes = $routesPayload['items'] ?? [];
+            $routeCount = count($routes);
+            $metadataCount = count($metadataConfig);
+
+            $return .= '<tr>';
+            $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+            $return .= '<font color="'.$color.'">MySQL Router : '.$routeCount.' route(s) / '.$metadataCount.' metadata cache</font>';
+            $return .= '</td>';
+            $return .= '</tr>'.PHP_EOL;
+
+            if (!empty($routes)) {
+                foreach ($routes as $route) {
+                    $routeName = $route['route'] ?? $route['name'] ?? $route['id'] ?? 'route';
+                    $bindAddress = $route['bindAddress'] ?? $route['bind_address'] ?? '0.0.0.0';
+                    $bindPort = $route['bindPort'] ?? $route['bind_port'] ?? '';
+                    $destinations = $route['destinations_payload']['items'] ?? [];
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="#00B33C" align="left">';
+                    $return .= '<font color="#ffffff">🛣 '.$routeName.' : '.$bindAddress.':'.$bindPort.'</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+
+                    foreach ($destinations as $destination) {
+                        if (is_array($destination)) {
+                            $destinationAddress = $destination['address'] ?? $destination['hostname'] ?? 'n/a';
+                            $destinationPort = $destination['port'] ?? '';
+                        } else {
+                            $destinationAddress = (string) $destination;
+                            $destinationPort = '';
+                        }
+
+                        $return .= '<tr>';
+                        $return .= '<td colspan="2" bgcolor="#EAF7EE" align="left">';
+                        $return .= '<font color="#0f172a">↳ '.$destinationAddress.':'.$destinationPort.'</font>';
+                        $return .= '</td>';
+                        $return .= '</tr>'.PHP_EOL;
+                    }
+                }
+            } else {
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="#FFBF00" align="left">';
+                $return .= '<font color="#000000">MySQL Router routes : no payload collected</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+            }
+
+            if (!empty($metadataConfig)) {
+                foreach ($metadataConfig as $metadataName => $metadata) {
+                    $nodes = $metadata['nodes'] ?? [];
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                    $return .= '<font color="'.$color.'">📦 Metadata : '.$metadataName.' ('.count($nodes).' node(s))</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+            }
+
+            $return .= '</table>';
+            $return .= '</td></tr>'.PHP_EOL;
         }elseif ($server['is_maxscale'] == "1")
         {
 
@@ -1837,4 +1912,3 @@ class Graphviz
         return $nouveau_hex;
     }
 }
-
