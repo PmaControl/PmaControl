@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PmaControl - Documentation API</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PmaControl - Documentation API</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#documentation-api-complete-pmacontrol">Documentation API
+Complete PmaControl</a>
+<ul>
+<li><a href="#perimetre">1. Perimetre</a></li>
+<li><a href="#philosophie-de-lapi">2. Philosophie de l’API</a></li>
+<li><a href="#contrat-http">3. Contrat HTTP</a>
+<ul>
+<li><a href="#get">GET</a></li>
+<li><a href="#post">POST</a></li>
+<li><a href="#put-patch">PUT / PATCH</a></li>
+<li><a href="#delete">DELETE</a></li>
+<li><a href="#openapi-like">OpenAPI-like</a></li>
+</ul></li>
+<li><a href="#ressources-et-regles-metier">4. Ressources et regles
+metier</a>
+<ul>
+<li><a href="#tags">4.1 tags</a></li>
+<li><a href="#clients">4.2 clients</a></li>
+<li><a href="#environments">4.3 environments</a></li>
+<li><a href="#aliases">4.4 aliases</a></li>
+<li><a href="#storage-areas">4.5 storage-areas</a></li>
+<li><a href="#servers">4.6 servers</a></li>
+</ul></li>
+<li><a href="#normalisation-des-payloads">5. Normalisation des
+payloads</a></li>
+<li><a href="#exemples-de-payloads">6. Exemples de payloads</a>
+<ul>
+<li><a href="#create-tag">Create tag</a></li>
+<li><a href="#create-client">Create client</a></li>
+<li><a href="#create-environment">Create environment</a></li>
+<li><a href="#create-alias">Create alias</a></li>
+<li><a href="#create-storage-area">Create storage area</a></li>
+<li><a href="#create-server">Create server</a></li>
+</ul></li>
+<li><a href="#erreurs-et-comportements">7. Erreurs et
+comportements</a></li>
+<li><a href="#limites-actuelles">8. Limites actuelles</a></li>
+<li><a href="#evolution-recommandee">9. Evolution recommandee</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="documentation-api-complete-pmacontrol">Documentation API
+Complete PmaControl</h1>
+<h2 id="perimetre">1. Perimetre</h2>
+<p>L’API actuelle de PmaControl est exposee par
+<code>App/Controller/Api.php</code> et cible les ressources de
+configuration modifiables depuis l’interface web. Elle suit le routeur
+historique Glial et herite donc du prefixe langue.</p>
+<p>Base route:</p>
+<ul>
+<li><code>/fr/api/config/{resource}</code></li>
+<li><code>/fr/api/config/{resource}/{id}</code></li>
+<li><code>/fr/api/openApi</code></li>
+</ul>
+<h2 id="philosophie-de-lapi">2. Philosophie de l’API</h2>
+<p>Cette API ne cherche pas encore a couvrir tout le monolithe. Elle se
+concentre sur les ressources de configuration a faible ambiguite
+metier:</p>
+<ul>
+<li>tags</li>
+<li>clients</li>
+<li>environments</li>
+<li>aliases</li>
+<li>storage-areas</li>
+<li>servers</li>
+</ul>
+<p>Le controleur traduit directement les operations CRUD de l’UI legacy,
+avec normalisation des payloads, valeurs par defaut, cast bool/int et
+chiffrement du mot de passe serveur.</p>
+<h2 id="contrat-http">3. Contrat HTTP</h2>
+<h3 id="get">GET</h3>
+<ul>
+<li><code>GET /fr/api/config/{resource}</code>: liste les
+enregistrements</li>
+<li><code>GET /fr/api/config/{resource}/{id}</code>: lit un
+enregistrement</li>
+</ul>
+<h3 id="post">POST</h3>
+<ul>
+<li><code>POST /fr/api/config/{resource}</code>: cree un enregistrement
+a partir d’un JSON</li>
+</ul>
+<h3 id="put-patch">PUT / PATCH</h3>
+<ul>
+<li><code>PUT /fr/api/config/{resource}/{id}</code>: remplace ou met a
+jour l’enregistrement cible</li>
+<li><code>PATCH /fr/api/config/{resource}/{id}</code>: mise a jour
+partielle</li>
+</ul>
+<h3 id="delete">DELETE</h3>
+<ul>
+<li><code>DELETE /fr/api/config/{resource}/{id}</code>: suppression ou
+soft delete selon la ressource</li>
+</ul>
+<h3 id="openapi-like">OpenAPI-like</h3>
+<ul>
+<li><code>GET /fr/api/openApi</code>: retourne un document JSON
+simplifie des paths disponibles</li>
+</ul>
+<h2 id="ressources-et-regles-metier">4. Ressources et regles metier</h2>
+<h3 id="tags">4.1 tags</h3>
+<p>Table: <code>tag</code></p>
+<p>Champs:</p>
+<ul>
+<li><code>id</code></li>
+<li><code>name</code></li>
+<li><code>color</code></li>
+<li><code>background</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li>creation exige <code>name</code>, <code>color</code>,
+<code>background</code></li>
+<li>couleurs par defaut si non precisees lors de certaines creations
+guidees</li>
+<li>suppression hard delete</li>
+</ul>
+<h3 id="clients">4.2 clients</h3>
+<p>Table: <code>client</code></p>
+<p>Champs:</p>
+<ul>
+<li><code>id</code></li>
+<li><code>libelle</code></li>
+<li><code>logo</code></li>
+<li><code>date</code></li>
+<li><code>is_monitored</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li><code>libelle</code> est obligatoire a la creation</li>
+<li><code>is_monitored</code> est cast en entier 0/1</li>
+<li><code>date</code> est alimentee a <code>now()</code> cote API</li>
+<li>le client <code>99</code> est protege en suppression</li>
+</ul>
+<h3 id="environments">4.3 environments</h3>
+<p>Table: <code>environment</code></p>
+<p>Champs:</p>
+<ul>
+<li><code>id</code></li>
+<li><code>libelle</code></li>
+<li><code>key</code></li>
+<li><code>class</code></li>
+<li><code>letter</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li>tous les champs fonctionnels sont obligatoires a la creation</li>
+<li>seuls les environnements <code>id &gt; 6</code> sont supprimables
+via l’API</li>
+</ul>
+<h3 id="aliases">4.4 aliases</h3>
+<p>Table: <code>alias_dns</code></p>
+<p>Champs:</p>
+<ul>
+<li><code>id</code></li>
+<li><code>id_mysql_server</code></li>
+<li><code>dns</code></li>
+<li><code>port</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li>creation exige un rattachement serveur, un DNS et un port</li>
+<li>suppression hard delete</li>
+<li>l’API reste une couche de configuration; la resolution intelligente
+continue de vivre dans <code>Alias</code> et
+<code>Aspirateur</code></li>
+</ul>
+<h3 id="storage-areas">4.5 storage-areas</h3>
+<p>Table: <code>backup_storage_area</code></p>
+<p>Champs:</p>
+<ul>
+<li><code>id_ssh_key</code></li>
+<li><code>id_geolocalisation_city</code></li>
+<li><code>id_geolocalisation_country</code></li>
+<li><code>ip</code></li>
+<li><code>port</code></li>
+<li><code>path</code></li>
+<li><code>libelle</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li>port par defaut <code>22</code></li>
+<li>la validation d’atteignabilite SSH metier existe surtout dans le
+controleur web <code>StorageArea</code>; l’API fournit aujourd’hui le
+CRUD structurel</li>
+</ul>
+<h3 id="servers">4.6 servers</h3>
+<p>Table: <code>mysql_server</code></p>
+<p>Champs principaux:</p>
+<ul>
+<li>identite: <code>id_client</code>, <code>id_environment</code>,
+<code>name</code>, <code>display_name</code>, <code>ip</code>,
+<code>hostname</code>, <code>port</code></li>
+<li>acces: <code>login</code>, <code>passwd</code>,
+<code>database</code>, <code>is_ssl</code></li>
+<li>SSH: <code>ssh_nat</code>, <code>ssh_port</code>,
+<code>ssh_login</code>, <code>is_sudo</code>, <code>is_root</code></li>
+<li>exploitation: <code>is_monitored</code>, <code>is_proxy</code>,
+<code>is_vip</code>, <code>is_acknowledged</code></li>
+</ul>
+<p>Regles:</p>
+<ul>
+<li>le mot de passe est chiffre via
+<code>Chiffrement::encrypt</code></li>
+<li><code>port</code>, <code>ssh_port</code> et flags sont castes</li>
+<li><code>hostname</code>, <code>ssh_nat</code>, <code>ssh_login</code>
+ont des valeurs par defaut vides</li>
+<li>suppression par soft delete (<code>is_deleted = 1</code>)</li>
+</ul>
+<h2 id="normalisation-des-payloads">5. Normalisation des payloads</h2>
+<p>Le controleur applique trois transformations centrales:</p>
+<ol type="1">
+<li><strong>defaults</strong>: completent les champs attendus</li>
+<li><strong>casts</strong>: booleens et entiers sont ramenes au format
+BD</li>
+<li><strong>secrets</strong>: <code>passwd</code> est chiffre avant
+persistance</li>
+</ol>
+<p>Cela fait de l’API un point de normalisation plus robuste que
+plusieurs ecrans legacy qui interpolent directement les entrees.</p>
+<h2 id="exemples-de-payloads">6. Exemples de payloads</h2>
+<h3 id="create-tag">Create tag</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;critical&quot;</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;color&quot;</span><span class="fu">:</span> <span class="st">&quot;#ffffff&quot;</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;background&quot;</span><span class="fu">:</span> <span class="st">&quot;#d9534f&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="create-client">Create client</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;libelle&quot;</span><span class="fu">:</span> <span class="st">&quot;ACME&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;logo&quot;</span><span class="fu">:</span> <span class="st">&quot;&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_monitored&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="create-environment">Create environment</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;libelle&quot;</span><span class="fu">:</span> <span class="st">&quot;production&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;key&quot;</span><span class="fu">:</span> <span class="st">&quot;prod&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;class&quot;</span><span class="fu">:</span> <span class="st">&quot;danger&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;letter&quot;</span><span class="fu">:</span> <span class="st">&quot;P&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="create-alias">Create alias</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_mysql_server&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;dns&quot;</span><span class="fu">:</span> <span class="st">&quot;db01.example.net&quot;</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;port&quot;</span><span class="fu">:</span> <span class="dv">3306</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="create-storage-area">Create storage area</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_ssh_key&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_geolocalisation_city&quot;</span><span class="fu">:</span> <span class="dv">10</span><span class="fu">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_geolocalisation_country&quot;</span><span class="fu">:</span> <span class="dv">76</span><span class="fu">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ip&quot;</span><span class="fu">:</span> <span class="st">&quot;10.10.10.10&quot;</span><span class="fu">,</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;port&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;path&quot;</span><span class="fu">:</span> <span class="st">&quot;/var/backups/mysql&quot;</span><span class="fu">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;libelle&quot;</span><span class="fu">:</span> <span class="st">&quot;Primary SFTP vault&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="create-server">Create server</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_client&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id_environment&quot;</span><span class="fu">:</span> <span class="dv">2</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;db-prod-01&quot;</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;display_name&quot;</span><span class="fu">:</span> <span class="st">&quot;db-prod-01&quot;</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ip&quot;</span><span class="fu">:</span> <span class="st">&quot;10.0.0.15&quot;</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;hostname&quot;</span><span class="fu">:</span> <span class="st">&quot;db-prod-01.internal&quot;</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;login&quot;</span><span class="fu">:</span> <span class="st">&quot;root&quot;</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;passwd&quot;</span><span class="fu">:</span> <span class="st">&quot;secret&quot;</span><span class="fu">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;database&quot;</span><span class="fu">:</span> <span class="st">&quot;mysql&quot;</span><span class="fu">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;port&quot;</span><span class="fu">:</span> <span class="dv">3306</span><span class="fu">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_ssl&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ssh_nat&quot;</span><span class="fu">:</span> <span class="st">&quot;&quot;</span><span class="fu">,</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ssh_login&quot;</span><span class="fu">:</span> <span class="st">&quot;&quot;</span><span class="fu">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_sudo&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_root&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_monitored&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_proxy&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_vip&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h2 id="erreurs-et-comportements">7. Erreurs et comportements</h2>
+<ul>
+<li>ressource inconnue -&gt; <code>400</code></li>
+<li>methode non supportee -&gt; <code>405</code></li>
+<li>create/update impossible -&gt; <code>400</code> ou <code>500</code>
+selon l’origine de l’erreur</li>
+<li>identifiant absent sur update/delete -&gt; rejet explicite</li>
+</ul>
+<h2 id="limites-actuelles">8. Limites actuelles</h2>
+<ul>
+<li>couverture API encore partielle vis-a-vis de tout le monolithe</li>
+<li>peu de validation metier profonde sur certaines ressources
+techniques</li>
+<li>absence de couche repository dediee</li>
+<li>politique d’authentification a formaliser pour une exposition plus
+large</li>
+</ul>
+<h2 id="evolution-recommandee">9. Evolution recommandee</h2>
+<ul>
+<li>ajouter auth forte et audit trail</li>
+<li>exposer progressivement backup, tags de topologie et diagnostics
+lectures seule</li>
+<li>versionner l’API</li>
+<li>brancher une validation de schema JSON ou DTO stricts</li>
+<li>separer clairement lecture, ecriture et actions operateur</li>
+</ul>
+</body>
+</html>

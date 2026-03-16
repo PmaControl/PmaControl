@@ -12,3 +12,6 @@ packages.json
 .phpunit.result.cache
 /tmp/*
 !/tmp/.gitkeep
+.venv-pdf/
+.vscode/
+script/__pycache__/

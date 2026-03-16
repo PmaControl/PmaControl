@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PmaControl - Global Variables Non Default id_mysql_server=1</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PmaControl - Global Variables Non Default
+id_mysql_server=1</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a
+href="#variables-global_variable-non-par-defaut-pour-id_mysql_server-1">Variables
+<code>global_variable</code> non par defaut pour
+<code>id_mysql_server = 1</code></a></li>
+</ul>
+</nav>
+<h1
+id="variables-global_variable-non-par-defaut-pour-id_mysql_server-1">Variables
+<code>global_variable</code> non par defaut pour
+<code>id_mysql_server = 1</code></h1>
+<p>Comparaison:</p>
+<ul>
+<li>source instance: <code>pmacontrol.global_variable</code></li>
+<li>reference:
+<code>information_schema.SYSTEM_VARIABLES.DEFAULT_VALUE</code></li>
+<li>filtre principal:
+<code>GLOBAL_VALUE_ORIGIN IN ('CONFIG','AUTO')</code></li>
+</ul>
+<p>Colonnes:</p>
+<ul>
+<li><code>variable_name</code></li>
+<li><code>value</code> : valeur relevee dans
+<code>pmacontrol.global_variable</code></li>
+<li><code>default_value</code></li>
+<li><code>global_value</code></li>
+<li><code>origin</code></li>
+</ul>
+<p>Nombre de variables retenues: <code>97</code></p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>variable_name</th>
+<th>value</th>
+<th>default_value</th>
+<th>global_value</th>
+<th>origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>back_log</td>
+<td>70</td>
+<td>150</td>
+<td>70</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>basedir</td>
+<td>/usr</td>
+<td></td>
+<td>/usr</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>bind_address</td>
+<td>0.0.0.0</td>
+<td></td>
+<td>0.0.0.0</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>binlog_expire_logs_seconds</td>
+<td>3600</td>
+<td>0</td>
+<td>3600</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>binlog_format</td>
+<td>ROW</td>
+<td>MIXED</td>
+<td>ROW</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>bulk_insert_buffer_size</td>
+<td>16777216</td>
+<td>8388608</td>
+<td>16777216</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>character_sets_dir</td>
+<td>/usr/share/mysql/charsets/</td>
+<td></td>
+<td>/usr/share/mysql/charsets/</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>concurrent_insert</td>
+<td>ALWAYS</td>
+<td>AUTO</td>
+<td>ALWAYS</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>event_scheduler</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>general_log_file</td>
+<td>/srv/mysql/log/general.log</td>
+<td></td>
+<td>/srv/mysql/log/general.log</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>host_cache_size</td>
+<td>228</td>
+<td>128</td>
+<td>228</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>innodb_autoextend_increment</td>
+<td>1000</td>
+<td>64</td>
+<td>1000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_autoinc_lock_mode</td>
+<td>2</td>
+<td>1</td>
+<td>2</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>innodb_buffer_pool_size</td>
+<td>1140850688</td>
+<td>134217728</td>
+<td>1140850688</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_buffer_pool_size_auto_min</td>
+<td>1073741824</td>
+<td>0</td>
+<td>1073741824</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>innodb_buffer_pool_size_max</td>
+<td>3221225472</td>
+<td>0</td>
+<td>3221225472</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_flush_log_at_trx_commit</td>
+<td>2</td>
+<td>1</td>
+<td>2</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>innodb_io_capacity</td>
+<td>2000</td>
+<td>200</td>
+<td>2000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_log_buffer_size</td>
+<td>8388608</td>
+<td>16777216</td>
+<td>8388608</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>innodb_log_file_size</td>
+<td>994050048</td>
+<td>100663296</td>
+<td>994050048</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_max_dirty_pages_pct</td>
+<td>70</td>
+<td>90.000000</td>
+<td>70.000000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>innodb_open_files</td>
+<td>2000</td>
+<td>0</td>
+<td>2000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>innodb_rollback_on_timeout</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>key_cache_segments</td>
+<td>64</td>
+<td>0</td>
+<td>64</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>lc_messages_dir</td>
+<td>/usr/share/mysql</td>
+<td></td>
+<td>/usr/share/mysql</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>log_error</td>
+<td>/srv/mysql/log/error.log</td>
+<td>0</td>
+<td>/srv/mysql/log/error.log</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>log_slave_updates</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>log_slow_verbosity</td>
+<td>query_plan</td>
+<td></td>
+<td>query_plan</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>long_query_time</td>
+<td>1</td>
+<td>10.000000</td>
+<td>1.000000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>lower_case_file_system</td>
+<td>OFF</td>
+<td>NULL</td>
+<td>OFF</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>max_allowed_packet</td>
+<td>268435456</td>
+<td>16777216</td>
+<td>268435456</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>max_binlog_size</td>
+<td>104857600</td>
+<td>1073741824</td>
+<td>104857600</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>max_connections</td>
+<td>100</td>
+<td>151</td>
+<td>100</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>max_heap_table_size</td>
+<td>805306368</td>
+<td>16777216</td>
+<td>805306368</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>max_relay_log_size</td>
+<td>104857600</td>
+<td>1073741824</td>
+<td>104857600</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>metadata_locks_cache_size</td>
+<td>10000</td>
+<td>1024</td>
+<td>10000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>myisam_recover_options</td>
+<td>BACKUP</td>
+<td>BACKUP,QUICK</td>
+<td>BACKUP</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>myisam_sort_buffer_size</td>
+<td>536870912</td>
+<td>134216704</td>
+<td>536870912</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>open_files_limit</td>
+<td>160139</td>
+<td>0</td>
+<td>160139</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>performance_schema</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>performance_schema_digests_size</td>
+<td>5000</td>
+<td>-1</td>
+<td>5000</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>performance_schema_events_stages_history_long_size</td>
+<td>1000</td>
+<td>-1</td>
+<td>1000</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>performance_schema_events_stages_history_size</td>
+<td>10</td>
+<td>-1</td>
+<td>10</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>performance_schema_events_statements_history_long_size</td>
+<td>1000</td>
+<td>-1</td>
+<td>1000</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>performance_schema_events_statements_history_size</td>
+<td>500</td>
+<td>-1</td>
+<td>500</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>performance_schema_events_transactions_history_long_size</td>
+<td>1000</td>
+<td>-1</td>
+<td>1000</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>performance_schema_events_transactions_history_size</td>
+<td>10</td>
+<td>-1</td>
+<td>10</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>performance_schema_events_waits_history_long_size</td>
+<td>1000</td>
+<td>-1</td>
+<td>1000</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>performance_schema_events_waits_history_size</td>
+<td>10</td>
+<td>-1</td>
+<td>10</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>performance_schema_session_connect_attrs_size</td>
+<td>512</td>
+<td>-1</td>
+<td>512</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>pid_file</td>
+<td>/var/run/mysqld/mysqld.pid</td>
+<td></td>
+<td>/var/run/mysqld/mysqld.pid</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>plugin_dir</td>
+<td>/usr/lib/mysql/plugin/</td>
+<td></td>
+<td>/usr/lib/mysql/plugin/</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>port</td>
+<td>3306</td>
+<td>0</td>
+<td>3306</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>query_cache_limit</td>
+<td>131072</td>
+<td>1048576</td>
+<td>131072</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>query_cache_size</td>
+<td>0</td>
+<td>1048576</td>
+<td>0</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>query_response_time_stats</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>read_buffer_size</td>
+<td>2097152</td>
+<td>131072</td>
+<td>2097152</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>read_rnd_buffer_size</td>
+<td>1048576</td>
+<td>262144</td>
+<td>1048576</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>relay_log</td>
+<td>/srv/mysql/relaylog/relay-bin</td>
+<td></td>
+<td>/srv/mysql/relaylog/relay-bin</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>relay_log_info_file</td>
+<td>/srv/mysql/relaylog/relay-bin.info</td>
+<td></td>
+<td>/srv/mysql/relaylog/relay-bin.info</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>report_host</td>
+<td>ist-pmacontrol</td>
+<td></td>
+<td>ist-pmacontrol</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>report_port</td>
+<td>3306</td>
+<td>0</td>
+<td>3306</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>rocksdb_block_cache_size</td>
+<td>4294967296</td>
+<td>536870912</td>
+<td>4294967296</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>rocksdb_flush_log_at_trx_commit</td>
+<td>2</td>
+<td>1</td>
+<td>2</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>rocksdb_max_background_jobs</td>
+<td>8</td>
+<td>2</td>
+<td>8</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>rocksdb_use_direct_io_for_flush_and_compaction</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>rocksdb_wal_recovery_mode</td>
+<td>2</td>
+<td>1</td>
+<td>2</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>server_id</td>
+<td>394663081</td>
+<td>1</td>
+<td>394663081</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>skip_name_resolve</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>slave_load_tmpdir</td>
+<td>/srv/mysql/tmp</td>
+<td></td>
+<td>/srv/mysql/tmp</td>
+<td>AUTO</td>
+</tr>
+<tr class="odd">
+<td>slow_query_log</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>slow_query_log_file</td>
+<td>/srv/mysql/log/mariadb-slow.log</td>
+<td></td>
+<td>/srv/mysql/log/mariadb-slow.log</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>socket</td>
+<td>/var/run/mysqld/mysqld.sock</td>
+<td></td>
+<td>/var/run/mysqld/mysqld.sock</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>sort_buffer_size</td>
+<td>33554432</td>
+<td>2097152</td>
+<td>33554432</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>sql_mode</td>
+<td>NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION</td>
+<td>STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION</td>
+<td>NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>sync_binlog</td>
+<td>10000</td>
+<td>0</td>
+<td>10000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>table_definition_cache</td>
+<td>10000</td>
+<td>400</td>
+<td>10000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>table_open_cache</td>
+<td>10000</td>
+<td>2000</td>
+<td>10000</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>thread_cache_size</td>
+<td>100</td>
+<td>256</td>
+<td>100</td>
+<td>AUTO</td>
+</tr>
+<tr class="even">
+<td>thread_stack</td>
+<td>524288</td>
+<td>299008</td>
+<td>524288</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>tmpdir</td>
+<td>/srv/mysql/tmp</td>
+<td></td>
+<td>/srv/mysql/tmp</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>tmp_table_size</td>
+<td>805306368</td>
+<td>16777216</td>
+<td>805306368</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>transaction_prealloc_size</td>
+<td>8192</td>
+<td>4096</td>
+<td>8192</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>userstat</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wait_timeout</td>
+<td>600</td>
+<td>28800</td>
+<td>600</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_cluster_address</td>
+<td>gcomm://</td>
+<td></td>
+<td>gcomm://</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_cluster_name</td>
+<td>68Koncept</td>
+<td>my_wsrep_cluster</td>
+<td>68Koncept</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_gtid_mode</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_log_conflicts</td>
+<td>ON</td>
+<td>OFF</td>
+<td>ON</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_max_ws_rows</td>
+<td>131072</td>
+<td>0</td>
+<td>131072</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_max_ws_size</td>
+<td>1073741824</td>
+<td>2147483647</td>
+<td>1073741824</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_node_address</td>
+<td>10.68.68.111</td>
+<td></td>
+<td>10.68.68.111</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_provider</td>
+<td>/usr/lib/galera/libgalera_smm.so</td>
+<td>none</td>
+<td>/usr/lib/galera/libgalera_smm.so</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_provider_options</td>
+<td>gcache.size = 20G</td>
+<td></td>
+<td>gcache.size = 20G</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_slave_threads</td>
+<td>4</td>
+<td>1</td>
+<td>4</td>
+<td>CONFIG</td>
+</tr>
+<tr class="even">
+<td>wsrep_sst_auth</td>
+<td>sst:QSEDWGRg133</td>
+<td></td>
+<td>sst:QSEDWGRg133</td>
+<td>CONFIG</td>
+</tr>
+<tr class="odd">
+<td>wsrep_sst_method</td>
+<td>xtrabackup-v2</td>
+<td>rsync</td>
+<td>xtrabackup-v2</td>
+<td>CONFIG</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

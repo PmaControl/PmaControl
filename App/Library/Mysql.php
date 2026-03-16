@@ -308,6 +308,12 @@ class Mysql
         //debug($masters);
         
         foreach ($masters as $master) {
+            $dnsPort = $master[$connection_name]['master_host'].':'.$master[$connection_name]['master_port'];
+
+            $id_mysql_server = self::getIdFromDns($dnsPort);
+            if (!empty($id_mysql_server)) {
+                return (int) $id_mysql_server;
+            }
 
             //a mapper aussi avec les ip virtuel (version enterprise)
             $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
@@ -406,13 +412,17 @@ class Mysql
         $server = array();
 
         if (empty($data['fqdn'])) {
-            $data['fqdn'] = $data['ip'];
+            $data['fqdn'] = $data['hostname'] ?? ($data['ip'] ?? '');
         }
 
-        $ip = System::getIp($data['fqdn']);
+        if (!empty($data['ip'])) {
+            $ip = $data['ip'];
+        } else {
+            $ip = System::getIp($data['fqdn']);
 
-        if (empty($ip)) {
-            $ip = $data['fqdn'];
+            if (empty($ip)) {
+                $ip = $data['fqdn'];
+            }
         }
 
         if (empty($data['password'])) {
@@ -439,12 +449,13 @@ class Mysql
         $server['mysql_server']['display_name']        = self::getHostname($data['display_name'],
                 array($data['fqdn'], $data['login'], $data['password'], $data['port']));
         $server['mysql_server']['ip']                  = $ip;
-        $server['mysql_server']['hostname']            = $data['fqdn'];
+        $server['mysql_server']['hostname']            = $data['hostname'] ?? $data['fqdn'];
         $server['mysql_server']['login']               = $data['login'];
         $server['mysql_server']['passwd']              = Crypt::encrypt($data['password'], CRYPT_KEY);
         $server['mysql_server']['database']            = $data['database'] ?? "mysql";
         $server['mysql_server']['is_password_crypted'] = "1";
         $server['mysql_server']['port']                = $port;
+        $server['mysql_server']['ssh_nat']             = $data['ssh_nat'] ?? "";
 
         $server['mysql_server']['is_monitored']    = $data['is_monitored'] ?? "1";
         $server['mysql_server']['is_acknowledged'] = $data['is_acknowledged'] ?? 0;

@@ -1,0 +1,33 @@
+# User
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/User.php`
+
+- `before($param)`: Prepare user state through `before`.
+- `after($param)`: Handle user state through `after`.
+- `index()`: Render user state through `index`.
+- `is_logged()`: Handle user state through `is_logged`.
+- `block_newsletter()`: Handle user state through `block_newsletter`.
+- `city()`: Handle user state through `city`.
+- `author()`: Handle user state through `author`.
+- `register()`: Handle user state through `register`.
+- `lost_password()`: Handle user state through `lost_password`.
+- `password_recover($param)`: Handle user state through `password_recover`.
+- `block_last_registered()`: Handle user state through `block_last_registered`.
+- `block_last_online()`: Handle user state through `block_last_online`.
+- `admin_user()`: Handle user state through `admin_user`.
+- `confirmation($data)`: Handle user state through `confirmation`.
+- `login($login, $password)`: Handle user state through `login`.
+- `log($id_user, $success)`: Handle user state through `log`.
+- `profil($param)`: Handle user state through `profil`.
+- `user_main()`: Handle user state through `user_main`.
+- `settings($param)`: Handle user state through `settings`.
+- `photo($param)`: Handle user state through `photo`.
+- `get_new_mail()`: Retrieve user state through `get_new_mail`.
+- `send_confirmation()`: Handle user state through `send_confirmation`.
+- `connection()`: Handle user state through `connection`.
+- `logout()`: Handle user state through `logout`.
+- `updateGroup()`: Update user state through `updateGroup`.
+- `login($login, $password)`: Handle user state through `login`.
+- `update_idgroup()`: Update user state through `update_idgroup`.

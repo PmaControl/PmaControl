@@ -29,6 +29,15 @@ class MysqlUser extends Controller
 {
     const USER_DIR = "/srv/www/pmacontrol/data/backup/user";
 
+    public static function getExportAccountsSql($db): string
+    {
+        if ($db->checkVersion(array('MariaDB' => '10.0'))) {
+            return "SELECT User as `user`,`Host` as `host` FROM mysql.user WHERE BINARY is_role = BINARY 'N' ORDER by user,host";
+        }
+
+        return "SELECT User as `user`,`Host` as `host` FROM mysql.user ORDER by user,host";
+    }
+
 /**
  * Render mysql user state through `index`.
  *
@@ -547,7 +556,7 @@ SQL;
 
 
         $def = Sgbd::sql(DB_DEFAULT);
-        $sql3 = "SELECT id, display_name, ip, port, hostname FROM mysql_server;";
+        $sql3 = "SELECT id, display_name, ip, port, hostname FROM mysql_server WHERE is_deleted=0 and is_proxy=0 and is_vip=0;";
         $res3 = $def->sql_query($sql3);
 
         while ($ob3 = $def->sql_fetch_object($res3)) {
@@ -566,7 +575,7 @@ SQL;
 
                 $db = Mysql::getDbLink($mysql_server['id_mysql_server']);
 
-                $sql = "SELECT User as `user`,`Host` as `host` FROM mysql.user ORDER by user,host";
+                $sql = self::getExportAccountsSql($db);
                 $res = $db->sql_query($sql);
 
                 $display_name = "XXXXXXXXX";
@@ -577,7 +586,6 @@ SQL;
                 $file_user  = "-- From $display_name".PHP_EOL;
                 while($ob = $db->sql_fetch_object($res))
                 {
-
                     Debug::debug($ob, "OB");
                     $sql2 = "SHOW GRANTS FOR `".$ob->user."`@`".$ob->host."`;";
                     $res2 = $db->sql_query($sql2);
@@ -604,4 +612,3 @@ SQL;
 
 
 }
-

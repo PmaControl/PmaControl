@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PmaControl - Crash Investigation 2026-01-25 to 2026-03-12</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PmaControl - Crash Investigation 2026-01-25 to
+2026-03-12</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#investigation-crash-mariadb-pmacontrol">Investigation
+crash MariaDB / PmaControl</a>
+<ul>
+<li><a href="#perimetre">Perimetre</a></li>
+<li><a href="#methode">Methode</a></li>
+<li><a href="#reboots-retenus">Reboots retenus</a></li>
+<li><a href="#ce-que-disent-les-logs-systeme">Ce que disent les logs
+systeme</a>
+<ul>
+<li><a href="#trouve">Trouve</a></li>
+<li><a href="#non-trouve">Non trouve</a></li>
+</ul></li>
+<li><a href="#detail-par-crash">Detail par crash</a>
+<ul>
+<li><a href="#section">2026-01-29 16:20:02</a></li>
+<li><a href="#section-1">2026-02-05 20:20:02</a></li>
+<li><a href="#section-2">2026-02-23 14:30:02</a></li>
+<li><a href="#section-3">2026-03-03 14:15:02</a></li>
+<li><a href="#section-4">2026-03-06</a></li>
+<li><a href="#section-5">2026-03-12 17:32:52</a></li>
+</ul></li>
+<li><a href="#metriques-supplementaires-interessantes">Metriques
+supplementaires interessantes</a></li>
+<li><a href="#variables-non-par-defaut">Variables non par
+defaut</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="investigation-crash-mariadb-pmacontrol">Investigation crash
+MariaDB / PmaControl</h1>
+<h2 id="perimetre">Perimetre</h2>
+<ul>
+<li>Serveur analyse: <code>id_mysql_server = 1</code></li>
+<li>Periode: du <code>2026-01-25</code> au <code>2026-03-12</code></li>
+<li>Serie de reference crash: <code>ts_variable.id = 2693</code>
+(<code>uptime</code>, <code>status/general</code>)</li>
+<li>Metriques 1 heure avant crash:
+<ul>
+<li><code>threads_connected</code> (<code>2687</code>)</li>
+<li><code>threads_running</code> (<code>2689</code>)</li>
+<li><code>cpu_usage</code> (<code>4015</code>,
+<code>ssh_stats/general</code>)</li>
+<li><code>memory_mysqld</code> (<code>4017</code>,
+<code>ssh_stats/general</code>)</li>
+</ul></li>
+<li>Logs corrélés:
+<ul>
+<li><code>/srv/mysql/log/error.log</code></li>
+<li><code>/srv/mysql/log/error.log.old</code></li>
+<li><code>journalctl</code></li>
+</ul></li>
+</ul>
+<p>Contraintes d’execution respectees:</p>
+<ul>
+<li>chaque requete SQL:
+<code>SET SESSION max_statement_time=60</code></li>
+<li>chaque commande shell: <code>timeout 65s</code></li>
+<li>analyse journaliere / partition par partition sur
+<code>ts_value_general_int</code></li>
+</ul>
+<h2 id="methode">Methode</h2>
+<ol type="1">
+<li>detection des resets d’<code>uptime</code> via
+<code>ts_value_general_int</code></li>
+<li>filtration des seuls evenements anormaux</li>
+<li>correlation avec les logs MariaDB</li>
+<li>correlation avec les logs systeme pour chercher:
+<ul>
+<li><code>status=9/KILL</code></li>
+<li><code>oom</code></li>
+<li><code>Killed process</code></li>
+<li><code>segfault</code></li>
+<li><code>panic</code></li>
+</ul></li>
+<li>synthese des metriques sur l’heure precedente</li>
+</ol>
+<p>Note:</p>
+<ul>
+<li>quand les metriques <code>cpu_usage</code> ou
+<code>memory_mysqld</code> disparaissent avant le crash, cela signifie
+en pratique que la collecte SSH n’a plus de donnees. Dans ce contexte,
+c’est souvent coherent avec un serveur deja down ou en etat
+degrade.</li>
+</ul>
+<h2 id="reboots-retenus">Reboots retenus</h2>
+<p>Seuls les crashes, crashes probables ou incidents majeurs sont
+gardes.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Date</th>
+<th style="text-align: right;">Heure reset <code>uptime</code></th>
+<th>Classification</th>
+<th>Signature principale</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2026-01-29</td>
+<td style="text-align: right;">16:20:02</td>
+<td>crash probable</td>
+<td><code>InnoDB crash recovery</code> +
+<code>Recovering after a crash using /srv/mysql/binlog/mariadb-bin</code></td>
+</tr>
+<tr class="even">
+<td>2026-02-05</td>
+<td style="text-align: right;">20:20:02</td>
+<td>crash probable</td>
+<td>crash recovery +
+<code>Error in Log_event::read_log_event(): 'Event invalid'</code></td>
+</tr>
+<tr class="odd">
+<td>2026-02-23</td>
+<td style="text-align: right;">14:30:02</td>
+<td>crash probable</td>
+<td><code>InnoDB crash recovery</code> + recovery binlog</td>
+</tr>
+<tr class="even">
+<td>2026-03-03</td>
+<td style="text-align: right;">14:15:02</td>
+<td>crash probable</td>
+<td><code>Too many connections</code> avant reset + crash recovery</td>
+</tr>
+<tr class="odd">
+<td>2026-03-06</td>
+<td style="text-align: right;">08:48:01 et autres cycles</td>
+<td>incident majeur MyRocks</td>
+<td><code>Corruption: truncated record body</code>,
+<code>.frm mismatch</code>, <code>Can't init tc log</code>,
+<code>Aborting</code></td>
+</tr>
+<tr class="even">
+<td>2026-03-12</td>
+<td style="text-align: right;">17:32:52</td>
+<td>crash confirme</td>
+<td><code>systemd: status=9/KILL</code> + crash recovery</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ce-que-disent-les-logs-systeme">Ce que disent les logs
+systeme</h2>
+<h3 id="trouve">Trouve</h3>
+<ul>
+<li><code>2026-03-12 17:32:15</code>
+<ul>
+<li><code>mariadb.service: Main process exited, code=killed, status=9/KILL</code></li>
+<li>restart automatique 5 secondes plus tard</li>
+</ul></li>
+</ul>
+<h3 id="non-trouve">Non trouve</h3>
+<p>Pour les autres crashes retenus, je n’ai pas trouve dans
+<code>journalctl</code> de trace exploitable du type:</p>
+<ul>
+<li><code>Out of memory</code></li>
+<li><code>Killed process</code></li>
+<li><code>oom-killer</code></li>
+<li><code>segfault</code></li>
+<li><code>kernel panic</code></li>
+</ul>
+<p>Inference:</p>
+<ul>
+<li>l’absence de signature kernel/systemd n’innocente pas ces
+incidents</li>
+<li>elle est meme coherente avec le pattern du ticket
+<code>MDEV-39044</code>, qui decrit explicitement un cas sans crash
+record clair ni OOM killer visible</li>
+</ul>
+<h2 id="detail-par-crash">Detail par crash</h2>
+<h3 id="section">2026-01-29 16:20:02</h3>
+<p>Classification: crash probable</p>
+<p>Evidence logs:</p>
+<ul>
+<li><code>Starting MariaDB 10.11.15...</code></li>
+<li><code>InnoDB: Starting crash recovery from checkpoint LSN=3035597468044</code></li>
+<li><code>Recovering after a crash using /srv/mysql/binlog/mariadb-bin</code></li>
+<li>transactions XA preparees retrouvees et recoverees</li>
+</ul>
+<p>Contexte avant crash:</p>
+<ul>
+<li>nombreuses
+<code>Aborted connection ... Got timeout reading communication packets</code></li>
+<li>erreurs repetitives dans l’event scheduler:
+<ul>
+<li><code>Unknown column 'File_size' in 'SELECT'</code></li>
+</ul></li>
+</ul>
+<p>Resume 1 heure precedente:</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">33.83</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">27</td>
+<td>2026-01-29 16:20:02</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2.39</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td>2026-01-29 16:20:02</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">10150908</td>
+<td style="text-align: right;">10244668.12</td>
+<td style="text-align: right;">10342684</td>
+<td style="text-align: right;">10207432</td>
+<td style="text-align: right;">10315680</td>
+<td>2026-01-29 16:18:41</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">29.7308</td>
+<td style="text-align: right;">29.7309</td>
+<td style="text-align: right;">29.7310</td>
+<td style="text-align: right;">29.7310</td>
+<td style="text-align: right;">29.7310</td>
+<td>2026-01-29 16:18:41</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>pas de derive CPU visible</li>
+<li><code>threads_connected</code> modere mais stable</li>
+<li>incident plutot lie a un crash/restart backend qu’a une saturation
+progressive simple</li>
+</ul>
+<h3 id="section-1">2026-02-05 20:20:02</h3>
+<p>Classification: crash probable</p>
+<p>Evidence logs:</p>
+<ul>
+<li><code>InnoDB: Starting crash recovery from checkpoint LSN=3127773059315</code></li>
+<li><code>Recovering after a crash using /srv/mysql/binlog/mariadb-bin</code></li>
+<li><code>Error in Log_event::read_log_event(): 'Event invalid', data_len: 0, event_type: 0</code></li>
+</ul>
+<p>Resume 1 heure precedente:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">17</td>
+<td>2026-02-05 20:20:02</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td>2026-02-05 20:20:02</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>absence quasi totale de metriques systeme sur l’heure
+precedente</li>
+<li>cela renforce l’idee d’une indisponibilite ou d’un trou de collecte
+avant le restart</li>
+<li>le point le plus fort reste le binlog recovery avec
+<code>Event invalid</code></li>
+</ul>
+<h3 id="section-2">2026-02-23 14:30:02</h3>
+<p>Classification: crash probable</p>
+<p>Evidence logs:</p>
+<ul>
+<li><code>InnoDB: Starting crash recovery from checkpoint LSN=3359727579223</code></li>
+<li><code>Recovering after a crash using /srv/mysql/binlog/mariadb-bin</code></li>
+<li><code>Crash table recovery finished</code></li>
+</ul>
+<p>Resume 1 heure precedente:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td>2026-02-23 14:30:02</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td>2026-02-23 14:30:02</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>meme pattern que le <code>2026-02-05</code>: peu ou pas de metriques
+systeme disponibles dans la fenetre</li>
+<li>le crash recovery InnoDB/binlog suffit a classer l’evenement comme
+anormal</li>
+</ul>
+<h3 id="section-3">2026-03-03 14:15:02</h3>
+<p>Classification: crash probable</p>
+<p>Evidence logs:</p>
+<ul>
+<li>juste avant:
+<ul>
+<li>nombreuses connexions <code>unauthenticated</code> depuis
+<code>10.68.68.103</code></li>
+<li><code>Too many connections</code></li>
+<li><code>InnoDB: Memory pressure event disregarded</code></li>
+</ul></li>
+<li>apres restart:
+<ul>
+<li><code>InnoDB: Starting crash recovery from checkpoint LSN=3473476291238</code></li>
+<li>transactions XA preparees retrouvees</li>
+<li>recovery binlog</li>
+</ul></li>
+</ul>
+<p>Resume 1 heure precedente:</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">32.81</td>
+<td style="text-align: right;">82</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">29</td>
+<td>2026-03-03 14:15:02</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5.64</td>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
+<td>2026-03-03 14:15:02</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">10001148</td>
+<td style="text-align: right;">10194736.17</td>
+<td style="text-align: right;">10373696</td>
+<td style="text-align: right;">10223980</td>
+<td style="text-align: right;">10105840</td>
+<td>2026-03-03 14:08:42</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">24.8315</td>
+<td style="text-align: right;">24.8433</td>
+<td style="text-align: right;">24.8649</td>
+<td style="text-align: right;">24.8315</td>
+<td style="text-align: right;">24.8649</td>
+<td>2026-03-03 14:08:42</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>la saturation est visible cote threads:
+<ul>
+<li>pic <code>threads_connected = 82</code></li>
+<li>pic <code>threads_running = 59</code></li>
+</ul></li>
+<li>le systeme ne montre pas une derive CPU equivalente: ce n’est pas
+juste “CPU a 100%”</li>
+<li>pattern tres coherent avec une saturation de connexions / backlog
+applicatif avant crash</li>
+</ul>
+<h3 id="section-4">2026-03-06</h3>
+<p>Classification: incident majeur MyRocks</p>
+<p>Evidence logs:</p>
+<ul>
+<li><code>RocksDB: Error opening instance, Status Code: 2, Status: Corruption: truncated record body</code></li>
+<li>ensuite:
+<ul>
+<li><code>Incorrect information in file: './pmacontrol/ts_value_general_int.frm'</code></li>
+<li>memes erreurs sur plusieurs <code>ts_value_*</code></li>
+</ul></li>
+<li>a <code>09:15:24</code>:
+<ul>
+<li><code>Heuristic crash recovery mode</code></li>
+<li><code>Can't init tc log</code></li>
+<li><code>Aborting</code></li>
+</ul></li>
+<li>multiples cycles start/stop tout au long de la journee</li>
+</ul>
+<p>Resume 1 heure precedente du premier reset retenu
+(<code>08:48:01</code>):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">25.01</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">12</td>
+<td>2026-03-06 08:48:01</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.07</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td>2026-03-06 08:48:01</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">n/a</td>
+<td>aucune mesure</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>les compteurs de threads ne montrent pas une saturation massive
+juste avant</li>
+<li>l’absence de <code>cpu_usage</code> et <code>memory_mysqld</code>
+sur la fenetre renforce plutot l’idee d’un serveur deja degrade ou d’une
+collecte casse</li>
+<li>la signature structurante est clairement MyRocks / metadata
+corruption</li>
+</ul>
+<h3 id="section-5">2026-03-12 17:32:52</h3>
+<p>Classification: crash confirme</p>
+<p>Evidence logs:</p>
+<ul>
+<li><code>systemd</code>:
+<ul>
+<li><code>Main process exited, code=killed, status=9/KILL</code></li>
+<li>restart automatique</li>
+</ul></li>
+<li><code>error.log</code> apres restart:
+<ul>
+<li><code>InnoDB: Starting crash recovery from checkpoint LSN=3694675237923</code></li>
+<li>recovery binlog</li>
+</ul></li>
+<li>apres restart:
+<ul>
+<li><code>InnoDB: Memory pressure event shrunk innodb_buffer_pool_size=1536m</code></li>
+<li>puis <code>1280m</code></li>
+</ul></li>
+</ul>
+<p>Resume 1 heure precedente:</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Metrique</th>
+<th style="text-align: right;">Min</th>
+<th style="text-align: right;">Moyenne</th>
+<th style="text-align: right;">Max</th>
+<th style="text-align: right;">Premier</th>
+<th style="text-align: right;">Dernier</th>
+<th>Derniere mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>threads_connected</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">22.16</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">34</td>
+<td>2026-03-12 17:32:52</td>
+</tr>
+<tr class="even">
+<td>threads_running</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.89</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">15</td>
+<td>2026-03-12 17:32:52</td>
+</tr>
+<tr class="odd">
+<td>memory_mysqld</td>
+<td style="text-align: right;">6084048</td>
+<td style="text-align: right;">6413105.91</td>
+<td style="text-align: right;">7963260</td>
+<td style="text-align: right;">6314892</td>
+<td style="text-align: right;">7781484</td>
+<td>2026-03-12 17:32:13</td>
+</tr>
+<tr class="even">
+<td>cpu_usage</td>
+<td style="text-align: right;">46.8672</td>
+<td style="text-align: right;">80.6819</td>
+<td style="text-align: right;">99.5037</td>
+<td style="text-align: right;">75.3316</td>
+<td style="text-align: right;">97.0223</td>
+<td>2026-03-12 17:32:13</td>
+</tr>
+</tbody>
+</table>
+<p>Lecture:</p>
+<ul>
+<li>c’est le cas le plus lisible cote pression systeme</li>
+<li>dans les 10 dernieres minutes avant le kill:
+<ul>
+<li><code>cpu_usage</code> monte jusqu’a ~<code>99.5</code></li>
+<li><code>memory_mysqld</code> grimpe jusqu’a ~<code>7.96M</code> sur
+cette metrique SSH</li>
+<li><code>threads_running</code> monte a <code>15</code></li>
+<li><code>threads_connected</code> monte a <code>37</code></li>
+</ul></li>
+<li>ce crash est distinct du pattern pur MyRocks:
+<ul>
+<li>ici l’arret brutal est explicite</li>
+<li>mais il intervient dans un contexte de forte pression CPU +
+memoire</li>
+</ul></li>
+</ul>
+<h2 id="metriques-supplementaires-interessantes">Metriques
+supplementaires interessantes</h2>
+<p>En complement des 4 metriques demandees, les metriques MariaDB les
+plus interessantes pour le prochain niveau d’investigation sont:</p>
+<ul>
+<li><code>max_used_connections</code>
+<ul>
+<li>utile pour distinguer charge instantanee et saturation
+historique</li>
+</ul></li>
+<li><code>aborted_connects</code>
+<ul>
+<li>utile pour identifier problemes reseau/auth ou storms de
+connexion</li>
+</ul></li>
+<li><code>aborted_clients</code>
+<ul>
+<li>utile pour reperer les clients qui coupent brutalement</li>
+</ul></li>
+<li><code>slow_queries</code>
+<ul>
+<li>utile pour voir si la saturation est precedee d’une derive
+lente</li>
+</ul></li>
+<li><code>open_tables</code>
+<ul>
+<li>utile pour detecter pression metadata / table cache</li>
+</ul></li>
+<li><code>innodb_buffer_pool_pages_dirty</code>
+<ul>
+<li>utile pour evaluer pression d’ecriture / backlog flush</li>
+</ul></li>
+<li><code>innodb_row_lock_waits</code>
+<ul>
+<li>utile pour voir si un contentieux transactionnel precede le
+crash</li>
+</ul></li>
+</ul>
+<p>Sources officielles MariaDB:</p>
+<ul>
+<li>System &amp; Status Variables Guide:
+https://mariadb.com/docs/server/mariadb-quickstart-guides/system-and-status-variables-guide</li>
+<li>Server Status Variables:
+https://mariadb.com/kb/en/server-status-variables/</li>
+<li>Handling Too Many Connections:
+https://mariadb.com/kb/en/handling-too-many-connections/</li>
+</ul>
+<p>Inference:</p>
+<ul>
+<li>ces metriques sont pertinentes parce qu’elles permettent de
+distinguer:
+<ul>
+<li>crash moteur</li>
+<li>saturation connexions</li>
+<li>pression cache / metadata</li>
+<li>backlog d’ecriture InnoDB</li>
+<li>ralentissement applicatif avant crash</li>
+</ul></li>
+</ul>
+<h2 id="variables-non-par-defaut">Variables non par defaut</h2>
+<p>Comparaison effectuee entre:</p>
+<ul>
+<li><code>pmacontrol.global_variable</code></li>
+<li><code>information_schema.SYSTEM_VARIABLES.DEFAULT_VALUE</code></li>
+</ul>
+<p>Resultats:</p>
+<ul>
+<li><code>163</code> variables differentes du defaut au total</li>
+<li><code>97</code> variables non par defaut avec origine
+<code>CONFIG</code> ou <code>AUTO</code></li>
+</ul>
+<p>La liste detaillee est dans:</p>
+<ul>
+<li><a
+href="/srv/www/pmacontrol/documentation/global_variable_non_default_id1.md">global_variable_non_default_id1.md</a></li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>Les crashes les plus significatifs sont:</p>
+<ol type="1">
+<li><code>2026-03-06</code>
+<ul>
+<li>incident majeur MyRocks</li>
+<li>correspondance tres forte avec <code>MDEV-39044</code></li>
+</ul></li>
+<li><code>2026-03-12</code>
+<ul>
+<li>crash confirme par <code>status=9/KILL</code></li>
+<li>fort emballement CPU / memoire juste avant</li>
+</ul></li>
+<li><code>2026-03-03</code>
+<ul>
+<li>crash probable precede d’un <code>Too many connections</code></li>
+<li><code>threads_running</code> et <code>threads_connected</code>
+montrent une montee nette juste avant</li>
+</ul></li>
+</ol>
+<p>Les crashes <code>2026-01-29</code>, <code>2026-02-05</code> et
+<code>2026-02-23</code> restent importants, mais les metriques systeme
+sont plus lacunaires; leur classification repose surtout sur les
+signatures de crash recovery dans les logs MariaDB.</p>
+</body>
+</html>

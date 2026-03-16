@@ -1,0 +1,34 @@
+# Install
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Install.php`
+
+- `out($msg, $type)`: Handle install state through `out`.
+- `onError()`: Handle install state through `onError`.
+- `cmd($cmd, $msg)`: Handle install state through `cmd`.
+- `displayResult($msg, $fine)`: Handle install state through `displayResult`.
+- `anonymous($function, $msg)`: Handle install state through `anonymous`.
+- `index($param)`: Render install state through `index`.
+- `prompt($test)`: Handle install state through `prompt`.
+- `testMysqlServer()`: Handle install state through `testMysqlServer`.
+- `cadre($text, $elem)`: Handle install state through `cadre`.
+- `importData($server)`: Handle install state through `importData`.
+- `updateConfig($server)`: Update install state through `updateConfig`.
+- `updateCache()`: Update install state through `updateCache`.
+- `createAdmin($param)`: Create install state through `createAdmin`.
+- `createOrganisation($param)`: Create install state through `createOrganisation`.
+- `rand_char($length)`: Handle install state through `rand_char`.
+- `generate_key()`: Handle install state through `generate_key`.
+- `installLanguage($db)`: Handle install state through `installLanguage`.
+- `parseConfig($configFile)`: Handle install state through `parseConfig`.
+- `testIpPort($hostname, $port)`: Handle install state through `testIpPort`.
+- `testMySQL($hostname, $port, $user, $password)`: Handle install state through `testMySQL`.
+- `testVectorDB()`: Handle install state through `testVectorDB`.
+- `testSpider()`: Handle install state through `testSpider`.
+- `testDatabase($database)`: Handle install state through `testDatabase`.
+- `createDatabase($database)`: Create install state through `createDatabase`.
+- `configMySQL($config)`: Handle install state through `configMySQL`.
+- `webroot($param)`: Handle install state through `webroot`.
+- `updateVersion()`: Update install state through `updateVersion`.
+- `update($param)`: Update install state through `update`.

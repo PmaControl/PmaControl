@@ -1,0 +1,35 @@
+# Server
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Server.php`
+
+- `before($param)`: Prepare server state through `before`.
+- `hardware()`: Handle server state through `hardware`.
+- `main($param)`: Render server state through `main`.
+- `database()`: Handle server state through `database`.
+- `statistics()`: Handle server state through `statistics`.
+- `logs()`: Handle server state through `logs`.
+- `buildQuery($fields)`: Handle server state through `buildQuery`.
+- `memory()`: Handle server state through `memory`.
+- `index()`: Render server state through `index`.
+- `id($param)`: Handle server state through `id`.
+- `settings()`: Handle server state through `settings`.
+- `getClients()`: Retrieve server state through `getClients`.
+- `getEnvironments()`: Retrieve server state through `getEnvironments`.
+- `add()`: Create server state through `add`.
+- `cache()`: Handle server state through `cache`.
+- `passwd($param)`: Handle server state through `passwd`.
+- `show($param)`: Handle server state through `show`.
+- `updateHostname()`: Update server state through `updateHostname`.
+- `box()`: Handle server state through `box`.
+- `password($param)`: Handle server state through `password`.
+- `acknowledge($param)`: Handle server state through `acknowledge`.
+- `remove($param)`: Delete server state through `remove`.
+- `acknowledgedBy($param)`: Handle server state through `acknowledgedBy`.
+- `toggleGeneralLog($param)`: Toggle server state through `toggleGeneralLog`.
+- `getDaemonRunning($param)`: Retrieve server state through `getDaemonRunning`.
+- `testGetDaemonRunning($param)`: Handle server state through `testGetDaemonRunning`.
+- `retract($param)`: Handle server state through `retract`.
+- `getFlag($param)`: Retrieve server state through `getFlag`.
+- `ssl($param)`: Handle server state through `ssl`.

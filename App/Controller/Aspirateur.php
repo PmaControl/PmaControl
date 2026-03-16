@@ -4396,9 +4396,26 @@ GROUP BY C.ID, C.INFO;";
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
-            // associate =)
-            $id_mysql_server = MaxScale::getIdMysqlServer(array($id_maxscale_server));
-            
+            $matchReport = MaxScale::getMysqlServerMatches(array($id_maxscale_server));
+            $resolvedMysqlServerIds = $matchReport['matched_ids'] ?? array();
+
+            if (!empty($this->logger)) {
+                foreach (($matchReport['listeners'] ?? array()) as $listenerReport) {
+                    $endpoint = $listenerReport['endpoint'] ?? 'n/a';
+                    $matchedIds = implode(',', $listenerReport['matched_ids'] ?? array());
+                    $reason = $listenerReport['reason'] ?? 'n/a';
+
+                    if ($matchedIds === '') {
+                        $this->logger->warning("[MAXSCALE-MATCH] listener=".$endpoint." matched_ids=none reason=".$reason." id_maxscale_server=".$id_maxscale_server);
+                        continue;
+                    }
+
+                    $this->logger->info("[MAXSCALE-MATCH] listener=".$endpoint." matched_ids=".$matchedIds." reason=".$reason." id_maxscale_server=".$id_maxscale_server);
+                }
+            }
+
+            $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
+
             foreach($id_mysql_servers as $id_mysql_server) {
                 $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale");
             }

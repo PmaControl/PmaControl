@@ -1,6 +1,7 @@
 <?php
 
 use \App\Library\Display;
+use \Glial\Html\Form;
 use \Glial\Synapse\FactoryController;
 
 function setColor($type)
@@ -64,6 +65,33 @@ echo '<a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary
 echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
 echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
 echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a></div><br /><br />';
+
+$showSystemThreads = !empty($data['show_system_threads']);
+$processlistExtraPath = $data['processlist_extra_path'] ?? '';
+echo '<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var checkbox = document.getElementById("show-system-threads");
+    if (!checkbox) {
+        return;
+    }
+
+    var processlistExtraPath = '.json_encode($processlistExtraPath).';
+
+    checkbox.addEventListener("change", function () {
+        var basePath = GLIAL_LINK + GLIAL_URL;
+        basePath = basePath.replace(/\/ajax:true(?:\/|$)/, "/");
+        basePath = basePath.replace(/\/show_system_threads:[^/]+/g, "");
+        basePath = basePath.replace(/\/metadata_lock_servers:[^/]+/g, "");
+        basePath = basePath.replace(/\/+$/, "");
+
+        var url = basePath + processlistExtraPath;
+        if (checkbox.checked) {
+            url += "/show_system_threads:1";
+        }
+        window.location.href = url;
+    });
+});
+</script>';
 ?>
     </div>
     </div>
@@ -71,8 +99,23 @@ echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a><
     <br />
 
     <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><?= __("Processlist").' : '.Display::srv($param[0]); ?></h3>
+        <div class="panel-heading" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <h3 class="panel-title" style="margin:0;"><?= __("Processlist").' : '.Display::srv($param[0]); ?></h3>
+            <div class="form-group" style="margin:0">
+                <div class="checkbox checbox-switch switch-success" style="margin:0">
+                    <label style="color:#fff; font-weight:normal;">
+                        <?php // The AJAX refresh code reads this checkbox state and forwards show_system_threads=1 on each reload. ?>
+                        <?= Form::input("processlist", "show_system_threads", array(
+                            "id" => "show-system-threads",
+                            "class" => "form-control",
+                            "type" => "checkbox",
+                            "value" => "1",
+                            "checked" => $showSystemThreads ? "checked" : null,
+                        )) ?>
+                        <span></span> <?= __("Show all threads") ?>
+                    </label>
+                </div>
+            </div>
         </div>
     <?php
     echo '<div id="processlist">';
@@ -243,4 +286,3 @@ if (empty($_GET['ajax'])){
     echo '</div>';
 
 }
-

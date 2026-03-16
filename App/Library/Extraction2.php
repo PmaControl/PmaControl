@@ -77,6 +77,160 @@ class Extraction2
  * @psalm-var array<int|string,mixed>
  */
     static $partition = array();
+    static float $lastRuntimeCacheTouch = 0.0;
+
+    public static function resetRuntimeState(): void
+    {
+        self::$variable = [];
+        self::$server = [];
+        self::$ts_file = [];
+        self::$partition = [];
+    }
+
+    public static function resetRuntimeStateIfStale(?float $now = null, float $ttlSeconds = 1.0): bool
+    {
+        $now ??= microtime(true);
+
+        if (self::$lastRuntimeCacheTouch > 0.0 && ($now - self::$lastRuntimeCacheTouch) > $ttlSeconds) {
+            self::resetRuntimeState();
+            self::$lastRuntimeCacheTouch = $now;
+            return true;
+        }
+
+        self::$lastRuntimeCacheTouch = $now;
+        return false;
+    }
+
+    public static function shouldUseDirectPointLookup(array $server, $date, bool $range): bool
+    {
+        return !empty($date)
+            && $range === false
+            && count($server) === 1
+            && is_array($date)
+            && count($date) === 1;
+    }
+
+    public static function shouldUseTsMaxDate($date): bool
+    {
+        return empty($date) || $date === 'MAX_DATE';
+    }
+
+    public static function buildExplicitDateFilter(array $dates): ?string
+    {
+        if (count($dates) === 0) {
+            return null;
+        }
+
+        return " AND a.`date` IN ('".implode("','", $dates)."') ";
+    }
+
+    public static function getExtraIdentifierFieldByRadical(string $radical): ?string
+    {
+        return match ($radical) {
+            'slave' => 'connection_name',
+            'digest' => 'id_ts_mysql_query',
+            default => null,
+        };
+    }
+
+    public static function buildValueTableName(string $radical, string $type): string
+    {
+        return 'ts_value_'.$radical.'_'.$type;
+    }
+
+    public static function buildSelectFields(string $radical, string $type, bool $graph = false): string
+    {
+        if ($radical === 'slave') {
+            return "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+        }
+
+        if ($radical === 'digest') {
+            return "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`id_ts_mysql_query` as `id_ts_mysql_query`, a.`date`, a.`value` ";
+        }
+
+        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
+
+        if ($graph) {
+            return $fields.", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  ";
+        }
+
+        return $fields.", a.`value` as value ";
+    }
+
+    public static function normalizeDisplayValue(string $type, $value)
+    {
+        if ($type === 'json') {
+            return json_decode(trim((string) $value), true);
+        }
+
+        return trim((string) $value);
+    }
+
+    public static function appendDisplayRow(array $table, object $row, bool $range): array
+    {
+        $radical = self::$variable[$row->id_ts_variable]['radical'];
+        $metricName = self::$variable[$row->id_ts_variable]['name'];
+        $specialField = self::getExtraIdentifierFieldByRadical($radical);
+
+        if (!in_array($radical, ['digest', 'slave'], true)) {
+            $value = self::normalizeDisplayValue((string) $row->type, $row->value);
+
+            if ($range) {
+                $table[$row->id_mysql_server][$row->date]['id_mysql_server'] = $row->id_mysql_server;
+                $table[$row->id_mysql_server][$row->date]['date'] = $row->date;
+                $table[$row->id_mysql_server][$row->date][$metricName] = $value;
+            } else {
+                $table[$row->id_mysql_server]['id_mysql_server'] = $row->id_mysql_server;
+                $table[$row->id_mysql_server]['date'] = $row->date;
+                $table[$row->id_mysql_server][$metricName] = $value;
+            }
+
+            return $table;
+        }
+
+        $groupKey = '@'.$radical;
+        $identifier = '';
+        if ($specialField !== null && isset($row->{$specialField})) {
+            $identifier = (string) $row->{$specialField};
+        }
+
+        if (!isset($row->value)) {
+            $row->value = '';
+        }
+
+        $value = trim((string) $row->value);
+
+        if ($range) {
+            $table[$row->id_mysql_server][$groupKey][$identifier][$row->date]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$groupKey][$identifier][$row->date]['date'] = $row->date;
+            $table[$row->id_mysql_server][$groupKey][$identifier][$row->date][$metricName] = $value;
+        } else {
+            $table[$row->id_mysql_server][$groupKey][$identifier]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$groupKey][$identifier]['date'] = $row->date;
+            $table[$row->id_mysql_server][$groupKey][$identifier][$metricName] = $value;
+        }
+
+        return $table;
+    }
+
+    public static function buildDirectQuerySegments(array $idTsVariables, int $idMysqlServer, string $date, string $partition): array
+    {
+        $sql = [];
+
+        foreach ($idTsVariables as $radical => $dataType) {
+            foreach ($dataType as $type => $tabIds) {
+                $fields = self::buildSelectFields((string) $radical, (string) $type, false);
+                $tableName = self::buildValueTableName((string) $radical, (string) $type);
+                $idTsVariable = implode(',', $tabIds);
+
+                $sql[] = "(SELECT ".$fields." FROM `".$tableName."` PARTITION(`".$partition."`) a "
+                    ." WHERE id_ts_variable IN (".$idTsVariable.")
+                    AND a.id_mysql_server = ".$idMysqlServer." AND a.`date` = '".$date."' ) ";
+            }
+        }
+
+        return $sql;
+    }
 
 /**
  * Handle extraction2 state through `extract`.
@@ -125,6 +279,8 @@ class Extraction2
 
         //Debug::debug($date);
 
+        self::resetRuntimeStateIfStale();
+
         $db = Sgbd::sql(DB_DEFAULT);
         $sql3 = "";
 
@@ -140,9 +296,7 @@ class Extraction2
 
         //Debug::debug(self::$server, "SERVER");
 
-        if (! empty($date) && $range == false 
-        && count(self::$server) == 1 
-        && count($date) == 1){
+        if (self::shouldUseDirectPointLookup(self::$server, $date, (bool) $range)) {
             
             $date  = implode(',', $date);
 
@@ -151,7 +305,9 @@ class Extraction2
 
             $extra_where = "";
             $INNER       = "";
-            if (empty($date)) {
+            $useMaxDate = self::shouldUseTsMaxDate($date);
+
+            if ($useMaxDate) {
 
                 $INNER = "\n INNER JOIN ts_max_date b ON a.id_mysql_server = b.id_mysql_server AND a.date = b.date ";
                 $INNER .= "\n INNER JOIN `ts_variable` c ON a.`id_ts_variable` = c.id AND b.`id_ts_file` = c.`id_ts_file` ";
@@ -185,20 +341,22 @@ class Extraction2
                             $dates[] = $arr['date'];                        
                         }        
 
-                        $all_date    = implode("','", $dates);
-                        $extra_where = " AND a.`date` IN ('".$all_date."') ";
+                        $explicitDateFilter = self::buildExplicitDateFilter($dates);
+                        if ($explicitDateFilter === null) {
+                            return [];
+                        }
+
+                        $extra_where = $explicitDateFilter;
 
                     }
-                } if($date === "MAX_DATE")
-                {
-
-                }
-                else {
+                } else {
                     $extra_where = " AND a.`date` > date_sub(now(), INTERVAL $date) "; // JIRA-MARIADB : https://jira.mariadb.org/browse/MDEV-17355?filter=-2
                     $extra_where .= " AND a.`date` <= now() ";
                 }
 
-                $extra_where .= " AND a.`date` <= now() ";
+                if ($date !== "MAX_DATE") {
+                    $extra_where .= " AND a.`date` <= now() ";
+                }
 
                 //$extra_where .= " GROUP BY id_mysql_server, id_ts_variable, date(a.`date`), hour(a.`date`)";
                 //$extra_where .= ", minute(a.`date`)";
@@ -220,28 +378,10 @@ class Extraction2
 
                     //Debug::debug($radical);
 
-                    if ($radical == "slave") {
-                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-                    }
-                    elseif ($radical === "digest") {
-                        // digest => pas de connection_name
-                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`id_ts_mysql_query` as `id_ts_mysql_query`, a.`date`, a.`value` ";
-                    } else {
-                        $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date` ";
+                    $fields = self::buildSelectFields((string) $radical, (string) $type, (bool) $graph);
 
-                        if ($graph === true) {
-                            //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
-                            //$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
-                            $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
-
-                            $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
-                            //$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
-                        } else {
-                            $fields .= ", a.`value` as value ";
-                        }
-
-                        //a.`value`";
-                        // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
+                    if ($graph === true && !in_array($radical, ['slave', 'digest'], true)) {
+                        $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
                     }
 
                     foreach ($tab_ids as $id_ts_variable) {
@@ -258,7 +398,7 @@ class Extraction2
                             $filter_partition = "PARTITION (".self::$partition[$id_ts_variable].")";
                         }
                         
-                        $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` $filter_partition a "
+                        $sql4 = "(SELECT ".$fields." FROM `".self::buildValueTableName((string) $radical, (string) $type)."` $filter_partition a "
                         .$INNER."
                         WHERE id_ts_variable = ".$id_ts_variable."
                         AND a.id_mysql_server IN (".implode(",", $server).")  $extra_where ".$WINDOW.") ";
@@ -463,59 +603,8 @@ class Extraction2
             return $table;
         }
 
-        $extra = [
-            'digest' => 'id_ts_mysql_query',
-            'slave' => 'connection_name'
-        ];
-
         while ($ob = $db->sql_fetch_object($res)) {
-            //Debug::debug($ob);
-            //Debug::debug(self::$variable[$ob->id_ts_variable]['name']);
-
-            $radical = self::$variable[$ob->id_ts_variable]['radical'];
-            //$is_digest = ($radical === 'digest');
-
-            if ($range) {
-
-
-
-                if (! in_array($radical, ["digest", "slave"])) {
-                    $ob->value = trim($ob->value);
-                    if ($ob->type == "json") {
-                        $ob->value = json_decode($ob->value, true);
-                    }
-
-                    //$group = $is_digest ? '@digest' : null;
-
-                    $table[$ob->id_mysql_server][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server][$ob->date]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
-                } else {
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-                }
-            } else {
-                if (! in_array($radical, ["digest", "slave"])) {
-
-                    $ob->value = trim($ob->value);
-                    if ($ob->type == "json") {
-                        $ob->value = json_decode($ob->value, true);
-                    }
-                    $table[$ob->id_mysql_server]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server]['date']                                       = $ob->date;
-                    $table[$ob->id_mysql_server][self::$variable[$ob->id_ts_variable]['name']] = $ob->value;
-                } else {
-
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}]['id_mysql_server']                            = $ob->id_mysql_server;
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}]['date']                                       = $ob->date;
-
-                    if (! isset($ob->value)) {
-                        $ob->value = "";
-                    }
-                    $table[$ob->id_mysql_server]['@'.$radical][$ob->{$extra[$radical]}][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-                }
-            }
+            $table = self::appendDisplayRow($table, $ob, (bool) $range);
         }
 
 //debug($table);
@@ -766,6 +855,8 @@ class Extraction2
  */
     public static function getQuery($param)
     {
+        self::resetRuntimeStateIfStale();
+
         $variables = $param[0];
         $id_mysql_server = end($param[1]);
         $date = $param[2];
@@ -775,29 +866,7 @@ class Extraction2
 
         $partition = self::getPartitionFromDate($date);
 
-        $sql2 = [];
-
-        foreach ($id_ts_variables as $radical => $data_type) {
-            foreach ($data_type as $type => $tab_ids) {
-                //Debug::debug($radical);
-                if ($radical == "slave") {
-                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-                } else {
-                    $fields = "'".$type."' as 'type', a.`id_mysql_server`, a.`id_ts_variable`, 'N/A' as `connection_name`,a.`date`, a.value ";
-                }
-
-                $id_ts_variable = implode(',',$tab_ids);
-
-                $sql4 = "(SELECT ".$fields." FROM `ts_value_".$radical."_".$type."` PARTITION(`".$partition."`) a "
-                ." WHERE id_ts_variable IN (".$id_ts_variable.")
-                AND a.id_mysql_server = ".$id_mysql_server." AND a.`date` = '".$date."' ) ";
-
-                $sql2[] = $sql4;
-                
-            }
-        }
-
-        $sql3 = implode(" \nUNION ALL\n ", $sql2);
+        $sql3 = implode(" \nUNION ALL\n ", self::buildDirectQuerySegments($id_ts_variables, (int) $id_mysql_server, (string) $date, (string) $partition));
 
         return $sql3;
 
@@ -865,6 +934,8 @@ class Extraction2
 
     public static function getLast5Value($var = array(), $server = array())
     {
+        self::resetRuntimeStateIfStale();
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty($server)) {
@@ -962,4 +1033,3 @@ class Extraction2
     }
 
 }
-

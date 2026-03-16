@@ -1,0 +1,64 @@
+# Aspirateur
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Aspirateur.php`
+
+- `before($param)`: Prepare aspirateur state through `before`.
+- `tryMysqlConnection($param)`: Handle aspirateur state through `tryMysqlConnection`.
+- `upsertVipServerRoute($id_mysql_server, $dns, $ip, $newActual)`: Handle aspirateur state through `upsertVipServerRoute`.
+- `resolveVipIp($connectionHost)`: Handle aspirateur state through `resolveVipIp`.
+- `resolveVipDestinationId($id_mysql_server, $vipCandidates, $port)`: Handle aspirateur state through `resolveVipDestinationId`.
+- `resolveVipDestinationIdFromSshMetric($id_mysql_server, $normalizedTarget, $metricSelector, $fieldName)`: Handle aspirateur state through `resolveVipDestinationIdFromSshMetric`.
+- `resolveVipDestinationIdFromAliasDns($id_mysql_server, $normalizedCandidates, $port)`: Handle aspirateur state through `resolveVipDestinationIdFromAliasDns`.
+- `extractVipCandidatesFromRawValue($raw)`: Handle aspirateur state through `extractVipCandidatesFromRawValue`.
+- `flattenVipRawValue($value, $flat)`: Handle aspirateur state through `flattenVipRawValue`.
+- `normalizeVipCandidate($value)`: Handle aspirateur state through `normalizeVipCandidate`.
+- `allocate_shared_storage($name, $separator)`: Handle aspirateur state through `allocate_shared_storage`.
+- `trySshConnection($param)`: Handle aspirateur state through `trySshConnection`.
+- `getHardware($ssh)`: Retrieve aspirateur state through `getHardware`.
+- `getStats($ssh, $mysqlContext)`: Retrieve aspirateur state through `getStats`.
+- `getInstantCpuUsage($ssh, $intervalSeconds)`: Retrieve aspirateur state through `getInstantCpuUsage`.
+- `parseProcStatSnapshot($raw)`: Handle aspirateur state through `parseProcStatSnapshot`.
+- `computeCpuUsageDelta($start, $end)`: Handle aspirateur state through `computeCpuUsageDelta`.
+- `getMysqlDatadirContext($id_mysql_server)`: Retrieve aspirateur state through `getMysqlDatadirContext`.
+- `getMysqlDatadirStats($ssh, $mysqlContext)`: Retrieve aspirateur state through `getMysqlDatadirStats`.
+- `getMysqlDatadirCleanSize($ssh, $datadir, $logBinBasename, $relayLogBasename)`: Retrieve aspirateur state through `getMysqlDatadirCleanSize`.
+- `getSstElapsedSeconds($ssh)`: Retrieve aspirateur state through `getSstElapsedSeconds`.
+- `binaryLog($param)`: Handle aspirateur state through `binaryLog`.
+- `getArbitrator()`: Retrieve aspirateur state through `getArbitrator`.
+- `getDatabase($mysql_tested)`: Retrieve aspirateur state through `getDatabase`.
+- `getSwap($membrut)`: Retrieve aspirateur state through `getSwap`.
+- `getWsrep($param)`: Retrieve aspirateur state through `getWsrep`.
+- `getLockingQueries($param)`: Retrieve aspirateur state through `getLockingQueries`.
+- `getProxySQL($param)`: Retrieve aspirateur state through `getProxySQL`.
+- `testProxy($param)`: Handle aspirateur state through `testProxy`.
+- `setService($id_mysql_server, $ping, $error_msg, $available, $type)`: Handle aspirateur state through `setService`.
+- `debug($param)`: Handle aspirateur state through `debug`.
+- `getSchema($id_mysql_server)`: Retrieve aspirateur state through `getSchema`.
+- `keepConfigFile($param)`: Handle aspirateur state through `keepConfigFile`.
+- `testproxysql($param)`: Handle aspirateur state through `testproxysql`.
+- `exportData($id_mysql_server, $ts_file, $data, $check_data, $separator)`: Handle aspirateur state through `exportData`.
+- `isDataModified($id_mysql_server, $ts_file, $data)`: Handle aspirateur state through `isDataModified`.
+- `test2($param)`: Handle aspirateur state through `test2`.
+- `after($param)`: Handle aspirateur state through `after`.
+- `isValidStruc($array)`: Handle aspirateur state through `isValidStruc`.
+- `getMysqlLatencyByQuery($name_server)`: Retrieve aspirateur state through `getMysqlLatencyByQuery`.
+- `getInnodbMetrics($name_server)`: Retrieve aspirateur state through `getInnodbMetrics`.
+- `tryProxySqlConnection($param)`: Handle aspirateur state through `tryProxySqlConnection`.
+- `getElemFromTable($param)`: Retrieve aspirateur state through `getElemFromTable`.
+- `getTableElems($id_mysql_server, $database, $table)`: Retrieve aspirateur state through `getTableElems`.
+- `getTableExist($id_mysql_server, $database, $table)`: Retrieve aspirateur state through `getTableExist`.
+- `getTableFromProxySQL($id_proxysql)`: Retrieve aspirateur state through `getTableFromProxySQL`.
+- `getPsMemory($id_mysql_server)`: Retrieve aspirateur state through `getPsMemory`.
+- `getDigest($param)`: Retrieve aspirateur state through `getDigest`.
+- `getProcesslist($db_link, $isSingleStore)`: Retrieve aspirateur state through `getProcesslist`.
+- `array_values_to_lowercase($array)`: Handle aspirateur state through `array_values_to_lowercase`.
+- `getTables($param)`: Retrieve aspirateur state through `getTables`.
+- `getCreateTables($param)`: Retrieve aspirateur state through `getCreateTables`.
+- `eachHour($param)`: Handle aspirateur state through `eachHour`.
+- `getDisks($param)`: Retrieve aspirateur state through `getDisks`.
+- `getVelocity($name_server)`: Retrieve aspirateur state through `getVelocity`.
+- `detectDouble($param)`: Handle aspirateur state through `detectDouble`.
+- `find_duplicate_server_uids($servers)`: Handle aspirateur state through `find_duplicate_server_uids`.
+- `tryMaxScaleConnection($param)`: Handle aspirateur state through `tryMaxScaleConnection`.

@@ -65,6 +65,49 @@ class Extraction
  */
     static $groupbyday = false;
 
+    public static function buildSelectFields(string $radical, bool $graph = false): string
+    {
+        if ($radical === 'slave') {
+            return " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+        }
+
+        $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+
+        if ($graph) {
+            return $fields.", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  ";
+        }
+
+        return $fields.", a.`value` as value ";
+    }
+
+    public static function normalizeDisplayValue($value): string
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        return trim((string) $value);
+    }
+
+    public static function appendDisplayRow(array $table, object $row, bool $range): array
+    {
+        $metricName = self::$variable[$row->id_ts_variable]['name'];
+        $connectionName = isset($row->connection_name) ? (string) $row->connection_name : '';
+        $value = self::normalizeDisplayValue($row->value ?? '');
+
+        if ($range) {
+            $table[$row->id_mysql_server][$connectionName][$row->date]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$connectionName][$row->date]['date'] = $row->date;
+            $table[$row->id_mysql_server][$connectionName][$row->date][$metricName] = $value;
+        } else {
+            $table[$row->id_mysql_server][$connectionName]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$connectionName]['date'] = $row->date;
+            $table[$row->id_mysql_server][$connectionName][$metricName] = $value;
+        }
+
+        return $table;
+    }
+
 /**
  * Handle extraction state through `extract`.
  *
@@ -186,24 +229,10 @@ class Extraction
             foreach ($data_type as $type => $tab_ids) {
 
                 //debug($radical);
-                if ($radical == "slave") {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-                } else {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+                $fields = self::buildSelectFields((string) $radical, (bool) $graph);
 
-                    if ($graph === true) {
-                        //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
-                        //$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
-                        $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
-
-                        $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
-                        //$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
-                    } else {
-                        $fields .= ", a.`value` as value ";
-                    }
-
-                    //a.`value`";
-                    // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
+                if ($graph === true && $radical !== 'slave') {
+                    $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
                 }
 
                 foreach ($tab_ids as $id_ts_variable) {
@@ -357,19 +386,7 @@ class Extraction
             //debug(self::$variable[$ob->id_ts_variable]);
             //$ob->value ?? '';
 
-            if (is_null($ob->value)){
-                $ob->value = '';
-            }
-
-            if ($range) {
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-            } else {
-                $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-            }
+            $table = self::appendDisplayRow($table, $ob, (bool) $range);
         }
 
         //debug($table);

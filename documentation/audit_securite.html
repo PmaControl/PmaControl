@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>audit_securite</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#audit-securite-de-pmacontrol">Audit Securite de
+PmaControl</a>
+<ul>
+<li><a href="#resume-executif">1. Resume executif</a></li>
+<li><a href="#constat-principal">2. Constat principal</a>
+<ul>
+<li><a
+href="#critique-1.-sql-dynamique-concatene-avec-donnees-de-requete">Critique
+1. SQL dynamique concatene avec donnees de requete</a></li>
+<li><a
+href="#critique-2.-execution-shell-avec-parametres-composes-dynamiquement">Critique
+2. Execution shell avec parametres composes dynamiquement</a></li>
+<li><a href="#critique-3.-secrets-dechiffrables-a-chaud">Critique 3.
+Secrets dechiffrables a chaud</a></li>
+</ul></li>
+<li><a href="#risques-eleves">3. Risques eleves</a>
+<ul>
+<li><a href="#csrf-et-actions-mutables">3.1 CSRF et actions
+mutables</a></li>
+<li><a href="#controles-dautorisation-disperses">3.2 Controles
+d’autorisation disperses</a></li>
+<li><a href="#fichiers-et-chemins-manipules-dynamiquement">3.3 Fichiers
+et chemins manipules dynamiquement</a></li>
+</ul></li>
+<li><a href="#risques-moyens">4. Risques moyens</a>
+<ul>
+<li><a href="#exposition-de-details-internes">4.1 Exposition de details
+internes</a></li>
+<li><a href="#surface-reseau-large">4.2 Surface reseau large</a></li>
+<li><a href="#monolithe-a-privileges-eleves">4.3 Monolithe a privileges
+eleves</a></li>
+</ul></li>
+<li><a href="#bonnes-pratiques-deja-presentes">5. Bonnes pratiques deja
+presentes</a></li>
+<li><a href="#priorites-de-remediation">6. Priorites de remediation</a>
+<ul>
+<li><a href="#priorite-1">Priorite 1</a></li>
+<li><a href="#priorite-2">Priorite 2</a></li>
+<li><a href="#priorite-3">Priorite 3</a></li>
+</ul></li>
+<li><a href="#controles-recommandes">7. Controles recommandes</a></li>
+<li><a href="#conclusion-securite">8. Conclusion securite</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="audit-securite-de-pmacontrol">Audit Securite de PmaControl</h1>
+<ul>
+<li>Genere le: 2026-03-12 01:42:25</li>
+<li>Type: audit statique de code + lecture architecture + validation
+ponctuelle des integrations</li>
+<li>Sources: <code>App/Controller</code>, <code>App/Library</code>,
+<code>App/Webroot</code>, <code>documentation/*</code>, API REST,
+integration Telegram/MCP</li>
+</ul>
+<h2 id="resume-executif">1. Resume executif</h2>
+<p>Le projet dispose d’une forte puissance operationnelle mais expose
+aussi une surface d’attaque importante: SQL dynamique, appels shell,
+manipulation de secrets, endpoints de configuration, lecture directe des
+superglobales et actions d’administration riches. La principale
+faiblesse n’est pas un bug unique; c’est l’accumulation de patterns
+permissifs dans un monolithe administrateur.</p>
+<p>Le niveau de risque global est <strong>eleve</strong> pour une
+exposition internet directe, et <strong>moyen a eleve</strong> pour une
+exposition restreinte a un reseau d’exploitation. Le produit peut rester
+exploitable en environnement de confiance, mais il devrait etre
+considere comme sensible tant qu’un durcissement structurel n’a pas ete
+effectue.</p>
+<h2 id="constat-principal">2. Constat principal</h2>
+<h3
+id="critique-1.-sql-dynamique-concatene-avec-donnees-de-requete">Critique
+1. SQL dynamique concatene avec donnees de requete</h3>
+<p>Plusieurs controleurs construisent des requetes SQL par concatenation
+directe de <code>$_POST</code>, <code>$_GET</code> ou parametres de
+route. Exemples typiques:</p>
+<ul>
+<li><code>App/Controller/Tag.php</code></li>
+<li><code>App/Controller/Client.php</code></li>
+<li><code>App/Controller/Environment.php</code></li>
+<li>plusieurs sections de <code>Backup.php</code>,
+<code>Alias.php</code>, <code>Server.php</code>,
+<code>ForeignKey.php</code>, <code>ProxySQL.php</code></li>
+</ul>
+<p>Risque:</p>
+<ul>
+<li>injection SQL</li>
+<li>corruption du referentiel</li>
+<li>escalade horizontale par modification d’objets non autorises</li>
+</ul>
+<p>Remediation:</p>
+<ul>
+<li>interdire toute interpolation directe</li>
+<li>introduire un layer de requetes preparees ou un builder impose</li>
+<li>centraliser la validation des champs modifiables</li>
+</ul>
+<h3
+id="critique-2.-execution-shell-avec-parametres-composes-dynamiquement">Critique
+2. Execution shell avec parametres composes dynamiquement</h3>
+<p>Le code fait un usage massif de <code>shell_exec</code>,
+<code>passthru</code> et de commandes shell composees par concatenation,
+surtout dans:</p>
+<ul>
+<li><code>App/Controller/Backup.php</code></li>
+<li><code>App/Controller/Aspirateur.php</code></li>
+<li><code>App/Controller/Load.php</code></li>
+</ul>
+<p>Risque:</p>
+<ul>
+<li>command injection</li>
+<li>execution arbitraire sur l’hote applicatif</li>
+<li>exfiltration de secrets via arguments ou fichiers temporaires</li>
+</ul>
+<p>Remediation:</p>
+<ul>
+<li>remplacer les shell strings par des appels encapsules et
+echappes</li>
+<li>introduire une allow-list de binaires</li>
+<li>isoler les operations shell dans des workers non privilegies</li>
+</ul>
+<h3 id="critique-3.-secrets-dechiffrables-a-chaud">Critique 3. Secrets
+dechiffrables a chaud</h3>
+<p>Les mots de passe SSH, MySQL et autres secrets sont stockes
+chiffrables/dechiffrables par l’application. On observe des usages
+repetes de:</p>
+<ul>
+<li><code>Crypt::decrypt</code></li>
+<li><code>Chiffrement::decrypt</code></li>
+</ul>
+<p>Risque:</p>
+<ul>
+<li>tout code ayant acces au runtime peut lire les secrets</li>
+<li>fuite dans logs, dumps memoire, debug, erreurs ou variables
+shell</li>
+</ul>
+<p>Remediation:</p>
+<ul>
+<li>passer a un secret store externe ou a minima a une cle de
+chiffrement hors repo/hors DB</li>
+<li>journaliser les usages de dechiffrement</li>
+<li>minimiser la fenetre de vie des secrets en memoire</li>
+</ul>
+<h2 id="risques-eleves">3. Risques eleves</h2>
+<h3 id="csrf-et-actions-mutables">3.1 CSRF et actions mutables</h3>
+<p>De nombreuses actions modifient l’etat via POST ou GET sans mecanisme
+CSRF visible:</p>
+<ul>
+<li>updates inline de tags, clients, environnements</li>
+<li>suppressions</li>
+<li>toggles d’etat serveur</li>
+<li>operations d’administration</li>
+</ul>
+<p>Risque:</p>
+<ul>
+<li>modification non voulue depuis un navigateur authentifie</li>
+</ul>
+<h3 id="controles-dautorisation-disperses">3.2 Controles d’autorisation
+disperses</h3>
+<p>L’ACL existe, mais le pattern global reste heterogene. Certaines
+actions web, CLI ou API reposent plus sur le contexte de routage et la
+convention que sur une verification explicite de droits metier.</p>
+<p>Risque:</p>
+<ul>
+<li>divergence entre intention ACL et execution reelle</li>
+<li>endpoints techniques exposes plus largement que prevu</li>
+</ul>
+<h3 id="fichiers-et-chemins-manipules-dynamiquement">3.3 Fichiers et
+chemins manipules dynamiquement</h3>
+<p>Plusieurs modules ecrivent, lisent, telechargent ou suppriment des
+fichiers:</p>
+<ul>
+<li>dumps</li>
+<li>archives</li>
+<li>scripts shell</li>
+<li>fichiers md5</li>
+<li>caches pivots</li>
+</ul>
+<p>Risque:</p>
+<ul>
+<li>path traversal</li>
+<li>overwrite de fichiers sensibles</li>
+<li>fuite de fichiers via endpoints de download</li>
+</ul>
+<h2 id="risques-moyens">4. Risques moyens</h2>
+<h3 id="exposition-de-details-internes">4.1 Exposition de details
+internes</h3>
+<p>Le bootstrap active un mode debug en fonction d’IP ou d’environnement
+et certains controleurs retournent SQL, stack traces ou JSON techniques.
+En contexte mal cloisonne, cela facilite la reconnaissance.</p>
+<h3 id="surface-reseau-large">4.2 Surface reseau large</h3>
+<p>Le produit ouvre ou pilote:</p>
+<ul>
+<li>connexions MySQL</li>
+<li>SSH/SCP</li>
+<li>LDAP</li>
+<li>appels HTTP sortants</li>
+<li>integrations Telegram/Ollama</li>
+</ul>
+<p>Sans politique reseau stricte, la plateforme devient un point de
+rebond lateral.</p>
+<h3 id="monolithe-a-privileges-eleves">4.3 Monolithe a privileges
+eleves</h3>
+<p>La meme application peut:</p>
+<ul>
+<li>lire et ecrire en base</li>
+<li>lancer des commandes shell</li>
+<li>manipuler des secrets</li>
+<li>initier des connexions SSH</li>
+<li>reconfigurer des proxys</li>
+</ul>
+<p>Le blast radius d’un compte compromis est donc important.</p>
+<h2 id="bonnes-pratiques-deja-presentes">5. Bonnes pratiques deja
+presentes</h2>
+<ul>
+<li>presence d’un systeme ACL/Auth</li>
+<li>journalisation Monolog</li>
+<li>API REST documentee</li>
+<li>RBAC sur le serveur MCP Telegram</li>
+<li>segmentation metier par clients/environnements</li>
+<li>historique et tables de suivi pour plusieurs workflows</li>
+</ul>
+<h2 id="priorites-de-remediation">6. Priorites de remediation</h2>
+<h3 id="priorite-1">Priorite 1</h3>
+<ul>
+<li>sortir le SQL dynamique du code de presentation</li>
+<li>encapsuler toute execution shell</li>
+<li>mettre en place CSRF systematique</li>
+<li>revoir la gestion et le stockage des secrets</li>
+</ul>
+<h3 id="priorite-2">Priorite 2</h3>
+<ul>
+<li>isoler les workers/system calls du frontal web</li>
+<li>generaliser les DTO/validators pour l’API et les formulaires</li>
+<li>renforcer l’audit trail des operations sensibles</li>
+<li>interdire les ecritures filesystem hors repertoires allow-list</li>
+</ul>
+<h3 id="priorite-3">Priorite 3</h3>
+<ul>
+<li>normaliser le design des controleurs</li>
+<li>supprimer le dead code/commentaires de debug</li>
+<li>augmenter la couverture de tests sur les parcours sensibles</li>
+<li>segmenter les privileges BD et SSH par fonction</li>
+</ul>
+<h2 id="controles-recommandes">7. Controles recommandes</h2>
+<ul>
+<li>WAF ou reverse proxy restrictif</li>
+<li>acces applicatif reserve au reseau d’exploitation</li>
+<li>rotation de secrets</li>
+<li>supervision des appels shell</li>
+<li>analyse SAST continue</li>
+<li>revue de droits par domaine (backup, schema, admin, monitoring)</li>
+<li>separation compte lecture/compte action</li>
+</ul>
+<h2 id="conclusion-securite">8. Conclusion securite</h2>
+<p>PmaControl est un outil d’administration puissant qui doit etre
+traite comme un composant privilegie de production. Son principal enjeu
+securite n’est pas l’absence de fonctionnalites de securite, mais la
+cohabitation de capacites tres sensibles dans un codebase historiquement
+permissif. L’audit recommande un durcissement par couches: validation,
+authorisation, secret management, encapsulation shell, isolation des
+workers et reduction des privileges.</p>
+</body>
+</html>

@@ -35,6 +35,10 @@ $faqs = [
         'q' => ['fr' => 'Comment gérez-vous les sauvegardes ?', 'en' => 'How do you handle backups?'],
         'a' => ['fr' => 'Backups orchestrés, tests de restauration planifiés et rapports automatiques.', 'en' => 'Orchestrated backups, scheduled restore tests, automated reports.'],
     ],
+    [
+        'q' => ['fr' => 'Comment régénérer configuration/db.config.ini.php ?', 'en' => 'How do I regenerate configuration/db.config.ini.php?'],
+        'a' => ['fr' => 'Utilisez la commande CLI `pmacontrol mysql refreshConfig`. Elle régénère `/srv/www/pmacontrol/configuration/db.config.ini.php`.', 'en' => 'Use the CLI command `pmacontrol mysql refreshConfig`. It regenerates `/srv/www/pmacontrol/configuration/db.config.ini.php`.'],
+    ],
 ];
 ?>
 <section class="page-hero">

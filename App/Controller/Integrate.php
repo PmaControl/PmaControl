@@ -79,6 +79,25 @@ class Integrate extends Controller
  */
     static $id_mysql_server__to_refresh = array();
 
+    protected function normalizeSlaveMetricRow(string $typeMetrics, $value): ?array
+    {
+        if ($typeMetrics !== 'slave' || !is_array($value)) {
+            return null;
+        }
+
+        $value = array_change_key_case($value);
+
+        if (!isset($value['connection_name'])) {
+            $value['connection_name'] = '';
+        }
+
+        if (empty($value['seconds_behind_master'])) {
+            $value['seconds_behind_master'] = '0';
+        }
+
+        return $value;
+    }
+
 /**
  * Prepare integrate state through `before`.
  *
@@ -878,13 +897,11 @@ public function integrateAll($param)
                                         }
 
                                         // === SLAVE SECTION ===
-                                        if (is_array($value) &&  isset($value['connection_name'])   ) {
-                                            
-
-                                            if (empty($value['seconds_behind_master']))
-                                            {
-                                                $value['seconds_behind_master'] = "0";
-                                            }
+                                        // MariaDB/MySQL mono-source replication returns a numeric list of rows
+                                        // from SHOW SLAVE STATUS without a connection_name field.
+                                        $normalizedSlaveValue = $this->normalizeSlaveMetricRow($type_metrics, $value);
+                                        if ($normalizedSlaveValue !== null) {
+                                            $value = $normalizedSlaveValue;
 
                                             foreach ($value as $slave_variable => $slave_value) {
 

@@ -1,0 +1,36 @@
+# ProxySQL
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/ProxySQL.php`
+
+- `before($param)`: Prepare proxy s q l state through `before`.
+- `main($param)`: Render proxy s q l state through `main`.
+- `add()`: Create proxy s q l state through `add`.
+- `testProxySQLAdmin($param)`: Handle proxy s q l state through `testProxySQLAdmin`.
+- `index($param)`: Render proxy s q l state through `index`.
+- `getServers($hostname, $port, $login, $password)`: Retrieve proxy s q l state through `getServers`.
+- `associate($param)`: Handle proxy s q l state through `associate`.
+- `statistic($param)`: Handle proxy s q l state through `statistic`.
+- `getErrorConnect($param)`: Retrieve proxy s q l state through `getErrorConnect`.
+- `import($param)`: Handle proxy s q l state through `import`.
+- `auto($param)`: Handle proxy s q l state through `auto`.
+- `getConfigMenuDefinition()`: Retrieve proxy s q l state through `getConfigMenuDefinition`.
+- `extractTableNameFromSqlTemplate($sql_template)`: Handle proxy s q l state through `extractTableNameFromSqlTemplate`.
+- `getSqliteCreateTableStatement($db, $table_name)`: Retrieve proxy s q l state through `getSqliteCreateTableStatement`.
+- `normalizeDefaultValue($default_value)`: Handle proxy s q l state through `normalizeDefaultValue`.
+- `parseEnumValues($raw_values)`: Handle proxy s q l state through `parseEnumValues`.
+- `getEnumValuesByColumn($create_table_sql, $columns)`: Retrieve proxy s q l state through `getEnumValuesByColumn`.
+- `getAutoincrementByColumn($create_table_sql, $columns)`: Retrieve proxy s q l state through `getAutoincrementByColumn`.
+- `config($param)`: Handle proxy s q l state through `config`.
+- `update($param)`: Update proxy s q l state through `update`.
+- `menu($param)`: Handle proxy s q l state through `menu`.
+- `ifProxySqlExist($param)`: Handle proxy s q l state through `ifProxySqlExist`.
+- `insertProxySqlAdmin($param)`: Handle proxy s q l state through `insertProxySqlAdmin`.
+- `updateField($param)`: Update proxy s q l state through `updateField`.
+- `deleteLine($param)`: Delete proxy s q l state through `deleteLine`.
+- `monitor($param)`: Handle proxy s q l state through `monitor`.
+- `cluster($param)`: Handle proxy s q l state through `cluster`.
+- `log($param)`: Handle proxy s q l state through `log`.
+- `getIdMysqlServer($param)`: Retrieve proxy s q l state through `getIdMysqlServer`.
+- `addLine($param)`: Create proxy s q l state through `addLine`.

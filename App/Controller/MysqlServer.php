@@ -282,6 +282,7 @@ class MysqlServer extends Controller
     {
         $id_mysql_server = $param[0];
         $_GET['mysql_server']['id'] = $id_mysql_server;
+        $showSystemThreads = !empty($_GET['show_system_threads']) && $_GET['show_system_threads'] === '1';
 
         $isAjax = !empty($_GET['ajax']) && $_GET['ajax'] === "true";
         if ($isAjax){
@@ -462,7 +463,11 @@ class MysqlServer extends Controller
                 $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
             }
 
-            if ($db->checkVersion(array('MySQL' => '8.0')) && $has_perf_threads)
+            if ($db->checkVersion(array('Percona Server' => '5.6')) && ! $db->checkVersion(array('Percona Server' => '5.7')))
+            {
+                $sql = "SHOW FULL PROCESSLIST";
+            }
+            else if ($db->checkVersion(array('MySQL' => '8.0')) && $has_perf_threads)
             {
                 if ($has_innodb_trx) {
                     $sql = "SELECT /* pmacontrol-processlist */
@@ -489,9 +494,10 @@ class MysqlServer extends Controller
                     WHERE
                         processlist_id IS NOT NULL AND
                         processlist_time IS NOT NULL AND
-                        processlist_command != 'Daemon'
-                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%') 
-                        AND (processlist_info IS NOT NULL OR trx_query IS NOT NULL) AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
+                        ".($showSystemThreads ? "1 = 1" : "processlist_command != 'Daemon'
+                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%')")."
+                        AND ".($showSystemThreads ? "1 = 1" : "(processlist_info IS NOT NULL OR trx_query IS NOT NULL)")."
+                        AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
                         ORDER BY processlist_time DESC;";
                 } else {
                     $sql = "SELECT /* pmacontrol-processlist */
@@ -517,9 +523,10 @@ class MysqlServer extends Controller
                     WHERE
                         processlist_id IS NOT NULL AND
                         processlist_time IS NOT NULL AND
-                        processlist_command != 'Daemon'
-                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%') 
-                        AND processlist_info IS NOT NULL AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
+                        ".($showSystemThreads ? "1 = 1" : "processlist_command != 'Daemon'
+                        AND (processlist_command != 'Sleep' AND processlist_command NOT LIKE 'Binlog Dump%')")."
+                        AND ".($showSystemThreads ? "1 = 1" : "processlist_info IS NOT NULL")."
+                        AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
                         ORDER BY processlist_time DESC;";
                 }
 
@@ -570,7 +577,7 @@ class MysqlServer extends Controller
                         IFNULL(TIMESTAMPDIFF(SECOND, trx_started, NOW()), '') AS trx_time
                     FROM information_schema.processlist p
                     LEFT JOIN information_schema.innodb_trx t ON p.ID = t.trx_mysql_thread_id
-                    WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
+                    WHERE ".($showSystemThreads ? "1 = 1" : "(command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')")."
                     ORDER BY 
                         p.TIME DESC;";
                 } else {
@@ -593,7 +600,7 @@ class MysqlServer extends Controller
                         'N/A' AS trx_concurrency_tickets,
                         'N/A' AS trx_time
                     FROM information_schema.processlist p
-                    WHERE (command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')
+                    WHERE ".($showSystemThreads ? "1 = 1" : "(command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')")."
                     ORDER BY 
                         p.TIME DESC;";
                 }
@@ -620,7 +627,7 @@ class MysqlServer extends Controller
                     $command = $arr['Command'] ?? $arr['COMMAND'] ?? '';
                     $info = $arr['Info'] ?? $arr['INFO'] ?? '';
 
-                    if ($command === 'Sleep' || str_starts_with($command, 'Binlog Dump')) {
+                    if (!$showSystemThreads && ($command === 'Sleep' || str_starts_with($command, 'Binlog Dump'))) {
                         continue;
                     }
 
@@ -650,7 +657,9 @@ class MysqlServer extends Controller
 
             while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
             {
-                if (empty($arr['query']) || str_contains($arr['query'], '/* pmacontrol-processlist */')) {
+                $queryText = (string)($arr['query'] ?? '');
+
+                if ((!$showSystemThreads && $queryText === '') || str_contains($queryText, '/* pmacontrol-processlist */')) {
                     continue;
                 }
 
@@ -701,13 +710,15 @@ class MysqlServer extends Controller
         $data['metadata_lock_info'] = $metadataLockInfo;
         $data['metadata_lock_enabled'] = !empty($metadataLockServers);
         $data['metadata_lock_servers'] = $metadataLockServers;
+        $data['show_system_threads'] = $showSystemThreads;
 
         $metadataLockQuery = '';
         if (!empty($metadataLockServers)) {
-            $metadataLockQuery = '?metadata_lock_servers=' . implode(',', $metadataLockServers);
+            $metadataLockQuery = '/metadata_lock_servers:' . implode(',', $metadataLockServers);
         }
 
         $metadataLockQueryJs = json_encode($metadataLockQuery);
+        $data['processlist_extra_path'] = $metadataLockQuery;
 
         //debug($data['processlist']);
 
@@ -722,7 +733,20 @@ class MysqlServer extends Controller
 
             function refresh()
             {
-                var myURL = GLIAL_LINK+GLIAL_URL+"ajax:true"+metadataLockQuery;
+                var extraQuery = metadataLockQuery;
+                var checkbox = document.getElementById("show-system-threads");
+                var baseUrl = GLIAL_LINK+GLIAL_URL;
+
+                baseUrl = baseUrl.replace(/\/ajax:true(?:\/|$)/, "/");
+                baseUrl = baseUrl.replace(/\/show_system_threads:[^/]+/g, "");
+                baseUrl = baseUrl.replace(/\/metadata_lock_servers:[^/]+/g, "");
+                baseUrl = baseUrl.replace(/\/+$/, "");
+
+                if (checkbox && checkbox.checked) {
+                    extraQuery += "/show_system_threads:1";
+                }
+
+                var myURL = baseUrl+"/ajax:true"+extraQuery;
                 $("#processlist").load(myURL);
             }
 
@@ -902,15 +926,7 @@ class MysqlServer extends Controller
  */
     private function fetchMetadataLockInfo($db, int $id_mysql_server): array
     {
-        $sql = "SELECT
-                THREAD_ID,
-                LOCK_MODE,
-                LOCK_DURATION,
-                LOCK_TIME_MS,
-                LOCK_TYPE,
-                TABLE_CATALOG,
-                TABLE_SCHEMA,
-                TABLE_NAME
+        $sql = "SELECT *
             FROM information_schema.METADATA_LOCK_INFO";
 
         $res = $db->sql_query_silent($sql);
@@ -3596,4 +3612,3 @@ class MysqlServer extends Controller
     }
 
 }
-

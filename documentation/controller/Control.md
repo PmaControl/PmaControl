@@ -1,0 +1,31 @@
+# Control
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Control.php`
+
+- `checkSize($param)`: Handle control state through `checkSize`.
+- `before($param)`: Prepare control state through `before`.
+- `selectEngine()`: Handle control state through `selectEngine`.
+- `addPartition($param)`: Create control state through `addPartition`.
+- `makeCombinaison()`: Handle control state through `makeCombinaison`.
+- `dropPartition($param)`: Handle control state through `dropPartition`.
+- `getMinMaxPartition()`: Retrieve control state through `getMinMaxPartition`.
+- `getToDays($param)`: Retrieve control state through `getToDays`.
+- `service($param)`: Handle control state through `service`.
+- `dropTsTable($param)`: Handle control state through `dropTsTable`.
+- `createTsTable()`: Create control state through `createTsTable`.
+- `rebuildAll($param)`: Handle control state through `rebuildAll`.
+- `statistique($param)`: Handle control state through `statistique`.
+- `getDates()`: Retrieve control state through `getDates`.
+- `dropFile($diretory)`: Handle control state through `dropFile`.
+- `dropAllFile($param)`: Handle control state through `dropAllFile`.
+- `refreshVariable($param)`: Handle control state through `refreshVariable`.
+- `purgefrm($param)`: Handle control state through `purgefrm`.
+- `truncateTsVariable()`: Handle control state through `truncateTsVariable`.
+- `truncateTsMaxDate()`: Handle control state through `truncateTsMaxDate`.
+- `truncateTsFile()`: Handle control state through `truncateTsFile`.
+- `delMd5File($param)`: Handle control state through `delMd5File`.
+- `rocksdbCompact($param)`: Handle control state through `rocksdbCompact`.
+- `generateAllTables($param)`: Handle control state through `generateAllTables`.
+- `purgeAll($param)`: Handle control state through `purgeAll`.

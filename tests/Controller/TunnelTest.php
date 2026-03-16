@@ -35,9 +35,28 @@ class TunnelTest extends TestCase
         $this->assertEquals(8902, $result['local_port']);
         $this->assertEquals('192.168.114.22', $result['remote_host']);
         $this->assertEquals(8989, $result['remote_port']);
-        $this->assertCount(1, $result['jump_hosts']);
+        $this->assertCount(2, $result['jump_hosts']);
         $this->assertEquals('212.234.81.130', $result['jump_hosts'][0]['ip']);
         $this->assertEquals(22, $result['jump_hosts'][0]['port']);
+        $this->assertEquals('192.168.114.22', $result['jump_hosts'][1]['ip']);
+        $this->assertEquals(22, $result['jump_hosts'][1]['port']);
+    }
+
+    public function testParseLocalTunnelWithBindAddressAndProxyJumpKeepsForwardTarget(): void
+    {
+        $line = "root 7777 Tue Oct 14 01:32:49 2025 ? 00:00:00 ssh -fNT -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new -L 127.0.0.1:13306:172.22.14.8:3306 -J root@172.20.10.62 root@172.21.0.240";
+        $result = $this->parser->parse([$line]);
+
+        $this->assertEquals('L', $result['type']);
+        $this->assertEquals('127.0.0.1', $result['local_host']);
+        $this->assertEquals(13306, $result['local_port']);
+        $this->assertEquals('172.22.14.8', $result['remote_host']);
+        $this->assertEquals(3306, $result['remote_port']);
+        $this->assertCount(2, $result['jump_hosts']);
+        $this->assertEquals('172.20.10.62', $result['jump_hosts'][0]['ip']);
+        $this->assertEquals(22, $result['jump_hosts'][0]['port']);
+        $this->assertEquals('172.21.0.240', $result['jump_hosts'][1]['ip']);
+        $this->assertEquals(22, $result['jump_hosts'][1]['port']);
     }
 
     public function testParseRemoteTunnel()

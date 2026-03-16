@@ -1,0 +1,91 @@
+# Schema
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Schema.php`
+
+- `export($param)`: Handle schema state through `export`.
+- `importScript($param)`: Handle schema state through `importScript`.
+- `parseImportScriptOptions($args)`: Handle schema state through `parseImportScriptOptions`.
+- `buildImportTables($basePath)`: Handle schema state through `buildImportTables`.
+- `buildImportViews($basePath)`: Handle schema state through `buildImportViews`.
+- `buildImportProcedures($basePath)`: Handle schema state through `buildImportProcedures`.
+- `buildImportFunctions($basePath)`: Handle schema state through `buildImportFunctions`.
+- `buildImportTriggers($basePath)`: Handle schema state through `buildImportTriggers`.
+- `buildImportEvents($basePath)`: Handle schema state through `buildImportEvents`.
+- `concatImportChunks($chunks)`: Handle schema state through `concatImportChunks`.
+- `loadSqlFiles($path)`: Handle schema state through `loadSqlFiles`.
+- `buildSqlSection($label, $files)`: Handle schema state through `buildSqlSection`.
+- `buildRoutineSection($label, $files)`: Handle schema state through `buildRoutineSection`.
+- `readSqlFile($path)`: Handle schema state through `readSqlFile`.
+- `formatRoutineFile($path)`: Handle schema state through `formatRoutineFile`.
+- `exportRoutines($id_mysql_server, $database, $basePath, $routineType)`: Handle schema state through `exportRoutines`.
+- `exportTriggers($id_mysql_server, $database, $basePath)`: Handle schema state through `exportTriggers`.
+- `exportEvents($id_mysql_server, $database, $basePath)`: Handle schema state through `exportEvents`.
+- `executeRoutineShowCreate($id_mysql_server, $sqlShow, $routineType)`: Handle schema state through `executeRoutineShowCreate`.
+- `extractRoutineName($row, $definitionKey, $routineType)`: Handle schema state through `extractRoutineName`.
+- `ensureDirectory($path)`: Handle schema state through `ensureDirectory`.
+- `ensureSchemaDirectoryStructure($basePath)`: Handle schema state through `ensureSchemaDirectoryStructure`.
+- `initializeGitRepository($path)`: Handle schema state through `initializeGitRepository`.
+- `ensureGitRepository($path)`: Handle schema state through `ensureGitRepository`.
+- `commitSchemaSnapshot($idMysqlServer, $database, $path, $serverMeta)`: Handle schema state through `commitSchemaSnapshot`.
+- `getGitStatus($path, $exclude)`: Retrieve schema state through `getGitStatus`.
+- `commitSubDirectorySnapshot($basePath, $subDirectory, $database, $serverMeta, $label)`: Handle schema state through `commitSubDirectorySnapshot`.
+- `ensureGitSafeDirectory($path)`: Handle schema state through `ensureGitSafeDirectory`.
+- `removeAutoIncrement($createStatement)`: Delete schema state through `removeAutoIncrement`.
+- `getNextSnapshotNumber($path)`: Retrieve schema state through `getNextSnapshotNumber`.
+- `cleanupObsoleteSchemaFiles($path, $folder, $currentObjects)`: Handle schema state through `cleanupObsoleteSchemaFiles`.
+- `extractCreateViewStatement($createRow)`: Handle schema state through `extractCreateViewStatement`.
+- `ensureCreateOrReplaceView($statement)`: Handle schema state through `ensureCreateOrReplaceView`.
+- `normalizeLineEndings($sql)`: Handle schema state through `normalizeLineEndings`.
+- `runDos2Unix($path)`: Handle schema state through `runDos2Unix`.
+- `parseGitStatus($status)`: Handle schema state through `parseGitStatus`.
+- `notifySchemaChange($database, $snapshotNumber, $changes, $serverMeta)`: Handle schema state through `notifySchemaChange`.
+- `formatChangeList($items)`: Handle schema state through `formatChangeList`.
+- `formatServerLabel($meta)`: Handle schema state through `formatServerLabel`.
+- `isUnknownDatabaseError($exception)`: Handle schema state through `isUnknownDatabaseError`.
+- `exportAll($param)`: Handle schema state through `exportAll`.
+- `exportSchemasForServer($id_mysql_server)`: Handle schema state through `exportSchemasForServer`.
+- `getEligibleServerIds($param)`: Retrieve schema state through `getEligibleServerIds`.
+- `watchLoop($param)`: Handle schema state through `watchLoop`.
+- `loadDdlState()`: Handle schema state through `loadDdlState`.
+- `saveDdlState($state)`: Update schema state through `saveDdlState`.
+- `getDdlStateFile()`: Retrieve schema state through `getDdlStateFile`.
+- `toInt($value)`: Handle schema state through `toInt`.
+- `computeDelta($previous, $current)`: Handle schema state through `computeDelta`.
+- `compareModels($param)`: Handle schema state through `compareModels`.
+- `diffModelServers($leftId, $rightId, $options)`: Handle schema state through `diffModelServers`.
+- `getModelServerPath($serverId)`: Retrieve schema state through `getModelServerPath`.
+- `listModelDatabases($serverPath)`: Retrieve schema state through `listModelDatabases`.
+- `listModelObjects($databasePath)`: Retrieve schema state through `listModelObjects`.
+- `listModelSqlFiles($databasePath)`: Retrieve schema state through `listModelSqlFiles`.
+- `diffModelDatabase($leftDatabasePath, $rightDatabasePath, $ignoreColumnOrder)`: Handle schema state through `diffModelDatabase`.
+- `formatModelComparison($comparison)`: Handle schema state through `formatModelComparison`.
+- `compareModelsUi($param)`: Handle schema state through `compareModelsUi`.
+- `buildComparisonDetails($differences, $ignoreColumnOrder)`: Handle schema state through `buildComparisonDetails`.
+- `renderDiffTable($leftFile, $rightFile, $ignoreColumnOrder)`: Handle schema state through `renderDiffTable`.
+- `getDiffClass($type)`: Retrieve schema state through `getDiffClass`.
+- `getDiffPrefix($type)`: Retrieve schema state through `getDiffPrefix`.
+- `readFileContent($path)`: Handle schema state through `readFileContent`.
+- `areModelFilesIdentical($fileA, $fileB, $ignoreColumnOrder)`: Handle schema state through `areModelFilesIdentical`.
+- `normalizeCreateTableStatement($sql)`: Handle schema state through `normalizeCreateTableStatement`.
+- `splitSqlDefinitionList($body)`: Handle schema state through `splitSqlDefinitionList`.
+- `isColumnDefinitionLine($definition)`: Handle schema state through `isColumnDefinitionLine`.
+- `isIndexDefinitionLine($definition)`: Handle schema state through `isIndexDefinitionLine`.
+- `extractColumnName($definition)`: Handle schema state through `extractColumnName`.
+- `extractIndexName($definition)`: Handle schema state through `extractIndexName`.
+- `isEscapedByBackslash($subject, $position)`: Handle schema state through `isEscapedByBackslash`.
+- `getDiffTableCss()`: Retrieve schema state through `getDiffTableCss`.
+- `getDiffer()`: Retrieve schema state through `getDiffer`.
+- `watch($param)`: Handle schema state through `watch`.
+- `migration($param)`: Handle schema state through `migration`.
+- `migrationAll($param)`: Handle schema state through `migrationAll`.
+- `migrateSchemaRepo($param)`: Handle schema state through `migrateSchemaRepo`.
+- `migrateSchemaReposAll($param)`: Handle schema state through `migrateSchemaReposAll`.
+- `listSchemaRepoSkips($param)`: Retrieve schema state through `listSchemaRepoSkips`.
+- `runMigration($basePath, $serverFilter)`: Handle schema state through `runMigration`.
+- `formatMigrationSummary($summary)`: Handle schema state through `formatMigrationSummary`.
+- `moveFile($source, $destination)`: Handle schema state through `moveFile`.
+- `moveDirectory($source, $destination)`: Handle schema state through `moveDirectory`.
+- `copyDirectory($source, $destination)`: Handle schema state through `copyDirectory`.
+- `removeDirectory($path)`: Delete schema state through `removeDirectory`.

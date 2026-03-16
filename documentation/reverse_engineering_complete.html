@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>reverse_engineering_complete</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#reverse-engineering-complet-de-pmacontrol">Reverse
+Engineering Complet de PmaControl</a>
+<ul>
+<li><a href="#resume-executif">1. Resume executif</a></li>
+<li><a href="#architecture-dexecution">2. Architecture d’execution</a>
+<ul>
+<li><a href="#modes-dexecution">2.1 Modes d’execution</a></li>
+<li><a href="#routage-et-contrat-url">2.2 Routage et contrat
+URL</a></li>
+<li><a href="#pile-technique">2.3 Pile technique</a></li>
+</ul></li>
+<li><a href="#cartographie-fonctionnelle">3. Cartographie
+fonctionnelle</a>
+<ul>
+<li><a href="#domaines-dominants">3.1 Domaines dominants</a></li>
+<li><a href="#controleurs-les-plus-lourds">3.2 Controleurs les plus
+lourds</a></li>
+<li><a href="#zones-de-vues-les-plus-actives">3.3 Zones de vues les plus
+actives</a></li>
+</ul></li>
+<li><a href="#modele-de-donnees-reverse-engineere">4. Modele de donnees
+reverse-engineere</a>
+<ul>
+<li><a href="#lecture-metier-du-schema">4.1 Lecture metier du
+schema</a></li>
+<li><a href="#referentialite-logique">4.2 Referentialite
+logique</a></li>
+</ul></li>
+<li><a href="#regles-metier-detaillees">5. Regles metier detaillees</a>
+<ul>
+<li><a href="#regles-didentite-serveur">5.1 Regles d’identite
+serveur</a></li>
+<li><a href="#regles-denvironnement-et-de-segmentation">5.2 Regles
+d’environnement et de segmentation</a></li>
+<li><a href="#regles-de-decouverte-et-dalias">5.3 Regles de decouverte
+et d’alias</a></li>
+<li><a href="#regles-de-monitoring-et-de-collecte">5.4 Regles de
+monitoring et de collecte</a></li>
+<li><a href="#regles-de-cluster-et-de-proxy">5.5 Regles de cluster et de
+proxy</a></li>
+<li><a href="#regles-de-sauvegarde">5.6 Regles de sauvegarde</a></li>
+<li><a href="#regles-de-nettoyage-et-darchivage">5.7 Regles de nettoyage
+et d’archivage</a></li>
+<li><a href="#regles-de-schema-et-de-cles-etrangeres">5.8 Regles de
+schema et de cles etrangeres</a></li>
+<li><a href="#regles-de-securite-et-didentite">5.9 Regles de securite et
+d’identite</a></li>
+<li><a href="#regles-api-et-integration">5.10 Regles API et
+integration</a></li>
+</ul></li>
+<li><a href="#reverse-engineering-des-flux-principaux">6. Reverse
+engineering des flux principaux</a>
+<ul>
+<li><a href="#flux-web">6.1 Flux web</a></li>
+<li><a href="#flux-cli">6.2 Flux CLI</a></li>
+<li><a href="#flux-de-collecte">6.3 Flux de collecte</a></li>
+<li><a href="#flux-backup">6.4 Flux backup</a></li>
+</ul></li>
+<li><a href="#forces-structurelles-du-systeme">7. Forces structurelles
+du systeme</a></li>
+<li><a href="#limites-structurelles-observees">8. Limites structurelles
+observees</a></li>
+<li><a href="#conclusion-dingenierie-inverse">9. Conclusion d’ingenierie
+inverse</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="reverse-engineering-complet-de-pmacontrol">Reverse Engineering
+Complet de PmaControl</h1>
+<ul>
+<li>Genere le: 2026-03-12 01:42:25</li>
+<li>Perimetre analyse: <code>App/Controller</code>,
+<code>App/Library</code>, <code>App/model/IdentifierPmacontrol</code>,
+<code>App/view</code>, <code>documentation/*.md</code></li>
+<li>Volumetrie applicative:
+<ul>
+<li>Controles web/CLI: 123</li>
+<li>Bibliotheques metier et techniques: 49</li>
+<li>Modeles de schema: 161</li>
+<li>Fichiers de vue: 298</li>
+<li>Tables documentees dans la base <code>pmacontrol</code>: 162</li>
+<li>Fiches controleurs disponibles dans
+<code>documentation/controller/</code>: 123</li>
+</ul></li>
+</ul>
+<h2 id="resume-executif">1. Resume executif</h2>
+<p>PmaControl est une plateforme PHP historique de pilotage
+d’infrastructure MySQL/MariaDB orientee DBA, capable d’operer a la fois
+comme application web, comme outillage CLI et comme moteur de
+traitements planifies. Le depot combine des fonctions de monitoring, de
+cartographie topologique, d’analyse de schema, de backup/restauration,
+de nettoyage de donnees, de gestion de cluster et d’integration d’outils
+externes tels que SSH, ProxySQL, MaxScale, Graphviz, LDAP et plus
+recemment une API REST de configuration.</p>
+<p>L’application est fortement centree base de donnees: la base
+<code>pmacontrol</code> n’est pas un simple stockage d’etat, elle joue
+aussi le role de referentiel d’infrastructure, de journal de jobs, de
+cache analytique et de couche d’orchestration pour les collectes. Une
+part importante de la logique metier est repartie entre gros controleurs
+transactionnels et bibliotheques statiques. La couche de vues est
+importante, mais le coeur des regles reside surtout dans les
+controleurs, les modeles de schema et les scripts de collecte.</p>
+<p>Le design global montre un systeme “monolithe operateur” : un seul
+codebase regroupe l’administration, l’observation, les actions
+remediatives, les exports, la documentation, les workflows de backup, la
+topologie et les integrations. Ce n’est pas un back-office CRUD
+classique; c’est un cockpit d’exploitation complet pour fermes
+MySQL.</p>
+<h2 id="architecture-dexecution">2. Architecture d’execution</h2>
+<h3 id="modes-dexecution">2.1 Modes d’execution</h3>
+<p>Le meme code sert deux modes:</p>
+<ul>
+<li>mode web via <code>App/Webroot/Bootstrap.php</code></li>
+<li>mode CLI via les appels
+<code>php index.php Controller action [params]</code></li>
+</ul>
+<p>Le bootstrap initialise Composer, la configuration Glial, Monolog, la
+session, la langue, la connexion BD et les composants DI
+(<code>auth</code>, <code>acl</code>, <code>js</code>,
+<code>config</code>, <code>log</code>). Cote web,
+<code>App/Webroot/Router.php</code> transforme l’URL en triplet
+<code>langue / controller / action / params</code>.</p>
+<h3 id="routage-et-contrat-url">2.2 Routage et contrat URL</h3>
+<p>Le routeur est minimaliste et stable:</p>
+<ul>
+<li>premier segment: langue</li>
+<li>deuxieme segment: controleur</li>
+<li>troisieme segment: action</li>
+<li>segments suivants: parametres</li>
+<li>format <code>cle:valeur</code> ou <code>cle:souscle:valeur</code>
+mappe directement vers <code>$_GET</code></li>
+</ul>
+<p>Ce routage explique pourquoi beaucoup de controleurs lisent a la fois
+les parametres route et les superglobales. Le contrat d’URL est simple
+mais tres permissif, ce qui accelere le developpement historique au prix
+d’un couplage fort entre URL, superglobales et logique metier.</p>
+<h3 id="pile-technique">2.3 Pile technique</h3>
+<ul>
+<li>Framework principal: Glial / Synapse</li>
+<li>Langage: PHP 8.2+</li>
+<li>Persistence: MariaDB / MySQL</li>
+<li>Graphes: Graphviz</li>
+<li>Journalisation: Monolog</li>
+<li>Transport distant: SSH, SCP</li>
+<li>Integration REST: controleur <code>Api</code></li>
+<li>Generation documentaire: Markdown + PDF</li>
+</ul>
+<h2 id="cartographie-fonctionnelle">3. Cartographie fonctionnelle</h2>
+<h3 id="domaines-dominants">3.1 Domaines dominants</h3>
+<p>Le code se structure de facto autour des domaines ci-dessous:</p>
+<ol type="1">
+<li><strong>Referentiel d’infrastructure</strong>
+<ul>
+<li>serveurs MySQL</li>
+<li>alias DNS</li>
+<li>clients/organisations</li>
+<li>environnements</li>
+<li>tags</li>
+<li>zones de stockage backup</li>
+</ul></li>
+<li><strong>Collecte et monitoring</strong>
+<ul>
+<li><code>Aspirateur</code>, <code>Listener</code>, <code>Worker</code>,
+<code>Integrate</code>, <code>Dashboard</code></li>
+<li>collecte d’etat MySQL, systeme, replication, ProxySQL, MaxScale</li>
+<li>stockage des series temporelles dans les tables
+<code>ts_*</code></li>
+</ul></li>
+<li><strong>Topologie et visualisation</strong>
+<ul>
+<li><code>Dot3</code>, <code>Graph</code>, <code>Architecture</code>,
+<code>Replication</code>, <code>Cluster</code></li>
+<li>generation d’arbres de dependances, vues cluster, cartes de
+flux</li>
+</ul></li>
+<li><strong>Sauvegarde, archivage et restauration</strong>
+<ul>
+<li><code>Backup</code>, <code>Archives</code>, <code>Recover</code>,
+<code>StorageArea</code>, <code>Load</code></li>
+<li>orchestration de dumps, archives, transferts, restauration
+cible</li>
+</ul></li>
+<li><strong>Qualite du schema et hygiene</strong>
+<ul>
+<li><code>Schema</code>, <code>ForeignKey</code>, <code>Compare</code>,
+<code>CompareConfig</code>, <code>Cleaner</code></li>
+<li>virtualisation et suggestions de FK, comparaison de schemas,
+nettoyage</li>
+</ul></li>
+<li><strong>Securite, comptes et administration</strong>
+<ul>
+<li><code>User</code>, <code>Acl</code>, <code>Ldap</code>,
+<code>Administration</code>, <code>Api</code>,
+<code>Telegram</code></li>
+<li>gestion des acces, roles, abonnements, integrations externes</li>
+</ul></li>
+<li><strong>Analyse SQL et performance</strong>
+<ul>
+<li><code>Query</code>, <code>Mysql</code>, <code>MysqlServer</code>,
+<code>MysqlDatabase</code>, <code>MysqlTable</code>,
+<code>Digest</code></li>
+<li>digests, metadata locks, disponibilite, diagnostics offline</li>
+</ul></li>
+</ol>
+<h3 id="controleurs-les-plus-lourds">3.2 Controleurs les plus
+lourds</h3>
+<p>Les gros centres de gravite techniques du projet sont:</p>
+<ul>
+<li><code>Cleaner</code>: 98 methodes, 68 appels BD visibles</li>
+<li><code>Schema</code>: 85 methodes, 11 appels BD visibles</li>
+<li><code>Aspirateur</code>: 62 methodes, 61 appels BD visibles</li>
+<li><code>Dot3</code>: 62 methodes, 24 appels BD visibles</li>
+<li><code>MysqlServer</code>: 55 methodes, 7 appels BD visibles</li>
+<li><code>Backup</code>: 43 methodes, 57 appels BD visibles</li>
+<li><code>Mysql</code>: 40 methodes, 37 appels BD visibles</li>
+<li><code>Query</code>: 36 methodes, 38 appels BD visibles</li>
+<li><code>Server</code>: 33 methodes, 29 appels BD visibles</li>
+<li><code>Benchmark</code>: 33 methodes, 25 appels BD visibles</li>
+<li><code>ProxySQL</code>: 32 methodes, 31 appels BD visibles</li>
+<li><code>ForeignKey</code>: 31 methodes, 27 appels BD visibles</li>
+<li><code>Database</code>: 30 methodes, 58 appels BD visibles</li>
+<li><code>Pmacontrol</code>: 30 methodes, 0 appels BD visibles</li>
+<li><code>Install</code>: 28 methodes, 8 appels BD visibles</li>
+<li><code>User</code>: 27 methodes, 32 appels BD visibles</li>
+<li><code>Worker</code>: 27 methodes, 26 appels BD visibles</li>
+<li><code>Control</code>: 25 methodes, 22 appels BD visibles</li>
+<li><code>Slave</code>: 24 methodes, 26 appels BD visibles</li>
+<li><code>Audit</code>: 24 methodes, 8 appels BD visibles</li>
+</ul>
+<p>Ces fichiers concentrent l’essentiel du patrimoine fonctionnel et
+sont donc les plus critiques pour tout refactoring, toute mise en
+securite et toute evolution de contrat metier.</p>
+<h3 id="zones-de-vues-les-plus-actives">3.3 Zones de vues les plus
+actives</h3>
+<ul>
+<li><code>Pmacontrol</code>: 28 fichiers de vue</li>
+<li><code>Site</code>: 19 fichiers de vue</li>
+<li><code>Cleaner</code>: 16 fichiers de vue</li>
+<li><code>Server</code>: 16 fichiers de vue</li>
+<li><code>ProxySQL</code>: 11 fichiers de vue</li>
+<li><code>Database</code>: 10 fichiers de vue</li>
+<li><code>Mysql</code>: 9 fichiers de vue</li>
+<li><code>ForeignKey</code>: 8 fichiers de vue</li>
+<li><code>User</code>: 8 fichiers de vue</li>
+<li><code>Binlog</code>: 7 fichiers de vue</li>
+<li><code>Common</code>: 7 fichiers de vue</li>
+<li><code>Backup</code>: 7 fichiers de vue</li>
+<li><code>Docker</code>: 6 fichiers de vue</li>
+<li><code>Layout</code>: 6 fichiers de vue</li>
+<li><code>Benchmark</code>: 6 fichiers de vue</li>
+<li><code>Archives</code>: 5 fichiers de vue</li>
+<li><code>MysqlDatabase</code>: 5 fichiers de vue</li>
+<li><code>Audit</code>: 4 fichiers de vue</li>
+<li><code>Spider</code>: 4 fichiers de vue</li>
+<li><code>MysqlUser</code>: 4 fichiers de vue</li>
+</ul>
+<p>Cela confirme un biais fort vers les ecrans d’operations: l’interface
+n’est pas generique, elle est organisee par domaine d’exploitation.</p>
+<h2 id="modele-de-donnees-reverse-engineere">4. Modele de donnees
+reverse-engineere</h2>
+<p>La base <code>pmacontrol</code> compte 162 tables documentees. Les
+prefixes de tables les plus significatifs sont:</p>
+<ul>
+<li>Prefixe <code>ts</code>: 23 tables</li>
+<li>Prefixe <code>kb</code>: 17 tables</li>
+<li>Prefixe <code>mysql</code>: 8 tables</li>
+<li>Prefixe <code>dot3</code>: 6 tables</li>
+<li>Prefixe <code>docker</code>: 6 tables</li>
+<li>Prefixe <code>backup</code>: 6 tables</li>
+<li>Prefixe <code>foreign</code>: 5 tables</li>
+<li>Prefixe <code>archive</code>: 3 tables</li>
+<li>Prefixe <code>benchmark</code>: 3 tables</li>
+<li>Prefixe <code>translation</code>: 3 tables</li>
+<li>Prefixe <code>binlog</code>: 3 tables</li>
+<li>Prefixe <code>plugin</code>: 3 tables</li>
+<li>Prefixe <code>link</code>: 3 tables</li>
+<li>Prefixe <code>geolocalisation</code>: 3 tables</li>
+<li>Prefixe <code>worker</code>: 3 tables</li>
+<li>Prefixe <code>history</code>: 3 tables</li>
+<li>Prefixe <code>haproxy</code>: 3 tables</li>
+<li>Prefixe <code>cleaner</code>: 2 tables</li>
+<li>Prefixe <code>event</code>: 2 tables</li>
+<li>Prefixe <code>pmacli</code>: 2 tables</li>
+</ul>
+<h3 id="lecture-metier-du-schema">4.1 Lecture metier du schema</h3>
+<ul>
+<li><code>mysql_*</code>: coeur du referentiel serveurs, schemas,
+tables, privileges, requetes, digests</li>
+<li><code>ts_*</code>: couche de time series et variables de
+monitoring</li>
+<li><code>backup_*</code>, <code>archive_*</code>: cycle de vie des
+sauvegardes et de leur conservation</li>
+<li><code>dot3_*</code>: cartographie topologique et vues de
+graphes</li>
+<li><code>foreign_*</code>: moteur de suggestions, exceptions et
+projections de cles etrangeres</li>
+<li><code>worker_*</code>, <code>job</code>: orchestration asynchrone et
+supervision de taches</li>
+<li><code>plugin_*</code>: systeme d’extensions</li>
+<li><code>webservice_*</code>: exposition et import de donnees
+externes</li>
+</ul>
+<h3 id="referentialite-logique">4.2 Referentialite logique</h3>
+<p>La referentialite est partagee entre:</p>
+<ul>
+<li>des FKs reelles en base</li>
+<li>des verifications <code>reference_to</code> dans les modeles de
+schema Glial</li>
+<li>des conventions applicatives implicites</li>
+</ul>
+<p>Cette combinaison montre un systeme qui a grandi par couches
+successives: certaines relations sont strictes, d’autres seulement
+appliquees par le code. Le reverse engineering doit donc toujours lire
+en meme temps les modeles, les controleurs et les workflows.</p>
+<h2 id="regles-metier-detaillees">5. Regles metier detaillees</h2>
+<h3 id="regles-didentite-serveur">5.1 Regles d’identite serveur</h3>
+<ul>
+<li>un serveur MySQL est defini par une organisation
+(<code>id_client</code>), un environnement
+(<code>id_environment</code>), un nom logique, une IP, un port et des
+credentials</li>
+<li><code>name</code> et le couple <code>ip:port</code> sont traites
+comme des identifiants forts</li>
+<li>un serveur peut etre marque <code>is_monitored</code>,
+<code>is_proxy</code>, <code>is_vip</code>,
+<code>is_acknowledged</code></li>
+<li>la suppression metier de serveur est generalement douce
+(<code>is_deleted=1</code>) plutot que destructive</li>
+<li><code>display_name</code> sert a la presentation operateur et peut
+diverger du <code>hostname</code></li>
+</ul>
+<h3 id="regles-denvironnement-et-de-segmentation">5.2 Regles
+d’environnement et de segmentation</h3>
+<ul>
+<li>les donnees sont segmentees par client et environnement</li>
+<li>l’environnement porte des attributs de presentation
+(<code>class</code>, <code>letter</code>, <code>key</code>) qui servent
+a l’UI autant qu’a la categorisation</li>
+<li>certains environnements systeme ont des identifiants proteges et ne
+doivent pas etre supprimes arbitrairement</li>
+<li>le client <code>99</code> est traite comme une valeur de repli
+technique dans des workflows de suppression</li>
+</ul>
+<h3 id="regles-de-decouverte-et-dalias">5.3 Regles de decouverte et
+d’alias</h3>
+<ul>
+<li>les alias DNS permettent de rattacher un endpoint observe a un
+serveur connu</li>
+<li>la resolution peut venir du DNS, du hostname expose, des IP SSH, de
+<code>wsrep_node_address</code> ou d’autres signaux
+d’infrastructure</li>
+<li>les alias provenant de SSH sont purges s’ils ne sont plus visibles
+dans l’inventaire courant</li>
+<li>cette couche est essentielle pour maintenir la coherence de
+topologie lorsque NAT, VIP, proxys ou noms differents coexistent</li>
+</ul>
+<h3 id="regles-de-monitoring-et-de-collecte">5.4 Regles de monitoring et
+de collecte</h3>
+<ul>
+<li><code>Aspirateur</code> collecte l’etat serveur, systeme,
+replication, variables, plugins, metadata locks, processlist,
+statistiques OS, etc.</li>
+<li><code>Listener</code> et <code>Integrate</code> consolident ensuite
+les mesures dans les structures <code>ts_*</code></li>
+<li>le monitoring n’est pas seulement passif: certaines detections
+basculent des attributs metier comme <code>is_proxy</code>, l’etat des
+VIP ou la cartographie des clusters</li>
+<li>la base devient donc un miroir enrichi de l’infrastructure
+reelle</li>
+</ul>
+<h3 id="regles-de-cluster-et-de-proxy">5.5 Regles de cluster et de
+proxy</h3>
+<ul>
+<li>la plateforme modelise explicitement Galera, Master/Slave, ProxySQL,
+MaxScale, HAProxy</li>
+<li>les vues de topologie utilisent des donnees agrandies par alias,
+wsrep, groupes de serveurs et graphes DOT</li>
+<li>les outils de cluster supposent qu’un meme ensemble logique peut
+etre observe via plusieurs points d’entree</li>
+<li>les proxys sont des citoyens de premiere classe, pas des simples
+details reseau</li>
+</ul>
+<h3 id="regles-de-sauvegarde">5.6 Regles de sauvegarde</h3>
+<ul>
+<li>une sauvegarde est associee a un serveur, un type, un schedule et
+une zone de stockage</li>
+<li>les workflows enchainent dump, compression, chiffrement, transfert,
+verification de taille et de hash</li>
+<li>les zones de stockage sont des ressources metier validees par
+SSH</li>
+<li>les archives historisent l’etat des traitements, la progression, les
+checksums et les temps de traitement</li>
+<li>les restaurations et imports sont pilotes depuis l’application,
+parfois via shell et scripts distants</li>
+</ul>
+<h3 id="regles-de-nettoyage-et-darchivage">5.7 Regles de nettoyage et
+d’archivage</h3>
+<ul>
+<li><code>Cleaner</code> encapsule des jobs de purge, de copie,
+d’archivage et parfois de rechargement</li>
+<li>l’historique de nettoyage et les tables d’archive servent a tracer
+les operations et les volumes</li>
+<li>le code montre un parti pris operateur: la plateforme ne se contente
+pas de constater, elle agit sur les donnees</li>
+</ul>
+<h3 id="regles-de-schema-et-de-cles-etrangeres">5.8 Regles de schema et
+de cles etrangeres</h3>
+<ul>
+<li>les FKs reelles sont completees par des FKs virtuelles, des listes
+noires et des suggestions</li>
+<li>le systeme sait comparer, proposer et parfois reconstruire des
+relations absentes</li>
+<li><code>Schema</code>, <code>ForeignKey</code> et
+<code>Compare*</code> servent autant a l’audit de qualite qu’a la
+production d’artefacts de gouvernance schema</li>
+</ul>
+<h3 id="regles-de-securite-et-didentite">5.9 Regles de securite et
+d’identite</h3>
+<ul>
+<li>l’acces web est gouverne par ACL Glial et <code>Auth</code></li>
+<li>le LDAP peut etre active comme source d’identite</li>
+<li>le code gere plusieurs couches de secrets: mots de passe MySQL, SSH,
+webservice, sauvegardes, config</li>
+<li>les wrappers <code>Crypt</code> / <code>Chiffrement</code> indiquent
+une culture “secret stocke puis dechiffre a l’execution”</li>
+</ul>
+<h3 id="regles-api-et-integration">5.10 Regles API et integration</h3>
+<ul>
+<li>l’API REST actuelle cible principalement les ressources de
+configuration modifiables depuis l’UI</li>
+<li>le projet sait aussi importer des donnees par webservice et exposer
+des integrations Telegram / MCP</li>
+<li>le style d’integration reste tres operationnel: peu d’abstraction,
+beaucoup de logique proche du cas d’usage</li>
+</ul>
+<h2 id="reverse-engineering-des-flux-principaux">6. Reverse engineering
+des flux principaux</h2>
+<h3 id="flux-web">6.1 Flux web</h3>
+<ol type="1">
+<li>le bootstrap charge Composer, config et dependances</li>
+<li>le routeur parse <code>glial_path</code></li>
+<li>ACL/Auth resolvent l’autorisation</li>
+<li>le controleur est instancie</li>
+<li>l’action manipule BD, fichiers, reseau, shell ou vues</li>
+<li>la vue restitue soit HTML, soit JSON, soit fichier</li>
+</ol>
+<h3 id="flux-cli">6.2 Flux CLI</h3>
+<ol type="1">
+<li><code>index.php Controller action params</code></li>
+<li>le bootstrap positionne <code>$_SYSTEM</code></li>
+<li>le controleur est execute sans pile web</li>
+<li>les sorties peuvent etre texte, JSON, fichiers pivots, locks, md5,
+artefacts de collecte</li>
+</ol>
+<h3 id="flux-de-collecte">6.3 Flux de collecte</h3>
+<ol type="1">
+<li>inventaire serveur depuis le referentiel</li>
+<li>ouverture connexions MySQL / SSH</li>
+<li>lecture variables, etats, statistiques</li>
+<li>serialisation vers pivots ou structures temporaires</li>
+<li>integration en base <code>ts_*</code> ou tables de travail</li>
+<li>calcul de vues derivees, topologie et alertes</li>
+</ol>
+<h3 id="flux-backup">6.4 Flux backup</h3>
+<ol type="1">
+<li>definition d’un backup et de sa zone de stockage</li>
+<li>programmation cron/job</li>
+<li>execution de dump</li>
+<li>compression/chiffrement/transfert</li>
+<li>verification hash et taille</li>
+<li>historisation <code>backup_*</code> / <code>archive_*</code></li>
+</ol>
+<h2 id="forces-structurelles-du-systeme">7. Forces structurelles du
+systeme</h2>
+<ul>
+<li>couverture fonctionnelle tres large pour l’exploitation MySQL</li>
+<li>couplage fort entre observabilite, remediations et referentiel</li>
+<li>connaissance profonde des topologies MySQL complexes</li>
+<li>presence d’une base documentaire et d’une couche de schema
+riche</li>
+<li>possibilite d’operer en web, CLI et automatisation</li>
+</ul>
+<h2 id="limites-structurelles-observees">8. Limites structurelles
+observees</h2>
+<ul>
+<li>gros controleurs multi-responsabilites</li>
+<li>dependance importante aux superglobales et a la composition
+dynamique des URLs</li>
+<li>forte heterogeneite du style de code</li>
+<li>beaucoup d’effets de bord shell/reseau/fichiers dans les
+actions</li>
+<li>frontiere floue entre presentation, orchestration et domaine</li>
+</ul>
+<h2 id="conclusion-dingenierie-inverse">9. Conclusion d’ingenierie
+inverse</h2>
+<p>PmaControl n’est pas seulement une application de monitoring. C’est
+un systeme d’exploitation MySQL complet qui a accumule des couches de
+connaissances DBA sur la topologie, la sauvegarde, la gouvernance de
+schema et l’automatisation. Le reverse engineering montre une richesse
+metier elevee, mais aussi une dette structurelle equivalente: le code
+est puissant parce qu’il concentre beaucoup de logique dans peu
+d’endroits, ce qui accelere l’operationnel mais fragilise la
+maintenabilite, la securite et l’evolutivite.</p>
+<p>Pour toute modernisation, il faut raisonner par domaines metier et
+non par simple refactoring technique: inventaire/monitoring, sauvegarde,
+schema, topologie, securite, workers, API et administration doivent
+devenir des sous-systemes explicites avec contrats, DTO et services
+dedies.</p>
+</body>
+</html>

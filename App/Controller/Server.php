@@ -397,10 +397,13 @@ class Server extends Controller
         }
 
         $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
-         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only", 
-         "avg_latency","delta_sum_timer_wait", "delta_sum_lock_time"));
+         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only",
+         "avg_latency","delta_sum_timer_wait", "delta_sum_lock_time", "variables::hostname"));
+
+        
 
         $data['last_date'] = Extraction2::display(array("mysql_available"));
+        $data['tunnel_mapping'] = Tunnel::getTunnelsMapping();
 
         //debug($data);
 

@@ -1,0 +1,4464 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Generated on 2026-03-12" />
+  <title>PmaControl Controllers Documentation</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PmaControl Controllers Documentation</h1>
+<p class="author">Generated on 2026-03-12</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#index">Index</a></li>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#documentation-controllers">Documentation Controllers</a>
+<ul>
+<li><a href="#index-1">Index</a></li>
+</ul></li>
+<li><a href="#about">About</a></li>
+<li><a href="#about-1">About</a></li>
+<li><a href="#acl">Acl</a></li>
+<li><a href="#acl-1">Acl</a></li>
+<li><a href="#administration">Administration</a></li>
+<li><a href="#administration-1">Administration</a></li>
+<li><a href="#agent">Agent</a></li>
+<li><a href="#agent-1">Agent</a></li>
+<li><a href="#ai">Ai</a></li>
+<li><a href="#ai-1">Ai</a></li>
+<li><a href="#alert">Alert</a></li>
+<li><a href="#alert-1">Alert</a></li>
+<li><a href="#alias">Alias</a></li>
+<li><a href="#alias-1">Alias</a></li>
+<li><a href="#alter">Alter</a></li>
+<li><a href="#alter-1">Alter</a></li>
+<li><a href="#api">Api</a></li>
+<li><a href="#api-1">Api</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#architecture-1">Architecture</a></li>
+<li><a href="#archives">Archives</a></li>
+<li><a href="#archives-1">Archives</a></li>
+<li><a href="#aspirateur">Aspirateur</a></li>
+<li><a href="#aspirateur-1">Aspirateur</a></li>
+<li><a href="#audit">Audit</a></li>
+<li><a href="#audit-1">Audit</a></li>
+<li><a href="#bi">BI</a></li>
+<li><a href="#bi-1">BI</a></li>
+<li><a href="#backup">Backup</a></li>
+<li><a href="#backup-1">Backup</a></li>
+<li><a href="#benchmark">Benchmark</a></li>
+<li><a href="#benchmark-1">Benchmark</a></li>
+<li><a href="#binlog">Binlog</a></li>
+<li><a href="#binlog-1">Binlog</a></li>
+<li><a href="#chartjs">Chartjs</a></li>
+<li><a href="#chartjs-1">Chartjs</a></li>
+<li><a href="#check">Check</a></li>
+<li><a href="#check-1">Check</a></li>
+<li><a href="#checkconfig">CheckConfig</a></li>
+<li><a href="#checkconfig-1">CheckConfig</a></li>
+<li><a href="#checkdataoncluster">CheckDataOnCluster</a></li>
+<li><a href="#checkdataoncluster-1">CheckDataOnCluster</a></li>
+<li><a href="#chemin">Chemin</a></li>
+<li><a href="#chemin-1">Chemin</a></li>
+<li><a href="#cleaner">Cleaner</a></li>
+<li><a href="#cleaner-1">Cleaner</a></li>
+<li><a href="#cleanertest">CleanerTest</a></li>
+<li><a href="#cleanertest-1">CleanerTest</a></li>
+<li><a href="#client">Client</a></li>
+<li><a href="#client-1">Client</a></li>
+<li><a href="#cluster">Cluster</a></li>
+<li><a href="#cluster-1">Cluster</a></li>
+<li><a href="#color">Color</a></li>
+<li><a href="#color-1">Color</a></li>
+<li><a href="#common">Common</a></li>
+<li><a href="#common-1">Common</a></li>
+<li><a href="#compare">Compare</a></li>
+<li><a href="#compare-1">Compare</a></li>
+<li><a href="#compareconfig">CompareConfig</a></li>
+<li><a href="#compareconfig-1">CompareConfig</a></li>
+<li><a href="#control">Control</a></li>
+<li><a href="#control-1">Control</a></li>
+<li><a href="#covage">Covage</a></li>
+<li><a href="#covage-1">Covage</a></li>
+<li><a href="#crontab">Crontab</a></li>
+<li><a href="#crontab-1">Crontab</a></li>
+<li><a href="#daemon">Daemon</a></li>
+<li><a href="#daemon-1">Daemon</a></li>
+<li><a href="#dashboard">Dashboard</a></li>
+<li><a href="#dashboard-1">Dashboard</a></li>
+<li><a href="#database">Database</a></li>
+<li><a href="#database-1">Database</a></li>
+<li><a href="#datamodel">Datamodel</a></li>
+<li><a href="#datamodel-1">Datamodel</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#demo-1">Demo</a></li>
+<li><a href="#dependencytreegenerator">DependencyTreeGenerator</a></li>
+<li><a
+href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
+<li><a href="#deploy">Deploy</a></li>
+<li><a href="#deploy-1">Deploy</a></li>
+<li><a href="#deployrsakey">DeployRsaKey</a></li>
+<li><a href="#deployrsakey-1">DeployRsaKey</a></li>
+<li><a href="#detail">Detail</a></li>
+<li><a href="#detail-1">Detail</a></li>
+<li><a href="#digest">Digest</a></li>
+<li><a href="#digest-1">Digest</a></li>
+<li><a href="#disk">Disk</a></li>
+<li><a href="#disk-1">Disk</a></li>
+<li><a href="#dns">Dns</a></li>
+<li><a href="#dns-1">Dns</a></li>
+<li><a href="#docker">Docker</a></li>
+<li><a href="#docker-1">Docker</a></li>
+<li><a href="#dot3">Dot3</a></li>
+<li><a href="#dot3-1">Dot3</a></li>
+<li><a href="#enum">Enum</a></li>
+<li><a href="#enum-1">Enum</a></li>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#environment-1">Environment</a></li>
+<li><a href="#errorweb">ErrorWeb</a></li>
+<li><a href="#errorweb-1">ErrorWeb</a></li>
+<li><a href="#event">Event</a></li>
+<li><a href="#event-1">Event</a></li>
+<li><a href="#explain">Explain</a></li>
+<li><a href="#explain-1">Explain</a></li>
+<li><a href="#export">Export</a></li>
+<li><a href="#export-1">Export</a></li>
+<li><a href="#foreignkey">ForeignKey</a></li>
+<li><a href="#foreignkey-1">ForeignKey</a></li>
+<li><a href="#format">Format</a></li>
+<li><a href="#format-1">Format</a></li>
+<li><a href="#gagman">Gagman</a></li>
+<li><a href="#gagman-1">Gagman</a></li>
+<li><a href="#galera">Galera</a></li>
+<li><a href="#galera-1">Galera</a></li>
+<li><a href="#galeracluster">GaleraCluster</a></li>
+<li><a href="#galeracluster-1">GaleraCluster</a></li>
+<li><a href="#graph">Graph</a></li>
+<li><a href="#graph-1">Graph</a></li>
+<li><a href="#graphiccharter">GraphicCharter</a></li>
+<li><a href="#graphiccharter-1">GraphicCharter</a></li>
+<li><a href="#group">Group</a></li>
+<li><a href="#group-1">Group</a></li>
+<li><a href="#haproxy">Haproxy</a></li>
+<li><a href="#haproxy-1">Haproxy</a></li>
+<li><a href="#home">Home</a></li>
+<li><a href="#home-1">Home</a></li>
+<li><a href="#index-2">Index</a></li>
+<li><a href="#index-3">Index</a></li>
+<li><a href="#install">Install</a></li>
+<li><a href="#install-1">Install</a></li>
+<li><a href="#integrate">Integrate</a></li>
+<li><a href="#integrate-1">Integrate</a></li>
+<li><a href="#job">Job</a></li>
+<li><a href="#job-1">Job</a></li>
+<li><a href="#layout">Layout</a></li>
+<li><a href="#layout-1">Layout</a></li>
+<li><a href="#ldap">Ldap</a></li>
+<li><a href="#ldap-1">Ldap</a></li>
+<li><a href="#listener">Listener</a></li>
+<li><a href="#listener-1">Listener</a></li>
+<li><a href="#llm">Llm</a></li>
+<li><a href="#llm-1">Llm</a></li>
+<li><a href="#load">Load</a></li>
+<li><a href="#load-1">Load</a></li>
+<li><a href="#load2">Load2</a></li>
+<li><a href="#load2-1">Load2</a></li>
+<li><a href="#log">Log</a></li>
+<li><a href="#log-1">Log</a></li>
+<li><a href="#masterslave">MasterSlave</a></li>
+<li><a href="#masterslave-1">MasterSlave</a></li>
+<li><a href="#maxscale">MaxScale</a></li>
+<li><a href="#maxscale-1">MaxScale</a></li>
+<li><a href="#menu">Menu</a></li>
+<li><a href="#menu-1">Menu</a></li>
+<li><a href="#monitoring">Monitoring</a></li>
+<li><a href="#monitoring-1">Monitoring</a></li>
+<li><a href="#mysql">Mysql</a></li>
+<li><a href="#mysql-1">Mysql</a></li>
+<li><a href="#mysqldatabase">MysqlDatabase</a></li>
+<li><a href="#mysqldatabase-1">MysqlDatabase</a></li>
+<li><a href="#mysqltable">MysqlTable</a></li>
+<li><a href="#mysqltable-1">MysqlTable</a></li>
+<li><a href="#mysqluser">MysqlUser</a></li>
+<li><a href="#mysqluser-1">MysqlUser</a></li>
+<li><a href="#mysqlsys">Mysqlsys</a></li>
+<li><a href="#mysqlsys-1">Mysqlsys</a></li>
+<li><a href="#myxplain">Myxplain</a></li>
+<li><a href="#myxplain-1">Myxplain</a></li>
+<li><a href="#ollama">Ollama</a></li>
+<li><a href="#ollama-1">Ollama</a></li>
+<li><a href="#partition">Partition</a></li>
+<li><a href="#partition-1">Partition</a></li>
+<li><a href="#percona">Percona</a></li>
+<li><a href="#percona-1">Percona</a></li>
+<li><a href="#phpliveregex">PhpLiveRegex</a></li>
+<li><a href="#phpliveregex-1">PhpLiveRegex</a></li>
+<li><a href="#pid">Pid</a></li>
+<li><a href="#pid-1">Pid</a></li>
+<li><a href="#plugin">Plugin</a></li>
+<li><a href="#plugin-1">Plugin</a></li>
+<li><a href="#pmacontrol">Pmacontrol</a></li>
+<li><a href="#pmacontrol-1">Pmacontrol</a></li>
+<li><a href="#pmm">Pmm</a></li>
+<li><a href="#pmm-1">Pmm</a></li>
+<li><a href="#postmortem">PostMortem</a></li>
+<li><a href="#postmortem-1">PostMortem</a></li>
+<li><a href="#proxysql">ProxySQL</a></li>
+<li><a href="#proxysql-1">ProxySQL</a></li>
+<li><a href="#query">Query</a></li>
+<li><a href="#query-1">Query</a></li>
+<li><a href="#querycache">QueryCache</a></li>
+<li><a href="#querycache-1">QueryCache</a></li>
+<li><a href="#querygraphextractor">QueryGraphExtractor</a></li>
+<li><a href="#querygraphextractor-1">QueryGraphExtractor</a></li>
+<li><a href="#recover">Recover</a></li>
+<li><a href="#recover-1">Recover</a></li>
+<li><a href="#release">Release</a></li>
+<li><a href="#release-1">Release</a></li>
+<li><a href="#replication">Replication</a></li>
+<li><a href="#replication-1">Replication</a></li>
+<li><a href="#scan">Scan</a></li>
+<li><a href="#scan-1">Scan</a></li>
+<li><a href="#schema">Schema</a></li>
+<li><a href="#schema-1">Schema</a></li>
+<li><a href="#server">Server</a></li>
+<li><a href="#server-1">Server</a></li>
+<li><a href="#site">Site</a></li>
+<li><a href="#site-1">Site</a></li>
+<li><a href="#slave">Slave</a></li>
+<li><a href="#slave-1">Slave</a></li>
+<li><a href="#spider">Spider</a></li>
+<li><a href="#spider-1">Spider</a></li>
+<li><a href="#ssh">Ssh</a></li>
+<li><a href="#ssh-1">Ssh</a></li>
+<li><a href="#statementanalysis">StatementAnalysis</a></li>
+<li><a href="#statementanalysis-1">StatementAnalysis</a></li>
+<li><a href="#storagearea">StorageArea</a></li>
+<li><a href="#storagearea-1">StorageArea</a></li>
+<li><a href="#table">Table</a></li>
+<li><a href="#table-1">Table</a></li>
+<li><a href="#tag">Tag</a></li>
+<li><a href="#tag-1">Tag</a></li>
+<li><a href="#telegram">Telegram</a></li>
+<li><a href="#telegram-1">Telegram</a></li>
+<li><a href="#translation">Translation</a></li>
+<li><a href="#translation-1">Translation</a></li>
+<li><a href="#tree">Tree</a></li>
+<li><a href="#tree-1">Tree</a></li>
+<li><a href="#tunnel">Tunnel</a></li>
+<li><a href="#tunnel-1">Tunnel</a></li>
+<li><a href="#upgrade">Upgrade</a></li>
+<li><a href="#upgrade-1">Upgrade</a></li>
+<li><a href="#user">User</a></li>
+<li><a href="#user-1">User</a></li>
+<li><a href="#variable">Variable</a></li>
+<li><a href="#variable-1">Variable</a></li>
+<li><a href="#ventilateur">Ventilateur</a></li>
+<li><a href="#ventilateur-1">Ventilateur</a></li>
+<li><a href="#version">Version</a></li>
+<li><a href="#version-1">Version</a></li>
+<li><a href="#webservice">Webservice</a></li>
+<li><a href="#webservice-1">Webservice</a></li>
+<li><a href="#worker">Worker</a></li>
+<li><a href="#worker-1">Worker</a></li>
+</ul>
+</nav>
+<h1 id="index">Index</h1>
+<ul>
+<li><a href="#about">About</a></li>
+<li><a href="#acl">Acl</a></li>
+<li><a href="#administration">Administration</a></li>
+<li><a href="#agent">Agent</a></li>
+<li><a href="#ai">Ai</a></li>
+<li><a href="#alert">Alert</a></li>
+<li><a href="#alias">Alias</a></li>
+<li><a href="#alter">Alter</a></li>
+<li><a href="#api">Api</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#archives">Archives</a></li>
+<li><a href="#aspirateur">Aspirateur</a></li>
+<li><a href="#audit">Audit</a></li>
+<li><a href="#bi">BI</a></li>
+<li><a href="#backup">Backup</a></li>
+<li><a href="#benchmark">Benchmark</a></li>
+<li><a href="#binlog">Binlog</a></li>
+<li><a href="#chartjs">Chartjs</a></li>
+<li><a href="#check">Check</a></li>
+<li><a href="#checkconfig">CheckConfig</a></li>
+<li><a href="#checkdataoncluster">CheckDataOnCluster</a></li>
+<li><a href="#chemin">Chemin</a></li>
+<li><a href="#cleaner">Cleaner</a></li>
+<li><a href="#cleanertest">CleanerTest</a></li>
+<li><a href="#client">Client</a></li>
+<li><a href="#cluster">Cluster</a></li>
+<li><a href="#color">Color</a></li>
+<li><a href="#common">Common</a></li>
+<li><a href="#compare">Compare</a></li>
+<li><a href="#compareconfig">CompareConfig</a></li>
+<li><a href="#control">Control</a></li>
+<li><a href="#covage">Covage</a></li>
+<li><a href="#crontab">Crontab</a></li>
+<li><a href="#daemon">Daemon</a></li>
+<li><a href="#dashboard">Dashboard</a></li>
+<li><a href="#database">Database</a></li>
+<li><a href="#datamodel">Datamodel</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#dependencytreegenerator">DependencyTreeGenerator</a></li>
+<li><a href="#deploy">Deploy</a></li>
+<li><a href="#deployrsakey">DeployRsaKey</a></li>
+<li><a href="#detail">Detail</a></li>
+<li><a href="#digest">Digest</a></li>
+<li><a href="#disk">Disk</a></li>
+<li><a href="#dns">Dns</a></li>
+<li><a href="#docker">Docker</a></li>
+<li><a href="#dot3">Dot3</a></li>
+<li><a href="#enum">Enum</a></li>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#errorweb">ErrorWeb</a></li>
+<li><a href="#event">Event</a></li>
+<li><a href="#explain">Explain</a></li>
+<li><a href="#export">Export</a></li>
+<li><a href="#foreignkey">ForeignKey</a></li>
+<li><a href="#format">Format</a></li>
+<li><a href="#gagman">Gagman</a></li>
+<li><a href="#galera">Galera</a></li>
+<li><a href="#galeracluster">GaleraCluster</a></li>
+<li><a href="#graph">Graph</a></li>
+<li><a href="#graphiccharter">GraphicCharter</a></li>
+<li><a href="#group">Group</a></li>
+<li><a href="#haproxy">Haproxy</a></li>
+<li><a href="#home">Home</a></li>
+<li><a href="#index">Index</a></li>
+<li><a href="#install">Install</a></li>
+<li><a href="#integrate">Integrate</a></li>
+<li><a href="#job">Job</a></li>
+<li><a href="#layout">Layout</a></li>
+<li><a href="#ldap">Ldap</a></li>
+<li><a href="#listener">Listener</a></li>
+<li><a href="#llm">Llm</a></li>
+<li><a href="#load">Load</a></li>
+<li><a href="#load2">Load2</a></li>
+<li><a href="#log">Log</a></li>
+<li><a href="#masterslave">MasterSlave</a></li>
+<li><a href="#maxscale">MaxScale</a></li>
+<li><a href="#menu">Menu</a></li>
+<li><a href="#monitoring">Monitoring</a></li>
+<li><a href="#mysql">Mysql</a></li>
+<li><a href="#mysqldatabase">MysqlDatabase</a></li>
+<li><a href="#mysqltable">MysqlTable</a></li>
+<li><a href="#mysqluser">MysqlUser</a></li>
+<li><a href="#mysqlsys">Mysqlsys</a></li>
+<li><a href="#myxplain">Myxplain</a></li>
+<li><a href="#ollama">Ollama</a></li>
+<li><a href="#partition">Partition</a></li>
+<li><a href="#percona">Percona</a></li>
+<li><a href="#phpliveregex">PhpLiveRegex</a></li>
+<li><a href="#pid">Pid</a></li>
+<li><a href="#plugin">Plugin</a></li>
+<li><a href="#pmacontrol">Pmacontrol</a></li>
+<li><a href="#pmm">Pmm</a></li>
+<li><a href="#postmortem">PostMortem</a></li>
+<li><a href="#proxysql">ProxySQL</a></li>
+<li><a href="#query">Query</a></li>
+<li><a href="#querycache">QueryCache</a></li>
+<li><a href="#querygraphextractor">QueryGraphExtractor</a></li>
+<li><a href="#recover">Recover</a></li>
+<li><a href="#release">Release</a></li>
+<li><a href="#replication">Replication</a></li>
+<li><a href="#scan">Scan</a></li>
+<li><a href="#schema">Schema</a></li>
+<li><a href="#server">Server</a></li>
+<li><a href="#site">Site</a></li>
+<li><a href="#slave">Slave</a></li>
+<li><a href="#spider">Spider</a></li>
+<li><a href="#ssh">Ssh</a></li>
+<li><a href="#statementanalysis">StatementAnalysis</a></li>
+<li><a href="#storagearea">StorageArea</a></li>
+<li><a href="#table">Table</a></li>
+<li><a href="#tag">Tag</a></li>
+<li><a href="#telegram">Telegram</a></li>
+<li><a href="#translation">Translation</a></li>
+<li><a href="#tree">Tree</a></li>
+<li><a href="#tunnel">Tunnel</a></li>
+<li><a href="#upgrade">Upgrade</a></li>
+<li><a href="#user">User</a></li>
+<li><a href="#variable">Variable</a></li>
+<li><a href="#ventilateur">Ventilateur</a></li>
+<li><a href="#version">Version</a></li>
+<li><a href="#webservice">Webservice</a></li>
+<li><a href="#worker">Worker</a></li>
+</ul>
+<h1 id="overview">Overview</h1>
+<h1 id="documentation-controllers">Documentation Controllers</h1>
+<ul>
+<li>Source: <code>/srv/www/pmacontrol/App/Controller</code></li>
+<li>Documents: 122</li>
+</ul>
+<h2 id="index-1">Index</h2>
+<ul>
+<li><a href="About.md">About</a></li>
+<li><a href="Acl.md">Acl</a></li>
+<li><a href="Administration.md">Administration</a></li>
+<li><a href="Agent.md">Agent</a></li>
+<li><a href="Ai.md">Ai</a></li>
+<li><a href="Alert.md">Alert</a></li>
+<li><a href="Alias.md">Alias</a></li>
+<li><a href="Alter.md">Alter</a></li>
+<li><a href="Api.md">Api</a></li>
+<li><a href="Architecture.md">Architecture</a></li>
+<li><a href="Archives.md">Archives</a></li>
+<li><a href="Aspirateur.md">Aspirateur</a></li>
+<li><a href="Audit.md">Audit</a></li>
+<li><a href="BI.md">BI</a></li>
+<li><a href="Backup.md">Backup</a></li>
+<li><a href="Benchmark.md">Benchmark</a></li>
+<li><a href="Binlog.md">Binlog</a></li>
+<li><a href="Chartjs.md">Chartjs</a></li>
+<li><a href="Check.md">Check</a></li>
+<li><a href="CheckConfig.md">CheckConfig</a></li>
+<li><a href="CheckDataOnCluster.md">CheckDataOnCluster</a></li>
+<li><a href="Chemin.md">Chemin</a></li>
+<li><a href="Cleaner.md">Cleaner</a></li>
+<li><a href="CleanerTest.md">CleanerTest</a></li>
+<li><a href="Client.md">Client</a></li>
+<li><a href="Cluster.md">Cluster</a></li>
+<li><a href="Color.md">Color</a></li>
+<li><a href="Common.md">Common</a></li>
+<li><a href="Compare.md">Compare</a></li>
+<li><a href="CompareConfig.md">CompareConfig</a></li>
+<li><a href="Control.md">Control</a></li>
+<li><a href="Covage.md">Covage</a></li>
+<li><a href="Crontab.md">Crontab</a></li>
+<li><a href="Daemon.md">Daemon</a></li>
+<li><a href="Dashboard.md">Dashboard</a></li>
+<li><a href="Database.md">Database</a></li>
+<li><a href="Datamodel.md">Datamodel</a></li>
+<li><a href="Demo.md">Demo</a></li>
+<li><a
+href="DependencyTreeGenerator.md">DependencyTreeGenerator</a></li>
+<li><a href="Deploy.md">Deploy</a></li>
+<li><a href="DeployRsaKey.md">DeployRsaKey</a></li>
+<li><a href="Detail.md">Detail</a></li>
+<li><a href="Digest.md">Digest</a></li>
+<li><a href="Disk.md">Disk</a></li>
+<li><a href="Dns.md">Dns</a></li>
+<li><a href="Docker.md">Docker</a></li>
+<li><a href="Dot3.md">Dot3</a></li>
+<li><a href="Enum.md">Enum</a></li>
+<li><a href="Environment.md">Environment</a></li>
+<li><a href="ErrorWeb.md">ErrorWeb</a></li>
+<li><a href="Event.md">Event</a></li>
+<li><a href="Explain.md">Explain</a></li>
+<li><a href="Export.md">Export</a></li>
+<li><a href="ForeignKey.md">ForeignKey</a></li>
+<li><a href="Format.md">Format</a></li>
+<li><a href="Gagman.md">Gagman</a></li>
+<li><a href="Galera.md">Galera</a></li>
+<li><a href="GaleraCluster.md">GaleraCluster</a></li>
+<li><a href="Graph.md">Graph</a></li>
+<li><a href="GraphicCharter.md">GraphicCharter</a></li>
+<li><a href="Group.md">Group</a></li>
+<li><a href="Haproxy.md">Haproxy</a></li>
+<li><a href="Home.md">Home</a></li>
+<li><a href="Index.md">Index</a></li>
+<li><a href="Install.md">Install</a></li>
+<li><a href="Integrate.md">Integrate</a></li>
+<li><a href="Job.md">Job</a></li>
+<li><a href="Layout.md">Layout</a></li>
+<li><a href="Ldap.md">Ldap</a></li>
+<li><a href="Listener.md">Listener</a></li>
+<li><a href="Llm.md">Llm</a></li>
+<li><a href="Load.md">Load</a></li>
+<li><a href="Load2.md">Load2</a></li>
+<li><a href="Log.md">Log</a></li>
+<li><a href="MasterSlave.md">MasterSlave</a></li>
+<li><a href="MaxScale.md">MaxScale</a></li>
+<li><a href="Menu.md">Menu</a></li>
+<li><a href="Monitoring.md">Monitoring</a></li>
+<li><a href="Mysql.md">Mysql</a></li>
+<li><a href="MysqlDatabase.md">MysqlDatabase</a></li>
+<li><a href="MysqlTable.md">MysqlTable</a></li>
+<li><a href="MysqlUser.md">MysqlUser</a></li>
+<li><a href="Mysqlsys.md">Mysqlsys</a></li>
+<li><a href="Myxplain.md">Myxplain</a></li>
+<li><a href="Ollama.md">Ollama</a></li>
+<li><a href="Partition.md">Partition</a></li>
+<li><a href="Percona.md">Percona</a></li>
+<li><a href="PhpLiveRegex.md">PhpLiveRegex</a></li>
+<li><a href="Pid.md">Pid</a></li>
+<li><a href="Plugin.md">Plugin</a></li>
+<li><a href="Pmacontrol.md">Pmacontrol</a></li>
+<li><a href="Pmm.md">Pmm</a></li>
+<li><a href="PostMortem.md">PostMortem</a></li>
+<li><a href="ProxySQL.md">ProxySQL</a></li>
+<li><a href="Query.md">Query</a></li>
+<li><a href="QueryCache.md">QueryCache</a></li>
+<li><a href="QueryGraphExtractor.md">QueryGraphExtractor</a></li>
+<li><a href="Recover.md">Recover</a></li>
+<li><a href="Release.md">Release</a></li>
+<li><a href="Replication.md">Replication</a></li>
+<li><a href="Scan.md">Scan</a></li>
+<li><a href="Schema.md">Schema</a></li>
+<li><a href="Server.md">Server</a></li>
+<li><a href="Site.md">Site</a></li>
+<li><a href="Slave.md">Slave</a></li>
+<li><a href="Spider.md">Spider</a></li>
+<li><a href="Ssh.md">Ssh</a></li>
+<li><a href="StatementAnalysis.md">StatementAnalysis</a></li>
+<li><a href="StorageArea.md">StorageArea</a></li>
+<li><a href="Table.md">Table</a></li>
+<li><a href="Tag.md">Tag</a></li>
+<li><a href="Telegram.md">Telegram</a></li>
+<li><a href="Translation.md">Translation</a></li>
+<li><a href="Tree.md">Tree</a></li>
+<li><a href="Tunnel.md">Tunnel</a></li>
+<li><a href="Upgrade.md">Upgrade</a></li>
+<li><a href="User.md">User</a></li>
+<li><a href="Variable.md">Variable</a></li>
+<li><a href="Ventilateur.md">Ventilateur</a></li>
+<li><a href="Version.md">Version</a></li>
+<li><a href="Webservice.md">Webservice</a></li>
+<li><a href="Worker.md">Worker</a></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="about">About</h1>
+<h1 id="about-1">About</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/About.php</code></p></li>
+<li><p><code>index()</code>: Render about state through
+<code>index</code>.</p></li>
+<li><p><code>getResult($sql)</code>: Retrieve about state through
+<code>getResult</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="acl">Acl</h1>
+<h1 id="acl-1">Acl</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Acl.php</code></p></li>
+<li><p><code>index()</code>: Render acl state through
+<code>index</code>.</p></li>
+<li><p><code>check()</code>: Handle acl state through
+<code>check</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="administration">Administration</h1>
+<h1 id="administration-1">Administration</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Administration.php</code></p></li>
+<li><p><code>test()</code>: Handle administration state through
+<code>test</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="agent">Agent</h1>
+<h1 id="agent-1">Agent</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Agent.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare agent state through
+<code>before</code>.</p></li>
+<li><p><code>start($param)</code>: Handle agent state through
+<code>start</code>.</p></li>
+<li><p><code>stop($param)</code>: Handle agent state through
+<code>stop</code>.</p></li>
+<li><p><code>launch($params)</code>: Handle agent state through
+<code>launch</code>.</p></li>
+<li><p><code>updateServerList()</code>: Update agent state through
+<code>updateServerList</code>.</p></li>
+<li><p><code>logs($param)</code>: Handle agent state through
+<code>logs</code>.</p></li>
+<li><p><code>tailCustom($filepath, $lines, $adaptive)</code>: Handle
+agent state through <code>tailCustom</code>.</p></li>
+<li><p><code>check_daemon()</code>: Handle agent state through
+<code>check_daemon</code>.</p></li>
+<li><p><code>check_queue($param)</code>: Handle agent state through
+<code>check_queue</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="ai">Ai</h1>
+<h1 id="ai-1">Ai</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Ai.php</code></p></li>
+<li><p><code>index($param)</code>: Render ai state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="alert">Alert</h1>
+<h1 id="alert-1">Alert</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Alert.php</code></p></li>
+<li><p><code>check($date, $id_servers)</code>: Handle alert state
+through <code>check</code>.</p></li>
+<li><p><code>reboot($param)</code>: Handle alert state through
+<code>reboot</code>.</p></li>
+<li><p><code>test()</code>: Handle alert state through
+<code>test</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="alias">Alias</h1>
+<h1 id="alias-1">Alias</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Alias.php</code></p></li>
+<li><p><code>index()</code>: Render alias state through
+<code>index</code>.</p></li>
+<li><p><code>updateAlias($param)</code>: Update alias state through
+<code>updateAlias</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete alias state through
+<code>delete</code>.</p></li>
+<li><p><code>getExtraction($param)</code>: Retrieve alias state through
+<code>getExtraction</code>.</p></li>
+<li><p><code>getIdfromDns($param)</code>: Retrieve alias state through
+<code>getIdfromDns</code>.</p></li>
+<li><p><code>getIdfromHostname($param)</code>: Retrieve alias state
+through <code>getIdfromHostname</code>.</p></li>
+<li><p><code>addHostname($param)</code>: Create alias state through
+<code>addHostname</code>.</p></li>
+<li><p><code>addAliasFromHostname($param)</code>: Create alias state
+through <code>addAliasFromHostname</code>.</p></li>
+<li><p><code>upsertAliasDns($param)</code>: Handle alias state through
+<code>upsertAliasDns</code>.</p></li>
+<li><p><code>addAliasFromSshIps($param)</code>: Create alias state
+through <code>addAliasFromSshIps</code>.</p></li>
+<li><p><code>extractIpList($raw)</code>: Handle alias state through
+<code>extractIpList</code>.</p></li>
+<li><p><code>addAliasFromWsrepNodeAddress($param)</code>: Create alias
+state through <code>addAliasFromWsrepNodeAddress</code>.</p></li>
+<li><p><code>clearAliasDnsCache()</code>: Handle alias state through
+<code>clearAliasDnsCache</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="alter">Alter</h1>
+<h1 id="alter-1">Alter</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Alter.php</code></p></li>
+<li><p><code>dropsp($param)</code>: Handle alter state through
+<code>dropsp</code>.</p></li>
+<li><p><code>slave($param)</code>: Handle alter state through
+<code>slave</code>.</p></li>
+<li><p><code>user($param)</code>: Handle alter state through
+<code>user</code>.</p></li>
+<li><p><code>dropRoot($param)</code>: Handle alter state through
+<code>dropRoot</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="api">Api</h1>
+<h1 id="api-1">Api</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Api.php</code></p></li>
+<li><p><code>config($param)</code>: Handle api state through
+<code>config</code>.</p></li>
+<li><p><code>openApi($param)</code>: Handle api state through
+<code>openApi</code>.</p></li>
+<li><p><code>getResourceMap()</code>: Retrieve api state through
+<code>getResourceMap</code>.</p></li>
+<li><p><code>getResourceDefinition($resource)</code>: Retrieve api state
+through <code>getResourceDefinition</code>.</p></li>
+<li><p><code>normalizePayload($resource, $payload, $isUpdate)</code>:
+Handle api state through <code>normalizePayload</code>.</p></li>
+<li><p><code>getOpenApiDocument()</code>: Retrieve api state through
+<code>getOpenApiDocument</code>.</p></li>
+<li><p><code>normalizeBoolean($value)</code>: Handle api state through
+<code>normalizeBoolean</code>.</p></li>
+<li><p><code>handleGet($db, $definition, $id)</code>: Handle api state
+through <code>handleGet</code>.</p></li>
+<li><p><code>handleCreate($db, $resource, $definition, $payload)</code>:
+Handle api state through <code>handleCreate</code>.</p></li>
+<li><p><code>handleUpdate($db, $resource, $definition, $id, $payload)</code>:
+Handle api state through <code>handleUpdate</code>.</p></li>
+<li><p><code>handleDelete($db, $definition, $id)</code>: Handle api
+state through <code>handleDelete</code>.</p></li>
+<li><p><code>readJsonInput()</code>: Handle api state through
+<code>readJsonInput</code>.</p></li>
+<li><p><code>respondJson($payload, $status)</code>: Handle api state
+through <code>respondJson</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="architecture">Architecture</h1>
+<h1 id="architecture-1">Architecture</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Architecture.php</code></p></li>
+<li><p><code>index($param)</code>: Render architecture state through
+<code>index</code>.</p></li>
+<li><p><code>view($param)</code>: Handle architecture state through
+<code>view</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="archives">Archives</h1>
+<h1 id="archives-1">Archives</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Archives.php</code></p></li>
+<li><p><code>index($param)</code>: Render archives state through
+<code>index</code>.</p></li>
+<li><p><code>file_available($param)</code>: Handle archives state
+through <code>file_available</code>.</p></li>
+<li><p><code>load($param)</code>: Handle archives state through
+<code>load</code>.</p></li>
+<li><p><code>history($param)</code>: Handle archives state through
+<code>history</code>.</p></li>
+<li><p><code>restore($param)</code>: Handle archives state through
+<code>restore</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle archives state through
+<code>menu</code>.</p></li>
+<li><p><code>testPid()</code>: Handle archives state through
+<code>testPid</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare archives state through
+<code>before</code>.</p></li>
+<li><p><code>log($level, $type, $msg)</code>: Handle archives state
+through <code>log</code>.</p></li>
+<li><p><code>getUser()</code>: Retrieve archives state through
+<code>getUser</code>.</p></li>
+<li><p><code>detail($param)</code>: Handle archives state through
+<code>detail</code>.</p></li>
+<li><p><code>load_archive($param)</code>: Handle archives state through
+<code>load_archive</code>.</p></li>
+<li><p><code>format($lines, $id_cleaner)</code>: Handle archives state
+through <code>format</code>.</p></li>
+<li><p><code>setColor($type)</code>: Handle archives state through
+<code>setColor</code>.</p></li>
+<li><p><code>hexToRgb($colorName)</code>: Handle archives state through
+<code>hexToRgb</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="aspirateur">Aspirateur</h1>
+<h1 id="aspirateur-1">Aspirateur</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Aspirateur.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare aspirateur state through
+<code>before</code>.</p></li>
+<li><p><code>tryMysqlConnection($param)</code>: Handle aspirateur state
+through <code>tryMysqlConnection</code>.</p></li>
+<li><p><code>upsertVipServerRoute($id_mysql_server, $dns, $ip, $newActual)</code>:
+Handle aspirateur state through
+<code>upsertVipServerRoute</code>.</p></li>
+<li><p><code>resolveVipIp($connectionHost)</code>: Handle aspirateur
+state through <code>resolveVipIp</code>.</p></li>
+<li><p><code>resolveVipDestinationId($id_mysql_server, $vipCandidates, $port)</code>:
+Handle aspirateur state through
+<code>resolveVipDestinationId</code>.</p></li>
+<li><p><code>resolveVipDestinationIdFromSshMetric($id_mysql_server, $normalizedTarget, $metricSelector, $fieldName)</code>:
+Handle aspirateur state through
+<code>resolveVipDestinationIdFromSshMetric</code>.</p></li>
+<li><p><code>resolveVipDestinationIdFromAliasDns($id_mysql_server, $normalizedCandidates, $port)</code>:
+Handle aspirateur state through
+<code>resolveVipDestinationIdFromAliasDns</code>.</p></li>
+<li><p><code>extractVipCandidatesFromRawValue($raw)</code>: Handle
+aspirateur state through
+<code>extractVipCandidatesFromRawValue</code>.</p></li>
+<li><p><code>flattenVipRawValue($value, $flat)</code>: Handle aspirateur
+state through <code>flattenVipRawValue</code>.</p></li>
+<li><p><code>normalizeVipCandidate($value)</code>: Handle aspirateur
+state through <code>normalizeVipCandidate</code>.</p></li>
+<li><p><code>allocate_shared_storage($name, $separator)</code>: Handle
+aspirateur state through <code>allocate_shared_storage</code>.</p></li>
+<li><p><code>trySshConnection($param)</code>: Handle aspirateur state
+through <code>trySshConnection</code>.</p></li>
+<li><p><code>getHardware($ssh)</code>: Retrieve aspirateur state through
+<code>getHardware</code>.</p></li>
+<li><p><code>getStats($ssh, $mysqlContext)</code>: Retrieve aspirateur
+state through <code>getStats</code>.</p></li>
+<li><p><code>getInstantCpuUsage($ssh, $intervalSeconds)</code>: Retrieve
+aspirateur state through <code>getInstantCpuUsage</code>.</p></li>
+<li><p><code>parseProcStatSnapshot($raw)</code>: Handle aspirateur state
+through <code>parseProcStatSnapshot</code>.</p></li>
+<li><p><code>computeCpuUsageDelta($start, $end)</code>: Handle
+aspirateur state through <code>computeCpuUsageDelta</code>.</p></li>
+<li><p><code>getMysqlDatadirContext($id_mysql_server)</code>: Retrieve
+aspirateur state through <code>getMysqlDatadirContext</code>.</p></li>
+<li><p><code>getMysqlDatadirStats($ssh, $mysqlContext)</code>: Retrieve
+aspirateur state through <code>getMysqlDatadirStats</code>.</p></li>
+<li><p><code>getMysqlDatadirCleanSize($ssh, $datadir, $logBinBasename, $relayLogBasename)</code>:
+Retrieve aspirateur state through
+<code>getMysqlDatadirCleanSize</code>.</p></li>
+<li><p><code>getSstElapsedSeconds($ssh)</code>: Retrieve aspirateur
+state through <code>getSstElapsedSeconds</code>.</p></li>
+<li><p><code>binaryLog($param)</code>: Handle aspirateur state through
+<code>binaryLog</code>.</p></li>
+<li><p><code>getArbitrator()</code>: Retrieve aspirateur state through
+<code>getArbitrator</code>.</p></li>
+<li><p><code>getDatabase($mysql_tested)</code>: Retrieve aspirateur
+state through <code>getDatabase</code>.</p></li>
+<li><p><code>getSwap($membrut)</code>: Retrieve aspirateur state through
+<code>getSwap</code>.</p></li>
+<li><p><code>getWsrep($param)</code>: Retrieve aspirateur state through
+<code>getWsrep</code>.</p></li>
+<li><p><code>getLockingQueries($param)</code>: Retrieve aspirateur state
+through <code>getLockingQueries</code>.</p></li>
+<li><p><code>getProxySQL($param)</code>: Retrieve aspirateur state
+through <code>getProxySQL</code>.</p></li>
+<li><p><code>testProxy($param)</code>: Handle aspirateur state through
+<code>testProxy</code>.</p></li>
+<li><p><code>setService($id_mysql_server, $ping, $error_msg, $available, $type)</code>:
+Handle aspirateur state through <code>setService</code>.</p></li>
+<li><p><code>debug($param)</code>: Handle aspirateur state through
+<code>debug</code>.</p></li>
+<li><p><code>getSchema($id_mysql_server)</code>: Retrieve aspirateur
+state through <code>getSchema</code>.</p></li>
+<li><p><code>keepConfigFile($param)</code>: Handle aspirateur state
+through <code>keepConfigFile</code>.</p></li>
+<li><p><code>testproxysql($param)</code>: Handle aspirateur state
+through <code>testproxysql</code>.</p></li>
+<li><p><code>exportData($id_mysql_server, $ts_file, $data, $check_data, $separator)</code>:
+Handle aspirateur state through <code>exportData</code>.</p></li>
+<li><p><code>isDataModified($id_mysql_server, $ts_file, $data)</code>:
+Handle aspirateur state through <code>isDataModified</code>.</p></li>
+<li><p><code>test2($param)</code>: Handle aspirateur state through
+<code>test2</code>.</p></li>
+<li><p><code>after($param)</code>: Handle aspirateur state through
+<code>after</code>.</p></li>
+<li><p><code>isValidStruc($array)</code>: Handle aspirateur state
+through <code>isValidStruc</code>.</p></li>
+<li><p><code>getMysqlLatencyByQuery($name_server)</code>: Retrieve
+aspirateur state through <code>getMysqlLatencyByQuery</code>.</p></li>
+<li><p><code>getInnodbMetrics($name_server)</code>: Retrieve aspirateur
+state through <code>getInnodbMetrics</code>.</p></li>
+<li><p><code>tryProxySqlConnection($param)</code>: Handle aspirateur
+state through <code>tryProxySqlConnection</code>.</p></li>
+<li><p><code>getElemFromTable($param)</code>: Retrieve aspirateur state
+through <code>getElemFromTable</code>.</p></li>
+<li><p><code>getTableElems($id_mysql_server, $database, $table)</code>:
+Retrieve aspirateur state through <code>getTableElems</code>.</p></li>
+<li><p><code>getTableExist($id_mysql_server, $database, $table)</code>:
+Retrieve aspirateur state through <code>getTableExist</code>.</p></li>
+<li><p><code>getTableFromProxySQL($id_proxysql)</code>: Retrieve
+aspirateur state through <code>getTableFromProxySQL</code>.</p></li>
+<li><p><code>getPsMemory($id_mysql_server)</code>: Retrieve aspirateur
+state through <code>getPsMemory</code>.</p></li>
+<li><p><code>getDigest($param)</code>: Retrieve aspirateur state through
+<code>getDigest</code>.</p></li>
+<li><p><code>getProcesslist($db_link, $isSingleStore)</code>: Retrieve
+aspirateur state through <code>getProcesslist</code>.</p></li>
+<li><p><code>array_values_to_lowercase($array)</code>: Handle aspirateur
+state through <code>array_values_to_lowercase</code>.</p></li>
+<li><p><code>getTables($param)</code>: Retrieve aspirateur state through
+<code>getTables</code>.</p></li>
+<li><p><code>getCreateTables($param)</code>: Retrieve aspirateur state
+through <code>getCreateTables</code>.</p></li>
+<li><p><code>eachHour($param)</code>: Handle aspirateur state through
+<code>eachHour</code>.</p></li>
+<li><p><code>getDisks($param)</code>: Retrieve aspirateur state through
+<code>getDisks</code>.</p></li>
+<li><p><code>getVelocity($name_server)</code>: Retrieve aspirateur state
+through <code>getVelocity</code>.</p></li>
+<li><p><code>detectDouble($param)</code>: Handle aspirateur state
+through <code>detectDouble</code>.</p></li>
+<li><p><code>find_duplicate_server_uids($servers)</code>: Handle
+aspirateur state through
+<code>find_duplicate_server_uids</code>.</p></li>
+<li><p><code>tryMaxScaleConnection($param)</code>: Handle aspirateur
+state through <code>tryMaxScaleConnection</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="audit">Audit</h1>
+<h1 id="audit-1">Audit</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Audit.php</code></p></li>
+<li><p><code>getuser($param)</code>: Retrieve audit state through
+<code>getuser</code>.</p></li>
+<li><p><code>general_log($param)</code>: Handle audit state through
+<code>general_log</code>.</p></li>
+<li><p><code>scp($param)</code>: Handle audit state through
+<code>scp</code>.</p></li>
+<li><p><code>export($param)</code>: Handle audit state through
+<code>export</code>.</p></li>
+<li><p><code>server($param)</code>: Handle audit state through
+<code>server</code>.</p></li>
+<li><p><code>upload($param)</code>: Handle audit state through
+<code>upload</code>.</p></li>
+<li><p><code>callXmlRpc($xmlContent, $xmlrpcUrl, $cookieJar)</code>:
+Handle audit state through <code>callXmlRpc</code>.</p></li>
+<li><p><code>recommandation($param)</code>: Handle audit state through
+<code>recommandation</code>.</p></li>
+<li><p><code>queryCache($param)</code>: Handle audit state through
+<code>queryCache</code>.</p></li>
+<li><p><code>all($param)</code>: Handle audit state through
+<code>all</code>.</p></li>
+<li><p><code>cluster($param)</code>: Handle audit state through
+<code>cluster</code>.</p></li>
+<li><p><code>byCluster($param)</code>: Handle audit state through
+<code>byCluster</code>.</p></li>
+<li><p><code>get_common_parts($servers)</code>: Retrieve audit state
+through <code>get_common_parts</code>.</p></li>
+<li><p><code>retirerChiffreEtSeparateurFin($chaine)</code>: Handle audit
+state through <code>retirerChiffreEtSeparateurFin</code>.</p></li>
+<li><p><code>getQueryOnCluster($param)</code>: Retrieve audit state
+through <code>getQueryOnCluster</code>.</p></li>
+<li><p><code>getTableWithoutFk($param)</code>: Retrieve audit state
+through <code>getTableWithoutFk</code>.</p></li>
+<li><p><code>displayTable($param)</code>: Handle audit state through
+<code>displayTable</code>.</p></li>
+<li><p><code>aggregate($param)</code>: Handle audit state through
+<code>aggregate</code>.</p></li>
+<li><p><code>getAutoInc($param)</code>: Retrieve audit state through
+<code>getAutoInc</code>.</p></li>
+<li><p><code>getIndex($param)</code>: Retrieve audit state through
+<code>getIndex</code>.</p></li>
+<li><p><code>getRedundantIndex($param)</code>: Retrieve audit state
+through <code>getRedundantIndex</code>.</p></li>
+<li><p><code>getRedundantAlter($param)</code>: Retrieve audit state
+through <code>getRedundantAlter</code>.</p></li>
+<li><p><code>getUnusedIndex($param)</code>: Retrieve audit state through
+<code>getUnusedIndex</code>.</p></li>
+<li><p><code>getConfig($param)</code>: Retrieve audit state through
+<code>getConfig</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="bi">BI</h1>
+<h1 id="bi-1">BI</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/BI.php</code></p></li>
+<li><p><code>searchField($param)</code>: Handle b i state through
+<code>searchField</code>.</p></li>
+<li><p><code>createServer($param)</code>: Create b i state through
+<code>createServer</code>.</p></li>
+<li><p><code>rapport($param)</code>: Handle b i state through
+<code>rapport</code>.</p></li>
+<li><p><code>createTableSpider($param)</code>: Create b i state through
+<code>createTableSpider</code>.</p></li>
+<li><p><code>getBackend($param)</code>: Retrieve b i state through
+<code>getBackend</code>.</p></li>
+<li><p><code>getCreateTable($param)</code>: Retrieve b i state through
+<code>getCreateTable</code>.</p></li>
+<li><p><code>changeToSpider($param)</code>: Handle b i state through
+<code>changeToSpider</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="backup">Backup</h1>
+<h1 id="backup-1">Backup</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Backup.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare backup state through
+<code>before</code>.</p></li>
+<li><p><code>sendKeyPub()</code>: Handle backup state through
+<code>sendKeyPub</code>.</p></li>
+<li><p><code>checkDirectory($dir)</code>: Handle backup state through
+<code>checkDirectory</code>.</p></li>
+<li><p><code>cmd($cmd)</code>: Handle backup state through
+<code>cmd</code>.</p></li>
+<li><p><code>compress_dump()</code>: Handle backup state through
+<code>compress_dump</code>.</p></li>
+<li><p><code>backupUser()</code>: Handle backup state through
+<code>backupUser</code>.</p></li>
+<li><p><code>listing()</code>: Retrieve backup state through
+<code>listing</code>.</p></li>
+<li><p><code>getDump($param)</code>: Retrieve backup state through
+<code>getDump</code>.</p></li>
+<li><p><code>settings()</code>: Handle backup state through
+<code>settings</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve backup state
+through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>getServerByName($param)</code>: Retrieve backup state
+through <code>getServerByName</code>.</p></li>
+<li><p><code>getServerByIp($server)</code>: Retrieve backup state
+through <code>getServerByIp</code>.</p></li>
+<li><p><code>saveDb($param)</code>: Update backup state through
+<code>saveDb</code>.</p></li>
+<li><p><code>deleteShedule($param)</code>: Delete backup state through
+<code>deleteShedule</code>.</p></li>
+<li><p><code>toggleShedule($param)</code>: Toggle backup state through
+<code>toggleShedule</code>.</p></li>
+<li><p><code>mysqldump($backup)</code>: Handle backup state through
+<code>mysqldump</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="benchmark">Benchmark</h1>
+<h1 id="benchmark-1">Benchmark</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Benchmark.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare benchmark state through
+<code>before</code>.</p></li>
+<li><p><code>run($param)</code>: Handle benchmark state through
+<code>run</code>.</p></li>
+<li><p><code>getQueriesPerformedRead($input_lines)</code>: Retrieve
+benchmark state through <code>getQueriesPerformedRead</code>.</p></li>
+<li><p><code>getQueriesPerformedWrite($input_lines)</code>: Retrieve
+benchmark state through <code>getQueriesPerformedWrite</code>.</p></li>
+<li><p><code>getQueriesPerformedOther($input_lines)</code>: Retrieve
+benchmark state through <code>getQueriesPerformedOther</code>.</p></li>
+<li><p><code>getQueriesPerformedTotal($input_lines)</code>: Retrieve
+benchmark state through <code>getQueriesPerformedTotal</code>.</p></li>
+<li><p><code>getTransactions($input_lines)</code>: Retrieve benchmark
+state through <code>getTransactions</code>.</p></li>
+<li><p><code>getErrors($input_lines)</code>: Retrieve benchmark state
+through <code>getErrors</code>.</p></li>
+<li><p><code>getTotalTime($input_lines)</code>: Retrieve benchmark state
+through <code>getTotalTime</code>.</p></li>
+<li><p><code>getReponseTimeMin($input_lines)</code>: Retrieve benchmark
+state through <code>getReponseTimeMin</code>.</p></li>
+<li><p><code>getReponseTimeMax($input_lines)</code>: Retrieve benchmark
+state through <code>getReponseTimeMax</code>.</p></li>
+<li><p><code>getReponseTimeAvg($input_lines)</code>: Retrieve benchmark
+state through <code>getReponseTimeAvg</code>.</p></li>
+<li><p><code>getReponseTime95percent($input_lines)</code>: Retrieve
+benchmark state through <code>getReponseTime95percent</code>.</p></li>
+<li><p><code>testMoc($param)</code>: Handle benchmark state through
+<code>testMoc</code>.</p></li>
+<li><p><code>moc()</code>: Handle benchmark state through
+<code>moc</code>.</p></li>
+<li><p><code>moc2()</code>: Handle benchmark state through
+<code>moc2</code>.</p></li>
+<li><p><code>moc3()</code>: Handle benchmark state through
+<code>moc3</code>.</p></li>
+<li><p><code>index($param)</code>: Render benchmark state through
+<code>index</code>.</p></li>
+<li><p><code>testError($input_lines)</code>: Handle benchmark state
+through <code>testError</code>.</p></li>
+<li><p><code>install()</code>: Handle benchmark state through
+<code>install</code>.</p></li>
+<li><p><code>uninstall()</code>: Handle benchmark state through
+<code>uninstall</code>.</p></li>
+<li><p><code>graph()</code>: Handle benchmark state through
+<code>graph</code>.</p></li>
+<li><p><code>config()</code>: Handle benchmark state through
+<code>config</code>.</p></li>
+<li><p><code>bench($param)</code>: Handle benchmark state through
+<code>bench</code>.</p></li>
+<li><p><code>current()</code>: Handle benchmark state through
+<code>current</code>.</p></li>
+<li><p><code>getFilter()</code>: Retrieve benchmark state through
+<code>getFilter</code>.</p></li>
+<li><p><code>queue($param)</code>: Handle benchmark state through
+<code>queue</code>.</p></li>
+<li><p><code>debug($string)</code>: Handle benchmark state through
+<code>debug</code>.</p></li>
+<li><p><code>getSysbenchVersion($param)</code>: Retrieve benchmark state
+through <code>getSysbenchVersion</code>.</p></li>
+<li><p><code>getScriptLua($param)</code>: Retrieve benchmark state
+through <code>getScriptLua</code>.</p></li>
+<li><p><code>getDirectoryLua($param)</code>: Retrieve benchmark state
+through <code>getDirectoryLua</code>.</p></li>
+<li><p><code>getLua()</code>: Retrieve benchmark state through
+<code>getLua</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="binlog">Binlog</h1>
+<h1 id="binlog-1">Binlog</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Binlog.php</code></p></li>
+<li><p><code>index()</code>: Render binlog state through
+<code>index</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare binlog state through
+<code>before</code>.</p></li>
+<li><p><code>add()</code>: Create binlog state through
+<code>add</code>.</p></li>
+<li><p><code>max()</code>: Handle binlog state through
+<code>max</code>.</p></li>
+<li><p><code>getMaxBinlogSize($param)</code>: Retrieve binlog state
+through <code>getMaxBinlogSize</code>.</p></li>
+<li><p><code>view($param)</code>: Handle binlog state through
+<code>view</code>.</p></li>
+<li><p><code>search($param)</code>: Handle binlog state through
+<code>search</code>.</p></li>
+<li><p><code>backupAll($param)</code>: Handle binlog state through
+<code>backupAll</code>.</p></li>
+<li><p><code>backup($param)</code>: Handle binlog state through
+<code>backup</code>.</p></li>
+<li><p><code>backupServer($param)</code>: Handle binlog state through
+<code>backupServer</code>.</p></li>
+<li><p><code>purgeAll($param)</code>: Handle binlog state through
+<code>purgeAll</code>.</p></li>
+<li><p><code>purgeServer($param)</code>: Handle binlog state through
+<code>purgeServer</code>.</p></li>
+<li><p><code>liste($param)</code>: Retrieve binlog state through
+<code>liste</code>.</p></li>
+<li><p><code>getBinlog($param)</code>: Retrieve binlog state through
+<code>getBinlog</code>.</p></li>
+<li><p><code>binlog2sql($param)</code>: Handle binlog state through
+<code>binlog2sql</code>.</p></li>
+<li><p><code>getLastSqlError($param)</code>: Retrieve binlog state
+through <code>getLastSqlError</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="chartjs">Chartjs</h1>
+<h1 id="chartjs-1">Chartjs</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Chartjs.php</code></p></li>
+<li><p><code>lineBasic($param)</code>: Handle chartjs state through
+<code>lineBasic</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="check">Check</h1>
+<h1 id="check-1">Check</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Check.php</code></p></li>
+<li><p><code>uptimeDecrease($servers)</code>: Handle check state through
+<code>uptimeDecrease</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="checkconfig">CheckConfig</h1>
+<h1 id="checkconfig-1">CheckConfig</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/CheckConfig.php</code></p></li>
+<li><p><code>index($param)</code>: Render check config state through
+<code>index</code>.</p></li>
+<li><p><code>getDatabasesByServers($param)</code>: Retrieve check config
+state through <code>getDatabasesByServers</code>.</p></li>
+<li><p><code>getDbLinkFromId($id_db)</code>: Retrieve check config state
+through <code>getDbLinkFromId</code>.</p></li>
+<li><p><code>see($param)</code>: Handle check config state through
+<code>see</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="checkdataoncluster">CheckDataOnCluster</h1>
+<h1 id="checkdataoncluster-1">CheckDataOnCluster</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source:
+<code>App/Controller/CheckDataOnCluster.php</code></p></li>
+<li><p><code>index($param)</code>: Render check data on cluster state
+through <code>index</code>.</p></li>
+<li><p><code>getDatabasesByServers($param)</code>: Retrieve check data
+on cluster state through <code>getDatabasesByServers</code>.</p></li>
+<li><p><code>getDbLinkFromId($id_db)</code>: Retrieve check data on
+cluster state through <code>getDbLinkFromId</code>.</p></li>
+<li><p><code>array_diff_assoc_recursive($array1, $array2)</code>: Handle
+check data on cluster state through
+<code>array_diff_assoc_recursive</code>.</p></li>
+<li><p><code>liste_combinaison($list)</code>: Retrieve check data on
+cluster state through <code>liste_combinaison</code>.</p></li>
+<li><p><code>perm($nbrs)</code>: Handle check data on cluster state
+through <code>perm</code>.</p></li>
+<li><p><code>see($param)</code>: Handle check data on cluster state
+through <code>see</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="chemin">Chemin</h1>
+<h1 id="chemin-1">Chemin</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Chemin.php</code></p></li>
+<li><p><code>possibilite($param)</code>: Handle chemin state through
+<code>possibilite</code>.</p></li>
+<li><p><code>getNameMysqlServer($id)</code>: Retrieve chemin state
+through <code>getNameMysqlServer</code>.</p></li>
+<li><p><code>getPaths($table, $table2, $database)</code>: Retrieve
+chemin state through <code>getPaths</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="cleaner">Cleaner</h1>
+<h1 id="cleaner-1">Cleaner</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Cleaner.php</code></p></li>
+<li><p><code>statistics($param)</code>: Handle cleaner state through
+<code>statistics</code>.</p></li>
+<li><p><code>getMsgStartDaemon($ob)</code>: Retrieve cleaner state
+through <code>getMsgStartDaemon</code>.</p></li>
+<li><p><code>showDaemon()</code>: Handle cleaner state through
+<code>showDaemon</code>.</p></li>
+<li><p><code>index($param)</code>: Render cleaner state through
+<code>index</code>.</p></li>
+<li><p><code>treatment($param)</code>: Handle cleaner state through
+<code>treatment</code>.</p></li>
+<li><p><code>detail($param)</code>: Handle cleaner state through
+<code>detail</code>.</p></li>
+<li><p><code>add($param)</code>: Create cleaner state through
+<code>add</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve cleaner state
+through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>getTableByDatabase($param)</code>: Retrieve cleaner state
+through <code>getTableByDatabase</code>.</p></li>
+<li><p><code>getColumnByTable($param)</code>: Retrieve cleaner state
+through <code>getColumnByTable</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete cleaner state through
+<code>delete</code>.</p></li>
+<li><p><code>settings($param)</code>: Handle cleaner state through
+<code>settings</code>.</p></li>
+<li><p><code>launch($param)</code>: Handle cleaner state through
+<code>launch</code>.</p></li>
+<li><p><code>start($param)</code>: Handle cleaner state through
+<code>start</code>.</p></li>
+<li><p><code>stop($param)</code>: Handle cleaner state through
+<code>stop</code>.</p></li>
+<li><p><code>restart($param)</code>: Handle cleaner state through
+<code>restart</code>.</p></li>
+<li><p><code>isRunning($pid)</code>: Handle cleaner state through
+<code>isRunning</code>.</p></li>
+<li><p><code>stats_for_log($data)</code>: Handle cleaner state through
+<code>stats_for_log</code>.</p></li>
+<li><p><code>getTableImpacted($param)</code>: Retrieve cleaner state
+through <code>getTableImpacted</code>.</p></li>
+<li><p><code>checkFileToPush($path)</code>: Handle cleaner state through
+<code>checkFileToPush</code>.</p></li>
+<li><p><code>compressAndCrypt($file, $is_cryted)</code>: Handle cleaner
+state through <code>compressAndCrypt</code>.</p></li>
+<li><p><code>getFileinfo($filename)</code>: Retrieve cleaner state
+through <code>getFileinfo</code>.</p></li>
+<li><p><code>cryptFile($file_name)</code>: Handle cleaner state through
+<code>cryptFile</code>.</p></li>
+<li><p><code>decryptFile($file_name)</code>: Handle cleaner state
+through <code>decryptFile</code>.</p></li>
+<li><p><code>compressFile($path_file)</code>: Handle cleaner state
+through <code>compressFile</code>.</p></li>
+<li><p><code>unCompressFile($path_file)</code>: Handle cleaner state
+through <code>unCompressFile</code>.</p></li>
+<li><p><code>uncc($param)</code>: Handle cleaner state through
+<code>uncc</code>.</p></li>
+<li><p><code>purge_clean_db($param)</code>: Handle cleaner state through
+<code>purge_clean_db</code>.</p></li>
+<li><p><code>sig_handler($signo)</code>: Handle cleaner state through
+<code>sig_handler</code>.</p></li>
+<li><p><code>get_id_cleaner($param)</code>: Retrieve cleaner state
+through <code>get_id_cleaner</code>.</p></li>
+<li><p><code>purge()</code>: Handle cleaner state through
+<code>purge</code>.</p></li>
+<li><p><code>createTemporaryTable($table)</code>: Create cleaner state
+through <code>createTemporaryTable</code>.</p></li>
+<li><p><code>feedDeleteTableWithFk()</code>: Handle cleaner state
+through <code>feedDeleteTableWithFk</code>.</p></li>
+<li><p><code>createAllTemporaryTable()</code>: Create cleaner state
+through <code>createAllTemporaryTable</code>.</p></li>
+<li><p><code>getTableError()</code>: Retrieve cleaner state through
+<code>getTableError</code>.</p></li>
+<li><p><code>getRealForeignKeys()</code>: Retrieve cleaner state through
+<code>getRealForeignKeys</code>.</p></li>
+<li><p><code>getVirtualForeignKeys()</code>: Retrieve cleaner state
+through <code>getVirtualForeignKeys</code>.</p></li>
+<li><p><code>getOrderBy($param)</code>: Retrieve cleaner state through
+<code>getOrderBy</code>.</p></li>
+<li><p><code>delete_rows()</code>: Delete cleaner state through
+<code>delete_rows</code>.</p></li>
+<li><p><code>setAffectedRows($table)</code>: Handle cleaner state
+through <code>setAffectedRows</code>.</p></li>
+<li><p><code>getAffectedTables()</code>: Retrieve cleaner state through
+<code>getAffectedTables</code>.</p></li>
+<li><p><code>removeTableNotImpacted($fks)</code>: Delete cleaner state
+through <code>removeTableNotImpacted</code>.</p></li>
+<li><p><code>exportToFile($table)</code>: Handle cleaner state through
+<code>exportToFile</code>.</p></li>
+<li><p><code>testDirectory($path)</code>: Handle cleaner state through
+<code>testDirectory</code>.</p></li>
+<li><p><code>__sleep()</code>: Handle cleaner state through
+<code>__sleep</code>.</p></li>
+<li><p><code>get_rows($result)</code>: Retrieve cleaner state through
+<code>get_rows</code>.</p></li>
+<li><p><code>printableBitValue($value, $length)</code>: Handle cleaner
+state through <code>printableBitValue</code>.</p></li>
+<li><p><code>getImpactedTable()</code>: Retrieve cleaner state through
+<code>getImpactedTable</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare cleaner state through
+<code>before</code>.</p></li>
+<li><p><code>pushArchive($param)</code>: Handle cleaner state through
+<code>pushArchive</code>.</p></li>
+<li><p><code>getIdStorageArea($id_cleaner)</code>: Retrieve cleaner
+state through <code>getIdStorageArea</code>.</p></li>
+<li><p><code>init()</code>: Handle cleaner state through
+<code>init</code>.</p></li>
+<li><p><code>generateCreateTable()</code>: Handle cleaner state through
+<code>generateCreateTable</code>.</p></li>
+<li><p><code>cacheDdlOnDisk()</code>: Handle cleaner state through
+<code>cacheDdlOnDisk</code>.</p></li>
+<li><p><code>initFileWithCreateTable($file)</code>: Handle cleaner state
+through <code>initFileWithCreateTable</code>.</p></li>
+<li><p><code>cleanTableFromNoNeedConstraint($tableCreate)</code>: Handle
+cleaner state through
+<code>cleanTableFromNoNeedConstraint</code>.</p></li>
+<li><p><code>cacheComStatus()</code>: Handle cleaner state through
+<code>cacheComStatus</code>.</p></li>
+<li><p><code>compareComStatus()</code>: Handle cleaner state through
+<code>compareComStatus</code>.</p></li>
+<li><p><code>sighup()</code>: Handle cleaner state through
+<code>sighup</code>.</p></li>
+<li><p><code>getPrimaryKey($table, $database)</code>: Retrieve cleaner
+state through <code>getPrimaryKey</code>.</p></li>
+<li><p><code>end_loop()</code>: Handle cleaner state through
+<code>end_loop</code>.</p></li>
+<li><p><code>initDdlOnDisk()</code>: Handle cleaner state through
+<code>initDdlOnDisk</code>.</p></li>
+<li><p><code>compareDdl()</code>: Handle cleaner state through
+<code>compareDdl</code>.</p></li>
+<li><p><code>compareTables()</code>: Handle cleaner state through
+<code>compareTables</code>.</p></li>
+<li><p><code>compareTable($table)</code>: Handle cleaner state through
+<code>compareTable</code>.</p></li>
+<li><p><code>edit($param)</code>: Handle cleaner state through
+<code>edit</code>.</p></li>
+<li><p><code>install()</code>: Handle cleaner state through
+<code>install</code>.</p></li>
+<li><p><code>uninstall()</code>: Handle cleaner state through
+<code>uninstall</code>.</p></li>
+<li><p><code>view($param)</code>: Handle cleaner state through
+<code>view</code>.</p></li>
+<li><p><code>logs($param)</code>: Handle cleaner state through
+<code>logs</code>.</p></li>
+<li><p><code>details($param)</code>: Handle cleaner state through
+<code>details</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle cleaner state through
+<code>menu</code>.</p></li>
+<li><p><code>format($lines, $id_cleaner)</code>: Handle cleaner state
+through <code>format</code>.</p></li>
+<li><p><code>setColor($type)</code>: Handle cleaner state through
+<code>setColor</code>.</p></li>
+<li><p><code>label($text)</code>: Handle cleaner state through
+<code>label</code>.</p></li>
+<li><p><code>hexToRgb($colorName)</code>: Handle cleaner state through
+<code>hexToRgb</code>.</p></li>
+<li><p><code>getUser($id)</code>: Retrieve cleaner state through
+<code>getUser</code>.</p></li>
+<li><p><code>log($level, $type, $msg)</code>: Handle cleaner state
+through <code>log</code>.</p></li>
+<li><p><code>getrgba($label, $alpha)</code>: Retrieve cleaner state
+through <code>getrgba</code>.</p></li>
+<li><p><code>impacted($param)</code>: Handle cleaner state through
+<code>impacted</code>.</p></li>
+<li><p><code>setCacheFile()</code>: Handle cleaner state through
+<code>setCacheFile</code>.</p></li>
+<li><p><code>addChild($fks, $ref_table, $childs)</code>: Create cleaner
+state through <code>addChild</code>.</p></li>
+<li><p><code>filterFkWithChildren($children, $foreign_keys)</code>:
+Handle cleaner state through <code>filterFkWithChildren</code>.</p></li>
+<li><p><code>getForeignKeys()</code>: Retrieve cleaner state through
+<code>getForeignKeys</code>.</p></li>
+<li><p><code>generateMock($param)</code>: Handle cleaner state through
+<code>generateMock</code>.</p></li>
+<li><p><code>skipReplication($db)</code>: Handle cleaner state through
+<code>skipReplication</code>.</p></li>
+<li><p><code>testOrder($param)</code>: Handle cleaner state through
+<code>testOrder</code>.</p></li>
+<li><p><code>getOrderBy2($param)</code>: Retrieve cleaner state through
+<code>getOrderBy2</code>.</p></li>
+<li><p><code>dropFk($child, $parent)</code>: Handle cleaner state
+through <code>dropFk</code>.</p></li>
+<li><p><code>detectCircularDefinition($param)</code>: Handle cleaner
+state through <code>detectCircularDefinition</code>.</p></li>
+<li><p><code>getCircularMulti($param)</code>: Retrieve cleaner state
+through <code>getCircularMulti</code>.</p></li>
+<li><p><code>getPath($table, $table2, $db)</code>: Retrieve cleaner
+state through <code>getPath</code>.</p></li>
+<li><p><code>testOneToOne($way, $order)</code>: Handle cleaner state
+through <code>testOneToOne</code>.</p></li>
+<li><p><code>testFk($table_a, $table_b)</code>: Handle cleaner state
+through <code>testFk</code>.</p></li>
+<li><p><code>comptage($param)</code>: Handle cleaner state through
+<code>comptage</code>.</p></li>
+<li><p><code>feedCircularFk($table)</code>: Handle cleaner state through
+<code>feedCircularFk</code>.</p></li>
+<li><p><code>setDebug($param)</code>: Handle cleaner state through
+<code>setDebug</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="cleanertest">CleanerTest</h1>
+<h1 id="cleanertest-1">CleanerTest</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller\Test</code></p></li>
+<li><p>Source: <code>App/Controller/Test/CleanerTest.php</code></p></li>
+<li><p><code>mydb()</code>: Handle cleaner test state through
+<code>mydb</code>.</p></li>
+<li><p><code>testPushAndPop()</code>: Handle cleaner test state through
+<code>testPushAndPop</code>.</p></li>
+<li><p><code>testGetOrderBy()</code>: Handle cleaner test state through
+<code>testGetOrderBy</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="client">Client</h1>
+<h1 id="client-1">Client</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Client.php</code></p></li>
+<li><p><code>index()</code>: Render client state through
+<code>index</code>.</p></li>
+<li><p><code>add()</code>: Create client state through
+<code>add</code>.</p></li>
+<li><p><code>update($param)</code>: Update client state through
+<code>update</code>.</p></li>
+<li><p><code>toggleMonitoring($param)</code>: Toggle client state
+through <code>toggleMonitoring</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete client state through
+<code>delete</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="cluster">Cluster</h1>
+<h1 id="cluster-1">Cluster</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Cluster.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare cluster state through
+<code>before</code>.</p></li>
+<li><p><code>svg($param)</code>: Handle cluster state through
+<code>svg</code>.</p></li>
+<li><p><code>replay($param)</code>: Handle cluster state through
+<code>replay</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="color">Color</h1>
+<h1 id="color-1">Color</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Color.php</code></p></li>
+<li><p><code>setFontColor($type)</code>: Handle color state through
+<code>setFontColor</code>.</p></li>
+<li><p><code>setBackgroundColor($type)</code>: Handle color state
+through <code>setBackgroundColor</code>.</p></li>
+<li><p><code>testColor($param)</code>: Handle color state through
+<code>testColor</code>.</p></li>
+<li><p><code>getFontColor($b_color)</code>: Retrieve color state through
+<code>getFontColor</code>.</p></li>
+<li><p><code>isDark()</code>: Handle color state through
+<code>isDark</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="common">Common</h1>
+<h1 id="common-1">Common</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Common.php</code></p></li>
+<li><p><code>index()</code>: Render common state through
+<code>index</code>.</p></li>
+<li><p><code>displayClientEnvironment($param)</code>: Handle common
+state through <code>displayClientEnvironment</code>.</p></li>
+<li><p><code>remove($array)</code>: Delete common state through
+<code>remove</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve common state
+through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>getDbLinkFromId($id_db)</code>: Retrieve common state
+through <code>getDbLinkFromId</code>.</p></li>
+<li><p><code>getTableByServerAndDatabase($param)</code>: Retrieve common
+state through <code>getTableByServerAndDatabase</code>.</p></li>
+<li><p><code>getSelectServerAvailable($param)</code>: Retrieve common
+state through <code>getSelectServerAvailable</code>.</p></li>
+<li><p><code>getTsVariables($param)</code>: Retrieve common state
+through <code>getTsVariables</code>.</p></li>
+<li><p><code>getTsVariableJson($param)</code>: Retrieve common state
+through <code>getTsVariableJson</code>.</p></li>
+<li><p><code>getTagByServer($param)</code>: Retrieve common state
+through <code>getTagByServer</code>.</p></li>
+<li><p><code>getTagArray($db)</code>: Retrieve common state through
+<code>getTagArray</code>.</p></li>
+<li><p><code>getAvailable($param)</code>: Retrieve common state through
+<code>getAvailable</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="compare">Compare</h1>
+<h1 id="compare-1">Compare</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Compare.php</code></p></li>
+<li><p><code>index($params)</code>: Render compare state through
+<code>index</code>.</p></li>
+<li><p><code>checkConfig($id_server1, $db1, $id_server2, $db2)</code>:
+Handle compare state through <code>checkConfig</code>.</p></li>
+<li><p><code>analyse($id_server1, $db1, $id_server2, $db2)</code>:
+Handle compare state through <code>analyse</code>.</p></li>
+<li><p><code>compareTable($original, $compare, $data)</code>: Handle
+compare state through <code>compareTable</code>.</p></li>
+<li><p><code>execMulti($queries, $db_link)</code>: Handle compare state
+through <code>execMulti</code>.</p></li>
+<li><p><code>compareListObject($db1, $db2, $type_object)</code>: Handle
+compare state through <code>compareListObject</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle compare state through
+<code>menu</code>.</p></li>
+<li><p><code>generateGet()</code>: Handle compare state through
+<code>generateGet</code>.</p></li>
+<li><p><code>getObjectDiff($param)</code>: Retrieve compare state
+through <code>getObjectDiff</code>.</p></li>
+<li><p><code>compareObject($db1, $db2, $data)</code>: Handle compare
+state through <code>compareObject</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve compare state
+through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>getDbLinkFromId($id_db)</code>: Retrieve compare state
+through <code>getDbLinkFromId</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="compareconfig">CompareConfig</h1>
+<h1 id="compareconfig-1">CompareConfig</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/CompareConfig.php</code></p></li>
+<li><p><code>index($param)</code>: Render compare config state through
+<code>index</code>.</p></li>
+<li><p><code>checkConfig($id_server1, $db1, $id_server2, $db2)</code>:
+Handle compare config state through <code>checkConfig</code>.</p></li>
+<li><p><code>analyse($id_server1, $db1, $id_server2, $db2)</code>:
+Handle compare config state through <code>analyse</code>.</p></li>
+<li><p><code>compareTable($original, $compare, $data)</code>: Handle
+compare config state through <code>compareTable</code>.</p></li>
+<li><p><code>execMulti($queries, $db_link)</code>: Handle compare config
+state through <code>execMulti</code>.</p></li>
+<li><p><code>compareListObject($db1, $db2, $type_object)</code>: Handle
+compare config state through <code>compareListObject</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle compare config state through
+<code>menu</code>.</p></li>
+<li><p><code>generateGet()</code>: Handle compare config state through
+<code>generateGet</code>.</p></li>
+<li><p><code>getObjectDiff($param)</code>: Retrieve compare config state
+through <code>getObjectDiff</code>.</p></li>
+<li><p><code>compareObject($db1, $db2, $data)</code>: Handle compare
+config state through <code>compareObject</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve compare config
+state through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>getDbLinkFromId($id_db)</code>: Retrieve compare config
+state through <code>getDbLinkFromId</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="control">Control</h1>
+<h1 id="control-1">Control</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Control.php</code></p></li>
+<li><p><code>checkSize($param)</code>: Handle control state through
+<code>checkSize</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare control state through
+<code>before</code>.</p></li>
+<li><p><code>selectEngine()</code>: Handle control state through
+<code>selectEngine</code>.</p></li>
+<li><p><code>addPartition($param)</code>: Create control state through
+<code>addPartition</code>.</p></li>
+<li><p><code>makeCombinaison()</code>: Handle control state through
+<code>makeCombinaison</code>.</p></li>
+<li><p><code>dropPartition($param)</code>: Handle control state through
+<code>dropPartition</code>.</p></li>
+<li><p><code>getMinMaxPartition()</code>: Retrieve control state through
+<code>getMinMaxPartition</code>.</p></li>
+<li><p><code>getToDays($param)</code>: Retrieve control state through
+<code>getToDays</code>.</p></li>
+<li><p><code>service($param)</code>: Handle control state through
+<code>service</code>.</p></li>
+<li><p><code>dropTsTable($param)</code>: Handle control state through
+<code>dropTsTable</code>.</p></li>
+<li><p><code>createTsTable()</code>: Create control state through
+<code>createTsTable</code>.</p></li>
+<li><p><code>rebuildAll($param)</code>: Handle control state through
+<code>rebuildAll</code>.</p></li>
+<li><p><code>statistique($param)</code>: Handle control state through
+<code>statistique</code>.</p></li>
+<li><p><code>getDates()</code>: Retrieve control state through
+<code>getDates</code>.</p></li>
+<li><p><code>dropFile($diretory)</code>: Handle control state through
+<code>dropFile</code>.</p></li>
+<li><p><code>dropAllFile($param)</code>: Handle control state through
+<code>dropAllFile</code>.</p></li>
+<li><p><code>refreshVariable($param)</code>: Handle control state
+through <code>refreshVariable</code>.</p></li>
+<li><p><code>purgefrm($param)</code>: Handle control state through
+<code>purgefrm</code>.</p></li>
+<li><p><code>truncateTsVariable()</code>: Handle control state through
+<code>truncateTsVariable</code>.</p></li>
+<li><p><code>truncateTsMaxDate()</code>: Handle control state through
+<code>truncateTsMaxDate</code>.</p></li>
+<li><p><code>truncateTsFile()</code>: Handle control state through
+<code>truncateTsFile</code>.</p></li>
+<li><p><code>delMd5File($param)</code>: Handle control state through
+<code>delMd5File</code>.</p></li>
+<li><p><code>rocksdbCompact($param)</code>: Handle control state through
+<code>rocksdbCompact</code>.</p></li>
+<li><p><code>generateAllTables($param)</code>: Handle control state
+through <code>generateAllTables</code>.</p></li>
+<li><p><code>purgeAll($param)</code>: Handle control state through
+<code>purgeAll</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="covage">Covage</h1>
+<h1 id="covage-1">Covage</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Covage.php</code></p></li>
+<li><p><code>creationTableSpider()</code>: Handle covage state through
+<code>creationTableSpider</code>.</p></li>
+<li><p><code>getEnvs()</code>: Retrieve covage state through
+<code>getEnvs</code>.</p></li>
+<li><p><code>all($param)</code>: Handle covage state through
+<code>all</code>.</p></li>
+<li><p><code>drop()</code>: Handle covage state through
+<code>drop</code>.</p></li>
+<li><p><code>diff($param)</code>: Handle covage state through
+<code>diff</code>.</p></li>
+<li><p><code>getPrimaryKey($database, $table)</code>: Retrieve covage
+state through <code>getPrimaryKey</code>.</p></li>
+<li><p><code>reprise($param)</code>: Handle covage state through
+<code>reprise</code>.</p></li>
+<li><p><code>saveRef()</code>: Update covage state through
+<code>saveRef</code>.</p></li>
+<li><p><code>getFields($database, $table)</code>: Retrieve covage state
+through <code>getFields</code>.</p></li>
+<li><p><code>createTableSpider($param)</code>: Create covage state
+through <code>createTableSpider</code>.</p></li>
+<li><p><code>createDbLink($param)</code>: Create covage state through
+<code>createDbLink</code>.</p></li>
+<li><p><code>getInfoFromBackend($backend, $id_mysql_server)</code>:
+Retrieve covage state through <code>getInfoFromBackend</code>.</p></li>
+<li><p><code>toRename($param)</code>: Handle covage state through
+<code>toRename</code>.</p></li>
+<li><p><code>toRenameRollback($param)</code>: Handle covage state
+through <code>toRenameRollback</code>.</p></li>
+<li><p><code>convertToUtf8($param)</code>: Handle covage state through
+<code>convertToUtf8</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="crontab">Crontab</h1>
+<h1 id="crontab-1">Crontab</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Crontab.php</code></p></li>
+<li><p><code>index()</code>: Render crontab state through
+<code>index</code>.</p></li>
+<li><p><code>admin_crontab()</code>: Handle crontab state through
+<code>admin_crontab</code>.</p></li>
+<li><p><code>view()</code>: Handle crontab state through
+<code>view</code>.</p></li>
+<li><p><code>monitor($param)</code>: Handle crontab state through
+<code>monitor</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="daemon">Daemon</h1>
+<h1 id="daemon-1">Daemon</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Daemon.php</code></p></li>
+<li><p><code>index($param)</code>: Render daemon state through
+<code>index</code>.</p></li>
+<li><p><code>startAll($param)</code>: Handle daemon state through
+<code>startAll</code>.</p></li>
+<li><p><code>stopAll($param)</code>: Handle daemon state through
+<code>stopAll</code>.</p></li>
+<li><p><code>manageDaemon($commande)</code>: Handle daemon state through
+<code>manageDaemon</code>.</p></li>
+<li><p><code>update()</code>: Update daemon state through
+<code>update</code>.</p></li>
+<li><p><code>refresh($param)</code>: Handle daemon state through
+<code>refresh</code>.</p></li>
+<li><p><code>getStatitics($param)</code>: Retrieve daemon state through
+<code>getStatitics</code>.</p></li>
+<li><p><code>getAllProcessPhp($param)</code>: Retrieve daemon state
+through <code>getAllProcessPhp</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="dashboard">Dashboard</h1>
+<h1 id="dashboard-1">Dashboard</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Dashboard.php</code></p></li>
+<li><p><code>json($param)</code>: Handle dashboard state through
+<code>json</code>.</p></li>
+<li><p><code>hitRatio($param)</code>: Handle dashboard state through
+<code>hitRatio</code>.</p></li>
+<li><p><code>ratioTable($param)</code>: Handle dashboard state through
+<code>ratioTable</code>.</p></li>
+<li><p><code>ratioLockTable($param)</code>: Handle dashboard state
+through <code>ratioLockTable</code>.</p></li>
+<li><p><code>ratioThreadCache($param)</code>: Handle dashboard state
+through <code>ratioThreadCache</code>.</p></li>
+<li><p><code>ratioOpenFile($param)</code>: Handle dashboard state
+through <code>ratioOpenFile</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="database">Database</h1>
+<h1 id="database-1">Database</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Database.php</code></p></li>
+<li><p><code>getTagSize($size)</code>: Retrieve database state through
+<code>getTagSize</code>.</p></li>
+<li><p><code>emptyDatabase($param)</code>: Handle database state through
+<code>emptyDatabase</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="datamodel">Datamodel</h1>
+<h1 id="datamodel-1">Datamodel</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Datamodel.php</code></p></li>
+<li><p><code>index()</code>: Render datamodel state through
+<code>index</code>.</p></li>
+<li><p><code>add()</code>: Create datamodel state through
+<code>add</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="demo">Demo</h1>
+<h1 id="demo-1">Demo</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Demo.php</code></p></li>
+<li><p><code>index()</code>: Render demo state through
+<code>index</code>.</p></li>
+<li><p><code>getTestServer($param)</code>: Retrieve demo state through
+<code>getTestServer</code>.</p></li>
+<li><p><code>AssociateServerByLevel($param)</code>: Handle demo state
+through <code>AssociateServerByLevel</code>.</p></li>
+<li><p><code>compareVersions($a, $b)</code>: Handle demo state through
+<code>compareVersions</code>.</p></li>
+<li><p><code>compareDigit($a, $b)</code>: Handle demo state through
+<code>compareDigit</code>.</p></li>
+<li><p><code>obtenirPlusGrandChiffre($s)</code>: Handle demo state
+through <code>obtenirPlusGrandChiffre</code>.</p></li>
+<li><p><code>generatePair($param)</code>: Handle demo state through
+<code>generatePair</code>.</p></li>
+<li><p><code>configMasterSlave($param)</code>: Handle demo state through
+<code>configMasterSlave</code>.</p></li>
+<li><p><code>randomPassword()</code>: Handle demo state through
+<code>randomPassword</code>.</p></li>
+<li><p><code>install($param)</code>: Handle demo state through
+<code>install</code>.</p></li>
+<li><p><code>createSakila($param)</code>: Create demo state through
+<code>createSakila</code>.</p></li>
+<li><p><code>createInstanceMariaDB($param)</code>: Create demo state
+through <code>createInstanceMariaDB</code>.</p></li>
+<li><p><code>dropDemo($param)</code>: Handle demo state through
+<code>dropDemo</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="dependencytreegenerator">DependencyTreeGenerator</h1>
+<h1 id="dependencytreegenerator-1">DependencyTreeGenerator</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source:
+<code>App/Controller/DependencyTreeGenerator.php</code></p></li>
+<li><p><code>init($directory)</code>: Handle dependency tree generator
+state through <code>init</code>.</p></li>
+<li><p><code>loadFiles($directory)</code>: Handle dependency tree
+generator state through <code>loadFiles</code>.</p></li>
+<li><p><code>parseMethodCalls($className, $methodName)</code>: Handle
+dependency tree generator state through
+<code>parseMethodCalls</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="deploy">Deploy</h1>
+<h1 id="deploy-1">Deploy</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Deploy.php</code></p></li>
+<li><p><code>index()</code>: Render deploy state through
+<code>index</code>.</p></li>
+<li><p><code>execute($param)</code>: Handle deploy state through
+<code>execute</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="deployrsakey">DeployRsaKey</h1>
+<h1 id="deployrsakey-1">DeployRsaKey</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/DeployRsaKey.php</code></p></li>
+<li><p><code>index()</code>: Render deploy rsa key state through
+<code>index</code>.</p></li>
+<li><p><code>getFilter()</code>: Retrieve deploy rsa key state through
+<code>getFilter</code>.</p></li>
+<li><p><code>testConnection($ip, $path_private_key)</code>: Handle
+deploy rsa key state through <code>testConnection</code>.</p></li>
+<li><p><code>dropKeySsh($params)</code>: Handle deploy rsa key state
+through <code>dropKeySsh</code>.</p></li>
+<li><p><code>testkey($param)</code>: Handle deploy rsa key state through
+<code>testkey</code>.</p></li>
+<li><p><code>workerDeploy()</code>: Handle deploy rsa key state through
+<code>workerDeploy</code>.</p></li>
+<li><p><code>deploy($param)</code>: Handle deploy rsa key state through
+<code>deploy</code>.</p></li>
+<li><p><code>parseUserKey($elem, $type_key)</code>: Handle deploy rsa
+key state through <code>parseUserKey</code>.</p></li>
+<li><p><code>testParseUserKey()</code>: Handle deploy rsa key state
+through <code>testParseUserKey</code>.</p></li>
+<li><p><code>queue($param)</code>: Handle deploy rsa key state through
+<code>queue</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="detail">Detail</h1>
+<h1 id="detail-1">Detail</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Detail.php</code></p></li>
+<li><p><code>format($bytes, $decimals)</code>: Handle detail state
+through <code>format</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="digest">Digest</h1>
+<h1 id="digest-1">Digest</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Digest.php</code></p></li>
+<li><p><code>integrate($param)</code>: Handle digest state through
+<code>integrate</code>.</p></li>
+<li><p><code>insertDigest($param)</code>: Handle digest state through
+<code>insertDigest</code>.</p></li>
+<li><p><code>selectIdfromDigest($param)</code>: Handle digest state
+through <code>selectIdfromDigest</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="disk">Disk</h1>
+<h1 id="disk-1">Disk</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Disk.php</code></p></li>
+<li><p><code>getData($param)</code>: Retrieve disk state through
+<code>getData</code>.</p></li>
+<li><p><code>gg($param)</code>: Handle disk state through
+<code>gg</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="dns">Dns</h1>
+<h1 id="dns-1">Dns</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Dns.php</code></p></li>
+<li><p><code>check($param)</code>: Handle dns state through
+<code>check</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="docker">Docker</h1>
+<h1 id="docker-1">Docker</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Docker.php</code></p></li>
+<li><p><code>install()</code>: Handle docker state through
+<code>install</code>.</p></li>
+<li><p><code>uninstall()</code>: Handle docker state through
+<code>uninstall</code>.</p></li>
+<li><p><code>getTag($param)</code>: Retrieve docker state through
+<code>getTag</code>.</p></li>
+<li><p><code>getImage($param)</code>: Retrieve docker state through
+<code>getImage</code>.</p></li>
+<li><p><code>index($param)</code>: Render docker state through
+<code>index</code>.</p></li>
+<li><p><code>createInstance($param)</code>: Create docker state through
+<code>createInstance</code>.</p></li>
+<li><p><code>linkTagAndImage($param)</code>: Handle docker state through
+<code>linkTagAndImage</code>.</p></li>
+<li><p><code>add($param)</code>: Create docker state through
+<code>add</code>.</p></li>
+<li><p><code>installMariadb($param)</code>: Handle docker state through
+<code>installMariadb</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare docker state through
+<code>before</code>.</p></li>
+<li><p><code>password($length)</code>: Handle docker state through
+<code>password</code>.</p></li>
+<li><p><code>getCredentials($param)</code>: Retrieve docker state
+through <code>getCredentials</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="dot3">Dot3</h1>
+<h1 id="dot3-1">Dot3</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Dot3.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare dot3 state through
+<code>before</code>.</p></li>
+<li><p><code>generateInformation($param)</code>: Handle dot3 state
+through <code>generateInformation</code>.</p></li>
+<li><p><code>generateGroupMasterSlave($information)</code>: Handle dot3
+state through <code>generateGroupMasterSlave</code>.</p></li>
+<li><p><code>generateGroupProxySQL($information)</code>: Handle dot3
+state through <code>generateGroupProxySQL</code>.</p></li>
+<li><p><code>generateGroupVip($information)</code>: Handle dot3 state
+through <code>generateGroupVip</code>.</p></li>
+<li><p><code>generateGroupGalera($information)</code>: Handle dot3 state
+through <code>generateGroupGalera</code>.</p></li>
+<li><p><code>getIdMysqlServerFromGalera($cluster_address)</code>:
+Retrieve dot3 state through
+<code>getIdMysqlServerFromGalera</code>.</p></li>
+<li><p><code>generateGroupMaxScale($information)</code>: Handle dot3
+state through <code>generateGroupMaxScale</code>.</p></li>
+<li><p><code>test2($param)</code>: Handle dot3 state through
+<code>test2</code>.</p></li>
+<li><p><code>run($param)</code>: Handle dot3 state through
+<code>run</code>.</p></li>
+<li><p><code>saveGraph($id_dot3_information, $file_name, $dot, $group)</code>:
+Update dot3 state through <code>saveGraph</code>.</p></li>
+<li><p><code>writeDot()</code>: Handle dot3 state through
+<code>writeDot</code>.</p></li>
+<li><p><code>logMissingProxySqlMysqlServers($server, $context)</code>:
+Handle dot3 state through
+<code>logMissingProxySqlMysqlServers</code>.</p></li>
+<li><p><code>array_merge_group($array)</code>: Handle dot3 state through
+<code>array_merge_group</code>.</p></li>
+<li><p><code>array_values_recursive($ary)</code>: Handle dot3 state
+through <code>array_values_recursive</code>.</p></li>
+<li><p><code>getGroup($param)</code>: Retrieve dot3 state through
+<code>getGroup</code>.</p></li>
+<li><p><code>buildLink($param)</code>: Handle dot3 state through
+<code>buildLink</code>.</p></li>
+<li><p><code>buildLinkVIP($param)</code>: Handle dot3 state through
+<code>buildLinkVIP</code>.</p></li>
+<li><p><code>buildGaleraSstHintLink($param)</code>: Handle dot3 state
+through <code>buildGaleraSstHintLink</code>.</p></li>
+<li><p><code>getGaleraSegmentFromNode($node)</code>: Retrieve dot3 state
+through <code>getGaleraSegmentFromNode</code>.</p></li>
+<li><p><code>scoreSstDonorCandidate($donorNode, $joinerSegment)</code>:
+Handle dot3 state through <code>scoreSstDonorCandidate</code>.</p></li>
+<li><p><code>buildSstEdgeLabel($donorNode, $joinerNode)</code>: Handle
+dot3 state through <code>buildSstEdgeLabel</code>.</p></li>
+<li><p><code>estimateSstProgressPercent($donorNode, $joinerNode, $elapsedSec)</code>:
+Handle dot3 state through
+<code>estimateSstProgressPercent</code>.</p></li>
+<li><p><code>estimateSstElapsedSeconds($donorNode, $joinerNode)</code>:
+Handle dot3 state through
+<code>estimateSstElapsedSeconds</code>.</p></li>
+<li><p><code>formatSstElapsedLabel($elapsedSec)</code>: Handle dot3
+state through <code>formatSstElapsedLabel</code>.</p></li>
+<li><p><code>getPositiveIntMetric($node, $key)</code>: Retrieve dot3
+state through <code>getPositiveIntMetric</code>.</p></li>
+<li><p><code>guessGaleraAutoIncrement($servers, $group, $joinerId, $clusterName)</code>:
+Handle dot3 state through
+<code>guessGaleraAutoIncrement</code>.</p></li>
+<li><p><code>buildServer($param)</code>: Handle dot3 state through
+<code>buildServer</code>.</p></li>
+<li><p><code>mergeVipDnsDataInInformation($all, $vipServerIds, $date_request)</code>:
+Handle dot3 state through
+<code>mergeVipDnsDataInInformation</code>.</p></li>
+<li><p><code>isVipServer($server)</code>: Handle dot3 state through
+<code>isVipServer</code>.</p></li>
+<li><p><code>enrichVipServerForGraph($server, $allServers)</code>:
+Handle dot3 state through <code>enrichVipServerForGraph</code>.</p></li>
+<li><p><code>getVipRenderDestinations($server, $allServers)</code>:
+Retrieve dot3 state through
+<code>getVipRenderDestinations</code>.</p></li>
+<li><p><code>resolveVipDestinationId($idDestination, $allServers, $maxDepth)</code>:
+Handle dot3 state through <code>resolveVipDestinationId</code>.</p></li>
+<li><p><code>buildVipDestinationLabel($allServers, $idDestination)</code>:
+Handle dot3 state through
+<code>buildVipDestinationLabel</code>.</p></li>
+<li><p><code>getServerPort($server)</code>: Retrieve dot3 state through
+<code>getServerPort</code>.</p></li>
+<li><p><code>getOrCreateUnknownProxySqlServer($host, $referenceId)</code>:
+Retrieve dot3 state through
+<code>getOrCreateUnknownProxySqlServer</code>.</p></li>
+<li><p><code>isUnknownProxySqlNode($id_mysql_server)</code>: Handle dot3
+state through <code>isUnknownProxySqlNode</code>.</p></li>
+<li><p><code>linkProxySQLAdmin($param)</code>: Handle dot3 state through
+<code>linkProxySQLAdmin</code>.</p></li>
+<li><p><code>linkHostGroup($param)</code>: Handle dot3 state through
+<code>linkHostGroup</code>.</p></li>
+<li><p><code>linkMaxScale($param)</code>: Handle dot3 state through
+<code>linkMaxScale</code>.</p></li>
+<li><p><code>loadConfigColor()</code>: Handle dot3 state through
+<code>loadConfigColor</code>.</p></li>
+<li><p><code>findIdMysqlServer($host, $id_dot3_information, $silent)</code>:
+Handle dot3 state through <code>findIdMysqlServer</code>.</p></li>
+<li><p><code>getInformation($id_dot3_information)</code>: Retrieve dot3
+state through <code>getInformation</code>.</p></li>
+<li><p><code>replaceKey($array, $oldKey, $newKey)</code>: Handle dot3
+state through <code>replaceKey</code>.</p></li>
+<li><p><code>legend()</code>: Handle dot3 state through
+<code>legend</code>.</p></li>
+<li><p><code>download($param)</code>: Handle dot3 state through
+<code>download</code>.</p></li>
+<li><p><code>escapeTooltip($string)</code>: Handle dot3 state through
+<code>escapeTooltip</code>.</p></li>
+<li><p><code>purgeAll($param)</code>: Handle dot3 state through
+<code>purgeAll</code>.</p></li>
+<li><p><code>show($param)</code>: Handle dot3 state through
+<code>show</code>.</p></li>
+<li><p><code>buildGaleraCluster($param)</code>: Handle dot3 state
+through <code>buildGaleraCluster</code>.</p></li>
+<li><p><code>extractProviderOption($wsrep_provider_options, $variable)</code>:
+Handle dot3 state through <code>extractProviderOption</code>.</p></li>
+<li><p><code>setThemeToServer($theme, $id_mysql_server)</code>: Handle
+dot3 state through <code>setThemeToServer</code>.</p></li>
+<li><p><code>reOrderVariable($variables, $filter)</code>: Handle dot3
+state through <code>reOrderVariable</code>.</p></li>
+<li><p><code>getHostGroup($hostgroups)</code>: Retrieve dot3 state
+through <code>getHostGroup</code>.</p></li>
+<li><p><code>buildLinkBetweenProxySQL($param)</code>: Handle dot3 state
+through <code>buildLinkBetweenProxySQL</code>.</p></li>
+<li><p><code>resolveMaxScaleConnection($maxscale, $maxscale_ip_port)</code>:
+Handle dot3 state through
+<code>resolveMaxScaleConnection</code>.</p></li>
+<li><p><code>splitAddressPort($value)</code>: Handle dot3 state through
+<code>splitAddressPort</code>.</p></li>
+<li><p><code>getTunnel($param)</code>: Retrieve dot3 state through
+<code>getTunnel</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="enum">Enum</h1>
+<h1 id="enum-1">Enum</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Enum.php</code></p></li>
+<li><p><code>index($param)</code>: Render enum state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="environment">Environment</h1>
+<h1 id="environment-1">Environment</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Environment.php</code></p></li>
+<li><p><code>index()</code>: Render environment state through
+<code>index</code>.</p></li>
+<li><p><code>update()</code>: Update environment state through
+<code>update</code>.</p></li>
+<li><p><code>add($param)</code>: Create environment state through
+<code>add</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete environment state through
+<code>delete</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="errorweb">ErrorWeb</h1>
+<h1 id="errorweb-1">ErrorWeb</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/ErrorWeb.php</code></p></li>
+<li><p><code>error404()</code>: Handle error web state through
+<code>error404</code>.</p></li>
+<li><p><code>message($param)</code>: Handle error web state through
+<code>message</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="event">Event</h1>
+<h1 id="event-1">Event</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Event.php</code></p></li>
+<li><p><code>gg($param)</code>: Handle event state through
+<code>gg</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="explain">Explain</h1>
+<h1 id="explain-1">Explain</h1>
+<ul>
+<li>Type: class</li>
+<li>Namespace: <code>App\Controller</code></li>
+<li>Source: <code>App/Controller/Explain.php</code></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="export">Export</h1>
+<h1 id="export-1">Export</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Export.php</code></p></li>
+<li><p><code>generateDump($param)</code>: Handle export state through
+<code>generateDump</code>.</p></li>
+<li><p><code>index()</code>: Render export state through
+<code>index</code>.</p></li>
+<li><p><code>export_conf()</code>: Handle export state through
+<code>export_conf</code>.</p></li>
+<li><p><code>import_conf($param)</code>: Handle export state through
+<code>import_conf</code>.</p></li>
+<li><p><code>import($param)</code>: Handle export state through
+<code>import</code>.</p></li>
+<li><p><code>test_import($param)</code>: Handle export state through
+<code>test_import</code>.</p></li>
+<li><p><code>_export($options)</code>: Handle export state through
+<code>_export</code>.</p></li>
+<li><p><code>test_export($param)</code>: Handle export state through
+<code>test_export</code>.</p></li>
+<li><p><code>getExportOption()</code>: Retrieve export state through
+<code>getExportOption</code>.</p></li>
+<li><p><code>getUniqueKey($table_name)</code>: Retrieve export state
+through <code>getUniqueKey</code>.</p></li>
+<li><p><code>encrypt()</code>: Handle export state through
+<code>encrypt</code>.</p></li>
+<li><p><code>option()</code>: Handle export state through
+<code>option</code>.</p></li>
+<li><p><code>test_dechiffrement($param)</code>: Handle export state
+through <code>test_dechiffrement</code>.</p></li>
+<li><p><code>is_gzipped($in)</code>: Handle export state through
+<code>is_gzipped</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="foreignkey">ForeignKey</h1>
+<h1 id="foreignkey-1">ForeignKey</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/ForeignKey.php</code></p></li>
+<li><p><code>__construct($db, $database)</code>: Handle foreign key
+state through <code>__construct</code>.</p></li>
+<li><p><code>getPath($table_a, $table_b)</code>: Retrieve foreign key
+state through <code>getPath</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="format">Format</h1>
+<h1 id="format-1">Format</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Format.php</code></p></li>
+<li><p><code>bytes($bytes, $decimals)</code>: Handle format state
+through <code>bytes</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="gagman">Gagman</h1>
+<h1 id="gagman-1">Gagman</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Gagman.php</code></p></li>
+<li><p><code>index($param)</code>: Render gagman state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="galera">Galera</h1>
+<h1 id="galera-1">Galera</h1>
+<ul>
+<li><p>Type: trait</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Galera.php</code></p></li>
+<li><p><code>getGaleraCluster($param)</code>: Retrieve galera state
+through <code>getGaleraCluster</code>.</p></li>
+<li><p><code>deduplicateGaleraClustersByNodeId($clusters)</code>: Handle
+galera state through
+<code>deduplicateGaleraClustersByNodeId</code>.</p></li>
+<li><p><code>getAllMemberFromGalera($incomming, $galera_nodes, $group)</code>:
+Retrieve galera state through
+<code>getAllMemberFromGalera</code>.</p></li>
+<li><p><code>getInfoServer($param)</code>: Retrieve galera state through
+<code>getInfoServer</code>.</p></li>
+<li><p><code>mappingMaster()</code>: Handle galera state through
+<code>mappingMaster</code>.</p></li>
+<li><p><code>createArbitrator()</code>: Create galera state through
+<code>createArbitrator</code>.</p></li>
+<li><p><code>getNewId()</code>: Retrieve galera state through
+<code>getNewId</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="galeracluster">GaleraCluster</h1>
+<h1 id="galeracluster-1">GaleraCluster</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/GaleraCluster.php</code></p></li>
+<li><p><code>index($param)</code>: Render galera cluster state through
+<code>index</code>.</p></li>
+<li><p><code>getInfoGalera($param)</code>: Retrieve galera cluster state
+through <code>getInfoGalera</code>.</p></li>
+<li><p><code>setNodeAsPrimary($param)</code>: Handle galera cluster
+state through <code>setNodeAsPrimary</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="graph">Graph</h1>
+<h1 id="graph-1">Graph</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Graph.php</code></p></li>
+<li><p><code>index()</code>: Render graph state through
+<code>index</code>.</p></li>
+<li><p><code>cache()</code>: Handle graph state through
+<code>cache</code>.</p></li>
+<li><p><code>innodb()</code>: Handle graph state through
+<code>innodb</code>.</p></li>
+<li><p><code>galera()</code>: Handle graph state through
+<code>galera</code>.</p></li>
+<li><p><code>myisam()</code>: Handle graph state through
+<code>myisam</code>.</p></li>
+<li><p><code>engine()</code>: Handle graph state through
+<code>engine</code>.</p></li>
+<li><p><code>main()</code>: Render graph state through
+<code>main</code>.</p></li>
+<li><p><code>gg($param)</code>: Handle graph state through
+<code>gg</code>.</p></li>
+<li><p><code>getElems($string)</code>: Retrieve graph state through
+<code>getElems</code>.</p></li>
+<li><p><code>generateGraph($data)</code>: Handle graph state through
+<code>generateGraph</code>.</p></li>
+<li><p><code>agregate($param)</code>: Handle graph state through
+<code>agregate</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="graphiccharter">GraphicCharter</h1>
+<h1 id="graphiccharter-1">GraphicCharter</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/GraphicCharter.php</code></p></li>
+<li><p><code>show()</code>: Handle graphic charter state through
+<code>show</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="group">Group</h1>
+<h1 id="group-1">Group</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Group.php</code></p></li>
+<li><p><code>index()</code>: Render group state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="haproxy">Haproxy</h1>
+<h1 id="haproxy-1">Haproxy</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Haproxy.php</code></p></li>
+<li><p><code>refreshConfiguration($param)</code>: Handle haproxy state
+through <code>refreshConfiguration</code>.</p></li>
+<li><p><code>parseConfiguration($config)</code>: Handle haproxy state
+through <code>parseConfiguration</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="home">Home</h1>
+<h1 id="home-1">Home</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Home.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare home state through
+<code>before</code>.</p></li>
+<li><p><code>index()</code>: Render home state through
+<code>index</code>.</p></li>
+<li><p><code>list_server($param)</code>: Retrieve home state through
+<code>list_server</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="index-2">Index</h1>
+<h1 id="index-3">Index</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Index.php</code></p></li>
+<li><p><code>buildCash($param)</code>: Handle index state through
+<code>buildCash</code>.</p></li>
+<li><p><code>IsRedundantIndexes($id_mysql_server, $schema_name, $table_name, $index_name)</code>:
+Handle index state through <code>IsRedundantIndexes</code>.</p></li>
+<li><p><code>IsUnusedIndexes($id_mysql_server, $schema_name, $table_name, $index_name)</code>:
+Handle index state through <code>IsUnusedIndexes</code>.</p></li>
+<li><p><code>dashboard($param)</code>: Handle index state through
+<code>dashboard</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="install">Install</h1>
+<h1 id="install-1">Install</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Install.php</code></p></li>
+<li><p><code>out($msg, $type)</code>: Handle install state through
+<code>out</code>.</p></li>
+<li><p><code>onError()</code>: Handle install state through
+<code>onError</code>.</p></li>
+<li><p><code>cmd($cmd, $msg)</code>: Handle install state through
+<code>cmd</code>.</p></li>
+<li><p><code>displayResult($msg, $fine)</code>: Handle install state
+through <code>displayResult</code>.</p></li>
+<li><p><code>anonymous($function, $msg)</code>: Handle install state
+through <code>anonymous</code>.</p></li>
+<li><p><code>index($param)</code>: Render install state through
+<code>index</code>.</p></li>
+<li><p><code>prompt($test)</code>: Handle install state through
+<code>prompt</code>.</p></li>
+<li><p><code>testMysqlServer()</code>: Handle install state through
+<code>testMysqlServer</code>.</p></li>
+<li><p><code>cadre($text, $elem)</code>: Handle install state through
+<code>cadre</code>.</p></li>
+<li><p><code>importData($server)</code>: Handle install state through
+<code>importData</code>.</p></li>
+<li><p><code>updateConfig($server)</code>: Update install state through
+<code>updateConfig</code>.</p></li>
+<li><p><code>updateCache()</code>: Update install state through
+<code>updateCache</code>.</p></li>
+<li><p><code>createAdmin($param)</code>: Create install state through
+<code>createAdmin</code>.</p></li>
+<li><p><code>createOrganisation($param)</code>: Create install state
+through <code>createOrganisation</code>.</p></li>
+<li><p><code>rand_char($length)</code>: Handle install state through
+<code>rand_char</code>.</p></li>
+<li><p><code>generate_key()</code>: Handle install state through
+<code>generate_key</code>.</p></li>
+<li><p><code>installLanguage($db)</code>: Handle install state through
+<code>installLanguage</code>.</p></li>
+<li><p><code>parseConfig($configFile)</code>: Handle install state
+through <code>parseConfig</code>.</p></li>
+<li><p><code>testIpPort($hostname, $port)</code>: Handle install state
+through <code>testIpPort</code>.</p></li>
+<li><p><code>testMySQL($hostname, $port, $user, $password)</code>:
+Handle install state through <code>testMySQL</code>.</p></li>
+<li><p><code>testVectorDB()</code>: Handle install state through
+<code>testVectorDB</code>.</p></li>
+<li><p><code>testSpider()</code>: Handle install state through
+<code>testSpider</code>.</p></li>
+<li><p><code>testDatabase($database)</code>: Handle install state
+through <code>testDatabase</code>.</p></li>
+<li><p><code>createDatabase($database)</code>: Create install state
+through <code>createDatabase</code>.</p></li>
+<li><p><code>configMySQL($config)</code>: Handle install state through
+<code>configMySQL</code>.</p></li>
+<li><p><code>webroot($param)</code>: Handle install state through
+<code>webroot</code>.</p></li>
+<li><p><code>updateVersion()</code>: Update install state through
+<code>updateVersion</code>.</p></li>
+<li><p><code>update($param)</code>: Update install state through
+<code>update</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="integrate">Integrate</h1>
+<h1 id="integrate-1">Integrate</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Integrate.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare integrate state through
+<code>before</code>.</p></li>
+<li><p><code>show($param)</code>: Handle integrate state through
+<code>show</code>.</p></li>
+<li><p><code>getIdTsFile($ts_file)</code>: Retrieve integrate state
+through <code>getIdTsFile</code>.</p></li>
+<li><p><code>get_variable()</code>: Retrieve integrate state through
+<code>get_variable</code>.</p></li>
+<li><p><code>isFloat($value)</code>: Handle integrate state through
+<code>isFloat</code>.</p></li>
+<li><p><code>getTypeOfData($value)</code>: Retrieve integrate state
+through <code>getTypeOfData</code>.</p></li>
+<li><p><code>insert_variable($variables_to_insert)</code>: Handle
+integrate state through <code>insert_variable</code>.</p></li>
+<li><p><code>insert_value($values)</code>: Handle integrate state
+through <code>insert_value</code>.</p></li>
+<li><p><code>insert_slave_value($values, $val)</code>: Handle integrate
+state through <code>insert_slave_value</code>.</p></li>
+<li><p><code>linkServerVariable($history, $memory_file)</code>: Handle
+integrate state through <code>linkServerVariable</code>.</p></li>
+<li><p><code>convert($id, $revert)</code>: Handle integrate state
+through <code>convert</code>.</p></li>
+<li><p><code>getIdMemoryFile($memory_file)</code>: Retrieve integrate
+state through <code>getIdMemoryFile</code>.</p></li>
+<li><p><code>integrateAll($param)</code>: Handle integrate state through
+<code>integrateAll</code>.</p></li>
+<li><p><code>isJson($string)</code>: Handle integrate state through
+<code>isJson</code>.</p></li>
+<li><p><code>evaluate($param)</code>: Handle integrate state through
+<code>evaluate</code>.</p></li>
+<li><p><code>purgeAll($param)</code>: Handle integrate state through
+<code>purgeAll</code>.</p></li>
+<li><p><code>normalizeSharedMemoryPayload($payload)</code>: Handle
+integrate state through
+<code>normalizeSharedMemoryPayload</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="job">Job</h1>
+<h1 id="job-1">Job</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Job.php</code></p></li>
+<li><p><code>index()</code>: Render job state through
+<code>index</code>.</p></li>
+<li><p><code>callback($param)</code>: Handle job state through
+<code>callback</code>.</p></li>
+<li><p><code>add($param)</code>: Create job state through
+<code>add</code>.</p></li>
+<li><p><code>gg($param)</code>: Handle job state through
+<code>gg</code>.</p></li>
+<li><p><code>restart($param)</code>: Handle job state through
+<code>restart</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="layout">Layout</h1>
+<h1 id="layout-1">Layout</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Layout.php</code></p></li>
+<li><p><code>header($title)</code>: Handle layout state through
+<code>header</code>.</p></li>
+<li><p><code>footer()</code>: Handle layout state through
+<code>footer</code>.</p></li>
+<li><p><code>headerPma($param)</code>: Handle layout state through
+<code>headerPma</code>.</p></li>
+<li><p><code>footerPma()</code>: Handle layout state through
+<code>footerPma</code>.</p></li>
+<li><p><code>headerPmacontrol($param)</code>: Handle layout state
+through <code>headerPmacontrol</code>.</p></li>
+<li><p><code>footerPmacontrol()</code>: Handle layout state through
+<code>footerPmacontrol</code>.</p></li>
+<li><p><code>ariane($param)</code>: Handle layout state through
+<code>ariane</code>.</p></li>
+<li><p><code>getMethod()</code>: Retrieve layout state through
+<code>getMethod</code>.</p></li>
+<li><p><code>replaceIndex($method)</code>: Handle layout state through
+<code>replaceIndex</code>.</p></li>
+<li><p><code>title($params)</code>: Handle layout state through
+<code>title</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="ldap">Ldap</h1>
+<h1 id="ldap-1">Ldap</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Ldap.php</code></p></li>
+<li><p><code>recursiveArraySearchByKey($haystack, $needle, $ret)</code>:
+Handle ldap state through
+<code>recursiveArraySearchByKey</code>.</p></li>
+<li><p><code>index($param)</code>: Render ldap state through
+<code>index</code>.</p></li>
+<li><p><code>testLdap($url, $port)</code>: Handle ldap state through
+<code>testLdap</code>.</p></li>
+<li><p><code>postToGet($post, $exclude)</code>: Handle ldap state
+through <code>postToGet</code>.</p></li>
+<li><p><code>testLdapCredential($url, $port, $bind_dn, $bind_passwd)</code>:
+Handle ldap state through <code>testLdapCredential</code>.</p></li>
+<li><p><code>putUl($error)</code>: Handle ldap state through
+<code>putUl</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare ldap state through
+<code>before</code>.</p></li>
+<li><p><code>log($level, $type, $msg)</code>: Handle ldap state through
+<code>log</code>.</p></li>
+<li><p><code>update_group($id_group)</code>: Update ldap state through
+<code>update_group</code>.</p></li>
+<li><p><code>change()</code>: Handle ldap state through
+<code>change</code>.</p></li>
+<li><p><code>show()</code>: Handle ldap state through
+<code>show</code>.</p></li>
+<li><p><code>obtenirRangLePlusHaut()</code>: Handle ldap state through
+<code>obtenirRangLePlusHaut</code>.</p></li>
+<li><p><code>OraganiseNiveau()</code>: Handle ldap state through
+<code>OraganiseNiveau</code>.</p></li>
+<li><p><code>UpdateConfigFile($var)</code>: Handle ldap state through
+<code>UpdateConfigFile</code>.</p></li>
+<li><p><code>updateFromInstall($param)</code>: Update ldap state through
+<code>updateFromInstall</code>.</p></li>
+<li><p><code>parseConfig($configFile)</code>: Handle ldap state through
+<code>parseConfig</code>.</p></li>
+<li><p><code>requestLdap($command)</code>: Handle ldap state through
+<code>requestLdap</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="listener">Listener</h1>
+<h1 id="listener-1">Listener</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Listener.php</code></p></li>
+<li><p><code>load($param)</code>: Handle listener state through
+<code>load</code>.</p></li>
+<li><p><code>init($param)</code>: Handle listener state through
+<code>init</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare listener state through
+<code>before</code>.</p></li>
+<li><p><code>checkAll($param)</code>: Handle listener state through
+<code>checkAll</code>.</p></li>
+<li><p><code>check($param)</code>: Handle listener state through
+<code>check</code>.</p></li>
+<li><p><code>getUpdateTodo($param)</code>: Retrieve listener state
+through <code>getUpdateTodo</code>.</p></li>
+<li><p><code>dispatch($arr)</code>: Handle listener state through
+<code>dispatch</code>.</p></li>
+<li><p><code>updateListener($param)</code>: Update listener state
+through <code>updateListener</code>.</p></li>
+<li><p><code>updateDatabase($param)</code>: Update listener state
+through <code>updateDatabase</code>.</p></li>
+<li><p><code>extract($data)</code>: Handle listener state through
+<code>extract</code>.</p></li>
+<li><p><code>updateElem($table_name, $param)</code>: Update listener
+state through <code>updateElem</code>.</p></li>
+<li><p><code>test1($param)</code>: Handle listener state through
+<code>test1</code>.</p></li>
+<li><p><code>test2($param)</code>: Handle listener state through
+<code>test2</code>.</p></li>
+<li><p><code>test4($param)</code>: Handle listener state through
+<code>test4</code>.</p></li>
+<li><p><code>afterUpdateVariable($param)</code>: Handle listener state
+through <code>afterUpdateVariable</code>.</p></li>
+<li><p><code>resetAll($param)</code>: Handle listener state through
+<code>resetAll</code>.</p></li>
+<li><p><code>index()</code>: Render listener state through
+<code>index</code>.</p></li>
+<li><p><code>status($param)</code>: Handle listener state through
+<code>status</code>.</p></li>
+<li><p><code>splitAndFormat($text)</code>: Handle listener state through
+<code>splitAndFormat</code>.</p></li>
+<li><p><code>test5($param)</code>: Handle listener state through
+<code>test5</code>.</p></li>
+<li><p><code>purgeAll($param)</code>: Handle listener state through
+<code>purgeAll</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="llm">Llm</h1>
+<h1 id="llm-1">Llm</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Llm.php</code></p></li>
+<li><p><code>analyze($param)</code>: Handle llm state through
+<code>analyze</code>.</p></li>
+<li><p><code>extractInput($param)</code>: Handle llm state through
+<code>extractInput</code>.</p></li>
+<li><p><code>checkLLMAvailability()</code>: Handle llm state through
+<code>checkLLMAvailability</code>.</p></li>
+<li><p><code>callLLM($input)</code>: Handle llm state through
+<code>callLLM</code>.</p></li>
+<li><p><code>buildSystemPrompt()</code>: Handle llm state through
+<code>buildSystemPrompt</code>.</p></li>
+<li><p><code>parseLLMResponse($raw)</code>: Handle llm state through
+<code>parseLLMResponse</code>.</p></li>
+<li><p><code>handleNonOkStatus($parsed)</code>: Handle llm state through
+<code>handleNonOkStatus</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="load">Load</h1>
+<h1 id="load-1">Load</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Load.php</code></p></li>
+<li><p><code>exec($param)</code>: Handle load state through
+<code>exec</code>.</p></li>
+<li><p><code>waitPosition($db, $file, $position)</code>: Handle load
+state through <code>waitPosition</code>.</p></li>
+<li><p><code>install($db_order)</code>: Handle load state through
+<code>install</code>.</p></li>
+<li><p><code>log($sql)</code>: Handle load state through
+<code>log</code>.</p></li>
+<li><p><code>getLogAndPos($filename)</code>: Retrieve load state through
+<code>getLogAndPos</code>.</p></li>
+<li><p><code>cmd($cmd)</code>: Handle load state through
+<code>cmd</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="load2">Load2</h1>
+<h1 id="load2-1">Load2</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Load2.php</code></p></li>
+<li><p><code>exec($param)</code>: Handle load2 state through
+<code>exec</code>.</p></li>
+<li><p><code>waitPosition($db, $file, $position)</code>: Handle load2
+state through <code>waitPosition</code>.</p></li>
+<li><p><code>install($db_order)</code>: Handle load2 state through
+<code>install</code>.</p></li>
+<li><p><code>log($sql)</code>: Handle load2 state through
+<code>log</code>.</p></li>
+<li><p><code>getLogAndPos($filename)</code>: Retrieve load2 state
+through <code>getLogAndPos</code>.</p></li>
+<li><p><code>cmd($cmd)</code>: Handle load2 state through
+<code>cmd</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="log">Log</h1>
+<h1 id="log-1">Log</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Log.php</code></p></li>
+<li><p><code>get()</code>: Retrieve log state through
+<code>get</code>.</p></li>
+<li><p><code>from()</code>: Handle log state through
+<code>from</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="masterslave">MasterSlave</h1>
+<h1 id="masterslave-1">MasterSlave</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/MasterSlave.php</code></p></li>
+<li><p><code>index()</code>: Render master slave state through
+<code>index</code>.</p></li>
+<li><p><code>getTestServer($param)</code>: Retrieve master slave state
+through <code>getTestServer</code>.</p></li>
+<li><p><code>AssociateServerByLevel($param)</code>: Handle master slave
+state through <code>AssociateServerByLevel</code>.</p></li>
+<li><p><code>compareVersions($a, $b)</code>: Handle master slave state
+through <code>compareVersions</code>.</p></li>
+<li><p><code>compareDigit($a, $b)</code>: Handle master slave state
+through <code>compareDigit</code>.</p></li>
+<li><p><code>obtenirPlusGrandChiffre($s)</code>: Handle master slave
+state through <code>obtenirPlusGrandChiffre</code>.</p></li>
+<li><p><code>generatePair($param)</code>: Handle master slave state
+through <code>generatePair</code>.</p></li>
+<li><p><code>configMasterSlave($param)</code>: Handle master slave state
+through <code>configMasterSlave</code>.</p></li>
+<li><p><code>randomPassword()</code>: Handle master slave state through
+<code>randomPassword</code>.</p></li>
+<li><p><code>setUpDemo($param)</code>: Handle master slave state through
+<code>setUpDemo</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="maxscale">MaxScale</h1>
+<h1 id="maxscale-1">MaxScale</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/MaxScale.php</code></p></li>
+<li><p><code>index()</code>: Render max scale state through
+<code>index</code>.</p></li>
+<li><p><code>curl($param)</code>: Handle max scale state through
+<code>curl</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="menu">Menu</h1>
+<h1 id="menu-1">Menu</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Menu.php</code></p></li>
+<li><p><code>show($params)</code>: Handle menu state through
+<code>show</code>.</p></li>
+<li><p><code>getSelectedLevelOneMenu($id_menu)</code>: Retrieve menu
+state through <code>getSelectedLevelOneMenu</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="monitoring">Monitoring</h1>
+<h1 id="monitoring-1">Monitoring</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Monitoring.php</code></p></li>
+<li><p><code>arrays_are_similar($a, $b)</code>: Handle monitoring state
+through <code>arrays_are_similar</code>.</p></li>
+<li><p><code>compare($tab_from, $tab_to)</code>: Handle monitoring state
+through <code>compare</code>.</p></li>
+<li><p><code>query($param)</code>: Handle monitoring state through
+<code>query</code>.</p></li>
+<li><p><code>explain()</code>: Handle monitoring state through
+<code>explain</code>.</p></li>
+<li><p><code>getServer()</code>: Retrieve monitoring state through
+<code>getServer</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="mysql">Mysql</h1>
+<h1 id="mysql-1">Mysql</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Mysql.php</code></p></li>
+<li><p><code>exportAllUser($db_link)</code>: Handle mysql state through
+<code>exportAllUser</code>.</p></li>
+<li><p><code>exportUserByUser($db_link)</code>: Handle mysql state
+through <code>exportUserByUser</code>.</p></li>
+<li><p><code>onAddMysqlServer($id_mysql_server)</code>: Handle mysql
+state through <code>onAddMysqlServer</code>.</p></li>
+<li><p><code>generateMySQLConfig()</code>: Handle mysql state through
+<code>generateMySQLConfig</code>.</p></li>
+<li><p><code>addMaxDate($param)</code>: Create mysql state through
+<code>addMaxDate</code>.</p></li>
+<li><p><code>getMaster($id_mysql_server, $connection_name)</code>:
+Retrieve mysql state through <code>getMaster</code>.</p></li>
+<li><p><code>getDbLink($id_mysql_server, $name)</code>: Retrieve mysql
+state through <code>getDbLink</code>.</p></li>
+<li><p><code>addMysqlServer($data)</code>: Create mysql state through
+<code>addMysqlServer</code>.</p></li>
+<li><p><code>getId($value, $table_name, $field, $list)</code>: Retrieve
+mysql state through <code>getId</code>.</p></li>
+<li><p><code>isPmaControl($ip, $port)</code>: Handle mysql state through
+<code>isPmaControl</code>.</p></li>
+<li><p><code>getHostname($name, $data)</code>: Retrieve mysql state
+through <code>getHostname</code>.</p></li>
+<li><p><code>selectOrInsert($value, $table_name, $field, $list)</code>:
+Handle mysql state through <code>selectOrInsert</code>.</p></li>
+<li><p><code>getServerInfo($id_mysql_server)</code>: Retrieve mysql
+state through <code>getServerInfo</code>.</p></li>
+<li><p><code>execMulti($queries, $db_link)</code>: Handle mysql state
+through <code>execMulti</code>.</p></li>
+<li><p><code>getListObject($db_link, $database, $type_object)</code>:
+Retrieve mysql state through <code>getListObject</code>.</p></li>
+<li><p><code>getCurrentDb($db)</code>: Retrieve mysql state through
+<code>getCurrentDb</code>.</p></li>
+<li><p><code>getStructure($db_link, $database, $data, $object)</code>:
+Retrieve mysql state through <code>getStructure</code>.</p></li>
+<li><p><code>getRoutineShowCreateQueries($param)</code>: Retrieve mysql
+state through <code>getRoutineShowCreateQueries</code>.</p></li>
+<li><p><code>getIdFromDns($dns_port)</code>: Retrieve mysql state
+through <code>getIdFromDns</code>.</p></li>
+<li><p><code>testMySQL($param)</code>: Handle mysql state through
+<code>testMySQL</code>.</p></li>
+<li><p><code>getRealForeignKey($param)</code>: Retrieve mysql state
+through <code>getRealForeignKey</code>.</p></li>
+<li><p><code>getEmptyDatabase($param)</code>: Retrieve mysql state
+through <code>getEmptyDatabase</code>.</p></li>
+<li><p><code>getInfoServer($param)</code>: Retrieve mysql state through
+<code>getInfoServer</code>.</p></li>
+<li><p><code>createSelectAccount($param)</code>: Create mysql state
+through <code>createSelectAccount</code>.</p></li>
+<li><p><code>getIdMySqlServer($param)</code>: Retrieve mysql state
+through <code>getIdMySqlServer</code>.</p></li>
+<li><p><code>getRoles($param)</code>: Retrieve mysql state through
+<code>getRoles</code>.</p></li>
+<li><p><code>getCreateRoles($param)</code>: Retrieve mysql state through
+<code>getCreateRoles</code>.</p></li>
+<li><p><code>getSlave($param)</code>: Retrieve mysql state through
+<code>getSlave</code>.</p></li>
+<li><p><code>generateProxySQLConfig()</code>: Handle mysql state through
+<code>generateProxySQLConfig</code>.</p></li>
+<li><p><code>execute($id_mysql_server, $file_name)</code>: Handle mysql
+state through <code>execute</code>.</p></li>
+<li><p><code>test($hostname, $port, $user, $password)</code>: Handle
+mysql state through <code>test</code>.</p></li>
+<li><p><code>test2($hostname, $port, $user, $password)</code>: Handle
+mysql state through <code>test2</code>.</p></li>
+<li><p><code>getIdMySQLFromGalera($wsrep_incoming_addresses)</code>:
+Retrieve mysql state through <code>getIdMySQLFromGalera</code>.</p></li>
+<li><p><code>getIdMysqlServerFromIpPort($ip, $port)</code>: Retrieve
+mysql state through <code>getIdMysqlServerFromIpPort</code>.</p></li>
+<li><p><code>getNameMysqlServerFromIpPort($ip, $port)</code>: Retrieve
+mysql state through <code>getNameMysqlServerFromIpPort</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="mysqldatabase">MysqlDatabase</h1>
+<h1 id="mysqldatabase-1">MysqlDatabase</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/MysqlDatabase.php</code></p></li>
+<li><p><code>addNoDatabaseCautionFlash()</code>: Create mysql database
+state through <code>addNoDatabaseCautionFlash</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle mysql database state through
+<code>menu</code>.</p></li>
+<li><p><code>getDatabaseByServer($param)</code>: Retrieve mysql database
+state through <code>getDatabaseByServer</code>.</p></li>
+<li><p><code>mpd($param)</code>: Handle mysql database state through
+<code>mpd</code>.</p></li>
+<li><p><code>foreignKey($param)</code>: Handle mysql database state
+through <code>foreignKey</code>.</p></li>
+<li><p><code>table($param)</code>: Handle mysql database state through
+<code>table</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="mysqltable">MysqlTable</h1>
+<h1 id="mysqltable-1">MysqlTable</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/MysqlTable.php</code></p></li>
+<li><p><code>menu($param)</code>: Handle mysql table state through
+<code>menu</code>.</p></li>
+<li><p><code>getTableByDatabase($param)</code>: Retrieve mysql table
+state through <code>getTableByDatabase</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="mysqluser">MysqlUser</h1>
+<h1 id="mysqluser-1">MysqlUser</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/MysqlUser.php</code></p></li>
+<li><p><code>index($param)</code>: Render mysql user state through
+<code>index</code>.</p></li>
+<li><p><code>backup()</code>: Handle mysql user state through
+<code>backup</code>.</p></li>
+<li><p><code>cmpHost($param)</code>: Handle mysql user state through
+<code>cmpHost</code>.</p></li>
+<li><p><code>security($param)</code>: Handle mysql user state through
+<code>security</code>.</p></li>
+<li><p><code>getUserNeverConnected($param)</code>: Retrieve mysql user
+state through <code>getUserNeverConnected</code>.</p></li>
+<li><p><code>role($param)</code>: Handle mysql user state through
+<code>role</code>.</p></li>
+<li><p><code>export($param)</code>: Handle mysql user state through
+<code>export</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="mysqlsys">Mysqlsys</h1>
+<h1 id="mysqlsys-1">Mysqlsys</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Mysqlsys.php</code></p></li>
+<li><p><code>index()</code>: Render mysqlsys state through
+<code>index</code>.</p></li>
+<li><p><code>install()</code>: Handle mysqlsys state through
+<code>install</code>.</p></li>
+<li><p><code>addFormat($tab)</code>: Create mysqlsys state through
+<code>addFormat</code>.</p></li>
+<li><p><code>reset($param)</code>: Handle mysqlsys state through
+<code>reset</code>.</p></li>
+<li><p><code>drop($param)</code>: Handle mysqlsys state through
+<code>drop</code>.</p></li>
+<li><p><code>updateConfig($param)</code>: Update mysqlsys state through
+<code>updateConfig</code>.</p></li>
+<li><p><code>export($param)</code>: Handle mysqlsys state through
+<code>export</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="myxplain">Myxplain</h1>
+<h1 id="myxplain-1">Myxplain</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Myxplain.php</code></p></li>
+<li><p><code>index($param)</code>: Render myxplain state through
+<code>index</code>.</p></li>
+<li><p><code>import()</code>: Handle myxplain state through
+<code>import</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="ollama">Ollama</h1>
+<h1 id="ollama-1">Ollama</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Ollama.php</code></p></li>
+<li><p><code>index($param)</code>: Render ollama state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="partition">Partition</h1>
+<h1 id="partition-1">Partition</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Partition.php</code></p></li>
+<li><p><code>generate($param)</code>: Handle partition state through
+<code>generate</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="percona">Percona</h1>
+<h1 id="percona-1">Percona</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Percona.php</code></p></li>
+<li><p><code>execQuery($param)</code>: Handle percona state through
+<code>execQuery</code>.</p></li>
+<li><p><code>getServeAvailable($param)</code>: Retrieve percona state
+through <code>getServeAvailable</code>.</p></li>
+<li><p><code>ptOsc($param)</code>: Handle percona state through
+<code>ptOsc</code>.</p></li>
+<li><p><code>updateOsc($param)</code>: Update percona state through
+<code>updateOsc</code>.</p></li>
+<li><p><code>delOldOscTable($param)</code>: Handle percona state through
+<code>delOldOscTable</code>.</p></li>
+<li><p><code>displayOsc($param)</code>: Handle percona state through
+<code>displayOsc</code>.</p></li>
+<li><p><code>delAllOldOscTable($param)</code>: Handle percona state
+through <code>delAllOldOscTable</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="phpliveregex">PhpLiveRegex</h1>
+<h1 id="phpliveregex-1">PhpLiveRegex</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/PhpLiveRegex.php</code></p></li>
+<li><p><code>index()</code>: Render php live regex state through
+<code>index</code>.</p></li>
+<li><p><code>evaluate($param)</code>: Handle php live regex state
+through <code>evaluate</code>.</p></li>
+<li><p><code>pregView($regex, $options, $replace, $data)</code>: Handle
+php live regex state through <code>pregView</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="pid">Pid</h1>
+<h1 id="pid-1">Pid</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Pid.php</code></p></li>
+<li><p><code>index()</code>: Render pid state through
+<code>index</code>.</p></li>
+<li><p><code>deleteOldPid($param)</code>: Delete pid state through
+<code>deleteOldPid</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="plugin">Plugin</h1>
+<h1 id="plugin-1">Plugin</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Plugin.php</code></p></li>
+<li><p><code>index($param)</code>: Render plugin state through
+<code>index</code>.</p></li>
+<li><p><code>jsontodatabase($jsonInText)</code>: Handle plugin state
+through <code>jsontodatabase</code>.</p></li>
+<li><p><code>install($param)</code>: Handle plugin state through
+<code>install</code>.</p></li>
+<li><p><code>copyfile($file, $source, $target, $nest)</code>: Handle
+plugin state through <code>copyfile</code>.</p></li>
+<li><p><code>logpluginfile($handle, $pluginid, $source, $target)</code>:
+Handle plugin state through <code>logpluginfile</code>.</p></li>
+<li><p><code>sqlexecute($filename)</code>: Handle plugin state through
+<code>sqlexecute</code>.</p></li>
+<li><p><code>remove($param)</code>: Delete plugin state through
+<code>remove</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="pmacontrol">Pmacontrol</h1>
+<h1 id="pmacontrol-1">Pmacontrol</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Pmacontrol.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare pmacontrol state through
+<code>before</code>.</p></li>
+<li><p><code>setPageMeta($title, $ariane, $meta)</code>: Handle
+pmacontrol state through <code>setPageMeta</code>.</p></li>
+<li><p><code>index()</code>: Render pmacontrol state through
+<code>index</code>.</p></li>
+<li><p><code>product()</code>: Handle pmacontrol state through
+<code>product</code>.</p></li>
+<li><p><code>monitoring()</code>: Handle pmacontrol state through
+<code>monitoring</code>.</p></li>
+<li><p><code>performance()</code>: Handle pmacontrol state through
+<code>performance</code>.</p></li>
+<li><p><code>backups()</code>: Handle pmacontrol state through
+<code>backups</code>.</p></li>
+<li><p><code>galera()</code>: Handle pmacontrol state through
+<code>galera</code>.</p></li>
+<li><p><code>proxysql()</code>: Handle pmacontrol state through
+<code>proxysql</code>.</p></li>
+<li><p><code>schema()</code>: Handle pmacontrol state through
+<code>schema</code>.</p></li>
+<li><p><code>security()</code>: Handle pmacontrol state through
+<code>security</code>.</p></li>
+<li><p><code>automation()</code>: Handle pmacontrol state through
+<code>automation</code>.</p></li>
+<li><p><code>solutions()</code>: Handle pmacontrol state through
+<code>solutions</code>.</p></li>
+<li><p><code>integrations()</code>: Handle pmacontrol state through
+<code>integrations</code>.</p></li>
+<li><p><code>pricing()</code>: Handle pmacontrol state through
+<code>pricing</code>.</p></li>
+<li><p><code>docs()</code>: Handle pmacontrol state through
+<code>docs</code>.</p></li>
+<li><p><code>resources()</code>: Handle pmacontrol state through
+<code>resources</code>.</p></li>
+<li><p><code>blog()</code>: Handle pmacontrol state through
+<code>blog</code>.</p></li>
+<li><p><code>blog_article()</code>: Handle pmacontrol state through
+<code>blog_article</code>.</p></li>
+<li><p><code>case_studies()</code>: Handle pmacontrol state through
+<code>case_studies</code>.</p></li>
+<li><p><code>whitepapers()</code>: Handle pmacontrol state through
+<code>whitepapers</code>.</p></li>
+<li><p><code>webinars()</code>: Handle pmacontrol state through
+<code>webinars</code>.</p></li>
+<li><p><code>company()</code>: Handle pmacontrol state through
+<code>company</code>.</p></li>
+<li><p><code>roadmap()</code>: Handle pmacontrol state through
+<code>roadmap</code>.</p></li>
+<li><p><code>security_page()</code>: Handle pmacontrol state through
+<code>security_page</code>.</p></li>
+<li><p><code>contact()</code>: Handle pmacontrol state through
+<code>contact</code>.</p></li>
+<li><p><code>privacy()</code>: Handle pmacontrol state through
+<code>privacy</code>.</p></li>
+<li><p><code>terms()</code>: Handle pmacontrol state through
+<code>terms</code>.</p></li>
+<li><p><code>cookies()</code>: Handle pmacontrol state through
+<code>cookies</code>.</p></li>
+<li><p><code>ai()</code>: Handle pmacontrol state through
+<code>ai</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="pmm">Pmm</h1>
+<h1 id="pmm-1">Pmm</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Pmm.php</code></p></li>
+<li><p><code>export()</code>: Handle pmm state through
+<code>export</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="postmortem">PostMortem</h1>
+<h1 id="postmortem-1">PostMortem</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/PostMortem.php</code></p></li>
+<li><p><code>format($bytes, $decimals)</code>: Handle post mortem state
+through <code>format</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="proxysql">ProxySQL</h1>
+<h1 id="proxysql-1">ProxySQL</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/ProxySQL.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare proxy s q l state through
+<code>before</code>.</p></li>
+<li><p><code>main($param)</code>: Render proxy s q l state through
+<code>main</code>.</p></li>
+<li><p><code>add()</code>: Create proxy s q l state through
+<code>add</code>.</p></li>
+<li><p><code>testProxySQLAdmin($param)</code>: Handle proxy s q l state
+through <code>testProxySQLAdmin</code>.</p></li>
+<li><p><code>index($param)</code>: Render proxy s q l state through
+<code>index</code>.</p></li>
+<li><p><code>getServers($hostname, $port, $login, $password)</code>:
+Retrieve proxy s q l state through <code>getServers</code>.</p></li>
+<li><p><code>associate($param)</code>: Handle proxy s q l state through
+<code>associate</code>.</p></li>
+<li><p><code>statistic($param)</code>: Handle proxy s q l state through
+<code>statistic</code>.</p></li>
+<li><p><code>getErrorConnect($param)</code>: Retrieve proxy s q l state
+through <code>getErrorConnect</code>.</p></li>
+<li><p><code>import($param)</code>: Handle proxy s q l state through
+<code>import</code>.</p></li>
+<li><p><code>auto($param)</code>: Handle proxy s q l state through
+<code>auto</code>.</p></li>
+<li><p><code>getConfigMenuDefinition()</code>: Retrieve proxy s q l
+state through <code>getConfigMenuDefinition</code>.</p></li>
+<li><p><code>extractTableNameFromSqlTemplate($sql_template)</code>:
+Handle proxy s q l state through
+<code>extractTableNameFromSqlTemplate</code>.</p></li>
+<li><p><code>getSqliteCreateTableStatement($db, $table_name)</code>:
+Retrieve proxy s q l state through
+<code>getSqliteCreateTableStatement</code>.</p></li>
+<li><p><code>normalizeDefaultValue($default_value)</code>: Handle proxy
+s q l state through <code>normalizeDefaultValue</code>.</p></li>
+<li><p><code>parseEnumValues($raw_values)</code>: Handle proxy s q l
+state through <code>parseEnumValues</code>.</p></li>
+<li><p><code>getEnumValuesByColumn($create_table_sql, $columns)</code>:
+Retrieve proxy s q l state through
+<code>getEnumValuesByColumn</code>.</p></li>
+<li><p><code>getAutoincrementByColumn($create_table_sql, $columns)</code>:
+Retrieve proxy s q l state through
+<code>getAutoincrementByColumn</code>.</p></li>
+<li><p><code>config($param)</code>: Handle proxy s q l state through
+<code>config</code>.</p></li>
+<li><p><code>update($param)</code>: Update proxy s q l state through
+<code>update</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle proxy s q l state through
+<code>menu</code>.</p></li>
+<li><p><code>ifProxySqlExist($param)</code>: Handle proxy s q l state
+through <code>ifProxySqlExist</code>.</p></li>
+<li><p><code>insertProxySqlAdmin($param)</code>: Handle proxy s q l
+state through <code>insertProxySqlAdmin</code>.</p></li>
+<li><p><code>updateField($param)</code>: Update proxy s q l state
+through <code>updateField</code>.</p></li>
+<li><p><code>deleteLine($param)</code>: Delete proxy s q l state through
+<code>deleteLine</code>.</p></li>
+<li><p><code>monitor($param)</code>: Handle proxy s q l state through
+<code>monitor</code>.</p></li>
+<li><p><code>cluster($param)</code>: Handle proxy s q l state through
+<code>cluster</code>.</p></li>
+<li><p><code>log($param)</code>: Handle proxy s q l state through
+<code>log</code>.</p></li>
+<li><p><code>getIdMysqlServer($param)</code>: Retrieve proxy s q l state
+through <code>getIdMysqlServer</code>.</p></li>
+<li><p><code>addLine($param)</code>: Create proxy s q l state through
+<code>addLine</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="query">Query</h1>
+<h1 id="query-1">Query</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Query.php</code></p></li>
+<li><p><code>getFielsWithoutDefault($id_mysql_server, $databases)</code>:
+Retrieve query state through
+<code>getFielsWithoutDefault</code>.</p></li>
+<li><p><code>getDefaultValueByType($type, $typeExtra)</code>: Retrieve
+query state through <code>getDefaultValueByType</code>.</p></li>
+<li><p><code>setDefault($param)</code>: Handle query state through
+<code>setDefault</code>.</p></li>
+<li><p><code>dropDefault($param)</code>: Handle query state through
+<code>dropDefault</code>.</p></li>
+<li><p><code>runSetDefault($param)</code>: Handle query state through
+<code>runSetDefault</code>.</p></li>
+<li><p><code>runQuery($param)</code>: Handle query state through
+<code>runQuery</code>.</p></li>
+<li><p><code>createWorkTable($param)</code>: Create query state through
+<code>createWorkTable</code>.</p></li>
+<li><p><code>deleteWorkTable($param)</code>: Delete query state through
+<code>deleteWorkTable</code>.</p></li>
+<li><p><code>sigHandler($signo)</code>: Handle query state through
+<code>sigHandler</code>.</p></li>
+<li><p><code>getMaxRun($param)</code>: Retrieve query state through
+<code>getMaxRun</code>.</p></li>
+<li><p><code>byDigest($param)</code>: Handle query state through
+<code>byDigest</code>.</p></li>
+<li><p><code>extractTablesFromSQL($sql)</code>: Handle query state
+through <code>extractTablesFromSQL</code>.</p></li>
+<li><p><code>extractTablesAndAliases($sql)</code>: Handle query state
+through <code>extractTablesAndAliases</code>.</p></li>
+<li><p><code>extractTablesWithOffsets($sql)</code>: Handle query state
+through <code>extractTablesWithOffsets</code>.</p></li>
+<li><p><code>extract($param)</code>: Handle query state through
+<code>extract</code>.</p></li>
+<li><p><code>normalize_sql_for_digest($sql, $ansi_quotes)</code>: Handle
+query state through <code>normalize_sql_for_digest</code>.</p></li>
+<li><p><code>normalize_sql_strict($sql, $ansi_quotes)</code>: Handle
+query state through <code>normalize_sql_strict</code>.</p></li>
+<li><p><code>statement_digest_text($sql, $max_digest_length, $perf_max_digest_length, $ansi_quotes)</code>:
+Handle query state through <code>statement_digest_text</code>.</p></li>
+<li><p><code>statement_digest($sql, $max_digest_length, $ansi_quotes)</code>:
+Handle query state through <code>statement_digest</code>.</p></li>
+<li><p><code>statement_digest_text_strict($sql, $max_digest_length, $show_length, $ansi_quotes)</code>:
+Handle query state through
+<code>statement_digest_text_strict</code>.</p></li>
+<li><p><code>statement_digest_strict($sql, $max_digest_length, $ansi_quotes)</code>:
+Handle query state through
+<code>statement_digest_strict</code>.</p></li>
+<li><p><code>testDigest($param)</code>: Handle query state through
+<code>testDigest</code>.</p></li>
+<li><p><code>digest2($query)</code>: Handle query state through
+<code>digest2</code>.</p></li>
+<li><p><code>digestText($query)</code>: Handle query state through
+<code>digestText</code>.</p></li>
+<li><p><code>normalize($query)</code>: Handle query state through
+<code>normalize</code>.</p></li>
+<li><p><code>isKeyword($word)</code>: Handle query state through
+<code>isKeyword</code>.</p></li>
+<li><p><code>replaceAlias($string)</code>: Handle query state through
+<code>replaceAlias</code>.</p></li>
+<li><p><code>collectDigest($param)</code>: Handle query state through
+<code>collectDigest</code>.</p></li>
+<li><p><code>collectAll($param)</code>: Handle query state through
+<code>collectAll</code>.</p></li>
+<li><p><code>degradeMariaDB($string)</code>: Handle query state through
+<code>degradeMariaDB</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="querycache">QueryCache</h1>
+<h1 id="querycache-1">QueryCache</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/QueryCache.php</code></p></li>
+<li><p><code>index($param)</code>: Render query cache state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="querygraphextractor">QueryGraphExtractor</h1>
+<h1 id="querygraphextractor-1">QueryGraphExtractor</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source:
+<code>App/Controller/QueryGraphExtractor.php</code></p></li>
+<li><p><code>extractSelectBlock($sql)</code>: Handle query graph
+extractor state through <code>extractSelectBlock</code>.</p></li>
+<li><p><code>splitSelectFields($selectBlock)</code>: Handle query graph
+extractor state through <code>splitSelectFields</code>.</p></li>
+<li><p><code>normalizeSelectField($field, $order)</code>: Handle query
+graph extractor state through
+<code>normalizeSelectField</code>.</p></li>
+<li><p><code>extractSelectFields($sql)</code>: Handle query graph
+extractor state through <code>extractSelectFields</code>.</p></li>
+<li><p><code>extractTables($sql)</code>: Handle query graph extractor
+state through <code>extractTables</code>.</p></li>
+<li><p><code>extractJoinBlocks($sql)</code>: Handle query graph
+extractor state through <code>extractJoinBlocks</code>.</p></li>
+<li><p><code>extractJoinConditions($condBlock)</code>: Handle query
+graph extractor state through
+<code>extractJoinConditions</code>.</p></li>
+<li><p><code>extractJoins($sql)</code>: Handle query graph extractor
+state through <code>extractJoins</code>.</p></li>
+<li><p><code>extractWhereBlock($sql)</code>: Handle query graph
+extractor state through <code>extractWhereBlock</code>.</p></li>
+<li><p><code>extractWhereConditions($sql)</code>: Handle query graph
+extractor state through <code>extractWhereConditions</code>.</p></li>
+<li><p><code>extract($sql)</code>: Handle query graph extractor state
+through <code>extract</code>.</p></li>
+<li><p><code>extractSubqueryBlocks($sql)</code>: Handle query graph
+extractor state through <code>extractSubqueryBlocks</code>.</p></li>
+<li><p><code>extractSubquery($sql, $alias)</code>: Handle query graph
+extractor state through <code>extractSubquery</code>.</p></li>
+<li><p><code>extractSubqueries($sql)</code>: Handle query graph
+extractor state through <code>extractSubqueries</code>.</p></li>
+<li><p><code>extractGroupBy($sql)</code>: Handle query graph extractor
+state through <code>extractGroupBy</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="recover">Recover</h1>
+<h1 id="recover-1">Recover</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Recover.php</code></p></li>
+<li><p><code>rewrite($param)</code>: Handle recover state through
+<code>rewrite</code>.</p></li>
+<li><p><code>getTableId($table_schema, $table_name)</code>: Retrieve
+recover state through <code>getTableId</code>.</p></li>
+<li><p><code>getTableName($file)</code>: Retrieve recover state through
+<code>getTableName</code>.</p></li>
+<li><p><code>importData($param)</code>: Handle recover state through
+<code>importData</code>.</p></li>
+<li><p><code>removeComments($content)</code>: Delete recover state
+through <code>removeComments</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="release">Release</h1>
+<h1 id="release-1">Release</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Release.php</code></p></li>
+<li><p><code>make($params)</code>: Handle release state through
+<code>make</code>.</p></li>
+<li><p><code>bdd()</code>: Handle release state through
+<code>bdd</code>.</p></li>
+<li><p><code>getLastVersion()</code>: Retrieve release state through
+<code>getLastVersion</code>.</p></li>
+<li><p><code>publishVersion()</code>: Handle release state through
+<code>publishVersion</code>.</p></li>
+<li><p><code>getOldsql()</code>: Retrieve release state through
+<code>getOldsql</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="replication">Replication</h1>
+<h1 id="replication-1">Replication</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Replication.php</code></p></li>
+<li><p><code>index()</code>: Render replication state through
+<code>index</code>.</p></li>
+<li><p><code>status()</code>: Handle replication state through
+<code>status</code>.</p></li>
+<li><p><code>event()</code>: Handle replication state through
+<code>event</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="scan">Scan</h1>
+<h1 id="scan-1">Scan</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Scan.php</code></p></li>
+<li><p><code>parse($input)</code>: Handle scan state through
+<code>parse</code>.</p></li>
+<li><p><code>autoDiscovering()</code>: Handle scan state through
+<code>autoDiscovering</code>.</p></li>
+<li><p><code>extract($data)</code>: Handle scan state through
+<code>extract</code>.</p></li>
+<li><p><code>xmlToArray($xml)</code>: Handle scan state through
+<code>xmlToArray</code>.</p></li>
+<li><p><code>index()</code>: Render scan state through
+<code>index</code>.</p></li>
+<li><p><code>__sleep()</code>: Handle scan state through
+<code>__sleep</code>.</p></li>
+<li><p><code>getData($refresh)</code>: Retrieve scan state through
+<code>getData</code>.</p></li>
+<li><p><code>generateNmap($range)</code>: Handle scan state through
+<code>generateNmap</code>.</p></li>
+<li><p><code>getIpMonitored()</code>: Retrieve scan state through
+<code>getIpMonitored</code>.</p></li>
+<li><p><code>refresh()</code>: Handle scan state through
+<code>refresh</code>.</p></li>
+<li><p><code>generateRange($ips)</code>: Handle scan state through
+<code>generateRange</code>.</p></li>
+<li><p><code>scanner()</code>: Handle scan state through
+<code>scanner</code>.</p></li>
+<li><p><code>scanner2($ranges)</code>: Handle scan state through
+<code>scanner2</code>.</p></li>
+<li><p><code>pingAll($param)</code>: Handle scan state through
+<code>pingAll</code>.</p></li>
+<li><p><code>testPing($host, $timeout)</code>: Handle scan state through
+<code>testPing</code>.</p></li>
+<li><p><code>generateListIps($ranges)</code>: Handle scan state through
+<code>generateListIps</code>.</p></li>
+<li><p><code>collectHosts()</code>: Handle scan state through
+<code>collectHosts</code>.</p></li>
+<li><p><code>scanAllPort($combi)</code>: Handle scan state through
+<code>scanAllPort</code>.</p></li>
+<li><p><code>generatePortForScan($ips)</code>: Handle scan state through
+<code>generatePortForScan</code>.</p></li>
+<li><p><code>scanPort($ip, $port, $maxExecutionTime)</code>: Handle scan
+state through <code>scanPort</code>.</p></li>
+<li><p><code>scanAll($param)</code>: Handle scan state through
+<code>scanAll</code>.</p></li>
+<li><p><code>save()</code>: Update scan state through
+<code>save</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="schema">Schema</h1>
+<h1 id="schema-1">Schema</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Schema.php</code></p></li>
+<li><p><code>export($param)</code>: Handle schema state through
+<code>export</code>.</p></li>
+<li><p><code>importScript($param)</code>: Handle schema state through
+<code>importScript</code>.</p></li>
+<li><p><code>parseImportScriptOptions($args)</code>: Handle schema state
+through <code>parseImportScriptOptions</code>.</p></li>
+<li><p><code>buildImportTables($basePath)</code>: Handle schema state
+through <code>buildImportTables</code>.</p></li>
+<li><p><code>buildImportViews($basePath)</code>: Handle schema state
+through <code>buildImportViews</code>.</p></li>
+<li><p><code>buildImportProcedures($basePath)</code>: Handle schema
+state through <code>buildImportProcedures</code>.</p></li>
+<li><p><code>buildImportFunctions($basePath)</code>: Handle schema state
+through <code>buildImportFunctions</code>.</p></li>
+<li><p><code>buildImportTriggers($basePath)</code>: Handle schema state
+through <code>buildImportTriggers</code>.</p></li>
+<li><p><code>buildImportEvents($basePath)</code>: Handle schema state
+through <code>buildImportEvents</code>.</p></li>
+<li><p><code>concatImportChunks($chunks)</code>: Handle schema state
+through <code>concatImportChunks</code>.</p></li>
+<li><p><code>loadSqlFiles($path)</code>: Handle schema state through
+<code>loadSqlFiles</code>.</p></li>
+<li><p><code>buildSqlSection($label, $files)</code>: Handle schema state
+through <code>buildSqlSection</code>.</p></li>
+<li><p><code>buildRoutineSection($label, $files)</code>: Handle schema
+state through <code>buildRoutineSection</code>.</p></li>
+<li><p><code>readSqlFile($path)</code>: Handle schema state through
+<code>readSqlFile</code>.</p></li>
+<li><p><code>formatRoutineFile($path)</code>: Handle schema state
+through <code>formatRoutineFile</code>.</p></li>
+<li><p><code>exportRoutines($id_mysql_server, $database, $basePath, $routineType)</code>:
+Handle schema state through <code>exportRoutines</code>.</p></li>
+<li><p><code>exportTriggers($id_mysql_server, $database, $basePath)</code>:
+Handle schema state through <code>exportTriggers</code>.</p></li>
+<li><p><code>exportEvents($id_mysql_server, $database, $basePath)</code>:
+Handle schema state through <code>exportEvents</code>.</p></li>
+<li><p><code>executeRoutineShowCreate($id_mysql_server, $sqlShow, $routineType)</code>:
+Handle schema state through
+<code>executeRoutineShowCreate</code>.</p></li>
+<li><p><code>extractRoutineName($row, $definitionKey, $routineType)</code>:
+Handle schema state through <code>extractRoutineName</code>.</p></li>
+<li><p><code>ensureDirectory($path)</code>: Handle schema state through
+<code>ensureDirectory</code>.</p></li>
+<li><p><code>ensureSchemaDirectoryStructure($basePath)</code>: Handle
+schema state through
+<code>ensureSchemaDirectoryStructure</code>.</p></li>
+<li><p><code>initializeGitRepository($path)</code>: Handle schema state
+through <code>initializeGitRepository</code>.</p></li>
+<li><p><code>ensureGitRepository($path)</code>: Handle schema state
+through <code>ensureGitRepository</code>.</p></li>
+<li><p><code>commitSchemaSnapshot($idMysqlServer, $database, $path, $serverMeta)</code>:
+Handle schema state through <code>commitSchemaSnapshot</code>.</p></li>
+<li><p><code>getGitStatus($path, $exclude)</code>: Retrieve schema state
+through <code>getGitStatus</code>.</p></li>
+<li><p><code>commitSubDirectorySnapshot($basePath, $subDirectory, $database, $serverMeta, $label)</code>:
+Handle schema state through
+<code>commitSubDirectorySnapshot</code>.</p></li>
+<li><p><code>ensureGitSafeDirectory($path)</code>: Handle schema state
+through <code>ensureGitSafeDirectory</code>.</p></li>
+<li><p><code>removeAutoIncrement($createStatement)</code>: Delete schema
+state through <code>removeAutoIncrement</code>.</p></li>
+<li><p><code>getNextSnapshotNumber($path)</code>: Retrieve schema state
+through <code>getNextSnapshotNumber</code>.</p></li>
+<li><p><code>cleanupObsoleteSchemaFiles($path, $folder, $currentObjects)</code>:
+Handle schema state through
+<code>cleanupObsoleteSchemaFiles</code>.</p></li>
+<li><p><code>extractCreateViewStatement($createRow)</code>: Handle
+schema state through <code>extractCreateViewStatement</code>.</p></li>
+<li><p><code>ensureCreateOrReplaceView($statement)</code>: Handle schema
+state through <code>ensureCreateOrReplaceView</code>.</p></li>
+<li><p><code>normalizeLineEndings($sql)</code>: Handle schema state
+through <code>normalizeLineEndings</code>.</p></li>
+<li><p><code>runDos2Unix($path)</code>: Handle schema state through
+<code>runDos2Unix</code>.</p></li>
+<li><p><code>parseGitStatus($status)</code>: Handle schema state through
+<code>parseGitStatus</code>.</p></li>
+<li><p><code>notifySchemaChange($database, $snapshotNumber, $changes, $serverMeta)</code>:
+Handle schema state through <code>notifySchemaChange</code>.</p></li>
+<li><p><code>formatChangeList($items)</code>: Handle schema state
+through <code>formatChangeList</code>.</p></li>
+<li><p><code>formatServerLabel($meta)</code>: Handle schema state
+through <code>formatServerLabel</code>.</p></li>
+<li><p><code>isUnknownDatabaseError($exception)</code>: Handle schema
+state through <code>isUnknownDatabaseError</code>.</p></li>
+<li><p><code>exportAll($param)</code>: Handle schema state through
+<code>exportAll</code>.</p></li>
+<li><p><code>exportSchemasForServer($id_mysql_server)</code>: Handle
+schema state through <code>exportSchemasForServer</code>.</p></li>
+<li><p><code>getEligibleServerIds($param)</code>: Retrieve schema state
+through <code>getEligibleServerIds</code>.</p></li>
+<li><p><code>watchLoop($param)</code>: Handle schema state through
+<code>watchLoop</code>.</p></li>
+<li><p><code>loadDdlState()</code>: Handle schema state through
+<code>loadDdlState</code>.</p></li>
+<li><p><code>saveDdlState($state)</code>: Update schema state through
+<code>saveDdlState</code>.</p></li>
+<li><p><code>getDdlStateFile()</code>: Retrieve schema state through
+<code>getDdlStateFile</code>.</p></li>
+<li><p><code>toInt($value)</code>: Handle schema state through
+<code>toInt</code>.</p></li>
+<li><p><code>computeDelta($previous, $current)</code>: Handle schema
+state through <code>computeDelta</code>.</p></li>
+<li><p><code>compareModels($param)</code>: Handle schema state through
+<code>compareModels</code>.</p></li>
+<li><p><code>diffModelServers($leftId, $rightId, $options)</code>:
+Handle schema state through <code>diffModelServers</code>.</p></li>
+<li><p><code>getModelServerPath($serverId)</code>: Retrieve schema state
+through <code>getModelServerPath</code>.</p></li>
+<li><p><code>listModelDatabases($serverPath)</code>: Retrieve schema
+state through <code>listModelDatabases</code>.</p></li>
+<li><p><code>listModelObjects($databasePath)</code>: Retrieve schema
+state through <code>listModelObjects</code>.</p></li>
+<li><p><code>listModelSqlFiles($databasePath)</code>: Retrieve schema
+state through <code>listModelSqlFiles</code>.</p></li>
+<li><p><code>diffModelDatabase($leftDatabasePath, $rightDatabasePath, $ignoreColumnOrder)</code>:
+Handle schema state through <code>diffModelDatabase</code>.</p></li>
+<li><p><code>formatModelComparison($comparison)</code>: Handle schema
+state through <code>formatModelComparison</code>.</p></li>
+<li><p><code>compareModelsUi($param)</code>: Handle schema state through
+<code>compareModelsUi</code>.</p></li>
+<li><p><code>buildComparisonDetails($differences, $ignoreColumnOrder)</code>:
+Handle schema state through
+<code>buildComparisonDetails</code>.</p></li>
+<li><p><code>renderDiffTable($leftFile, $rightFile, $ignoreColumnOrder)</code>:
+Handle schema state through <code>renderDiffTable</code>.</p></li>
+<li><p><code>getDiffClass($type)</code>: Retrieve schema state through
+<code>getDiffClass</code>.</p></li>
+<li><p><code>getDiffPrefix($type)</code>: Retrieve schema state through
+<code>getDiffPrefix</code>.</p></li>
+<li><p><code>readFileContent($path)</code>: Handle schema state through
+<code>readFileContent</code>.</p></li>
+<li><p><code>areModelFilesIdentical($fileA, $fileB, $ignoreColumnOrder)</code>:
+Handle schema state through
+<code>areModelFilesIdentical</code>.</p></li>
+<li><p><code>normalizeCreateTableStatement($sql)</code>: Handle schema
+state through <code>normalizeCreateTableStatement</code>.</p></li>
+<li><p><code>splitSqlDefinitionList($body)</code>: Handle schema state
+through <code>splitSqlDefinitionList</code>.</p></li>
+<li><p><code>isColumnDefinitionLine($definition)</code>: Handle schema
+state through <code>isColumnDefinitionLine</code>.</p></li>
+<li><p><code>isIndexDefinitionLine($definition)</code>: Handle schema
+state through <code>isIndexDefinitionLine</code>.</p></li>
+<li><p><code>extractColumnName($definition)</code>: Handle schema state
+through <code>extractColumnName</code>.</p></li>
+<li><p><code>extractIndexName($definition)</code>: Handle schema state
+through <code>extractIndexName</code>.</p></li>
+<li><p><code>isEscapedByBackslash($subject, $position)</code>: Handle
+schema state through <code>isEscapedByBackslash</code>.</p></li>
+<li><p><code>getDiffTableCss()</code>: Retrieve schema state through
+<code>getDiffTableCss</code>.</p></li>
+<li><p><code>getDiffer()</code>: Retrieve schema state through
+<code>getDiffer</code>.</p></li>
+<li><p><code>watch($param)</code>: Handle schema state through
+<code>watch</code>.</p></li>
+<li><p><code>migration($param)</code>: Handle schema state through
+<code>migration</code>.</p></li>
+<li><p><code>migrationAll($param)</code>: Handle schema state through
+<code>migrationAll</code>.</p></li>
+<li><p><code>migrateSchemaRepo($param)</code>: Handle schema state
+through <code>migrateSchemaRepo</code>.</p></li>
+<li><p><code>migrateSchemaReposAll($param)</code>: Handle schema state
+through <code>migrateSchemaReposAll</code>.</p></li>
+<li><p><code>listSchemaRepoSkips($param)</code>: Retrieve schema state
+through <code>listSchemaRepoSkips</code>.</p></li>
+<li><p><code>runMigration($basePath, $serverFilter)</code>: Handle
+schema state through <code>runMigration</code>.</p></li>
+<li><p><code>formatMigrationSummary($summary)</code>: Handle schema
+state through <code>formatMigrationSummary</code>.</p></li>
+<li><p><code>moveFile($source, $destination)</code>: Handle schema state
+through <code>moveFile</code>.</p></li>
+<li><p><code>moveDirectory($source, $destination)</code>: Handle schema
+state through <code>moveDirectory</code>.</p></li>
+<li><p><code>copyDirectory($source, $destination)</code>: Handle schema
+state through <code>copyDirectory</code>.</p></li>
+<li><p><code>removeDirectory($path)</code>: Delete schema state through
+<code>removeDirectory</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="server">Server</h1>
+<h1 id="server-1">Server</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Server.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare server state through
+<code>before</code>.</p></li>
+<li><p><code>hardware()</code>: Handle server state through
+<code>hardware</code>.</p></li>
+<li><p><code>main($param)</code>: Render server state through
+<code>main</code>.</p></li>
+<li><p><code>database()</code>: Handle server state through
+<code>database</code>.</p></li>
+<li><p><code>statistics()</code>: Handle server state through
+<code>statistics</code>.</p></li>
+<li><p><code>logs()</code>: Handle server state through
+<code>logs</code>.</p></li>
+<li><p><code>buildQuery($fields)</code>: Handle server state through
+<code>buildQuery</code>.</p></li>
+<li><p><code>memory()</code>: Handle server state through
+<code>memory</code>.</p></li>
+<li><p><code>index()</code>: Render server state through
+<code>index</code>.</p></li>
+<li><p><code>id($param)</code>: Handle server state through
+<code>id</code>.</p></li>
+<li><p><code>settings()</code>: Handle server state through
+<code>settings</code>.</p></li>
+<li><p><code>getClients()</code>: Retrieve server state through
+<code>getClients</code>.</p></li>
+<li><p><code>getEnvironments()</code>: Retrieve server state through
+<code>getEnvironments</code>.</p></li>
+<li><p><code>add()</code>: Create server state through
+<code>add</code>.</p></li>
+<li><p><code>cache()</code>: Handle server state through
+<code>cache</code>.</p></li>
+<li><p><code>passwd($param)</code>: Handle server state through
+<code>passwd</code>.</p></li>
+<li><p><code>show($param)</code>: Handle server state through
+<code>show</code>.</p></li>
+<li><p><code>updateHostname()</code>: Update server state through
+<code>updateHostname</code>.</p></li>
+<li><p><code>box()</code>: Handle server state through
+<code>box</code>.</p></li>
+<li><p><code>password($param)</code>: Handle server state through
+<code>password</code>.</p></li>
+<li><p><code>acknowledge($param)</code>: Handle server state through
+<code>acknowledge</code>.</p></li>
+<li><p><code>remove($param)</code>: Delete server state through
+<code>remove</code>.</p></li>
+<li><p><code>acknowledgedBy($param)</code>: Handle server state through
+<code>acknowledgedBy</code>.</p></li>
+<li><p><code>toggleGeneralLog($param)</code>: Toggle server state
+through <code>toggleGeneralLog</code>.</p></li>
+<li><p><code>getDaemonRunning($param)</code>: Retrieve server state
+through <code>getDaemonRunning</code>.</p></li>
+<li><p><code>testGetDaemonRunning($param)</code>: Handle server state
+through <code>testGetDaemonRunning</code>.</p></li>
+<li><p><code>retract($param)</code>: Handle server state through
+<code>retract</code>.</p></li>
+<li><p><code>getFlag($param)</code>: Retrieve server state through
+<code>getFlag</code>.</p></li>
+<li><p><code>ssl($param)</code>: Handle server state through
+<code>ssl</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="site">Site</h1>
+<h1 id="site-1">Site</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Site.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare site state through
+<code>before</code>.</p></li>
+<li><p><code>buildCommon()</code>: Handle site state through
+<code>buildCommon</code>.</p></li>
+<li><p><code>setActive($id)</code>: Handle site state through
+<code>setActive</code>.</p></li>
+<li><p><code>index()</code>: Render site state through
+<code>index</code>.</p></li>
+<li><p><code>saas()</code>: Handle site state through
+<code>saas</code>.</p></li>
+<li><p><code>onpremise()</code>: Handle site state through
+<code>onpremise</code>.</p></li>
+<li><p><code>agents()</code>: Handle site state through
+<code>agents</code>.</p></li>
+<li><p><code>max()</code>: Handle site state through
+<code>max</code>.</p></li>
+<li><p><code>offers()</code>: Handle site state through
+<code>offers</code>.</p></li>
+<li><p><code>integrations()</code>: Handle site state through
+<code>integrations</code>.</p></li>
+<li><p><code>documentation()</code>: Handle site state through
+<code>documentation</code>.</p></li>
+<li><p><code>faq()</code>: Handle site state through
+<code>faq</code>.</p></li>
+<li><p><code>process()</code>: Handle site state through
+<code>process</code>.</p></li>
+<li><p><code>demo()</code>: Handle site state through
+<code>demo</code>.</p></li>
+<li><p><code>resources()</code>: Handle site state through
+<code>resources</code>.</p></li>
+<li><p><code>blog()</code>: Handle site state through
+<code>blog</code>.</p></li>
+<li><p><code>support()</code>: Handle site state through
+<code>support</code>.</p></li>
+<li><p><code>contact()</code>: Handle site state through
+<code>contact</code>.</p></li>
+<li><p><code>roadmap()</code>: Handle site state through
+<code>roadmap</code>.</p></li>
+<li><p><code>success()</code>: Handle site state through
+<code>success</code>.</p></li>
+<li><p><code>lab()</code>: Handle site state through
+<code>lab</code>.</p></li>
+<li><p><code>incidents()</code>: Handle site state through
+<code>incidents</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="slave">Slave</h1>
+<h1 id="slave-1">Slave</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Slave.php</code></p></li>
+<li><p><code>index()</code>: Render slave state through
+<code>index</code>.</p></li>
+<li><p><code>generateGraph($slaves)</code>: Handle slave state through
+<code>generateGraph</code>.</p></li>
+<li><p><code>show($param)</code>: Handle slave state through
+<code>show</code>.</p></li>
+<li><p><code>box()</code>: Handle slave state through
+<code>box</code>.</p></li>
+<li><p><code>generateGraphSlave($slaves)</code>: Handle slave state
+through <code>generateGraphSlave</code>.</p></li>
+<li><p><code>startSlave($param)</code>: Handle slave state through
+<code>startSlave</code>.</p></li>
+<li><p><code>stopSlave($param)</code>: Handle slave state through
+<code>stopSlave</code>.</p></li>
+<li><p><code>setSlave($param)</code>: Handle slave state through
+<code>setSlave</code>.</p></li>
+<li><p><code>getInfoServer($id_mysql_server)</code>: Retrieve slave
+state through <code>getInfoServer</code>.</p></li>
+<li><p><code>runInBackground($command, $log, $priority)</code>: Handle
+slave state through <code>runInBackground</code>.</p></li>
+<li><p><code>isProcessRunning($PID)</code>: Handle slave state through
+<code>isProcessRunning</code>.</p></li>
+<li><p><code>getMasterInfo($param)</code>: Retrieve slave state through
+<code>getMasterInfo</code>.</p></li>
+<li><p><code>switchOver($param)</code>: Handle slave state through
+<code>switchOver</code>.</p></li>
+<li><p><code>activateGtid($param)</code>: Handle slave state through
+<code>activateGtid</code>.</p></li>
+<li><p><code>deactivateGtid($param)</code>: Handle slave state through
+<code>deactivateGtid</code>.</p></li>
+<li><p><code>skipCounter($param)</code>: Handle slave state through
+<code>skipCounter</code>.</p></li>
+<li><p><code>extractBinlogInfo($line)</code>: Handle slave state through
+<code>extractBinlogInfo</code>.</p></li>
+<li><p><code>groupBinlogInfoByPosition($extractedData)</code>: Handle
+slave state through <code>groupBinlogInfoByPosition</code>.</p></li>
+<li><p><code>processBinlogFile($param)</code>: Handle slave state
+through <code>processBinlogFile</code>.</p></li>
+<li><p><code>generateCmd($param)</code>: Handle slave state through
+<code>generateCmd</code>.</p></li>
+<li><p><code>execute($sql, $db, $DRY_RUN)</code>: Handle slave state
+through <code>execute</code>.</p></li>
+<li><p><code>generateSecurePassword($length)</code>: Handle slave state
+through <code>generateSecurePassword</code>.</p></li>
+<li><p><code>waitForSlavePosition($param)</code>: Handle slave state
+through <code>waitForSlavePosition</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="spider">Spider</h1>
+<h1 id="spider-1">Spider</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Spider.php</code></p></li>
+<li><p><code>index()</code>: Render spider state through
+<code>index</code>.</p></li>
+<li><p><code>Server($param)</code>: Handle spider state through
+<code>Server</code>.</p></li>
+<li><p><code>testIfSpiderExist($param)</code>: Handle spider state
+through <code>testIfSpiderExist</code>.</p></li>
+<li><p><code>getServerLink($id_mysql_server)</code>: Retrieve spider
+state through <code>getServerLink</code>.</p></li>
+<li><p><code>extractSpiderInfoFromCreateTable($createTable)</code>:
+Handle spider state through
+<code>extractSpiderInfoFromCreateTable</code>.</p></li>
+<li><p><code>create()</code>: Create spider state through
+<code>create</code>.</p></li>
+<li><p><code>addLinkDb($param)</code>: Create spider state through
+<code>addLinkDb</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="ssh">Ssh</h1>
+<h1 id="ssh-1">Ssh</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Ssh.php</code></p></li>
+<li><p><code>setMockInstance($instance)</code>: Handle ssh state through
+<code>setMockInstance</code>.</p></li>
+<li><p><code>formatPrivateKey($key)</code>: Handle ssh state through
+<code>formatPrivateKey</code>.</p></li>
+<li><p><code>connect($ip, $port, $user, $password)</code>: Handle ssh
+state through <code>connect</code>.</p></li>
+<li><p><code>close()</code>: Handle ssh state through
+<code>close</code>.</p></li>
+<li><p><code>isValid($pubkeyssh)</code>: Handle ssh state through
+<code>isValid</code>.</p></li>
+<li><p><code>generate($type, $bit)</code>: Handle ssh state through
+<code>generate</code>.</p></li>
+<li><p><code>put($server, $port, $login, $private_key, $src, $dst)</code>:
+Handle ssh state through <code>put</code>.</p></li>
+<li><p><code>spaceAvailable($param)</code>: Handle ssh state through
+<code>spaceAvailable</code>.</p></li>
+<li><p><code>ssh($id_server, $type)</code>: Handle ssh state through
+<code>ssh</code>.</p></li>
+<li><p><code>getSsh($id, $type)</code>: Retrieve ssh state through
+<code>getSsh</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="statementanalysis">StatementAnalysis</h1>
+<h1 id="statementanalysis-1">StatementAnalysis</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source:
+<code>App/Controller/StatementAnalysis.php</code></p></li>
+<li><p><code>index($param)</code>: Render statement analysis state
+through <code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="storagearea">StorageArea</h1>
+<h1 id="storagearea-1">StorageArea</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/StorageArea.php</code></p></li>
+<li><p><code>index($param)</code>: Render storage area state through
+<code>index</code>.</p></li>
+<li><p><code>add($param)</code>: Create storage area state through
+<code>add</code>.</p></li>
+<li><p><code>listStorage()</code>: Retrieve storage area state through
+<code>listStorage</code>.</p></li>
+<li><p><code>getStorageSpace($param)</code>: Retrieve storage area state
+through <code>getStorageSpace</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete storage area state through
+<code>delete</code>.</p></li>
+<li><p><code>menu($param)</code>: Handle storage area state through
+<code>menu</code>.</p></li>
+<li><p><code>update($param)</code>: Update storage area state through
+<code>update</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="table">Table</h1>
+<h1 id="table-1">Table</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Table.php</code></p></li>
+<li><p><code>getTableDefinition($param)</code>: Retrieve table state
+through <code>getTableDefinition</code>.</p></li>
+<li><p><code>findFieldPosition($param)</code>: Handle table state
+through <code>findFieldPosition</code>.</p></li>
+<li><p><code>getNumberOfField($param)</code>: Retrieve table state
+through <code>getNumberOfField</code>.</p></li>
+<li><p><code>getCount($param)</code>: Retrieve table state through
+<code>getCount</code>.</p></li>
+<li><p><code>getIndex($param)</code>: Retrieve table state through
+<code>getIndex</code>.</p></li>
+<li><p><code>importRealForeignKey($param)</code>: Handle table state
+through <code>importRealForeignKey</code>.</p></li>
+<li><p><code>getTableWithFk($param)</code>: Retrieve table state through
+<code>getTableWithFk</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="tag">Tag</h1>
+<h1 id="tag-1">Tag</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Tag.php</code></p></li>
+<li><p><code>insertTag($id_mysql_server, $all_tags)</code>: Handle tag
+state through <code>insertTag</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="telegram">Telegram</h1>
+<h1 id="telegram-1">Telegram</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Telegram.php</code></p></li>
+<li><p><code>index($param)</code>: Render telegram state through
+<code>index</code>.</p></li>
+<li><p><code>add()</code>: Create telegram state through
+<code>add</code>.</p></li>
+<li><p><code>view($param)</code>: Handle telegram state through
+<code>view</code>.</p></li>
+<li><p><code>delete($param)</code>: Delete telegram state through
+<code>delete</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="translation">Translation</h1>
+<h1 id="translation-1">Translation</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Translation.php</code></p></li>
+<li><p><code>index()</code>: Render translation state through
+<code>index</code>.</p></li>
+<li><p><code>admin_translation()</code>: Handle translation state
+through <code>admin_translation</code>.</p></li>
+<li><p><code>delete_tmp_files()</code>: Delete translation state through
+<code>delete_tmp_files</code>.</p></li>
+<li><p><code>delete_table_cach()</code>: Delete translation state
+through <code>delete_table_cach</code>.</p></li>
+<li><p><code>getNew($param)</code>: Retrieve translation state through
+<code>getNew</code>.</p></li>
+<li><p><code>askApiGoogle($param)</code>: Handle translation state
+through <code>askApiGoogle</code>.</p></li>
+<li><p><code>settings($param)</code>: Handle translation state through
+<code>settings</code>.</p></li>
+<li><p><code>before($param)</code>: Prepare translation state through
+<code>before</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="tree">Tree</h1>
+<h1 id="tree-1">Tree</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Library</code></p></li>
+<li><p>Source: <code>App/Library/Tree.php</code></p></li>
+<li><p><code>__construct($db_link, $table_name, $fields, $options)</code>:
+Handle tree state through <code>__construct</code>.</p></li>
+<li><p><code>delete($id)</code>: Delete tree state through
+<code>delete</code>.</p></li>
+<li><p><code>extraWhere()</code>: Handle tree state through
+<code>extraWhere</code>.</p></li>
+<li><p><code>add($leaf, $id_parent)</code>: Create tree state through
+<code>add</code>.</p></li>
+<li><p><code>up($id)</code>: Handle tree state through
+<code>up</code>.</p></li>
+<li><p><code>countFather($id)</code>: Handle tree state through
+<code>countFather</code>.</p></li>
+<li><p><code>getInterval($id)</code>: Retrieve tree state through
+<code>getInterval</code>.</p></li>
+<li><p><code>getfather($id)</code>: Retrieve tree state through
+<code>getfather</code>.</p></li>
+<li><p><code>left($id)</code>: Handle tree state through
+<code>left</code>.</p></li>
+<li><p><code>removeaclfile()</code>: Delete tree state through
+<code>removeaclfile</code>.</p></li>
+<li><p><code>getFirstFather($id)</code>: Retrieve tree state through
+<code>getFirstFather</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="tunnel">Tunnel</h1>
+<h1 id="tunnel-1">Tunnel</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Tunnel.php</code></p></li>
+<li><p><code>agent($param)</code>: Handle tunnel state through
+<code>agent</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="upgrade">Upgrade</h1>
+<h1 id="upgrade-1">Upgrade</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Upgrade.php</code></p></li>
+<li><p><code>now($param)</code>: Handle upgrade state through
+<code>now</code>.</p></li>
+<li><p><code>setNewVersion($param)</code>: Handle upgrade state through
+<code>setNewVersion</code>.</p></li>
+<li><p><code>executePatch($param)</code>: Handle upgrade state through
+<code>executePatch</code>.</p></li>
+<li><p><code>getPatchFrom($build)</code>: Retrieve upgrade state through
+<code>getPatchFrom</code>.</p></li>
+<li><p><code>needUpgrade($param)</code>: Handle upgrade state through
+<code>needUpgrade</code>.</p></li>
+<li><p><code>updateConfig($param)</code>: Update upgrade state through
+<code>updateConfig</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="user">User</h1>
+<h1 id="user-1">User</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/User.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare user state through
+<code>before</code>.</p></li>
+<li><p><code>after($param)</code>: Handle user state through
+<code>after</code>.</p></li>
+<li><p><code>index()</code>: Render user state through
+<code>index</code>.</p></li>
+<li><p><code>is_logged()</code>: Handle user state through
+<code>is_logged</code>.</p></li>
+<li><p><code>block_newsletter()</code>: Handle user state through
+<code>block_newsletter</code>.</p></li>
+<li><p><code>city()</code>: Handle user state through
+<code>city</code>.</p></li>
+<li><p><code>author()</code>: Handle user state through
+<code>author</code>.</p></li>
+<li><p><code>register()</code>: Handle user state through
+<code>register</code>.</p></li>
+<li><p><code>lost_password()</code>: Handle user state through
+<code>lost_password</code>.</p></li>
+<li><p><code>password_recover($param)</code>: Handle user state through
+<code>password_recover</code>.</p></li>
+<li><p><code>block_last_registered()</code>: Handle user state through
+<code>block_last_registered</code>.</p></li>
+<li><p><code>block_last_online()</code>: Handle user state through
+<code>block_last_online</code>.</p></li>
+<li><p><code>admin_user()</code>: Handle user state through
+<code>admin_user</code>.</p></li>
+<li><p><code>confirmation($data)</code>: Handle user state through
+<code>confirmation</code>.</p></li>
+<li><p><code>login($login, $password)</code>: Handle user state through
+<code>login</code>.</p></li>
+<li><p><code>log($id_user, $success)</code>: Handle user state through
+<code>log</code>.</p></li>
+<li><p><code>profil($param)</code>: Handle user state through
+<code>profil</code>.</p></li>
+<li><p><code>user_main()</code>: Handle user state through
+<code>user_main</code>.</p></li>
+<li><p><code>settings($param)</code>: Handle user state through
+<code>settings</code>.</p></li>
+<li><p><code>photo($param)</code>: Handle user state through
+<code>photo</code>.</p></li>
+<li><p><code>get_new_mail()</code>: Retrieve user state through
+<code>get_new_mail</code>.</p></li>
+<li><p><code>send_confirmation()</code>: Handle user state through
+<code>send_confirmation</code>.</p></li>
+<li><p><code>connection()</code>: Handle user state through
+<code>connection</code>.</p></li>
+<li><p><code>logout()</code>: Handle user state through
+<code>logout</code>.</p></li>
+<li><p><code>updateGroup()</code>: Update user state through
+<code>updateGroup</code>.</p></li>
+<li><p><code>login($login, $password)</code>: Handle user state through
+<code>login</code>.</p></li>
+<li><p><code>update_idgroup()</code>: Update user state through
+<code>update_idgroup</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="variable">Variable</h1>
+<h1 id="variable-1">Variable</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Variable.php</code></p></li>
+<li><p><code>index($param)</code>: Render variable state through
+<code>index</code>.</p></li>
+<li><p><code>tsVariable($param)</code>: Handle variable state through
+<code>tsVariable</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="ventilateur">Ventilateur</h1>
+<h1 id="ventilateur-1">Ventilateur</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Ventilateur.php</code></p></li>
+<li><p><code>queue()</code>: Handle ventilateur state through
+<code>queue</code>.</p></li>
+<li><p><code>worker()</code>: Handle ventilateur state through
+<code>worker</code>.</p></li>
+<li><p><code>pull()</code>: Handle ventilateur state through
+<code>pull</code>.</p></li>
+<li><p><code>add()</code>: Create ventilateur state through
+<code>add</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="version">Version</h1>
+<h1 id="version-1">Version</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Version.php</code></p></li>
+<li><p><code>index()</code>: Render version state through
+<code>index</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="webservice">Webservice</h1>
+<h1 id="webservice-1">Webservice</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Webservice.php</code></p></li>
+<li><p><code>pushServer($param)</code>: Handle webservice state through
+<code>pushServer</code>.</p></li>
+<li><p><code>importFile($param)</code>: Handle webservice state through
+<code>importFile</code>.</p></li>
+<li><p><code>checkCredentials($user, $password)</code>: Handle
+webservice state through <code>checkCredentials</code>.</p></li>
+<li><p><code>parseServer($filename)</code>: Handle webservice state
+through <code>parseServer</code>.</p></li>
+<li><p><code>parseTest($param)</code>: Handle webservice state through
+<code>parseTest</code>.</p></li>
+<li><p><code>saveHistory($id_user_main, $json)</code>: Update webservice
+state through <code>saveHistory</code>.</p></li>
+<li><p><code>addAccount($param)</code>: Create webservice state through
+<code>addAccount</code>.</p></li>
+<li><p><code>index()</code>: Render webservice state through
+<code>index</code>.</p></li>
+<li><p><code>parseConfig($configFile)</code>: Handle webservice state
+through <code>parseConfig</code>.</p></li>
+<li><p><code>decrypt($param)</code>: Handle webservice state through
+<code>decrypt</code>.</p></li>
+<li><p><code>isJson($string)</code>: Handle webservice state through
+<code>isJson</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+<h1 id="worker">Worker</h1>
+<h1 id="worker-1">Worker</h1>
+<ul>
+<li><p>Type: class</p></li>
+<li><p>Namespace: <code>App\Controller</code></p></li>
+<li><p>Source: <code>App/Controller/Worker.php</code></p></li>
+<li><p><code>before($param)</code>: Prepare worker state through
+<code>before</code>.</p></li>
+<li><p><code>logger($param)</code>: Handle worker state through
+<code>logger</code>.</p></li>
+<li><p><code>run($param)</code>: Handle worker state through
+<code>run</code>.</p></li>
+<li><p><code>keepConfigFile($param)</code>: Handle worker state through
+<code>keepConfigFile</code>.</p></li>
+<li><p><code>adaptNumberWorker($param)</code>: Handle worker state
+through <code>adaptNumberWorker</code>.</p></li>
+<li><p><code>summarizeAvailability($data)</code>: Handle worker state
+through <code>summarizeAvailability</code>.</p></li>
+<li><p><code>generateWorkerUpdateQueries($availability)</code>: Handle
+worker state through <code>generateWorkerUpdateQueries</code>.</p></li>
+<li><p><code>test($param)</code>: Handle worker state through
+<code>test</code>.</p></li>
+<li><p><code>index($param)</code>: Render worker state through
+<code>index</code>.</p></li>
+<li><p><code>checkAll($param)</code>: Handle worker state through
+<code>checkAll</code>.</p></li>
+<li><p><code>check($param)</code>: Handle worker state through
+<code>check</code>.</p></li>
+<li><p><code>addWorker($param)</code>: Create worker state through
+<code>addWorker</code>.</p></li>
+<li><p><code>removeWorker($param)</code>: Delete worker state through
+<code>removeWorker</code>.</p></li>
+<li><p><code>killAll($param)</code>: Handle worker state through
+<code>killAll</code>.</p></li>
+<li><p><code>addToQueue($param)</code>: Create worker state through
+<code>addToQueue</code>.</p></li>
+<li><p><code>update()</code>: Update worker state through
+<code>update</code>.</p></li>
+<li><p><code>dropAllQueue($param)</code>: Handle worker state through
+<code>dropAllQueue</code>.</p></li>
+<li><p><code>file($param)</code>: Handle worker state through
+<code>file</code>.</p></li>
+<li><p><code>getPidWorking($param)</code>: Retrieve worker state through
+<code>getPidWorking</code>.</p></li>
+<li><p><code>checkPid($param)</code>: Handle worker state through
+<code>checkPid</code>.</p></li>
+<li><p><code>deleteWorkerPid($param)</code>: Delete worker state through
+<code>deleteWorkerPid</code>.</p></li>
+<li><p><code>getRunningId($param)</code>: Retrieve worker state through
+<code>getRunningId</code>.</p></li>
+<li><p><code>getListofWorkingServer($param)</code>: Retrieve worker
+state through <code>getListofWorkingServer</code>.</p></li>
+<li><p><code>deleteExpiredPid($param)</code>: Delete worker state
+through <code>deleteExpiredPid</code>.</p></li>
+</ul>
+<div style="page-break-after: always;">
+
+</div>
+</body>
+</html>

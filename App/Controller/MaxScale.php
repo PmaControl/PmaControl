@@ -52,6 +52,200 @@ class MaxScale extends Controller {
  */
     static $maxscale_cache = array();
 
+    public static function normalizeEndpointHost(string $host): string
+    {
+        $host = trim($host);
+
+        if ($host === '') {
+            return '';
+        }
+
+        if ($host[0] === '[' && substr($host, -1) === ']') {
+            $host = substr($host, 1, -1);
+        }
+
+        if (strtolower($host) === 'localhost') {
+            return '127.0.0.1';
+        }
+
+        return strtolower($host);
+    }
+
+    public static function buildMysqlServerEndpointInventory(array $mysqlServers, array $aliases, array $tunnels): array
+    {
+        $inventory = [];
+
+        foreach ($mysqlServers as $server) {
+            $id = (int)($server['id'] ?? 0);
+            $host = self::normalizeEndpointHost((string)($server['ip'] ?? ''));
+            $port = (int)($server['port'] ?? 0);
+
+            if ($id <= 0 || $host === '' || $port <= 0) {
+                continue;
+            }
+
+            $inventory[$host . ':' . $port][$id][] = 'mysql_server';
+        }
+
+        foreach ($aliases as $alias) {
+            $id = (int)($alias['id_mysql_server'] ?? 0);
+            $host = self::normalizeEndpointHost((string)($alias['dns'] ?? ''));
+            $port = (int)($alias['port'] ?? 0);
+
+            if ($id <= 0 || $host === '' || $port <= 0) {
+                continue;
+            }
+
+            $inventory[$host . ':' . $port][$id][] = 'alias_dns';
+        }
+
+        foreach ($tunnels as $tunnel) {
+            $id = (int)($tunnel['id_mysql_server'] ?? 0);
+            $host = self::normalizeEndpointHost((string)($tunnel['remote_host'] ?? ''));
+            $port = (int)($tunnel['remote_port'] ?? 0);
+
+            if ($id <= 0 || $host === '' || $port <= 0) {
+                continue;
+            }
+
+            $inventory[$host . ':' . $port][$id][] = 'ssh_tunnel.remote';
+        }
+
+        return $inventory;
+    }
+
+    public static function matchMysqlServerIdsForEndpoint(string $host, int $port, array $inventory): array
+    {
+        $normalized = self::normalizeEndpointHost($host);
+        $key = $normalized . ':' . $port;
+        $matches = [];
+
+        foreach (($inventory[$key] ?? []) as $id_mysql_server => $sources) {
+            $matches[] = [
+                'id_mysql_server' => (int)$id_mysql_server,
+                'endpoint' => $key,
+                'sources' => array_values(array_unique($sources)),
+            ];
+        }
+
+        usort($matches, static function (array $left, array $right): int {
+            return $left['id_mysql_server'] <=> $right['id_mysql_server'];
+        });
+
+        return $matches;
+    }
+
+    public static function getMysqlServerMatches($param): array
+    {
+        Debug::parseDebug($param);
+
+        $id_maxscale_server = (int)($param[0] ?? 0);
+
+        if ($id_maxscale_server <= 0) {
+            throw new \Exception("[PMACONTROL-1003] getMysqlServerMatches() requires a valid id_maxscale_server.");
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `hostname`,`is_ssl`,`port`,`login`,`password` FROM maxscale_server WHERE `id`=".$id_maxscale_server.";";
+        Debug::sql($sql);
+        $res = $db->sql_query($sql);
+        $config = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if (empty($config)) {
+            throw new \Exception("[PMACONTROL-2001] No MaxScale server found with id '{$id_maxscale_server}'.");
+        }
+
+        $services = self::curl([
+            $config['hostname'],
+            $config['is_ssl'],
+            $config['port'],
+            $config['login'],
+            $config['password'],
+            'services',
+        ]);
+
+        $mysqlServers = [];
+        $resMysqlServer = $db->sql_query("SELECT id, ip, port FROM mysql_server WHERE is_deleted = 0");
+        while ($row = $db->sql_fetch_array($resMysqlServer, MYSQLI_ASSOC)) {
+            $mysqlServers[] = $row;
+        }
+
+        $aliases = [];
+        $resAlias = $db->sql_query("SELECT id_mysql_server, dns, port FROM alias_dns");
+        while ($row = $db->sql_fetch_array($resAlias, MYSQLI_ASSOC)) {
+            $aliases[] = $row;
+        }
+
+        $tunnels = [];
+        $resTunnel = $db->sql_query("SELECT id_mysql_server, remote_host, remote_port FROM ssh_tunnel WHERE date_end IS NULL AND id_mysql_server IS NOT NULL");
+        while ($row = $db->sql_fetch_array($resTunnel, MYSQLI_ASSOC)) {
+            $tunnels[] = $row;
+        }
+
+        $inventory = self::buildMysqlServerEndpointInventory($mysqlServers, $aliases, $tunnels);
+        $result = [
+            'id_maxscale_server' => $id_maxscale_server,
+            'matched_ids' => [],
+            'listeners' => [],
+        ];
+
+        foreach (($services['data'] ?? []) as $service) {
+            foreach (($service['attributes']['listeners'] ?? []) as $listener) {
+                $listenerId = $listener['id'] ?? 'unknown';
+                $parameters = $listener['attributes']['parameters'] ?? [];
+                $listenerHost = (string)($parameters['address'] ?? '');
+                $listenerPort = (int)($parameters['port'] ?? 0);
+
+                if ($listenerHost === '' || $listenerPort <= 0) {
+                    $result['listeners'][] = [
+                        'listener' => $listenerId,
+                        'endpoint' => '',
+                        'matched_ids' => [],
+                        'candidates' => [],
+                        'reason' => 'listener endpoint is incomplete',
+                    ];
+                    continue;
+                }
+
+                $matches = self::matchMysqlServerIdsForEndpoint($listenerHost, $listenerPort, $inventory);
+                $matchedIds = array_values(array_unique(array_map(static function (array $match): int {
+                    return (int)$match['id_mysql_server'];
+                }, $matches)));
+
+                $sources = [];
+                foreach ($matches as $match) {
+                    $sources = array_merge($sources, $match['sources']);
+                }
+
+                foreach ($matchedIds as $id_mysql_server) {
+                    $result['matched_ids'][] = $id_mysql_server;
+                    $db->sql_query(
+                        "INSERT IGNORE INTO maxscale_server__mysql_server (id_maxscale_server, id_mysql_server) VALUES ("
+                        .$id_maxscale_server.", ".$id_mysql_server.")"
+                    );
+                    $db->sql_query(
+                        "UPDATE mysql_server SET is_proxy = 1 WHERE id = ".$id_mysql_server." AND is_proxy != 1"
+                    );
+                }
+
+                $result['listeners'][] = [
+                    'listener' => $listenerId,
+                    'endpoint' => self::normalizeEndpointHost($listenerHost).':'.$listenerPort,
+                    'matched_ids' => $matchedIds,
+                    'candidates' => $matches,
+                    'reason' => empty($matchedIds)
+                        ? 'no mysql_server / alias_dns / ssh_tunnel.remote candidate matched'
+                        : 'matched via '.implode(', ', array_values(array_unique($sources))),
+                ];
+            }
+        }
+
+        $result['matched_ids'] = array_values(array_unique(array_map('intval', $result['matched_ids'])));
+        sort($result['matched_ids']);
+
+        return $result;
+    }
+
 /**
  * Render max scale state through `index`.
  *
@@ -257,66 +451,9 @@ class MaxScale extends Controller {
     public static function getIdMysqlServer($param)
     {
         Debug::parseDebug($param);
-        
-        $id_maxscale_server = $param[0];
+        $matches = self::getMysqlServerMatches($param);
 
-
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT `hostname`,`is_ssl` ,`port`, `login`,`password`  from maxscale_server WHERE `id`=".$id_maxscale_server.";";
-        Debug::sql($sql);
-        $res = $db->sql_query($sql);
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
-            
-            $arr[] = "services";
-
-            Debug::debug($arr, "ARR");
-            $data = self::curl($arr );
-
-            
-            Debug::debug($data, "RESULT");
-
-            foreach ($data['data'] as $service) {
-                if (!empty($service['attributes']['listeners'])) {
-                    foreach ($service['attributes']['listeners'] as $listener) {
-                        $name  = $listener['id'];
-                        $ip    = $listener['attributes']['parameters']['address'];
-                        $port  = $listener['attributes']['parameters']['port'];
-                        
-                        Debug::debug("$name => $ip:$port", "EXTRACT");
-
-                        
-                        $sql2 = "SELECT `id` FROM `mysql_server` WHERE `ip`='".$ip."' AND `port` =".$port.";";
-                        Debug::sql($sql2, "SQL2");
-                        $res2 = $db->sql_query($sql2);
-                        while($ob = $db->sql_fetch_object($res2))
-                        {
-                            $id_mysql_server = $ob->id;
-
-                            $sql5 = "SELECT count(1) as cpt FROM maxscale_server__mysql_server 
-                            WHERE id_maxscale_server =$id_maxscale_server AND id_mysql_server=$id_mysql_server";
-                            $res5 = $db->sql_query($sql5);
-
-                            while($ob5 = $db->sql_fetch_object($res5)) {
-                                if ($ob5->cpt == "0") {
-                                    $sql6 = "INSERT INTO maxscale_server__mysql_server (id_maxscale_server,id_mysql_server) 
-                                    VALUES ($id_maxscale_server, $id_mysql_server)";
-                                    $db->sql_query($sql6);
-                                }
-                            }
-                            
-                            $sql4 = "UPDATE mysql_server SET is_proxy = 1 WHERE `id`=".$ob->id ." AND is_proxy != 1;";
-                            Debug::sql($sql4);
-                            $db->sql_query($sql4);
-
-                            return $ob->id;
-
-                        }
-
-                    }
-                }
-            }
-
-        }
+        return $matches['matched_ids'][0] ?? null;
 
     }
 

@@ -1,0 +1,103 @@
+# Cleaner
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Cleaner.php`
+
+- `statistics($param)`: Handle cleaner state through `statistics`.
+- `getMsgStartDaemon($ob)`: Retrieve cleaner state through `getMsgStartDaemon`.
+- `showDaemon()`: Handle cleaner state through `showDaemon`.
+- `index($param)`: Render cleaner state through `index`.
+- `treatment($param)`: Handle cleaner state through `treatment`.
+- `detail($param)`: Handle cleaner state through `detail`.
+- `add($param)`: Create cleaner state through `add`.
+- `getDatabaseByServer($param)`: Retrieve cleaner state through `getDatabaseByServer`.
+- `getTableByDatabase($param)`: Retrieve cleaner state through `getTableByDatabase`.
+- `getColumnByTable($param)`: Retrieve cleaner state through `getColumnByTable`.
+- `delete($param)`: Delete cleaner state through `delete`.
+- `settings($param)`: Handle cleaner state through `settings`.
+- `launch($param)`: Handle cleaner state through `launch`.
+- `start($param)`: Handle cleaner state through `start`.
+- `stop($param)`: Handle cleaner state through `stop`.
+- `restart($param)`: Handle cleaner state through `restart`.
+- `isRunning($pid)`: Handle cleaner state through `isRunning`.
+- `stats_for_log($data)`: Handle cleaner state through `stats_for_log`.
+- `getTableImpacted($param)`: Retrieve cleaner state through `getTableImpacted`.
+- `checkFileToPush($path)`: Handle cleaner state through `checkFileToPush`.
+- `compressAndCrypt($file, $is_cryted)`: Handle cleaner state through `compressAndCrypt`.
+- `getFileinfo($filename)`: Retrieve cleaner state through `getFileinfo`.
+- `cryptFile($file_name)`: Handle cleaner state through `cryptFile`.
+- `decryptFile($file_name)`: Handle cleaner state through `decryptFile`.
+- `compressFile($path_file)`: Handle cleaner state through `compressFile`.
+- `unCompressFile($path_file)`: Handle cleaner state through `unCompressFile`.
+- `uncc($param)`: Handle cleaner state through `uncc`.
+- `purge_clean_db($param)`: Handle cleaner state through `purge_clean_db`.
+- `sig_handler($signo)`: Handle cleaner state through `sig_handler`.
+- `get_id_cleaner($param)`: Retrieve cleaner state through `get_id_cleaner`.
+- `purge()`: Handle cleaner state through `purge`.
+- `createTemporaryTable($table)`: Create cleaner state through `createTemporaryTable`.
+- `feedDeleteTableWithFk()`: Handle cleaner state through `feedDeleteTableWithFk`.
+- `createAllTemporaryTable()`: Create cleaner state through `createAllTemporaryTable`.
+- `getTableError()`: Retrieve cleaner state through `getTableError`.
+- `getRealForeignKeys()`: Retrieve cleaner state through `getRealForeignKeys`.
+- `getVirtualForeignKeys()`: Retrieve cleaner state through `getVirtualForeignKeys`.
+- `getOrderBy($param)`: Retrieve cleaner state through `getOrderBy`.
+- `delete_rows()`: Delete cleaner state through `delete_rows`.
+- `setAffectedRows($table)`: Handle cleaner state through `setAffectedRows`.
+- `getAffectedTables()`: Retrieve cleaner state through `getAffectedTables`.
+- `removeTableNotImpacted($fks)`: Delete cleaner state through `removeTableNotImpacted`.
+- `exportToFile($table)`: Handle cleaner state through `exportToFile`.
+- `testDirectory($path)`: Handle cleaner state through `testDirectory`.
+- `__sleep()`: Handle cleaner state through `__sleep`.
+- `get_rows($result)`: Retrieve cleaner state through `get_rows`.
+- `printableBitValue($value, $length)`: Handle cleaner state through `printableBitValue`.
+- `getImpactedTable()`: Retrieve cleaner state through `getImpactedTable`.
+- `before($param)`: Prepare cleaner state through `before`.
+- `pushArchive($param)`: Handle cleaner state through `pushArchive`.
+- `getIdStorageArea($id_cleaner)`: Retrieve cleaner state through `getIdStorageArea`.
+- `init()`: Handle cleaner state through `init`.
+- `generateCreateTable()`: Handle cleaner state through `generateCreateTable`.
+- `cacheDdlOnDisk()`: Handle cleaner state through `cacheDdlOnDisk`.
+- `initFileWithCreateTable($file)`: Handle cleaner state through `initFileWithCreateTable`.
+- `cleanTableFromNoNeedConstraint($tableCreate)`: Handle cleaner state through `cleanTableFromNoNeedConstraint`.
+- `cacheComStatus()`: Handle cleaner state through `cacheComStatus`.
+- `compareComStatus()`: Handle cleaner state through `compareComStatus`.
+- `sighup()`: Handle cleaner state through `sighup`.
+- `getPrimaryKey($table, $database)`: Retrieve cleaner state through `getPrimaryKey`.
+- `end_loop()`: Handle cleaner state through `end_loop`.
+- `initDdlOnDisk()`: Handle cleaner state through `initDdlOnDisk`.
+- `compareDdl()`: Handle cleaner state through `compareDdl`.
+- `compareTables()`: Handle cleaner state through `compareTables`.
+- `compareTable($table)`: Handle cleaner state through `compareTable`.
+- `edit($param)`: Handle cleaner state through `edit`.
+- `install()`: Handle cleaner state through `install`.
+- `uninstall()`: Handle cleaner state through `uninstall`.
+- `view($param)`: Handle cleaner state through `view`.
+- `logs($param)`: Handle cleaner state through `logs`.
+- `details($param)`: Handle cleaner state through `details`.
+- `menu($param)`: Handle cleaner state through `menu`.
+- `format($lines, $id_cleaner)`: Handle cleaner state through `format`.
+- `setColor($type)`: Handle cleaner state through `setColor`.
+- `label($text)`: Handle cleaner state through `label`.
+- `hexToRgb($colorName)`: Handle cleaner state through `hexToRgb`.
+- `getUser($id)`: Retrieve cleaner state through `getUser`.
+- `log($level, $type, $msg)`: Handle cleaner state through `log`.
+- `getrgba($label, $alpha)`: Retrieve cleaner state through `getrgba`.
+- `impacted($param)`: Handle cleaner state through `impacted`.
+- `setCacheFile()`: Handle cleaner state through `setCacheFile`.
+- `addChild($fks, $ref_table, $childs)`: Create cleaner state through `addChild`.
+- `filterFkWithChildren($children, $foreign_keys)`: Handle cleaner state through `filterFkWithChildren`.
+- `getForeignKeys()`: Retrieve cleaner state through `getForeignKeys`.
+- `generateMock($param)`: Handle cleaner state through `generateMock`.
+- `skipReplication($db)`: Handle cleaner state through `skipReplication`.
+- `testOrder($param)`: Handle cleaner state through `testOrder`.
+- `getOrderBy2($param)`: Retrieve cleaner state through `getOrderBy2`.
+- `dropFk($child, $parent)`: Handle cleaner state through `dropFk`.
+- `detectCircularDefinition($param)`: Handle cleaner state through `detectCircularDefinition`.
+- `getCircularMulti($param)`: Retrieve cleaner state through `getCircularMulti`.
+- `getPath($table, $table2, $db)`: Retrieve cleaner state through `getPath`.
+- `testOneToOne($way, $order)`: Handle cleaner state through `testOneToOne`.
+- `testFk($table_a, $table_b)`: Handle cleaner state through `testFk`.
+- `comptage($param)`: Handle cleaner state through `comptage`.
+- `feedCircularFk($table)`: Handle cleaner state through `feedCircularFk`.
+- `setDebug($param)`: Handle cleaner state through `setDebug`.

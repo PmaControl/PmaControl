@@ -1,0 +1,36 @@
+# Query
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Query.php`
+
+- `getFielsWithoutDefault($id_mysql_server, $databases)`: Retrieve query state through `getFielsWithoutDefault`.
+- `getDefaultValueByType($type, $typeExtra)`: Retrieve query state through `getDefaultValueByType`.
+- `setDefault($param)`: Handle query state through `setDefault`.
+- `dropDefault($param)`: Handle query state through `dropDefault`.
+- `runSetDefault($param)`: Handle query state through `runSetDefault`.
+- `runQuery($param)`: Handle query state through `runQuery`.
+- `createWorkTable($param)`: Create query state through `createWorkTable`.
+- `deleteWorkTable($param)`: Delete query state through `deleteWorkTable`.
+- `sigHandler($signo)`: Handle query state through `sigHandler`.
+- `getMaxRun($param)`: Retrieve query state through `getMaxRun`.
+- `byDigest($param)`: Handle query state through `byDigest`.
+- `extractTablesFromSQL($sql)`: Handle query state through `extractTablesFromSQL`.
+- `extractTablesAndAliases($sql)`: Handle query state through `extractTablesAndAliases`.
+- `extractTablesWithOffsets($sql)`: Handle query state through `extractTablesWithOffsets`.
+- `extract($param)`: Handle query state through `extract`.
+- `normalize_sql_for_digest($sql, $ansi_quotes)`: Handle query state through `normalize_sql_for_digest`.
+- `normalize_sql_strict($sql, $ansi_quotes)`: Handle query state through `normalize_sql_strict`.
+- `statement_digest_text($sql, $max_digest_length, $perf_max_digest_length, $ansi_quotes)`: Handle query state through `statement_digest_text`.
+- `statement_digest($sql, $max_digest_length, $ansi_quotes)`: Handle query state through `statement_digest`.
+- `statement_digest_text_strict($sql, $max_digest_length, $show_length, $ansi_quotes)`: Handle query state through `statement_digest_text_strict`.
+- `statement_digest_strict($sql, $max_digest_length, $ansi_quotes)`: Handle query state through `statement_digest_strict`.
+- `testDigest($param)`: Handle query state through `testDigest`.
+- `digest2($query)`: Handle query state through `digest2`.
+- `digestText($query)`: Handle query state through `digestText`.
+- `normalize($query)`: Handle query state through `normalize`.
+- `isKeyword($word)`: Handle query state through `isKeyword`.
+- `replaceAlias($string)`: Handle query state through `replaceAlias`.
+- `collectDigest($param)`: Handle query state through `collectDigest`.
+- `collectAll($param)`: Handle query state through `collectAll`.
+- `degradeMariaDB($string)`: Handle query state through `degradeMariaDB`.

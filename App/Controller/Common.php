@@ -301,7 +301,7 @@ class Common extends Controller
         }
 
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."';";
+        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."' WHERE id_deleted=0;";
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
@@ -447,7 +447,7 @@ class Common extends Controller
         $sql = "SELECT ".$available['case'].", a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
-            WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
+            WHERE 1 ".self::getFilter($mysql_server_specify)." AND a.is_deleted=0 ORDER by b.libelle,a.name";
 
         //debug($_GET);
 

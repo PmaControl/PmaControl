@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PmaControl - Reverse Engineering par Domaines</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PmaControl - Reverse Engineering par Domaines</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#dossier-domaines-pmacontrol">Dossier Domaines
+PmaControl</a>
+<ul>
+<li><a href="#index">Index</a></li>
+</ul></li>
+<li><a href="#domaine-backup">Domaine Backup</a>
+<ul>
+<li><a href="#role-metier">Role metier</a></li>
+<li><a href="#responsabilites-principales">Responsabilites
+principales</a></li>
+<li><a href="#regles-metier-detaillees">Regles metier detaillees</a>
+<ul>
+<li><a href="#definition-dun-backup">Definition d’un backup</a></li>
+<li><a href="#validation-de-la-destination">Validation de la
+destination</a></li>
+<li><a href="#cycle-de-vie-dun-dump">Cycle de vie d’un dump</a></li>
+<li><a href="#journalisation-et-reprise">Journalisation et
+reprise</a></li>
+</ul></li>
+<li><a href="#architecture-interne-du-domaine">Architecture interne du
+domaine</a></li>
+<li><a href="#risques-et-points-dattention">Risques et points
+d’attention</a></li>
+<li><a href="#proposition-de-modernisation">Proposition de
+modernisation</a></li>
+</ul></li>
+<li><a href="#domaine-cleaner">Domaine Cleaner</a>
+<ul>
+<li><a href="#role-metier-1">Role metier</a></li>
+<li><a href="#ce-que-fait-réellement-cleaner">Ce que fait réellement
+Cleaner</a></li>
+<li><a href="#regles-metier-detaillees-1">Regles metier detaillees</a>
+<ul>
+<li><a href="#regle-1-ne-pas-casser-la-referentialite">Regle 1: ne pas
+casser la referentialite</a></li>
+<li><a href="#regle-2-pouvoir-archiver-avant-de-detruire">Regle 2:
+pouvoir archiver avant de detruire</a></li>
+<li><a href="#regle-3-tracer-et-reprendre">Regle 3: tracer et
+reprendre</a></li>
+<li><a href="#regle-4-supporter-les-anomalies-de-schema">Regle 4:
+supporter les anomalies de schema</a></li>
+</ul></li>
+<li><a href="#lecture-darchitecture">Lecture d’architecture</a></li>
+<li><a href="#risques-principaux">Risques principaux</a></li>
+<li><a href="#recommandations">Recommandations</a></li>
+</ul></li>
+<li><a href="#domaine-aspirateur">Domaine Aspirateur</a>
+<ul>
+<li><a href="#role-metier-2">Role metier</a></li>
+<li><a href="#capacites-observees">Capacites observees</a></li>
+<li><a href="#regles-metier-detaillees-2">Regles metier detaillees</a>
+<ul>
+<li><a href="#identification-du-serveur-reel">Identification du serveur
+reel</a></li>
+<li><a href="#classification-automatique">Classification
+automatique</a></li>
+<li><a href="#collecte-hybride">Collecte hybride</a></li>
+</ul></li>
+<li><a href="#architecture-metier">Architecture metier</a></li>
+<li><a href="#valeur-metier">Valeur metier</a></li>
+<li><a href="#risques-et-chantiers">Risques et chantiers</a></li>
+</ul></li>
+<li><a href="#domaine-schema">Domaine Schema</a>
+<ul>
+<li><a href="#role-metier-3">Role metier</a></li>
+<li><a href="#fonctions-metier-visibles">Fonctions metier
+visibles</a></li>
+<li><a href="#regles-metier-detaillees-3">Regles metier detaillees</a>
+<ul>
+<li><a href="#le-schema-est-un-actif-versionne">Le schema est un actif
+versionne</a></li>
+<li><a href="#la-comparaison-doit-etre-intelligible">La comparaison doit
+etre intelligible</a></li>
+<li><a
+href="#les-routines-et-objets-derives-comptent-autant-que-les-tables">Les
+routines et objets derives comptent autant que les tables</a></li>
+</ul></li>
+<li><a href="#lecture-darchitecture-1">Lecture d’architecture</a></li>
+<li><a href="#chantiers-recommandes">Chantiers recommandes</a></li>
+</ul></li>
+<li><a href="#domaine-dot3">Domaine Dot3</a>
+<ul>
+<li><a href="#role-metier-4">Role metier</a></li>
+<li><a href="#capacites-observees-1">Capacites observees</a></li>
+<li><a href="#regles-metier-detaillees-4">Regles metier detaillees</a>
+<ul>
+<li><a href="#le-graphe-nest-pas-decoratif">Le graphe n’est pas
+decoratif</a></li>
+<li><a href="#les-entites-inconnues-doivent-rester-visibles">Les entites
+inconnues doivent rester visibles</a></li>
+<li><a href="#le-rendu-doit-fusionner-plusieurs-sources">Le rendu doit
+fusionner plusieurs sources</a></li>
+</ul></li>
+<li><a href="#valeur-pour-lexploitation">Valeur pour
+l’exploitation</a></li>
+<li><a href="#chantiers-recommandes-1">Chantiers recommandes</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="dossier-domaines-pmacontrol">Dossier Domaines PmaControl</h1>
+<p>Ce dossier approfondit les domaines les plus critiques du code
+PmaControl.</p>
+<h2 id="index">Index</h2>
+<ul>
+<li><a href="backup.md">Backup</a></li>
+<li><a href="cleaner.md">Cleaner</a></li>
+<li><a href="aspirateur.md">Aspirateur</a></li>
+<li><a href="schema.md">Schema</a></li>
+<li><a href="dot3.md">Dot3</a></li>
+</ul>
+<h1 id="domaine-backup">Domaine Backup</h1>
+<h2 id="role-metier">Role metier</h2>
+<p><code>Backup</code> porte toute la chaine de sauvegarde logique et
+physique: definition des jobs, planification, execution, compression,
+chiffrement, transfert, telechargement, verification et relance. Le
+controleur ne sert pas seulement d’UI; il joue aussi le role
+d’orchestrateur de traitements techniques et de passerelle entre la base
+<code>pmacontrol</code>, le shell systeme, SSH, NAS/SCP et les moteurs
+de dump MySQL.</p>
+<h2 id="responsabilites-principales">Responsabilites principales</h2>
+<ul>
+<li>parametrage des zones de stockage et des dumps</li>
+<li>creation et edition de schedules avec <code>crontab</code></li>
+<li>lancement de dumps (<code>mysqldump</code>, <code>mydumper</code>,
+<code>myloader</code>)</li>
+<li>telechargement des artefacts</li>
+<li>verification de taille, hash et progression</li>
+<li>pilotage de scripts shell distants</li>
+<li>restauration ou rechargement cible</li>
+</ul>
+<h2 id="regles-metier-detaillees">Regles metier detaillees</h2>
+<h3 id="definition-dun-backup">Definition d’un backup</h3>
+<p>Un backup n’est valide que s’il reference un serveur, un type de
+sauvegarde, une destination et un schedule exploitable. Le metier
+suppose donc l’existence coherente de:</p>
+<ul>
+<li><code>backup_main</code></li>
+<li><code>backup_dump</code></li>
+<li><code>backup_storage_area</code></li>
+<li><code>crontab</code></li>
+<li>serveur source et, selon le flux, serveur cible</li>
+</ul>
+<h3 id="validation-de-la-destination">Validation de la destination</h3>
+<p>Avant de deposer une sauvegarde, le systeme verifie que la zone de
+stockage est atteignable. Cela passe par SSH/SCP, la creation de
+repertoire, puis des controles de taille et de hash une fois le
+transfert termine. La zone de stockage n’est donc pas un simple label
+applicatif; c’est une ressource d’infrastructure active.</p>
+<h3 id="cycle-de-vie-dun-dump">Cycle de vie d’un dump</h3>
+<p>Le cycle metier observable est le suivant:</p>
+<ol type="1">
+<li>selection de la source et des parametres d’extraction</li>
+<li>execution du dump local ou distant</li>
+<li>compression eventuelle</li>
+<li>chiffrement eventuel</li>
+<li>transfert vers la zone de stockage</li>
+<li>verification d’integrite</li>
+<li>historisation en base</li>
+</ol>
+<h3 id="journalisation-et-reprise">Journalisation et reprise</h3>
+<p>Le code conserve des journaux techniques, des PID, des metadonnees de
+fichiers et des etats intermediaires. Cela montre une logique de reprise
+orientee exploitant: l’application doit permettre de reprendre ou
+diagnostiquer un backup partiellement execute.</p>
+<h2 id="architecture-interne-du-domaine">Architecture interne du
+domaine</h2>
+<p><code>Backup.php</code> concentre plusieurs sous-domaines qui
+devraient idealement etre separes:</p>
+<ul>
+<li>service de definition des jobs</li>
+<li>service d’execution shell</li>
+<li>service d’acces MySQL source</li>
+<li>service de transfert et de verifications NAS/SCP</li>
+<li>service de restauration</li>
+<li>service d’exposition UI</li>
+</ul>
+<p>Aujourd’hui, ces responsabilites sont co-localisees, ce qui rend le
+domaine puissant mais fragile. Une erreur de validation ou de quoting
+shell peut impacter toute la chaine.</p>
+<h2 id="risques-et-points-dattention">Risques et points d’attention</h2>
+<ul>
+<li>composition de commandes shell par concatenation</li>
+<li>manipulation de secrets dechiffres a chaud</li>
+<li>ecriture de scripts temporaires sur disque</li>
+<li>endpoints de telechargement de fichiers</li>
+<li>dependance forte au systeme et aux utilitaires presents</li>
+</ul>
+<h2 id="proposition-de-modernisation">Proposition de modernisation</h2>
+<ul>
+<li>extraire un <code>BackupJobService</code></li>
+<li>extraire un <code>BackupTransferService</code></li>
+<li>unifier les DTO d’entree/sortie</li>
+<li>encapsuler toutes les commandes shell</li>
+<li>securiser les telechargements et les chemins</li>
+</ul>
+<h1 id="domaine-cleaner">Domaine Cleaner</h1>
+<h2 id="role-metier-1">Role metier</h2>
+<p><code>Cleaner</code> est le domaine de purge, d’archivage et de
+reorganisation de donnees. C’est probablement le bloc metier le plus
+riche du projet avec <code>98</code> methodes visibles. Il gere des jobs
+complexes qui peuvent impacter fortement l’integrite referentielle et la
+volumetrie.</p>
+<h2 id="ce-que-fait-réellement-cleaner">Ce que fait réellement
+Cleaner</h2>
+<ul>
+<li>analyse les dependances entre tables</li>
+<li>calcule l’ordre de suppression</li>
+<li>cree des tables temporaires de travail</li>
+<li>exporte, archive et pousse les donnees purgées</li>
+<li>compare l’etat avant/apres</li>
+<li>pilote des boucles longues et des workers</li>
+<li>loggue finement les etapes techniques</li>
+</ul>
+<h2 id="regles-metier-detaillees-1">Regles metier detaillees</h2>
+<h3 id="regle-1-ne-pas-casser-la-referentialite">Regle 1: ne pas casser
+la referentialite</h3>
+<p>Le domaine suppose que toute purge doit tenir compte des FK reelles,
+virtuelles ou calculees. La purge n’est donc jamais une simple
+instruction <code>DELETE</code>; c’est un graphe d’impact. C’est pour
+cela que Cleaner manipule des ordres de suppression, des tables
+impactees, des chemins et des controles de circularite.</p>
+<h3 id="regle-2-pouvoir-archiver-avant-de-detruire">Regle 2: pouvoir
+archiver avant de detruire</h3>
+<p>Une suppression metier importante peut exiger une sauvegarde ou une
+archive avant la purge. Les fonctions de compression, chiffrement et
+push d’archive montrent que la conservation des donnees supprimees fait
+partie du metier.</p>
+<h3 id="regle-3-tracer-et-reprendre">Regle 3: tracer et reprendre</h3>
+<p>Le code gere des logs, des PID, des signaux, des etats de daemon et
+des sorties de details. Le produit est pense pour des jobs longs,
+observables, et parfois interrompus puis relances.</p>
+<h3 id="regle-4-supporter-les-anomalies-de-schema">Regle 4: supporter
+les anomalies de schema</h3>
+<p>Le domaine ne repose pas uniquement sur la verite des FKs MySQL. Il
+sait travailler avec des FK virtuelles, des exceptions et des
+heuristiques, ce qui est capital dans les SI historiques ou les
+contraintes sont incompletes.</p>
+<h2 id="lecture-darchitecture">Lecture d’architecture</h2>
+<p>Cleaner est a la fois:</p>
+<ul>
+<li>un moteur de graphe de dependances</li>
+<li>un orchestrateur de purge</li>
+<li>un systeme d’archive</li>
+<li>un moteur de logs d’exploitation</li>
+<li>une UI d’administration</li>
+</ul>
+<p>Cette concentration explique pourquoi ce controleur est lourd. Sa
+vraie decomposition cible devrait separer:</p>
+<ul>
+<li>calcul d’ordre</li>
+<li>execution de purge</li>
+<li>gestion d’archives</li>
+<li>supervision/daemon</li>
+<li>exposition web</li>
+</ul>
+<h2 id="risques-principaux">Risques principaux</h2>
+<ul>
+<li>operations destructives massives</li>
+<li>usage de shell et de fichiers temporaires</li>
+<li>desactivation ponctuelle de <code>FOREIGN_KEY_CHECKS</code></li>
+<li>derive possible entre modele calcule et schema reel</li>
+</ul>
+<h2 id="recommandations">Recommandations</h2>
+<ul>
+<li>transformer les strategies de purge en objets explicites</li>
+<li>isoler les parcours destructifs dans des workers securises</li>
+<li>ajouter des dry-run obligatoires sur les operations critiques</li>
+<li>versionner les plans de purge et leurs resultats</li>
+</ul>
+<h1 id="domaine-aspirateur">Domaine Aspirateur</h1>
+<h2 id="role-metier-2">Role metier</h2>
+<p><code>Aspirateur</code> est le moteur de collecte. Il explore les
+serveurs MySQL et les hotes systeme, detecte des roles, reconstruit des
+liaisons et produit les donnees qui alimentent monitoring, topologie,
+API et dashboards. C’est le capteur principal du produit.</p>
+<h2 id="capacites-observees">Capacites observees</h2>
+<ul>
+<li>connexion MySQL et SSH</li>
+<li>collecte hardware, OS, CPU, memoire, disques</li>
+<li>lecture processlist, variables, wsrep, metadata locks, digests</li>
+<li>detection d’alias, de VIP, de proxys et de destinations de
+service</li>
+<li>production de fichiers pivots et empreintes md5</li>
+<li>alimentation des structures d’integration et de series
+temporelles</li>
+</ul>
+<h2 id="regles-metier-detaillees-2">Regles metier detaillees</h2>
+<h3 id="identification-du-serveur-reel">Identification du serveur
+reel</h3>
+<p>Le domaine essaie de relier plusieurs representations d’un meme
+noeud:</p>
+<ul>
+<li>IP de connexion</li>
+<li>hostname expose</li>
+<li>alias DNS</li>
+<li>IP remontee par SSH</li>
+<li><code>wsrep_node_address</code></li>
+<li>VIP eventuelles</li>
+</ul>
+<p>Le metier ici est tres clair: la plateforme doit raisonner sur
+l’identite technique reelle, meme en presence de NAT, VIP ou couches
+proxy.</p>
+<h3 id="classification-automatique">Classification automatique</h3>
+<p>Le code peut faire evoluer le referentiel applicatif a partir des
+constats de collecte, par exemple en marquant un serveur comme proxy ou
+en mettant a jour des liaisons de VIP. La collecte n’est pas neutre:
+elle enrichit et corrige le modele de reference.</p>
+<h3 id="collecte-hybride">Collecte hybride</h3>
+<p>Aspirateur combine deux mondes:</p>
+<ul>
+<li>verite BD exposee par le serveur MySQL</li>
+<li>verite systeme exposee par SSH</li>
+</ul>
+<p>Cette dualite permet de reconstruire une image plus fiable du noeud
+que ne le ferait une seule source.</p>
+<h2 id="architecture-metier">Architecture metier</h2>
+<p><code>Aspirateur</code> devrait idealement etre decoupe en
+sous-services:</p>
+<ul>
+<li><code>MysqlProbeService</code></li>
+<li><code>SshProbeService</code></li>
+<li><code>VipResolutionService</code></li>
+<li><code>PivotWriterService</code></li>
+<li><code>RuntimeClassificationService</code></li>
+<li><code>ProxyAndClusterDiscoveryService</code></li>
+</ul>
+<h2 id="valeur-metier">Valeur metier</h2>
+<p>C’est ce domaine qui rend possible:</p>
+<ul>
+<li>le monitoring fin</li>
+<li>les vues cluster</li>
+<li>les graphes DOT</li>
+<li>la remontee de diagnostics offline</li>
+<li>l’auto-discovery de structure</li>
+</ul>
+<h2 id="risques-et-chantiers">Risques et chantiers</h2>
+<ul>
+<li>forte dependance aux binaires systeme</li>
+<li>grand nombre d’appels shell/SSH</li>
+<li>logique de resolution complexe a tester</li>
+<li>effets de bord sur le referentiel</li>
+</ul>
+<h1 id="domaine-schema">Domaine Schema</h1>
+<h2 id="role-metier-3">Role metier</h2>
+<p><code>Schema</code> industrialise l’export, la normalisation, la
+comparaison et la migration des schemas MySQL. Ce n’est pas seulement un
+export SQL: c’est un veritable depot documentaire et comparatif de la
+structure des bases.</p>
+<h2 id="fonctions-metier-visibles">Fonctions metier visibles</h2>
+<ul>
+<li>export tables, vues, procedures, fonctions, triggers, events</li>
+<li>assemblage de scripts d’import complets</li>
+<li>initialisation et maintenance d’un depot Git de schema</li>
+<li>snapshots numerotes</li>
+<li>comparaison de modeles entre serveurs</li>
+<li>UI de comparaison</li>
+<li>migration de repositories de schema</li>
+</ul>
+<h2 id="regles-metier-detaillees-3">Regles metier detaillees</h2>
+<h3 id="le-schema-est-un-actif-versionne">Le schema est un actif
+versionne</h3>
+<p>Le domaine pose implicitement une regle forte: la structure MySQL
+doit etre suivie comme du code. Les snapshots Git, la numerotation et
+les comparaisons indiquent que le produit considere le DDL comme un
+patrimoine gouverne.</p>
+<h3 id="la-comparaison-doit-etre-intelligible">La comparaison doit etre
+intelligible</h3>
+<p>Les methodes de normalisation de <code>CREATE TABLE</code>, de split
+de definitions et de rendu diff montrent que l’objectif n’est pas juste
+de dire “different” mais d’expliquer <em>ou</em> et <em>comment</em> le
+schema diverge.</p>
+<h3
+id="les-routines-et-objets-derives-comptent-autant-que-les-tables">Les
+routines et objets derives comptent autant que les tables</h3>
+<p>Le domaine integre triggers, procedures, fonctions, events et vues.
+Il traite donc le schema comme un ensemble complet d’objets SQL, pas
+seulement comme un catalogue de tables.</p>
+<h2 id="lecture-darchitecture-1">Lecture d’architecture</h2>
+<p>Ce domaine est deja plus moderne que d’autres parties du code:</p>
+<ul>
+<li>signatures typees</li>
+<li>sous-fonctions explicites</li>
+<li>logique plus deterministe</li>
+<li>meilleure separation entre export, formatage et comparaison</li>
+</ul>
+<p>Il reste toutefois charge de responsabilites Git, filesystem, SQL et
+UI dans le meme controleur.</p>
+<h2 id="chantiers-recommandes">Chantiers recommandes</h2>
+<ul>
+<li>extraire le moteur de diff dans une bibliotheque dediee</li>
+<li>isoler toute interaction Git dans un adapter</li>
+<li>formaliser un format de snapshot stable</li>
+<li>augmenter les tests de non-regression sur la normalisation DDL</li>
+</ul>
+<h1 id="domaine-dot3">Domaine Dot3</h1>
+<h2 id="role-metier-4">Role metier</h2>
+<p><code>Dot3</code> est le moteur de cartographie avancée. Il fabrique
+des graphes de topologie a partir des donnees de collecte et du
+referentiel pour representer masters, replicas, proxys, VIP, Galera,
+MaxScale et liens de service.</p>
+<h2 id="capacites-observees-1">Capacites observees</h2>
+<ul>
+<li>creation d’objets d’information <code>dot3_information</code></li>
+<li>generation de groupes de rendu par type de topologie</li>
+<li>construction de liens et de labels</li>
+<li>persistance de graphes et clusters derives</li>
+<li>export/download des graphes</li>
+<li>enrichissement des noeuds VIP et ProxySQL</li>
+<li>calcul d’indices utiles au SST Galera</li>
+</ul>
+<h2 id="regles-metier-detaillees-4">Regles metier detaillees</h2>
+<h3 id="le-graphe-nest-pas-decoratif">Le graphe n’est pas decoratif</h3>
+<p>Les graphes servent a produire une representation exploitable de
+l’etat du parc. Les labels, indices SST, hostgroups, VIP et groupes
+MaxScale montrent une intention metier forte: aider l’operateur a
+comprendre les dependances en un coup d’oeil.</p>
+<h3 id="les-entites-inconnues-doivent-rester-visibles">Les entites
+inconnues doivent rester visibles</h3>
+<p>Le code cree ou signale des noeuds ProxySQL inconnus. Cela traduit
+une regle importante: l’incoherence de topologie doit etre visualisee,
+pas masquee.</p>
+<h3 id="le-rendu-doit-fusionner-plusieurs-sources">Le rendu doit
+fusionner plusieurs sources</h3>
+<p><code>Dot3</code> consomme alias, metrics, wsrep, VIP, couleurs,
+legendes et informations de cluster. La topologie est donc une
+projection composee, pas une simple lecture d’une table.</p>
+<h2 id="valeur-pour-lexploitation">Valeur pour l’exploitation</h2>
+<p>Sans ce domaine, PmaControl perdrait une grande part de sa valeur
+differenciante: la comprehension topologique des environnements
+complexes. C’est un domaine de restitution tres riche, au croisement du
+monitoring, du referentiel et des proxys.</p>
+<h2 id="chantiers-recommandes-1">Chantiers recommandes</h2>
+<ul>
+<li>formaliser un modele de graphe interne independant de l’UI</li>
+<li>tester les resolvers de liens et de destinations</li>
+<li>sortir le rendu Graphviz et la persistance en services
+distincts</li>
+<li>standardiser les couleurs, legendes et conventions de nommage</li>
+</ul>
+</body>
+</html>
