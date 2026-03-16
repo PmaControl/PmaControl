@@ -393,6 +393,11 @@ class Common extends Controller
             $options = (array) $param[2];
         }
 
+        $data['selected'] = '';
+        if (isset($param[3])) {
+            $data['selected'] = $param[3];
+        }
+
         $data['list_server'] = array();
 
         $data['options'] = $options;

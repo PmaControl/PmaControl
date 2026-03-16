@@ -1,7 +1,8 @@
 <?php
 
 use \Glial\Synapse\FactoryController;
-FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-style" => "btn-primary", "data-width" => "auto","all_selectable"=> "true")));
+$serverId = (int) ($param[0] ?? 0);
+FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-style" => "btn-primary", "data-width" => "auto","all_selectable"=> "true"), $serverId));
 ?>
 
 <div class="btn-group">
@@ -14,7 +15,6 @@ FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_se
   <?php
 
 $node = FactoryController::getRootNode();
-$serverId = (int) ($param[0] ?? 0);
 $routeExtra = isset($param[1]) && $param[1] !== '' ? '/'.$param[1] : '';
 $runDateLabel = (string) ($param[2] ?? '');
 
