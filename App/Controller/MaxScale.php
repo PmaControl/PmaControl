@@ -135,6 +135,105 @@ class MaxScale extends Controller {
         return $matches;
     }
 
+    public static function isWildcardListenerHost(string $host): bool
+    {
+        $normalized = self::normalizeEndpointHost($host);
+
+        return in_array($normalized, ['', '0.0.0.0', '::', '*'], true);
+    }
+
+    public static function matchMysqlServerIdsForPortWithinScope(int $port, array $inventory, array $scopedMysqlServerIds): array
+    {
+        $scopedMysqlServerIds = array_values(array_unique(array_map('intval', $scopedMysqlServerIds)));
+
+        if ($port <= 0 || empty($scopedMysqlServerIds)) {
+            return [];
+        }
+
+        $matches = [];
+        foreach ($inventory as $endpoint => $inventoryMatches) {
+            $endpointParts = explode(':', (string) $endpoint);
+            $endpointPort = (int) array_pop($endpointParts);
+
+            if ($endpointPort !== $port) {
+                continue;
+            }
+
+            foreach ($inventoryMatches as $id_mysql_server => $sources) {
+                $id_mysql_server = (int) $id_mysql_server;
+
+                if (!in_array($id_mysql_server, $scopedMysqlServerIds, true)) {
+                    continue;
+                }
+
+                $matches[$id_mysql_server] = [
+                    'id_mysql_server' => $id_mysql_server,
+                    'endpoint' => $endpoint,
+                    'sources' => array_values(array_unique(array_merge(
+                        $matches[$id_mysql_server]['sources'] ?? [],
+                        $sources,
+                        ['maxscale_server__mysql_server.scope']
+                    ))),
+                ];
+            }
+        }
+
+        usort($matches, static function (array $left, array $right): int {
+            return $left['id_mysql_server'] <=> $right['id_mysql_server'];
+        });
+
+        return array_values($matches);
+    }
+
+    public static function resolveMysqlServerMatchesForListener(
+        string $listenerHost,
+        int $listenerPort,
+        array $inventory,
+        array $scopedMysqlServerIds = []
+    ): array {
+        if ($listenerPort <= 0) {
+            return [
+                'matches' => [],
+                'reason' => 'listener endpoint is incomplete',
+            ];
+        }
+
+        $matches = self::matchMysqlServerIdsForEndpoint($listenerHost, $listenerPort, $inventory);
+        if (!empty($matches)) {
+            return [
+                'matches' => $matches,
+                'reason' => 'matched via exact endpoint',
+            ];
+        }
+
+        if (!self::isWildcardListenerHost($listenerHost)) {
+            return [
+                'matches' => [],
+                'reason' => 'no mysql_server / alias_dns / ssh_tunnel.remote candidate matched',
+            ];
+        }
+
+        $scopedMatches = self::matchMysqlServerIdsForPortWithinScope($listenerPort, $inventory, $scopedMysqlServerIds);
+        if (!empty($scopedMatches)) {
+            return [
+                'matches' => $scopedMatches,
+                'reason' => 'listener endpoint is wildcard; matched scoped candidates on port '.$listenerPort,
+            ];
+        }
+
+        if (empty($scopedMysqlServerIds)) {
+            return [
+                'matches' => [],
+                'reason' => 'listener endpoint is wildcard and no maxscale_server__mysql_server scope exists for port '.$listenerPort,
+            ];
+        }
+
+        return [
+            'matches' => [],
+            'reason' => 'listener endpoint is wildcard and scoped candidates do not expose port '.$listenerPort,
+        ];
+    }
+
     public static function getMysqlServerMatches($param): array
     {
         Debug::parseDebug($param);
@@ -183,6 +282,14 @@ class MaxScale extends Controller {
         }
 
         $inventory = self::buildMysqlServerEndpointInventory($mysqlServers, $aliases, $tunnels);
+        $scopedMysqlServerIds = [];
+        $resScope = $db->sql_query(
+            "SELECT id_mysql_server FROM maxscale_server__mysql_server WHERE id_maxscale_server = ".$id_maxscale_server
+        );
+        while ($row = $db->sql_fetch_array($resScope, MYSQLI_ASSOC)) {
+            $scopedMysqlServerIds[] = (int) $row['id_mysql_server'];
+        }
+
         $result = [
             'id_maxscale_server' => $id_maxscale_server,
             'matched_ids' => [],
@@ -207,7 +314,13 @@ class MaxScale extends Controller {
                     continue;
                 }
 
-                $matches = self::matchMysqlServerIdsForEndpoint($listenerHost, $listenerPort, $inventory);
+                $resolution = self::resolveMysqlServerMatchesForListener(
+                    $listenerHost,
+                    $listenerPort,
+                    $inventory,
+                    $scopedMysqlServerIds
+                );
+                $matches = $resolution['matches'];
                 $matchedIds = array_values(array_unique(array_map(static function (array $match): int {
                     return (int)$match['id_mysql_server'];
                 }, $matches)));
@@ -234,8 +347,8 @@ class MaxScale extends Controller {
                     'matched_ids' => $matchedIds,
                     'candidates' => $matches,
                     'reason' => empty($matchedIds)
-                        ? 'no mysql_server / alias_dns / ssh_tunnel.remote candidate matched'
-                        : 'matched via '.implode(', ', array_values(array_unique($sources))),
+                        ? $resolution['reason']
+                        : $resolution['reason'].' via '.implode(', ', array_values(array_unique($sources))),
                 ];
             }
         }
@@ -395,7 +508,7 @@ class MaxScale extends Controller {
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlErr  = curl_error($ch);
-            curl_close($ch);
+
 
             if ($response === false) {
                 throw new \Exception("[PMACONTROL-2002] cURL error when contacting MaxScale at {$url}: {$curlErr}");

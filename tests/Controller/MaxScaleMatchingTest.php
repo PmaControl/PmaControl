@@ -54,4 +54,45 @@ final class MaxScaleMatchingTest extends TestCase
         $this->assertSame('127.0.0.1', MaxScale::normalizeEndpointHost('127.0.0.1'));
         $this->assertSame('::1', MaxScale::normalizeEndpointHost('[::1]'));
     }
+
+    public function testResolveMysqlServerMatchesForWildcardListenerUsesScopedPortCandidates(): void
+    {
+        $inventory = MaxScale::buildMysqlServerEndpointInventory(
+            [
+                ['id' => 145, 'ip' => '10.100.31.59', 'port' => 4006],
+                ['id' => 177, 'ip' => '10.68.68.134', 'port' => 6447],
+                ['id' => 178, 'ip' => '10.68.68.135', 'port' => 6447],
+                ['id' => 179, 'ip' => '10.68.68.134', 'port' => 6450],
+            ],
+            [],
+            []
+        );
+
+        $resolution = MaxScale::resolveMysqlServerMatchesForListener('::', 6450, $inventory, [145, 177, 179]);
+
+        $this->assertSame('listener endpoint is wildcard; matched scoped candidates on port 6450', $resolution['reason']);
+        $this->assertCount(1, $resolution['matches']);
+        $this->assertSame(179, $resolution['matches'][0]['id_mysql_server']);
+        $this->assertContains('maxscale_server__mysql_server.scope', $resolution['matches'][0]['sources']);
+    }
+
+    public function testResolveMysqlServerMatchesForWildcardListenerDoesNotGuessWithoutScope(): void
+    {
+        $inventory = MaxScale::buildMysqlServerEndpointInventory(
+            [
+                ['id' => 177, 'ip' => '10.68.68.134', 'port' => 6447],
+                ['id' => 178, 'ip' => '10.68.68.135', 'port' => 6447],
+            ],
+            [],
+            []
+        );
+
+        $resolution = MaxScale::resolveMysqlServerMatchesForListener('0.0.0.0', 6447, $inventory, []);
+
+        $this->assertSame([], $resolution['matches']);
+        $this->assertSame(
+            'listener endpoint is wildcard and no maxscale_server__mysql_server scope exists for port 6447',
+            $resolution['reason']
+        );
+    }
 }
