@@ -10,6 +10,7 @@ use Glial\Synapse\Controller;
 class MysqlRouter extends Controller
 {
     public static string $version_api = 'api/20190715';
+    public static array $mysqlrouter_mysql_server_links_cache = [];
 
     public function index()
     {
@@ -381,13 +382,19 @@ class MysqlRouter extends Controller
         }
 
         $inventory = MaxScale::buildMysqlServerEndpointInventory($mysqlServers, $aliases, $tunnels);
-        $scopedMysqlServerIds = [];
-        $resScope = $db->sql_query(
-            "SELECT id_mysql_server FROM mysqlrouter_server__mysql_server WHERE id_mysqlrouter_server = " . $id_mysqlrouter_server
-        );
-        while ($row = $db->sql_fetch_array($resScope, MYSQLI_ASSOC)) {
-            $scopedMysqlServerIds[] = (int) $row['id_mysql_server'];
+        if (!isset(self::$mysqlrouter_mysql_server_links_cache[$id_mysqlrouter_server])) {
+            self::$mysqlrouter_mysql_server_links_cache[$id_mysqlrouter_server] = [];
+
+            $resScope = $db->sql_query(
+                "SELECT id_mysql_server FROM mysqlrouter_server__mysql_server WHERE id_mysqlrouter_server = " . $id_mysqlrouter_server
+            );
+            while ($row = $db->sql_fetch_array($resScope, MYSQLI_ASSOC)) {
+                self::$mysqlrouter_mysql_server_links_cache[$id_mysqlrouter_server][(int) $row['id_mysql_server']] = true;
+            }
         }
+
+        $existingLinks = &self::$mysqlrouter_mysql_server_links_cache[$id_mysqlrouter_server];
+        $scopedMysqlServerIds = array_keys($existingLinks);
 
         $result = [
             'id_mysqlrouter_server' => $id_mysqlrouter_server,
@@ -415,11 +422,17 @@ class MysqlRouter extends Controller
             }
 
             foreach ($matchedIds as $id_mysql_server) {
+                $id_mysql_server = (int) $id_mysql_server;
                 $result['matched_ids'][] = $id_mysql_server;
-                $db->sql_query(
-                    "INSERT IGNORE INTO mysqlrouter_server__mysql_server (id_mysqlrouter_server, id_mysql_server) VALUES ("
-                    . $id_mysqlrouter_server . ", " . $id_mysql_server . ")"
-                );
+
+                if (!isset($existingLinks[$id_mysql_server])) {
+                    $db->sql_query(
+                        "INSERT INTO mysqlrouter_server__mysql_server (id_mysqlrouter_server, id_mysql_server) VALUES ("
+                        . $id_mysqlrouter_server . ", " . $id_mysql_server . ")"
+                    );
+                    $existingLinks[$id_mysql_server] = true;
+                }
+
                 $db->sql_query(
                     "UPDATE mysql_server SET is_proxy = 1 WHERE id = " . $id_mysql_server . " AND is_proxy != 1"
                 );

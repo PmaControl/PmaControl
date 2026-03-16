@@ -51,6 +51,7 @@ class MaxScale extends Controller {
  * @psalm-var array<int|string,mixed>
  */
     static $maxscale_cache = array();
+    static $maxscale_mysql_server_links_cache = array();
 
     public static function normalizeEndpointHost(string $host): string
     {
@@ -282,13 +283,20 @@ class MaxScale extends Controller {
         }
 
         $inventory = self::buildMysqlServerEndpointInventory($mysqlServers, $aliases, $tunnels);
-        $scopedMysqlServerIds = [];
-        $resScope = $db->sql_query(
-            "SELECT id_mysql_server FROM maxscale_server__mysql_server WHERE id_maxscale_server = ".$id_maxscale_server
-        );
-        while ($row = $db->sql_fetch_array($resScope, MYSQLI_ASSOC)) {
-            $scopedMysqlServerIds[] = (int) $row['id_mysql_server'];
+
+        if (!isset(self::$maxscale_mysql_server_links_cache[$id_maxscale_server])) {
+            self::$maxscale_mysql_server_links_cache[$id_maxscale_server] = [];
+
+            $resScope = $db->sql_query(
+                "SELECT id_mysql_server FROM maxscale_server__mysql_server WHERE id_maxscale_server = ".$id_maxscale_server
+            );
+            while ($row = $db->sql_fetch_array($resScope, MYSQLI_ASSOC)) {
+                self::$maxscale_mysql_server_links_cache[$id_maxscale_server][(int) $row['id_mysql_server']] = true;
+            }
         }
+
+        $existingLinks = &self::$maxscale_mysql_server_links_cache[$id_maxscale_server];
+        $scopedMysqlServerIds = array_keys($existingLinks);
 
         $result = [
             'id_maxscale_server' => $id_maxscale_server,
@@ -331,11 +339,17 @@ class MaxScale extends Controller {
                 }
 
                 foreach ($matchedIds as $id_mysql_server) {
+                    $id_mysql_server = (int) $id_mysql_server;
                     $result['matched_ids'][] = $id_mysql_server;
-                    $db->sql_query(
-                        "INSERT IGNORE INTO maxscale_server__mysql_server (id_maxscale_server, id_mysql_server) VALUES ("
-                        .$id_maxscale_server.", ".$id_mysql_server.")"
-                    );
+
+                    if (!isset($existingLinks[$id_mysql_server])) {
+                        $db->sql_query(
+                            "INSERT INTO maxscale_server__mysql_server (id_maxscale_server, id_mysql_server) VALUES ("
+                            .$id_maxscale_server.", ".$id_mysql_server.")"
+                        );
+                        $existingLinks[$id_mysql_server] = true;
+                    }
+
                     $db->sql_query(
                         "UPDATE mysql_server SET is_proxy = 1 WHERE id = ".$id_mysql_server." AND is_proxy != 1"
                     );

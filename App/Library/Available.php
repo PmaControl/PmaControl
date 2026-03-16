@@ -52,7 +52,7 @@ class Available
  * @since 5.0
  * @version 1.0
  */
-    public static function getMySQL($id_mysql_server = 0)
+    public static function getMySQL($id_mysql_server = 0, $is_vip=null,  $is_proxy=null)
     {
         if (empty(self::$mysql_available))
         {
