@@ -362,14 +362,31 @@ class Alias extends Controller
         Debug::debug($param);
         
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "INSERT IGNORE INTO alias_dns (id_mysql_server, dns, port)
-        SELECT ms.id, ms.hostname, ms.port
-        FROM mysql_server ms
-        LEFT JOIN alias_dns ad 
-            ON ms.hostname = ad.dns AND ms.port = ad.port
-        WHERE ad.dns IS NULL;";
+        $existingAlias = [];
+        $res = $db->sql_query("SELECT dns, port FROM alias_dns");
 
-        $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $existingAlias[$row['dns'].':'.$row['port']] = true;
+        }
+
+        $toInsert = [];
+        $res = $db->sql_query("SELECT id, hostname, port FROM mysql_server WHERE hostname IS NOT NULL AND hostname != ''");
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $key = $row['hostname'].':'.$row['port'];
+
+            if (!empty($existingAlias[$key])) {
+                continue;
+            }
+
+            $toInsert[] = '('.(int) $row['id'].', "'.$db->sql_real_escape_string($row['hostname']).'", '.(int) $row['port'].')';
+            $existingAlias[$key] = true;
+        }
+
+        if (!empty($toInsert)) {
+            $sql = "INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES ".implode(',', $toInsert).";";
+            $db->sql_query($sql);
+        }
 
     }
 
@@ -468,7 +485,8 @@ class Alias extends Controller
 
         // éviter les doublons avec INSERT ... ON DUPLICATE KEY UPDATE (assurant que dns et port sont uniques)
         $sqlUpsert = sprintf(
-            "INSERT INTO alias_dns (dns, port, id_mysql_server, is_from_ssh) VALUES ('%s', %d, %d, %d) ON DUPLICATE KEY UPDATE id_mysql_server = VALUES(id_mysql_server), is_from_ssh = VALUES(is_from_ssh)",
+            "INSERT INTO alias_dns (dns, port, id_mysql_server, is_from_ssh) VALUES ('%s', %d, %d, %d) 
+            ON DUPLICATE KEY UPDATE id_mysql_server = VALUES(id_mysql_server), is_from_ssh = VALUES(is_from_ssh)",
             $db->sql_real_escape_string($dns),
             $port,
             $id_mysql_server,
