@@ -874,7 +874,7 @@ class Aspirateur extends Controller
             $db->sql_query("START TRANSACTION;");
 
             $sql = "SELECT id, id_mysql_server__actual
-            FROM vip_server
+            FROM vip_server PARTITION (pn)
             WHERE id_mysql_server = ".(int)$id_mysql_server."
             FOR UPDATE;";
 
@@ -1243,10 +1243,10 @@ class Aspirateur extends Controller
         }
 
         $sql = "SELECT a.id_mysql_server
-        FROM alias_dns a
+        FROM alias_dns PARTITION (pn) a
         WHERE a.port = ".(int)$port."
         AND a.id_mysql_server != ".(int)$id_mysql_server."
-        AND LOWER(a.dns) IN (".implode(',', $in).")
+        AND a.dns IN (".implode(',', $in).")
         ORDER BY a.id_mysql_server ASC
         LIMIT 1;";
 

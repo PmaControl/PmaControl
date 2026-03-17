@@ -307,12 +307,11 @@ class Dot3 extends Controller
                 "mysqlrouter::mysqlrouter_routes", "mysqlrouter::mysqlrouter_metadata_config", "mysqlrouter::mysqlrouter_metadata_status",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
                 "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
-                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress", 
-                "vip::destination_id", "vip::destination_date","vip::destination_previous_id", "vip::destination_previous_date",
+                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress",
             ),$id_mysql_servers , $date_request);
 /***/
 
-        $this->mergeVipDnsDataInInformation($all, $id_mysql_servers__vip, $date_request);
+        $this->mergeVipServerDataInInformation($all, $id_mysql_servers__vip);
 
 
 
@@ -2352,7 +2351,7 @@ class Dot3 extends Controller
     }
 
 /**
- * Handle dot3 state through `mergeVipDnsDataInInformation`.
+ * Handle dot3 state through `mergeVipServerDataInInformation`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
  *
@@ -2365,11 +2364,11 @@ class Dot3 extends Controller
  * @param mixed $date_request Input value for `date_request`.
  * @phpstan-param mixed $date_request
  * @psalm-param mixed $date_request
- * @return void Returned value for mergeVipDnsDataInInformation.
+ * @return void Returned value for mergeVipServerDataInInformation.
  * @phpstan-return void
  * @psalm-return void
- * @see self::mergeVipDnsDataInInformation()
- * @example /fr/dot3/mergeVipDnsDataInInformation
+ * @see self::mergeVipServerDataInInformation()
+ * @example /fr/dot3/mergeVipServerDataInInformation
  * @category PmaControl
  * @package App
  * @subpackage Controller
@@ -2378,20 +2377,26 @@ class Dot3 extends Controller
  * @since 5.0
  * @version 1.0
  */
-    private function mergeVipDnsDataInInformation(array &$all, array $vipServerIds, $date_request): void
+    private function mergeVipServerDataInInformation(array &$all, array $vipServerIds): void
     {
         if (empty($vipServerIds)) {
             return;
         }
 
-        $vip_data = Extraction2::display(array('vip::ip', 'vip::port'), $vipServerIds, $date_request);
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id_mysql_server, dns, ip, id_mysql_server__actual, id_mysql_server__previous, date__actual, date__previous
+                FROM vip_server PARTITION (pn)
+                WHERE id_mysql_server IN (".implode(',', array_map('intval', $vipServerIds)).")";
 
-        if (empty($vip_data) || !is_array($vip_data)) {
-            return;
+        $res = $db->sql_query($sql);
+        $vipData = array();
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $vipData[(int) $row['id_mysql_server']] = $row;
         }
 
         foreach ($vipServerIds as $id_mysql_server) {
-            if (empty($vip_data[$id_mysql_server]) || !is_array($vip_data[$id_mysql_server])) {
+            if (empty($vipData[$id_mysql_server]) || !is_array($vipData[$id_mysql_server])) {
                 continue;
             }
 
@@ -2399,15 +2404,23 @@ class Dot3 extends Controller
                 $all[$id_mysql_server] = array();
             }
 
-            $vip_ip = trim((string)($vip_data[$id_mysql_server]['ip'] ?? ''));
+            $vipRow = $vipData[$id_mysql_server];
+            $all[$id_mysql_server]['vip_server'] = $vipRow;
+
+            $vip_ip = trim((string)($vipRow['ip'] ?? ''));
             if ($vip_ip !== '') {
                 $all[$id_mysql_server]['vip_dns_ip'] = $vip_ip;
             }
 
-            $vip_port = trim((string)($vip_data[$id_mysql_server]['port'] ?? ''));
-            if ($vip_port !== '') {
-                $all[$id_mysql_server]['vip_dns_port'] = $vip_port;
+            $vip_dns = trim((string)($vipRow['dns'] ?? ''));
+            if ($vip_dns !== '') {
+                $all[$id_mysql_server]['vip_dns'] = $vip_dns;
             }
+
+            $all[$id_mysql_server]['destination_id'] = (int)($vipRow['id_mysql_server__actual'] ?? 0);
+            $all[$id_mysql_server]['destination_previous_id'] = (int)($vipRow['id_mysql_server__previous'] ?? 0);
+            $all[$id_mysql_server]['destination_date'] = $vipRow['date__actual'] ?? '';
+            $all[$id_mysql_server]['destination_previous_date'] = $vipRow['date__previous'] ?? '';
         }
     }
 

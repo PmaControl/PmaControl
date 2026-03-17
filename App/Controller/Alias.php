@@ -363,23 +363,24 @@ class Alias extends Controller
         
         $db = Sgbd::sql(DB_DEFAULT);
         $existingAlias = [];
-        $res = $db->sql_query("SELECT dns, port FROM alias_dns");
+        $res = $db->sql_query("SELECT dns, port FROM alias_dns PARTITION (pn)");
 
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $existingAlias[$row['dns'].':'.$row['port']] = true;
+            $existingAlias[strtolower((string) $row['dns']).':'.$row['port']] = true;
         }
 
         $toInsert = [];
         $res = $db->sql_query("SELECT id, hostname, port FROM mysql_server WHERE hostname IS NOT NULL AND hostname != ''");
 
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $key = $row['hostname'].':'.$row['port'];
+            $hostname = strtolower((string) $row['hostname']);
+            $key = $hostname.':'.$row['port'];
 
             if (!empty($existingAlias[$key])) {
                 continue;
             }
 
-            $toInsert[] = '('.(int) $row['id'].', "'.$db->sql_real_escape_string($row['hostname']).'", '.(int) $row['port'].')';
+            $toInsert[] = '('.(int) $row['id'].', "'.$db->sql_real_escape_string($hostname).'", '.(int) $row['port'].')';
             $existingAlias[$key] = true;
         }
 
@@ -571,7 +572,7 @@ class Alias extends Controller
         }
 
         // purge les entrées ssh obsolètes (plus présentes dans ssh_hardware::ips)
-        $sql = "SELECT id, dns, port FROM alias_dns WHERE is_from_ssh = 1";
+        $sql = "SELECT id, dns, port FROM alias_dns PARTITION (pn) WHERE is_from_ssh = 1";
         $res = $db->sql_query($sql);
 
         $to_delete = [];

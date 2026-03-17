@@ -877,7 +877,7 @@ class Graphviz
             $image_logo = 'maxscale.png';            
         }
 
-        if (Dot3::isMysqlRouterNode($server)) {
+        if (!$isVipServer && Dot3::isMysqlRouterNode($server)) {
             $image_logo = 'router.svg';
             $version_label = 'MySQL Router';
         }

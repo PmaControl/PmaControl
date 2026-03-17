@@ -388,7 +388,7 @@ trait Galera {
         }
 
         // Aliases from alias_dns table
-        $sql_alias = "SELECT a.id_mysql_server, a.dns, a.port FROM alias_dns a
+        $sql_alias = "SELECT a.id_mysql_server, a.dns, a.port FROM alias_dns PARTITION (pn) a
                       INNER JOIN mysql_server s ON a.id_mysql_server = s.id
                       WHERE s.is_deleted=0 AND s.is_proxy=0 AND s.is_vip=0";
         $res_alias = $db->sql_query($sql_alias);
@@ -468,4 +468,3 @@ trait Galera {
     }
 
 }
-

@@ -370,7 +370,7 @@ class MysqlRouter extends Controller
         }
 
         $aliases = [];
-        $resAlias = $db->sql_query("SELECT id_mysql_server, dns, port FROM alias_dns");
+        $resAlias = $db->sql_query("SELECT id_mysql_server, dns, port FROM alias_dns PARTITION (pn)");
         while ($row = $db->sql_fetch_array($resAlias, MYSQLI_ASSOC)) {
             $aliases[] = $row;
         }

@@ -1079,7 +1079,7 @@ END IF;";
             $db = Sgbd::sql(DB_DEFAULT);
 
             $sql = "SELECT ip, port, id as id_mysql_server FROM mysql_server a
-                 UNION select dns as ip, port, id_mysql_server from alias_dns b;";
+                 UNION select dns as ip, port, id_mysql_server from alias_dns PARTITION (pn) b;";
 
             $res = $db->sql_query($sql);
 
@@ -1777,7 +1777,7 @@ END IF;";
         FROM mysql_server a 
         WHERE ip = '".$ip."' AND port='".$port."'
         UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
-        from alias_dns b 
+        from alias_dns PARTITION (pn) b 
         INNER JOIN mysql_server c ON b.id_mysql_server =c.id
         WHERE b.dns = '".$ip."' AND b.port='".$port."'";
 
@@ -1827,7 +1827,7 @@ END IF;";
         FROM mysql_server a 
         WHERE ip = '".$ip."' AND port='".$port."'
         UNION select c.name, b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
-        from alias_dns b 
+        from alias_dns PARTITION (pn) b 
         INNER JOIN mysql_server c ON b.id_mysql_server =c.id
         WHERE b.dns = '".$ip."' AND b.port='".$port."';";
 
