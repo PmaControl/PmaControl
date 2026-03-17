@@ -30,7 +30,12 @@ foreach($menu as $controller => $views)
 {
   foreach($views as $view => $title)
   {
-    if (($node[0] === "$controller" && $node[1] === "$view") || strtolower($node[0]) == strtolower($view) || ($node[0] === 'MysqlServer' && $node[1] === 'runDetail' && $controller === 'MysqlServer' && $view === 'main')){
+    if (
+      ($node[0] === "$controller" && $node[1] === "$view")
+      || strtolower($node[0]) == strtolower($view)
+      || ($node[0] === 'MysqlServer' && $node[1] === 'runDetail' && $controller === 'MysqlServer' && $view === 'main')
+      || ($node[0] === 'Cluster' && $node[1] === 'viewDot' && $controller === 'Cluster' && $view === 'svg')
+    ){
       $active ='active';
     }
     else{

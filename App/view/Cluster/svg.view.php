@@ -12,8 +12,13 @@ if (empty($_GET['ajax'])){
         <div style="float: left;">
         <?= FactoryController::addNode("MysqlServer", "menu", $param); ?>
         </div>
-        <div style="float: right;">
+        <div style="float: right; display:inline-flex; align-items:center; gap:8px; white-space:nowrap;">
+        <span style="display:inline-block; vertical-align:middle;">
         <?= FactoryController::addNode("Cluster", "replay", $data['param']); ?>
+        </span>
+        <a style="display:inline-block; vertical-align:middle; margin-left:0;" href="<?= LINK ?>Cluster/viewDot/<?= (int) ($param[0] ?? 0) ?>/" class="btn btn-default" role="button">
+            View DOT
+        </a>
         </div>
         <!--enterprise -->
         </div>
@@ -29,9 +34,6 @@ if (empty($_GET['ajax'])){
                 <h3 class="panel-title">
 
                     <?= __("Cluster") ?>
-                    <a style="float:right; margin-left:8px;" href="<?= LINK ?>Cluster/viewDot/<?= (int) ($param[0] ?? 0) ?>/" class="btn btn-default btn-xs" role="button">
-                        View DOT
-                    </a>
                     </h3>
             </div>
             <div class="mpd">

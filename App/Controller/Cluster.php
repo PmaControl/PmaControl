@@ -34,14 +34,54 @@ class Cluster extends Controller
         $lines = preg_split('/\R/', $dot) ?: [];
         $formatted = [];
         $indentLevel = 0;
+        $inHtmlLabel = false;
+        $htmlIndentLevel = 0;
 
         foreach ($lines as $line) {
-            $trimmed = trim($line);
+            $rawLine = rtrim($line, "\r");
+            $trimmed = trim($rawLine);
 
             if ($trimmed === '') {
                 if (!empty($formatted) && end($formatted) !== '') {
                     $formatted[] = '';
                 }
+                continue;
+            }
+
+            if (strpos($trimmed, '<<') !== false) {
+                $formatted[] = str_repeat('  ', $indentLevel) . $trimmed;
+                $inHtmlLabel = true;
+                $htmlIndentLevel = 0;
+                continue;
+            }
+
+            if ($inHtmlLabel) {
+                if ($trimmed === '>>' || str_starts_with($trimmed, '>>')) {
+                    $formatted[] = str_repeat('  ', $indentLevel) . $trimmed;
+                    $inHtmlLabel = false;
+                    $htmlIndentLevel = 0;
+                    continue;
+                }
+
+                if (preg_match('/^\s*</', $rawLine) === 1) {
+                    $htmlLine = $trimmed;
+
+                    if (preg_match('/^<\/(table|tr|td)\b/i', $htmlLine) === 1) {
+                        $htmlIndentLevel = max(0, $htmlIndentLevel - 1);
+                    }
+
+                    $formatted[] = str_repeat('  ', $indentLevel + $htmlIndentLevel + 1) . $htmlLine;
+
+                    if (preg_match('/^<(table|tr|td)\b/i', $htmlLine) === 1
+                        && preg_match('/\/>$/', $htmlLine) !== 1
+                        && preg_match('/^<[^>]+>.*<\/[^>]+>$/', $htmlLine) !== 1) {
+                        $htmlIndentLevel++;
+                    }
+
+                    continue;
+                }
+
+                $formatted[] = str_repeat('  ', $indentLevel + $htmlIndentLevel + 1) . $trimmed;
                 continue;
             }
 
@@ -54,7 +94,7 @@ class Cluster extends Controller
                 $indentLevel = max(0, $indentLevel - $prefixClosers);
             }
 
-            $formatted[] = str_repeat('    ', $indentLevel) . $trimmed;
+            $formatted[] = str_repeat('  ', $indentLevel) . $trimmed;
 
             $opens = substr_count($trimmed, '{');
             $closes = substr_count($trimmed, '}');
@@ -201,6 +241,8 @@ class Cluster extends Controller
     public function viewDot($param)
     {
         $id_mysql_server = (int) ($param[0] ?? 0);
+        $isAjaxPreview = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         if ($id_mysql_server <= 0) {
             header("location: " . LINK . "Cluster/svg/1/");
@@ -228,18 +270,43 @@ class Cluster extends Controller
         $sourceDot = (string) ($row['dot'] ?? '');
         $previewSvg = (string) ($row['svg'] ?? '');
         $renderError = '';
+        $ajaxPreviewSvg = $previewSvg;
+        $ajaxDownloadSvgHref = Graphviz::buildSvgDownloadDataUri($previewSvg);
+        $previewKey = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dot_preview']['preview_key'])) {
+            $previewKey = preg_replace('/[^a-f0-9]/', '', (string) $_POST['dot_preview']['preview_key']) ?? '';
+        }
+
+        if ($previewKey === '') {
+            $previewKey = bin2hex(random_bytes(16));
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dot_preview']['dot'])) {
             $sourceDot = (string) $_POST['dot_preview']['dot'];
-            $reference = 'view-dot-' . md5($sourceDot);
+            $reference = self::getPreviewReference($id_mysql_server, $previewKey, bin2hex(random_bytes(8)));
             $generatedFile = Graphviz::generateDot($reference, $sourceDot);
-            $renderedSvg = @file_get_contents($generatedFile);
+            $renderedSvg = false;
+            $graphvizError = trim(Graphviz::getLastGenerateDotError());
 
-            if ($renderedSvg === false || stripos(ltrim((string) $renderedSvg), '<svg') !== 0) {
-                $renderError = __('Unable to render DOT as SVG.');
+            if (is_string($generatedFile) && $generatedFile !== '' && file_exists($generatedFile)) {
+                $renderedSvg = @file_get_contents($generatedFile);
+            }
+
+            if ($graphvizError !== '' || !self::isSvgPreviewPayload($renderedSvg)) {
+                $renderError = $graphvizError;
+                if ($renderError === '') {
+                    $renderError = 'Unable to render DOT as SVG.';
+                }
+                $ajaxPreviewSvg = '';
+                $ajaxDownloadSvgHref = '';
             } else {
                 $previewSvg = $renderedSvg;
+                $ajaxPreviewSvg = $renderedSvg;
+                $ajaxDownloadSvgHref = Graphviz::buildSvgDownloadDataUri($renderedSvg);
             }
+
+            self::cleanupPreviewArtifacts($reference);
         }
 
         $data = [
@@ -252,10 +319,62 @@ class Cluster extends Controller
             'dot_length' => strlen($sourceDot),
             'svg' => $previewSvg,
             'render_error' => $renderError,
+            'preview_key' => $previewKey,
         ];
+
+        if ($isAjaxPreview) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'svg' => $ajaxPreviewSvg,
+                'download_svg_href' => $ajaxDownloadSvgHref,
+                'render_error' => self::safeJsonString($renderError),
+                'dot_length' => strlen($sourceDot),
+                'preview_key' => $previewKey,
+            ], JSON_INVALID_UTF8_SUBSTITUTE);
+            exit;
+        }
 
         $this->set('data', $data);
         $this->set('param', [$id_mysql_server]);
+    }
+
+    private static function isSvgPreviewPayload($payload)
+    {
+        if (!is_string($payload) || $payload === '') {
+            return false;
+        }
+
+        $trimmed = ltrim($payload);
+        $pngSignature = "\x89PNG\r\n\x1a\n";
+        if (strncmp($trimmed, $pngSignature, 8) === 0) {
+            return false;
+        }
+
+        return stripos($trimmed, '<svg') !== false;
+    }
+
+    private static function getPreviewReference(int $idMysqlServer, string $previewKey, string $requestNonce): string
+    {
+        return 'view-dot-preview-' . $idMysqlServer . '-' . $previewKey . '-' . $requestNonce;
+    }
+
+    private static function cleanupPreviewArtifacts(string $reference): void
+    {
+        foreach (['dot', 'svg', 'png'] as $extension) {
+            $file = TMP . 'dot/' . $reference . '.' . $extension;
+            if (file_exists($file)) {
+                @unlink($file);
+            }
+        }
+    }
+
+    private static function safeJsonString($value): string
+    {
+        if (!is_string($value)) {
+            $value = (string) $value;
+        }
+
+        return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
     }
 
     /*

@@ -32,6 +32,7 @@ use \Glial\Extract\Grabber;
  */
 class Graphviz
 {
+    private static string $lastGenerateDotError = '';
     // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
     const MAX_ROWS_TO_REQUEST = 10000;
 
@@ -119,7 +120,47 @@ class Graphviz
  * @phpstan-var array<int|string,mixed>
  * @psalm-var array<int|string,mixed>
  */
-        static $edge = array();
+    static $edge = array();
+
+    private static function openHtmlLikeLabel(string $targetPort, string $borderColor, string $innerBackground = '#eafafa'): string
+    {
+        return 'shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">' . PHP_EOL
+            . '    <tr>' . PHP_EOL
+            . '      <td port="' . $targetPort . '" bgcolor="' . $borderColor . '">' . PHP_EOL
+            . '        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">' . PHP_EOL
+            . '          <tr>' . PHP_EOL
+            . '            <td>' . PHP_EOL
+            . '              <table BGCOLOR="' . $innerBackground . '" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">' . PHP_EOL;
+    }
+
+    private static function closeHtmlLikeLabel(bool $withBracket = true): string
+    {
+        $suffix = '</table>>';
+        if ($withBracket) {
+            $suffix .= ' ];';
+        }
+
+        return '              </table>' . PHP_EOL
+            . '            </td>' . PHP_EOL
+            . '          </tr>' . PHP_EOL
+            . '        </table>' . PHP_EOL
+            . '      </td>' . PHP_EOL
+            . '    </tr>' . PHP_EOL
+            . '  ' . $suffix;
+    }
+
+    private static function htmlRow(array $cells, int $indentLevel = 7): string
+    {
+        $indent = str_repeat('  ', $indentLevel);
+        $cellIndent = str_repeat('  ', $indentLevel + 1);
+        $row = $indent . '<tr>' . PHP_EOL;
+        foreach ($cells as $cell) {
+            $row .= $cellIndent . $cell . PHP_EOL;
+        }
+        $row .= $indent . '</tr>' . PHP_EOL;
+
+        return $row;
+    }
 
 /**
  * Handle graphviz state through `generateTable`.
@@ -467,6 +508,7 @@ class Graphviz
 
     static public function generateDot($reference, $graph)
     {
+        self::$lastGenerateDotError = '';
         $type = "svg";
         $type2 = "png";
 
@@ -485,6 +527,7 @@ class Graphviz
         $output_svg = array();
         $result_svg = 0;
         exec($dot, $output_svg, $result_svg);
+        $svgErrorOutput = trim(implode("\n", $output_svg));
 
         if ($result_svg !== 0) {
             $fallbacks = array('svg', 'svg:svg', 'svg:cairo');
@@ -501,7 +544,13 @@ class Graphviz
                 exec($dot_try, $output_try, $result_try);
                 if ($result_try === 0) {
                     $type = $fallback;
+                    $svgErrorOutput = '';
                     break;
+                }
+
+                $tryOutput = trim(implode("\n", $output_try));
+                if ($tryOutput !== '') {
+                    $svgErrorOutput = $tryOutput;
                 }
             }
         }
@@ -533,6 +582,7 @@ class Graphviz
         if (file_exists($file_name) && substr($file_name, -4) === '.svg') {
             $firstBytes = file_get_contents($file_name, false, null, 0, 8);
             if ($firstBytes !== false && strncmp($firstBytes, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                self::$lastGenerateDotError = 'Graphviz fallback produced PNG instead of SVG.';
                 return $file_name;
             }
 
@@ -540,7 +590,16 @@ class Graphviz
             self::replaceLinkImg($file_name);
         }
 
+        if ($result_svg !== 0 && $svgErrorOutput !== '') {
+            self::$lastGenerateDotError = $svgErrorOutput;
+        }
+
         return $file_name;
+    }
+
+    public static function getLastGenerateDotError(): string
+    {
+        return self::$lastGenerateDotError;
     }
 
 /**
@@ -703,58 +762,76 @@ class Graphviz
             return;
         }
 
+        $svg = self::postProcessSvgMarkup($svg);
+        file_put_contents($file_name, $svg);
+    }
+
+    public static function postProcessSvgMarkup($svg)
+    {
+        if (!is_string($svg) || $svg === '') {
+            return $svg;
+        }
+
         $image_server  = ROOT."/App/Webroot/image/dot/";
         $image_url = WWW_ROOT."image/icon/";
-
-        $embeddedSvgFiles = array(
-            'gr.svg' => 'pmac-icon-gr',
-            'mysql.svg' => 'pmac-icon-mysql',
-        );
-
         $symbols = array();
-        $iconSources = array();
+        $symbolMap = array();
 
-        foreach ($embeddedSvgFiles as $embeddedFile => $symbolId) {
-            $diskPath = $image_server.$embeddedFile;
-            if (!file_exists($diskPath)) {
+        if (!preg_match_all('/<image\b([^>]*?)\s(?:xlink:href|href)="([^"]+)"([^>]*?)\/>/i', $svg, $matches, PREG_SET_ORDER)) {
+            return str_replace($image_server, $image_url, $svg);
+        }
+
+        foreach ($matches as $match) {
+            $href = $match[2];
+            $diskPath = self::resolveGraphvizImagePath($href);
+
+            if ($diskPath === null || !file_exists($diskPath)) {
                 continue;
             }
 
-            $iconSvg = file_get_contents($diskPath);
-            if ($iconSvg === false || $iconSvg === '') {
+            $extension = strtolower((string) pathinfo($diskPath, PATHINFO_EXTENSION));
+            if ($extension === 'svg') {
+                if (empty($symbolMap[$diskPath])) {
+                    $iconSvg = file_get_contents($diskPath);
+                    if ($iconSvg === false || $iconSvg === '') {
+                        continue;
+                    }
+
+                    $symbolId = 'pmac-icon-'.md5($diskPath);
+                    $symbol = self::buildSvgSymbol($iconSvg, $symbolId);
+                    if ($symbol === '') {
+                        continue;
+                    }
+
+                    $symbols[] = $symbol;
+                    $symbolMap[$diskPath] = $symbolId;
+                }
                 continue;
             }
 
-            $symbol = self::buildSvgSymbol($iconSvg, $symbolId);
-            if ($symbol === '') {
+            $dataUri = self::buildImageDataUri($diskPath);
+            if ($dataUri === '') {
                 continue;
             }
 
-            $symbols[] = $symbol;
-            $iconSources[$symbolId] = array(
-                $diskPath,
-                $image_url.$embeddedFile,
-                'data:image/svg+xml;base64,'.base64_encode($iconSvg),
+            $quotedHref = preg_quote($href, '/');
+            $svg = preg_replace(
+                '/(<image\b[^>]*?\s(?:xlink:href|href)=")'.$quotedHref.'(")/i',
+                '$1'.$dataUri.'$2',
+                $svg
             );
         }
 
-        if (!empty($symbols)) {
+        if (!empty($symbolMap)) {
+            $symbols = array_values(array_unique($symbols));
             $svg = self::injectSvgSymbols($svg, implode('', $symbols));
 
             $svg = preg_replace_callback(
                 '/<image\b([^>]*?)\s(?:xlink:href|href)="([^"]+)"([^>]*?)\/>/i',
-                function ($matches) use ($iconSources) {
+                function ($matches) use ($symbolMap) {
                     $href = $matches[2];
-                    $symbolId = null;
-
-                    foreach ($iconSources as $candidateId => $sources) {
-                        if (in_array($href, $sources, true)) {
-                            $symbolId = $candidateId;
-                            break;
-                        }
-                    }
-
-                    if ($symbolId === null) {
+                    $diskPath = self::resolveGraphvizImagePath($href);
+                    if ($diskPath === null || empty($symbolMap[$diskPath])) {
                         return $matches[0];
                     }
 
@@ -766,14 +843,24 @@ class Graphviz
                         $attributes = ' '.$attributes;
                     }
 
-                    return '<use xlink:href="#'.$symbolId.'"'.$attributes.'/>';
+                    return '<use xlink:href="#'.$symbolMap[$diskPath].'"'.$attributes.'/>';
                 },
                 $svg
             );
         }
 
         $svg = str_replace($image_server, $image_url, $svg);
-        file_put_contents($file_name, $svg);
+        return $svg;
+    }
+
+    public static function buildSvgDownloadDataUri($svg)
+    {
+        $svg = self::postProcessSvgMarkup($svg);
+        if (!is_string($svg) || $svg === '') {
+            return '';
+        }
+
+        return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode($svg);
     }
 
     private static function buildSvgSymbol($iconSvg, $symbolId)
@@ -796,6 +883,69 @@ class Graphviz
         $viewBoxAttribute = $viewBox !== '' ? ' viewBox="'.$viewBox.'"' : '';
 
         return '<symbol id="'.$symbolId.'"'.$viewBoxAttribute.'>'.$innerSvg.'</symbol>';
+    }
+
+    private static function resolveGraphvizImagePath($href)
+    {
+        if (!is_string($href) || $href === '') {
+            return null;
+        }
+
+        $candidates = array();
+        $basename = basename(parse_url($href, PHP_URL_PATH) ?: $href);
+
+        if ($href[0] === '/' && file_exists($href)) {
+            $candidates[] = $href;
+        }
+
+        if (str_starts_with($href, WWW_ROOT)) {
+            $relative = substr($href, strlen(WWW_ROOT));
+            $candidates[] = ROOT.'/App/Webroot/'.$relative;
+        }
+
+        if (str_starts_with($href, '/image/')) {
+            $candidates[] = ROOT.'/App/Webroot'.$href;
+        }
+
+        if ($basename !== '') {
+            $candidates[] = ROOT.'/App/Webroot/image/dot/'.$basename;
+            $candidates[] = ROOT.'/App/Webroot/image/icon/'.$basename;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static function buildImageDataUri($diskPath)
+    {
+        if (!is_string($diskPath) || $diskPath === '' || !file_exists($diskPath)) {
+            return '';
+        }
+
+        $content = file_get_contents($diskPath);
+        if ($content === false || $content === '') {
+            return '';
+        }
+
+        $extension = strtolower((string) pathinfo($diskPath, PATHINFO_EXTENSION));
+        $mime = match ($extension) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => '',
+        };
+
+        if ($mime === '') {
+            return '';
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode($content);
     }
 
     private static function injectSvgSymbols($svg, $symbolsMarkup)
@@ -1006,16 +1156,16 @@ class Graphviz
 
         //
         $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
-        $return .= 'tooltip="'.$server['display_name'].'"
-        shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-        <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$server['color'].'">
-        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
-        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
-        $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">'
-        .'<font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td></tr>';
+        $return .= 'tooltip="'.$server['display_name'].'"'.PHP_EOL;
+        $return .= self::openHtmlLikeLabel(Dot3::TARGET, $server['color']);
+        $return .= self::htmlRow([
+            '<td PORT="title" colspan="2" bgcolor="'.$server['color'].'"><font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td>',
+        ]);
 
-        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" width="100" align="left">'.$version_label.'</td></tr>';
+        $return .= self::htmlRow([
+            '<td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server.$image_logo.'" /></td>',
+            '<td bgcolor="lightgrey" width="100" align="left">'.$version_label.'</td>',
+        ]);
 
         $nat = '';
 
@@ -1056,7 +1206,9 @@ class Graphviz
         }
 
         //country there
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.$ip_display.':'.($server['port_real'] ?? '').$nat.'</td></tr>'.PHP_EOL;
+        $return .= self::htmlRow([
+            '<td bgcolor="lightgrey" width="100" align="left"> '.$ip_display.':'.($server['port_real'] ?? '').$nat.'</td>',
+        ]);
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
@@ -1093,16 +1245,24 @@ class Graphviz
                         $vipLastSwitch = 'N/A';
                     }
 
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_ACTIVE_PORT.'">IP active : '.$vipActive.'</td></tr>'.PHP_EOL;
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_PREVIOUS_PORT.'">IP previous : '.$vipPrevious.'</td></tr>'.PHP_EOL;
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">Date last switch : '.$vipLastSwitch.'</td></tr>'.PHP_EOL;
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_ACTIVE_PORT.'">IP active : '.$vipActive.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_PREVIOUS_PORT.'">IP previous : '.$vipPrevious.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">Date last switch : '.$vipLastSwitch.'</td>',
+                    ]);
                 }
                 else
                 {
 
                 $is_single_store = strtolower((string)$fork) === 'singlestore';
 
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td></tr>'.PHP_EOL;
+                $return .= self::htmlRow([
+                    '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td>',
+                ]);
 
                 if (!$is_single_store) {
                     // 🇫🇷
@@ -1110,7 +1270,9 @@ class Graphviz
                     $auto_increment_offset = $server['auto_increment_offset'] ?? 'N/A';
                     $auto_increment_increment = $server['auto_increment_increment'] ?? 'N/A';
 
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server_id.' - Auto Inc : '.$auto_increment_offset.'/'.$auto_increment_increment.'</td></tr>'.PHP_EOL;
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server_id.' - Auto Inc : '.$auto_increment_offset.'/'.$auto_increment_increment.'</td>',
+                    ]);
 
                     $debug = '';
                     //Debug::$debug = true;
@@ -1129,7 +1291,9 @@ class Graphviz
                     }
 
                     $binlog_display = $server['binlog_format'] ?? 'N/A';
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$binlog_display.' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$binlog_display.' '.$ROW.$debug.'</td>',
+                    ]);
 
                     if (empty($server['log_slave_updates']))
                     {
@@ -1160,7 +1324,9 @@ class Graphviz
                         $server['log_slave_updates'] = 'N/A';
                     }
 
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td>',
+                    ]);
                 }
                 
 
@@ -1205,13 +1371,14 @@ class Graphviz
                         $status = $server['wsrep_cluster_status'].' ('.$comment.')';
                     }
 
-                    $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td>',
+                    ]);
                 }
                 }
             }
             
-            $return .= '</table>'.PHP_EOL;
-            $return .= '</td></tr>'.PHP_EOL;
+            
             
 
             /*
@@ -1362,10 +1529,7 @@ class Graphviz
                 $return .= '</td>';
                 $return .= '</tr>'.PHP_EOL;
             }
-            $return .= '</table>';
             
-            
-            $return .= '</td></tr>'.PHP_EOL;
 
 
 
@@ -1461,8 +1625,7 @@ class Graphviz
                 }
             }*/
 
-            $return .= '</table>';
-            $return .= '</td></tr>'.PHP_EOL;
+            
         }elseif ($server['is_maxscale'] == "1")
         {
 
@@ -1690,15 +1853,13 @@ class Graphviz
                 }
             }
 
-            $return .= '</table>'.PHP_EOL;
-            $return .= '</td></tr>'.PHP_EOL;
+            
 
             //rgb(125, 208, 18) => color arrow maxscale
         }
 
 
-        $return .= '</table>'.PHP_EOL;
-        $return .= '</td></tr></table>> ];'.PHP_EOL;
+        $return .= self::closeHtmlLikeLabel().PHP_EOL;
         
         
         // http://localhost/pmacontrol/image/icon/proxysql.png
