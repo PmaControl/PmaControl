@@ -22,7 +22,7 @@ class Dot3Test extends TestCase
         dot3::getTunnel([]);
     }
 
-    public function testDetectsMysqlRouterFromStandardPorts()
+    public function testDoesNotDetectMysqlRouterFromStandardPortsAlone()
     {
         $server = [
             'display_name' => 'prodCluster-router-1-ro',
@@ -30,14 +30,25 @@ class Dot3Test extends TestCase
             'is_proxysql' => '0',
         ];
 
-        $this->assertTrue(Dot3::isMysqlRouterNode($server));
+        $this->assertFalse(Dot3::isMysqlRouterNode($server));
     }
 
-    public function testDetectsMysqlRouterFromCollectedPayload()
+    public function testDoesNotDetectMysqlRouterFromExplicitSignatureAlone()
+    {
+        $server = [
+            'display_name' => 'prodCluster mysql router 1',
+            'port_real' => '6447',
+            'is_proxysql' => '0',
+        ];
+
+        $this->assertFalse(Dot3::isMysqlRouterNode($server));
+    }
+
+    public function testDetectsMysqlRouterFromMetadataConfig()
     {
         $server = [
             'display_name' => 'APP-1',
-            'mysqlrouter_routes' => '{"items":[{"route":"bootstrap_ro","bind_port":6447}]}',
+            'mysqlrouter_metadata_config' => '{"bootstrap":{"groupReplicationId":"b62a1be2-1caa-11f1-895d-bc24110e621d","nodes":[{"hostname":"10.68.68.131","port":3306}]}}',
             'is_proxysql' => '0',
         ];
 
@@ -50,7 +61,7 @@ class Dot3Test extends TestCase
             'display_name' => 'proxysql-1',
             'port_real' => '6033',
             'is_proxysql' => '1',
-            'mysqlrouter_routes' => '{"items":[]}',
+            'mysqlrouter_metadata_config' => '{"bootstrap":{"groupReplicationId":"b62a1be2-1caa-11f1-895d-bc24110e621d","nodes":[{"hostname":"10.68.68.131","port":3306}]}}',
         ];
 
         $this->assertFalse(Dot3::isMysqlRouterNode($server));

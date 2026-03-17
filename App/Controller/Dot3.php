@@ -112,6 +112,22 @@ class Dot3 extends Controller
     static $build_galera = array();
 
 /**
+ * Stores `$build_innodb_cluster` for build innodb cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $build_innodb_cluster = array();
+
+/**
+ * Stores `$build_mysqlrouter` for build mysqlrouter.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $build_mysqlrouter = array();
+
+/**
  * Stores `$config` for config.
  *
  * @var array<int|string,mixed>
@@ -128,6 +144,22 @@ class Dot3 extends Controller
  * @psalm-var array<int|string,mixed>
  */
     static $galera = array();
+
+/**
+ * Stores `$innodb_cluster` for innodb cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $innodb_cluster = array();
+
+/**
+ * Stores `$mysqlrouter` for mysqlrouter.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $mysqlrouter = array();
 
 /**
  * Stores `$rank_same` for rank same.
@@ -303,6 +335,13 @@ class Dot3 extends Controller
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
                 "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
                 "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
+                "variables::group_replication_group_name", "variables::group_replication_group_seeds",
+                "variables::group_replication_local_address", "variables::group_replication_single_primary_mode",
+                "variables::group_replication_bootstrap_group", "variables::group_replication_consistency",
+                "variables::group_replication_autorejoin_tries", "variables::group_replication_member_expel_timeout",
+                "variables::group_replication_recovery_use_ssl", "variables::group_replication_ssl_mode",
+                "variables::group_replication_start_on_boot", "variables::report_host", "variables::report_port",
+                "variables::server_uuid", "variables::super_read_only",
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "mysqlrouter::mysqlrouter_routes", "mysqlrouter::mysqlrouter_metadata_config", "mysqlrouter::mysqlrouter_metadata_status",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
@@ -607,6 +646,222 @@ class Dot3 extends Controller
         }
 
         return $tmp_group;
+    }
+
+    public function generateGroupInnoDBCluster($information)
+    {
+        $tmp_group = array();
+
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        $groupReplicationEndpointMap = self::buildGroupReplicationEndpointMap($information['servers']);
+        $sqlEndpointMap = self::buildNormalizedEndpointMap($information['mapping'] ?? array());
+        $hostCandidates = self::buildGroupReplicationHostCandidates($information['servers']);
+
+        foreach ($information['servers'] as $id_mysql_server => $server) {
+            $group_name = trim((string)($server['group_replication_group_name'] ?? ''));
+            $group_seeds = trim((string)($server['group_replication_group_seeds'] ?? ''));
+            $local_address = trim((string)($server['group_replication_local_address'] ?? ''));
+
+            if ($group_name === '' && $group_seeds === '' && $local_address === '') {
+                continue;
+            }
+
+            $clusterKey = $group_name !== '' ? $group_name : '__innodb_cluster__'.$id_mysql_server;
+
+            if (empty($tmp_group[$clusterKey])) {
+                $tmp_group[$clusterKey] = array();
+            }
+
+            $tmp_group[$clusterKey][] = (int)$id_mysql_server;
+
+            $endpoints = array_merge(
+                self::extractGroupReplicationEndpoints($group_seeds),
+                self::extractGroupReplicationEndpoints($local_address)
+            );
+
+            foreach ($endpoints as $endpoint) {
+                $matchedId = self::resolveGroupReplicationEndpoint(
+                    $endpoint,
+                    $groupReplicationEndpointMap,
+                    $sqlEndpointMap,
+                    $hostCandidates
+                );
+
+                if ($matchedId !== null) {
+                    $tmp_group[$clusterKey][] = (int)$matchedId;
+                }
+            }
+
+            $tmp_group[$clusterKey] = array_values(array_unique(array_map('intval', $tmp_group[$clusterKey])));
+            self::$innodb_cluster[$clusterKey] = $tmp_group[$clusterKey];
+        }
+
+        return $tmp_group;
+    }
+
+    private static function buildGroupReplicationEndpointMap(array $servers): array
+    {
+        $map = array();
+
+        foreach ($servers as $id_mysql_server => $server) {
+            $local_address = trim((string)($server['group_replication_local_address'] ?? ''));
+            if ($local_address === '') {
+                continue;
+            }
+
+            foreach (self::extractGroupReplicationEndpoints($local_address) as $endpoint) {
+                $normalized = self::normalizeEndpoint($endpoint);
+                if ($normalized !== '') {
+                    $map[$normalized] = (int)$id_mysql_server;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private static function buildNormalizedEndpointMap(array $mapping): array
+    {
+        $normalized = array();
+
+        foreach ($mapping as $endpoint => $id_mysql_server) {
+            $normalizedEndpoint = self::normalizeEndpoint((string)$endpoint);
+            if ($normalizedEndpoint === '') {
+                continue;
+            }
+
+            $normalized[$normalizedEndpoint] = (int)$id_mysql_server;
+        }
+
+        return $normalized;
+    }
+
+    private static function buildGroupReplicationHostCandidates(array $servers): array
+    {
+        $hosts = array();
+
+        foreach ($servers as $id_mysql_server => $server) {
+            foreach (['report_host', 'hostname', 'ip_real', 'ip'] as $field) {
+                $host = strtolower(trim((string)($server[$field] ?? '')));
+                if ($host === '') {
+                    continue;
+                }
+
+                $hosts[$host][] = (int)$id_mysql_server;
+            }
+        }
+
+        foreach ($hosts as $host => $ids) {
+            $hosts[$host] = array_values(array_unique(array_map('intval', $ids)));
+        }
+
+        return $hosts;
+    }
+
+    private static function resolveGroupReplicationEndpoint(
+        string $endpoint,
+        array $groupReplicationEndpointMap,
+        array $sqlEndpointMap,
+        array $hostCandidates
+    ): ?int {
+        $normalizedEndpoint = self::normalizeEndpoint($endpoint);
+        if ($normalizedEndpoint === '') {
+            return null;
+        }
+
+        if (!empty($groupReplicationEndpointMap[$normalizedEndpoint])) {
+            return (int)$groupReplicationEndpointMap[$normalizedEndpoint];
+        }
+
+        if (!empty($sqlEndpointMap[$normalizedEndpoint])) {
+            return (int)$sqlEndpointMap[$normalizedEndpoint];
+        }
+
+        [$host] = self::splitHostPort($normalizedEndpoint);
+        if ($host === '') {
+            return null;
+        }
+
+        $normalizedHost = strtolower($host);
+        if (!empty($hostCandidates[$normalizedHost]) && count($hostCandidates[$normalizedHost]) === 1) {
+            return (int)$hostCandidates[$normalizedHost][0];
+        }
+
+        return null;
+    }
+
+    private static function splitHostPort(string $endpoint): array
+    {
+        $endpoint = trim($endpoint);
+        if ($endpoint === '') {
+            return array('', '');
+        }
+
+        if ($endpoint[0] === '[') {
+            $closingPos = strpos($endpoint, ']');
+            if ($closingPos === false) {
+                return array('', '');
+            }
+
+            $host = substr($endpoint, 1, $closingPos - 1);
+            $port = '';
+
+            if (isset($endpoint[$closingPos + 1]) && $endpoint[$closingPos + 1] === ':') {
+                $port = substr($endpoint, $closingPos + 2);
+            }
+
+            return array($host, $port);
+        }
+
+        $pos = strrpos($endpoint, ':');
+        if ($pos === false) {
+            return array($endpoint, '');
+        }
+
+        return array(substr($endpoint, 0, $pos), substr($endpoint, $pos + 1));
+    }
+
+    private static function normalizeEndpoint(string $endpoint): string
+    {
+        [$host, $port] = self::splitHostPort(trim((string)$endpoint));
+
+        $host = strtolower(trim($host));
+        $port = trim($port);
+
+        if ($host === '' || $port === '') {
+            return '';
+        }
+
+        return $host.':'.$port;
+    }
+
+    private static function extractGroupReplicationEndpoints($raw_endpoints)
+    {
+        $raw = trim((string)$raw_endpoints);
+        if ($raw === '') {
+            return array();
+        }
+
+        $parts = array_filter(array_map('trim', explode(',', $raw)), static function ($part) {
+            return $part !== '';
+        });
+
+        $result = array();
+        foreach ($parts as $part) {
+            $clean = preg_replace('/^mysqlx?:\/\//i', '', $part);
+            $normalized = self::normalizeEndpoint($clean);
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            $result[] = $normalized;
+        }
+
+        return array_values(array_unique($result));
     }
 
 /**
@@ -1015,6 +1270,8 @@ class Dot3 extends Controller
 
             self::$rank_same = array();
             self::$build_galera = array();
+            self::$build_innodb_cluster = array();
+            self::$build_mysqlrouter = array();
             self::$build_ms = array();
             self::$build_server = array();
 
@@ -1026,6 +1283,8 @@ class Dot3 extends Controller
 
             // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
             $this->buildGaleraCluster(array($id_dot3_information, $group));
+            $this->buildInnoDBCluster(array($id_dot3_information, $group));
+            $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
 
             // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
             // constraint=false pour ne pas déformer le layout du cluster.
@@ -1036,6 +1295,7 @@ class Dot3 extends Controller
             //Debug::debug($group, "GROUP");
 
             $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+            $this->linkMysqlRouter(array($id_dot3_information, $group));
 
             //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
             $this->linkHostGroup(array($id_dot3_information, $group));
@@ -1137,13 +1397,13 @@ class Dot3 extends Controller
         }
 
         $dot3_cluster = array();
+        $id_dot3_cluster = null;
         $sql = "SELECT id FROM dot3_cluster WHERE id_dot3_graph = ".$id_dot3_graph." AND id_dot3_information = ".$id_dot3_information."";
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
-            $id_dot3_graph = $ob->id;
-            //Debug::debug($id_dot3_graph, "id_dot3_graph");
-            $dot3_cluster['dot3_cluster']['id'] = $id_dot3_graph;
+            $id_dot3_cluster = $ob->id;
+            $dot3_cluster['dot3_cluster']['id'] = $id_dot3_cluster;
         }
 
         $dot3_cluster['dot3_cluster']['id_dot3_graph'] = $id_dot3_graph;
@@ -1151,7 +1411,7 @@ class Dot3 extends Controller
 
         $id_dot3_cluster = $db->sql_save($dot3_cluster);
 
-        foreach($group as $id_mysql_server)
+        foreach(array_values(array_unique($group)) as $id_mysql_server)
         {
             $dot3_cluster__mysql_server = array();
             $dot3_cluster__mysql_server['dot3_cluster__mysql_server']['id_mysql_server'] = $id_mysql_server;
@@ -1203,6 +1463,7 @@ class Dot3 extends Controller
         }
 
         $dot .= Graphviz::generateGalera(self::$build_galera);
+        $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
     
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
@@ -1360,8 +1621,15 @@ class Dot3 extends Controller
         $id_dot3_information = $param[0];
         $dot3_information = self::getInformation($id_dot3_information);
 
+        self::$galera = array();
+        self::$innodb_cluster = array();
+        self::$mysqlrouter = array();
+
         $galera = $this->generateGroupGalera($dot3_information['information']);
         //Debug::debug($galera, "GALERA");
+
+        $innodb_cluster = $this->generateGroupInnoDBCluster($dot3_information['information']);
+        $mysqlrouter = $this->generateGroupMysqlRouter($dot3_information['information']);
 
         $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
         $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
@@ -1371,7 +1639,7 @@ class Dot3 extends Controller
         $vip = $this->generateGroupVip($dot3_information['information']);
         
 
-        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql, $maxscale, $vip));
+        $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $mysqlrouter, $master_slave, $proxysql, $maxscale, $vip));
 
        //Debug::debug($group, "GROUP");
         //die();
@@ -3014,6 +3282,91 @@ class Dot3 extends Controller
         //Debug::debug(self::$build_ms);
     }
 
+    public function linkMysqlRouter($param)
+    {
+        $id_dot3_information = $param[0];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach (self::$build_server as $id_mysql_server => $server) {
+            if (!self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
+            $matchedRoute = self::resolveMysqlRouterRouteForServer($server);
+            $destinations = $matchedRoute['destinations_payload']['items'] ?? array();
+            if (!is_array($destinations) || empty($destinations)) {
+                continue;
+            }
+
+            $routeConfig = $matchedRoute['config'] ?? array();
+            $connectionSharing = (string)($routeConfig['connection_sharing'] ?? $matchedRoute['connection_sharing'] ?? '0');
+            $isConnectionSharing = in_array(strtolower($connectionSharing), array('1', 'on', 'true', 'yes'), true);
+
+            foreach ($destinations as $destination) {
+                if (!is_array($destination)) {
+                    continue;
+                }
+
+                $host = trim((string)($destination['address'] ?? $destination['hostname'] ?? ''));
+                $port = trim((string)($destination['port'] ?? '3306'));
+                if ($host === '') {
+                    continue;
+                }
+
+                if ($port === '') {
+                    $port = '3306';
+                }
+
+                $id_mysql_server_target = self::findIdMysqlServer($host.':'.$port, $id_dot3_information, true);
+                if (empty($id_mysql_server_target)) {
+                    continue;
+                }
+
+                $targetServer = $dot3_information['information']['servers'][$id_mysql_server_target] ?? array();
+                $targetRole = $this->resolveMysqlRouterBackendRole($targetServer);
+                $graphPort = crc32($id_mysql_server.':'.$host.':'.$port);
+
+                if (empty(self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'])) {
+                    self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'] = array();
+                }
+
+                self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'][$host.':'.$port] = array(
+                    'id_mysql_server' => $id_mysql_server_target,
+                    'role' => $targetRole,
+                    'graph_port' => $graphPort,
+                );
+
+                $tmp = array();
+                $tmp['arrow'] = $id_mysql_server.':'.$graphPort.' -> '.$id_mysql_server_target.':'.self::TARGET;
+                $tmp['options']['style'] = 'filled';
+                $tmp['options']['color'] = $targetRole === 'PRIMARY' ? '#008000' : '#00B33C';
+                $tmp['tooltip'] = 'MySQL Router '.$host.':'.$port.' connection_sharing='.( $isConnectionSharing ? '1' : '0');
+
+                if ($isConnectionSharing) {
+                    $tmp['options']['dir'] = 'both';
+                    $tmp['options']['arrowtail'] = 'crow';
+                    $tmp['options']['arrowhead'] = 'none';
+                } else {
+                    $tmp['options']['arrowhead'] = 'none';
+                }
+
+                self::$build_ms[] = $tmp;
+            }
+        }
+    }
+
+    private function resolveMysqlRouterBackendRole(array $server): string
+    {
+        $readOnly = strtolower((string)($server['read_only'] ?? 'on'));
+        $superReadOnly = strtolower((string)($server['super_read_only'] ?? 'on'));
+
+        if (in_array($readOnly, array('off', '0'), true) || in_array($superReadOnly, array('off', '0'), true)) {
+            return 'PRIMARY';
+        }
+
+        return 'REPLICA';
+    }
+
 
 /**
  * Handle dot3 state through `linkMaxScale`.
@@ -3820,6 +4173,105 @@ class Dot3 extends Controller
         //Debug::debug(($dot3_information));
     }
 
+    public function buildInnoDBCluster($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty(self::$innodb_cluster)) {
+            return;
+        }
+
+        $clusters = $this->array_merge_group(self::$innodb_cluster);
+
+        foreach ($clusters as $cluster_members) {
+            if (empty($cluster_members) || !empty(array_diff($cluster_members, $group))) {
+                continue;
+            }
+
+            sort($cluster_members);
+            $cluster_id = 'gr_'.md5(implode('-', $cluster_members));
+            $servers = $dot3_information['information']['servers'];
+            $first = $servers[$cluster_members[0]] ?? array();
+
+            $group_name = trim((string)($first['group_replication_group_name'] ?? ''));
+            $cluster_name = 'InnoDB Cluster';
+            if ($group_name !== '') {
+                $cluster_name = preg_match('/^[a-f0-9-]{36}$/i', $group_name) ? substr($group_name, -12) : $group_name;
+            }
+
+            $single_primary_mode = strtolower((string)($first['group_replication_single_primary_mode'] ?? 'off'));
+            $is_single_primary_mode = in_array($single_primary_mode, array('on', '1', 'true'), true);
+
+            $online = 0;
+            $primary_online = 0;
+
+            self::$build_innodb_cluster[$cluster_id] = array(
+                'id_cluster' => $cluster_id,
+                'name' => $cluster_name,
+                'group_name' => $group_name,
+                'mode' => $is_single_primary_mode ? 'single-primary' : 'multi-primary',
+                'members' => count($cluster_members),
+                'node' => array(),
+            );
+
+            foreach ($cluster_members as $id_mysql_server) {
+                $row = $servers[$id_mysql_server] ?? array();
+
+                $is_online = (string)($row['mysql_available'] ?? '0') === '1';
+                if ($is_online) {
+                    $online++;
+                }
+
+                $server_uuid = trim((string)($row['server_uuid'] ?? ''));
+                $primary_member_uuid = trim((string)($row['group_replication_primary_member'] ?? ''));
+                $super_read_only = strtolower((string)($row['super_read_only'] ?? 'on'));
+                $read_only = strtolower((string)($row['read_only'] ?? 'on'));
+
+                $role = 'SECONDARY';
+                if (!$is_single_primary_mode) {
+                    $role = 'PRIMARY';
+                } elseif ($server_uuid !== '' && $primary_member_uuid !== '' && strcasecmp($server_uuid, $primary_member_uuid) === 0) {
+                    $role = 'PRIMARY';
+                } elseif ($super_read_only === 'off' || $read_only === 'off' || $read_only === '0') {
+                    $role = 'PRIMARY';
+                }
+
+                if ($role === 'PRIMARY' && $is_online) {
+                    $primary_online++;
+                }
+
+                $state = strtoupper((string)($row['group_replication_status'] ?? ''));
+                if ($state === '') {
+                    if ($is_online) {
+                        $state = 'ONLINE';
+                    } elseif (!empty($row['mysql_error'])) {
+                        $state = 'ERROR';
+                    } else {
+                        $state = 'OFFLINE';
+                    }
+                }
+
+                self::$build_innodb_cluster[$cluster_id]['node'][$id_mysql_server] = array(
+                    'member_state' => $state,
+                    'member_role' => $role,
+                );
+            }
+
+            self::$build_innodb_cluster[$cluster_id]['node_online'] = $online;
+            self::$build_innodb_cluster[$cluster_id]['primary_online'] = $primary_online;
+
+            if ($online === 0 || ($is_single_primary_mode && $primary_online === 0)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_CRIT';
+            } elseif ($online < count($cluster_members)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_WARN';
+            } else {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_OK';
+            }
+        }
+    }
+
     //move to lib/Galera.php
 /**
  * Handle dot3 state through `extractProviderOption`.
@@ -4169,40 +4621,117 @@ class Dot3 extends Controller
         return $resolved;
     }
 
+    public function generateGroupMysqlRouter($information)
+    {
+        if (empty($information['servers']) || empty(self::$id_dot3_information)) {
+            return array();
+        }
+
+        self::$mysqlrouter = array();
+
+        foreach ($information['servers'] as $id_mysql_server => $server) {
+            if (!self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
+            $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+            $bootstrap = $metadataConfig['bootstrap'] ?? array();
+            $clusterNodes = self::extractMysqlRouterRouteDestinations($server);
+            if (empty($clusterNodes)) {
+                $clusterNodes = self::extractMysqlRouterMetadataNodes($server);
+            }
+            if (empty($clusterNodes)) {
+                continue;
+            }
+
+            $matchedRoute = self::resolveMysqlRouterRouteForServer($server);
+            $routeKey = trim((string)($matchedRoute['route'] ?? $matchedRoute['name'] ?? $matchedRoute['routeName'] ?? ''));
+            $routePort = trim((string)($matchedRoute['bind_port'] ?? $matchedRoute['bindPort'] ?? $server['port_real'] ?? $server['port'] ?? ''));
+            $groupReplicationId = trim((string)($bootstrap['groupReplicationId'] ?? ''));
+
+            $groupKeyParts = array_filter(array(
+                $groupReplicationId !== '' ? $groupReplicationId : null,
+                $routeKey !== '' ? $routeKey : null,
+                $routePort !== '' ? $routePort : null,
+                'router-'.$id_mysql_server,
+            ));
+
+            $groupKey = implode('|', array_slice($groupKeyParts, 0, 3));
+
+            if (empty(self::$mysqlrouter[$groupKey])) {
+                self::$mysqlrouter[$groupKey] = array();
+            }
+
+            self::$mysqlrouter[$groupKey][] = (int) $id_mysql_server;
+
+            foreach ($clusterNodes as $endpoint) {
+                $id_mysql_server_target = self::findIdMysqlServer($endpoint, self::$id_dot3_information, true);
+                if (!empty($id_mysql_server_target)) {
+                    self::$mysqlrouter[$groupKey][] = (int) $id_mysql_server_target;
+                }
+            }
+
+            self::$mysqlrouter[$groupKey] = array_values(array_unique(self::$mysqlrouter[$groupKey]));
+        }
+
+        return array_values(self::$mysqlrouter);
+    }
+
+    public function buildGroupMysqlRouter($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty(self::$mysqlrouter) || empty($dot3_information['information']['servers'])) {
+            return;
+        }
+
+        foreach (self::$mysqlrouter as $groupKey => $routerGroup) {
+            if (empty($routerGroup) || !empty(array_diff($routerGroup, $group))) {
+                continue;
+            }
+
+            self::$build_mysqlrouter[$groupKey] = array(
+                'routers' => array(),
+                'targets' => array(),
+            );
+
+            foreach ($routerGroup as $id_mysql_server) {
+                $server = $dot3_information['information']['servers'][$id_mysql_server] ?? array();
+                if (!self::isMysqlRouterNode($server)) {
+                    self::$build_mysqlrouter[$groupKey]['targets'][] = $id_mysql_server;
+                    continue;
+                }
+
+                $role = self::resolveMysqlRouterRole($server);
+                self::$build_mysqlrouter[$groupKey]['routers'][$id_mysql_server] = $role;
+                self::applyMysqlRouterRoleTheme($id_mysql_server, $role);
+            }
+        }
+    }
+
     public static function isMysqlRouterNode(array $server): bool
     {
         if (!empty($server['is_proxysql']) && (string) $server['is_proxysql'] === '1') {
             return false;
         }
 
-        foreach (['mysqlrouter_routes', 'mysqlrouter_metadata_config', 'mysqlrouter_metadata_status'] as $field) {
-            if (!empty($server[$field])) {
+        $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+        $bootstrap = $metadataConfig['bootstrap'] ?? array();
+        $groupReplicationId = trim((string)($bootstrap['groupReplicationId'] ?? ''));
+        $nodes = $bootstrap['nodes'] ?? array();
+
+        if ($groupReplicationId === '' || !is_array($nodes) || empty($nodes)) {
+            return false;
+        }
+
+        foreach ($nodes as $node) {
+            $hostname = trim((string)($node['hostname'] ?? ''));
+            $port = trim((string)($node['port'] ?? '3306'));
+            if ($hostname !== '' && $port !== '') {
                 return true;
             }
-        }
-
-        foreach (['port', 'port_real', 'virtual_port'] as $portField) {
-            $port = (int) ($server[$portField] ?? 0);
-            if (in_array($port, [6446, 6447, 6450, 64460, 64470], true)) {
-                return true;
-            }
-        }
-
-        $labels = [
-            (string) ($server['display_name'] ?? ''),
-            (string) ($server['name'] ?? ''),
-            (string) ($server['hostname'] ?? ''),
-            (string) ($server['version_comment'] ?? ''),
-            (string) ($server['comment'] ?? ''),
-        ];
-
-        $haystack = strtolower(implode(' ', $labels));
-        if (str_contains($haystack, 'mysql router') || str_contains($haystack, 'mysqlrouter')) {
-            return true;
-        }
-
-        if (preg_match('/(^|[^a-z])router([^a-z]|$)/', $haystack) === 1) {
-            return true;
         }
 
         return false;
@@ -4210,12 +4739,146 @@ class Dot3 extends Controller
 
     public static function decodeMysqlRouterJson(array $server, string $field): array
     {
-        if (empty($server[$field]) || !is_string($server[$field])) {
+        if (empty($server[$field])) {
+            return [];
+        }
+
+        if (is_array($server[$field])) {
+            return $server[$field];
+        }
+
+        if (!is_string($server[$field])) {
             return [];
         }
 
         $decoded = json_decode($server[$field], true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private static function extractMysqlRouterMetadataNodes(array $server): array
+    {
+        $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+        $bootstrap = $metadataConfig['bootstrap'] ?? array();
+        $nodes = $bootstrap['nodes'] ?? array();
+        $result = array();
+
+        if (!is_array($nodes)) {
+            return $result;
+        }
+
+        foreach ($nodes as $node) {
+            $hostname = trim((string)($node['hostname'] ?? ''));
+            $port = trim((string)($node['port'] ?? '3306'));
+            if ($hostname === '') {
+                continue;
+            }
+            if ($port === '') {
+                $port = '3306';
+            }
+            $result[] = $hostname.':'.$port;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    public static function resolveMysqlRouterRouteForServer(array $server): array
+    {
+        $routesPayload = self::decodeMysqlRouterJson($server, 'mysqlrouter_routes');
+        $items = $routesPayload['items'] ?? $routesPayload;
+        if (!is_array($items)) {
+            return array();
+        }
+
+        $targetPort = trim((string)($server['port_real'] ?? $server['port'] ?? ''));
+        $fallback = array();
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $fallback = empty($fallback) ? $item : $fallback;
+            $bindPort = trim((string)($item['bind_port'] ?? $item['bindPort'] ?? ''));
+
+            if ($targetPort !== '' && $bindPort === $targetPort) {
+                return $item;
+            }
+        }
+
+        return $fallback;
+    }
+
+    private static function extractMysqlRouterRouteDestinations(array $server): array
+    {
+        $route = self::resolveMysqlRouterRouteForServer($server);
+        $destinations = $route['destinations_payload']['items'] ?? array();
+        $result = array();
+
+        if (!is_array($destinations)) {
+            return $result;
+        }
+
+        foreach ($destinations as $destination) {
+            if (!is_array($destination)) {
+                continue;
+            }
+
+            $hostname = trim((string)($destination['address'] ?? $destination['hostname'] ?? ''));
+            $port = trim((string)($destination['port'] ?? '3306'));
+            if ($hostname === '') {
+                continue;
+            }
+
+            if ($port === '') {
+                $port = '3306';
+            }
+
+            $result[] = $hostname.':'.$port;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    private static function resolveMysqlRouterRole(array $server): string
+    {
+        $route = self::resolveMysqlRouterRouteForServer($server);
+        $labels = array(
+            (string)($route['route'] ?? ''),
+            (string)($route['name'] ?? ''),
+            (string)($route['routeName'] ?? ''),
+            (string)($route['destinations'] ?? ''),
+            (string)($server['display_name'] ?? ''),
+        );
+
+        $haystack = strtolower(implode(' ', $labels));
+
+        if (str_contains($haystack, 'rw_split') || str_contains($haystack, 'rw-split')) {
+            return 'PRIMARY';
+        }
+
+        if (preg_match('/(^|[^a-z])rw([^a-z]|$)/', $haystack)) {
+            return 'PRIMARY';
+        }
+
+        if (preg_match('/(^|[^a-z])ro([^a-z]|$)/', $haystack)) {
+            return 'SECONDARY';
+        }
+
+        return 'PRIMARY';
+    }
+
+    private static function applyMysqlRouterRoleTheme(int $id_mysql_server, string $role): void
+    {
+        if (empty(self::$build_server[$id_mysql_server])) {
+            return;
+        }
+
+        if ($role === 'SECONDARY') {
+            self::$build_server[$id_mysql_server]['color'] = '#7cb342';
+            return;
+        }
+
+        self::$build_server[$id_mysql_server]['color'] = '#006400';
     }
 
 /**

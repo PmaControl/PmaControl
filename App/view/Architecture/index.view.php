@@ -43,9 +43,15 @@ foreach ($data['graphs'] as $graph) {
             $border = "1";
         }
 
+        $svg = $graph['svg'];
+        $svgSuffix = '-graph-'.$graph['id'];
+        $svg = str_replace('id="pmac-icon-gr"', 'id="pmac-icon-gr'.$svgSuffix.'"', $svg);
+        $svg = str_replace('id="pmac-icon-mysql"', 'id="pmac-icon-mysql'.$svgSuffix.'"', $svg);
+        $svg = str_replace('xlink:href="#pmac-icon-gr"', 'xlink:href="#pmac-icon-gr'.$svgSuffix.'" href="#pmac-icon-gr'.$svgSuffix.'"', $svg);
+        $svg = str_replace('xlink:href="#pmac-icon-mysql"', 'xlink:href="#pmac-icon-mysql'.$svgSuffix.'" href="#pmac-icon-mysql'.$svgSuffix.'"', $svg);
+
         echo '<div class="grid-item" style="float:left; border:#000 '.$border.'px solid">';
-        //echo $graph['height'];
-        echo $graph['svg'];
+        echo $svg;
         echo '</div>';
         $date['date'][] = $graph['date_refresh'];
     }

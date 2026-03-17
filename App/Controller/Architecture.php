@@ -88,6 +88,7 @@ class Architecture extends Controller
             .__("Dashboard").'</a> > <i class="fa fa-object-group" style="font-size:14px"></i> '.__("Architecture");
         */
 
+
         //https://masonry.desandro.com/events
         $this->di['js']->addJavascript(array("https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"));
 
@@ -100,13 +101,27 @@ class Architecture extends Controller
             });
 
         ');
+        
+
+
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
 FROM dot3_graph dg
 JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
-WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information)-1 FROM dot3_cluster)";
+WHERE dc.id_dot3_information = (
+    SELECT COALESCE(
+        MAX(CASE WHEN snapshot_rank = 2 THEN id_dot3_information END),
+        MAX(CASE WHEN snapshot_rank = 1 THEN id_dot3_information END)
+    )
+    FROM (
+        SELECT id_dot3_information,
+               DENSE_RANK() OVER (ORDER BY id_dot3_information DESC) AS snapshot_rank
+        FROM dot3_cluster
+        GROUP BY id_dot3_information
+    ) ranked_snapshots
+)";
 
 /*
         $sql = "WITH LatestDot3Information AS (
@@ -188,4 +203,3 @@ ORDER BY  height DESC, width desc;";
 
     }
 }
-
