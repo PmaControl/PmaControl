@@ -1173,47 +1173,34 @@ class Graphviz
             '<td bgcolor="lightgrey" width="100" align="left">'.$version_label.'</td>',
         ]);
 
-        $nat = '';
-
         if ($isVipServer)
         {
             $server['port_real'] = trim((string)($server['vip_dns_port'] ?? $server['port_real'] ?? $server['port'] ?? ''));
             $server['ip_real'] = trim((string)($server['vip_dns_ip'] ?? $server['ip_real'] ?? $server['ip'] ?? ''));
         }
 
-
-
-        if (($server['port_real'] ?? '') != ($server['port'] ?? '')){
-            $nat = ' <b>(NAT)</b>';
-            $nat = ' 🔀';
-
-            $ip_real = Dot3::getTunnel([($server['ip_real'] ?? '').":".($server['port_real'] ?? '')]);
-            if ($ip_real){
-                $nat .= "$ip_real";
-            }
-            else{
-                $nat .= '🌐:'.$server['port'];
-            }
-        }
+        $displayAddress = ' ' . Ofuscate::ip($server['ip_real'] ?? '') . ':' . ($server['port_real'] ?? '');
 
         if ($server['display_name'] === "garb")
         {
             $server['ip_real'] = "N/A";
-            $nat = '';
-            $server['port_real'] = explode(":",$ip_real)[1] ?? "3306";
+            $displayAddress = ' N/A:' . ($server['port_real'] ?? '3306');
         }
+        else {
+            $endpoint = trim((string)($server['ip_real'] ?? '')) . ':' . trim((string)($server['port_real'] ?? ''));
 
-        // Determine IP to display
-        $ip_display = Ofuscate::ip($server['ip_real'] ?? '');
+            if (preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $endpoint)) {
+                $tunnelDestination = Dot3::getTunnel([$endpoint]);
 
-        // Replace 🌐 with wsrep_node_address if present
-        if (!empty($server['wsrep_node_address']) && strpos($nat, '🌐') !== false) {
-            $nat = ' 🔀' . Ofuscate::ip($server['wsrep_node_address']) . ':' . ($server['port'] ?? '');
+                if (!empty($tunnelDestination)) {
+                    $displayAddress = ' 🔀' . $tunnelDestination;
+                }
+            }
         }
 
         //country there
         $return .= self::htmlRow([
-            '<td bgcolor="lightgrey" width="100" align="left"> '.$ip_display.':'.($server['port_real'] ?? '').$nat.'</td>',
+            '<td bgcolor="lightgrey" width="100" align="left">' . $displayAddress . '</td>',
         ]);
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
