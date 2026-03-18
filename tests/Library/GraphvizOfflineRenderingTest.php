@@ -115,6 +115,66 @@ final class GraphvizOfflineRenderingTest extends TestCase
         $this->assertGreaterThanOrEqual(3, substr_count($dot, 'bgcolor="#FF0000"'));
     }
 
+    public function testMysqlRouterDisplaysModeLabelForRwSplit(): void
+    {
+        $rwSplitServer = [
+            'id_mysql_server' => '207',
+            'display_name' => 'router-rw-split',
+            'hostname' => 'router-rw-split',
+            'ip' => '10.0.0.70',
+            'ip_real' => '10.0.0.70',
+            'port' => '6450',
+            'port_real' => '6450',
+            'version' => '8.4.3',
+            'version_comment' => 'MySQL Community Server - GPL',
+            'color' => '#008000',
+            'mysql_available' => '1',
+            'is_proxy' => '1',
+            'mysqlrouter_metadata_config' => [
+                'bootstrap' => [
+                    'groupReplicationId' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+                    'nodes' => [
+                        ['hostname' => '10.0.0.71', 'port' => 3306],
+                    ],
+                ],
+            ],
+            'mysqlrouter_routes' => [
+                'items' => [
+                    [
+                        'route' => 'bootstrap_rw_split',
+                        'bindAddress' => '0.0.0.0',
+                        'bindPort' => 6450,
+                        'destinations_payload' => ['items' => []],
+                    ],
+                    [
+                        'route' => 'bootstrap_rw',
+                        'bindAddress' => '0.0.0.0',
+                        'bindPort' => 6446,
+                        'destinations_payload' => ['items' => []],
+                    ],
+                ],
+            ],
+        ];
+
+        $rwSplitDot = Graphviz::generateServer($rwSplitServer);
+
+        $this->assertStringContainsString('🛣 Mode : bootstrap_rw_split', $rwSplitDot);
+        $this->assertStringNotContainsString('bootstrap_rw_split : 0.0.0.0:6450', $rwSplitDot);
+
+        $rwServer = $rwSplitServer;
+        $rwServer['id_mysql_server'] = '208';
+        $rwServer['display_name'] = 'router-rw';
+        $rwServer['hostname'] = 'router-rw';
+        $rwServer['port'] = '6446';
+        $rwServer['port_real'] = '6446';
+
+        $rwDot = Graphviz::generateServer($rwServer);
+
+        $this->assertStringContainsString('Mode : bootstrap_rw', $rwDot);
+        $this->assertStringNotContainsString('🛣 Mode : bootstrap_rw', $rwDot);
+        $this->assertStringNotContainsString('bootstrap_rw : 0.0.0.0:6446', $rwDot);
+    }
+
     public static function offlineServerProvider(): array
     {
         return [

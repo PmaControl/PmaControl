@@ -66,4 +66,37 @@ class Dot3Test extends TestCase
 
         $this->assertFalse(Dot3::isMysqlRouterNode($server));
     }
+
+    public function testBuildVipDestinationLabelIncludesResolvedEndpointAndTunnel(): void
+    {
+        Dot3::$id_dot3_information = 991000;
+        Dot3::$information[991000] = [
+            'information' => [
+                'tunnel' => [
+                    '127.0.0.1:8001' => '192.168.114.104:3306',
+                ],
+            ],
+        ];
+
+        $reflection = new ReflectionClass(Dot3::class);
+        $dot3 = $reflection->newInstanceWithoutConstructor();
+        $method = $reflection->getMethod('buildVipDestinationLabel');
+        $method->setAccessible(true);
+
+        $label = $method->invoke($dot3, [
+            112 => [
+                'display_name' => 'FRDC1-DR-DTA01L',
+                'ip_real' => '127.0.0.1',
+                'port_real' => '8001',
+            ],
+        ], 112);
+
+        $this->assertSame(
+            ['label' => '🔀192.168.114.104:3306'],
+            $label
+        );
+
+        unset(Dot3::$information[991000]);
+        Dot3::$id_dot3_information = 1;
+    }
 }

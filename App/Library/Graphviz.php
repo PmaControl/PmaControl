@@ -1582,15 +1582,14 @@ class Graphviz
             if (!empty($routes)) {
                 foreach ($routes as $route) {
                     $routeName = $route['route'] ?? $route['name'] ?? $route['id'] ?? 'route';
-                    $bindAddress = $route['bindAddress'] ?? $route['bind_address'] ?? '0.0.0.0';
-                    $bindPort = $route['bindPort'] ?? $route['bind_port'] ?? '';
                     $destinations = $route['destinations_payload']['items'] ?? [];
+                    $routePrefix = $routeName === 'bootstrap_rw_split' ? '🛣 ' : '';
 
                     [$routeBackground, $routeFontColor] = self::resolveOfflineRowColors($server, '#00B33C', '#ffffff');
 
                     $return .= '<tr>';
                     $return .= '<td colspan="2" bgcolor="'.$routeBackground.'" align="left">';
-                    $return .= '<font color="'.$routeFontColor.'">🛣 '.$routeName.' : '.$bindAddress.':'.$bindPort.'</font>';
+                    $return .= '<font color="'.$routeFontColor.'">'.$routePrefix.'Mode : '.$routeName.'</font>';
                     $return .= '</td>';
                     $return .= '</tr>'.PHP_EOL;
 

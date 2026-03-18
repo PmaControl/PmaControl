@@ -3047,21 +3047,41 @@ class Dot3 extends Controller
         }
 
         $destination_server = $allServers[$idDestination];
-        $destination_name = trim((string)($destination_server['display_name'] ?? ''));
-
-        if ($destination_name === '') {
-            $destination_name = '#'.$idDestination;
+        $destination_endpoint = $this->buildVipDestinationEndpointLabel($destination_server);
+        if ($destination_endpoint !== '') {
+            return array('label' => $destination_endpoint);
         }
 
-        $destination_port = $this->getServerPort($destination_server);
-        //$label = $idDestination.' / '.$destination_name;
-        $label = $destination_name;
+        $fallback_host = trim((string)($destination_server['ip_real'] ?? $destination_server['ip'] ?? ''));
+        $fallback_port = $this->getServerPort($destination_server);
 
-        if ($destination_port !== '') {
-            $label .= ':'.$destination_port;
+        if ($fallback_host !== '' && $fallback_port !== '') {
+            return array('label' => $fallback_host.':'.$fallback_port);
         }
 
-        return array('label' => $label);
+        return array('label' => 'N/A');
+    }
+
+    private function buildVipDestinationEndpointLabel(array $server): string
+    {
+        $host = trim((string)($server['ip_real'] ?? $server['ip'] ?? ''));
+        $port = trim((string)($server['port_real'] ?? $server['port'] ?? ''));
+
+        if ($host === '' || $port === '') {
+            return '';
+        }
+
+        $endpoint = $host.':'.$port;
+        if (preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $endpoint)) {
+            $dot3Information = self::getInformation(self::$id_dot3_information);
+            $tunnel = $dot3Information['information']['tunnel'] ?? array();
+
+            if (!empty($tunnel[$endpoint])) {
+                return '🔀'.$tunnel[$endpoint];
+            }
+        }
+
+        return $endpoint;
     }
 
 /**
