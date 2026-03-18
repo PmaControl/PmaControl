@@ -4126,7 +4126,7 @@ class Dot3 extends Controller
         {
             $server = $dot3_information['information']['servers'];
 
-            self::$build_galera[$id_cluster]["name"] = $server[$cluster[0]]['wsrep_cluster_name'];;
+            self::$build_galera[$id_cluster]["name"] = $server[$cluster[0]]['wsrep_cluster_name'] ?? 'Galera';
             self::$build_galera[$id_cluster]["id_cluster"] = $id_cluster;
 
             $available = 0;
@@ -4139,37 +4139,45 @@ class Dot3 extends Controller
             foreach($cluster as $id_mysql_server)
             {
                 $elems = $server[$id_mysql_server];
-                $segment = self::extractProviderOption($elems['wsrep_provider_options'], "gmcast.segment" );
+                $providerOptions = (string)($elems['wsrep_provider_options'] ?? '');
+                $segment = self::extractProviderOption($providerOptions, "gmcast.segment");
+                $wsrepClusterStatus = (string)($elems['wsrep_cluster_status'] ?? '');
+                $wsrepLocalStateComment = (string)($elems['wsrep_local_state_comment'] ?? '');
+                $wsrepDesync = (string)($elems['wsrep_desync'] ?? '');
+                $mysqlAvailable = (string)($elems['mysql_available'] ?? '0');
+                $wsrepSstMethod = (string)($elems['wsrep_sst_method'] ?? '');
+                $wsrepProviderVersion = (string)($elems['wsrep_provider_version'] ?? '');
+                $wsrepSlaveThreads = (string)($elems['wsrep_slave_threads'] ?? '');
 
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_cluster_status'] = $elems['wsrep_cluster_status'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_local_state_comment'] = $elems['wsrep_local_state_comment'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_desync'] = $elems['wsrep_desync'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $elems['mysql_available'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_sst_method'] = $elems['wsrep_sst_method'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $elems['wsrep_provider_version'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_cluster_status'] = $wsrepClusterStatus;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_local_state_comment'] = $wsrepLocalStateComment;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_desync'] = $wsrepDesync;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $mysqlAvailable;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_sst_method'] = $wsrepSstMethod;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $wsrepProviderVersion;
                 
                 if (! isset(self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'])) {
                     self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] = 0;
                 }
 
-                if ($elems['mysql_available'] == "1" && !empty($elems['wsrep_desync']) && strtolower($elems['wsrep_desync']) === "on") {
+                if ($mysqlAvailable === "1" && $wsrepDesync !== '' && strtolower($wsrepDesync) === "on") {
 
                     self::setThemeToServer('NODE_DONOR_DESYNCED', $id_mysql_server);
                 }
 
-                $wsrep_cluster_status = strtolower(trim((string)($elems['wsrep_cluster_status'] ?? '')));
-                $wsrep_local_state_comment = strtolower(trim((string)($elems['wsrep_local_state_comment'] ?? '')));
+                $wsrep_cluster_status = strtolower(trim($wsrepClusterStatus));
+                $wsrep_local_state_comment = strtolower(trim($wsrepLocalStateComment));
                 if ($wsrep_cluster_status === 'disconnected' && $wsrep_local_state_comment === 'inconsistent') {
                     self::setThemeToServer('NODE_GALERA_DISCONNECTED', $id_mysql_server);
                 }
 
-                self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += $elems['mysql_available'];
+                self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += (int) $mysqlAvailable;
 
-                $wsrep_slave_threads[] = $elems['wsrep_slave_threads'];
-                $sst_method[] = $elems['wsrep_sst_method'];
+                $wsrep_slave_threads[] = $wsrepSlaveThreads;
+                $sst_method[] = $wsrepSstMethod;
 
                 $output_array = array();
-                preg_match('/\d+\.(\d+)\./', $elems['wsrep_provider_version'], $output_array);
+                preg_match('/\d+\.(\d+)\./', $wsrepProviderVersion, $output_array);
                 if (!empty($output_array[1])) {
                     $version[] = $output_array[1];
                     
