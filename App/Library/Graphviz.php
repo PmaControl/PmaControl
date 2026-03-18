@@ -491,7 +491,7 @@ class Graphviz
     static public function generateStart($param=array())
     {
         //margin="0.104,0.0'.$rand.'";
-        $ret = 'digraph structs {rankdir=LR;  splines="compound";  fontname="arial" '.PHP_EOL; 
+        $ret = 'digraph structs {rankdir=LR; splines="compound"; fontname="arial" '.PHP_EOL; 
         //$ret = 'digraph structs {rankdir=LR; layout="sfdp"; splines="ortho"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
         //$ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;

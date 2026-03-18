@@ -1917,6 +1917,14 @@ class Dot3 extends Controller
 
                     $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
 
+                    if ($this->isMutualMasterReplication($dot3_information['information']['servers'], (int) $id_master, (int) $id_mysql_server, $id_dot3_information)) {
+                        $tmp['options']['constraint'] = 'false';
+                        $tmp['options']['label'] = ' ';
+                        if ((int) $id_master > (int) $id_mysql_server) {
+                            $tmp['options']['dir'] = 'back';
+                        }
+                    }
+
                     self::$build_ms[] = $tmp;
                 }
                 
@@ -1928,6 +1936,23 @@ class Dot3 extends Controller
 
     }
 
+    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, int $idDot3Information): bool
+    {
+        if ($idMaster <= 0 || $idSlave <= 0 || empty($servers[$idMaster]['@slave'])) {
+            return false;
+        }
+
+        foreach ($servers[$idMaster]['@slave'] as $replicationLink) {
+            $host = ($replicationLink['master_host'] ?? '').':'.($replicationLink['master_port'] ?? '');
+            $reverseMasterId = (int) self::findIdMysqlServer($host, $idDot3Information);
+
+            if ($reverseMasterId === $idSlave) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 /**
  * Handle dot3 state through `buildLinkVIP`.
  *
@@ -4626,8 +4651,6 @@ class Dot3 extends Controller
         {
             if (! empty($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers']) && !empty($dot3_information['information']['servers'][$id_mysql_server]['is_proxy']))
             {
-                $same = array();
-
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers'] as $proxysql_servers)
                 {
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
@@ -4636,7 +4659,6 @@ class Dot3 extends Controller
                         $id_master = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
                     }
 
-                    $same[] = $id_master.":".self::TARGET."";
                     if ($id_mysql_server == $id_master) {
                         continue;
                     }
@@ -4651,6 +4673,14 @@ class Dot3 extends Controller
                     
                     $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
 
+                    if ($this->isMutualProxySqlReplication($dot3_information['information']['servers'], (int) $id_master, (int) $id_mysql_server, $id_dot3_information)) {
+                        $tmp['options']['constraint'] = 'false';
+                        $tmp['options']['label'] = ' ';
+                        if ((int) $id_master > (int) $id_mysql_server) {
+                            $tmp['options']['dir'] = 'back';
+                        }
+                    }
+
                     if ($this->isUnknownProxySqlNode($id_master) || $this->isUnknownProxySqlNode($id_mysql_server)) {
                         $tmp['color'] = '#9e9e9e';
                         if (empty($tmp['options']) || !is_array($tmp['options'])) {
@@ -4660,16 +4690,27 @@ class Dot3 extends Controller
                     }
 
                     self::$build_ms[] = $tmp;
-
-                    //Debug::debug($id_master ,"ID PROXYSQL");
                 }
-                
-                if (count($same) >= 2){
-                    self::$rank_same[] = "{ rank=same;".implode("; ", $same).";}\n";
-                }
-                
             }
         }
+    }
+
+    private function isMutualProxySqlReplication(array $servers, int $idMaster, int $idProxy, int $idDot3Information): bool
+    {
+        if ($idMaster <= 0 || $idProxy <= 0 || empty($servers[$idMaster]['proxysql_servers'])) {
+            return false;
+        }
+
+        foreach ($servers[$idMaster]['proxysql_servers'] as $proxySqlServer) {
+            $host = ($proxySqlServer['hostname'] ?? '').':'.($proxySqlServer['port'] ?? '');
+            $reverseMasterId = (int) self::findIdMysqlServer($host, $idDot3Information, true);
+
+            if ($reverseMasterId === $idProxy) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

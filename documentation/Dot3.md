@@ -69,6 +69,60 @@ Les groupes sont fusionnés pour définir chaque graphe :
 - `linkHostGroup()` : liens ProxySQL → backends (hostgroup).
 - `linkMaxScale()` : liens MaxScale → backends.
 
+### 3.3.1 Cas `MASTER <=> MASTER`
+
+Quand deux serveurs se répliquent mutuellement :
+
+- `A => B`
+- `B => A`
+
+Dot3 ne doit pas essayer de fusionner cela en un seul edge logique si l’objectif
+est de garder visibles les **deux directions**.
+
+Le rendu utilisé est volontairement celui-ci :
+
+```dot
+"master01" -> "master02" [color="green", constraint=false, label=" "]
+"master02" -> "master01" [color="green", constraint=false, dir=back, label=" "]
+```
+
+Règles métier :
+
+- `constraint=false`
+  - empêche Graphviz de déformer le layout pour satisfaire la contrainte de rang
+    sur deux flèches opposées
+- la deuxième flèche reçoit `dir=back`
+  - permet de dessiner correctement la contre-direction sans perdre la lecture
+- `label=" "`
+  - garde un peu d’air visuel sur l’edge quand les deux flèches se superposent
+
+Objectif :
+
+- afficher **deux réplications contraires lisibles**
+- éviter les artefacts Graphviz classiques sur les doubles flèches opposées
+- conserver une lecture stable même quand les nœuds sont proches
+
+### 3.3.2 Cas cluster ProxySQL pair-à-pair
+
+Le même principe est appliqué pour un cluster ProxySQL où deux nœuds se
+référencent mutuellement dans `proxysql_servers`.
+
+Exemple de rendu attendu :
+
+```dot
+"proxysql01" -> "proxysql02" [color="green", constraint=false, label=" "]
+"proxysql02" -> "proxysql01" [color="green", constraint=false, dir=back, label=" "]
+```
+
+Règle :
+
+- si `ProxySQL A` référence `ProxySQL B`
+- et que `ProxySQL B` référence aussi `ProxySQL A`
+
+alors Dot3 force le même mode d’affichage que pour `MASTER <=> MASTER` afin de
+garder visibles les deux directions sans que Graphviz écrase visuellement les
+flèches opposées.
+
 ### 3.4 Génération Graphviz
 
 `writeDot()` assemble le DOT :
