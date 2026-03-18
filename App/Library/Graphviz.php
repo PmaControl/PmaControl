@@ -32,6 +32,7 @@ use \Glial\Extract\Grabber;
  */
 class Graphviz
 {
+    private const OFFLINE_RED = '#FF0000';
     private static string $lastGenerateDotError = '';
     // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
     const MAX_ROWS_TO_REQUEST = 10000;
@@ -160,6 +161,41 @@ class Graphviz
         $row .= $indent . '</tr>' . PHP_EOL;
 
         return $row;
+    }
+
+    private static function isOfflineServer(array $server): bool
+    {
+        return isset($server['mysql_available'])
+            && (string)$server['mysql_available'] === '0'
+            && empty($server['is_sst_receiver']);
+    }
+
+    private static function isGreyBackground(string $background): bool
+    {
+        $normalized = strtolower(trim($background));
+
+        return in_array($normalized, [
+            'grey',
+            'gray',
+            'lightgrey',
+            'lightgray',
+            'darkgrey',
+            'darkgray',
+            '#eeeeee',
+            '#dddddd',
+            '#cccccc',
+            '#bbbbbb',
+            '#aaaaaa',
+        ], true);
+    }
+
+    private static function resolveOfflineRowColors(array $server, string $background, string $fontColor): array
+    {
+        if (!self::isOfflineServer($server) || self::isGreyBackground($background)) {
+            return [$background, $fontColor];
+        }
+
+        return [self::OFFLINE_RED, '#ffffff'];
     }
 
 /**
@@ -1155,8 +1191,8 @@ class Graphviz
             //$image_logo = 'galera.svg';
         }
         
-        if ($server['mysql_available'] == "0" && empty($server['is_sst_receiver'])) {
-            $server['color'] = "#FF5733";
+        if (self::isOfflineServer($server)) {
+            $server['color'] = self::OFFLINE_RED;
         }
 
 
@@ -1489,7 +1525,7 @@ class Graphviz
 
                 $extra = '';
                 $bgcolor = Dot3::$config['PROXYSQL_'.$link['status']]['color'];
-                $forground_color =Dot3::$config['PROXYSQL_'.$link['status']]['font'];
+                $forground_color = Dot3::$config['PROXYSQL_'.$link['status']]['font'];
 
                 if (! empty($server['proxy_connect_error'])) {
                     foreach($server['proxy_connect_error'] as $hostname => $error)
@@ -1516,6 +1552,8 @@ class Graphviz
 
                 $port = crc32($link['hostgroup_id'].':'.$link['hostname'].':'.$link['port']);
                 
+                [$bgcolor, $forground_color] = self::resolveOfflineRowColors($server, $bgcolor, $forground_color);
+
                 $return .= '<tr>';
                 $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left" port="'.$port.'">';
                 $return .= '<font color="'.$forground_color.'">'.$link['hostname'].':'.$link['port'].''.$extra.'</font>';
@@ -1541,17 +1579,6 @@ class Graphviz
                 $routes = array($matchedRoute);
             }
 
-            $routeCount = count($routes);
-            $metadataCount = count($metadataConfig);
-
-            
-            $return .= '<tr>';
-            $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
-            $return .= '<font color="'.$color.'">MySQL Router : '.$routeCount.' route(s) / '.$metadataCount.' metadata cache</font>';
-            $return .= '</td>';
-
-            $return .= '</tr>'.PHP_EOL;
-
             if (!empty($routes)) {
                 foreach ($routes as $route) {
                     $routeName = $route['route'] ?? $route['name'] ?? $route['id'] ?? 'route';
@@ -1559,9 +1586,11 @@ class Graphviz
                     $bindPort = $route['bindPort'] ?? $route['bind_port'] ?? '';
                     $destinations = $route['destinations_payload']['items'] ?? [];
 
+                    [$routeBackground, $routeFontColor] = self::resolveOfflineRowColors($server, '#00B33C', '#ffffff');
+
                     $return .= '<tr>';
-                    $return .= '<td colspan="2" bgcolor="#00B33C" align="left">';
-                    $return .= '<font color="#ffffff">🛣 '.$routeName.' : '.$bindAddress.':'.$bindPort.'</font>';
+                    $return .= '<td colspan="2" bgcolor="'.$routeBackground.'" align="left">';
+                    $return .= '<font color="'.$routeFontColor.'">🛣 '.$routeName.' : '.$bindAddress.':'.$bindPort.'</font>';
                     $return .= '</td>';
                     $return .= '</tr>'.PHP_EOL;
 
@@ -1591,6 +1620,8 @@ class Graphviz
                             $destinationFontColor = '#ffffff';
                         }
 
+                        [$destinationBgColor, $destinationFontColor] = self::resolveOfflineRowColors($server, $destinationBgColor, $destinationFontColor);
+
                         $return .= '<tr>';
                         $return .= '<td colspan="2" bgcolor="'.$destinationBgColor.'" align="left" port="'.$destinationGraphPort.'">';
                         $return .= '<font color="'.$destinationFontColor.'">'.$destinationIcon.' '.$destinationAddress.':'.$destinationPort.'</font>';
@@ -1599,9 +1630,11 @@ class Graphviz
                     }
                 }
             } else {
+                [$warningBgColor, $warningFontColor] = self::resolveOfflineRowColors($server, '#FFBF00', '#000000');
+
                 $return .= '<tr>';
-                $return .= '<td colspan="2" bgcolor="#FFBF00" align="left">';
-                $return .= '<font color="#000000">MySQL Router routes : no payload collected</font>';
+                $return .= '<td colspan="2" bgcolor="'.$warningBgColor.'" align="left">';
+                $return .= '<font color="'.$warningFontColor.'">MySQL Router routes : no payload collected</font>';
                 $return .= '</td>';
                 $return .= '</tr>'.PHP_EOL;
             }
@@ -1696,6 +1729,8 @@ class Graphviz
                     $icone = "⛔";
                 }
 
+                [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+
                 $return .= '<tr>';
                 $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
                 $return .= '<font color="'.$color.'">'.$icone.' Router : '.$max['service']['router'].' ('
@@ -1718,6 +1753,8 @@ class Graphviz
                     if (empty($server['mysql_available'])){
                         $icone = "⛔";
                     }
+
+                    [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
 
                     $return .= '<tr>';
                     $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
@@ -1837,6 +1874,8 @@ class Graphviz
 
                     $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$server_ip_port);
 
+
+                    [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
 
                     $return .= '<tr>';
                     $return .= '<td colspan="2" bgcolor="'.$background.'" align="left" port="'.$port.'">';

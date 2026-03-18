@@ -52,6 +52,7 @@ use \Glial\Sgbd\Sgbd;
  */
 class Dot3 extends Controller
 {
+    private const OFFLINE_EDGE_COLOR = '#FF0000';
 
     /*
     * récupére toutes les infomations du serveur à un date t   
@@ -2036,6 +2037,11 @@ class Dot3 extends Controller
                 $tmp['options']['arrowsize'] = '1.5';
                 $tmp['arrow'] = $id_mysql_server . ':' . $settings['source_port'] . ' -> ' . $id_destination . ':' . self::TARGET;
 
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
                 self::$build_ms[] = $tmp;
             }
         }
@@ -3372,6 +3378,11 @@ class Dot3 extends Controller
                     $tmp['color'] = '#9e9e9e';
                     $tmp['options']['color'] = '#9e9e9e';
                 }
+
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
                 self::$build_ms[] = $tmp;
             }
         }
@@ -3445,6 +3456,11 @@ class Dot3 extends Controller
                     $tmp['options']['arrowhead'] = 'none';
                 } else {
                     $tmp['options']['arrowhead'] = 'none';
+                }
+
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
                 }
 
                 self::$build_ms[] = $tmp;
@@ -3566,7 +3582,8 @@ class Dot3 extends Controller
 
                 }
                 else{
-                    $tmp['options']['color'] = "#cc5500";
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
                 }
 
                 self::$build_ms[] = $tmp;
@@ -4724,6 +4741,11 @@ class Dot3 extends Controller
         }
 
         return $resolved;
+    }
+
+    private function isServerOfflineForGraph(array $server): bool
+    {
+        return isset($server['mysql_available']) && (string)$server['mysql_available'] === '0';
     }
 
     public function generateGroupMysqlRouter($information)
