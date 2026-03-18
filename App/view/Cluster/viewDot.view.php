@@ -20,6 +20,11 @@ if ($svg !== '') {
     $downloadSvgHref = Graphviz::buildSvgDownloadDataUri($svg);
 }
 $previewKey = (string) ($data['preview_key'] ?? '');
+$importBundle = $data['import_bundle'] ?? [];
+$selectedImportGraph = $data['import_selected_graph'] ?? [];
+$selectedImportGraphIndex = $data['import_selected_graph_index'] ?? null;
+$importPayload = (string) ($data['import_payload'] ?? '');
+$isImported = !empty($importBundle['graphs']);
 ?>
 
 <style>
@@ -117,6 +122,70 @@ $previewKey = (string) ($data['preview_key'] ?? '');
     margin-left: auto;
 }
 
+.dot-online-import-details {
+    margin-bottom: 14px;
+}
+
+.dot-online-import-details summary {
+    display: none;
+}
+
+.dot-online-import-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.dot-online-import-panel {
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid #dbe5ef;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.dot-online-dropzone {
+    position: relative;
+    padding: 18px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.dot-online-dropzone.is-dragover {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.dot-online-dropzone-hint {
+    margin: 0 0 12px 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.dot-online-import-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(220px, 320px) minmax(280px, 1fr);
+    align-items: start;
+}
+
+.dot-online-import-panel textarea {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.dot-online-import-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+}
+
 .dot-online-layout {
     display: flex;
     align-items: stretch;
@@ -154,12 +223,15 @@ $previewKey = (string) ($data['preview_key'] ?? '');
 
 .dot-online-panel-body {
     padding: 12px;
+    min-height: 0;
 }
 
 .dot-online-editor-panel .dot-online-panel-body {
     display: flex;
+    flex-direction: column;
     flex: 1;
     padding: 0 !important;
+    min-height: 0;
 }
 
 .dot-online-top-actions {
@@ -182,14 +254,19 @@ $previewKey = (string) ($data['preview_key'] ?? '');
     overflow: hidden;
     background: #0f172a;
     display: flex;
-    flex: 1;
+    flex: 1 1 auto;
     width: 100%;
+    min-height: 0;
+    height: 100%;
+    max-height: 72vh;
 }
 
 .dot-online-editor-panel form {
     display: flex;
-    flex: 1;
+    flex: 1 1 auto;
+    flex-direction: column;
     width: 100%;
+    min-height: 0;
 }
 
 .dot-online-editor,
@@ -208,6 +285,7 @@ $previewKey = (string) ($data['preview_key'] ?? '');
 
 .dot-online-preview {
     min-height: 72vh;
+    max-height: 72vh;
     overflow: auto;
     border: 1px solid #dbe5ef;
     border-radius: 6px;
@@ -244,6 +322,15 @@ $previewKey = (string) ($data['preview_key'] ?? '');
     background: #0f172a !important;
     color: #e5e7eb !important;
     flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.dot-online-editor-panel .CodeMirror-sizer,
+.dot-online-editor-panel .CodeMirror-scroll,
+.dot-online-editor-panel .CodeMirror-code {
+    min-height: 100%;
 }
 
 .dot-online-editor-panel .CodeMirror-gutters {
@@ -358,14 +445,17 @@ $previewKey = (string) ($data['preview_key'] ?? '');
         flex-direction: column;
     }
 
-    .dot-online-editor,
-    .dot-online-preview {
-        min-height: 48vh;
+    .dot-online-import-grid {
+        grid-template-columns: 1fr;
     }
 
     .dot-online-code-shell,
-    .dot-online-editor-panel .CodeMirror {
+    .dot-online-preview {
         max-height: 48vh;
+    }
+
+    .dot-online-preview svg {
+        height: auto;
     }
 }
 </style>
@@ -379,13 +469,75 @@ $previewKey = (string) ($data['preview_key'] ?? '');
         <?= FactoryController::addNode("MysqlServer", "menu", [$idMysqlServer]); ?>
     </div>
 
+    <details class="dot-online-import-details"<?= $isImported ? ' open' : '' ?> id="dot-online-import-details">
+        <summary class="btn btn-warning" id="dot-online-import-summary">Import JSON</summary>
+        <div class="dot-online-import-panel">
+            <form method="post" enctype="multipart/form-data" id="dot-import-form">
+                <input type="hidden" name="dot_import[preview_key]" value="<?= htmlspecialchars($previewKey, ENT_QUOTES, 'UTF-8') ?>" />
+                <div class="dot-online-dropzone" id="dot-online-dropzone">
+                    <p class="dot-online-dropzone-hint"><strong>Drop a JSON file here</strong> or use the file picker / paste the payload below.</p>
+                    <div class="dot-online-import-grid">
+                        <div>
+                            <label for="dot-import-file"><strong>JSON file</strong></label>
+                            <input type="file" id="dot-import-file" name="dot_import[file]" class="form-control" accept=".json,application/json" />
+                            <p style="margin:10px 0 0; color:#64748b; font-size:12px;">Upload a `dot3/download` export or paste the JSON snapshot.</p>
+                        </div>
+                        <div>
+                            <label for="dot-import-payload"><strong>JSON payload</strong></label>
+                            <textarea id="dot-import-payload" name="dot_import[payload]" class="form-control" spellcheck="false"><?= htmlspecialchars($importPayload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="dot-online-import-actions">
+                    <button type="submit" class="btn btn-warning">Load JSON</button>
+                    <?php if ($isImported): ?>
+                        <span class="dot-online-chip">Imported graphs: <?= count($importBundle['graphs']) ?></span>
+                        <?php if (!empty($importBundle['source_label'])): ?>
+                            <span class="dot-online-chip">Source: <?= htmlspecialchars((string) $importBundle['source_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            </form>
+
+            <?php if ($isImported): ?>
+                <form method="get" action="" class="dot-online-import-actions" style="margin-top:12px;">
+                    <input type="hidden" name="preview_key" value="<?= htmlspecialchars($previewKey, ENT_QUOTES, 'UTF-8') ?>" />
+                    <label for="dot-import-selected-graph" style="margin:0;"><strong>Imported graph</strong></label>
+                    <select
+                        id="dot-import-selected-graph"
+                        name="selected_graph"
+                        class="selectpicker form-control"
+                        data-live-search="true"
+                        data-size="10"
+                        data-width="420px"
+                        title="Choose an imported graph"
+                    >
+                        <option value=""<?= $selectedImportGraphIndex === null ? ' selected' : '' ?>>Choose an imported graph</option>
+                        <?php foreach ($importBundle['graphs'] as $index => $graph): ?>
+                            <option value="<?= (int) $index ?>"<?= !empty($selectedImportGraph) && ($graph['md5'] ?? '') === ($selectedImportGraph['md5'] ?? '') ? ' selected' : '' ?>>
+                                <?= htmlspecialchars((string) ($graph['label'] ?? ('Graph ' . ((int) $index + 1))), ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="btn btn-default">Load graph</button>
+                </form>
+            <?php endif; ?>
+        </div>
+    </details>
+
     <div class="dot-online-meta">
         <span class="dot-online-chip">Server ID: <?= $idMysqlServer ?></span>
+        <?php if ($isImported): ?>
+            <span class="dot-online-chip">Mode: Imported JSON</span>
+        <?php endif; ?>
         <?php if ($dateInserted !== ''): ?>
             <span class="dot-online-chip">Refresh: <?= htmlspecialchars($dateInserted, ENT_QUOTES, 'UTF-8') ?></span>
         <?php endif; ?>
         <?php if ($md5 !== ''): ?>
             <span class="dot-online-chip">MD5: <?= htmlspecialchars($md5, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endif; ?>
+        <?php if ($isImported && !empty($importBundle['snapshot_id'])): ?>
+            <span class="dot-online-chip">Snapshot ID: <?= htmlspecialchars((string) $importBundle['snapshot_id'], ENT_QUOTES, 'UTF-8') ?></span>
         <?php endif; ?>
         <?php if ($filename !== ''): ?>
             <span class="dot-online-chip">File: <?= htmlspecialchars(basename($filename), ENT_QUOTES, 'UTF-8') ?></span>
@@ -396,6 +548,7 @@ $previewKey = (string) ($data['preview_key'] ?? '');
                 <a href="<?= $downloadSvgHref ?>" download="<?= htmlspecialchars($downloadSvgName, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary" id="dot-online-download-svg">Download SVG</a>
             <?php endif; ?>
             <a href="<?= LINK ?>dot3/download/" class="btn btn-success">Download JSON</a>
+            <button type="button" class="btn btn-warning" id="dot-online-import-trigger">Import JSON</button>
             <a href="<?= LINK ?>Cluster/svg/<?= $idMysqlServer ?>/" class="btn btn-default">Back to Cluster</a>
         </span>
     </div>
@@ -411,6 +564,9 @@ $previewKey = (string) ($data['preview_key'] ?? '');
             <div class="dot-online-panel-body">
                 <form method="post" action="" id="dot-online-form">
                     <input type="hidden" name="dot_preview[preview_key]" value="<?= htmlspecialchars($previewKey, ENT_QUOTES, 'UTF-8') ?>" id="dot-online-preview-key" />
+                    <?php if ($selectedImportGraphIndex !== null): ?>
+                        <input type="hidden" name="dot_preview[selected_graph]" value="<?= (int) $selectedImportGraphIndex ?>" id="dot-online-selected-import-graph" />
+                    <?php endif; ?>
                     <div class="dot-online-code-shell" id="dot-online-code-shell">
                         <textarea id="dot-online-editor" class="dot-online-editor" name="dot_preview[dot]" spellcheck="false"><?= htmlspecialchars($dot, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
                     </div>
@@ -480,6 +636,88 @@ if (window.CodeMirror && window.CodeMirror.defineSimpleMode) {
     var metaActions = document.getElementById("dot-online-meta-actions");
     var downloadSvgLink = document.getElementById("dot-online-download-svg");
     var fallbackActions = document.getElementById("dot-online-fallback-actions");
+    var importDetails = document.getElementById("dot-online-import-details");
+    var importTrigger = document.getElementById("dot-online-import-trigger");
+    var importDropzone = document.getElementById("dot-online-dropzone");
+    var importForm = document.getElementById("dot-import-form");
+    var importFileInput = document.getElementById("dot-import-file");
+    var importPayloadField = document.getElementById("dot-import-payload");
+    var importGraphSelect = document.getElementById("dot-import-selected-graph");
+
+    if (importTrigger && importDetails) {
+        importTrigger.addEventListener("click", function () {
+            importDetails.open = !importDetails.open;
+            if (importDetails.open) {
+                if (importPayloadField) {
+                    importPayloadField.focus();
+                }
+            }
+        });
+    }
+
+    if (importGraphSelect && window.jQuery && window.jQuery.fn && window.jQuery.fn.selectpicker) {
+        window.jQuery(importGraphSelect).selectpicker();
+    }
+
+    if (importForm) {
+        importForm.addEventListener("submit", function (event) {
+            var hasFile = !!(importFileInput && importFileInput.files && importFileInput.files.length);
+            var hasPayload = !!(importPayloadField && importPayloadField.value.trim() !== "");
+
+            if (hasFile || hasPayload) {
+                return;
+            }
+
+            event.preventDefault();
+            if (importDetails) {
+                importDetails.open = true;
+            }
+            if (importPayloadField) {
+                importPayloadField.focus();
+            }
+        });
+    }
+
+    if (importDropzone && importFileInput) {
+        ["dragenter", "dragover"].forEach(function (eventName) {
+            importDropzone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                importDropzone.classList.add("is-dragover");
+                if (importDetails) {
+                    importDetails.open = true;
+                }
+            });
+        });
+
+        ["dragleave", "dragend", "drop"].forEach(function (eventName) {
+            importDropzone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                importDropzone.classList.remove("is-dragover");
+            });
+        });
+
+        importDropzone.addEventListener("drop", function (event) {
+            var files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+            if (!files || !files.length) {
+                return;
+            }
+
+            importFileInput.files = files;
+
+            var firstFile = files[0];
+            if (firstFile && importPayloadField && typeof FileReader !== "undefined") {
+                var reader = new FileReader();
+                reader.onload = function (loadEvent) {
+                    if (loadEvent.target && typeof loadEvent.target.result === "string") {
+                        importPayloadField.value = loadEvent.target.result;
+                    }
+                };
+                reader.readAsText(firstFile);
+            }
+        });
+    }
 
     function ensureDownloadSvgLink() {
         if (downloadSvgLink || !metaActions) {
@@ -599,7 +837,6 @@ if (window.CodeMirror && window.CodeMirror.defineSimpleMode) {
                 setDownloadSvgHref("");
                 pushRenderError(payload.render_error);
             }
-            refreshEditorLayout();
             if (renderRequest === xhr) {
                 renderRequest = null;
             }
@@ -648,41 +885,6 @@ if (window.CodeMirror && window.CodeMirror.defineSimpleMode) {
     if (fallbackActions) {
         fallbackActions.style.display = "none";
     }
-
-    if (form) {
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-            if (autoRenderTimer !== null) {
-                clearTimeout(autoRenderTimer);
-                autoRenderTimer = null;
-            }
-            submitPreview();
-        });
-    }
-
-    function refreshEditorLayout() {
-        var codeShell = document.getElementById("dot-online-code-shell");
-        var editorPanel = document.getElementById("dot-online-editor-panel");
-        var renderPanel = document.querySelector(".dot-online-render-panel");
-        if (!editor || !codeShell || !editorPanel || !renderPanel) {
-            return;
-        }
-
-        var editorTop = codeShell.getBoundingClientRect().top;
-        var viewportLimit = window.innerHeight - editorTop + 24;
-        var head = editorPanel.querySelector(".dot-online-panel-head");
-        var headHeight = head ? head.offsetHeight : 0;
-        var renderBodyHeight = renderPanel.offsetHeight - headHeight;
-        var targetHeight = Math.max(320, Math.min(renderBodyHeight, viewportLimit));
-
-        codeShell.style.height = targetHeight + "px";
-        editor.setSize(null, targetHeight);
-        editor.refresh();
-    }
-
-    window.addEventListener("load", refreshEditorLayout);
-    window.addEventListener("resize", refreshEditorLayout);
-    setTimeout(refreshEditorLayout, 0);
 
     <?php if ($renderError !== ''): ?>
     pushRenderError(<?= json_encode($renderError) ?>);

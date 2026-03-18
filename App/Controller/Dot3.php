@@ -329,7 +329,7 @@ class Dot3 extends Controller
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
+                "mysql_available", "mysql_error","variables::version_comment","variables::is_single_store","is_proxy", "variables::server_id","read_only",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
@@ -1310,6 +1310,103 @@ class Dot3 extends Controller
             $file_name = Graphviz::generateDot($reference, $dot);
 
             $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
+        }
+    }
+
+    public function renderImportedGraphs(array $dot3Information): array
+    {
+        if (empty($dot3Information['information']) || !is_array($dot3Information['information'])) {
+            throw new Exception('Invalid imported dot3 payload: missing information block.');
+        }
+
+        $virtualInformationId = 'import:' . md5(json_encode($dot3Information['information']));
+
+        self::$unknown_proxy_nodes = array();
+        self::$missing_mapping = array();
+        self::$information[$virtualInformationId] = array(
+            'id' => $dot3Information['id'] ?? $virtualInformationId,
+            'date_generated' => $dot3Information['date_generated'] ?? '',
+            'date_inserted' => $dot3Information['date_inserted'] ?? ($dot3Information['date_generated'] ?? ''),
+            'md5' => $dot3Information['md5'] ?? md5(json_encode($dot3Information['information'])),
+            'information' => $dot3Information['information'],
+        );
+        self::$id_dot3_information = $virtualInformationId;
+
+        $graphs = array();
+        $groups = $this->getGroup(array($virtualInformationId));
+
+        foreach ($groups as $index => $group) {
+            if (empty($group) || !is_array($group)) {
+                continue;
+            }
+
+            $graphs[] = $this->renderImportedGraphGroup($virtualInformationId, array_values(array_unique($group)), (int) $index);
+        }
+
+        return array(
+            'information_id' => $virtualInformationId,
+            'graphs' => $graphs,
+        );
+    }
+
+    private function renderImportedGraphGroup($id_dot3_information, array $group, int $index): array
+    {
+        self::$id_dot3_information = $id_dot3_information;
+        self::$rank_same = array();
+        self::$build_galera = array();
+        self::$build_innodb_cluster = array();
+        self::$build_mysqlrouter = array();
+        self::$build_ms = array();
+        self::$build_server = array();
+
+        $this->buildServer(array($id_dot3_information, $group));
+        $this->buildGaleraCluster(array($id_dot3_information, $group));
+        $this->buildInnoDBCluster(array($id_dot3_information, $group));
+        $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
+        $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
+        $this->buildLink(array($id_dot3_information, $group));
+        $this->buildLinkVIP(array($id_dot3_information, $group));
+        $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+        $this->linkMysqlRouter(array($id_dot3_information, $group));
+        $this->linkHostGroup(array($id_dot3_information, $group));
+        $this->linkMaxScale(array($id_dot3_information, $group));
+
+        $dot = $this->writeDot();
+        $reference = 'import-dot3-' . $index . '-' . md5(json_encode($group)) . '-' . bin2hex(random_bytes(8));
+        $file_name = Graphviz::generateDot($reference, $dot);
+        $svgPayload = '';
+        $graphvizError = trim(Graphviz::getLastGenerateDotError());
+
+        if (is_string($file_name) && $file_name !== '' && file_exists($file_name)) {
+            $svgPayload = (string) file_get_contents($file_name);
+        }
+
+        if ($graphvizError !== '' || stripos(ltrim($svgPayload), '<svg') === false) {
+            if ($graphvizError === '') {
+                $graphvizError = 'Unable to render DOT as SVG.';
+            }
+            $svgPayload = '';
+        }
+
+        self::cleanupGeneratedGraphArtifacts($reference);
+
+        return array(
+            'group' => array_values(array_unique($group)),
+            'dot' => $dot,
+            'svg' => $svgPayload,
+            'md5' => md5($dot),
+            'filename' => is_string($file_name) ? basename($file_name) : '',
+            'render_error' => $graphvizError,
+        );
+    }
+
+    private static function cleanupGeneratedGraphArtifacts(string $reference): void
+    {
+        foreach (array('dot', 'svg', 'png') as $extension) {
+            $file = TMP . 'dot/' . $reference . '.' . $extension;
+            if (file_exists($file)) {
+                @unlink($file);
+            }
         }
     }
 

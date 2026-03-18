@@ -1101,6 +1101,12 @@ class Graphviz
 
         $fork = $format['fork'] ?? '';
         $number = $format['number'] ?? '';
+        $isSingleStore = !empty($server['is_single_store']) && (string) $server['is_single_store'] === '1';
+
+        if ($isSingleStore) {
+            $fork = 'SingleStore';
+        }
+
         $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
         $version_label = trim($fork.' : '.$number);
         if ($version_label === ':') {
@@ -1258,7 +1264,7 @@ class Graphviz
                 else
                 {
 
-                $is_single_store = strtolower((string)$fork) === 'singlestore';
+                $is_single_store = $isSingleStore || strtolower((string)$fork) === 'singlestore';
 
                 $return .= self::htmlRow([
                     '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td>',

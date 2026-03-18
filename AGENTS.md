@@ -9,6 +9,9 @@ Run `composer install --no-interaction` after cloning to pull PHP 8.2-compatible
 ## Coding Style & Naming Conventions
 Follow PSR-12: 4-space indentation, braces on the next line, and strict types where possible. Classes belong under `App\` or `Glial\` namespaces to match Composer autoloading. Name controllers `SomethingController`, service classes `*Manager`, and tests `*Test`. Prefer dependency injection over locating globals. Run `vendor/bin/phpcbf` (if installed) before opening a PR; otherwise ensure `php -l` stays clean.
 
+## Navigation And Form Flows
+Default to browser-friendly request flows. Any server-rendered form that mutates state or computes a new page state must end in `GET`, using POST-Redirect-GET by default instead of returning HTML directly from a POST response. Use plain `GET` directly for pure selection, filtering, search, and navigation forms. Avoid leaving the UI on a POST URL so back/refresh behavior stays predictable everywhere.
+
 ## Testing Guidelines
 All new logic requires PHPUnit coverage under `tests/`, mirroring the namespace of the code under test. Use descriptive test names (`testSyncJobFailsWithoutCredentials`). Keep fixtures small and reusable; store SQL samples in `tests/fixtures`. Aim to keep the suite under five minutes locally—split slow integration tests into separate cases invoked via `--filter`.
 
