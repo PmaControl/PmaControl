@@ -89,19 +89,199 @@ Le DOT est ensuite compilé par `Graphviz::generateDot()` en **SVG + PNG**.
 
 ---
 
-## 3.6 Règles d’ajout d’un arbitre Galera (garb)
+## 3.6 Résolution des endpoints et cas métier ProxySQL
+
+La partie la plus sensible de Dot3 n’est pas le rendu Graphviz mais la
+**résolution de l’endpoint à afficher** et la **résolution des liens internes**
+vers le bon `id_mysql_server`.
+
+### 3.6.1 Sources de vérité
+
+Dot3 assemble plusieurs sources qui n’ont pas le même rôle :
+
+- `mysql_server`
+  - représente l’endpoint principal d’un serveur dans l’inventaire
+  - pour un MySQL direct : IP/FQDN client + port SQL
+  - pour un ProxySQL : endpoint SQL exposé aux clients, souvent `IP:6033`
+- `proxysql_server`
+  - représente l’endpoint d’administration ProxySQL, souvent `IP/FQDN:6032`
+- `alias_dns`
+  - ajoute des noms alternatifs qui doivent résoudre vers le même `id_mysql_server`
+- `ssh_tunnel`
+  - stocke les traductions explicites `local_host:local_port -> remote_host:remote_port`
+- `dot3_information.information.mapping`
+  - cache de résolution `host:port -> id_mysql_server` utilisé pendant le build
+
+### 3.6.2 Règle métier par type d’endpoint
+
+- `MySQL direct`
+  - l’adresse affichée doit être l’endpoint atteignable par l’utilisateur
+  - en pratique : `ip_real:port_real`
+- `Alias DNS`
+  - utile pour résoudre les liens internes
+  - ne doit pas remplacer une IP atteignable si celle-ci est connue
+- `ProxySQL SQL listener`
+  - l’adresse affichée doit être l’endpoint client
+  - typiquement `mysql_server.ip:mysql_server.port`
+- `ProxySQL admin`
+  - sert au mapping interne et aux corrélations techniques
+  - typiquement `proxysql_server.hostname:6032`
+  - ne doit pas devenir l’endpoint affiché au client
+- `Tunnel SSH`
+  - si une entrée explicite existe dans `Dot3::getTunnel()`, Dot3 peut afficher
+    `🔀destination`
+  - sans tunnel explicite, il faut conserver l’endpoint atteignable déjà connu
+- `VIP / NAT / port translation`
+  - si aucun tunnel explicite n’existe, l’UI doit garder `ip_real:port_real`
+  - il ne faut pas remplacer cet endpoint par une IP interne non joignable
+
+### 3.6.3 Cas historique qui a causé la confusion
+
+Un cas métier récurrent a été observé sur ProxySQL :
+
+- l’UI affichait `NAME:6033` au lieu d’une IP
+- l’intuition initiale faisait penser à un problème de tunnel ou de `alias_dns`
+- la cause réelle était dans `Dot3::generateInformation()`
+
+Le `UNION` utilisé pour construire le cache `mapping` et les champs de base des
+nœuds ProxySQL injectait :
+
+- `ip = e.ip`
+- `port = e.port`
+- `ip_real = e.hostname`
+
+Conséquence :
+
+- Graphviz affichait mécaniquement `hostname:port`
+- un nœud ProxySQL pouvait apparaître comme `mariadb-11-1:6033`
+- alors que la vraie donnée atteignable était déjà présente dans `mysql_server.ip`
+
+La règle correcte est :
+
+- pour les nœuds ProxySQL, `ip_real` doit pointer vers `mysql_server.ip`
+- `proxysql_server.hostname:port_admin` reste utilisé pour les mappings admin
+  explicites (6032)
+
+### 3.6.4 Ce qui relève du rendu et ce qui relève de la donnée
+
+Pour éviter de “tourner en rond”, il faut distinguer deux niveaux :
+
+- `Dot3`
+  - choisit la **bonne identité technique** du nœud
+  - construit `mapping`, `ip_real`, `port_real`, VIP, endpoints admin
+- `Graphviz`
+  - affiche ce que Dot3 a décidé
+  - ne doit pas inventer de fallback qui change un endpoint atteignable en
+    endpoint interne non joignable
+
+En pratique :
+
+- si le mauvais host est visible sur la boîte du nœud, le bug est souvent dans
+  `generateInformation()`
+- si le préfixe `🔀` est incorrect, le bug est souvent dans la logique de tunnel
+  ou dans l’interprétation d’un export historique
+
+---
+
+## 3.7 Group Replication / InnoDB Cluster
+
+Dot3 gère aussi les topologies **MySQL Group Replication / InnoDB Cluster**.
+Le principe est proche de Galera sur la forme visuelle, mais pas sur les
+signaux métier utilisés.
+
+### 3.7.1 Détection et composition du groupe
+
+Le regroupement est réalisé par `generateGroupInnoDBCluster()` à partir de :
+
+- `group_replication_group_name`
+- `group_replication_group_seeds`
+- `group_replication_local_address`
+
+La résolution des membres combine :
+
+- les endpoints Group Replication eux-mêmes (`group_replication_local_address`)
+- le mapping SQL normalisé `host:port -> id_mysql_server`
+- les alias possibles via `report_host`, `hostname`, `ip_real`, `ip`
+
+Le port de Group Replication (`33061` le plus souvent) sert à **identifier les
+membres du cluster**, pas à définir l’endpoint SQL affiché dans les box.
+
+### 3.7.2 Calcul du rôle Primary / Replica
+
+Le rôle affiché dans le graphe est calculé dans `buildInnoDBCluster()`.
+
+Règles utilisées :
+
+- si `group_replication_single_primary_mode` est désactivé
+  - tous les nœuds sont considérés `PRIMARY`
+- si `group_replication_single_primary_mode` est activé
+  - Dot3 tente d’identifier le primary via
+    `group_replication_primary_member == server_uuid`
+  - à défaut, Dot3 utilise un fallback métier via `super_read_only` / `read_only`
+    pour distinguer `PRIMARY` et `SECONDARY`
+
+Cette logique correspond à l’usage MySQL standard :
+
+- `group_replication_primary_member` indique le membre primary dans un cluster
+  single-primary
+- le port local de Group Replication n’indique pas le rôle
+
+### 3.7.3 Rendu en sous-graphes
+
+Dans `Graphviz::generateInnoDBCluster()`, chaque InnoDB Cluster contient
+désormais deux sous-graphes internes :
+
+- `Primary`
+- `Replica`
+
+Les nœuds sont rangés dans le bon sous-groupe selon `member_role` :
+
+- `PRIMARY` -> sous-graphe `Primary`
+- `SECONDARY` -> sous-graphe `Replica`
+
+Ce découpage reprend l’idée des segments Galera, mais adaptée à Group
+Replication :
+
+- Galera segmente par `gmcast.segment`
+- Group Replication segmente ici par **rôle logique**
+
+### 3.7.4 Tunnel et Group Replication
+
+Le tunnel n’a aucun effet sur le rôle `Primary` / `Replica`.
+
+Le tunnel n’impacte que l’adresse affichée sur la deuxième ligne de la box :
+
+- sans tunnel explicite : Dot3 garde `ip_real:port_real`
+- avec tunnel explicite : Dot3 peut afficher `🔀destination`
+
+Autrement dit :
+
+- le **sous-graphe** dépend des métadonnées Group Replication
+- la **deuxième ligne de la box** dépend de l’endpoint SQL atteignable
+
+### 3.7.5 Cas testés
+
+Les tests unitaires couvrent explicitement :
+
+- Group Replication sans tunnel
+- Group Replication avec tunnel
+- génération des sous-graphes `Primary` / `Replica`
+
+---
+
+## 3.8 Règles d’ajout d’un arbitre Galera (garb)
 
 Dot3 peut **ajouter un nœud arbitre** (garb) lorsqu’il est présent dans
 `wsrep_incoming_addresses` d’un nœud Galera.
 
-### 3.6.1 Détection
+### 3.8.1 Détection
 
 Dans `generateGroupGalera()` :
 
 - `wsrep_incoming_addresses` est parsé par `getIdMysqlServerFromGalera()`.
 - Si un élément commence par `:` (ex. `:4567`), Dot3 considère qu’il s’agit d’un **garb**.
 
-### 3.6.2 Création (fonction `createGarb()`)
+### 3.8.2 Création (fonction `createGarb()`)
 
 Dot3 crée alors un nœud **virtuel** :
 
@@ -113,7 +293,7 @@ Dot3 crée alors un nœud **virtuel** :
    - `id_mysql_server = <nouvel id>`
 4. **Injecte** ce nœud dans `self::$information[self::$id_dot3_information]['information']`.
 
-### 3.6.3 Rendu Graphviz
+### 3.8.3 Rendu Graphviz
 
 - Le nœud `garb` est intégré au cluster Galera comme un nœud classique.
 - Dans `Graphviz::generateServer()` :

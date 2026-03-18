@@ -367,7 +367,7 @@ class Dot3 extends Controller
                 UNION select d.id_mysql_server,
                     e.ip, e.port,e.display_name,
                     e.is_proxy, e.is_vip,
-                    e.hostname,
+                    e.ip,
                     e.port as port_real
                 FROM proxysql_server d
                 INNER JOIN mysql_server e ON e.id = d.id_mysql_server

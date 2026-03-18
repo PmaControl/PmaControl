@@ -2064,9 +2064,6 @@ class Graphviz
             <td bgcolor="lightgrey" width="100" align="left">Nodes available : <b>'.(int)$cluster['node_online'].'/'.(int)$cluster['members'].'</b></td></tr>';
             $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">Mode : <b>'.htmlspecialchars((string)$cluster['mode'], ENT_QUOTES, 'UTF-8').'</b></td></tr>'.PHP_EOL;
 
-            if ($groupName !== '') {
-                $return .= '<tr><td bgcolor="lightgrey" align="left" colspan="2">Group name : '.htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8').'</td></tr>';
-            }
 
             $return .= '</table>';
             $return .= '</td></tr></table>';
@@ -2079,8 +2076,51 @@ class Graphviz
             $return .= 'fillcolor = "'.$background.'"'.PHP_EOL;
             $return .= 'href = "'.LINK.'InnoDBCluster/index/'.urlencode((string)$groupName).'";'.PHP_EOL;
 
+            $roleBuckets = array(
+                'PRIMARY' => array(),
+                'SECONDARY' => array(),
+            );
+
             foreach ($cluster['node'] as $idMysqlServer => $node) {
-                $return .= $idMysqlServer.';'.PHP_EOL;
+                $role = strtoupper((string)($node['member_role'] ?? 'SECONDARY'));
+                if (!isset($roleBuckets[$role])) {
+                    $roleBuckets[$role] = array();
+                }
+                $roleBuckets[$role][] = $idMysqlServer;
+            }
+
+            $subgroups = array(
+                'PRIMARY' => array(
+                    'label' => 'Primary',
+                    'color' => '#1b5e20',
+                    'fillcolor' => '#e8f5e9',
+                ),
+                'SECONDARY' => array(
+                    'label' => 'Replica',
+                    'color' => '#1565c0',
+                    'fillcolor' => '#e3f2fd',
+                ),
+            );
+
+            foreach ($subgroups as $role => $style) {
+                if (empty($roleBuckets[$role])) {
+                    continue;
+                }
+
+                $return .= 'subgraph cluster_innodb_'.crc32((string)$cluster['id_cluster'].'_'.$role).' {'.PHP_EOL;
+                $return .= 'label = "'.$style['label'].'";'.PHP_EOL;
+                $return .= 'penwidth = 2;'.PHP_EOL;
+                $return .= 'color = "'.$style['color'].'";'.PHP_EOL;
+                $return .= 'style = "rounded,filled";'.PHP_EOL;
+                $return .= 'fillcolor = "'.$style['fillcolor'].'";'.PHP_EOL;
+                $return .= 'fontsize = 8;'.PHP_EOL;
+                $return .= 'fontname = "Arial";'.PHP_EOL;
+
+                foreach ($roleBuckets[$role] as $idMysqlServer) {
+                    $return .= $idMysqlServer.';'.PHP_EOL;
+                }
+
+                $return .= '}'.PHP_EOL;
             }
 
             $return .= self::endCluster();

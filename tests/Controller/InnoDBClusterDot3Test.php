@@ -1,6 +1,7 @@
 <?php
 
 use App\Controller\Dot3;
+use App\Library\Graphviz;
 use PHPUnit\Framework\TestCase;
 
 class InnoDBClusterDot3Test extends TestCase
@@ -47,5 +48,35 @@ class InnoDBClusterDot3Test extends TestCase
 
         $this->assertArrayHasKey('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', $groups);
         $this->assertSame([10, 11], $groups['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee']);
+    }
+
+    public function testGenerateInnoDBClusterCreatesPrimaryAndReplicaSubgraphs(): void
+    {
+        if (!defined('LINK')) {
+            define('LINK', '/');
+        }
+
+        $graph = Graphviz::generateInnoDBCluster([
+            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' => [
+                'id_cluster' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+                'name' => 'prodCluster',
+                'group_name' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+                'mode' => 'single-primary',
+                'members' => 3,
+                'node_online' => 3,
+                'primary_online' => 1,
+                'config' => 'INNODB_CLUSTER_OK',
+                'node' => [
+                    10 => ['member_role' => 'PRIMARY', 'member_state' => 'ONLINE'],
+                    11 => ['member_role' => 'SECONDARY', 'member_state' => 'ONLINE'],
+                    12 => ['member_role' => 'SECONDARY', 'member_state' => 'ONLINE'],
+                ],
+            ],
+        ]);
+
+        $this->assertStringContainsString('label = "Primary";', $graph);
+        $this->assertStringContainsString('label = "Replica";', $graph);
+        $this->assertMatchesRegularExpression('/subgraph cluster_innodb_[^{]+\{[^}]*label = "Primary";[^}]*10;/s', $graph);
+        $this->assertMatchesRegularExpression('/subgraph cluster_innodb_[^{]+\{[^}]*label = "Replica";[^}]*11;[^}]*12;/s', $graph);
     }
 }
