@@ -152,6 +152,22 @@ find tmp/ -type f -exec chmod 0644 {} \;
 find data/ -type d -exec chmod 0755 {} \;
 find data/ -type f -exec chmod 0644 {} \;
 
+# dedicate a tmpfs for highly contended temporary files
+tmp_tmp_dir="$pmacontrol_path/tmp/tmp_dir"
+mkdir -p "$tmp_tmp_dir"
+chown "$user:$user" "$tmp_tmp_dir"
+chmod 0775 "$tmp_tmp_dir"
+
+tmpfs_entry="tmpfs $tmp_tmp_dir tmpfs rw,nosuid,nodev,relatime,size=256M,uid=$(id -u "$user"),gid=$(id -g "$user"),mode=0775 0 0"
+
+if ! grep -qsF "$tmp_tmp_dir" /etc/fstab; then
+    echo "$tmpfs_entry" >> /etc/fstab
+fi
+
+if ! mountpoint -q "$tmp_tmp_dir"; then
+    mount "$tmp_tmp_dir"
+fi
+
 # install crontab for user apache
 
 #write out current crontab
