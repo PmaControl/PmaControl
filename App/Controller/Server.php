@@ -556,6 +556,90 @@ class Server extends Controller
         $this->set('data', $data);
     }
 
+    public function state()
+    {
+        $this->title = __("Server State");
+        $this->ariane = " > " . $this->title;
+        $rangeOptions = $this->getServerStateRangeOptions();
+        $payload = ServerStateTimeline::buildInitialPayload($this->getServerStateList(), $rangeOptions);
+        $chartVersion = @filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'chart-4.5.1.umd.min.js') ?: time();
+        $stateJsVersion = @filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'Server' . DS . 'state.js') ?: time();
+        $queryString = http_build_query(array_filter($rangeOptions, function ($value) {
+            return $value !== null && $value !== '';
+        }));
+        $urlSuffix = $queryString === '' ? '' : '?' . $queryString;
+
+        $this->di['js']->addJavascript(array(
+            'chart-4.5.1.umd.min.js?v=' . $chartVersion,
+            'Server/state.js?v=' . $stateJsVersion,
+        ));
+        $this->di['js']->code_javascript('window.serverStateConfig = ' . json_encode(array(
+            'initialUrl' => LINK . 'server/stateInitial/ajax:true' . $urlSuffix,
+            'liveUrl' => LINK . 'server/stateLive/ajax:true' . $urlSuffix,
+            'refreshIntervalMs' => 10000,
+            'liveEnabled' => !empty($payload['range']['live_enabled']),
+        )) . ';');
+        $this->di['js']->code_javascript('window.serverStateInitialPayload = ' . json_encode($payload) . ';');
+        $this->set('data', array(
+            'range' => $payload['range'] ?? [],
+        ));
+    }
+
+    public function stateInitial()
+    {
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(ServerStateTimeline::buildInitialPayload($this->getServerStateList(), $this->getServerStateRangeOptions()));
+        exit;
+    }
+
+    public function stateLive()
+    {
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(ServerStateTimeline::buildLivePayload($this->getServerStateList(), $this->getServerStateRangeOptions()));
+        exit;
+    }
+
+    private function getServerStateRangeOptions(): array
+    {
+        return array(
+            'range' => $_GET['range'] ?? '1h',
+            'range_mode' => $_GET['range_mode'] ?? 'preset',
+            'start' => $_GET['start'] ?? null,
+            'end' => $_GET['end'] ?? null,
+        );
+    }
+
+    private function getServerStateList(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT a.id, a.name, a.display_name
+            FROM mysql_server a
+            INNER JOIN client c ON c.id = a.id_client
+            WHERE a.is_deleted = 0
+            AND a.is_monitored = 1
+            AND c.is_monitored = 1 " . self::getFilter([], 'a') . "
+            ORDER BY a.name ASC";
+
+        $res = $db->sql_query($sql);
+        $servers = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $servers[] = [
+                'id' => (int) $row['id'],
+                'name' => !empty($row['display_name']) ? $row['display_name'] : $row['name'],
+                'display_html' => Display::srv((int) $row['id'], true, LINK . 'MysqlServer/main/' . (int) $row['id'] . '/'),
+            ];
+        }
+
+        return $servers;
+    }
+
 /**
  * Handle server state through `logs`.
  *
@@ -669,6 +753,51 @@ class Server extends Controller
                 "ssh_stats::memory_total", "databases::databases"));
 
         $data['database'] = Extraction::getSizeByEngine($data['variables']);
+
+        $this->set('data', $data);
+    }
+
+/**
+ * Handle server state through `engineMemory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for engineMemory.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::engineMemory()
+ * @example /fr/server/engineMemory/1
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function engineMemory($param)
+    {
+        if (empty($param[0]) || !ctype_digit((string) $param[0])) {
+            throw new \InvalidArgumentException('Usage: /server/engineMemory/{id_mysql_server}');
+        }
+
+        $idMysqlServer = (int) $param[0];
+
+        $this->title = __("Engine Memory");
+        $this->ariane = " > ".__("Tools Box")." > ".$this->title;
+
+        $data = EngineMemoryBreakdown::build($idMysqlServer, [
+            'range' => $_GET['range'] ?? '6h',
+            'range_mode' => $_GET['range_mode'] ?? 'preset',
+            'start' => $_GET['start'] ?? null,
+            'end' => $_GET['end'] ?? null,
+        ]);
+
+        $this->di['js']->addJavascript(array('chart-4.5.1.umd.min.js', 'Server/engineMemory.js'));
+        $this->di['js']->code_javascript('window.engineMemoryChartPayload = '.json_encode($data['process_memory_chart']).';');
 
         $this->set('data', $data);
     }

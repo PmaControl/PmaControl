@@ -125,10 +125,18 @@
     }
 
     function renderTable(payload) {
+        var chartTitle = "Last 60 minutes";
+
+        if (payload.range && payload.range.mode === "custom") {
+            chartTitle = "Custom range";
+        } else if (payload.range && payload.range.preset) {
+            chartTitle = payload.range.preset;
+        }
+
         var html = [
             '<table class="table table-condensed table-bordered table-striped server-state-table">',
             '<thead>',
-            '<tr><th>Server</th><th>Current status</th><th>(nombre de 1) / (nombre 0 + 1)</th><th>Last 60 minutes</th></tr>',
+            '<tr><th>Server</th><th>Current status</th><th>(nombre de 1) / (nombre 0 + 1)</th><th>' + chartTitle + '</th></tr>',
             '</thead>',
             '<tbody>'
         ];
@@ -310,6 +318,10 @@
             renderCharts(payload);
 
             stopPolling();
+            if (stateConfig.liveEnabled === false || (payload.range && payload.range.live_enabled === false)) {
+                return;
+            }
+
             pollTimer = window.setInterval(function () {
                 fetchJson(stateConfig.liveUrl, applyLivePayload, function (message) {
                     stopPolling();

@@ -6,20 +6,26 @@ use Glial\Sgbd\Sgbd;
 
 class ServerStateTimeline
 {
-    public const WINDOW_MINUTES = 60;
     public const AGGREGATION_BUCKET_SECONDS = 10;
-    public const WINDOW_POINTS = 360;
+    public const LIVE_SAFETY_DELAY_SECONDS = 5;
     public const INITIAL_CACHE_TTL = 10;
     public const LIVE_CACHE_TTL = 5;
+    public const RANGE_PRESETS = [
+        '1h' => 3600,
+        '6h' => 21600,
+        '24h' => 86400,
+    ];
 
-    public static function buildInitialPayload(array $servers): array
+    public static function buildInitialPayload(array $servers, array $options = []): array
     {
         $serverIds = array_map('intval', array_column($servers, 'id'));
-        $bucketEnd = self::getCurrentBucket();
-        $bucketStart = $bucketEnd->modify('-' . ((self::WINDOW_POINTS - 1) * self::AGGREGATION_BUCKET_SECONDS) . ' seconds');
+        $range = self::normalizeRange($options);
+        $bucketStart = $range['start'];
+        $bucketEnd = $range['end'];
+        $pointCount = self::getPointCount($bucketStart, $bucketEnd);
         $cacheKey = 'initial-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s'), $bucketEnd->format('Y-m-d H:i:s')]));
 
-        return self::remember($cacheKey, self::INITIAL_CACHE_TTL, function () use ($servers, $serverIds, $bucketStart, $bucketEnd) {
+        return self::remember($cacheKey, self::INITIAL_CACHE_TTL, function () use ($servers, $serverIds, $bucketStart, $bucketEnd, $pointCount, $range) {
             $rows = self::fetchAvailabilityRows($serverIds, $bucketStart, $bucketEnd);
             $currentStatuses = self::fetchCurrentStatuses($serverIds);
             $labels = self::buildLabels($bucketStart, $bucketEnd);
@@ -28,13 +34,19 @@ class ServerStateTimeline
 
             foreach ($servers as $server) {
                 $serverId = (int) $server['id'];
+                $serverValues = $series[$serverId] ?? array_fill(0, $pointCount, null);
+
+                if (!empty($range['live_enabled'])) {
+                    $serverValues = self::fillLatestMissingBucketFromCurrentStatus($serverValues, $currentStatuses[$serverId] ?? null);
+                }
+
                 $payloadServers[] = [
                     'server_id' => $serverId,
                     'name' => $server['name'],
                     'display_html' => $server['display_html'] ?? $server['name'],
                     'current_status' => $currentStatuses[$serverId] ?? null,
-                    'values' => $series[$serverId] ?? array_fill(0, self::WINDOW_MINUTES, null),
-                    'ratio' => self::computeServerRatio($series[$serverId] ?? array_fill(0, self::WINDOW_MINUTES, null)),
+                    'values' => $serverValues,
+                    'ratio' => self::computeServerRatio($serverValues),
                 ];
             }
 
@@ -43,29 +55,92 @@ class ServerStateTimeline
                 'labels' => $labels,
                 'servers' => $payloadServers,
                 'stats' => self::computeStats($payloadServers),
+                'range' => $range,
             ];
         });
     }
 
-    public static function buildLivePayload(array $servers): array
+    public static function buildLivePayload(array $servers, array $options = []): array
     {
         $serverIds = array_map('intval', array_column($servers, 'id'));
-        $bucketEnd = self::getCurrentBucket();
-        $cacheKey = 'live-' . md5(json_encode([$serverIds, $bucketEnd->format('Y-m-d H:i:s')]));
+        $range = self::normalizeRange($options);
 
-        return self::remember($cacheKey, self::LIVE_CACHE_TTL, function () use ($serverIds, $bucketEnd) {
-            $bucketStart = (clone $bucketEnd)->modify('-' . (self::AGGREGATION_BUCKET_SECONDS - 1) . ' seconds');
+        if (!$range['live_enabled']) {
+            return [
+                'bucket_key' => $range['end']->format('Y-m-d H:i:s'),
+                'label' => $range['end']->format('H:i:s'),
+                'values' => [],
+                'current_statuses' => [],
+            ];
+        }
+
+        $bucketStart = self::getStableBucket($options);
+        $bucketEnd = $bucketStart->modify('+' . (self::AGGREGATION_BUCKET_SECONDS - 1) . ' seconds');
+        $cacheKey = 'live-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s')]));
+
+        return self::remember($cacheKey, self::LIVE_CACHE_TTL, function () use ($serverIds, $bucketStart, $bucketEnd) {
             $rows = self::fetchAvailabilityRows($serverIds, $bucketStart, $bucketEnd);
-            $values = self::buildCurrentBucketValues($serverIds, $rows, $bucketEnd);
+            $values = self::buildCurrentBucketValues($serverIds, $rows, $bucketStart);
             $currentStatuses = self::fetchCurrentStatuses($serverIds);
 
+            foreach ($values as $serverId => $value) {
+                if ($value === null && array_key_exists($serverId, $currentStatuses) && $currentStatuses[$serverId] !== null) {
+                    $values[$serverId] = $currentStatuses[$serverId];
+                }
+            }
+
             return [
-                'bucket_key' => $bucketEnd->format('Y-m-d H:i:s'),
-                'label' => $bucketEnd->format('H:i:s'),
+                'bucket_key' => $bucketStart->format('Y-m-d H:i:s'),
+                'label' => $bucketStart->format('H:i:s'),
                 'values' => $values,
                 'current_statuses' => $currentStatuses,
             ];
         });
+    }
+
+    public static function normalizeRange(array $options = []): array
+    {
+        $timezone = new \DateTimeZone(date_default_timezone_get() ?: 'UTC');
+        $bucketNow = self::getStableBucket($options, $timezone);
+        $preset = (string) ($options['range'] ?? '1h');
+        $rangeMode = (string) ($options['range_mode'] ?? 'preset');
+
+        if (!isset(self::RANGE_PRESETS[$preset])) {
+            $preset = '1h';
+        }
+
+        $mode = 'preset';
+        $end = $bucketNow;
+        $start = $end->modify('-' . (self::RANGE_PRESETS[$preset] - self::AGGREGATION_BUCKET_SECONDS) . ' seconds');
+
+        $customStart = self::parseDateTimeInput($options['start'] ?? null, $timezone);
+        $customEnd = self::parseDateTimeInput($options['end'] ?? null, $timezone);
+
+        if ($rangeMode === 'custom' && $customStart !== null && $customEnd !== null && $customEnd > $customStart) {
+            $customStart = self::toBucketStart($customStart);
+            $customEnd = self::toBucketStart($customEnd);
+            $diff = $customEnd->getTimestamp() - $customStart->getTimestamp();
+
+            if ($diff >= 0 && $diff <= self::RANGE_PRESETS['24h']) {
+                $mode = 'custom';
+                $start = $customStart;
+                $end = $customEnd;
+            }
+        }
+
+        return [
+            'mode' => $mode,
+            'preset' => $preset,
+            'range_mode' => $mode,
+            'start' => $start,
+            'end' => $end,
+            'start_value' => $start->format('Y-m-d\TH:i'),
+            'end_value' => $end->format('Y-m-d\TH:i'),
+            'live_enabled' => $mode === 'preset',
+            'title' => $mode === 'custom'
+                ? 'Server state (custom range)'
+                : 'Server state (' . $preset . ')',
+        ];
     }
 
     public static function aggregateMinuteValues(array $values): ?int
@@ -154,9 +229,10 @@ class ServerStateTimeline
     {
         $series = [];
         $bucketMap = [];
+        $pointCount = self::getPointCount($bucketStart, $bucketEnd);
 
         foreach ($serverIds as $serverId) {
-            $series[(int) $serverId] = array_fill(0, self::WINDOW_POINTS, null);
+            $series[(int) $serverId] = array_fill(0, $pointCount, null);
         }
 
         $cursor = $bucketStart;
@@ -193,9 +269,9 @@ class ServerStateTimeline
         return $series;
     }
 
-    private static function buildCurrentBucketValues(array $serverIds, array $rows, \DateTimeImmutable $bucketEnd): array
+    private static function buildCurrentBucketValues(array $serverIds, array $rows, \DateTimeImmutable $bucketStart): array
     {
-        $bucketKey = $bucketEnd->format('Y-m-d H:i:s');
+        $bucketKey = $bucketStart->format('Y-m-d H:i:s');
         $values = [];
 
         foreach ($serverIds as $serverId) {
@@ -236,6 +312,34 @@ class ServerStateTimeline
         }
 
         return $labels;
+    }
+
+    private static function getPointCount(\DateTimeImmutable $bucketStart, \DateTimeImmutable $bucketEnd): int
+    {
+        return (int) floor(($bucketEnd->getTimestamp() - $bucketStart->getTimestamp()) / self::AGGREGATION_BUCKET_SECONDS) + 1;
+    }
+
+    private static function parseDateTimeInput($value, \DateTimeZone $timezone): ?\DateTimeImmutable
+    {
+        if (empty($value) || !is_string($value)) {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $value, $timezone);
+
+        if ($date instanceof \DateTimeImmutable) {
+            return $date;
+        }
+
+        return null;
+    }
+
+    private static function toBucketStart(\DateTimeImmutable $date): \DateTimeImmutable
+    {
+        $timestamp = $date->getTimestamp();
+        $bucketTimestamp = $timestamp - ($timestamp % self::AGGREGATION_BUCKET_SECONDS);
+
+        return new \DateTimeImmutable(date('Y-m-d H:i:s', $bucketTimestamp));
     }
 
     private static function normalizeAvailability($value): ?int
@@ -301,11 +405,54 @@ class ServerStateTimeline
         ];
     }
 
+    private static function fillLatestMissingBucketFromCurrentStatus(array $values, ?int $currentStatus): array
+    {
+        if ($currentStatus === null || empty($values)) {
+            return $values;
+        }
+
+        $lastIndex = count($values) - 1;
+
+        if ($values[$lastIndex] === null) {
+            $values[$lastIndex] = $currentStatus;
+        }
+
+        return $values;
+    }
+
     private static function getCurrentBucket(): \DateTimeImmutable
     {
         $timestamp = time();
         $bucketTimestamp = $timestamp - ($timestamp % self::AGGREGATION_BUCKET_SECONDS);
         return new \DateTimeImmutable(date('Y-m-d H:i:s', $bucketTimestamp));
+    }
+
+    private static function getStableBucket(array $options = [], ?\DateTimeZone $timezone = null): \DateTimeImmutable
+    {
+        $timezone = $timezone ?? new \DateTimeZone(date_default_timezone_get() ?: 'UTC');
+        $reference = self::resolveReferenceNow($options, $timezone);
+        $stableReference = $reference->modify('-' . self::LIVE_SAFETY_DELAY_SECONDS . ' seconds');
+
+        return self::toBucketStart($stableReference);
+    }
+
+    private static function resolveReferenceNow(array $options, \DateTimeZone $timezone): \DateTimeImmutable
+    {
+        $override = $options['now'] ?? null;
+
+        if ($override instanceof \DateTimeImmutable) {
+            return $override->setTimezone($timezone);
+        }
+
+        if ($override instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($override)->setTimezone($timezone);
+        }
+
+        if (is_string($override) && $override !== '') {
+            return new \DateTimeImmutable($override, $timezone);
+        }
+
+        return new \DateTimeImmutable('now', $timezone);
     }
 
     private static function remember(string $cacheKey, int $ttl, callable $callback): array
