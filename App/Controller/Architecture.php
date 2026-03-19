@@ -90,7 +90,7 @@ class Architecture extends Controller
 
 
         //https://masonry.desandro.com/events
-        $this->di['js']->addJavascript(array("https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"));
+        $this->di['js']->addJavascript(array("vendor/masonry-layout-4.2.2.pkgd.min.js"));
 
         $this->di['js']->code_javascript('
 

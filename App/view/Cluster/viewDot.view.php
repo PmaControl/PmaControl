@@ -460,9 +460,9 @@ $isImported = !empty($importBundle['graphs']);
 }
 </style>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
+<link rel="stylesheet" href="<?php echo WWW_ROOT; ?>css/vendor/codemirror-5.65.16.min.css" />
+<script src="<?php echo WWW_ROOT; ?>js/vendor/codemirror-5.65.16.min.js"></script>
+<script src="<?php echo WWW_ROOT; ?>js/vendor/codemirror-simple-5.65.16.min.js"></script>
 
 <div class="dot-online-shell">
     <div style="margin-bottom:10px;">

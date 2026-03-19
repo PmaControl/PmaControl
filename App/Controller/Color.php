@@ -49,7 +49,7 @@ class Color extends Controller
  */
     public function index($param)
     {
-        $this->di['js']->addJavascript(array('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.3.6/js/bootstrap-colorpicker.min.js'));
+        $this->di['js']->addJavascript(array('vendor/bootstrap-colorpicker-2.3.6.min.js'));
     
         $this->di['js']->code_javascript('$(".colorpicker").colorpicker({format: "hex"});');
 
