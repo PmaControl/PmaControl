@@ -23,6 +23,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use \App\Library\Microsecond;
+use App\Library\MysqlLogCollector;
 /*
 
 https://www.phpclasses.org/package/12231-PHP-Display-bar-charts-in-CLI-console-from-datasets.html
@@ -280,6 +281,8 @@ SELECT *, `TABLE_SCHEMA`       AS `Db`, `TABLE_NAME`         AS `Name`, `TABLE_T
 
 class Aspirateur extends Controller
 {
+    private const MYSQL_LOG_MAX_EVENTS_PER_PIVOT = 250;
+    private const MYSQL_LOG_MAX_BYTES_PER_PIVOT = 1048576;
     //use \App\Library\Filter;
 
 /**
@@ -465,10 +468,15 @@ class Aspirateur extends Controller
                     // hack to force read to switch back online after shunned in case of no query on proxy (reader)
                     $mysql_tested->sql_query("SELECT 1;");
 
+                    // You have an error in your SQL syntax; after BEGIN only [WORK] is expected. Unexpected input near ; > 
+                    // remove ; for mysqlrouter
                     $error_filter='';
-                    $sql ="BEGIN;";
+                    $sql ="BEGIN";
                     $mysql_tested->sql_query($sql);
-                    $sql ="COMMIT;";
+                    $sql ="SELECT 1";
+                    $mysql_tested->sql_query($sql);
+
+                    $sql ="COMMIT";
                     $mysql_tested->sql_query($sql);
                 }
                 catch(Exception $e){
@@ -484,10 +492,10 @@ class Aspirateur extends Controller
                 }
                 finally
                 {
-                    $available = empty($error_ori) ? 1 : 0;
+                    $available = empty($error_ori) ? 1 : 2; // 2 => cas read only
                     $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
 
-                    if ($available === 0) {
+                    if ($available === 0 && $available === 2) {
                         $mysql_tested->sql_close();
                         return false;
                     }
@@ -584,6 +592,44 @@ class Aspirateur extends Controller
             $mysql_tested->sql_close();
             return true;
         } 
+
+        $detectedVersion = (string) ($var['variables']['version'] ?? '');
+        $detectedVersionComment = (string) ($var['variables']['version_comment'] ?? '');
+        $detectedServerBanner = '';
+
+        if (!empty($mysql_tested->link)) {
+            try {
+                $detectedServerBanner = (string) mysqli_get_server_info($mysql_tested->link);
+            } catch (\Throwable $e) {
+                $detectedServerBanner = '';
+            }
+        }
+
+        $isMysqlRouter = false;
+
+        if ($detectedServerBanner !== '' && stripos($detectedServerBanner, '-router') !== false) {
+            $isMysqlRouter = true;
+        }
+
+        if (!$isMysqlRouter && $detectedVersion !== '' && stripos($detectedVersion, '-router') !== false) {
+            $isMysqlRouter = true;
+        }
+
+        if (!$isMysqlRouter && $detectedVersionComment !== '' && stripos($detectedVersionComment, 'router') !== false) {
+            $isMysqlRouter = true;
+        }
+
+        if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1" && $isMysqlRouter)
+        {
+            $var_temp = array();
+            $var_temp['variables']['is_proxy'] = "1";
+            $var_temp['variables']['version'] = $detectedServerBanner !== '' ? $detectedServerBanner : $detectedVersion;
+            $var_temp['variables']['version_comment'] = "MySQL Router";
+
+            $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
+            $mysql_tested->sql_close();
+            return true;
+        }
 
         // cas maxscale
         if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1")
@@ -1426,6 +1472,16 @@ class Aspirateur extends Controller
         return $SHARED_MEMORY;
     }
 
+    private function allocate_shared_storage_unique($name, $separator = EngineV4::SEPERATOR)
+    {
+        Debug::debug($name, 'create file');
+
+        $shared_file = EngineV4::PATH_PIVOT_FILE . sprintf('%.6f', microtime(true)) . '-' . substr(uniqid('', true), -8) . $separator . $name;
+        $shared_file = str_replace('.', '', $shared_file);
+        $storage = new StorageFile($shared_file);
+        return new SharedMemory($storage);
+    }
+
 /**
  * Handle aspirateur state through `trySshConnection`.
  *
@@ -1527,6 +1583,421 @@ class Aspirateur extends Controller
 
 
         $db->sql_close();
+    }
+
+    /**
+     * Dedicated SSH collector for MySQL-side log files and OOM journal events.
+     * For the first rollout, the worker query may be limited to server id 1.
+     *
+     * @param array<int,mixed> $param
+     */
+    public function tryMysqlLogCollection($param)
+    {
+        $this->view = false;
+
+        $id_mysql_server = (int)($param[1] ?? 0);
+        if ($id_mysql_server <= 0) {
+            return false;
+        }
+
+        Debug::parseDebug($param);
+
+        $ssh = null;
+        try {
+            $ssh = Ssh::ssh($id_mysql_server);
+        } catch (Exception $e) {
+            $this->logger->warning('[MYSQL-LOG] SSH unavailable for server ' . $id_mysql_server . ' : ' . $e->getMessage());
+            return false;
+        }
+
+        if (empty($ssh)) {
+            return false;
+        }
+
+        try {
+            $variables = $this->getMysqlLogVariables($id_mysql_server);
+            $sources = MysqlLogCollector::resolveLogSources($variables);
+
+            $events = [];
+            $cursorUpdates = [];
+
+            foreach ($sources as $source) {
+                MysqlLogCollector::ensureLocalStorageDirectories($id_mysql_server, (string)($source['log_type'] ?? ''));
+
+                if (($source['source_kind'] ?? '') === 'file') {
+                    $result = $this->readRemoteFileLogSource($ssh, $id_mysql_server, $source);
+                    if (!empty($result['cursor'])) {
+                        $cursorUpdates[] = $result['cursor'];
+                    }
+                    continue;
+                }
+
+                if (($source['source_kind'] ?? '') === 'journal') {
+                    $result = $this->readRemoteJournalLogSource($ssh, $id_mysql_server, $source);
+                    $events = array_merge($events, $result['events']);
+                    if (!empty($result['cursor'])) {
+                        $cursorUpdates[] = $result['cursor'];
+                    }
+                }
+            }
+
+            if (!empty($cursorUpdates)) {
+                $this->upsertMysqlLogCursors($cursorUpdates);
+            }
+
+            if (!empty($events)) {
+                $this->persistMysqlLogPayloadChunks($id_mysql_server, $events, []);
+            }
+        } finally {
+            if (is_object($ssh) && method_exists($ssh, 'disconnect')) {
+                $ssh->disconnect();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function getMysqlLogVariables(int $idMysqlServer): array
+    {
+        $data = Extraction2::display([
+            'log_error',
+            'slow_query_log_file',
+            'general_log_file',
+            'general_log',
+            'sql_error_log_filename',
+            'information_schema::plugins',
+        ], [$idMysqlServer]);
+
+        $row = $data[$idMysqlServer] ?? [];
+
+        return [
+            'log_error' => $row['log_error'] ?? '',
+            'slow_query_log_file' => $row['slow_query_log_file'] ?? '',
+            'general_log_file' => $row['general_log_file'] ?? '',
+            'general_log' => $row['general_log'] ?? 'OFF',
+            'sql_error_log_filename' => $row['sql_error_log_filename'] ?? '',
+            'plugins_json' => $row['plugins'] ?? '',
+        ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $events
+     * @param array<int,array<string,mixed>> $cursorUpdates
+     */
+    private function persistMysqlLogPayloadChunks(int $idMysqlServer, array $events, array $cursorUpdates): void
+    {
+        if (empty($events)) {
+            $ts = time();
+            $payload[$ts][$idMysqlServer] = [
+                'events' => [],
+                'cursor_updates' => $cursorUpdates,
+            ];
+
+            $memory = $this->allocate_shared_storage_unique('logs');
+            $memory->{$idMysqlServer} = $payload;
+            return;
+        }
+
+        $chunks = [];
+        $currentChunk = [];
+        $currentBytes = 0;
+
+        foreach ($events as $event) {
+            $estimatedBytes = strlen((string)($event['raw_line'] ?? $event['message'] ?? '')) + strlen((string)($event['meta_json'] ?? '')) + 256;
+
+            if (!empty($currentChunk)
+                && (count($currentChunk) >= self::MYSQL_LOG_MAX_EVENTS_PER_PIVOT
+                    || ($currentBytes + $estimatedBytes) > self::MYSQL_LOG_MAX_BYTES_PER_PIVOT)
+            ) {
+                $chunks[] = $currentChunk;
+                $currentChunk = [];
+                $currentBytes = 0;
+            }
+
+            $currentChunk[] = $event;
+            $currentBytes += $estimatedBytes;
+        }
+
+        if (!empty($currentChunk)) {
+            $chunks[] = $currentChunk;
+        }
+
+        $totalChunks = count($chunks);
+
+        foreach ($chunks as $index => $chunk) {
+            $ts = time();
+            $payload[$ts][$idMysqlServer] = [
+                'events' => $chunk,
+                'cursor_updates' => $index === ($totalChunks - 1) ? $cursorUpdates : [],
+            ];
+
+            $memory = $this->allocate_shared_storage_unique('logs');
+            $memory->{$idMysqlServer} = $payload;
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $source
+     * @return array{events: array<int,array<string,mixed>>, cursor: array<string,mixed>|null}
+     */
+    private function readRemoteFileLogSource($ssh, int $idMysqlServer, array $source): array
+    {
+        $path = (string)($source['source_name'] ?? '');
+        if ($path === '') {
+            return ['events' => [], 'cursor' => null];
+        }
+
+        $cursor = $this->getMysqlLogCursor($idMysqlServer, (string)$source['log_type'], 'file', $path);
+        $quotedPath = escapeshellarg($path);
+        $stat = trim((string)$ssh->exec("if [ -f {$quotedPath} ]; then stat -c '%i %s' -- {$quotedPath}; fi"));
+
+        if ($stat === '') {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => null,
+                'last_offset' => 0,
+                'last_event_time' => null,
+            ]];
+        }
+
+        [$inode, $size] = array_pad(preg_split('/\s+/', $stat, 2) ?: [], 2, '0');
+        $inode = (int)$inode;
+        $size = (int)$size;
+
+        $offset = (int)($cursor['last_offset'] ?? 0);
+        $isFirstCollection = empty($cursor);
+
+        if ((int)($cursor['inode'] ?? 0) !== $inode || $size < $offset) {
+            $offset = 0;
+        }
+
+        if ($isFirstCollection) {
+            $storagePath = MysqlLogCollector::buildInitialFullSnapshotPath($idMysqlServer, (string)$source['log_type'], $path);
+            if (!$this->downloadRemoteFileSnapshot($idMysqlServer, $path, $storagePath)) {
+                $this->logger->warning('[MYSQL-LOG] initial full download failed for server ' . $idMysqlServer . ' path ' . $path);
+                return ['events' => [], 'cursor' => null];
+            }
+
+            $content = (string)file_get_contents($storagePath);
+            $parts = MysqlLogCollector::prepareLocalFileParts(
+                $idMysqlServer,
+                (string)$source['log_type'],
+                $path,
+                $inode,
+                0,
+                $content
+            );
+            MysqlLogCollector::persistLocalFileParts($parts);
+
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $size,
+                'last_event_time' => null,
+            ]];
+        }
+
+        if ($size <= $offset) {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $size,
+                'last_event_time' => $cursor['last_event_time'] ?? null,
+            ]];
+        }
+
+        $content = (string)$ssh->exec("dd if={$quotedPath} iflag=skip_bytes skip={$offset} status=none 2>/dev/null");
+        if ($content === '') {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $offset,
+                'last_event_time' => $cursor['last_event_time'] ?? null,
+            ]];
+        }
+
+        $parts = MysqlLogCollector::prepareLocalFileParts(
+            $idMysqlServer,
+            (string)$source['log_type'],
+            $path,
+            $inode,
+            $offset,
+            $content
+        );
+        MysqlLogCollector::persistLocalFileParts($parts);
+
+        $lastEventTime = null;
+        if (!empty($parts)) {
+            $lastPart = end($parts);
+            $partContent = (string)($lastPart['content'] ?? '');
+            $partEvents = MysqlLogCollector::buildFileEvents(
+                $idMysqlServer,
+                (string)$source['log_type'],
+                $path,
+                $inode,
+                (int)($lastPart['offset_start'] ?? $offset),
+                $partContent
+            );
+            if (!empty($partEvents)) {
+                $lastEventTime = end($partEvents)['event_time'] ?? null;
+            }
+        }
+
+        return ['events' => [], 'cursor' => [
+            'id_mysql_server' => $idMysqlServer,
+            'log_type' => (string)$source['log_type'],
+            'source_kind' => 'file',
+            'source_name' => $path,
+            'inode' => $inode,
+            'last_offset' => $size,
+            'last_event_time' => $lastEventTime,
+        ]];
+    }
+
+    /**
+     * @param array<string,mixed> $source
+     * @return array{events: array<int,array<string,mixed>>, cursor: array<string,mixed>|null}
+     */
+    private function readRemoteJournalLogSource($ssh, int $idMysqlServer, array $source): array
+    {
+        $cursor = $this->getMysqlLogCursor($idMysqlServer, (string)$source['log_type'], 'journal', (string)$source['source_name']);
+        $since = $cursor['last_event_time'] ?? date('Y-m-d H:i:s', time() - 3600);
+
+        // overlap a bit to tolerate delayed arrival; dedup happens in IntegrateLog.
+        $sinceTs = strtotime((string)$since);
+        if ($sinceTs !== false) {
+            $since = date('Y-m-d H:i:s', max(0, $sinceTs - 5));
+        }
+
+        $quotedSince = escapeshellarg((string)$since);
+        $journal = (string)$ssh->exec("journalctl -k -o short-iso --since {$quotedSince} --no-pager 2>/dev/null");
+        $events = MysqlLogCollector::buildOomEvents($idMysqlServer, $journal);
+
+        $lastEventTime = $cursor['last_event_time'] ?? null;
+        if (!empty($events)) {
+            $lastEventTime = end($events)['event_time'] ?? date('Y-m-d H:i:s');
+        } else {
+            $lastEventTime = date('Y-m-d H:i:s');
+        }
+
+        return ['events' => $events, 'cursor' => [
+            'id_mysql_server' => $idMysqlServer,
+            'log_type' => (string)$source['log_type'],
+            'source_kind' => 'journal',
+            'source_name' => (string)$source['source_name'],
+            'inode' => null,
+            'last_offset' => null,
+            'last_event_time' => $lastEventTime,
+        ]];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function getMysqlLogCursor(int $idMysqlServer, string $logType, string $sourceKind, string $sourceName): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `inode`, `last_offset`, `last_event_time`
+                FROM `ssh_log_mysql_cursor`
+                WHERE `id_mysql_server` = " . $idMysqlServer . "
+                  AND `log_type` = '" . $db->sql_real_escape_string($logType) . "'
+                  AND `source_kind` = '" . $db->sql_real_escape_string($sourceKind) . "'
+                  AND `source_name` = '" . $db->sql_real_escape_string($sourceName) . "'
+                LIMIT 1";
+
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC) ?: [];
+        $db->sql_close();
+
+        return $row;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $cursorUpdates
+     */
+    private function upsertMysqlLogCursors(array $cursorUpdates): void
+    {
+        if (empty($cursorUpdates)) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $values = [];
+
+        foreach ($cursorUpdates as $cursor) {
+            $values[] = sprintf(
+                '(%d,"%s","%s","%s",%s,%s,%s,NOW())',
+                (int)$cursor['id_mysql_server'],
+                $db->sql_real_escape_string((string)$cursor['log_type']),
+                $db->sql_real_escape_string((string)$cursor['source_kind']),
+                $db->sql_real_escape_string((string)$cursor['source_name']),
+                $this->sqlNullableInt($cursor['inode'] ?? null),
+                $this->sqlNullableInt($cursor['last_offset'] ?? null),
+                $this->sqlNullableString($db, $cursor['last_event_time'] ?? null)
+            );
+        }
+
+        if (!empty($values)) {
+            $sql = 'INSERT INTO ssh_log_mysql_cursor (`id_mysql_server`,`log_type`,`source_kind`,`source_name`,`inode`,`last_offset`,`last_event_time`,`updated_at`) VALUES '
+                . implode(",\n", $values)
+                . ' ON DUPLICATE KEY UPDATE `inode`=VALUES(`inode`), `last_offset`=VALUES(`last_offset`), `last_event_time`=VALUES(`last_event_time`), `updated_at`=NOW()';
+            $db->sql_query($sql);
+        }
+
+        $db->sql_close();
+    }
+
+    private function sqlNullableInt($value): string
+    {
+        if ($value === null || $value === '') {
+            return 'NULL';
+        }
+
+        return (string)(int)$value;
+    }
+
+    private function sqlNullableString($db, $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'NULL';
+        }
+
+        return '"' . $db->sql_real_escape_string((string)$value) . '"';
+    }
+
+    private function downloadRemoteFileSnapshot(int $idMysqlServer, string $remotePath, string $localPath): bool
+    {
+        $parentDir = dirname($localPath);
+        if (!is_dir($parentDir)) {
+            mkdir($parentDir, 0775, true);
+        }
+
+        $sftp = Ssh::sftp($idMysqlServer);
+        if (!$sftp) {
+            return false;
+        }
+
+        $result = $sftp->get($remotePath, $localPath);
+        if (is_object($sftp) && method_exists($sftp, 'disconnect')) {
+            $sftp->disconnect();
+        }
+
+        return $result !== false && file_exists($localPath);
     }
 
 /**

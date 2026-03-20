@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Display;
+use App\Library\MysqlLogCollector;
 use Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
@@ -772,6 +773,847 @@ class MysqlServer extends Controller
         $this->set('param', $param);
         $this->set('data', $data);
 
+    }
+
+/**
+ * Handle mysql server state through `logs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for logs.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logs()
+ * @example /fr/mysqlserver/logs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function logs($param)
+    {
+        if (empty($param[0]) || !ctype_digit((string)$param[0])) {
+            throw new \Exception("Usage: /mysqlserver/logs/{id_mysql_server}/{log_type}");
+        }
+
+        $id_mysql_server = (int)$param[0];
+        $currentType = (string)($param[1] ?? MysqlLogCollector::LOG_TYPE_ERROR);
+        $pageSize = 100;
+        $currentPage = max(1, (int)($_GET['page'] ?? 1));
+
+        $tabs = [
+            MysqlLogCollector::LOG_TYPE_ERROR => __('Error log'),
+            MysqlLogCollector::LOG_TYPE_SLOW_QUERY => __('Slow query'),
+            MysqlLogCollector::LOG_TYPE_SQL_ERROR => __('SQL error'),
+            MysqlLogCollector::LOG_TYPE_GENERAL => __('General log'),
+            MysqlLogCollector::LOG_TYPE_OOM => __('OOM killer'),
+        ];
+
+        if (!isset($tabs[$currentType])) {
+            $currentType = MysqlLogCollector::LOG_TYPE_ERROR;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $this->di['js']->addJavascript(array(
+            'chart-4.5.1.umd.min.js',
+            'MysqlServer/logs.js?v=' . @filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'MysqlServer' . DS . 'logs.js')
+        ));
+
+        $sqlServer = "SELECT `name`, `display_name`
+            FROM `mysql_server`
+            WHERE `id` = " . $id_mysql_server . "
+            LIMIT 1";
+        $resServer = $db->sql_query($sqlServer);
+        $server = $db->sql_fetch_array($resServer, MYSQLI_ASSOC) ?: [];
+        [$counts, $summaryByType, $sourcesByType] = $this->loadMysqlLogsCacheSummary($id_mysql_server, array_keys($tabs));
+
+        $summary = $summaryByType[$currentType] ?? [
+            'total_rows' => 0,
+            'min_event_time' => null,
+            'max_event_time' => null,
+        ];
+        $lines = [];
+        $currentSource = (string)($sourcesByType[$currentType] ?? '');
+
+        $totalRowsCurrentType = (int)($summary['total_rows'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalRowsCurrentType / $pageSize));
+        if ($currentPage > $totalPages) {
+            $currentPage = $totalPages;
+        }
+
+        $this->title = __('Logs');
+        $this->ariane = " > " . __('Mysql Server') . " > " . $this->title;
+
+        $this->set('param', $param);
+        $this->set('id_mysql_server', $id_mysql_server);
+        $this->set('current_type', $currentType);
+        $this->set('tabs', $tabs);
+        $this->set('counts', $counts);
+        $this->set('lines', $lines);
+        $this->set('summary', $summary);
+        $this->set('server', $server);
+        $this->set('current_source', $currentSource);
+        $this->set('current_page', $currentPage);
+        $this->set('page_size', $pageSize);
+        $this->set('total_pages', $totalPages);
+
+        $chartPayload = $this->buildMysqlLogsChartPayload($id_mysql_server, $currentType);
+        $initialLinesPayload = $this->loadMysqlLogWindowLines($id_mysql_server, $currentType, 'month', '', $currentPage, $pageSize);
+        $this->set('chart_payload', $chartPayload);
+        $this->set('initial_lines_payload', $initialLinesPayload);
+    }
+
+    public function logsChartData($param)
+    {
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
+
+        $idMysqlServer = (int)($param[0] ?? 0);
+        $logType = (string)($param[1] ?? MysqlLogCollector::LOG_TYPE_ERROR);
+        $granularity = (string)($param[2] ?? 'day');
+        $key = (string)($param[3] ?? '');
+
+        if ($key === 'ajax:true') {
+            $key = '';
+        }
+
+        $result = [
+            'labels' => [],
+            'datasets' => [
+                'ERROR' => [],
+                'WARNING' => [],
+                'NOTE' => [],
+            ],
+        ];
+
+        $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
+
+        if ($granularity === 'day') {
+            $result = $this->buildMysqlLogsChartPayload($idMysqlServer, $logType)['day'] ?? $result;
+        } elseif ($granularity === 'hour' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $key)) {
+            $dayDir = $baseDir . '/' . $key;
+            $hourCache = $this->readMysqlLogsChartCache($dayDir . '/chart.hour.json');
+            if (!empty($hourCache['hours']) && is_array($hourCache['hours'])) {
+                $result = [
+                    'labels' => array_keys($hourCache['hours']),
+                    'datasets' => [
+                        'ERROR' => array_column($hourCache['hours'], 'ERROR'),
+                        'WARNING' => array_column($hourCache['hours'], 'WARNING'),
+                        'NOTE' => array_column($hourCache['hours'], 'NOTE'),
+                    ],
+                ];
+            }
+        } elseif ($granularity === 'minute' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}$/', $key)) {
+            [$dayKey, $hourPrefix] = explode('_', $key, 2);
+            $dayDir = $baseDir . '/' . $dayKey;
+            $minuteCache = $this->readMysqlLogsChartCache($dayDir . '/chart.minute.json');
+            $hourLabel = $hourPrefix . ':00';
+            if (!empty($minuteCache['hours'][$hourLabel]) && is_array($minuteCache['hours'][$hourLabel])) {
+                $result = $minuteCache['hours'][$hourLabel];
+            }
+        }
+
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($result);
+    }
+
+    public function logsLinesData($param)
+    {
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
+
+        $idMysqlServer = (int)($param[0] ?? 0);
+        $logType = (string)($param[1] ?? MysqlLogCollector::LOG_TYPE_ERROR);
+        $scope = (string)($param[2] ?? 'month');
+        $key = (string)($param[3] ?? '');
+        $page = max(1, (int)($_GET['page'] ?? 1));
+
+        if ($key === 'ajax:true') {
+            $key = '';
+        }
+
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($this->loadMysqlLogWindowLines($idMysqlServer, $logType, $scope, $key, $page, 100));
+    }
+
+    /**
+     * @param array<int,string> $logTypes
+     * @return array{0: array<string,int>, 1: array<string,array<string,mixed>>, 2: array<string,array<int,array<string,mixed>>>, 3: array<string,string>}
+     */
+    private function loadMysqlLogsFromFilesystem(int $idMysqlServer, array $logTypes, int $currentPage = 1, int $pageSize = 100): array
+    {
+        $counts = [];
+        $summaryByType = [];
+        $linesByType = [];
+        $sourcesByType = [];
+
+        foreach ($logTypes as $logType) {
+            $counts[$logType] = 0;
+            $summaryByType[$logType] = [
+                'total_rows' => 0,
+                'min_event_time' => null,
+                'max_event_time' => null,
+            ];
+            $linesByType[$logType] = [];
+            $sourcesByType[$logType] = '';
+
+            if ($logType === MysqlLogCollector::LOG_TYPE_OOM) {
+                continue;
+            }
+
+            $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
+            $partFiles = glob($baseDir . '/*/*.part.*') ?: [];
+            sort($partFiles, SORT_STRING);
+
+            $latestLines = [];
+
+            foreach ($partFiles as $partFile) {
+                [, $meta] = $this->getMysqlLogPartMeta($partFile);
+                $sourceName = (string)($meta['source_name'] ?? '');
+                $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
+
+                if ($sourcesByType[$logType] === '' && $sourceName !== '') {
+                    $sourcesByType[$logType] = $sourceName;
+                }
+
+                foreach ($events as $event) {
+                    $counts[$logType]++;
+
+                    $eventTime = (string)($event['event_time'] ?? '');
+                    if ($eventTime !== '') {
+                        if (empty($summaryByType[$logType]['min_event_time']) || $eventTime < $summaryByType[$logType]['min_event_time']) {
+                            $summaryByType[$logType]['min_event_time'] = $eventTime;
+                        }
+                        if (empty($summaryByType[$logType]['max_event_time']) || $eventTime > $summaryByType[$logType]['max_event_time']) {
+                            $summaryByType[$logType]['max_event_time'] = $eventTime;
+                        }
+                    }
+
+                    $latestLines[] = [
+                        'event_time' => $event['event_time'],
+                        'source_kind' => $event['source_kind'],
+                        'log_path' => $event['log_path'],
+                        'user_name' => $event['user_name'],
+                        'host_name' => $event['host_name'],
+                        'db_name' => '',
+                        'process_name' => $event['process_name'],
+                        'level' => $event['level'],
+                        'error_code' => $event['error_code'],
+                        'message' => $event['message'],
+                        'raw_line' => $event['raw_line'],
+                    ];
+
+                    if (!empty($event['meta_json'])) {
+                        $eventMeta = json_decode((string)$event['meta_json'], true);
+                        if (is_array($eventMeta) && isset($eventMeta['db_name'])) {
+                            $latestLines[count($latestLines) - 1]['db_name'] = (string)$eventMeta['db_name'];
+                        }
+                    }
+                }
+            }
+
+            $summaryByType[$logType]['total_rows'] = $counts[$logType];
+
+            if (!empty($latestLines)) {
+                usort($latestLines, static function (array $a, array $b): int {
+                    return strcmp((string)($b['event_time'] ?? ''), (string)($a['event_time'] ?? ''));
+                });
+                $offset = max(0, ($currentPage - 1) * $pageSize);
+                $linesByType[$logType] = array_slice($latestLines, $offset, $pageSize);
+            }
+        }
+
+        return [$counts, $summaryByType, $linesByType, $sourcesByType];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function buildMysqlLogsChartPayload(int $idMysqlServer, string $logType): array
+    {
+        $payload = [
+            'current_type' => $logType,
+            'id_mysql_server' => $idMysqlServer,
+            'data_url_base' => LINK . 'MysqlServer/logsChartData/' . $idMysqlServer . '/' . $logType . '/',
+            'lines_url_base' => LINK . 'MysqlServer/logsLinesData/' . $idMysqlServer . '/' . $logType . '/',
+            'day' => [
+                'labels' => [],
+                'datasets' => [
+                    'ERROR' => [],
+                    'WARNING' => [],
+                    'NOTE' => [],
+                ],
+            ],
+        ];
+
+        if ($logType === MysqlLogCollector::LOG_TYPE_OOM) {
+            return $payload;
+        }
+
+        $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
+
+        $today = new \DateTimeImmutable('today');
+        $dayStart = $today->sub(new \DateInterval('P29D'));
+        $dayBuckets = [];
+
+        for ($i = 0; $i < 30; $i++) {
+            $dayKey = $dayStart->modify('+' . $i . ' day')->format('Y-m-d');
+            $dayBuckets[$dayKey] = ['ERROR' => 0, 'WARNING' => 0, 'NOTE' => 0];
+        }
+
+        foreach (array_keys($dayBuckets) as $dayKey) {
+            $dayDir = $baseDir . '/' . $dayKey;
+            $dayCache = $this->readMysqlLogsChartCache($dayDir . '/chart.day.json');
+            if (!empty($dayCache['counts']) && is_array($dayCache['counts'])) {
+                foreach (['ERROR', 'WARNING', 'NOTE'] as $levelName) {
+                    $dayBuckets[$dayKey][$levelName] = (int)($dayCache['counts'][$levelName] ?? 0);
+                }
+            }
+        }
+
+        foreach ($dayBuckets as $dayKey => $levels) {
+            $payload['day']['labels'][] = $dayKey;
+            $payload['day']['datasets']['ERROR'][] = $levels['ERROR'];
+            $payload['day']['datasets']['WARNING'][] = $levels['WARNING'];
+            $payload['day']['datasets']['NOTE'][] = $levels['NOTE'];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<int,string> $logTypes
+     * @return array{0: array<string,int>, 1: array<string,array<string,mixed>>, 2: array<string,string>}
+     */
+    private function loadMysqlLogsCacheSummary(int $idMysqlServer, array $logTypes): array
+    {
+        $counts = [];
+        $summaryByType = [];
+        $sourcesByType = [];
+
+        foreach ($logTypes as $logType) {
+            $storageName = MysqlLogCollector::getStorageDirectoryName($logType);
+            $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . $storageName;
+            $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
+            sort($dayDirs, SORT_STRING);
+
+            $totalRows = 0;
+            $minEventTime = null;
+            $maxEventTime = null;
+
+            foreach ($dayDirs as $dayDir) {
+                $dayCache = $this->readMysqlLogsChartCache($dayDir . '/chart.day.json');
+                if (empty($dayCache['counts']) || !is_array($dayCache['counts'])) {
+                    continue;
+                }
+
+                $dayTotal = 0;
+                foreach (['ERROR', 'WARNING', 'NOTE'] as $levelName) {
+                    $dayTotal += (int)($dayCache['counts'][$levelName] ?? 0);
+                }
+
+                if ($dayTotal === 0) {
+                    continue;
+                }
+
+                $totalRows += $dayTotal;
+                $dayKey = basename($dayDir);
+                $dayStart = $dayKey . ' 00:00:00';
+                $dayEnd = $dayKey . ' 23:59:59';
+
+                if ($minEventTime === null || strcmp($dayStart, $minEventTime) < 0) {
+                    $minEventTime = $dayStart;
+                }
+                if ($maxEventTime === null || strcmp($dayEnd, $maxEventTime) > 0) {
+                    $maxEventTime = $dayEnd;
+                }
+            }
+
+            $counts[$logType] = $totalRows;
+            $summaryByType[$logType] = [
+                'total_rows' => $totalRows,
+                'min_event_time' => $minEventTime,
+                'max_event_time' => $maxEventTime,
+            ];
+
+            $sourcesByType[$logType] = $this->findMysqlLogsRemoteSourceName($baseDir);
+        }
+
+        return [$counts, $summaryByType, $sourcesByType];
+    }
+
+    private function findMysqlLogsRemoteSourceName(string $baseDir): string
+    {
+        $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
+        rsort($dayDirs, SORT_STRING);
+
+        foreach ($dayDirs as $dayDir) {
+            $metaFiles = glob($dayDir . '/.*.meta.json') ?: [];
+            rsort($metaFiles, SORT_STRING);
+
+            foreach ($metaFiles as $metaFile) {
+                $meta = json_decode((string)file_get_contents($metaFile), true);
+                if (!is_array($meta)) {
+                    continue;
+                }
+
+                $sourceName = trim((string)($meta['source_name'] ?? ''));
+                if ($sourceName !== '') {
+                    return $sourceName;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function loadMysqlLogWindowLines(int $idMysqlServer, string $logType, string $scope, string $key, int $page, int $pageSize): array
+    {
+        $result = [
+            'scope' => $scope,
+            'key' => $key,
+            'page' => $page,
+            'page_size' => $pageSize,
+            'total_rows' => 0,
+            'total_pages' => 1,
+            'lines' => [],
+        ];
+
+        if ($logType === MysqlLogCollector::LOG_TYPE_OOM) {
+            return $result;
+        }
+
+        $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
+        $partFiles = $this->getMysqlLogWindowPartFiles($baseDir, $scope, $key);
+        if (empty($partFiles)) {
+            return $result;
+        }
+
+        $window = $this->getMysqlLogWindowBounds($scope, $key);
+        $lineRange = $this->getMysqlLogLineRange($baseDir, $scope, $key);
+        $latestLines = [];
+        $lineIndex = -1;
+
+        foreach ($partFiles as $partFile) {
+            $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
+
+            foreach ($events as $event) {
+                $lineIndex++;
+                if ($lineRange['start'] !== null && $lineIndex < $lineRange['start']) {
+                    continue;
+                }
+                if ($lineRange['end'] !== null && $lineIndex > $lineRange['end']) {
+                    break 2;
+                }
+
+                $eventTime = (string)($event['event_time'] ?? '');
+                if ($eventTime === '') {
+                    continue;
+                }
+
+                $eventTs = strtotime($eventTime);
+                if ($eventTs === false) {
+                    continue;
+                }
+
+                if ($window['start'] !== null && $eventTs < $window['start']) {
+                    continue;
+                }
+                if ($window['end'] !== null && $eventTs > $window['end']) {
+                    continue;
+                }
+
+                $row = [
+                    'event_time' => $event['event_time'],
+                    'source_kind' => $event['source_kind'],
+                    'log_path' => $event['log_path'],
+                    'user_name' => $event['user_name'],
+                    'host_name' => $event['host_name'],
+                    'db_name' => '',
+                    'process_name' => $event['process_name'],
+                    'level' => $event['level'],
+                    'error_code' => $event['error_code'],
+                    'message' => $event['message'],
+                    'raw_line' => $event['raw_line'],
+                ];
+
+                if (!empty($event['meta_json'])) {
+                    $eventMeta = json_decode((string)$event['meta_json'], true);
+                    if (is_array($eventMeta) && isset($eventMeta['db_name'])) {
+                        $row['db_name'] = (string)$eventMeta['db_name'];
+                    }
+                }
+
+                $latestLines[] = $row;
+            }
+        }
+
+        usort($latestLines, static function (array $a, array $b): int {
+            return strcmp((string)($b['event_time'] ?? ''), (string)($a['event_time'] ?? ''));
+        });
+
+        $result['total_rows'] = count($latestLines);
+        $result['total_pages'] = max(1, (int)ceil($result['total_rows'] / $pageSize));
+        $result['page'] = min($page, $result['total_pages']);
+        $offset = max(0, ($result['page'] - 1) * $pageSize);
+        $result['lines'] = array_slice($latestLines, $offset, $pageSize);
+
+        return $result;
+    }
+
+    /**
+     * @return array{start: int|null, end: int|null}
+     */
+    private function getMysqlLogLineRange(string $baseDir, string $scope, string $key): array
+    {
+        if ($scope === 'hour' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}$/', $key)) {
+            [$dayKey, $hourKey] = explode('_', $key, 2);
+            $hourCache = $this->readMysqlLogsChartCache($baseDir . '/' . $dayKey . '/chart.hour.json');
+            $hourLabel = $hourKey . ':00';
+            if (!empty($hourCache['hours'][$hourLabel]['line_start']) || !empty($hourCache['hours'][$hourLabel]['line_end'])) {
+                return [
+                    'start' => isset($hourCache['hours'][$hourLabel]['line_start']) ? (int)$hourCache['hours'][$hourLabel]['line_start'] : null,
+                    'end' => isset($hourCache['hours'][$hourLabel]['line_end']) ? (int)$hourCache['hours'][$hourLabel]['line_end'] : null,
+                ];
+            }
+        }
+
+        if ($scope === 'minute' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}_\d{2}$/', $key)) {
+            [$dayKey, $hourKey, $minuteKey] = explode('_', $key, 3);
+            $minuteCache = $this->readMysqlLogsChartCache($baseDir . '/' . $dayKey . '/chart.minute.json');
+            $hourLabel = $hourKey . ':00';
+            if (!empty($minuteCache['hours'][$hourLabel]['line_ranges'][$minuteKey])) {
+                $range = $minuteCache['hours'][$hourLabel]['line_ranges'][$minuteKey];
+                return [
+                    'start' => isset($range['line_start']) ? (int)$range['line_start'] : null,
+                    'end' => isset($range['line_end']) ? (int)$range['line_end'] : null,
+                ];
+            }
+        }
+
+        return ['start' => null, 'end' => null];
+    }
+
+    /**
+     * @return array{start: int|null, end: int|null}
+     */
+    private function getMysqlLogWindowBounds(string $scope, string $key): array
+    {
+        if ($scope === 'month') {
+            $today = new \DateTimeImmutable('today');
+            return [
+                'start' => $today->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
+                'end' => $today->setTime(23, 59, 59)->getTimestamp(),
+            ];
+        }
+
+        if ($scope === 'day' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $key)) {
+            return [
+                'start' => (new \DateTimeImmutable($key . ' 00:00:00'))->getTimestamp(),
+                'end' => (new \DateTimeImmutable($key . ' 23:59:59'))->getTimestamp(),
+            ];
+        }
+
+        if ($scope === 'hour' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}$/', $key)) {
+            [$dayKey, $hourKey] = explode('_', $key, 2);
+            return [
+                'start' => (new \DateTimeImmutable($dayKey . ' ' . $hourKey . ':00:00'))->getTimestamp(),
+                'end' => (new \DateTimeImmutable($dayKey . ' ' . $hourKey . ':59:59'))->getTimestamp(),
+            ];
+        }
+
+        if ($scope === 'minute' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}_\d{2}$/', $key)) {
+            [$dayKey, $hourKey, $minuteKey] = explode('_', $key, 3);
+            return [
+                'start' => (new \DateTimeImmutable($dayKey . ' ' . $hourKey . ':' . $minuteKey . ':00'))->getTimestamp(),
+                'end' => (new \DateTimeImmutable($dayKey . ' ' . $hourKey . ':' . $minuteKey . ':59'))->getTimestamp(),
+            ];
+        }
+
+        return ['start' => null, 'end' => null];
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function getMysqlLogWindowPartFiles(string $baseDir, string $scope, string $key): array
+    {
+        if ($scope === 'month') {
+            $today = new \DateTimeImmutable('today');
+            $partFiles = [];
+            for ($i = 0; $i < 30; $i++) {
+                $dayKey = $today->sub(new \DateInterval('P' . $i . 'D'))->format('Y-m-d');
+                $partFiles = array_merge($partFiles, glob($baseDir . '/' . $dayKey . '/*.part.*') ?: []);
+            }
+            sort($partFiles, SORT_STRING);
+            return $partFiles;
+        }
+
+        if ($scope === 'day' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $key)) {
+            $partFiles = glob($baseDir . '/' . $key . '/*.part.*') ?: [];
+            sort($partFiles, SORT_STRING);
+            return $partFiles;
+        }
+
+        if ($scope === 'hour' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}$/', $key)) {
+            [$dayKey] = explode('_', $key, 2);
+            $partFiles = glob($baseDir . '/' . $dayKey . '/*.part.*') ?: [];
+            sort($partFiles, SORT_STRING);
+            return $partFiles;
+        }
+
+        if ($scope === 'minute' && preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}_\d{2}$/', $key)) {
+            [$dayKey] = explode('_', $key, 2);
+            $partFiles = glob($baseDir . '/' . $dayKey . '/*.part.*') ?: [];
+            sort($partFiles, SORT_STRING);
+            return $partFiles;
+        }
+
+        return [];
+    }
+
+    private function ensureMysqlLogsChartCaches(int $idMysqlServer, string $logType): void
+    {
+        if ($logType === MysqlLogCollector::LOG_TYPE_OOM) {
+            return;
+        }
+
+        $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
+        $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
+        rsort($dayDirs, SORT_STRING);
+
+        foreach ($dayDirs as $index => $dayDir) {
+            if ($index > 0 && $this->hasFreshMysqlLogsChartCachesForDay($dayDir)) {
+                continue;
+            }
+            $this->buildMysqlLogsChartCachesForDay($idMysqlServer, $logType, $dayDir);
+        }
+    }
+
+    private function buildMysqlLogsChartCachesForDay(int $idMysqlServer, string $logType, string $dayDir): void
+    {
+        $partFiles = glob($dayDir . '/*.part.*') ?: [];
+        if (empty($partFiles)) {
+            return;
+        }
+
+        $cacheFiles = [
+            $dayDir . '/chart.day.json',
+            $dayDir . '/chart.hour.json',
+            $dayDir . '/chart.minute.json',
+        ];
+
+        $latestSourceMtime = 0;
+        foreach ($partFiles as $partFile) {
+            $latestSourceMtime = max($latestSourceMtime, (int)@filemtime($partFile));
+            $metaPath = dirname($partFile) . '/.' . basename($partFile) . '.meta.json';
+            if (file_exists($metaPath)) {
+                $latestSourceMtime = max($latestSourceMtime, (int)@filemtime($metaPath));
+            }
+            $parsedPath = dirname($partFile) . '/.' . basename($partFile) . '.parsed.json';
+            if (file_exists($parsedPath)) {
+                $latestSourceMtime = max($latestSourceMtime, (int)@filemtime($parsedPath));
+            }
+        }
+
+        $cacheIsFresh = true;
+        foreach ($cacheFiles as $cacheFile) {
+            if (!file_exists($cacheFile) || (int)@filemtime($cacheFile) < $latestSourceMtime) {
+                $cacheIsFresh = false;
+                break;
+            }
+        }
+
+        if ($cacheIsFresh) {
+            return;
+        }
+
+        $dayKey = basename($dayDir);
+        $dayCounts = ['ERROR' => 0, 'WARNING' => 0, 'NOTE' => 0];
+        $hourCounts = [];
+        $minuteCounts = [];
+
+        for ($h = 0; $h < 24; $h++) {
+            $hourLabel = sprintf('%02d:00', $h);
+            $hourCounts[$hourLabel] = ['ERROR' => 0, 'WARNING' => 0, 'NOTE' => 0, 'line_start' => null, 'line_end' => null];
+            $minuteCounts[$hourLabel] = [
+                'labels' => [],
+                'datasets' => [
+                    'ERROR' => [],
+                    'WARNING' => [],
+                    'NOTE' => [],
+                ],
+                'line_ranges' => [],
+            ];
+
+            for ($m = 0; $m < 60; $m++) {
+                $minuteLabel = sprintf('%02d', $m);
+                $minuteCounts[$hourLabel]['labels'][] = $minuteLabel;
+                $minuteCounts[$hourLabel]['datasets']['ERROR'][] = 0;
+                $minuteCounts[$hourLabel]['datasets']['WARNING'][] = 0;
+                $minuteCounts[$hourLabel]['datasets']['NOTE'][] = 0;
+                $minuteCounts[$hourLabel]['line_ranges'][$minuteLabel] = ['line_start' => null, 'line_end' => null];
+            }
+        }
+
+        sort($partFiles, SORT_STRING);
+        $lineIndex = -1;
+        foreach ($partFiles as $partFile) {
+            $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
+
+            foreach ($events as $event) {
+                $lineIndex++;
+                $eventTime = (string)($event['event_time'] ?? '');
+                if ($eventTime === '') {
+                    continue;
+                }
+
+                $timestamp = strtotime($eventTime);
+                if ($timestamp === false || date('Y-m-d', $timestamp) !== $dayKey) {
+                    continue;
+                }
+
+                $levelBucket = $this->normalizeMysqlLogLevelBucket((string)($event['level'] ?? ''));
+                $dayCounts[$levelBucket]++;
+
+                $hourLabel = date('H:00', $timestamp);
+                $minuteLabel = date('i', $timestamp);
+
+                $hourCounts[$hourLabel][$levelBucket]++;
+                if ($hourCounts[$hourLabel]['line_start'] === null) {
+                    $hourCounts[$hourLabel]['line_start'] = $lineIndex;
+                }
+                $hourCounts[$hourLabel]['line_end'] = $lineIndex;
+
+                $minuteIndex = (int)$minuteLabel;
+                $minuteCounts[$hourLabel]['datasets'][$levelBucket][$minuteIndex]++;
+                if ($minuteCounts[$hourLabel]['line_ranges'][$minuteLabel]['line_start'] === null) {
+                    $minuteCounts[$hourLabel]['line_ranges'][$minuteLabel]['line_start'] = $lineIndex;
+                }
+                $minuteCounts[$hourLabel]['line_ranges'][$minuteLabel]['line_end'] = $lineIndex;
+            }
+        }
+
+        file_put_contents($dayDir . '/chart.day.json', json_encode([
+            'date' => $dayKey,
+            'counts' => $dayCounts,
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
+        file_put_contents($dayDir . '/chart.hour.json', json_encode([
+            'date' => $dayKey,
+            'hours' => $hourCounts,
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
+        file_put_contents($dayDir . '/chart.minute.json', json_encode([
+            'date' => $dayKey,
+            'hours' => $minuteCounts,
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+    }
+
+    private function hasFreshMysqlLogsChartCachesForDay(string $dayDir): bool
+    {
+        $cacheFiles = [
+            $dayDir . '/chart.day.json',
+            $dayDir . '/chart.hour.json',
+            $dayDir . '/chart.minute.json',
+        ];
+
+        foreach ($cacheFiles as $cacheFile) {
+            if (!file_exists($cacheFile)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function readMysqlLogsChartCache(string $path): array
+    {
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $decoded = json_decode((string)file_get_contents($path), true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string,mixed>}
+     */
+    private function getMysqlLogPartMeta(string $partFile): array
+    {
+        $metaPath = dirname($partFile) . '/.' . basename($partFile) . '.meta.json';
+        $meta = file_exists($metaPath) ? json_decode((string)file_get_contents($metaPath), true) : [];
+        if (!is_array($meta)) {
+            $meta = [];
+        }
+
+        return [$metaPath, $meta];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function loadParsedMysqlLogPartEvents(string $partFile, int $idMysqlServer, string $logType): array
+    {
+        [$metaPath, $meta] = $this->getMysqlLogPartMeta($partFile);
+        $parsedPath = dirname($partFile) . '/.' . basename($partFile) . '.parsed.json';
+        $sourceMtime = max(
+            (int)@filemtime($partFile),
+            file_exists($metaPath) ? (int)@filemtime($metaPath) : 0
+        );
+
+        if (file_exists($parsedPath) && (int)@filemtime($parsedPath) >= $sourceMtime) {
+            $decoded = json_decode((string)file_get_contents($parsedPath), true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        $sourceName = (string)($meta['source_name'] ?? '');
+        $inode = (int)($meta['inode'] ?? 0);
+        $offsetStart = (int)($meta['offset_start'] ?? 0);
+        $content = (string)file_get_contents($partFile);
+
+        $events = MysqlLogCollector::buildFileEvents(
+            $idMysqlServer,
+            $logType,
+            $sourceName,
+            $inode,
+            $offsetStart,
+            $content
+        );
+
+        file_put_contents($parsedPath, json_encode($events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
+        return $events;
+    }
+
+    private function normalizeMysqlLogLevelBucket(string $level): string
+    {
+        $level = strtoupper(trim($level));
+
+        if ($level === 'WARNING' || $level === 'WARN') {
+            return 'WARNING';
+        }
+
+        if ($level === 'NOTE') {
+            return 'NOTE';
+        }
+
+        return 'ERROR';
     }
 
 /**

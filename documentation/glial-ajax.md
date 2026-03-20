@@ -96,6 +96,32 @@ The screen now uses all of the following:
    - `chart-4.5.1.umd.min.js?v=<filemtime>`
    - `Server/state.js?v=<filemtime>`
 
+## Additional case: `MysqlServer/logs`
+
+The same Glial rule also applies to:
+
+- `MysqlServer/logsChartData/.../ajax:true`
+- `MysqlServer/logsLinesData/.../ajax:true`
+
+Without the explicit `/ajax:true` suffix, Glial can return a full HTML page instead
+of JSON, which then breaks client code with:
+
+```text
+Unexpected token '<'
+```
+
+For paginated JSON endpoints, the correct pattern is:
+
+```text
+/pmacontrol/en/MysqlServer/logsLinesData/1/error_log/month/ajax:true/?page=2
+```
+
+Not:
+
+```text
+/pmacontrol/en/MysqlServer/logsLinesData/1/error_log/month?page=2
+```
+
 ## Rule to keep in mind
 
 For every new JSON/AJAX endpoint in this codebase:

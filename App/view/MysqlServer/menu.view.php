@@ -21,6 +21,7 @@ $runDateLabel = (string) ($param[2] ?? '');
 $menu= array();
 $menu['MysqlServer']['main'] = __('Info');
 $menu['MysqlServer']['processlist'] = __('Processlist');
+$menu['MysqlServer']['logs'] = __('Logs');
 $menu['Cluster']['svg'] = __('Cluster');
 $menu['Query']['all'] = __('Queries');
 $menu['MysqlDatabase']['mpd'] = __('Database');
