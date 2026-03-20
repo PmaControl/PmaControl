@@ -151,6 +151,10 @@ class ServerStateTimeline
             return 0;
         }
 
+        if (in_array(2, $normalized, true)) {
+            return 2;
+        }
+
         if (in_array(1, $normalized, true)) {
             return 1;
         }
@@ -356,6 +360,10 @@ class ServerStateTimeline
             return 1;
         }
 
+        if ((string) $value === '2') {
+            return 2;
+        }
+
         return null;
     }
 
@@ -363,6 +371,7 @@ class ServerStateTimeline
     {
         $zeroCount = 0;
         $oneCount = 0;
+        $twoCount = 0;
         $totalCount = 0;
 
         foreach ($servers as $server) {
@@ -373,6 +382,8 @@ class ServerStateTimeline
                     $zeroCount++;
                 } elseif ($value === 1) {
                     $oneCount++;
+                } elseif ($value === 2) {
+                    $twoCount++;
                 }
             }
         }
@@ -380,6 +391,7 @@ class ServerStateTimeline
         return [
             'zero' => $zeroCount,
             'one' => $oneCount,
+            'two' => $twoCount,
             'total' => $totalCount,
         ];
     }

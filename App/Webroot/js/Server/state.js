@@ -21,6 +21,10 @@
             return "#2ca25f";
         }
 
+        if (value === 2) {
+            return "#2563eb";
+        }
+
         if (value === 0) {
             return "#de2d26";
         }
@@ -33,6 +37,10 @@
             return "UP";
         }
 
+        if (value === 2) {
+            return "READ ONLY";
+        }
+
         if (value === 0) {
             return "DOWN";
         }
@@ -43,6 +51,10 @@
     function statusClass(value) {
         if (value === 1) {
             return "server-state-status up";
+        }
+
+        if (value === 2) {
+            return "server-state-status readonly";
         }
 
         if (value === 0) {
@@ -125,18 +137,57 @@
     }
 
     function renderTable(payload) {
-        var chartTitle = "Last 60 minutes";
+        var chartTitle = "Availability timeline";
+        var serverCount = (payload.servers || []).length;
+        var upCount = 0;
+        var downCount = 0;
+        var readOnlyCount = 0;
+        var signalCount = 0;
+        var greyCount = 0;
 
-        if (payload.range && payload.range.mode === "custom") {
-            chartTitle = "Custom range";
-        } else if (payload.range && payload.range.preset) {
-            chartTitle = payload.range.preset;
+        (payload.servers || []).forEach(function (server) {
+            if (server.current_status === 1) {
+                upCount++;
+            } else if (server.current_status === 2) {
+                readOnlyCount++;
+            } else if (server.current_status === 0) {
+                downCount++;
+            }
+        });
+
+        if (payload.stats) {
+            signalCount = (payload.stats.one || 0) + (payload.stats.two || 0) + (payload.stats.zero || 0);
+            greyCount = Math.max((payload.stats.total || 0) - signalCount, 0);
+        }
+
+        if (payload.range && payload.range.title) {
+            chartTitle = payload.range.title;
         }
 
         var html = [
+            '<div class="server-state-summary-row">',
+            buildSummaryCard("Servers", serverCount, "#0f766e"),
+            buildSummaryCard("Current UP", upCount, "#2563eb"),
+            buildSummaryCard("Current READ ONLY", readOnlyCount, "#2563eb"),
+            buildSummaryCard("Current DOWN", downCount, "#dc2626"),
+            buildSummaryCard("No Data Buckets", greyCount, "#6b7280"),
+            '</div>',
+            '<div class="server-state-panel">',
+            '<div class="server-state-panel-head">',
+            '<div class="row">',
+            '<div class="col-md-8">',
+            '<div class="server-state-panel-title">Availability Timeline</div>',
+            '<div class="server-state-panel-subtitle">' + escapeHtml(chartTitle) + '</div>',
+            '</div>',
+            '<div class="col-md-4 text-right">',
+            '<span class="label label-default" style="font-size:13px;margin-top:6px;display:inline-block;">Signal buckets: ' + signalCount + '</span>',
+            '</div>',
+            '</div>',
+            '</div>',
+            '<div class="server-state-panel-body">',
             '<table class="table table-condensed table-bordered table-striped server-state-table">',
             '<thead>',
-            '<tr><th>Server</th><th>Current status</th><th>(nombre de 1) / (nombre 0 + 1)</th><th>' + chartTitle + '</th></tr>',
+            '<tr><th>Server</th><th>Current status</th><th>(nombre de 1) / (nombre 0 + 1)</th><th>Timeline</th></tr>',
             '</thead>',
             '<tbody>'
         ];
@@ -152,8 +203,28 @@
             );
         });
 
-        html.push('</tbody></table>');
+        html.push('</tbody></table></div></div>');
         stateRoot.innerHTML = html.join("");
+    }
+
+    function buildSummaryCard(label, value, color) {
+        return [
+            '<div class="server-state-summary-col">',
+            '<div class="server-state-summary-card" style="border-left-color:' + color + ';">',
+            '<div class="server-state-summary-label">' + escapeHtml(String(label)) + '</div>',
+            '<div class="server-state-summary-value">' + escapeHtml(String(value)) + '</div>',
+            '</div>',
+            '</div>'
+        ].join("");
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function renderCharts(payload) {

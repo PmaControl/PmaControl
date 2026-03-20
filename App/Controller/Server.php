@@ -420,14 +420,19 @@ class Server extends Controller
                 $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
                 $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
                 $isProxySql = !empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1";
+                $versionInfo = [];
+                if (!empty($extra['version']) || !empty($extra['version_comment'])) {
+                    $versionInfo = \App\Library\Format::getMySQLNumVersion((string)$extra['version'], (string)($extra['version_comment'] ?? ''));
+                }
 
                 $typeLabel = 'MySQL';
                 if ($isVipServer) {
                     $typeLabel = 'VIP';
+                } elseif (!empty($versionInfo['fork']) && strtolower((string)$versionInfo['fork']) === 'mysql router') {
+                    $typeLabel = 'MySQL Router';
                 } elseif ($isProxyServer || $isProxySql) {
                     $typeLabel = 'ProxySQL';
-                } elseif (!empty($extra['version'])) {
-                    $versionInfo = \App\Library\Format::getMySQLNumVersion((string)$extra['version'], (string)($extra['version_comment'] ?? ''));
+                } elseif (!empty($versionInfo['fork'])) {
                     if (!empty($versionInfo['fork'])) {
                         $typeLabel = ucfirst(strtolower((string)$versionInfo['fork']));
                     }

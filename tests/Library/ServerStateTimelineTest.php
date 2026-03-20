@@ -17,6 +17,11 @@ class ServerStateTimelineTest extends TestCase
         $this->assertSame(1, ServerStateTimeline::aggregateMinuteValues([1, 1, null]));
     }
 
+    public function testAggregateMinuteValuesReturnsTwoWhenReadOnlyExistsWithoutZero(): void
+    {
+        $this->assertSame(2, ServerStateTimeline::aggregateMinuteValues([1, 2, null]));
+    }
+
     public function testAggregateMinuteValuesReturnsNullWhenNoValueExists(): void
     {
         $this->assertNull(ServerStateTimeline::aggregateMinuteValues([null, '', null]));
