@@ -33,6 +33,7 @@ use \Glial\Extract\Grabber;
 class Graphviz
 {
     private const OFFLINE_RED = '#FF0000';
+    private const SYMBOL_DOWN_RED = '#FF0000';
     private static string $lastGenerateDotError = '';
     // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
     const MAX_ROWS_TO_REQUEST = 10000;
@@ -196,6 +197,15 @@ class Graphviz
         }
 
         return [self::OFFLINE_RED, '#ffffff'];
+    }
+
+    private static function forceDownRowColors(string $icon, string $background, string $fontColor): array
+    {
+        if ($icon !== '⛔') {
+            return [$background, $fontColor];
+        }
+
+        return [self::SYMBOL_DOWN_RED, '#ffffff'];
     }
 
 /**
@@ -529,6 +539,102 @@ class Graphviz
         //$ret .= 'fontname="arial" fontsize=8 edgeURL=""];'.PHP_EOL;
         $ret .= "}\n";
         return $ret;
+    }
+
+    public static function generateRepmanHaOverlay(array $servers): string
+    {
+        $targetIps = [
+            '192.168.100.101',
+            '192.168.100.102',
+            '192.168.100.103',
+            '192.168.100.104',
+        ];
+        $targetNodeIds = [
+            '101',
+            '102',
+            '103',
+            '104',
+            '218',
+            '219',
+            '220',
+            '221',
+        ];
+
+        $nodeIds = [];
+        foreach ($servers as $server) {
+            if (!is_array($server)) {
+                continue;
+            }
+
+            $nodeId = (string)($server['id_mysql_server'] ?? '');
+            if ($nodeId !== '' && in_array($nodeId, $targetNodeIds, true)) {
+                $nodeIds[$nodeId] = $nodeId;
+                continue;
+            }
+
+            $candidates = [
+                trim((string)($server['ip_real'] ?? '')),
+                trim((string)($server['ip'] ?? '')),
+                trim((string)($server['vip_dns_ip'] ?? '')),
+                trim((string)($server['report_host'] ?? '')),
+                trim((string)($server['hostname'] ?? '')),
+            ];
+
+            foreach ($candidates as $candidateIp) {
+                if ($candidateIp !== '' && in_array($candidateIp, $targetIps, true)) {
+                    if ($nodeId !== '') {
+                        $nodeIds[$nodeId] = $nodeId;
+                    }
+                    break;
+                }
+            }
+
+            if (!empty($nodeIds[$nodeId])) {
+                continue;
+            }
+
+            if (!empty($server['is_maxscale']) && (string)$server['is_maxscale'] === '1') {
+                $payload = json_encode([
+                    $server['maxscale_servers'] ?? null,
+                    $server['maxscale_services'] ?? null,
+                    $server['maxscale_monitors'] ?? null,
+                    $server['mysql_servers'] ?? null,
+                ]);
+
+                foreach ($targetIps as $targetIp) {
+                    if (is_string($payload) && strpos($payload, $targetIp) !== false && $nodeId !== '') {
+                        $nodeIds[$nodeId] = $nodeId;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (empty($nodeIds)) {
+            return '';
+        }
+
+        $return = 'subgraph cluster_repman_ha {' . PHP_EOL;
+        $return .= 'graph [' . PHP_EOL;
+        $return .= '  label="HA by Repman : 10.68.68.156",' . PHP_EOL;
+        $return .= '  labelloc="t",' . PHP_EOL;
+        $return .= '  labeljust="r",' . PHP_EOL;
+        $return .= '  color="#000000",' . PHP_EOL;
+        $return .= '  pencolor="#000000",' . PHP_EOL;
+        $return .= '  bgcolor="transparent",' . PHP_EOL;
+        $return .= '  style="rounded,dashed",' . PHP_EOL;
+        $return .= '  penwidth="1.4",' . PHP_EOL;
+        $return .= '  fontname="arial",' . PHP_EOL;
+        $return .= '  fontsize="8"' . PHP_EOL;
+        $return .= '];' . PHP_EOL;
+
+        foreach ($nodeIds as $nodeId) {
+            $return .= '"' . $nodeId . '";' . PHP_EOL;
+        }
+
+        $return .= '}' . PHP_EOL;
+
+        return $return;
     }
 
     /*
@@ -1163,6 +1269,10 @@ class Graphviz
             $forground_color = '#FFFFFF';
         }
 
+        $isMysqlRouter = Dot3::isMysqlRouterNode($server)
+            || stripos((string)($server['version'] ?? ''), '-router') !== false
+            || stripos((string)($server['version_comment'] ?? ''), 'router') !== false;
+
         $image_logo = strtolower($fork).'.svg';
         if ($image_logo === '.svg' || $image_logo === 'sql.svg') {
             $image_logo = 'mysql.svg';
@@ -1174,14 +1284,14 @@ class Graphviz
         }
 
         if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
-            $image_logo = 'proxysql.png';            
+            $image_logo = 'proxysql.png';
         }
 
         if (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1" ) {
-            $image_logo = 'maxscale.png';            
+            $image_logo = 'maxscale.png';
         }
 
-        if (!$isVipServer && Dot3::isMysqlRouterNode($server)) {
+        if (!$isVipServer && $isMysqlRouter) {
             $image_logo = 'router.svg';
             $version_label = 'MySQL Router';
         }
@@ -1565,7 +1675,7 @@ class Graphviz
 
 
 
-        }elseif (Dot3::isMysqlRouterNode($server))
+        } elseif ($isMysqlRouter)
         {
             $background = Dot3::$config['SERVER_CONFIG']['background'];
             $color = Dot3::$config['SERVER_CONFIG']['color'];
@@ -1651,7 +1761,7 @@ class Graphviz
             }*/
 
             
-        }elseif ($server['is_maxscale'] == "1")
+        } elseif (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1")
         {
 
             $background = Dot3::$config['SERVER_CONFIG']['background'];
@@ -1729,6 +1839,7 @@ class Graphviz
                 }
 
                 [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                [$background, $color] = self::forceDownRowColors($icone, $background, $color);
 
                 $return .= '<tr>';
                 $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
@@ -1754,6 +1865,7 @@ class Graphviz
                     }
 
                     [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                    [$background, $color] = self::forceDownRowColors($icone, $background, $color);
 
                     $return .= '<tr>';
                     $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
@@ -1875,6 +1987,7 @@ class Graphviz
 
 
                     [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                    [$background, $color] = self::forceDownRowColors($icone, $background, $color);
 
                     $return .= '<tr>';
                     $return .= '<td colspan="2" bgcolor="'.$background.'" align="left" port="'.$port.'">';

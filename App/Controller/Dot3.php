@@ -1560,6 +1560,8 @@ class Dot3 extends Controller
             $dot .= Graphviz::generateServer($server);
         }
 
+        $dot .= Graphviz::generateRepmanHaOverlay(self::$build_server);
+
         $dot .= Graphviz::generateGalera(self::$build_galera);
         $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
     
@@ -3424,6 +3426,11 @@ class Dot3 extends Controller
                     $tmp['options']['color'] = '#9e9e9e';
                 }
 
+                if (($hostgroup['status'] ?? '') !== 'ONLINE') {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
                 if ($this->isServerOfflineForGraph($server)) {
                     $tmp['color'] = self::OFFLINE_EDGE_COLOR;
                     $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
@@ -3610,20 +3617,27 @@ class Dot3 extends Controller
 
                 $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$elem['parameters']['address'].":".$elem['parameters']['port']);
                 $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':'.self::TARGET.'';
+                $tmp['options']['arrowhead'] = 'none';
                 
                 if ($server['mysql_available'] == "1")
                 {
                     if (in_array("Master",explode(", ",$elem['state']) )){
+                        $tmp['color'] = "#008000";
                         $tmp['options']['color'] = "#008000";
                     }
                     else{
+                        $tmp['color'] = "#00B33C";
                         $tmp['options']['color'] = "#00B33C";
                     }
 
                     if (in_array("Donor/Desynced",explode(", ",$elem['state']) )){
+                        $tmp['color'] = "#337ab7";
                         $tmp['options']['color'] = "#337ab7";
                     }
-                    
+                    if (in_array("Down", explode(", ", $elem['state']))) {
+                        $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                        $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                    }
 
                 }
                 else{
