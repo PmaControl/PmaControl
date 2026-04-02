@@ -854,6 +854,12 @@ PARTITION BY RANGE (to_days(`date`))
                 }
                 $sql .= implode(",", $partition).")";
 
+                $checkSql = "SHOW TABLES LIKE '".$db->sql_real_escape_string($table_name)."'";
+                $checkRes = $db->sql_query($checkSql);
+                if ($db->sql_num_rows($checkRes) > 0) {
+                    continue;
+                }
+
                 $db->sql_query($sql);
                 echo Debug::sql($sql);
 
@@ -887,7 +893,11 @@ PARTITION BY RANGE (to_days(`date`))
 
         echo Debug::sql($sql);
 
-        $db->sql_query($sql);
+        $checkSql = "SHOW TABLES LIKE 'ts_date_by_server'";
+        $checkRes = $db->sql_query($checkSql);
+        if ($db->sql_num_rows($checkRes) === 0) {
+            $db->sql_query($sql);
+        }
     }
 
 /**
