@@ -564,7 +564,7 @@ user=".$server['user']."
 password='".$server['password']."'
 crypted='1'
 database=".$server['database']."
-ssl=".$server['is_ssl']."";
+ssl=".($server['is_ssl'] ?? 0)."";
 
         $fp = fopen(CONFIG."/db.config.ini.php", 'w');
         fwrite($fp, $config);
@@ -1223,10 +1223,10 @@ if (! defined('CRYPT_KEY'))
         $ob = mysqli_fetch_object($result);
 
         if ($ob->cpt == "1") {
-            return "Database -> KO (this database already exist";
-        } else {
-            return true;
+            return "Database already exists";
         }
+
+        return true;
 
 
         exit;
@@ -1256,7 +1256,7 @@ if (! defined('CRYPT_KEY'))
     private function createDatabase($database)
     {
 
-        $sql = "CREATE DATABASE ".mysqli_real_escape_string($this->link, $database)."";
+        $sql = "CREATE DATABASE IF NOT EXISTS ".mysqli_real_escape_string($this->link, $database)."";
         $res = mysqli_query($this->link, $sql);
 
         if ($res) {
@@ -1309,7 +1309,7 @@ if (! defined('CRYPT_KEY'))
         //$this->testSpider();
 
         $ret = $this->testDatabase($config['mysql']['database']);
-        if ($ret !== true) {
+        if ($ret !== true && $ret !== "Database already exists") {
             throw new \Exception($ret);
         }
 

@@ -408,6 +408,8 @@ class Agent extends Controller {
             $data['mysql_server']['port'] = empty($info_server['port']) ? 3306 : $info_server['port'];
             $data['mysql_server']['date_refresh'] = date('Y-m-d H:i:s');
             $data['mysql_server']['database'] = $info_server['database'];
+            $data['mysql_server']['ssh_nat'] = $info_server['ssh_nat'] ?? '';
+            $data['mysql_server']['is_ssl'] = $info_server['ssl'] ?? $info_server['is_ssl'] ?? 0;
 
             //$data['mysql_server']['is_monitored'] = 1;
 
