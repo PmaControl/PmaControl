@@ -1,143 +1,182 @@
 #!/bin/bash
-set +x
 set -euo pipefail
 
 DEV_MOD=0
+VERSION_MARIADB="11.8"
+VERSION_PHP="8.5"
+
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-VERSION_MARIADB="10.11"
 
-while getopts 'hp:v:d' flag; do
+while getopts 'hp:v:dP:' flag; do
   case "${flag}" in
     h)
-
         echo "options:"
-        echo "-d                      devlopment mode, we may ask you questions"
-        echo "-p                      specify password for PmaControl (admin)"
+        echo "-d                      development mode, we may ask you questions"
+        echo "-p                      specify password for PmaControl admin"
         echo "-v                      specify version of MariaDB"
+        echo "-P                      specify version of PHP"
         exit 0
     ;;
-
     p) pwd_admin="${OPTARG}" ;;
-    d) DEV_MOD="1"   ;;
+    d) DEV_MOD="1" ;;
     v) VERSION_MARIADB="${OPTARG}" ;;
-    *) echo "Unexpected option ${flag}" 
-	exit 0
-    ;;
+    P) VERSION_PHP="${OPTARG}" ;;
+    *) echo "Unexpected option ${flag}"; exit 1 ;;
   esac
 done
 
-apt-get update
-apt-get -y upgrade
-apt-get -y install lsb-release
-apt-get -y install zip unzip
-apt-get -y install curl
-apt-get -y install bc
-apt-get -y install wget
-apt install -y gnupg
-apt install -y wget 
-apt install -y gnupg2 
-apt install -y git 
-apt install -y tig
-apt install -y curl
-apt install -y net-tools
-apt install -y dnsutils
-apt install -y sysbench
-apt install -y skopeo
-apt install -y jq
-apt install -y sudo
+export DEBIAN_FRONTEND=noninteractive
+export UCF_FORCE_CONFOLD=1
+export UCF_FORCE_CONFFNEW=1
+export NEEDRESTART_MODE=a
 
-sysctl vm.swappiness=1
-grep -qxF "vm.swappiness=1" /etc/sysctl.conf || echo "vm.swappiness=1" | tee -a /etc/sysctl.conf
-
-if [ -d "/tmp/Toolkit" ]; then
-    rm -rf "/tmp/Toolkit"
-fi
-cd /tmp
-git clone https://github.com/PmaControl/Toolkit.git
-
-cd Toolkit
-chmod +x install-mariadb.sh
-
-curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-$VERSION_MARIADB"
-
-./install-mariadb.sh -v "$VERSION_MARIADB" -p "$password" -d /srv/mysql -r
-
-apt-get -y install php8.2 apache2 php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
-apt -y install graphviz
-apt -y install libcairo2
-
-apt-get -y install mariadb-plugin-rocksdb 
-
-service mysql restart
-
-mysql -e  "INSTALL SONAME 'ha_rocksdb'"
-
-a2enmod proxy_fcgi setenvif
-a2enconf php8.2-fpm
-
-a2enmod rewrite
-
-sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/fpm/php.ini
-sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/apache2/php.ini
-sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/cli/php.ini
-
-sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
-sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
-awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
-
-mkdir -p /srv/www/
-cd /srv/www/
-
-apt-get install -y composer
-
-cd /srv/www/
-
-if [[ $DEV_MOD -eq 1 ]]; then
-    ssh -T git@github.com
-    ret=$?
-    
-    if [[ $ret -eq 1 ]]; then
-      git clone git@github.com:PmaControl/PmaControl.git pmacontrol
-    else
-      git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+require_root()
+{
+    if [[ "${EUID}" -ne 0 ]]; then
+        echo "This script must be run as root."
+        exit 1
     fi
-else
-    git clone https://github.com/PmaControl/PmaControl.git pmacontrol
-fi
+}
 
-chown www-data:www-data -R /srv/www/pmacontrol
-chown www-data:www-data -R /var/www
+install_base_packages()
+{
+    apt-get update
+    apt-get -y upgrade
+    apt-get install -y \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        wget \
+        gnupg \
+        gnupg2 \
+        lsb-release \
+        zip \
+        unzip \
+        bc \
+        git \
+        tig \
+        net-tools \
+        dnsutils \
+        cron \
+        sysbench \
+        skopeo \
+        jq \
+        sudo
+}
 
+install_php_sury()
+{
+    install -d -m 0755 /etc/apt/keyrings
+    curl -fsSL https://packages.sury.org/php/apt.gpg -o /etc/apt/keyrings/php-sury.gpg
+    chmod 0644 /etc/apt/keyrings/php-sury.gpg
 
-cd pmacontrol
+    cat > /etc/apt/sources.list.d/php-sury.list <<EOF
+deb [signed-by=/etc/apt/keyrings/php-sury.gpg] https://packages.sury.org/php/ trixie main
+EOF
 
-#git pull origin develop
+    apt-get update
+}
 
-if [[ $DEV_MOD -eq 1 ]]; then
-    git config core.fileMode false
-fi
+install_mariadb()
+{
+    apt-get install -y mariadb-server mariadb-client mariadb-plugin-rocksdb
+    systemctl enable mariadb
+    systemctl restart mariadb
+}
 
-#curl -sS https://getcomposer.org/installer | php
-#mv composer.phar /usr/local/bin/composer
+install_php()
+{
+    local php_version="$1"
 
-#export COMPOSER_ALLOW_SUPERUSER=1
-sudo -u www-data composer install
+    install_php_sury
 
+    apt-get install -y \
+        apache2 \
+        graphviz \
+        libcairo2 \
+        composer \
+        "php${php_version}" \
+        "php${php_version}-mysql" \
+        "php${php_version}-ldap" \
+        "php${php_version}-curl" \
+        "php${php_version}-cli" \
+        "php${php_version}-mbstring" \
+        "php${php_version}-intl" \
+        "php${php_version}-fpm" \
+        "libapache2-mod-php${php_version}" \
+        "php${php_version}-gd" \
+        "php${php_version}-xml" \
+        "php${php_version}-gmp" \
+        php-json
 
-service apache2 restart
+    a2enmod proxy_fcgi setenvif rewrite
+    a2enconf "php${php_version}-fpm"
 
+    sed -i 's#;date.timezone =#date.timezone = Europe/Paris#g' "/etc/php/${php_version}/fpm/php.ini"
+    sed -i 's#;date.timezone =#date.timezone = Europe/Paris#g' "/etc/php/${php_version}/apache2/php.ini"
+    sed -i 's#;date.timezone =#date.timezone = Europe/Paris#g' "/etc/php/${php_version}/cli/php.ini"
+}
 
+configure_apache()
+{
+    mkdir -p /srv/www
+    sed -i 's#/var/www#/srv/www#g' /etc/apache2/apache2.conf
+    sed -i 's#/var/www/html#/srv/www#g' /etc/apache2/sites-enabled/000-default.conf
+    awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/apache2.conf.pmacontrol
+    mv /tmp/apache2.conf.pmacontrol /etc/apache2/apache2.conf
+    systemctl restart apache2
+}
 
-sleep 1
+clone_repo()
+{
+    mkdir -p /srv/www
+    cd /srv/www
 
+    if [[ -d /srv/www/pmacontrol ]]; then
+        rm -rf /srv/www/pmacontrol
+    fi
 
+    if [[ $DEV_MOD -eq 1 ]]; then
+        set +e
+        ssh -T git@github.com >/dev/null 2>&1
+        ret=$?
+        set -e
 
-mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
+        if [[ $ret -eq 1 ]]; then
+            git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+        else
+            git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+        fi
+    else
+        git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+    fi
 
+    chown -R www-data:www-data /srv/www/pmacontrol
+    chown -R www-data:www-data /var/www || true
+}
 
-cat > /tmp/config.json << EOF
+install_php_dependencies()
+{
+    cd /srv/www/pmacontrol
+
+    if [[ $DEV_MOD -eq 1 ]]; then
+        git config core.fileMode false
+    fi
+
+    sudo -u www-data composer install --no-interaction
+}
+
+configure_mysql()
+{
+    mysql -e "INSTALL SONAME 'ha_rocksdb';" || true
+    mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
+}
+
+write_install_config()
+{
+    cat > /tmp/config.json <<EOF
 {
   "mysql": {
     "ip": "127.0.0.1",
@@ -174,7 +213,7 @@ cat > /tmp/config.json << EOF
         "lastname": "DUPONT",
         "country": "France",
         "city": "Paris",
-        "login": "admin", 
+        "login": "admin",
         "password": "${pwd_admin}"
       }
     ]
@@ -184,35 +223,67 @@ cat > /tmp/config.json << EOF
     "host": "%",
     "password": "QDRWSHGqdrtwhqetrHthTH",
     "organization": "68Koncept"
-  }]
-,
+  }],
   "ssh": [{
     "user": "pmacontrol",
     "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
     "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
   }]
 }
-
 EOF
+}
 
-chmod +x install.sh
+run_pmacontrol_install()
+{
+    cd /srv/www/pmacontrol
+    chmod +x install.sh
+    ./install.sh -c /tmp/config.json
+}
 
-./install.sh -c /tmp/config.json
+install_cli_wrapper()
+{
+    cd /srv/www/pmacontrol
+    local pwd_repo
+    pwd_repo=$(pwd)
+    cp -a glial pmacontrol
+    sed -i "s#php App/Webroot/index.php#php ${pwd_repo}/App/Webroot/index.php#g" pmacontrol
+    mv pmacontrol /usr/local/bin/pmacontrol
+}
 
-echo "Save these credentials"
-echo "#########################################################"
-echo "# Account MySQL"
-echo "Login : pmacontrol"
-echo "Password : ${pwd_pmacontrol}"
-echo "#########################################################"
-echo "# Account SuperAdmin on PmaControl"
-echo "Login : admin"
-echo "Password : ${pwd_admin}"
-echo "#########################################################"
+print_credentials()
+{
+    echo "Save these credentials"
+    echo "#########################################################"
+    echo "# Account MySQL"
+    echo "Login : pmacontrol"
+    echo "Password : ${pwd_pmacontrol}"
+    echo "#########################################################"
+    echo "# Account SuperAdmin on PmaControl"
+    echo "Login : admin"
+    echo "Password : ${pwd_admin}"
+    echo "#########################################################"
+}
 
+main()
+{
+    require_root
 
+    sysctl vm.swappiness=1
+    touch /etc/sysctl.conf
+    grep -qxF "vm.swappiness=1" /etc/sysctl.conf || echo "vm.swappiness=1" >> /etc/sysctl.conf
 
-PWD=$(pwd)
-cp -a glial pmacontrol
-sed "s#php App/Webroot/index.php#php ${PWD}/App/Webroot/index.php#g" -i pmacontrol
-mv pmacontrol /usr/local/bin/pmacontrol
+    install_base_packages
+    install_mariadb
+    install_php "${VERSION_PHP}"
+    configure_apache
+    clone_repo
+    install_php_dependencies
+    configure_mysql
+    write_install_config
+    run_pmacontrol_install
+    install_cli_wrapper
+    systemctl restart apache2
+    print_credentials
+}
+
+main "$@"
