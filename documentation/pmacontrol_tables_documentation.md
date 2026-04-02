@@ -5930,6 +5930,8 @@
 
 ## Table `ssh_tunnel`
 
+- Note exploitation: sur l'instance live, `ALTER TABLE ssh_tunnel DROP PARTITION p0` a echoue avec `ERROR 4128` car MariaDB exige encore `exactly one last CURRENT` et au moins une partition `HISTORY` sur une table system-versioned partitionnee par `SYSTEM_TIME`. La sequence qui fonctionne est: `ALTER TABLE ssh_tunnel REMOVE PARTITIONING;` puis `ALTER TABLE ssh_tunnel DROP SYSTEM VERSIONING;`.
+
 - Rôle: Configuration et clés d'accès SSH.
 - Modèle PHP: `App/model/IdentifierPmacontrol/ssh_tunnel.php`
 - Type/engine: `SYSTEM VERSIONED` / `InnoDB`

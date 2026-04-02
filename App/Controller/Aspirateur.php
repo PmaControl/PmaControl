@@ -1616,7 +1616,13 @@ class Aspirateur extends Controller
 
         try {
             $variables = $this->getMysqlLogVariables($id_mysql_server);
-            $sources = MysqlLogCollector::resolveLogSources($variables);
+            $sources = MysqlLogCollector::filterSourcesByLogTypes(
+                MysqlLogCollector::resolveLogSources($variables),
+                [
+                    MysqlLogCollector::LOG_TYPE_ERROR,
+                    MysqlLogCollector::LOG_TYPE_SQL_ERROR,
+                ]
+            );
 
             $events = [];
             $cursorUpdates = [];
@@ -2184,21 +2190,29 @@ class Aspirateur extends Controller
         $membrut = trim($ssh->exec("free -b"));
         $stats   = $this->getSwap($membrut);
 
-//on exclu les montage nfs
-        $dd = trim($ssh->exec("df -l"));
-
-        $lines = explode("\n", $dd);
-        $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
-        unset($lines[0]);
-
-        $tmp = array();
-        foreach ($lines as $line) {
-
-            $elems          = preg_split('/\s+/', $line);
-            $tmp[$elems[5]] = $elems;
+        $procStatCounters = $this->getProcStatSystemCounters($ssh);
+        foreach ($procStatCounters as $key => $value) {
+            $stats[$key] = $value;
         }
 
-        $stats['disks'] = json_encode($tmp);
+        $networkStats = $this->getNetworkStats($ssh);
+        foreach ($networkStats as $key => $value) {
+            $stats[$key] = $value;
+        }
+
+        $diskIoStats = $this->getDiskIoStats($ssh);
+        foreach ($diskIoStats as $key => $value) {
+            $stats[$key] = $value;
+        }
+
+        $processStateStats = $this->getProcessStateStats($ssh);
+        foreach ($processStateStats as $key => $value) {
+            $stats[$key] = $value;
+        }
+
+// on exclut les montages réseau et on produit une structure nommée compatible avec information_schema.disks
+        $diskSnapshot = (string)$ssh->exec("df -lPTB1 2>/dev/null");
+        $stats['disks'] = json_encode($this->parseDfDisks($diskSnapshot));
 
         $cpu_usage = $this->getInstantCpuUsage($ssh);
         if (!empty($cpu_usage)) {
@@ -2463,6 +2477,377 @@ class Aspirateur extends Controller
         }
 
         return $usage;
+    }
+
+    private function getProcStatSystemCounters($ssh): array
+    {
+        $raw = (string)$ssh->exec('cat /proc/stat');
+        if ($raw === '') {
+            return [];
+        }
+
+        return $this->parseProcSystemCounters($raw);
+    }
+
+    private function parseProcSystemCounters(string $raw): array
+    {
+        $detail = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, 'cpu') === 0) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            if (count($parts) < 2) {
+                continue;
+            }
+
+            $key = array_shift($parts);
+            $detail[$key] = count($parts) === 1 ? (int)$parts[0] : array_map('intval', $parts);
+        }
+
+        return [
+            'proc_stat_detail' => json_encode($detail),
+            'system_interrupts_total' => (int)($detail['intr'] ?? 0),
+            'system_context_switches_total' => (int)($detail['ctxt'] ?? 0),
+            'system_process_forks_total' => (int)($detail['processes'] ?? 0),
+            'system_processes_running' => (int)($detail['procs_running'] ?? 0),
+            'system_processes_blocked' => (int)($detail['procs_blocked'] ?? 0),
+            'system_softirq_total' => (int)($detail['softirq'][0] ?? 0),
+        ];
+    }
+
+    private function getNetworkStats($ssh): array
+    {
+        $rawDev = (string)$ssh->exec('cat /proc/net/dev');
+        $rawSnmp = (string)$ssh->exec('cat /proc/net/snmp');
+        $rawNetstat = (string)$ssh->exec('cat /proc/net/netstat');
+        $rawSockstat = (string)$ssh->exec('cat /proc/net/sockstat 2>/dev/null');
+        $rawSockstat6 = (string)$ssh->exec('cat /proc/net/sockstat6 2>/dev/null');
+
+        $interfaces = $this->parseProcNetDev($rawDev);
+        $protocols = [
+            'snmp' => $this->parseProcSnmpLike($rawSnmp),
+            'netstat' => $this->parseProcSnmpLike($rawNetstat),
+            'sockstat' => $this->parseSockstat($rawSockstat),
+            'sockstat6' => $this->parseSockstat($rawSockstat6),
+        ];
+
+        $summary = [
+            'rx_bytes' => 0,
+            'tx_bytes' => 0,
+            'rx_packets' => 0,
+            'tx_packets' => 0,
+            'rx_errors' => 0,
+            'tx_errors' => 0,
+            'rx_drop' => 0,
+            'tx_drop' => 0,
+        ];
+
+        foreach ($interfaces as $interface => $metrics) {
+            if ($interface === 'lo') {
+                continue;
+            }
+
+            $summary['rx_bytes'] += (int)($metrics['rx_bytes'] ?? 0);
+            $summary['tx_bytes'] += (int)($metrics['tx_bytes'] ?? 0);
+            $summary['rx_packets'] += (int)($metrics['rx_packets'] ?? 0);
+            $summary['tx_packets'] += (int)($metrics['tx_packets'] ?? 0);
+            $summary['rx_errors'] += (int)($metrics['rx_errors'] ?? 0);
+            $summary['tx_errors'] += (int)($metrics['tx_errors'] ?? 0);
+            $summary['rx_drop'] += (int)($metrics['rx_drop'] ?? 0);
+            $summary['tx_drop'] += (int)($metrics['tx_drop'] ?? 0);
+        }
+
+        return [
+            'network_detail' => json_encode($interfaces),
+            'network_protocol_detail' => json_encode($protocols),
+            'network_rx_bytes_total' => $summary['rx_bytes'],
+            'network_tx_bytes_total' => $summary['tx_bytes'],
+            'network_rx_packets_total' => $summary['rx_packets'],
+            'network_tx_packets_total' => $summary['tx_packets'],
+            'network_rx_errors_total' => $summary['rx_errors'],
+            'network_tx_errors_total' => $summary['tx_errors'],
+            'network_rx_drop_total' => $summary['rx_drop'],
+            'network_tx_drop_total' => $summary['tx_drop'],
+            'network_tcp_retrans_segs_total' => (int)($protocols['snmp']['Tcp']['RetransSegs'] ?? 0),
+            'network_tcp_in_errs_total' => (int)($protocols['snmp']['Tcp']['InErrs'] ?? 0),
+            'network_tcp_out_rsts_total' => (int)($protocols['snmp']['Tcp']['OutRsts'] ?? 0),
+            'network_udp_in_errors_total' => (int)($protocols['snmp']['Udp']['InErrors'] ?? 0),
+        ];
+    }
+
+    private function parseProcNetDev(string $raw): array
+    {
+        $interfaces = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        foreach ($lines as $index => $line) {
+            if ($index < 2) {
+                continue;
+            }
+
+            $line = trim($line);
+            if ($line === '' || strpos($line, ':') === false) {
+                continue;
+            }
+
+            [$interface, $values] = array_map('trim', explode(':', $line, 2));
+            $parts = preg_split('/\s+/', $values);
+            if (count($parts) < 16) {
+                continue;
+            }
+
+            $interfaces[$interface] = [
+                'rx_bytes' => (int)$parts[0],
+                'rx_packets' => (int)$parts[1],
+                'rx_errors' => (int)$parts[2],
+                'rx_drop' => (int)$parts[3],
+                'rx_fifo' => (int)$parts[4],
+                'rx_frame' => (int)$parts[5],
+                'rx_compressed' => (int)$parts[6],
+                'rx_multicast' => (int)$parts[7],
+                'tx_bytes' => (int)$parts[8],
+                'tx_packets' => (int)$parts[9],
+                'tx_errors' => (int)$parts[10],
+                'tx_drop' => (int)$parts[11],
+                'tx_fifo' => (int)$parts[12],
+                'tx_colls' => (int)$parts[13],
+                'tx_carrier' => (int)$parts[14],
+                'tx_compressed' => (int)$parts[15],
+            ];
+        }
+
+        return $interfaces;
+    }
+
+    private function parseProcSnmpLike(string $raw): array
+    {
+        $result = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        for ($i = 0; $i + 1 < count($lines); $i += 2) {
+            $header = trim($lines[$i]);
+            $values = trim($lines[$i + 1]);
+            if ($header === '' || $values === '' || strpos($header, ':') === false || strpos($values, ':') === false) {
+                continue;
+            }
+
+            [$prefixHeader, $headerFields] = array_map('trim', explode(':', $header, 2));
+            [$prefixValues, $valueFields] = array_map('trim', explode(':', $values, 2));
+            if ($prefixHeader !== $prefixValues) {
+                continue;
+            }
+
+            $keys = preg_split('/\s+/', $headerFields);
+            $vals = preg_split('/\s+/', $valueFields);
+            $row = [];
+            foreach ($keys as $index => $key) {
+                $row[$key] = is_numeric($vals[$index] ?? null) ? (int)$vals[$index] : ($vals[$index] ?? null);
+            }
+            $result[$prefixHeader] = $row;
+        }
+
+        return $result;
+    }
+
+    private function parseSockstat(string $raw): array
+    {
+        $result = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, ':') === false) {
+                continue;
+            }
+
+            [$family, $rest] = array_map('trim', explode(':', $line, 2));
+            $parts = preg_split('/\s+/', $rest);
+            $row = [];
+            for ($i = 0; $i + 1 < count($parts); $i += 2) {
+                $value = $parts[$i + 1];
+                $row[$parts[$i]] = is_numeric($value) ? (int)$value : $value;
+            }
+            $result[$family] = $row;
+        }
+
+        return $result;
+    }
+
+    private function getDiskIoStats($ssh): array
+    {
+        $raw = (string)$ssh->exec('cat /proc/diskstats');
+        if ($raw === '') {
+            return [];
+        }
+
+        $devices = $this->parseProcDiskstats($raw);
+        $summary = [
+            'reads_completed' => 0,
+            'writes_completed' => 0,
+            'read_bytes' => 0,
+            'write_bytes' => 0,
+            'io_time_ms' => 0,
+            'weighted_io_time_ms' => 0,
+        ];
+
+        foreach ($devices as $device) {
+            $summary['reads_completed'] += (int)($device['reads_completed'] ?? 0);
+            $summary['writes_completed'] += (int)($device['writes_completed'] ?? 0);
+            $summary['read_bytes'] += (int)($device['read_bytes'] ?? 0);
+            $summary['write_bytes'] += (int)($device['write_bytes'] ?? 0);
+            $summary['io_time_ms'] += (int)($device['io_time_ms'] ?? 0);
+            $summary['weighted_io_time_ms'] += (int)($device['weighted_io_time_ms'] ?? 0);
+        }
+
+        return [
+            'disk_io_detail' => json_encode($devices),
+            'disk_reads_completed_total' => $summary['reads_completed'],
+            'disk_writes_completed_total' => $summary['writes_completed'],
+            'disk_read_bytes_total' => $summary['read_bytes'],
+            'disk_write_bytes_total' => $summary['write_bytes'],
+            'disk_io_time_ms_total' => $summary['io_time_ms'],
+            'disk_weighted_io_time_ms_total' => $summary['weighted_io_time_ms'],
+        ];
+    }
+
+    private function parseProcDiskstats(string $raw): array
+    {
+        $devices = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            if (count($parts) < 14) {
+                continue;
+            }
+
+            $device = $parts[2];
+            if (!$this->isTrackedDiskDevice($device)) {
+                continue;
+            }
+
+            $readSectors = (int)($parts[5] ?? 0);
+            $writtenSectors = (int)($parts[9] ?? 0);
+
+            $devices[$device] = [
+                'reads_completed' => (int)($parts[3] ?? 0),
+                'reads_merged' => (int)($parts[4] ?? 0),
+                'read_sectors' => $readSectors,
+                'read_bytes' => $readSectors * 512,
+                'read_time_ms' => (int)($parts[6] ?? 0),
+                'writes_completed' => (int)($parts[7] ?? 0),
+                'writes_merged' => (int)($parts[8] ?? 0),
+                'write_sectors' => $writtenSectors,
+                'write_bytes' => $writtenSectors * 512,
+                'write_time_ms' => (int)($parts[10] ?? 0),
+                'io_in_progress' => (int)($parts[11] ?? 0),
+                'io_time_ms' => (int)($parts[12] ?? 0),
+                'weighted_io_time_ms' => (int)($parts[13] ?? 0),
+                'discard_completed' => (int)($parts[14] ?? 0),
+                'discard_merged' => (int)($parts[15] ?? 0),
+                'discard_sectors' => (int)($parts[16] ?? 0),
+                'discard_time_ms' => (int)($parts[17] ?? 0),
+                'flush_completed' => (int)($parts[18] ?? 0),
+                'flush_time_ms' => (int)($parts[19] ?? 0),
+            ];
+        }
+
+        return $devices;
+    }
+
+    private function isTrackedDiskDevice(string $device): bool
+    {
+        return (bool)preg_match('/^(sd[a-z]+|vd[a-z]+|xvd[a-z]+|hd[a-z]+|nvme\d+n\d+|md\d+|dm-\d+)$/', $device);
+    }
+
+    private function getProcessStateStats($ssh): array
+    {
+        $raw = (string)$ssh->exec("ps -eo state= 2>/dev/null");
+        if ($raw === '') {
+            return [];
+        }
+
+        return $this->parseProcessStates($raw);
+    }
+
+    private function parseProcessStates(string $raw): array
+    {
+        $counts = [
+            'R' => 0,
+            'S' => 0,
+            'D' => 0,
+            'T' => 0,
+            'Z' => 0,
+            'I' => 0,
+        ];
+        $total = 0;
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $state = strtoupper(substr(trim($line), 0, 1));
+            if ($state === '') {
+                continue;
+            }
+            if (!isset($counts[$state])) {
+                $counts[$state] = 0;
+            }
+            $counts[$state]++;
+            $total++;
+        }
+
+        return [
+            'process_state_detail' => json_encode($counts),
+            'process_total' => $total,
+            'process_running' => (int)($counts['R'] ?? 0),
+            'process_sleeping' => (int)($counts['S'] ?? 0),
+            'process_disk_sleep' => (int)($counts['D'] ?? 0),
+            'process_stopped' => (int)($counts['T'] ?? 0),
+            'process_zombie' => (int)($counts['Z'] ?? 0),
+            'process_idle' => (int)($counts['I'] ?? 0),
+        ];
+    }
+
+    private function parseDfDisks(string $raw): array
+    {
+        $rows = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        foreach ($lines as $index => $line) {
+            if ($index === 0) {
+                continue;
+            }
+
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line, 7);
+            if (count($parts) < 7) {
+                continue;
+            }
+
+            $rows[] = [
+                'Filesystem' => (string)$parts[0],
+                'Type' => (string)$parts[1],
+                'Total' => (string)$parts[2],
+                'Size' => (string)$parts[2],
+                'Used' => (string)$parts[3],
+                'Avail' => (string)$parts[4],
+                'Available' => (string)$parts[4],
+                'Use%' => (string)$parts[5],
+                'Mounted' => (string)$parts[6],
+                'Mounted on' => (string)$parts[6],
+            ];
+        }
+
+        return $rows;
     }
 
 /**

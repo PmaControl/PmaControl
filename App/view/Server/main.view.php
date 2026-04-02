@@ -528,8 +528,15 @@ if (!empty($data['servers'])) {
         }
 
         if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2") {
-            echo '&nbsp;'.$server['warning'];
-            echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
+            if (!empty($extra['mysql_error'])) {
+                echo htmlspecialchars((string)$extra['mysql_error'], ENT_QUOTES, 'UTF-8');
+            } else {
+                echo '<span class="label label-warning">'.__('Read only').'</span>';
+            }
+
+            if (!empty($data['processing'][$server['id']])) {
+                echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
+            }
         }
 
         if ($IS_AVAILABLE === true)

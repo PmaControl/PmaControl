@@ -120,6 +120,16 @@ class Control extends Controller
         'ssh_log_mysql_agg_day',
     ];
 
+    /**
+     * @var array<int,string>
+     */
+    private array $aggregateMetricTables = [
+        'aggregate_metric_10s',
+        'aggregate_metric_1m',
+        'aggregate_metric_10m',
+        'aggregate_metric_1h',
+    ];
+
 
 /**
  * Stores `$logger` for logger.
@@ -444,6 +454,8 @@ class Control extends Controller
 
         $this->createMysqlLogTables();
         $this->ensureMysqlLogWorkers();
+        $this->createAggregateMetricTables();
+        $this->ensureAggregateMetricWorkers();
 
         $partitions = $this->getMinMaxPartition();
 
@@ -502,6 +514,7 @@ class Control extends Controller
         }
 
         $this->syncMysqlLogPartitions();
+        $this->syncAggregateMetricPartitions();
 
         $this->refreshVariable(array());
 
@@ -539,7 +552,7 @@ class Control extends Controller
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_cursor` (`id_mysql_server`,`log_type`,`source_kind`,`source_name`(191))
-) ENGINE=".$this->engine." DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci";
         $db->sql_query($sqlCursor);
 
         $sqlLine = "CREATE TABLE IF NOT EXISTS `ssh_log_mysql_line` (
@@ -580,7 +593,7 @@ PARTITION BY RANGE (to_days(`event_time`))
   `count_total` int(10) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`log_type`),
   KEY `idx_server_type_bucket` (`id_mysql_server`,`log_type`,`bucket_start`)
-) ENGINE=".$this->engine." DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 PARTITION BY RANGE (to_days(`bucket_start`))
 (".$this->buildDailyPartitionSql($dates).")";
             $db->sql_query($sqlAgg);
@@ -597,7 +610,7 @@ PARTITION BY RANGE (to_days(`bucket_start`))
             "INSERT IGNORE INTO `daemon_main` (`id`,`name`,`date`,`pid`,`refresh_time`,`max_delay`,`class`,`method`,`params`,`debug`)
              VALUES (38,'Integrate MySQL logs','2026-03-20 00:00:00',0,15,10,'IntegrateLog','integrateAll','logs',0)",
             "INSERT IGNORE INTO `worker_queue` (`id`,`id_daemon_main`,`table`,`name`,`nb_worker`,`timeout`,`queue_number`,`worker_class`,`worker_method`,`max_execution_time`,`query`)
-             VALUES (6,37,'logs','worker_mysql_log',1,30,158850,'Aspirateur','tryMysqlLogCollection',30,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.id=1 and a.is_monitored=1 and b.is_monitored=1')",
+             VALUES (6,37,'logs','worker_mysql_log',1,30,158850,'Aspirateur','tryMysqlLogCollection',30,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1')",
         ];
 
         foreach ($sqls as $sql) {
@@ -606,6 +619,73 @@ PARTITION BY RANGE (to_days(`bucket_start`))
 
         $db->sql_query("UPDATE `daemon_main` SET `params` = 'logs' WHERE `id` = 38");
         $db->sql_query("UPDATE `worker_queue` SET `table` = 'logs' WHERE `id` = 6");
+        $db->sql_query("UPDATE `worker_queue` SET `query` = 'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1' WHERE `id` = 6");
+    }
+
+    public function createAggregateMetricTables()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        $sqlPolicy = "CREATE TABLE IF NOT EXISTS `aggregate_metric_policy` (
+  `id_ts_variable` int(11) NOT NULL,
+  `variable_name` varchar(100) NOT NULL,
+  `value_type` varchar(16) NOT NULL,
+  `variable_from` varchar(64) NOT NULL,
+  `radical` char(10) NOT NULL,
+  `display_policy` varchar(16) NOT NULL,
+  `stats_policy` varchar(32) NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_ts_variable`),
+  KEY `idx_from_radical` (`variable_from`,`radical`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci";
+        $db->sql_query($sqlPolicy);
+
+        foreach ($this->aggregateMetricTables as $table) {
+            $sql = "CREATE TABLE IF NOT EXISTS `".$table."` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+PARTITION BY RANGE (to_days(`bucket_start`))
+(".$this->buildDailyPartitionSql($dates).")";
+            $db->sql_query($sql);
+        }
+    }
+
+    public function ensureAggregateMetricWorkers()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sqls = [
+            "INSERT IGNORE INTO `daemon_main` (`id`,`name`,`date`,`pid`,`refresh_time`,`max_delay`,`class`,`method`,`params`,`debug`)
+             VALUES (39,'Aggregate metric rollups','2026-03-21 00:00:00',0,30,20,'Worker','addToQueue','7',0)",
+            "INSERT IGNORE INTO `worker_queue` (`id`,`id_daemon_main`,`table`,`name`,`nb_worker`,`timeout`,`queue_number`,`worker_class`,`worker_method`,`max_execution_time`,`query`)
+             VALUES (7,39,'aggregate_metric','worker_aggregate_metric',1,60,158851,'AggregateMetric','aggregateRecentByServer',120,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1 and a.id = 1')",
+        ];
+
+        foreach ($sqls as $sql) {
+            $db->sql_query($sql);
+        }
+
+        $db->sql_query("UPDATE `worker_queue` SET `table` = 'aggregate_metric', `nb_worker` = 1 WHERE `id` = 7");
+        $db->sql_query("UPDATE `worker_queue` SET `query` = 'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1 and a.id = 1' WHERE `id` = 7");
     }
 
     public function syncMysqlLogPartitions(): void
@@ -632,6 +712,35 @@ PARTITION BY RANGE (to_days(`bucket_start`))
                 }
 
                 $column = $table === 'ssh_log_mysql_line' ? 'event_time' : 'bucket_start';
+                $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partitionNumber."` VALUES LESS THAN (".$partitionNumber.") ENGINE = ".$this->engine.")";
+                $db->sql_query($sql);
+            }
+        }
+    }
+
+    public function syncAggregateMetricPartitions(): void
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        foreach ($this->aggregateMetricTables as $table) {
+            $existsRes = $db->sql_query("SHOW TABLES LIKE '".$db->sql_real_escape_string($table)."'");
+            if ($db->sql_num_rows($existsRes) === 0) {
+                continue;
+            }
+
+            $existing = [];
+            $res = $db->sql_query("SELECT PARTITION_NAME FROM information_schema.partitions WHERE table_schema = DATABASE() AND table_name = '".$db->sql_real_escape_string($table)."' AND PARTITION_NAME IS NOT NULL");
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $existing[] = substr((string) $row['PARTITION_NAME'], 1);
+            }
+
+            foreach ($dates as $date) {
+                $partitionNumber = $this->getToDays([$date]);
+                if (in_array((string) $partitionNumber, $existing, true)) {
+                    continue;
+                }
+
                 $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partitionNumber."` VALUES LESS THAN (".$partitionNumber.") ENGINE = ".$this->engine.")";
                 $db->sql_query($sql);
             }
@@ -828,6 +937,8 @@ PARTITION BY RANGE (to_days(`date`))
         $this->createTsTable();
         $this->createMysqlLogTables();
         $this->ensureMysqlLogWorkers();
+        $this->createAggregateMetricTables();
+        $this->ensureAggregateMetricWorkers();
 
         //drop lock sur
         Mysql::onAddMysqlServer();

@@ -1827,7 +1827,7 @@ class MysqlServer extends Controller
             "aborted_clients","aborted_connects","access_denied_errors",
             "innodb_flush_log_at_trx_commit","innodb_log_file_size","innodb_log_buffer_size","innodb_buffer_pool_instances",
             "innodb_page_size","innodb_read_io_threads","innodb_write_io_threads",
-            "log_bin","sync_binlog","binlog_format","binlog_row_image","binlog_checksum","binlog_cache_size","binlog_stmt_cache_size","max_binlog_size","binlog_space_limit","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds",
+            "log_bin","sync_binlog","binlog_format","binlog_row_image","binlog_checksum","binlog_cache_size","binlog_stmt_cache_size","max_binlog_size","binlog_space_limit","binlog_nb_files","binlog_total_size","binlog_expire_logs_seconds","expire_logs_days",
             "log_bin_basename","mysql_binlog::binlog_file_last","gtid_current_pos","gtid_binlog_pos",
             "wsrep_on","wsrep_connected","wsrep_cluster_name","wsrep_cluster_status","wsrep_cluster_size","wsrep_cluster_state_uuid",
             "wsrep_local_state","wsrep_local_state_comment","wsrep_local_state_uuid","wsrep_ready","wsrep_desync","wsrep_sst_method",
@@ -2223,6 +2223,7 @@ class MysqlServer extends Controller
             '#files' => $g('binlog_nb_files'),
             'Total size' => self::formatBytesToMbGb($g('binlog_total_size')),
             'expire (sec)' => $g('binlog_expire_logs_seconds'),
+            'expire_logs_days' => $g('expire_logs_days') ?? 'n/a',
         ];
 
         $wsrepOn = strtoupper((string)($g('wsrep_on') ?? ''));

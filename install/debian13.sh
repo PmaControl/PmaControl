@@ -4,6 +4,7 @@ set -euo pipefail
 DEV_MOD=0
 VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
+GIT_BRANCH="commercial"
 
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
@@ -31,6 +32,20 @@ export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
 export UCF_FORCE_CONFFNEW=1
 export NEEDRESTART_MODE=a
+
+get_os_codename()
+{
+    if [[ -r /etc/os-release ]]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        if [[ -n "${VERSION_CODENAME:-}" ]]; then
+            echo "${VERSION_CODENAME}"
+            return 0
+        fi
+    fi
+
+    lsb_release -sc
+}
 
 require_root()
 {
@@ -68,12 +83,15 @@ install_base_packages()
 
 install_php_sury()
 {
+    local distro_codename
+    distro_codename=$(get_os_codename)
+
     install -d -m 0755 /etc/apt/keyrings
     curl -fsSL https://packages.sury.org/php/apt.gpg -o /etc/apt/keyrings/php-sury.gpg
     chmod 0644 /etc/apt/keyrings/php-sury.gpg
 
     cat > /etc/apt/sources.list.d/php-sury.list <<EOF
-deb [signed-by=/etc/apt/keyrings/php-sury.gpg] https://packages.sury.org/php/ trixie main
+deb [signed-by=/etc/apt/keyrings/php-sury.gpg] https://packages.sury.org/php/ ${distro_codename} main
 EOF
 
     apt-get update
@@ -145,12 +163,12 @@ clone_repo()
         set -e
 
         if [[ $ret -eq 1 ]]; then
-            git clone git@github.com:PmaControl/PmaControl.git pmacontrol
+            git clone --branch "${GIT_BRANCH}" --single-branch git@github.com:PmaControl/PmaControl.git pmacontrol
         else
-            git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+            git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
         fi
     else
-        git clone https://github.com/PmaControl/PmaControl.git pmacontrol
+        git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
     fi
 
     chown -R www-data:www-data /srv/www/pmacontrol

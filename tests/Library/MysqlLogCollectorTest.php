@@ -51,6 +51,30 @@ final class MysqlLogCollectorTest extends TestCase
         $this->assertNotContains(MysqlLogCollector::LOG_TYPE_SQL_ERROR, $types);
     }
 
+    public function testFilterSourcesByLogTypesKeepsOnlyErrorAndSqlError(): void
+    {
+        $sources = MysqlLogCollector::resolveLogSources([
+            'log_error' => '/var/log/mysql/error.log',
+            'slow_query_log_file' => '/var/log/mysql/slow.log',
+            'general_log_file' => '/var/log/mysql/general.log',
+            'general_log' => 'ON',
+            'sql_error_log_filename' => '/var/log/mysql/sql_errors.log',
+            'plugins_json' => json_encode([
+                ['PLUGIN_NAME' => 'SQL_ERROR_LOG', 'PLUGIN_STATUS' => 'ACTIVE'],
+            ]),
+        ]);
+
+        $filtered = MysqlLogCollector::filterSourcesByLogTypes($sources, [
+            MysqlLogCollector::LOG_TYPE_ERROR,
+            MysqlLogCollector::LOG_TYPE_SQL_ERROR,
+        ]);
+
+        $this->assertSame(
+            [MysqlLogCollector::LOG_TYPE_ERROR, MysqlLogCollector::LOG_TYPE_SQL_ERROR],
+            array_values(array_column($filtered, 'log_type'))
+        );
+    }
+
     public function testSplitSqlErrorLogEntriesSeparatesConcatenatedEntries(): void
     {
         $blob = '2026-03-18 18:22:31 root[root] @ localhost [] WARNING 1265: first broken SQL NUL2026-03-18 18:22:31 root[root] @ localhost [] WARNING 1265: second broken SQL';

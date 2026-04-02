@@ -1,0 +1,269 @@
+digraph o2s_proxysql_mirroring_topology {
+    graph [
+        rankdir=LR,
+        splines="compound",
+        pad="0.3",
+        nodesep="0.55",
+        ranksep="1.0",
+        bgcolor="white",
+        fontname="arial",
+        fontsize="10",
+        labelloc="t",
+        label="O2S ProxySQL Mirroring Topology"
+    ];
+
+    node [
+        shape=plaintext,
+        fontname="arial",
+        fontsize="8"
+    ];
+
+    edge [
+        fontname="arial",
+        fontsize="8",
+        color="#5f6b7a",
+        penwidth="2"
+    ];
+
+    subgraph cluster_proxy_layer {
+        label="Proxy Layer";
+        style="rounded,dashed";
+        color="#4384c7";
+        fontname="arial";
+        fontsize="9";
+        bgcolor="transparent";
+
+        proxysql_1 [
+            label=<
+                <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                    <tr>
+                        <td bgcolor="#4384c7">
+                            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                                <tr>
+                                    <td>
+                                        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                            <tr>
+                                                <td PORT="title" colspan="2" bgcolor="#4384c7">
+                                                    <font color="#ffffff"><b>proxysql-front-1</b></font>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="#eeeeee" width="28" rowspan="2" align="center" port="from"><b>P</b></td>
+                                                <td bgcolor="lightgrey" width="140" align="left">ProxySQL</td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="lightgrey" align="left">10.68.68.201:6033</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#aaaaaa" align="left" port="writer">HG 10 : writer</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#d9edf7" align="left" port="reader">HG 20 : reader</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#f7ecb5" align="left" port="mirror">mirror hostgroup</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            >
+        ];
+
+        proxysql_2 [
+            label=<
+                <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                    <tr>
+                        <td bgcolor="#4384c7">
+                            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                                <tr>
+                                    <td>
+                                        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                            <tr>
+                                                <td PORT="title" colspan="2" bgcolor="#4384c7">
+                                                    <font color="#ffffff"><b>proxysql-front-2</b></font>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="#eeeeee" width="28" rowspan="2" align="center" port="from"><b>P</b></td>
+                                                <td bgcolor="lightgrey" width="140" align="left">ProxySQL</td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="lightgrey" align="left">10.68.68.202:6033</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#aaaaaa" align="left" port="writer">HG 10 : writer</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#d9edf7" align="left" port="reader">HG 20 : reader</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="#f7ecb5" align="left" port="mirror">mirror hostgroup</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            >
+        ];
+    }
+
+    subgraph cluster_mysql_layer {
+        label="MySQL Layer";
+        style="rounded,dashed";
+        color="#5cb85c";
+        fontname="arial";
+        fontsize="9";
+        bgcolor="transparent";
+
+        o2s_master [
+            label=<
+                <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                    <tr>
+                        <td bgcolor="#5cb85c">
+                            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                                <tr>
+                                    <td>
+                                        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                            <tr>
+                                                <td PORT="title" colspan="2" bgcolor="#5cb85c">
+                                                    <font color="#ffffff"><b>o2s_master</b></font>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="#eeeeee" width="28" rowspan="2" align="center" port="from"><b>DB</b></td>
+                                                <td bgcolor="lightgrey" width="140" align="left">MariaDB / MySQL</td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="lightgrey" align="left">writer primary</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="lightgrey" align="left" port="target">10.68.68.210:3306</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            >
+        ];
+
+        o2s_slave [
+            label=<
+                <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                    <tr>
+                        <td bgcolor="#f0ad4e">
+                            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                                <tr>
+                                    <td>
+                                        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                            <tr>
+                                                <td PORT="title" colspan="2" bgcolor="#f0ad4e">
+                                                    <font color="#ffffff"><b>o2s_slave</b></font>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="#eeeeee" width="28" rowspan="2" align="center" port="from"><b>DB</b></td>
+                                                <td bgcolor="lightgrey" width="140" align="left">Replica</td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="lightgrey" align="left">legacy read target</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="lightgrey" align="left" port="target">10.68.68.211:3306</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            >
+        ];
+
+        o2s_new_archi [
+            label=<
+                <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                    <tr>
+                        <td bgcolor="#5bc0de">
+                            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                                <tr>
+                                    <td>
+                                        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                            <tr>
+                                                <td PORT="title" colspan="2" bgcolor="#5bc0de">
+                                                    <font color="#ffffff"><b>o2s_new_archi</b></font>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="#eeeeee" width="28" rowspan="2" align="center" port="from"><b>DB</b></td>
+                                                <td bgcolor="lightgrey" width="140" align="left">Replica</td>
+                                            </tr>
+                                            <tr>
+                                                <td bgcolor="lightgrey" align="left">new read target</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" bgcolor="lightgrey" align="left" port="target">10.68.68.212:3306</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            >
+        ];
+    }
+
+    app_clients [
+        label=<
+            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+                <tr>
+                    <td bgcolor="#777777">
+                        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                            <tr>
+                                <td>
+                                    <table BGCOLOR="#f8f8f8" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">
+                                        <tr>
+                                            <td PORT="title" bgcolor="#777777">
+                                                <font color="#ffffff"><b>application</b></font>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td bgcolor="lightgrey" align="left" port="from">writers + readers</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        >
+    ];
+
+    app_clients:from -> proxysql_1:from [label="traffic", color="#666666", fontcolor="#666666"];
+    app_clients:from -> proxysql_2:from [label="traffic", color="#666666", fontcolor="#666666"];
+
+    proxysql_1:writer -> o2s_master:target [label="writes", color="#008000", fontcolor="#008000"];
+    proxysql_2:writer -> o2s_master:target [label="writes", color="#008000", fontcolor="#008000"];
+
+    proxysql_1:reader -> o2s_new_archi:target [label="reads", color="#337ab7", fontcolor="#337ab7"];
+    proxysql_2:reader -> o2s_new_archi:target [label="reads", color="#337ab7", fontcolor="#337ab7"];
+
+    proxysql_1:mirror -> o2s_slave:target [label="mirror reads", color="#9b59b6", fontcolor="#9b59b6", style="dashed"];
+    proxysql_2:mirror -> o2s_slave:target [label="mirror reads", color="#9b59b6", fontcolor="#9b59b6", style="dashed"];
+
+    o2s_master:target -> o2s_slave:target [label="replication", color="#f0ad4e", fontcolor="#f0ad4e", arrowhead="none"];
+    o2s_master:target -> o2s_new_archi:target [label="replication", color="#5bc0de", fontcolor="#5bc0de", arrowhead="none"];
+}

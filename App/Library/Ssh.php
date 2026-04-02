@@ -465,6 +465,52 @@ class Ssh
     }
 
 /**
+ * Handle ssh state through `sftp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_server Input value for `id_server`.
+ * @phpstan-param int $id_server
+ * @psalm-param int $id_server
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for sftp.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::sftp()
+ * @example /fr/ssh/sftp
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    static function sftp($id_server, $type = 'mysql')
+    {
+        if (self::$mock) {
+            return self::$mock;
+        }
+
+        $server = self::getSsh($id_server, $type);
+
+        if ($server === false) {
+            return false;
+        }
+
+        $sftp = new SFTP($server['ip'], $server['port'], 30);
+        $rsa  = PublicKeyLoader::load(Crypt::decrypt($server['private_key'], CRYPT_KEY));
+
+        if (!$sftp->login($server['user'], $rsa)) {
+            return false;
+        }
+
+        return $sftp;
+    }
+
+/**
  * Retrieve ssh state through `getSsh`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.

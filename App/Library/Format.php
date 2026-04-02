@@ -112,6 +112,11 @@ class Format
                 $name .= ' ProxySQL';
                 break;
 
+            case 'mysql router':
+                $name .= '<img title="MySQL Router" alt="MySQL Router" height="16" width="16" src="'.IMG.'/icon/router.svg"/>';
+                $name .= ' MySQL Router';
+                break;
+
             case 'maxscale':
                 $name .= '<img title="MaxScale Server" alt="MaxScale Server" height="16" width="16" src="'.IMG.'/icon/maxscale.svg"/>';
                 $name .= ' MaxScale';
@@ -170,6 +175,10 @@ class Format
 
             case 'proxysql':
                 $logo = '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+                break;
+
+            case 'mysql router':
+                $logo = '<img title="MySQL Router" alt="MySQL Router" height="16" width="16" src="'.IMG.'/icon/router.svg"/>';
                 break;
 
             case 'maxscale':
@@ -275,6 +284,16 @@ class Format
             $fork = "ProxySQL";
         }
 
+        $pos = strpos(strtolower($comment), "mysql router");
+        if ($pos !== false) {
+            $fork = "MySQL Router";
+        }
+
+        $pos = strpos(strtolower($comment), "-router");
+        if ($pos !== false) {
+            $fork = "MySQL Router";
+        }
+
         $pos = strpos(strtolower($comment), "maxscale");
         if ($pos !== false) {
             $fork = "MaxScale";
@@ -288,4 +307,3 @@ class Format
         return array('number'=>$number, 'fork'=> $fork, 'enterprise'=> $enterprise);
     }
 }
-

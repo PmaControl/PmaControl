@@ -78,6 +78,26 @@ final class MysqlLogCollector
     }
 
     /**
+     * @param array<int,array<string,mixed>> $sources
+     * @param array<int,string> $allowedLogTypes
+     * @return array<int,array<string,mixed>>
+     */
+    public static function filterSourcesByLogTypes(array $sources, array $allowedLogTypes): array
+    {
+        if (empty($allowedLogTypes)) {
+            return $sources;
+        }
+
+        $allowed = array_fill_keys($allowedLogTypes, true);
+
+        return array_values(array_filter($sources, static function ($source) use ($allowed) {
+            $logType = (string)($source['log_type'] ?? '');
+
+            return isset($allowed[$logType]);
+        }));
+    }
+
+    /**
      * Parse a JSON payload exported from information_schema.plugins.
      *
      * @param mixed $pluginsJson

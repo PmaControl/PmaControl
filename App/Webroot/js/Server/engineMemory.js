@@ -291,9 +291,9 @@
         };
     }
 
-    function renderProcessMemoryChart() {
-        var payload = window.engineMemoryChartPayload || null;
-        var canvas = document.getElementById('engine-memory-process-chart');
+    function renderProcessMemoryChart(canvas, payload) {
+        payload = payload || window.engineMemoryChartPayload || null;
+        canvas = canvas || document.getElementById('engine-memory-process-chart');
         var datasets = buildDatasets(
             payload ? (payload.datasets || []) : [],
             payload ? (payload.memory_total_kb || 0) : 0,
@@ -385,7 +385,10 @@
         chart.$memoryTotalKb = Number(payload.memory_total_kb || 0);
         updateAxesForVisibleDatasets(chart);
         window.engineMemoryProcessChart = chart;
+        return chart;
     }
+
+    window.renderEngineMemoryProcessChart = renderProcessMemoryChart;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', renderProcessMemoryChart);

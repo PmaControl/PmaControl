@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>mariadb_oom_stop_analysis_2026-04-02</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="mariadb-stops-repeatedly-on-ist-pmacontrol">MariaDB Stops
+Repeatedly on <code>ist-pmacontrol</code></h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>MariaDB does <strong>not</strong> stop because of corruption, Galera
+recovery failure, or an SQL crash loop.</p>
+<p>It stops because the Linux kernel kills <code>mariadbd</code> for
+<strong>out-of-memory</strong> conditions.</p>
+<p>The evidence is explicit in both <code>systemd</code> and the kernel
+log:</p>
+<ul>
+<li><code>mariadb.service: Failed with result 'oom-kill'</code></li>
+<li><code>Out of memory: Killed process ... (mariadbd)</code></li>
+<li><code>Memory cgroup out of memory: Killed process ... (mariadbd)</code></li>
+</ul>
+<p>The service also has an explicit systemd memory cap:</p>
+<ul>
+<li><code>MemoryMax=16G</code></li>
+</ul>
+<p>The machine has about:</p>
+<ul>
+<li><code>MemTotal: 19.5 GiB</code></li>
+<li><code>SwapTotal: ~1.0 GiB</code></li>
+</ul>
+<p>MariaDB reaches roughly:</p>
+<ul>
+<li><code>anon-rss: ~16.6 GiB</code></li>
+</ul>
+<p>and is then killed by the kernel or by the service cgroup memory
+limit.</p>
+<h2 id="primary-evidence">Primary Evidence</h2>
+<h3 id="systemd">systemd</h3>
+<p><code>systemctl status mariadb</code> showed:</p>
+<ul>
+<li><code>Active: failed (Result: oom-kill)</code></li>
+<li><code>Main process exited, code=killed, status=9/KILL</code></li>
+<li><code>A process of this unit has been killed by the OOM killer</code></li>
+</ul>
+<p>Two recent stop events were visible:</p>
+<ul>
+<li><code>2026-03-28 00:10:55</code></li>
+<li><code>2026-03-31 22:21:22</code></li>
+</ul>
+<h3 id="kernel-log">kernel log</h3>
+<p><code>journalctl -k -b</code> showed:</p>
+<ul>
+<li><code>Out of memory: Killed process 1177 (mariadbd) total-vm:22267612kB, anon-rss:16649820kB</code></li>
+<li><code>Memory cgroup out of memory: Killed process 1146610 (mariadbd) total-vm:21608520kB, anon-rss:16659476kB</code></li>
+</ul>
+<p>and also:</p>
+<ul>
+<li><code>oom-kill:constraint=CONSTRAINT_MEMCG</code></li>
+<li><code>oom_memcg=/system.slice/mariadb.service</code></li>
+</ul>
+<p>So the last failure is not just a global host OOM; it is also aligned
+with the service cgroup limit.</p>
+<h3 id="mariadb-service-config">MariaDB service config</h3>
+<p><code>systemctl cat mariadb</code> showed:</p>
+<ul>
+<li><code>MemoryMax=16G</code></li>
+<li><code>LimitNOFILE=32768</code></li>
+</ul>
+<p>The <code>LimitNOFILE</code> warning is present at startup but is not
+the reason for the crash.</p>
+<h2 id="what-mariadb-was-doing-before-the-kill">What MariaDB Was Doing
+Before the Kill</h2>
+<p>The MariaDB error log at <code>/srv/mysql/log/error.log</code> shows
+repeated memory pressure events:</p>
+<ul>
+<li><code>Memory pressure event shrunk innodb_buffer_pool_size=1536m from 2048m</code></li>
+<li>then <code>1280m</code></li>
+<li>then <code>1152m</code></li>
+<li>then <code>1088m</code></li>
+<li>then <code>1056m</code></li>
+<li>then <code>1040m</code></li>
+<li>then <code>1032m</code></li>
+<li>then <code>1024m</code></li>
+</ul>
+<p>After that:</p>
+<ul>
+<li><code>Memory pressure event disregarded; innodb_buffer_pool_size=1024m, innodb_buffer_pool_size_auto_min=1024m</code></li>
+</ul>
+<p>So MariaDB was already under pressure long before the final kill and
+had already auto-shrunk InnoDB as much as allowed.</p>
+<h2 id="current-memory-related-configuration">Current Memory-Related
+Configuration</h2>
+<h3 id="systemd-1">systemd</h3>
+<ul>
+<li><code>MemoryMax=16G</code></li>
+</ul>
+<h3 id="mariadb-core-config">MariaDB core config</h3>
+<p>From <code>/etc/mysql/mariadb.cnf</code>:</p>
+<ul>
+<li><code>max_connections = 100</code></li>
+<li><code>sort_buffer_size = 32M</code></li>
+<li><code>tmp_table_size = 256M</code></li>
+<li><code>max_heap_table_size = 256M</code></li>
+<li><code>key_buffer_size = 128M</code></li>
+<li><code>read_buffer_size = 2M</code></li>
+<li><code>read_rnd_buffer_size = 1M</code></li>
+<li><code>innodb_buffer_pool_size = 2G</code></li>
+<li><code>innodb_buffer_pool_size_auto_min = 1G</code></li>
+<li><code>innodb_buffer_pool_size_max = 3G</code></li>
+</ul>
+<h3 id="releem-override">Releem override</h3>
+<p>From <code>/etc/mysql/releem.conf.d/z_aiops_mysql.cnf</code>:</p>
+<ul>
+<li><code>tmp_table_size = 805306368</code> (<code>768M</code>)</li>
+<li><code>max_heap_table_size = 805306368</code>
+(<code>768M</code>)</li>
+</ul>
+<p>This is materially higher than the base config and significantly
+increases worst-case per-session memory.</p>
+<h3 id="rocksdb">RocksDB</h3>
+<p>Both files exist:</p>
+<ul>
+<li><code>/etc/mysql/mariadb.conf.d/rocksdb.cnf</code></li>
+<li><code>/etc/mysql/conf.d/rocksdb.cnf</code></li>
+</ul>
+<p>and both set:</p>
+<ul>
+<li><code>rocksdb_block_cache_size = 4G</code></li>
+<li><code>rocksdb_max_background_jobs = 8</code></li>
+</ul>
+<p>The duplicated config is not the direct crash trigger by itself, but
+it is a sign that RocksDB memory deserves explicit review.</p>
+<h2 id="likely-root-cause">Likely Root Cause</h2>
+<p>The repeated stops are caused by the combination of:</p>
+<ol type="1">
+<li>A hard service memory cap:
+<ul>
+<li><code>MemoryMax=16G</code></li>
+</ul></li>
+<li>MariaDB dynamic memory growth under load</li>
+<li>Aggressive per-session memory settings:
+<ul>
+<li>especially <code>tmp_table_size = 768M</code></li>
+<li>and <code>max_heap_table_size = 768M</code></li>
+</ul></li>
+<li>A large always-on RocksDB cache:
+<ul>
+<li><code>rocksdb_block_cache_size = 4G</code></li>
+</ul></li>
+<li>Too many concurrent connections or connection storms</li>
+</ol>
+<p>The final kill happens after InnoDB has already shrunk itself down to
+<code>1G</code>, so InnoDB is not the main remaining culprit at kill
+time.</p>
+<p>The remaining likely contributors are:</p>
+<ul>
+<li>session memory</li>
+<li>temporary tables</li>
+<li>sort buffers</li>
+<li>RocksDB block cache</li>
+<li>active connection churn</li>
+</ul>
+<h2 id="aggravating-signal-connection-storm-proxy-pressure">Aggravating
+Signal: Connection Storm / Proxy Pressure</h2>
+<p>Just before the OOM window, the MariaDB log shows many aborted
+unauthenticated connections from:</p>
+<ul>
+<li><code>10.68.68.103</code></li>
+</ul>
+<p>This IP resolves to:</p>
+<ul>
+<li><code>proxysql3-test</code></li>
+<li><code>mysql_server.id = 163</code></li>
+<li><code>10.68.68.103:6033</code></li>
+</ul>
+<p>The error log contains:</p>
+<ul>
+<li>many
+<code>Aborted connection ... user: 'unauthenticated' host: '10.68.68.103'</code></li>
+<li><code>Too many connections</code></li>
+</ul>
+<p>This does not prove ProxySQL is the sole cause of the OOM, but it is
+a strong aggravating factor:</p>
+<ul>
+<li>more connection churn</li>
+<li>more thread/session memory</li>
+<li>more pressure on temp/sort/session allocations</li>
+</ul>
+<h2 id="what-it-is-not">What It Is Not</h2>
+<p>It is <strong>not</strong>:</p>
+<ul>
+<li>a startup failure</li>
+<li>a broken Galera recovery</li>
+<li>a corrupted datadir</li>
+<li>a simple open-files problem</li>
+</ul>
+<p>This was confirmed because MariaDB restarted cleanly on
+<code>2026-04-02 13:39:42</code> and came back
+<code>active (running)</code> immediately.</p>
+<h2 id="recommended-fix">Recommended Fix</h2>
+<h3 id="immediate-actions">Immediate actions</h3>
+<ol type="1">
+<li>Reduce session memory aggressively</li>
+</ol>
+<p>Recommended first pass:</p>
+<ul>
+<li><code>tmp_table_size = 128M</code></li>
+<li><code>max_heap_table_size = 128M</code></li>
+<li><code>sort_buffer_size = 4M</code> or <code>8M</code></li>
+<li>keep <code>read_buffer_size</code> and
+<code>read_rnd_buffer_size</code> conservative</li>
+</ul>
+<p>The current <code>768M</code> Releem values are too high for a server
+constrained at <code>16G</code>.</p>
+<ol start="2" type="1">
+<li>Reduce RocksDB cache</li>
+</ol>
+<p>Recommended first pass:</p>
+<ul>
+<li><code>rocksdb_block_cache_size = 2G</code></li>
+</ul>
+<p>Current:</p>
+<ul>
+<li><code>4G</code></li>
+</ul>
+<p>On a 19 GiB host with a 16 GiB service cap, 4 GiB is expensive when
+combined with active SQL memory.</p>
+<ol start="3" type="1">
+<li>Review or raise <code>MemoryMax</code></li>
+</ol>
+<p>Options:</p>
+<ul>
+<li>preferred: keep <code>MemoryMax=16G</code> and reduce MariaDB memory
+usage</li>
+<li>alternative: raise <code>MemoryMax</code> modestly, for example
+<code>18G</code>, only if the host has enough headroom for Apache + OS +
+page cache</li>
+</ul>
+<p>Raising the cap without reducing dynamic memory just postpones the
+kill.</p>
+<ol start="4" type="1">
+<li>Investigate <code>10.68.68.103</code> connection behavior</li>
+</ol>
+<p>Check on <code>proxysql3-test</code>:</p>
+<ul>
+<li>health check frequency</li>
+<li>connect storms</li>
+<li>auth failures</li>
+<li>backend retry loops</li>
+<li>whether a monitor user is misconfigured</li>
+</ul>
+<h3 id="medium-term-actions">Medium-term actions</h3>
+<ol type="1">
+<li>Remove duplicate RocksDB config file ownership ambiguity</li>
+</ol>
+<p>Keep a single authoritative RocksDB config source.</p>
+<ol start="2" type="1">
+<li>Add alerting before kill</li>
+</ol>
+<p>Alert on:</p>
+<ul>
+<li>repeated
+<code>Memory pressure event shrunk innodb_buffer_pool_size</code></li>
+<li><code>Too many connections</code></li>
+<li>rising MariaDB RSS near <code>14-15G</code></li>
+</ul>
+<ol start="3" type="1">
+<li>Add connection profile review</li>
+</ol>
+<p>Measure:</p>
+<ul>
+<li>active thread count</li>
+<li>temp table usage</li>
+<li>sort usage</li>
+<li>connection churn from ProxySQL / app hosts</li>
+</ul>
+<h2 id="safe-first-configuration-proposal">Safe First Configuration
+Proposal</h2>
+<p>Suggested first remediation set:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># /etc/mysql/releem.conf.d/z_aiops_mysql.cnf</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">tmp_table_size </span><span class="ot">=</span><span class="st"> </span><span class="dv">134217728</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">max_heap_table_size </span><span class="ot">=</span><span class="st"> </span><span class="dv">134217728</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># /etc/mysql/mariadb.cnf</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">sort_buffer_size </span><span class="ot">=</span><span class="st"> 8M</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># authoritative rocksdb config</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">rocksdb_block_cache_size </span><span class="ot">=</span><span class="st"> 2G</span></span></code></pre></div>
+<p>Optionally later:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># /etc/systemd/system/mariadb.service.d/override.conf</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="dt">MemoryMax</span><span class="ot">=</span><span class="st">18G</span></span></code></pre></div>
+<p>But only after reducing session memory first.</p>
+<h2 id="final-conclusion">Final Conclusion</h2>
+<p>MariaDB stops because it exceeds available memory and the service
+cgroup limit.</p>
+<p>The strongest evidence is:</p>
+<ul>
+<li>explicit <code>oom-kill</code></li>
+<li>MariaDB RSS around <code>16.6 GiB</code></li>
+<li><code>MemoryMax=16G</code></li>
+<li>repeated InnoDB memory pressure events</li>
+<li>high per-session memory settings</li>
+<li>likely connection churn from <code>proxysql3-test</code></li>
+</ul>
+<p>The most pragmatic fix is:</p>
+<ul>
+<li>reduce per-session memory now</li>
+<li>reduce RocksDB cache</li>
+<li>review ProxySQL connection behavior</li>
+<li>only then consider increasing <code>MemoryMax</code></li>
+</ul>
+</body>
+</html>

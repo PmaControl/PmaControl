@@ -2,48 +2,68 @@
 
 namespace App\Controller;
 
-use \Glial\Synapse\Controller;
-use \Glial\Security\Crypt\Crypt;
-use \Glial\Sgbd\Sgbd;
+use App\Library\PmmDashboardCatalog;
+use Glial\Security\Crypt\Crypt;
+use Glial\Sgbd\Sgbd;
+use Glial\Synapse\Controller;
 
-//require ROOT."/application/library/Filter.php";
-// ./glial control rebuildAll --debug
-
-/**
- * Class responsible for pmm workflows.
- *
- * This class belongs to the PmaControl application layer and documents the
- * public surface consumed by controllers, services, static analysis tools and IDEs.
- *
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
 class Pmm extends Controller
 {
-   
-/**
- * Handle pmm state through `export`.
- *
- * This action may stream a direct HTTP or CLI response.
- *
- * @return void Returned value for export.
- * @phpstan-return void
- * @psalm-return void
- * @see self::export()
- * @example /fr/pmm/export
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
+    public function menu($param = [])
+    {
+        $this->set('param', $param);
+    }
+
+    public function index($param = [])
+    {
+        $this->renderDashboard('overview', $param);
+    }
+
+    public function system($param = [])
+    {
+        $this->renderDashboard('system', $param);
+    }
+
+    public function innodb($param = [])
+    {
+        $this->renderDashboard('innodb', $param);
+    }
+
+    public function binlog($param = [])
+    {
+        $this->renderDashboard('binlog', $param);
+    }
+
+    public function galera($param = [])
+    {
+        $this->renderDashboard('galera', $param);
+    }
+
+    public function performance_schema($param = [])
+    {
+        $this->renderDashboard('performance_schema', $param);
+    }
+
+    public function aria($param = [])
+    {
+        $this->renderDashboard('aria', $param);
+    }
+
+    public function myisam($param = [])
+    {
+        $this->renderDashboard('myisam', $param);
+    }
+
+    public function rocksdb($param = [])
+    {
+        $this->renderDashboard('rocksdb', $param);
+    }
+
+    public function proxysql($param = [])
+    {
+        $this->renderDashboard('proxysql', $param);
+    }
+
     public function export()
     {
         $this->view = false;
@@ -53,36 +73,41 @@ class Pmm extends Controller
         $sql = "SELECT * FROM mysql_server ORDER BY display_name";
         $res = $db->sql_query($sql);
 
-        while ($ob = $db->sql_fetch_object($res))
-        {
-
+        while ($ob = $db->sql_fetch_object($res)) {
             Crypt::$key = CRYPT_KEY;
-            $password   = Crypt::decrypt($ob->passwd);
+            $password = Crypt::decrypt($ob->passwd);
 
-            echo "pmm-admin add mysql \
-  --username=$ob->login \
-  --password='$password' \
-  --host=$ob->ip \
-  --port=$ob->port \
-  --service-name=$ob->display_name\n\n";
-
+            echo "pmm-admin add mysql \\\n";
+            echo "  --username={$ob->login} \\\n";
+            echo "  --password='{$password}' \\\n";
+            echo "  --host={$ob->ip} \\\n";
+            echo "  --port={$ob->port} \\\n";
+            echo "  --service-name={$ob->display_name}\n\n";
         }
-
-        /*
-        pmm-admin add mysql --environment=test --custom-labels='source=slowlog' --username=root --password=password 
-        --tls --tls-skip-verify --tls-ca=pathtoca.pem --tls-cert=pathtocert.pem --tls-key=pathtocertkey.pem 
-        --query-source=slowlog MySQLSlowLog localhost:3306
-
-        */
     }
 
+    private function renderDashboard(string $dashboard, array $param): void
+    {
+        $idMysqlServer = isset($param[0]) && ctype_digit((string) $param[0]) ? (int) $param[0] : 1;
+        $rangeOptions = [
+            'range' => $_GET['range'] ?? '24h',
+            'range_mode' => $_GET['range_mode'] ?? 'preset',
+            'start' => $_GET['start'] ?? null,
+            'end' => $_GET['end'] ?? null,
+        ];
+
+        $payload = PmmDashboardCatalog::build($dashboard, $idMysqlServer, $rangeOptions);
+
+        $this->di['js']->addJavascript([
+            'chart-4.5.1.umd.min.js?v=' . (@filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'chart-4.5.1.umd.min.js') ?: time()),
+            'Server/engineMemory.js?v=' . (@filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'Server' . DS . 'engineMemory.js') ?: time()),
+            'Pmm/dashboard.js?v=' . (@filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'Pmm' . DS . 'dashboard.js') ?: time()),
+        ]);
+
+        $this->title = 'PMM / ' . ($payload['dashboard']['title'] ?? ucfirst($dashboard));
+        $this->ariane = ' > PMM > ' . $this->title;
+
+        $this->set('param', $param);
+        $this->set('payload', $payload);
+    }
 }
-
-
-
-
-
-
-
-
-
