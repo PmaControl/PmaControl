@@ -86,6 +86,7 @@ class Mysql
  * @psalm-var array<int|string,mixed>
  */
     static $db_link = array();
+    static $db_link_charset = array();
 
 /**
  * Handle mysql state through `exportAllUser`.
@@ -392,7 +393,33 @@ class Mysql
             throw new \Exception("PMACTRL-854 : impossible to find the server with id '".$id_mysql_server."'");
         }
         else {
-            return Sgbd::sql(self::$db_link[$id_mysql_server], $name);
+            $db = Sgbd::sql(self::$db_link[$id_mysql_server], $name);
+            self::forceUtf8Connection($db, $id_mysql_server, (string) $name);
+            return $db;
+        }
+    }
+
+    static private function forceUtf8Connection($db, int $id_mysql_server, string $name = '1'): void
+    {
+        $key = $id_mysql_server.'#'.$name;
+
+        if (!empty(self::$db_link_charset[$key])) {
+            return;
+        }
+
+        foreach (['utf8mb4', 'utf8'] as $charset) {
+            try {
+                $db->sql_query("SET NAMES '".$charset."'");
+                $db->sql_query(
+                    "SET character_set_results = '".$charset."', "
+                    ."character_set_client = '".$charset."', "
+                    ."character_set_connection = '".$charset."'"
+                );
+                self::$db_link_charset[$key] = $charset;
+                return;
+            } catch (\Throwable $e) {
+                continue;
+            }
         }
     }
 
