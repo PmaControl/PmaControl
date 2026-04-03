@@ -1602,6 +1602,7 @@ class Mysql extends Controller
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = $table['mysql_server']['id_environement'] ?? 1;
                 $table['mysql_server']['is_ssl']              = $this->last_connection_used_ssl;
+                $table['mysql_server']['ssh_nat']             = trim((string) ($table['mysql_server']['ssh_nat'] ?? ''));
                 $table['mysql_server']['is_proxy']            = empty($_POST['mysql_server']['is_proxy']) ? 0 : 1;
                 $table['mysql_server']['is_vip']              = empty($_POST['mysql_server']['is_vip']) ? 0 : 1;
 
