@@ -139,7 +139,7 @@ class MysqlServer extends Controller
         ];
 
         $sqlStatus = "SHOW GLOBAL STATUS WHERE Variable_name IN ('Threads_running', 'Threads_connected', 'Max_used_connections')";
-        $resStatus = $db->sql_query_silent($sqlStatus);
+        $resStatus = Mysql::sqlQuerySilentCompat($db, $sqlStatus);
         if ($resStatus) {
             while ($arr = $db->sql_fetch_array($resStatus, MYSQLI_ASSOC)) {
                 $name = strtolower((string)($arr['Variable_name'] ?? ''));
@@ -156,7 +156,7 @@ class MysqlServer extends Controller
         }
 
         $sqlVariables = "SHOW GLOBAL VARIABLES WHERE Variable_name = 'max_connections'";
-        $resVariables = $db->sql_query_silent($sqlVariables);
+        $resVariables = Mysql::sqlQuerySilentCompat($db, $sqlVariables);
         if ($resVariables) {
             while ($arr = $db->sql_fetch_array($resVariables, MYSQLI_ASSOC)) {
                 $metrics['max_connections'] = (int)($arr['Value'] ?? 0);
@@ -1733,7 +1733,7 @@ class MysqlServer extends Controller
               AND PLUGIN_STATUS = 'ACTIVE'
             LIMIT 1";
 
-        $res = $db->sql_query_silent($sql);
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
         if (!$res) {
             return false;
         }
@@ -1771,7 +1771,7 @@ class MysqlServer extends Controller
         $sql = "SELECT *
             FROM information_schema.METADATA_LOCK_INFO";
 
-        $res = $db->sql_query_silent($sql);
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
         if (!$res) {
             return [];
         }

@@ -3571,7 +3571,7 @@ GROUP BY C.ID, C.INFO;";
         // SingleStore / environnements restreints : testAccess() peut retourner false
         // alors que SHOW DATABASES reste autorisé. On tente donc d'abord schemata,
         // puis fallback sur SHOW DATABASES.
-        $res = $mysql_tested->sql_query_silent("SELECT * FROM information_schema.schemata");
+        $res = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT * FROM information_schema.schemata");
 
         if ($res) {
             while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -3588,7 +3588,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
         if (empty($schemas)) {
-            $res = $mysql_tested->sql_query_silent("SHOW DATABASES");
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested, "SHOW DATABASES");
 
             if ($res) {
                 while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {

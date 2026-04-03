@@ -32,6 +32,19 @@ use App\Controller\Dot3;
 class Mysql
 {
     public const INFORMATION_SCHEMA_TABLES_TIMEOUT_SECONDS = 10;
+
+    public static function sqlQuerySilentCompat($db, $sql, $table = "", $type = "")
+    {
+        if (method_exists($db, 'sql_query_silent')) {
+            return $db->sql_query_silent($sql, $table, $type);
+        }
+
+        try {
+            return $db->sql_query($sql, $table, $type);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 /**
  * Stores `$master` for master.
  *
@@ -454,7 +467,7 @@ class Mysql
     static public function sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server = null, $context = '', $silent = false)
     {
         $sql = self::protectInformationSchemaTablesQuery($db, $sql, $id_mysql_server);
-        $res = $silent ? $db->sql_query_silent($sql) : $db->sql_query($sql);
+        $res = $silent ? self::sqlQuerySilentCompat($db, $sql) : $db->sql_query($sql);
 
         if ($res === false) {
             $error = (string) $db->sql_error();
