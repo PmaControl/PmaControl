@@ -307,7 +307,7 @@ class ForeignKey extends Controller
         $sql = "SELECT TABLE_SCHEMA, TABLE_NAME 
         FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '".$database_name."' 
         AND  LOWER(`TABLE_NAME`) = LOWER('".$table_name."');";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $nb_tables = $db->sql_num_rows($res);
         if ($nb_tables > 1) {

@@ -247,7 +247,7 @@ class Graphviz
         FROM `INFORMATION_SCHEMA`.`TABLES` 
         WHERE TABLE_SCHEMA ='".$table_schema."' AND TABLE_NAME = '".$table_name."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED')";
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         while($ob = $db->sql_fetch_object($res)) {
             $row_format = $ob->row_format;

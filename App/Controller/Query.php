@@ -107,7 +107,7 @@ SQL;
         $sql .= ";";
 
         Debug::sql($sql);
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         while ($ob = $db->sql_fetch_object($res)) {
             yield $ob;
@@ -494,7 +494,7 @@ SQL;
 
         $sql2 = "select count(1) as cpt FROM information_schema.tables where table_name = '" . self::TABLE_NAME . "' and table_schema='" . self::TABLE_SCHEMA . "';";
         Debug::sql($sql2);
-        $res2 = $db->sql_query($sql2);
+        $res2 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql2, $id_mysql_server, __METHOD__);
 
         while ($ob2 = $db->sql_fetch_object($res2)) {
             if ($ob2->cpt > 0) {
@@ -549,7 +549,7 @@ SQL;
         $db = Mysql::getDbLink($id_mysql_server);
         $sql = "select count(1) as cpt FROM information_schema.tables where table_name = '" . self::TABLE_NAME . "' and table_schema='" . self::TABLE_SCHEMA . "';";
         Debug::debug($sql);
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -2784,4 +2784,3 @@ GROUP BY CURRENT_SCHEMA, DIGEST, SQL_TEXT
 
 
 */
-

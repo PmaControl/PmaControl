@@ -131,7 +131,7 @@ class Index extends Controller {
 
                         //Debug::debug(string: $ob3, "stats");
                         $sql5 ="SELECT table_rows as cpt FROM information_schema.tables WHERE table_schema = '".$ob->schema_name."' AND table_name = '".$table."'";
-                        $res5 = $db2->sql_query($sql5);
+                        $res5 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql5, $id_mysql_server, __METHOD__);
                         while ($ob5 = $db2->sql_fetch_object($res5)) {
                             $table_rows = $ob5->cpt;
                         }
@@ -346,5 +346,4 @@ class Index extends Controller {
         $this->set('data',$data);
     }
 }
-
 

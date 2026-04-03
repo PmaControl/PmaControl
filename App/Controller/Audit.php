@@ -1185,7 +1185,7 @@ performance_schema_digests_size
 
             $db = Mysql::getDbLink($id_mysql_server, "mysqlsys".$id_mysql_server);
             $sql = $query;
-            $res = $db->sql_query($sql);
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
             $data[$id_mysql_server] = array();
             while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
@@ -1761,4 +1761,3 @@ GROUP BY ENGINE
 ORDER BY data_gb DESC;
         */
 }
-

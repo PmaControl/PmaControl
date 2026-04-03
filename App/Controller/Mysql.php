@@ -808,7 +808,7 @@ class Mysql extends Controller
 
         $liste_table_connected = $this->tableListLinked($param);
 
-        $tables = $db->sql_fetch_yield($sql);
+        $tables = $db->sql_fetch_yield(Mysql::protectInformationSchemaTablesQuery($db, $sql, $param[0]));
 
         $fp = fopen($path.'/'.$file.'.dot', "w");
 
@@ -2453,4 +2453,3 @@ class Mysql extends Controller
     }
     
 }
-

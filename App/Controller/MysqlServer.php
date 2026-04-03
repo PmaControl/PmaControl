@@ -193,7 +193,7 @@ class MysqlServer extends Controller
  * @since 5.0
  * @version 1.0
  */
-    private function informationSchemaTableExists($db, $schema, $table)
+    private function informationSchemaTableExists($db, $schema, $table, $id_mysql_server = null)
     {
         $cache_key = $db->host.":".$db->port.":".$schema.".".$table;
         if (isset($this->table_exists_cache[$cache_key])) {
@@ -204,7 +204,7 @@ class MysqlServer extends Controller
         $table  = $db->sql_real_escape_string($table);
 
         $sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = '".$schema."' AND table_name = '".$table."' LIMIT 1";
-        $res = $db->sql_query_silent($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__, true);
         if (!$res) {
             $this->table_exists_cache[$cache_key] = false;
             return false;
@@ -450,9 +450,9 @@ class MysqlServer extends Controller
             $connectionSnapshot['max_used_connections'] += (int)$metrics['max_used_connections'];
             $connectionSnapshot['max_connections'] += (int)$metrics['max_connections'];
 
-            $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx');
-            $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads');
-            $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist');
+            $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx', $id_mysql_server);
+            $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads', $id_mysql_server);
+            $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist', $id_mysql_server);
 
             $metadataLockEnabled = false;
             if ($checkMetadataLockPlugin) {

@@ -13,6 +13,7 @@ use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use \App\Library\Debug;
 use \App\Library\Available;
+use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -60,6 +61,8 @@ class CompareConfig extends Controller {
  * @psalm-var mixed
  */
     var $db_default;
+    var $id_server_origin;
+    var $id_server_target;
 /**
  * Stores `$object` for object.
  *
@@ -315,6 +318,8 @@ class CompareConfig extends Controller {
         $this->db_origin = $db_original;
         $this->db_target = $db_compare;
         $this->db_default = $db;
+        $this->id_server_origin = $id_server1;
+        $this->id_server_target = $id_server2;
 
         foreach ($this->object as $object) {
             if ($object === "EVENT" && ($db1 === "performance_schema" || $db2 === "performance_schema")) {
@@ -527,8 +532,8 @@ class CompareConfig extends Controller {
         }
 
         // [] to prevent db with same name
-        $dbs[][$db1] = $this->db_origin;
-        $dbs[][$db2] = $this->db_target;
+        $dbs[] = array('database' => $db1, 'db_link' => $this->db_origin, 'id_mysql_server' => $this->id_server_origin);
+        $dbs[] = array('database' => $db2, 'db_link' => $this->db_target, 'id_mysql_server' => $this->id_server_target);
 
         $i = 0;
 
@@ -537,16 +542,17 @@ class CompareConfig extends Controller {
 
 
         foreach ($dbs as $db_unique) {
-            foreach ($db_unique as $db_name => $db_link) {
-                $sql = str_replace('{DB}', $db_name,
-                        $query[$type_object]['query']);
-                $res = $db_link->sql_query($sql);
+            $db_name = $db_unique['database'];
+            $db_link = $db_unique['db_link'];
+            $id_mysql_server = $db_unique['id_mysql_server'];
 
-                while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data[$row[$query[$type_object]['field']]][$i] = 1;
-                }
-                $i++;
+            $sql = str_replace('{DB}', $db_name, $query[$type_object]['query']);
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db_link, $sql, $id_mysql_server, __METHOD__);
+
+            while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $data[$row[$query[$type_object]['field']]][$i] = 1;
             }
+            $i++;
         }
         ksort($data);
         return $data;
@@ -897,4 +903,3 @@ class CompareConfig extends Controller {
     }
 
 }
-

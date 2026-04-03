@@ -373,7 +373,7 @@ class Cleaner extends Controller
             WHERE a.id_cleaner_main = ".$data['id_cleaner']." AND a.item_deleted !=0
            GROUP BY `table`";
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $this->link_to_purge, __METHOD__);
 
         $labels = array();
         while ($ob     = $db->sql_fetch_object($res)) {
@@ -868,7 +868,7 @@ var myChart = new Chart(ctx, {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($param[0])."';";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $this->id_mysql_server, __METHOD__);
 
         while ($ob = $db->sql_fetch_object($res)) {
 
@@ -917,7 +917,7 @@ var myChart = new Chart(ctx, {
 
         $sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '".$database."' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
 
-        $res = $db_clean->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db_clean, $sql, $id_server, __METHOD__);
 
         $data['table'] = [];
         while ($ob            = $db->sql_fetch_object($res)) {
@@ -4192,7 +4192,7 @@ var myChart = new Chart(ctx, {
         $sql = "explain SELECT COUNT(1) as cpt FROM `".$data['database']."`.`".$data['main_table']."` a ".$data['query'];
 
         $data['nb_line_to_purge'] = 0;
-        $res = $db2->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql, $this->id_mysql_server, __METHOD__);
         while ($ob  = $db2->sql_fetch_object($res)) {
             
             if ($ob->rows > $data['nb_line_to_purge']) {
@@ -4210,7 +4210,7 @@ var myChart = new Chart(ctx, {
         }
 
         $sql = "SELECT TABLE_ROWS FROM `information_schema`.`tables` WHERE table_name = '".$data['main_table']."' and table_schema = '".$data['database']."'";
-        $res = $db2->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql, $this->id_mysql_server, __METHOD__);
         while ($ob  = $db2->sql_fetch_object($res)) {
             $data['nb_line_total'] = $ob->TABLE_ROWS;
         }
@@ -4316,7 +4316,7 @@ var myChart = new Chart(ctx, {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM cleaner_main where id ='".$id_cleaner."'";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $this->id_mysql_server, __METHOD__);
 
         $ob = $db->sql_fetch_object($res);
 
@@ -4567,7 +4567,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $sql = "SELECT *,a.id as id_user FROM user_main a
             INNER JOIN geolocalisation_country b ON a.id_geolocalisation_country = b.id";
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $this->id_mysql_server, __METHOD__);
 
         while ($ob = $db->sql_fetch_object($res)) {
 

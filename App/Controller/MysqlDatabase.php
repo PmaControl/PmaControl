@@ -337,7 +337,7 @@ class MysqlDatabase extends Controller
             FROM information_schema.tables
             WHERE table_schema='".$table_schema."'
             ORDER BY ".$orderByColumn." ".$orderByDirection.", TABLE_NAME";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $data['table'] = array();
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){

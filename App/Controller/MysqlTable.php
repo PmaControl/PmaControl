@@ -128,7 +128,7 @@ class MysqlTable extends Controller
             $db = Mysql::getDbLink($id_mysql_server);
 
             $sql2 = "SELECT table_name FROM information_schema.tables WHERE table_schema ='".$table_schema."' ORDER BY table_name";
-            $res2 = $db->sql_query($sql2);
+            $res2 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql2, $id_mysql_server, __METHOD__);
     
  
 

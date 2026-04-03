@@ -187,7 +187,7 @@ class Database extends Controller
 
 //a déporté dans une librairy ?
         $sql = "SELECT * FROM mysql_privilege ORDER BY `type`, `privilege`";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $data['mysql_privilege'] = array();
         while ($ob                      = $db->sql_fetch_object($res)) {
@@ -366,7 +366,7 @@ class Database extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
         while ($ar  = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
@@ -706,7 +706,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
             $sql9 = "select `table_name` FROM `information_schema`.`tables` where `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='VIEW' ORDER BY FIELD(`table_name`, '".$orderby."') DESC, `table_name`;";
             Debug::sql($sql9);
 
-            $res9  = $db2->sql_query($sql9);
+            $res9  = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql9, $id_mysql_server, __METHOD__);
             $views = array();
             $sql11 = array();
             while ($ob9   = $db2->sql_fetch_array($res9, MYSQLI_ASSOC)) {
@@ -782,7 +782,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
             $sql2 = "SELECT `table_name` FROM `information_schema`.`tables` WHERE `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='BASE TABLE';";
             Debug::debug($sql2);
-            $res2 = $db2->sql_query($sql2);
+            $res2 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql2, $id_mysql_server, __METHOD__);
 
             $nb_renamed = 0;
             while ($ob2        = $db2->sql_fetch_object($res2)) {
@@ -867,7 +867,7 @@ ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,
 
 // DROP DATABASE IF NO OBJECT
             $sql4 = "select count(1) as cpt from information_schema.tables where table_schema='".$OLD_DB."';";
-            $res4 = $db2->sql_query($sql4);
+            $res4 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql4, $id_mysql_server, __METHOD__);
 
             while ($ob4 = $db2->sql_fetch_object($res4)) {
 
@@ -1363,10 +1363,10 @@ END;";
         $result_b = array();
 
         foreach ($objects as $object) {
-            $data_a[$object]   = Mysql::getListObject($db_a, $database_a, $object);
+            $data_a[$object]   = Mysql::getListObject($db_a, $database_a, $object, $id_mysql_server_a);
             $result_a[$object] = Mysql::getStructure($db_a, $database_a, $data_a[$object], $object);
 
-            $data_b[$object]   = Mysql::getListObject($db_b, $database_b, $object);
+            $data_b[$object]   = Mysql::getListObject($db_b, $database_b, $object, $id_mysql_server_b);
             $result_b[$object] = Mysql::getStructure($db_b, $database_b, $data_b[$object], $object);
 
             $data_a[$object] = array_flip($data_a[$object]);
@@ -1481,7 +1481,7 @@ END;";
         $error = array();
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_server1)."';";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
         if ($db->sql_num_rows($res) == 1) {
             while ($ob = $db->sql_fetch_object($res)) {
                 $db_name_ori = $ob->name;
@@ -2180,7 +2180,7 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
 
         foreach ($query as $key => $to_execute) {
             $sql3 = str_replace('{DB}', $database, $to_execute);
-            $res3 = $db2->sql_query($sql3);
+            $res3 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql3, $id_mysql_server, __METHOD__);
 
             $data['result'][$key] = $db2->sql_num_rows($res3);
         }

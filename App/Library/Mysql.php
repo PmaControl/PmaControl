@@ -31,6 +31,7 @@ use App\Controller\Dot3;
  */
 class Mysql
 {
+    public const INFORMATION_SCHEMA_TABLES_TIMEOUT_SECONDS = 10;
 /**
  * Stores `$master` for master.
  *
@@ -380,6 +381,90 @@ class Mysql
         else {
             return Sgbd::sql(self::$db_link[$id_mysql_server], $name);
         }
+    }
+
+    static public function shouldProtectInformationSchemaTables($id_mysql_server): bool
+    {
+        return is_numeric($id_mysql_server) && (int) $id_mysql_server !== 1;
+    }
+
+    static public function queryTargetsInformationSchemaTables($sql): bool
+    {
+        return preg_match('/information_schema\s*`?\s*\.\s*`?tables\b/i', (string) $sql) === 1
+            || preg_match('/`information_schema`\s*\.\s*`tables`/i', (string) $sql) === 1;
+    }
+
+    static public function isInformationSchemaTablesTimeoutError($error): bool
+    {
+        $error = strtolower(trim((string) $error));
+
+        if ($error === '') {
+            return false;
+        }
+
+        return strpos($error, 'max_statement_time') !== false
+            || strpos($error, 'max_execution_time') !== false
+            || strpos($error, 'maximum statement execution time exceeded') !== false
+            || strpos($error, 'query execution was interrupted') !== false
+            || strpos($error, 'execution timeout') !== false;
+    }
+
+    static public function buildInformationSchemaTablesTimeoutMessage($context = '', $timeoutSeconds = null): string
+    {
+        $timeoutSeconds = (int) ($timeoutSeconds ?? self::INFORMATION_SCHEMA_TABLES_TIMEOUT_SECONDS);
+        $context = trim((string) $context);
+
+        if ($context === '') {
+            $context = 'information_schema.tables';
+        }
+
+        return "[PMACONTROL-IS-TABLES-TIMEOUT] Query on ".$context." exceeded ".$timeoutSeconds."s. "
+            ."Use a narrower filter or a fallback strategy (SHOW TABLES / SHOW CREATE TABLE).";
+    }
+
+    static public function protectInformationSchemaTablesQuery($db, $sql, $id_mysql_server = null, $timeoutSeconds = null)
+    {
+        $timeoutSeconds = (int) ($timeoutSeconds ?? self::INFORMATION_SCHEMA_TABLES_TIMEOUT_SECONDS);
+        $sql = (string) $sql;
+
+        if (!self::shouldProtectInformationSchemaTables($id_mysql_server) || !self::queryTargetsInformationSchemaTables($sql)) {
+            return $sql;
+        }
+
+        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+            return "SET STATEMENT MAX_STATEMENT_TIME = ".$timeoutSeconds." FOR ".$sql;
+        }
+
+        if ($db->checkVersion(array('MySQL' => '5.7'))) {
+            if (stripos($sql, 'MAX_EXECUTION_TIME(') !== false) {
+                return $sql;
+            }
+
+            return preg_replace(
+                '/^\s*SELECT\s+/i',
+                'SELECT /*+ MAX_EXECUTION_TIME('.($timeoutSeconds * 1000).') */ ',
+                $sql,
+                1
+            ) ?? $sql;
+        }
+
+        return $sql;
+    }
+
+    static public function sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server = null, $context = '', $silent = false)
+    {
+        $sql = self::protectInformationSchemaTablesQuery($db, $sql, $id_mysql_server);
+        $res = $silent ? $db->sql_query_silent($sql) : $db->sql_query($sql);
+
+        if ($res === false) {
+            $error = (string) $db->sql_error();
+
+            if (self::isInformationSchemaTablesTimeoutError($error)) {
+                throw new \Exception(self::buildInformationSchemaTablesTimeoutMessage($context));
+            }
+        }
+
+        return $res;
     }
 
 /**
@@ -874,7 +959,7 @@ END IF;";
  * @since 5.0
  * @version 1.0
  */
-    static public function getListObject($db_link, $database, $type_object)
+    static public function getListObject($db_link, $database, $type_object, $id_mysql_server = null)
     {
         $query['TRIGGER']['query']   = "select trigger_schema, trigger_name, action_statement from `information_schema`.`triggers` where trigger_schema ='{DB}';";
         $query['FUNCTION']['query']  = "show function status WHERE Db ='{DB}';";
@@ -901,7 +986,7 @@ END IF;";
         $data = array();
 
         $sql = str_replace('{DB}', $database, $query[$type_object]['query']);
-        $res = $db_link->sql_query($sql);
+        $res = self::sqlQueryWithInformationSchemaTablesTimeout($db_link, $sql, $id_mysql_server, __METHOD__);
 
         while ($row = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data[] = $row[$query[$type_object]['field']];

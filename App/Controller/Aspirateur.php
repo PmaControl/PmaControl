@@ -3231,7 +3231,7 @@ class Aspirateur extends Controller
         
         Debug::sql($sql);
 
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
         if ($res) {
             if ($mysql_tested->sql_num_rows($res) > 0) {
                 $dbs = array();
@@ -4366,7 +4366,7 @@ GROUP BY C.ID, C.INFO;";
         $mysql_tested = Sgbd::sql($name_connection);
 
         $sql = "select * from runtime_mysql_servers;";
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
 
         $runtime_mysql_servers = array();
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC))
@@ -4518,7 +4518,7 @@ GROUP BY C.ID, C.INFO;";
         FROM information_schema.tables 
         WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."';";
 
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
         $data = array();
 
         while($ob = $mysql_tested->sql_fetch_object($res)) {

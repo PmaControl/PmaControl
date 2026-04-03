@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\Controller;
 //use \Glial\Cli\Color;
@@ -64,7 +65,7 @@ class Spider extends Controller {
         $db = $this->getServerLink($id_mysql_server);
         $sql = "SELECT TABLE_NAME,TABLE_SCHEMA FROM information_schema.TABLES where ENGINE = 'Spider';";
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
 
         // test if a table with spider exit
@@ -247,4 +248,3 @@ class Spider extends Controller {
 
 
 }
-

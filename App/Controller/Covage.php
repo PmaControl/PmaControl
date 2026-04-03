@@ -481,7 +481,7 @@ class Covage extends Controller
 
         Debug::sql($sql);
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $fields = array();
         while ($ob     = $db->sql_fetch_object($res)) {

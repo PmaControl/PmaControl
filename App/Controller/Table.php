@@ -132,7 +132,7 @@ class Table extends Controller {
         {
             $db = Mysql::getDbLink($id_mysql_server);
             $sql ="SELECT count(1) as cpt FROM information_schema.tables WHERE table_schema = '".$table_schema."' AND table_name = '".$table_name."'";
-            $res = $db->sql_query($sql);
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
             while ($ob = $db->sql_fetch_object($res)) {
                 $cpt = $ob->cpt;
             }
@@ -916,4 +916,3 @@ class Table extends Controller {
         
     }
 }
-

@@ -97,7 +97,7 @@ class Mysqlsys extends Controller {
                 $remote = Sgbd::sql($link_name);
                 $sql = "select TABLE_NAME from information_schema.tables "
                         . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
-                $res = $remote->sql_query($sql);
+                $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $id_mysql_server, __METHOD__);
                 $data['view_available'] = [];
                 while ($ob = $remote->sql_fetch_object($res)) {
                     //$data['view_available'][] = str_replace('x$','',$ob->table_name);
@@ -165,7 +165,7 @@ class Mysqlsys extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server where id='" . $_GET['mysql_server']['id'] . "'";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
 //test si "vendor/esysteme/mysql-sys/gen/" est crée et writable
 
@@ -533,4 +533,3 @@ LIMIT 10;";
 
 
 }
-
