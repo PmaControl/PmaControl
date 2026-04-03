@@ -4803,6 +4803,132 @@ GROUP BY C.ID, C.INFO;";
         }, $array);
     }
 
+    private function quoteIdentifier($identifier)
+    {
+        return '`'.str_replace('`', '``', (string) $identifier).'`';
+    }
+
+    private function getDatabaseList($db, $includeSystemSchemas = false)
+    {
+        $ret = array();
+        $systemSchemas = array('information_schema', 'performance_schema', 'mysql', 'sys');
+
+        $res = $db->sql_query("SHOW DATABASES;");
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $database = (string) ($arr[0] ?? '');
+
+            if ($database === '') {
+                continue;
+            }
+
+            if (!$includeSystemSchemas && in_array($database, $systemSchemas, true)) {
+                continue;
+            }
+
+            $ret[] = $database;
+        }
+
+        return $ret;
+    }
+
+    private function getTablesByShowTables($db)
+    {
+        $ret = array();
+        $createTables = array();
+
+        foreach ($this->getDatabaseList($db, true) as $database) {
+            $sql = "SHOW FULL TABLES FROM ".$this->quoteIdentifier($database).";";
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+                $tableName = (string) ($arr[0] ?? '');
+                $tableType = strtoupper((string) ($arr[1] ?? ''));
+
+                if ($tableName === '') {
+                    continue;
+                }
+
+                $ret[] = array(
+                    'TABLE_CATALOG' => 'def',
+                    'TABLE_SCHEMA' => $database,
+                    'TABLE_NAME' => $tableName,
+                    'TABLE_TYPE' => $tableType,
+                    'ENGINE' => '',
+                    'VERSION' => '',
+                    'ROW_FORMAT' => '',
+                    'TABLE_ROWS' => '',
+                    'AVG_ROW_LENGTH' => '',
+                    'DATA_LENGTH' => '',
+                    'MAX_DATA_LENGTH' => '',
+                    'INDEX_LENGTH' => '',
+                    'DATA_FREE' => '',
+                    'AUTO_INCREMENT' => '',
+                    'CREATE_TIME' => '',
+                    'UPDATE_TIME' => '',
+                    'CHECK_TIME' => '',
+                    'TABLE_COLLATION' => '',
+                    'CHECKSUM' => '',
+                    'CREATE_OPTIONS' => '',
+                    'TABLE_COMMENT' => '',
+                );
+
+                if ($tableType === 'VIEW') {
+                    $sqlCreate = "SHOW CREATE VIEW ".$this->quoteIdentifier($database).".".$this->quoteIdentifier($tableName).";";
+                } else {
+                    $sqlCreate = "SHOW CREATE TABLE ".$this->quoteIdentifier($database).".".$this->quoteIdentifier($tableName).";";
+                }
+
+                $resCreate = $db->sql_query($sqlCreate);
+                while ($arrCreate = $db->sql_fetch_array($resCreate, MYSQLI_ASSOC)) {
+                    $createTables[$database][$tableName] = $arrCreate['Create Table'] ?? $arrCreate['Create View'] ?? '';
+                }
+            }
+        }
+
+        return array($ret, $createTables);
+    }
+
+    private function shouldUseShowTablesFallback($db)
+    {
+        return count($this->getDatabaseList($db)) > 50;
+    }
+
+    private function getInformationSchemaTablesQuery($db)
+    {
+        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+            return "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
+        }
+
+        if ($db->checkVersion(array('MySQL' => '5.7'))) {
+            return "SELECT /*+ MAX_EXECUTION_TIME(10000) */ * FROM information_schema.tables;";
+        }
+
+        return "SELECT * FROM information_schema.tables;";
+    }
+
+    private function getTablesFromInformationSchema($db)
+    {
+        $ret = array();
+        $sql = $this->getInformationSchemaTablesQuery($db);
+
+        try {
+            $res = $db->sql_query($sql);
+        } catch (\Throwable $e) {
+            Debug::debug($e->getMessage(), 'getTablesFromInformationSchema');
+            return false;
+        }
+
+        if ($res === false) {
+            return false;
+        }
+
+        while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $ret[] = $data;
+        }
+
+        return $ret;
+    }
+
 
 /**
  * Retrieve aspirateur state through `getTables`.
@@ -4835,21 +4961,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $db = Mysql::getDbLink($id_mysql_server);
-
-        // if MARIADB ask limit 10 sec max
-        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
-            $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
-        }
-        else {
-            $sql = "SELECT * FROM information_schema.tables;";
-        }
-        
-        $res = $db->sql_query($sql);
-
-        $ret  = array();
-        while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $ret[] = $data;
-        }
+        $ret = $this->getTablesFromInformationSchema($db);
 
         Debug::debug($ret);
 
@@ -4942,8 +5054,23 @@ GROUP BY C.ID, C.INFO;";
 
             $data = array();
             $data['information_schema']['disks'] = json_encode($this->getDisks(array($id_mysql_server)));
-            $data['information_schema']['tables'] = json_encode($this->getTables(array($id_mysql_server)));
-            $data['information_schema']['create_tables'] = $this->getCreateTables(array($id_mysql_server));
+
+            if ($this->shouldUseShowTablesFallback($db)) {
+                list($tables, $createTables) = $this->getTablesByShowTables($db);
+                $data['information_schema']['tables'] = json_encode($tables);
+                $data['information_schema']['create_tables'] = json_encode($createTables);
+            } else {
+                $tables = $this->getTablesFromInformationSchema($db);
+
+                if ($tables === false) {
+                    list($tables, $createTables) = $this->getTablesByShowTables($db);
+                    $data['information_schema']['tables'] = json_encode($tables);
+                    $data['information_schema']['create_tables'] = json_encode($createTables);
+                } else {
+                    $data['information_schema']['tables'] = json_encode($tables);
+                    $data['information_schema']['create_tables'] = $this->getCreateTables(array($id_mysql_server));
+                }
+            }
             
             $db->sql_close();
 
