@@ -173204,6 +173204,7 @@ CREATE TABLE `aggregate_metric_10m` (
   `last_ts` datetime DEFAULT NULL,
   `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
   KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
   KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
@@ -173247,6 +173248,7 @@ CREATE TABLE `aggregate_metric_10s` (
   `last_ts` datetime DEFAULT NULL,
   `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
   KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
   KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
@@ -173290,6 +173292,7 @@ CREATE TABLE `aggregate_metric_1h` (
   `last_ts` datetime DEFAULT NULL,
   `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
   KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
   KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
@@ -173333,6 +173336,7 @@ CREATE TABLE `aggregate_metric_1m` (
   `last_ts` datetime DEFAULT NULL,
   `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
   KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
   KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
 ) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci

@@ -269,10 +269,14 @@ ON DUPLICATE KEY UPDATE
 
     private function resolveStartTime($db, string $table, int $idMysqlServer, int $bootstrapLookback, int $overlap): string
     {
-        $sql = "SELECT MAX(`bucket_start`) AS `max_bucket_start` FROM `".$table."` WHERE `id_mysql_server` = ".$idMysqlServer;
+        $sql = "SELECT `bucket_start`
+                FROM `".$table."`
+                WHERE `id_mysql_server` = ".$idMysqlServer."
+                ORDER BY `bucket_start` DESC
+                LIMIT 1";
         $res = $db->sql_query($sql);
         $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
-        $maxBucketStart = trim((string) ($row['max_bucket_start'] ?? ''));
+        $maxBucketStart = trim((string) ($row['bucket_start'] ?? ''));
 
         if ($maxBucketStart === '') {
             return date('Y-m-d H:i:s', time() - $bootstrapLookback);

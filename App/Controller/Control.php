@@ -660,12 +660,14 @@ PARTITION BY RANGE (to_days(`bucket_start`))
   `last_ts` datetime DEFAULT NULL,
   `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
   KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
   KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 PARTITION BY RANGE (to_days(`bucket_start`))
 (".$this->buildDailyPartitionSql($dates).")";
             $db->sql_query($sql);
+            $db->sql_query("ALTER TABLE `".$table."` ADD INDEX IF NOT EXISTS `idx_server_bucket` (`id_mysql_server`,`bucket_start`)");
         }
     }
 
