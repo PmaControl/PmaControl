@@ -159,6 +159,31 @@ class Install extends Controller
         echo $this->out(Color::getColoredString("[".date("Y-m-d H:i:s")."] ", "purple").$msg, $fine);
     }
 
+    private function cliPrompt($label, $secret = false)
+    {
+        fwrite(STDOUT, $label);
+        fflush(STDOUT);
+
+        if ($secret) {
+            if (function_exists('shell_exec')) {
+                @shell_exec('stty -echo');
+            }
+
+            $value = fgets(STDIN);
+
+            if (function_exists('shell_exec')) {
+                @shell_exec('stty echo');
+            }
+
+            fwrite(STDOUT, PHP_EOL);
+            fflush(STDOUT);
+
+            return trim((string) $value);
+        }
+
+        return trim((string) fgets(STDIN));
+    }
+
 /**
  * Handle install state through `anonymous`.
  *
@@ -670,7 +695,7 @@ ssl=".($server['is_ssl'] ?? 0)."";
 
             $email_is_valid = false;
             do {
-                $email = readline('Your email : ');
+                $email = $this->cliPrompt('Your email : ');
 
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $this->displayResult("This email considered as valid !", "KO");
@@ -692,13 +717,13 @@ ssl=".($server['is_ssl'] ?? 0)."";
             } while ($email_is_valid === false);
 
             //login
-            $login = readline('Your login : ');
+            $login = $this->cliPrompt('Your login : ');
 
             //first name
-            $firstname = readline('Your firstname : ');
+            $firstname = $this->cliPrompt('Your firstname : ');
 
             //last name
-            $lastname = readline('Your lastname : ');
+            $lastname = $this->cliPrompt('Your lastname : ');
 
             //country
             $sql = "SELECT libelle FROM geolocalisation_country where libelle != '' ORDER BY libelle";
@@ -711,7 +736,7 @@ ssl=".($server['is_ssl'] ?? 0)."";
             }
 
             do {
-                $country2 = readline('Your country [First letter in upper case, then tab for help] : ');
+                $country2 = $this->cliPrompt('Your country [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_country where libelle = '".$db->sql_real_escape_string($country2)."'";
                 $res = $db->sql_query($sql);
@@ -736,7 +761,7 @@ ssl=".($server['is_ssl'] ?? 0)."";
             }
 
             do {
-                $city2 = readline('Your city [First letter in upper case, then tab for help] : ');
+                $city2 = $this->cliPrompt('Your city [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_city where libelle = '".$db->sql_real_escape_string($city2)."'";
                 $res = $db->sql_query($sql);
@@ -752,8 +777,8 @@ ssl=".($server['is_ssl'] ?? 0)."";
 
             $good = false;
             do {
-                $pwd  = readline('Password : ');
-                $pwd2 = readline('Password (repeat) : ');
+                $pwd  = $this->cliPrompt('Password : ', true);
+                $pwd2 = $this->cliPrompt('Password (repeat) : ', true);
 
                 if (!empty($pwd) && $pwd === $pwd2) {
                     $good = true;
