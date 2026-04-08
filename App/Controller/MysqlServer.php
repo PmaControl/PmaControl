@@ -4236,6 +4236,14 @@ class MysqlServer extends Controller
             [$scopeType, $metricType, $scopeExpr] = $definition;
 
             $table = "ts_value_" . $scopeType . "_" . $metricType;
+
+            $sqlTable = "SHOW TABLES LIKE '" . $db->sql_real_escape_string($table) . "'";
+            $resTable = $db->sql_query($sqlTable);
+
+            if ($db->sql_num_rows($resTable) === 0) {
+                continue;
+            }
+
             $scopeSql = $scopeExpr === '' ? "''" : $scopeExpr;
             $digestJoin = $scopeType === 'digest'
                 ? "LEFT JOIN ts_mysql_query q ON q.id = a.id_ts_mysql_query"
@@ -4266,28 +4274,33 @@ class MysqlServer extends Controller
             ";
         }
 
-        $sqlMetrics = implode("\nUNION ALL\n", $queries) . "\nORDER BY scope_type, scope_name, file_name, metric_name";
-        $resMetrics = $db->sql_query($sqlMetrics);
+        $resMetrics = null;
+        if (!empty($queries)) {
+            $sqlMetrics = implode("\nUNION ALL\n", $queries) . "\nORDER BY scope_type, scope_name, file_name, metric_name";
+            $resMetrics = $db->sql_query($sqlMetrics);
+        }
 
         $sections = [];
         $totalMetrics = 0;
-        while ($row = $db->sql_fetch_array($resMetrics, MYSQLI_ASSOC)) {
-            $scopeType = $row['scope_type'];
-            $scopeName = trim((string) ($row['scope_name'] ?? ''));
+        if ($resMetrics !== null) {
+            while ($row = $db->sql_fetch_array($resMetrics, MYSQLI_ASSOC)) {
+                $scopeType = $row['scope_type'];
+                $scopeName = trim((string) ($row['scope_name'] ?? ''));
 
-            if ($scopeType === 'general') {
-                $groupKey = 'General';
-                $subgroupKey = (string) $row['file_name'];
-            } elseif ($scopeType === 'slave') {
-                $groupKey = 'Slave';
-                $subgroupKey = $scopeName !== '' ? $scopeName : 'default';
-            } else {
-                $groupKey = 'Digest';
-                $subgroupKey = $scopeName !== '' ? ('query #' . $scopeName) : 'query';
+                if ($scopeType === 'general') {
+                    $groupKey = 'General';
+                    $subgroupKey = (string) $row['file_name'];
+                } elseif ($scopeType === 'slave') {
+                    $groupKey = 'Slave';
+                    $subgroupKey = $scopeName !== '' ? $scopeName : 'default';
+                } else {
+                    $groupKey = 'Digest';
+                    $subgroupKey = $scopeName !== '' ? ('query #' . $scopeName) : 'query';
+                }
+
+                $sections[$groupKey][$subgroupKey][] = $row;
+                $totalMetrics++;
             }
-
-            $sections[$groupKey][$subgroupKey][] = $row;
-            $totalMetrics++;
         }
 
         $data = [
