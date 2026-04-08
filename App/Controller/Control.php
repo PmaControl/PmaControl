@@ -108,7 +108,7 @@ class Control extends Controller
  * @phpstan-var int
  * @psalm-var int
  */
-    public $partition_to_keep     = 90;
+    public $partition_to_keep     = 60;
 
     /**
      * @var array<int,string>
@@ -458,13 +458,14 @@ class Control extends Controller
         $this->ensureAggregateMetricWorkers();
 
         $partitions = $this->getMinMaxPartition();
+        $partitionDropped = false;
 
         Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
 
-        //$current_percent = $this->checkSize(array());
-        $current_percent = 60;
+        $current_percent = $this->checkSize(array());
+        //$current_percent = 60;
 
         if ($current_percent > self::PERCENT_MAX_DISK_USED) {
             $this->logger->notice('Usage of disk : '.$current_percent.' %');
@@ -482,13 +483,15 @@ class Control extends Controller
                 Sleep(10);
                 
                 $this->dropPartition(array($partitions['min']));
+                $partitionDropped = true;
+                $partitions = $this->getMinMaxPartition();
             }
         }
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
         //On drop les partitions supérieur a X jours
-        if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
+        if (!$partitionDropped && count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
             //System::deleteFiles("server");
             $this->logger->warning("Max partition to keep reeched : ".$this->partition_to_keep);
                 
@@ -496,6 +499,7 @@ class Control extends Controller
             Sleep(10);
 
             $this->dropPartition(array($partitions['min']));
+            $partitions = $this->getMinMaxPartition();
         }
 
         $part = $this->getDates();
