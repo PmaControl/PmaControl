@@ -39,6 +39,30 @@ final class IntegrateTest extends TestCase
         $this->assertSame('7', $normalized['seconds_behind_master']);
     }
 
+    public function testNormalizeSlaveMetricRowMapsSourceHostAndSourcePortToLegacyFields(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Source_Host' => 'mysql-primary.example.net',
+            'Source_Port' => 3310,
+            'Replica_IO_Running' => 'Yes',
+            'Replica_SQL_Running' => 'Yes',
+            'Seconds_Behind_Source' => '3',
+        ]);
+
+        $this->assertSame('mysql-primary.example.net', $normalized['master_host']);
+        $this->assertSame(3310, $normalized['master_port']);
+        $this->assertSame('mysql-primary.example.net', $normalized['source_host']);
+        $this->assertSame(3310, $normalized['source_port']);
+        $this->assertSame('3', $normalized['seconds_behind_master']);
+        $this->assertSame('3', $normalized['seconds_behind_source']);
+        $this->assertSame('Yes', $normalized['slave_io_running']);
+        $this->assertSame('Yes', $normalized['slave_sql_running']);
+        $this->assertSame('Yes', $normalized['replica_io_running']);
+        $this->assertSame('Yes', $normalized['replica_sql_running']);
+    }
+
     public function testNormalizeSlaveMetricRowReturnsNullForNonSlaveMetrics(): void
     {
         $controller = new TestableIntegrate('Controller', 'View', []);

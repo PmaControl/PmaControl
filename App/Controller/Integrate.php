@@ -94,8 +94,48 @@ class Integrate extends Controller
             $value['connection_name'] = '';
         }
 
+        if (!isset($value['master_host']) && isset($value['source_host'])) {
+            $value['master_host'] = $value['source_host'];
+        }
+
+        if (!isset($value['master_port']) && isset($value['source_port'])) {
+            $value['master_port'] = $value['source_port'];
+        }
+
+        if (!isset($value['source_host']) && isset($value['master_host'])) {
+            $value['source_host'] = $value['master_host'];
+        }
+
+        if (!isset($value['source_port']) && isset($value['master_port'])) {
+            $value['source_port'] = $value['master_port'];
+        }
+
+        if (!isset($value['slave_io_running']) && isset($value['replica_io_running'])) {
+            $value['slave_io_running'] = $value['replica_io_running'];
+        }
+
+        if (!isset($value['slave_sql_running']) && isset($value['replica_sql_running'])) {
+            $value['slave_sql_running'] = $value['replica_sql_running'];
+        }
+
+        if (!isset($value['replica_io_running']) && isset($value['slave_io_running'])) {
+            $value['replica_io_running'] = $value['slave_io_running'];
+        }
+
+        if (!isset($value['replica_sql_running']) && isset($value['slave_sql_running'])) {
+            $value['replica_sql_running'] = $value['slave_sql_running'];
+        }
+
         if (empty($value['seconds_behind_master'])) {
-            $value['seconds_behind_master'] = '0';
+            if (!empty($value['seconds_behind_source'])) {
+                $value['seconds_behind_master'] = $value['seconds_behind_source'];
+            } else {
+                $value['seconds_behind_master'] = '0';
+            }
+        }
+
+        if (empty($value['seconds_behind_source'])) {
+            $value['seconds_behind_source'] = $value['seconds_behind_master'];
         }
 
         return $value;
