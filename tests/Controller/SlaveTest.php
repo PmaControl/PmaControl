@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\Slave;
+use App\Library\Extraction;
 use PHPUnit\Framework\TestCase;
 
 final class SlaveTest extends TestCase
@@ -75,5 +76,53 @@ final class SlaveTest extends TestCase
         $this->assertMatchesRegularExpression('/[!@#$%^&*()_+\\-=\\[\\]{}|;:,.<>?]/', $password);
         $this->assertStringNotContainsString("'", $password);
         $this->assertStringNotContainsString('"', $password);
+    }
+
+    public function testNormalizeReplicationLagDisplayRowsPrefersSourceLag(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
+        $method->setAccessible(true);
+
+        $rows = [
+            1 => [
+                '' => [
+                    'seconds_behind_master' => '11',
+                    'seconds_behind_source' => '3',
+                ],
+            ],
+        ];
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertSame('3', $normalized[1]['']['seconds_behind_master']);
+    }
+
+    public function testNormalizeReplicationLagGraphRowsPrefersSourceMetric(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+        $method->setAccessible(true);
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $rows = [
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => '',
+                'id_ts_variable' => 10,
+                'graph' => '{x:1,y:11}',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => '',
+                'id_ts_variable' => 11,
+                'graph' => '{x:1,y:3}',
+            ],
+        ];
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertCount(1, $normalized);
+        $this->assertSame(11, $normalized[0]['id_ts_variable']);
     }
 }

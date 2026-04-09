@@ -34,6 +34,60 @@ class Slave extends Controller
     use \App\Library\Filter;
     const BACKUP_TEMP = "/backup/";
 
+    private function getReplicationLagVariables(): array
+    {
+        return ['slave::seconds_behind_master', 'slave::seconds_behind_source'];
+    }
+
+    private function normalizeReplicationLagDisplayRows(array $rows): array
+    {
+        foreach ($rows as $idMysqlServer => $connections) {
+            foreach ($connections as $connectionName => $row) {
+                $sourceLag = trim((string)($row['seconds_behind_source'] ?? ''));
+                $masterLag = trim((string)($row['seconds_behind_master'] ?? ''));
+
+                if ($sourceLag !== '') {
+                    $rows[$idMysqlServer][$connectionName]['seconds_behind_master'] = $sourceLag;
+                } elseif (!isset($rows[$idMysqlServer][$connectionName]['seconds_behind_master'])) {
+                    $rows[$idMysqlServer][$connectionName]['seconds_behind_master'] = $masterLag;
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    private function normalizeReplicationLagGraphRows($rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($rows as $row) {
+            $key = $row['id_mysql_server'].'|'.($row['connection_name'] ?? '');
+            $metricName = Extraction::$variable[$row['id_ts_variable']]['name'] ?? '';
+
+            if (!isset($normalized[$key])) {
+                $normalized[$key] = $row;
+                continue;
+            }
+
+            if ($metricName === 'seconds_behind_source') {
+                $normalized[$key] = $row;
+                continue;
+            }
+
+            $existingMetricName = Extraction::$variable[$normalized[$key]['id_ts_variable']]['name'] ?? '';
+            if ($existingMetricName !== 'seconds_behind_source') {
+                $normalized[$key] = $row;
+            }
+        }
+
+        return array_values($normalized);
+    }
+
 /**
  * Render slave state through `index`.
  *
@@ -65,9 +119,13 @@ class Slave extends Controller
   $(\'[data-toggle="tooltip"]\').tooltip();
 })');
 
-        $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
+        $data['slave'] = Extraction::display(array_merge(
+            ["slave::master_host", "slave::master_port", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "slave::last_sql_error", "slave::last_sql_errno"));
+                "slave::last_sql_error", "slave::last_sql_errno"],
+            $this->getReplicationLagVariables()
+        ));
+        $data['slave'] = $this->normalizeReplicationLagDisplayRows($data['slave']);
 
 
                 
@@ -117,7 +175,8 @@ class Slave extends Controller
           $this->generateGraph($slaves);
          */
 
-        $slaves = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
+        $slaves = Extraction::extract($this->getReplicationLagVariables(), array(), "1 hour", false, true);
+        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
         $this->generateGraph($slaves);
 
         if (!empty($slaves)) {
@@ -376,7 +435,8 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
 
-        $slaves = Extraction::extract(array("slave::seconds_behind_master"), array($id_mysql_server), array($next_date, $date), true, true);
+        $slaves = Extraction::extract($this->getReplicationLagVariables(), array($id_mysql_server), array($next_date, $date), true, true);
+        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
         
         $this->generateGraphSlave($slaves);
 
@@ -475,9 +535,13 @@ if (!empty($_GET['mysql_server']['id'])) {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $data['slave'] = Extraction::display(array("slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running",
+        $data['slave'] = Extraction::display(array_merge(
+            ["slave::master_host", "slave::master_port", "slave::slave_io_running",
                 "slave::slave_sql_running", "slave::last_io_errno", "slave::last_io_error",
-                "slave::last_sql_error", "slave::last_sql_errno"));
+                "slave::last_sql_error", "slave::last_sql_errno"],
+            $this->getReplicationLagVariables()
+        ));
+        $data['slave'] = $this->normalizeReplicationLagDisplayRows($data['slave']);
 
         $sql = "SELECT a.*, c.libelle as client,d.libelle as environment,d.`class`,a.is_available  FROM mysql_server a
                  INNER JOIN client c on c.id = a.id_client
@@ -595,7 +659,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
     type: "line",
     data: {
         datasets: [{
-            label: "'.__('Second behind master').'",
+            label: "'.__('Second behind source').'",
             data: ['.$slave['graph'].'],
                 borderWidth: 1,
              pointRadius :1,
@@ -642,7 +706,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
       scaleLabel: {
         display: true,
-        labelString: "Second behind master",
+        labelString: "Second behind source",
 
       }
 
