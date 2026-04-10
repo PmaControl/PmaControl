@@ -266,7 +266,7 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
+        $this->di['js']->addJavascript(array("chart-4.5.1.umd.min.js"));
 
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
@@ -644,13 +644,13 @@ if (!empty($_GET['mysql_server']['id'])) {
  */
     private function generateGraphSlave($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
 
         foreach ($slaves as $slave) {
 
             $this->di['js']->code_javascript('
 
-Chart.defaults.global.legend.display = false;
+Chart.defaults.plugins.legend.display = false;
 
 var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'").getContext("2d");
 
@@ -663,54 +663,46 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             data: ['.$slave['graph'].'],
                 borderWidth: 1,
              pointRadius :1,
-             lineTension: 0
+             tension: 0
 
         },
 ]
     },
     options: {
-        bezierCurve: false,
-        title: {
-            display: true,
-            text: "Replication : '.$slave['day'].'",
-            position: "top",
-            padding: "0"
+        plugins: {
+            title: {
+                display: true,
+                text: "Replication : '.$slave['day'].'",
+                position: "top",
+                padding: 0
+            }
         },
-        pointDot : false,
         scales: {
-            xAxes: [{
-
+            x: {
                 type: "time",
                 display: true,
-                scaleLabel: {
+                title: {
                   display: true,
-                  labelString: "Date",
+                  text: "Date",
                 },
-                distribution: "linear",
                 time: {
-
-                    min: new Date("'.$slave['day'].' 00:00:00"),
-                    max: new Date("'.$slave['day'].' 23:59:59"),
                     tooltipFormat: "dddd YYYY-MM-DD, HH:mm:ss",
                     displayFormats: {
-          minute: "HH:mm"
-        }
-
+                        minute: "HH:mm"
+                    }
+                },
+                min: new Date("'.$slave['day'].' 00:00:00"),
+                max: new Date("'.$slave['day'].' 23:59:59"),
+            },
+            y: {
+                ticks: {
+                    beginAtZero: false,
+                },
+                title: {
+                    display: true,
+                    text: "Second behind source",
                 }
-
-            }],
-             yAxes: [{
-             ticks: {
-         beginAtZero:false,
-      },
-
-      scaleLabel: {
-        display: true,
-        labelString: "Second behind source",
-
-      }
-
-    }]
+            }
         }
     }
 });
