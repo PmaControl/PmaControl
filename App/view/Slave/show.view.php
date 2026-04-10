@@ -203,21 +203,32 @@ if (empty($data['replication_name'])) {
     </div>
 
     <?php
+    $oldestDay = null;
+    if (!empty($data['graph'])) {
+        $days = array_keys($data['graph']);
+        sort($days);
+        $oldestDay = $days[0];
+    }
+    ?>
+
+    <div style="padding:10px; text-align:center;">
+        <button type="button" class="btn btn-default" id="btn-load-more-days"
+                data-server="<?= $data['id_mysql_server'] ?>"
+                data-oldest="<?= $oldestDay ?>">
+            <i class="fa fa-plus"></i> <?= __('Load previous day') ?>
+        </button>
+    </div>
+
+    <div id="slave-graphs-container">
+    <?php
     if (!empty($data['graph'])) {
         foreach ($data['graph'] as $slave) {
             echo '<div>&nbsp;</div>';
             echo '<canvas style="width: 100%; height: 150px;" id="myChart'.$slave['id_mysql_server'].crc32($slave['day']).'" height="150" width="1600"></canvas>';
-
-            /*
-              echo '<div>';
-              echo '<span  class="right" style="color:#666; float:right">min : '.$slave['min']." - ";
-              echo 'max : '.$slave['max']." - ";
-              echo 'avg : '.round($slave['avg'],2)."&nbsp;&nbsp;&nbsp;</span>";
-              echo '</div>';
-              echo '<div class="clear"></div>'; */
         }
     }
     ?>
+    </div>
 </div>
 
 <!--

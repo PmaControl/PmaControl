@@ -509,6 +509,32 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
 
+        $this->di['js']->code_javascript('
+$(document).ready(function() {
+    $("#btn-load-more-days").on("click", function() {
+        var btn = $(this);
+        var server = btn.data("server");
+        var oldest = btn.data("oldest");
+
+        if (!oldest) return;
+
+        var d = new Date(oldest);
+        d.setDate(d.getDate() - 1);
+        var newDay = d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
+
+        btn.prop("disabled", true).html("<i class=\"fa fa-spinner fa-spin\"></i> '.__('Loading').'...");
+
+        $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/ajax:true/", function(html) {
+            $("#slave-graphs-container").prepend(html);
+            btn.data("oldest", newDay);
+            btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
+        }).fail(function() {
+            btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
+        });
+    });
+});
+');
+
         $this->set('data', $data);
     }
 
@@ -710,6 +736,37 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
 ');
         }
+    }
+
+    public function showGraphDay($param)
+    {
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+
+        $id_mysql_server = $param[0];
+        $day = $param[1];
+
+        Extraction::setOption('groupbyday', true);
+
+        $date_start = $day;
+        $date_end   = $day.' 23:59:59';
+
+        $slaves = Extraction::extract(
+            $this->getReplicationLagVariables(),
+            array($id_mysql_server),
+            array($date_start, $date_end),
+            true,
+            true
+        );
+        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
+
+        $data['graphs'] = [];
+        foreach ($slaves as $slave) {
+            $data['graphs'][] = $slave;
+        }
+
+        $this->set('data', $data);
     }
 
 /**
