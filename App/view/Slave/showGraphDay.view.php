@@ -4,26 +4,34 @@ if (!empty($data['graphs'])) {
         $canvasId = 'myChart'.$slave['id_mysql_server'].crc32($slave['day']);
         $varName  = 'myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']);
         ?>
-        <div>&nbsp;</div>
-        <canvas style="width: 100%; height: 150px;" id="<?= $canvasId ?>" height="150" width="1600"></canvas>
+        <div class="sv-chart-wrap"><canvas id="<?= $canvasId ?>"></canvas></div>
         <script>
 (function() {
     Chart.defaults.plugins.legend.display = false;
 
-    var ctx = document.getElementById("<?= $canvasId ?>").getContext("2d");
+    var canvas = document.getElementById("<?= $canvasId ?>");
+    if (!canvas) return;
+    var existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    var ctx = canvas.getContext("2d");
 
-    var <?= $varName ?> = new Chart(ctx, {
+    var chart = new Chart(ctx, {
         type: "line",
         data: {
             datasets: [{
                 label: "<?= __('Second behind source') ?>",
                 data: [<?= $slave['graph'] ?>],
+                borderColor: "#16285a",
+                backgroundColor: "rgba(22,40,90,0.3)",
+                fill: true,
                 borderWidth: 1,
                 pointRadius: 1,
                 tension: 0
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
@@ -50,9 +58,7 @@ if (!empty($data['graphs'])) {
                     max: new Date("<?= $slave['day'] ?> 23:59:59")
                 },
                 y: {
-                    ticks: {
-                        beginAtZero: false
-                    },
+                    min: 0,
                     title: {
                         display: true,
                         text: "Second behind source"

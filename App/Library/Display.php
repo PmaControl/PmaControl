@@ -36,6 +36,48 @@ class Display
     static $server      = array();
     static $tunnel      = array();
     static $info_bubble_loaded = false;
+
+    /**
+     * Render a status dot.
+     *
+     * @param string $state 'ok' = green, 'fail' = red with pulse halo, 'info' = blue (no pulse)
+     * @return string HTML span
+     */
+    public static function statusDot(string $state): string
+    {
+        if ($state === 'ok') {
+            return '<span class="sv-dot ok"></span>';
+        }
+        if ($state === 'info') {
+            return '<span class="sv-dot info"></span>';
+        }
+        return '<span class="sv-dot fail halo"></span>';
+    }
+
+    /**
+     * Format seconds into human-readable duration (e.g. 7d 21h 51m).
+     *
+     * @param int|string|null $seconds
+     * @return string
+     */
+    public static function humanDuration($seconds): string
+    {
+        if ($seconds === null || $seconds === 'NULL' || $seconds === '') {
+            return 'NULL';
+        }
+        $s = (int)$seconds;
+        if ($s < 60) {
+            return $s.'s';
+        }
+        if ($s < 3600) {
+            return floor($s / 60).'m '.($s % 60).'s';
+        }
+        if ($s < 86400) {
+            return floor($s / 3600).'h '.floor(($s % 3600) / 60).'m '.($s % 60).'s';
+        }
+        return floor($s / 86400).'d '.floor(($s % 86400) / 3600).'h '.floor(($s % 3600) / 60).'m '.($s % 60).'s';
+    }
+
 /**
  * Stores `$ts_variable` for ts variable.
  *

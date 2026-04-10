@@ -7,6 +7,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
+use App\Library\Extraction2;
 use App\Library\Mysql;
 use App\Library\Debug;
 use App\Controller\Tunnel;
@@ -266,7 +267,7 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("chart-4.5.1.umd.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js"));
 
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
@@ -419,8 +420,40 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             }
 
             $data['slave'] = $slave;
+
+            // Fetch parallel threads and CPU count
+            $data['parallel_threads'] = 0;
+            try {
+                $res_pt = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_threads AS val");
+                if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
+                    $data['parallel_threads'] = (int)$row_pt['val'];
+                }
+            } catch (\Exception $e) {
+                try {
+                    $res_pt = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_workers AS val");
+                    if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
+                        $data['parallel_threads'] = (int)$row_pt['val'];
+                    }
+                } catch (\Exception $e2) {}
+            }
+
+            // Fetch parallel mode (MariaDB only)
+            $data['parallel_mode'] = null;
+            try {
+                $res_pm = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_mode AS val");
+                if ($res_pm && $row_pm = $link_slave->sql_fetch_array($res_pm, MYSQLI_ASSOC)) {
+                    $data['parallel_mode'] = $row_pm['val'];
+                }
+            } catch (\Exception $e) {}
         }
         ksort($data['slave']);
+
+        // CPU count from time-series
+        $cpu_data = Extraction::display(array("ssh_hardware::cpu_thread_count"), array($id_mysql_server));
+        $data['cpu_count'] = 0;
+        if (!empty($cpu_data[$id_mysql_server]['']['cpu_thread_count'])) {
+            $data['cpu_count'] = (int)$cpu_data[$id_mysql_server]['']['cpu_thread_count'];
+        }
 
         $data['replication_name'] = $replication_name;
         Extraction::setOption('groupbyday', true);
@@ -501,16 +534,209 @@ if (!empty($_GET['mysql_server']['id'])) {
         $i++;
     }
 }*/
-        
-//gtid
-// https://mariadb.com/fr/node/493
-// https://mariadb.com/kb/en/library/gtid/
+
+        // Binlog gap estimation: how far behind is the SQL thread vs IO thread
+        $data['binlog_gap'] = null;
+        $master_id = $_GET['mysql_server']['id'] ?? null;
+        if ($master_id && !empty($data['slave'])) {
+            $sv = $data['slave'];
+            $exec_file = $sv['Relay_Master_Log_File'] ?? $sv['Relay_Source_Log_File'] ?? '';
+            $exec_pos  = (int)($sv['Exec_Master_Log_Pos'] ?? $sv['Exec_Source_Log_Pos'] ?? 0);
+            $read_file = $sv['Master_Log_File'] ?? $sv['Source_Log_File'] ?? '';
+            $read_pos  = (int)($sv['Read_Master_Log_Pos'] ?? $sv['Read_Source_Log_Pos'] ?? 0);
+
+            // Extract numeric suffix from binlog filenames (e.g. mysql-bin.1044404 → 1044404)
+            preg_match('/\.(\d+)$/', $exec_file, $m_exec);
+            preg_match('/\.(\d+)$/', $read_file, $m_read);
+            $exec_num = isset($m_exec[1]) ? (int)$m_exec[1] : null;
+            $read_num = isset($m_read[1]) ? (int)$m_read[1] : null;
+
+            $binlog_files_data = Extraction2::display(array("mysql_binlog::binlog_files"), array($master_id));
+            $binlog_sizes_data = Extraction2::display(array("mysql_binlog::binlog_sizes"), array($master_id));
+
+            $files_raw = $binlog_files_data[$master_id]['binlog_files'] ?? '';
+            $sizes_raw = $binlog_sizes_data[$master_id]['binlog_sizes'] ?? '';
+
+            $files = is_array($files_raw) ? $files_raw : (is_string($files_raw) && $files_raw !== '' ? json_decode($files_raw, true) : null);
+            $sizes = is_array($sizes_raw) ? $sizes_raw : (is_string($sizes_raw) && $sizes_raw !== '' ? json_decode($sizes_raw, true) : null);
+
+            $gap_computed = false;
+
+            if (is_array($files) && is_array($sizes) && count($files) === count($sizes)) {
+                $exec_idx = array_search($exec_file, $files);
+                $read_idx = array_search($read_file, $files);
+
+                if ($exec_idx !== false && $read_idx !== false && $read_idx >= $exec_idx) {
+                    $gap_bytes = 0;
+                    $gap_files = $read_idx - $exec_idx;
+
+                    if ($exec_idx === $read_idx) {
+                        $gap_bytes = max(0, $read_pos - $exec_pos);
+                    } else {
+                        $gap_bytes += max(0, (int)$sizes[$exec_idx] - $exec_pos);
+                        for ($fi = $exec_idx + 1; $fi < $read_idx; $fi++) {
+                            $gap_bytes += (int)$sizes[$fi];
+                        }
+                        $gap_bytes += $read_pos;
+                    }
+
+                    $data['binlog_gap'] = [
+                        'bytes'    => $gap_bytes,
+                        'files'    => $gap_files,
+                        'estimate' => false,
+                    ];
+                    $gap_computed = true;
+                }
+            }
+
+            // Fallback: estimate from file numbers + average binlog size
+            if (!$gap_computed && $exec_num !== null && $read_num !== null && $read_num >= $exec_num) {
+                $gap_files = $read_num - $exec_num;
+                $avg_size = 0;
+                if (is_array($sizes) && count($sizes) > 0) {
+                    $avg_size = array_sum(array_map('intval', $sizes)) / count($sizes);
+                }
+                $gap_bytes = (int)($gap_files * $avg_size);
+                // Adjust for partial positions
+                if ($gap_files === 0) {
+                    $gap_bytes = max(0, $read_pos - $exec_pos);
+                }
+
+                $data['binlog_gap'] = [
+                    'bytes'    => $gap_bytes,
+                    'files'    => $gap_files,
+                    'estimate' => true,
+                ];
+            }
+        }
+
+        // Sparkline: last 1 hour of replication lag for this server
+        $data['sparkline'] = '';
+        $spark_slaves = Extraction::extract($this->getReplicationLagVariables(), array($id_mysql_server), "1 hour", false, true);
+        $spark_slaves = $this->normalizeReplicationLagGraphRows($spark_slaves ?: []);
+        if (!empty($spark_slaves)) {
+            $spark = end($spark_slaves);
+            $data['sparkline'] = $spark['graph'] ?? '';
+        }
 
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
 
         $this->di['js']->code_javascript('
+function svHumanDuration(sec) {
+    if (sec === null || sec === "NULL") return "NULL";
+    var s = parseInt(sec);
+    if (isNaN(s)) return "NULL";
+    if (s < 60) return s + "s";
+    if (s < 3600) return Math.floor(s/60) + "m " + (s%60) + "s";
+    if (s < 86400) return Math.floor(s/3600) + "h " + Math.floor((s%3600)/60) + "m " + (s%60) + "s";
+    return Math.floor(s/86400) + "d " + Math.floor((s%86400)/3600) + "h " + Math.floor((s%3600)/60) + "m " + (s%60) + "s";
+}
+
 $(document).ready(function() {
+
+    // Remove native title tooltip from topology selects
+    $(".sv-action-group .bootstrap-select button").removeAttr("title");
+
+    // Sparkline: lag last hour
+    (function() {
+        var sparkCanvas = document.getElementById("sv-sparkline");
+        if (!sparkCanvas) return;
+        var sparkData = ['.$data['sparkline'].'];
+        if (!sparkData.length) return;
+        var existing = Chart.getChart(sparkCanvas);
+        if (existing) existing.destroy();
+        new Chart(sparkCanvas.getContext("2d"), {
+            type: "line",
+            data: {
+                datasets: [{
+                    data: sparkData,
+                    borderColor: "#16285a",
+                    backgroundColor: "rgba(22,40,90,0.3)",
+                    fill: true,
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    x: { display: false, type: "time" },
+                    y: { display: false }
+                }
+            }
+        });
+
+        // ETA calculation from sparkline data
+        if (sparkData.length >= 2) {
+            var last  = sparkData[sparkData.length - 1];
+            var etaEl = document.getElementById("sv-eta");
+            if (last && etaEl) {
+                var lagEnd = last.y;
+
+                // Find the max lag in the sparkline data to use as reference
+                // for computing the recovery rate. This handles cases where
+                // the lag started at 0, spiked, and is now being absorbed.
+                var peakIdx = 0;
+                var peakVal = sparkData[0].y;
+                for (var si = 1; si < sparkData.length; si++) {
+                    if (sparkData[si].y > peakVal) {
+                        peakVal = sparkData[si].y;
+                        peakIdx = si;
+                    }
+                }
+                // If peak is at the very end (still rising), use first point instead
+                if (peakIdx === sparkData.length - 1) {
+                    peakIdx = 0;
+                }
+                var ref = sparkData[peakIdx];
+                var tRef = (ref.x instanceof Date) ? ref.x.getTime() : new Date(ref.x).getTime();
+                var tEnd = (last.x instanceof Date) ? last.x.getTime() : new Date(last.x).getTime();
+                var elapsed = (tEnd - tRef) / 1000;
+
+                if (elapsed > 0 && lagEnd > 0) {
+                    var delta = ref.y - lagEnd; // positive = catching up since peak
+                    if (delta > 0) {
+                        var rate = delta / elapsed;
+                        var etaSec = lagEnd / rate;
+                        var etaDate = new Date(Date.now() + etaSec * 1000);
+
+                        var etaStr = "";
+                        if (etaSec < 60) {
+                            etaStr = "< 1 min";
+                        } else if (etaSec < 3600) {
+                            etaStr = "~" + Math.round(etaSec / 60) + " min";
+                        } else if (etaSec < 86400) {
+                            var h = Math.floor(etaSec / 3600);
+                            var m = Math.round((etaSec % 3600) / 60);
+                            etaStr = "~" + h + "h" + (m > 0 ? ("0"+m).slice(-2) : "");
+                        } else {
+                            var d = Math.floor(etaSec / 86400);
+                            var h = Math.round((etaSec % 86400) / 3600);
+                            etaStr = "~" + d + " '.__('days').' " + h + "h";
+                        }
+
+                        var hh = ("0" + etaDate.getHours()).slice(-2);
+                        var mm = ("0" + etaDate.getMinutes()).slice(-2);
+                        var dd = etaDate.getFullYear() + "-" + ("0"+(etaDate.getMonth()+1)).slice(-2) + "-" + ("0"+etaDate.getDate()).slice(-2);
+
+                        etaEl.innerHTML = "<span style=\"color:var(--clr-ok)\"><i class=\"fa fa-clock-o\"></i> " + etaStr + "</span><br><small style=\"color:var(--clr-muted)\">~" + dd + " " + hh + ":" + mm + "</small>";
+                    } else if (delta < 0) {
+                        etaEl.innerHTML = "<span style=\"color:var(--clr-crit)\"><i class=\"fa fa-arrow-up\"></i> '.__('increasing').'</span>";
+                    } else {
+                        etaEl.innerHTML = "<span style=\"color:var(--clr-warn)\"><i class=\"fa fa-minus\"></i> '.__('stable').'</span>";
+                    }
+                } else if (lagEnd === 0) {
+                    etaEl.innerHTML = "<span style=\"color:var(--clr-ok)\"><i class=\"fa fa-check\"></i> '.__('caught up').'</span>";
+                }
+            }
+        }
+    })();
+
+    // Load previous day graph
     $("#btn-load-more-days").on("click", function() {
         var btn = $(this);
         var server = btn.data("server");
@@ -525,13 +751,110 @@ $(document).ready(function() {
         btn.prop("disabled", true).html("<i class=\"fa fa-spinner fa-spin\"></i> '.__('Loading').'...");
 
         $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/ajax:true/", function(html) {
-            $("#slave-graphs-container").prepend(html);
+            var $parts = $($.parseHTML(html, document, true));
+            var scripts = [];
+            $parts.each(function() {
+                if (this.nodeName === "SCRIPT") {
+                    scripts.push(this.textContent);
+                }
+            });
+            $parts.not("script").prependTo("#slave-graphs-container");
+            for (var i = 0; i < scripts.length; i++) {
+                $.globalEval(scripts[i]);
+            }
             btn.data("oldest", newDay);
             btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
         }).fail(function() {
             btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
         });
     });
+
+    // SHOW SLAVE STATUS search filter
+    var filterTimer = null;
+    $("#sv-vars-filter").on("keyup", function() {
+        var input = this;
+        clearTimeout(filterTimer);
+        filterTimer = setTimeout(function() {
+            var q = input.value.toLowerCase().trim();
+            var rows = document.querySelectorAll(".sv-vars-row");
+            var cats = document.querySelectorAll(".sv-vars-cat");
+            var total = 0;
+
+            rows.forEach(function(row) {
+                var varName = row.getAttribute("data-var") || "";
+                var varVal  = row.getAttribute("data-val") || "";
+                var match   = !q || varName.indexOf(q) !== -1 || varVal.indexOf(q) !== -1;
+                row.classList.toggle("sv-hidden", !match);
+                if (match) total++;
+            });
+
+            cats.forEach(function(cat) {
+                var visible = cat.querySelectorAll(".sv-vars-row:not(.sv-hidden)").length;
+                var countEl = cat.querySelector(".sv-vars-cat-count");
+                if (countEl) countEl.textContent = "(" + visible + ")";
+                cat.style.display = visible ? "" : "none";
+            });
+
+            document.getElementById("sv-vars-no-match").style.display = total ? "none" : "block";
+        }, 150);
+    });
+
+    // Parallel threads slider + input sync
+    var ptInput = document.getElementById("sv-parallel-threads");
+    var ptRange = document.getElementById("sv-parallel-range");
+    var ptBtn   = document.getElementById("sv-parallel-apply");
+    if (ptInput && ptRange && ptBtn) {
+        ptInput.addEventListener("input", function() {
+            var v = Math.max(0, Math.min(parseInt(ptInput.max), parseInt(this.value) || 0));
+            ptRange.value = v;
+        });
+        ptRange.addEventListener("input", function() {
+            ptInput.value = this.value;
+        });
+        var ptMode = document.getElementById("sv-parallel-mode");
+        ptBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            var v = Math.max(0, Math.min(parseInt(ptInput.max), parseInt(ptInput.value) || 0));
+            var msg = "'.__('This will STOP and restart replication.').'\\n\\n" + "slave_parallel_threads = " + v;
+            if (ptMode) msg += "\\nslave_parallel_mode = " + ptMode.value;
+            if (!confirm(msg)) return;
+            var url = ptBtn.getAttribute("data-base-threads") + "threads:" + v + "/";
+            if (ptMode) url += "mode:" + ptMode.value + "/";
+            window.location.href = url;
+        });
+    }
+
+    // Live lag polling every 5s
+    function svDot(state) {
+        if (state === "ok") return "<span class=\"sv-dot ok\"></span>";
+        if (state === "info") return "<span class=\"sv-dot info\"></span>";
+        return "<span class=\"sv-dot fail halo\"></span>";
+    }
+    function svLagClass(io, sql, lag) {
+        var stopped = (io !== "Yes" && sql !== "Yes");
+        if (stopped) return "stopped";
+        if (lag === null || lag === "NULL") return "critical";
+        lag = parseInt(lag);
+        if (isNaN(lag)) return "critical";
+        if (lag === 0) return "ok";
+        if (lag < 60) return "behind";
+        if (lag <= 60) return "warning";
+        return "critical";
+    }
+    setInterval(function() {
+        $.getJSON(GLIAL_LINK + "slave/getLag/'.$id_mysql_server.'/'.$replication_name.'/ajax:true/", function(d) {
+            var both = (d.io !== "Yes" && d.sql !== "Yes");
+            var ioDot  = d.io === "Yes" ? "ok" : (both ? "info" : "fail");
+            var sqlDot = d.sql === "Yes" ? "ok" : (both ? "info" : "fail");
+
+            $("#sv-live-io").html(svDot(ioDot) + " " + (d.io || "N/A") + (d.io_state ? " <small>&mdash; " + $("<span>").text(d.io_state).html() + "</small>" : ""));
+            $("#sv-live-sql").html(svDot(sqlDot) + " " + (d.sql || "N/A"));
+
+            var lagText = svHumanDuration(d.lag);
+            var lagCls = svLagClass(d.io, d.sql, d.lag);
+            $("#sv-live-lag").attr("class", "sv-lag " + lagCls).text(lagText);
+        });
+    }, 5000);
 });
 ');
 
@@ -678,15 +1001,23 @@ $(document).ready(function() {
 
 Chart.defaults.plugins.legend.display = false;
 
-var ctx = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'").getContext("2d");
+(function() {
+var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'");
+if (!canvas) return;
+var existing = Chart.getChart(canvas);
+if (existing) existing.destroy();
+var ctx = canvas.getContext("2d");
 
-var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new Chart(ctx, {
+var chart = new Chart(ctx, {
 
     type: "line",
     data: {
         datasets: [{
             label: "'.__('Second behind source').'",
             data: ['.$slave['graph'].'],
+                borderColor: "#16285a",
+                backgroundColor: "rgba(22,40,90,0.3)",
+                fill: true,
                 borderWidth: 1,
              pointRadius :1,
              tension: 0
@@ -695,6 +1026,8 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 ]
     },
     options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             title: {
                 display: true,
@@ -721,9 +1054,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
                 max: new Date("'.$slave['day'].' 23:59:59"),
             },
             y: {
-                ticks: {
-                    beginAtZero: false,
-                },
+                min: 0,
                 title: {
                     display: true,
                     text: "Second behind source",
@@ -732,6 +1063,7 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
     }
 });
+})();
 
 
 ');
@@ -767,6 +1099,103 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
         }
 
         $this->set('data', $data);
+    }
+
+    public function getLag($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+
+        $id_mysql_server  = $param[0];
+        $replication_name = $param[1] ?? '';
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM mysql_server WHERE id = ".(int)$id_mysql_server.";";
+        $res = $db->sql_query($sql);
+        $server = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $result = ['io' => null, 'sql' => null, 'lag' => null, 'io_state' => ''];
+
+        $server_data = Extraction::display(array("mysql_server::mysql_available"));
+        if (!empty($server_data[$id_mysql_server]['']['mysql_available']) && $server_data[$id_mysql_server]['']['mysql_available'] === "1") {
+            $link = Sgbd::sql($server['name']);
+            $slaves = $link->isSlave();
+
+            $slave = [];
+            if (count($slaves) === 1) {
+                $slave = end($slaves);
+            } else {
+                foreach ($slaves as $option) {
+                    if (($option['Connection_name'] ?? '') === $replication_name) {
+                        $slave = $option;
+                    }
+                }
+            }
+
+            $result['io']       = $slave['Slave_IO_Running']  ?? $slave['Replica_IO_Running']  ?? null;
+            $result['sql']      = $slave['Slave_SQL_Running'] ?? $slave['Replica_SQL_Running'] ?? null;
+            $result['lag']      = $slave['Seconds_Behind_Master'] ?? $slave['Seconds_Behind_Source'] ?? null;
+            $result['io_state'] = $slave['Slave_IO_State'] ?? $slave['Replica_IO_State'] ?? '';
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($result);
+    }
+
+    public function setParallelThreads($param)
+    {
+        $this->view = false;
+
+        $id_mysql_server = $param[0];
+        // param[1] may be connection_name or a key:value — skip if it contains ':'
+        $connection_name = (!empty($param[1]) && strpos($param[1], ':') === false) ? $param[1] : '';
+        $threads = (int)($_GET['threads'] ?? 0);
+        $mode = $_GET['mode'] ?? null;
+
+        // Enforce limits: min 0, max 50
+        $threads = max(0, min(50, $threads));
+
+        // Validate mode if provided
+        $allowed_modes = ['conservative', 'optimistic', 'aggressive', 'minimal', 'none'];
+        if ($mode !== null && !in_array($mode, $allowed_modes)) {
+            $mode = null;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+
+        // Detect MariaDB vs MySQL: try slave_parallel_threads (MariaDB) first
+        $var_name = 'slave_parallel_workers'; // MySQL default
+        try {
+            $res = $db->sql_query("SELECT @@GLOBAL.slave_parallel_threads AS val");
+            if ($res) {
+                $var_name = 'slave_parallel_threads'; // MariaDB
+            }
+        } catch (\Exception $e) {}
+
+        // Stop slave, set threads (+mode), start slave — single stop/start cycle
+        if (empty($connection_name)) {
+            $db->sql_query("STOP SLAVE;");
+        } else {
+            $db->sql_query("STOP SLAVE '".$connection_name."';");
+        }
+
+        $db->sql_query("SET GLOBAL ".$var_name." = ".$threads.";");
+        $msg = "SET GLOBAL ".$var_name." = ".$threads;
+
+        if ($mode !== null) {
+            $db->sql_query("SET GLOBAL slave_parallel_mode = '".$mode."';");
+            $msg .= ", slave_parallel_mode = '".$mode."'";
+        }
+
+        if (empty($connection_name)) {
+            $db->sql_query("START SLAVE;");
+        } else {
+            $db->sql_query("START SLAVE '".$connection_name."';");
+        }
+
+        set_flash("success", "Success", $msg);
+
+        header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
     }
 
 /**
