@@ -196,9 +196,203 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
                padding: 4px 14px; border-radius: 14px; font-size: 12px; transition: all .15s; }
 .sv-btn-load:hover, .sv-btn-load:focus { background: var(--clr-head); color: #fff; border-color: var(--clr-head); }
 
+/* ---------- source tabs ---------- */
+.sv-tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--clr-border);
+           background: var(--clr-surface); border-radius: var(--radius) var(--radius) 0 0;
+           box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.sv-tab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;
+          border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s;
+          text-decoration: none; display: flex; align-items: center; gap: 6px; }
+.sv-tab:hover { color: #1e293b; background: #f8fafc; text-decoration: none; }
+.sv-tab.active { color: #1e3a8a; border-bottom-color: #1e3a8a; background: #f0f4ff; }
+.sv-tab .sv-tab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sv-tab .sv-tab-dot.ok { background: var(--clr-ok); }
+.sv-tab .sv-tab-dot.behind { background: var(--clr-ok); }
+.sv-tab .sv-tab-dot.warning { background: var(--clr-warn); }
+.sv-tab .sv-tab-dot.critical { background: var(--clr-crit); }
+.sv-tab .sv-tab-dot.stopped { background: #3b82f6; }
+.sv-tab .sv-tab-lag { font-size: 11px; font-weight: 400; color: var(--clr-muted); }
+.sv-tab-add { color: var(--clr-muted); font-size: 15px; padding: 10px 14px; }
+.sv-tab-add:hover { color: var(--clr-ok); }
+
+/* ---------- new source form ---------- */
+.sv-new-source { max-width: 700px; }
+.sv-new-source .form-group { margin-bottom: 12px; }
+.sv-new-source label { font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;
+                        letter-spacing: .3px; margin-bottom: 4px; display: block; }
+.sv-new-source .form-control { font-size: 13px; }
+.sv-new-source .sv-form-row { display: flex; gap: 12px; }
+.sv-new-source .sv-form-row > * { flex: 1; }
+
 </style>
 
 
+<!-- ============================================================
+     0) SOURCE TABS (multi-source replication)
+     ============================================================ -->
+<?php if (!empty($data['all_connections']) && count($data['all_connections']) > 0): ?>
+<div class="sv-tabs">
+    <?php foreach ($data['all_connections'] as $conn):
+        $cn = $conn['name'];
+        $label = $cn !== '' ? $cn : __('default');
+        $isActive = ($cn === $data['replication_name']);
+        $lagLabel = '';
+        if ($conn['lag'] !== null && $conn['lag'] !== 'NULL' && $conn['health'] !== 'stopped') {
+            $lagLabel = ((int)$conn['lag'] === 0) ? '0s' : $conn['lag'].'s';
+        }
+    ?>
+    <a class="sv-tab<?= $isActive ? ' active' : '' ?>"
+       href="<?= LINK ?>slave/show/<?= $data['id_mysql_server'] ?>/<?= urlencode($cn) ?>/">
+        <span class="sv-tab-dot <?= $conn['health'] ?>"></span>
+        <?= htmlspecialchars($label) ?>
+        <?php if ($lagLabel): ?><span class="sv-tab-lag"><?= $lagLabel ?></span><?php endif; ?>
+    </a>
+    <?php endforeach; ?>
+    <a class="sv-tab sv-tab-add" href="<?= LINK ?>slave/show/<?= $data['id_mysql_server'] ?>/__new__/"
+       title="<?= __('Add replication source') ?>">
+        <i class="fa fa-plus"></i>
+    </a>
+</div>
+<?php endif; ?>
+
+<?php if (($data['replication_name'] ?? '') === '__new__'): ?>
+<!-- ============================================================
+     NEW SOURCE FORM
+     ============================================================ -->
+<div class="sv-card">
+    <div class="sv-card-head">
+        <span><i class="fa fa-plus-circle"></i> <?= __('Set up new replication source') ?></span>
+    </div>
+    <div class="sv-card-body">
+        <form class="sv-new-source" method="POST"
+              action="<?= LINK ?>slave/setupSource/<?= $data['id_mysql_server'] ?>/">
+
+            <!-- Step 1: Source server -->
+            <fieldset style="border:1px solid var(--clr-border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+                <legend style="font-size:12px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.5px;padding:0 8px;width:auto">
+                    <i class="fa fa-server"></i> <?= __('Source server') ?>
+                </legend>
+
+                <div class="form-group" style="margin-bottom:12px">
+                    <label><?= __('Master server') ?></label>
+                    <select name="master_server_id" id="sv-master-server-select" class="form-control selectpicker"
+                            data-live-search="true" data-size="10" data-width="100%"
+                            data-style="btn-default">
+                        <option value="" data-host="" data-port=""><?= __('-- Select a server --') ?></option>
+                        <?php
+                        $availableServers = $data['available_servers'] ?? [];
+                        $currentEnv = '';
+                        foreach ($availableServers as $srv):
+                            if ($srv['environment'] !== $currentEnv):
+                                if ($currentEnv !== '') echo '</optgroup>';
+                                $currentEnv = $srv['environment'];
+                                echo '<optgroup label="'.htmlspecialchars($currentEnv).'">';
+                            endif;
+                        ?>
+                        <option value="<?= (int)$srv['id'] ?>"
+                                data-host="<?= htmlspecialchars($srv['ip']) ?>"
+                                data-port="<?= htmlspecialchars($srv['port']) ?>"
+                                data-subtext="<?= htmlspecialchars($srv['ip'].':'.$srv['port']) ?>">
+                            <?= htmlspecialchars($srv['display_name'] ?: $srv['ip']) ?>
+                        </option>
+                        <?php endforeach;
+                        if ($currentEnv !== '') echo '</optgroup>';
+                        ?>
+                    </select>
+                </div>
+
+                <div class="sv-form-row">
+                    <div class="form-group">
+                        <label><?= __('Master host') ?> <small style="text-transform:none;font-weight:400">(<?= __('auto-filled from selection') ?>)</small></label>
+                        <input type="text" name="master_host" id="sv-master-host" class="form-control" required
+                               placeholder="10.68.68.180">
+                    </div>
+                    <div class="form-group">
+                        <label><?= __('Master port') ?></label>
+                        <input type="number" name="master_port" id="sv-master-port" class="form-control" value="3306" min="1" max="65535">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Step 2: Connection -->
+            <fieldset style="border:1px solid var(--clr-border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+                <legend style="font-size:12px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.5px;padding:0 8px;width:auto">
+                    <i class="fa fa-plug"></i> <?= __('Connection') ?>
+                </legend>
+
+                <div class="sv-form-row">
+                    <div class="form-group">
+                        <label><?= __('Connection name') ?></label>
+                        <input type="text" name="connection_name" class="form-control" required
+                               placeholder="e.g. production_fr" pattern="[a-zA-Z0-9_\-]+">
+                    </div>
+                    <div class="form-group">
+                        <label><?= __('Replication user') ?></label>
+                        <input type="text" name="master_user" class="form-control" required placeholder="repl">
+                    </div>
+                    <div class="form-group">
+                        <label><?= __('Password') ?></label>
+                        <input type="password" name="master_password" class="form-control" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Step 3: Options -->
+            <fieldset style="border:1px solid var(--clr-border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+                <legend style="font-size:12px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.5px;padding:0 8px;width:auto">
+                    <i class="fa fa-sliders"></i> <?= __('Options') ?>
+                </legend>
+
+                <div class="sv-form-row">
+                    <div class="form-group">
+                        <label><?= __('Replicate database') ?> <small style="text-transform:none;font-weight:400">(<?= __('optional, comma-separated') ?>)</small></label>
+                        <input type="text" name="replicate_do_db" class="form-control" placeholder="db1,db2">
+                    </div>
+                    <div class="form-group">
+                        <label><?= __('Replicate rewrite') ?> <small style="text-transform:none;font-weight:400">(<?= __('optional') ?> source->target)</small></label>
+                        <input type="text" name="replicate_rewrite_db" class="form-control" placeholder="production->production_fr">
+                    </div>
+                </div>
+
+                <div class="sv-form-row" style="margin-top:8px">
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="use_gtid" value="1" checked> <?= __('Use GTID') ?>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="use_ssl" value="1" checked> <?= __('Use SSL') ?>
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div style="display:flex;gap:8px;align-items:center">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-play"></i> <?= __('Create & Start replication') ?>
+                </button>
+                <a class="btn btn-default" href="<?= LINK ?>slave/show/<?= $data['id_mysql_server'] ?>/">
+                    <?= __('Cancel') ?>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+$(document).ready(function() {
+    var $select = $('#sv-master-server-select');
+    if ($.fn.selectpicker) $select.selectpicker();
+    $select.on('changed.bs.select change', function() {
+        var $opt = $(this).find('option:selected');
+        var host = $opt.data('host') || '';
+        var port = $opt.data('port') || '';
+        if (host) $('#sv-master-host').val(host);
+        if (port) $('#sv-master-port').val(port);
+    });
+});
+</script>
+<?php else: ?>
 <!-- ============================================================
      1) REPLICATION LAG GRAPHS
      ============================================================ -->
@@ -681,4 +875,4 @@ $catIcons = [
     </div>
 </div>
 
-
+<?php endif; /* end else __new__ */ ?>

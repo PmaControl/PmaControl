@@ -315,6 +315,9 @@ class Mysql
  */
     static public function getMaster($id_mysql_server, $connection_name = '')
     {
+        if ($connection_name === '__new__') {
+            return 0;
+        }
 
         $db      = Sgbd::sql(DB_DEFAULT);
         $masters = Extraction::display(array("slave::master_host", "slave::master_port",
@@ -323,6 +326,10 @@ class Mysql
         //debug($masters);
         
         foreach ($masters as $master) {
+            if (!isset($master[$connection_name]['master_host']) || !isset($master[$connection_name]['master_port'])) {
+                continue;
+            }
+
             $dnsPort = $master[$connection_name]['master_host'].':'.$master[$connection_name]['master_port'];
 
             $id_mysql_server = self::getIdFromDns($dnsPort);
@@ -331,15 +338,13 @@ class Mysql
             }
 
             //a mapper aussi avec les ip virtuel (version enterprise)
-            $sql = "SELECT id FROM mysql_server where ip='".$master[$connection_name]['master_host']."' AND port='".$master[$connection_name]['master_port']."' LIMIT 1;";
+            $sql = "SELECT id FROM mysql_server where ip='".$db->sql_real_escape_string($master[$connection_name]['master_host'])."' AND port='".(int)$master[$connection_name]['master_port']."' LIMIT 1;";
 
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
                 return $ob->id;
             }
-
-            //if ()$master[$connection_name]['master_host']
         }
 
         return 0;

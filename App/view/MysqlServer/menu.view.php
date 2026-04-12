@@ -22,6 +22,7 @@ $menu= array();
 $menu['MysqlServer']['main'] = __('Info');
 $menu['MysqlServer']['processlist'] = __('Processlist');
 $menu['MysqlServer']['logs'] = __('Logs');
+$menu['MysqlServer']['replication'] = __('Replication');
 $menu['Pmm']['index'] = __('PMM');
 $menu['Cluster']['svg'] = __('Cluster');
 $menu['Query']['all'] = __('Queries');

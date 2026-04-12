@@ -407,44 +407,84 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
             
             $slaves = $link_slave->isSlave();
 
-            
-            if (count($slaves) === 1) {
-                $slave = end($slaves);
-            } else {
-
-                foreach ($slaves as $option) {
-                    if ($option['Connection_name'] === $replication_name) {
-                        $slave = $option;
-                    }
-                }
+            $data['all_connections'] = [];
+            foreach ($slaves as $s) {
+                $cn = $s['Connection_name'] ?? $s['Channel_Name'] ?? '';
+                $io = $s['Slave_IO_Running'] ?? $s['Replica_IO_Running'] ?? 'No';
+                $sql_r = $s['Slave_SQL_Running'] ?? $s['Replica_SQL_Running'] ?? 'No';
+                $lag = $s['Seconds_Behind_Master'] ?? $s['Seconds_Behind_Source'] ?? null;
+                $err = !empty($s['Last_SQL_Error'] ?? '') || !empty($s['Last_IO_Error'] ?? '');
+                $h = 'ok';
+                if ($io !== 'Yes' && $sql_r !== 'Yes') $h = 'stopped';
+                elseif ($io !== 'Yes' || $sql_r !== 'Yes' || $err) $h = 'critical';
+                elseif ($lag === null || $lag === 'NULL') $h = 'critical';
+                elseif ((int)$lag > 60) $h = 'warning';
+                elseif ((int)$lag > 0) $h = 'behind';
+                $data['all_connections'][] = ['name' => $cn, 'health' => $h, 'lag' => $lag];
             }
 
-            $data['slave'] = $slave;
+            $data['server_type'] = $link_slave->getServerType();
+
+            if ($replication_name === '__new__') {
+                $data['slave'] = [];
+
+                // Fetch available servers for the master_host dropdown
+                $sql_servers = "SELECT a.id, a.display_name, a.ip, a.port, b.libelle AS environment
+                    FROM mysql_server a
+                    INNER JOIN environment b ON a.id_environment = b.id
+                    WHERE a.is_deleted = 0 AND a.id != " . (int)$id_mysql_server . "
+                    ORDER BY b.libelle, a.display_name";
+                $res_servers = $db->sql_query($sql_servers);
+                $data['available_servers'] = [];
+                while ($row = $db->sql_fetch_array($res_servers, MYSQLI_ASSOC)) {
+                    $data['available_servers'][] = $row;
+                }
+            } else {
+                if (empty($replication_name) && !empty($slaves)) {
+                    $replication_name = $slaves[0]['Connection_name'] ?? $slaves[0]['Channel_Name'] ?? '';
+                    $data['replication_name'] = $replication_name;
+                }
+
+                if (count($slaves) === 1) {
+                    $slave = end($slaves);
+                } else {
+                    foreach ($slaves as $option) {
+                        $cn = $option['Connection_name'] ?? $option['Channel_Name'] ?? '';
+                        if ($cn === $replication_name) {
+                            $slave = $option;
+                        }
+                    }
+                }
+
+                $data['slave'] = $slave ?? [];
+            }
 
             // Fetch parallel threads and CPU count
             $data['parallel_threads'] = 0;
-            try {
-                $res_pt = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_threads AS val");
+            $data['parallel_mode'] = null;
+            $isMariaDB = (stripos($data['server_type'], 'mariadb') !== false);
+
+            if ($isMariaDB) {
+                $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.slave_parallel_threads AS val");
                 if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
                     $data['parallel_threads'] = (int)$row_pt['val'];
                 }
-            } catch (\Exception $e) {
-                try {
-                    $res_pt = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_workers AS val");
-                    if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
-                        $data['parallel_threads'] = (int)$row_pt['val'];
-                    }
-                } catch (\Exception $e2) {}
-            }
-
-            // Fetch parallel mode (MariaDB only)
-            $data['parallel_mode'] = null;
-            try {
-                $res_pm = $link_slave->sql_query("SELECT @@GLOBAL.slave_parallel_mode AS val");
+                $res_pm = $link_slave->sql_query_silent("SELECT @@GLOBAL.slave_parallel_mode AS val");
                 if ($res_pm && $row_pm = $link_slave->sql_fetch_array($res_pm, MYSQLI_ASSOC)) {
                     $data['parallel_mode'] = $row_pm['val'];
                 }
-            } catch (\Exception $e) {}
+            } else {
+                // MySQL 8.0.26+ renamed slave_parallel_workers → replica_parallel_workers
+                $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.replica_parallel_workers AS val");
+                if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
+                    $data['parallel_threads'] = (int)$row_pt['val'];
+                } else {
+                    $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.slave_parallel_workers AS val");
+                    if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
+                        $data['parallel_threads'] = (int)$row_pt['val'];
+                    }
+                }
+            }
         }
         ksort($data['slave']);
 
@@ -1673,6 +1713,98 @@ var chart = new Chart(ctx, {
     }
 
 
+    public function setupSource($param)
+    {
+        $this->view = false;
+        $id_mysql_server = $param[0];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/');
+            return;
+        }
+
+        $connection_name = trim($_POST['connection_name'] ?? '');
+        $master_host     = trim($_POST['master_host'] ?? '');
+        $master_port     = (int)($_POST['master_port'] ?? 3306);
+        $master_user     = trim($_POST['master_user'] ?? '');
+        $master_password = $_POST['master_password'] ?? '';
+        $use_gtid        = !empty($_POST['use_gtid']);
+        $use_ssl         = !empty($_POST['use_ssl']);
+        $replicate_do_db = trim($_POST['replicate_do_db'] ?? '');
+        $replicate_rewrite_db = trim($_POST['replicate_rewrite_db'] ?? '');
+
+        if ($connection_name === '' || $master_host === '' || $master_user === '') {
+            set_flash("error", __("Error"), __("Connection name, host and user are required"));
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/__new__/');
+            return;
+        }
+
+        $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+
+        try {
+            if ($isMariaDB) {
+                $sql = "CHANGE MASTER '$connection_name' TO "
+                    ."MASTER_HOST='".$db->sql_real_escape_string($master_host)."', "
+                    ."MASTER_PORT=$master_port, "
+                    ."MASTER_USER='".$db->sql_real_escape_string($master_user)."', "
+                    ."MASTER_PASSWORD='".$db->sql_real_escape_string($master_password)."'";
+                if ($use_gtid) {
+                    $sql .= ", MASTER_USE_GTID=slave_pos";
+                }
+                if ($use_ssl) {
+                    $sql .= ", MASTER_SSL=1";
+                }
+                $db->sql_query($sql.";");
+
+                if ($replicate_do_db !== '') {
+                    foreach (explode(',', $replicate_do_db) as $dbName) {
+                        $dbName = trim($dbName);
+                        if ($dbName !== '') {
+                            $db->sql_query("SET GLOBAL replicate_do_db='$connection_name:".$db->sql_real_escape_string($dbName)."';");
+                        }
+                    }
+                }
+
+                if ($replicate_rewrite_db !== '') {
+                    $db->sql_query("SET GLOBAL replicate_rewrite_db='$connection_name:(".$db->sql_real_escape_string($replicate_rewrite_db).")';");
+                }
+
+                $db->sql_query("START SLAVE '$connection_name';");
+            } else {
+                $sql = "CHANGE MASTER TO "
+                    ."MASTER_HOST='".$db->sql_real_escape_string($master_host)."', "
+                    ."MASTER_PORT=$master_port, "
+                    ."MASTER_USER='".$db->sql_real_escape_string($master_user)."', "
+                    ."MASTER_PASSWORD='".$db->sql_real_escape_string($master_password)."'";
+                if ($use_gtid) {
+                    $sql .= ", MASTER_AUTO_POSITION=1";
+                }
+                if ($use_ssl) {
+                    $sql .= ", MASTER_SSL=1";
+                }
+                $sql .= " FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."'";
+                $db->sql_query($sql.";");
+
+                if ($replicate_do_db !== '') {
+                    $db->sql_query("CHANGE REPLICATION FILTER REPLICATE_DO_DB=(".
+                        implode(',', array_map(function($d) use ($db) {
+                            return "'".$db->sql_real_escape_string(trim($d))."'";
+                        }, explode(',', $replicate_do_db))).
+                        ") FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."';");
+                }
+
+                $db->sql_query("START SLAVE FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."';");
+            }
+
+            set_flash("success", __("Success"), __("Replication source created and started").": $connection_name");
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/__new__/');
+        }
+    }
+
 /**
  * Handle slave state through `activateGtid`.
  *
@@ -1702,29 +1834,26 @@ var chart = new Chart(ctx, {
         $this->view = false;
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
-        if (! empty($connection_name))
-        {
-            $connection_name = " '$connection_name' ";
+        try {
+            if ($isMariaDB) {
+                $connClause = !empty($connection_name) ? " '".$connection_name."' " : "";
+                $db->sql_query("STOP SLAVE $connClause;");
+                $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = slave_pos;");
+                $db->sql_query("START SLAVE $connClause;");
+            } else {
+                $channelClause = !empty($connection_name) ? " FOR CHANNEL '".$connection_name."'" : "";
+                $db->sql_query("STOP SLAVE $channelClause;");
+                $db->sql_query("CHANGE MASTER TO MASTER_AUTO_POSITION = 1 $channelClause;");
+                $db->sql_query("START SLAVE $channelClause;");
+            }
+            set_flash("success", __("Success"), __("GTID Activated"));
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
 
-
-        $sql = "STOP SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-        $sql = "CHANGE MASTER $connection_name TO MASTER_USE_GTID = slave_pos;";
-        $db->sql_query($sql);
-
-        $sql = "START SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-
-        $title = "Success";
-        $msg = $sql;
-        set_flash("success", $title, "GTID Activated");
-
         header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
-        
     }
 
 
@@ -1757,29 +1886,26 @@ var chart = new Chart(ctx, {
         $this->view = false;
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
-        if (! empty($connection_name))
-        {
-            $connection_name = " '$connection_name' ";
+        try {
+            if ($isMariaDB) {
+                $connClause = !empty($connection_name) ? " '".$connection_name."' " : "";
+                $db->sql_query("STOP SLAVE $connClause;");
+                $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = no;");
+                $db->sql_query("START SLAVE $connClause;");
+            } else {
+                $channelClause = !empty($connection_name) ? " FOR CHANNEL '".$connection_name."'" : "";
+                $db->sql_query("STOP SLAVE $channelClause;");
+                $db->sql_query("CHANGE MASTER TO MASTER_AUTO_POSITION = 0 $channelClause;");
+                $db->sql_query("START SLAVE $channelClause;");
+            }
+            set_flash("success", __("Success"), __("GTID Deactivated"));
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
 
-
-        $sql = "STOP SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-        $sql = "CHANGE MASTER $connection_name TO MASTER_USE_GTID = no;";
-        $db->sql_query($sql);
-
-        $sql = "START SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-
-        $title = "Success";
-        $msg = $sql;
-        set_flash("success", $title, "GTID Deactivated");
-
         header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
-        
     }
 
 /**

@@ -869,6 +869,18 @@ class MysqlServer extends Controller
         $this->set('initial_lines_payload', $initialLinesPayload);
     }
 
+    public function replication($param)
+    {
+        if (empty($param[0]) || !ctype_digit((string)$param[0])) {
+            throw new \Exception("Usage: /mysqlserver/replication/{id_mysql_server}");
+        }
+
+        $this->title = '<i class="fa fa-sitemap"></i> '.__("Replication");
+
+        $this->set('param', $param);
+        $this->set('id_mysql_server', (int)$param[0]);
+    }
+
     public function logsChartData($param)
     {
         $this->layout_name = false;
