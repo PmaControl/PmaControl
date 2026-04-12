@@ -82,6 +82,61 @@ class Slave extends Controller
         return "$verb REPLICA FOR CHANNEL '$connectionName'";
     }
 
+    /**
+     * Enable GTID on a MySQL 8+ server with SET PERSIST for durability.
+     * Walks gtid_mode through: OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON
+     */
+    private static function enableMySQLGtid($db): void
+    {
+        $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
+        $gtidMode = '';
+        if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $gtidMode = strtoupper($row['val']);
+        }
+
+        if ($gtidMode === 'ON') {
+            return;
+        }
+
+        // enforce_gtid_consistency must be ON before gtid_mode can go to ON
+        $db->sql_query("SET PERSIST enforce_gtid_consistency = WARN;");
+        $db->sql_query("SET PERSIST enforce_gtid_consistency = ON;");
+
+        if ($gtidMode === 'OFF') {
+            $db->sql_query("SET PERSIST gtid_mode = OFF_PERMISSIVE;");
+        }
+        if (in_array($gtidMode, ['OFF', 'OFF_PERMISSIVE'])) {
+            $db->sql_query("SET PERSIST gtid_mode = ON_PERMISSIVE;");
+        }
+        $db->sql_query("SET PERSIST gtid_mode = ON;");
+    }
+
+    /**
+     * Disable GTID on a MySQL 8+ server with SET PERSIST for durability.
+     * Walks gtid_mode through: ON → ON_PERMISSIVE → OFF_PERMISSIVE → OFF
+     */
+    private static function disableMySQLGtid($db): void
+    {
+        $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
+        $gtidMode = '';
+        if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $gtidMode = strtoupper($row['val']);
+        }
+
+        if ($gtidMode === 'OFF') {
+            return;
+        }
+
+        if ($gtidMode === 'ON') {
+            $db->sql_query("SET PERSIST gtid_mode = ON_PERMISSIVE;");
+        }
+        if (in_array($gtidMode, ['ON', 'ON_PERMISSIVE'])) {
+            $db->sql_query("SET PERSIST gtid_mode = OFF_PERMISSIVE;");
+        }
+        $db->sql_query("SET PERSIST gtid_mode = OFF;");
+        $db->sql_query("SET PERSIST enforce_gtid_consistency = OFF;");
+    }
+
     private function normalizeReplicationLagGraphRows($rows): array
     {
         if (empty($rows)) {
@@ -1852,25 +1907,14 @@ var chart = new Chart(ctx, {
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = slave_pos;");
                 $db->sql_query(self::buildReplicationCmd('START', true, $connection_name).";");
             } else {
-                // MySQL requires gtid_mode=ON before SOURCE_AUTO_POSITION=1
-                $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
-                $gtidMode = '';
-                if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $gtidMode = strtoupper($row['val']);
+                // MySQL: enable GTID on master first, then slave, using SET PERSIST for durability
+                $id_master = Mysql::getMaster($id_mysql_server, $connection_name);
+                if (!empty($id_master)) {
+                    $db_master = Mysql::getDbLink($id_master);
+                    self::enableMySQLGtid($db_master);
                 }
 
-                if ($gtidMode !== 'ON') {
-                    // Progressive migration: OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON
-                    $db->sql_query("SET GLOBAL enforce_gtid_consistency = WARN;");
-                    $db->sql_query("SET GLOBAL enforce_gtid_consistency = ON;");
-                    if ($gtidMode === 'OFF') {
-                        $db->sql_query("SET GLOBAL gtid_mode = OFF_PERMISSIVE;");
-                    }
-                    if (in_array($gtidMode, ['OFF', 'OFF_PERMISSIVE'])) {
-                        $db->sql_query("SET GLOBAL gtid_mode = ON_PERMISSIVE;");
-                    }
-                    $db->sql_query("SET GLOBAL gtid_mode = ON;");
-                }
+                self::enableMySQLGtid($db);
 
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
                 $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
@@ -1927,11 +1971,16 @@ var chart = new Chart(ctx, {
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
                 $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
                 $db->sql_query("CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 0 $channelClause;");
-                // Revert gtid_mode: ON → ON_PERMISSIVE → OFF_PERMISSIVE → OFF
-                $db->sql_query("SET GLOBAL gtid_mode = ON_PERMISSIVE;");
-                $db->sql_query("SET GLOBAL gtid_mode = OFF_PERMISSIVE;");
-                $db->sql_query("SET GLOBAL gtid_mode = OFF;");
-                $db->sql_query("SET GLOBAL enforce_gtid_consistency = OFF;");
+
+                // Disable GTID on slave, then master
+                self::disableMySQLGtid($db);
+
+                $id_master = Mysql::getMaster($id_mysql_server, $connection_name);
+                if (!empty($id_master)) {
+                    $db_master = Mysql::getDbLink($id_master);
+                    self::disableMySQLGtid($db_master);
+                }
+
                 $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
             }
             set_flash("success", __("Success"), __("GTID Deactivated"));
