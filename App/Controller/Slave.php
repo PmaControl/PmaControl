@@ -84,10 +84,16 @@ class Slave extends Controller
 
     /**
      * Enable GTID on a MySQL 8+ server with SET PERSIST for durability.
-     * Walks gtid_mode through: OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON
+     * Walks gtid_mode through: OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON.
+     * Skips silently if the server is MariaDB (GTID works differently there).
      */
     private static function enableMySQLGtid($db): void
     {
+        // MariaDB has no gtid_mode variable — GTID is always available via MASTER_USE_GTID
+        if (stripos($db->getServerType(), 'mariadb') !== false) {
+            return;
+        }
+
         $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
         $gtidMode = '';
         if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -113,10 +119,15 @@ class Slave extends Controller
 
     /**
      * Disable GTID on a MySQL 8+ server with SET PERSIST for durability.
-     * Walks gtid_mode through: ON → ON_PERMISSIVE → OFF_PERMISSIVE → OFF
+     * Walks gtid_mode through: ON → ON_PERMISSIVE → OFF_PERMISSIVE → OFF.
+     * Skips silently if the server is MariaDB.
      */
     private static function disableMySQLGtid($db): void
     {
+        if (stripos($db->getServerType(), 'mariadb') !== false) {
+            return;
+        }
+
         $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
         $gtidMode = '';
         if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
