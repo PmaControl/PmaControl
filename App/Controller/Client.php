@@ -103,7 +103,7 @@ class Client extends Controller
             ) stats ON stats.id_client = c.id
             WHERE c.is_display = 1
             ORDER BY c.libelle";
-        $data['client'] = $db->sql_fetch_yield($sql);
+        $data['client'] = $db->sql_fetch_all($sql);
 
         $this->set('data', $data);
     }
