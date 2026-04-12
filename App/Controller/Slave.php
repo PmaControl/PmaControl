@@ -64,6 +64,24 @@ class Slave extends Controller
         return preg_replace('/[^a-zA-Z0-9_\-.]/', '', $name);
     }
 
+    /**
+     * Build the SQL for STOP/START replication, fork-aware.
+     * MariaDB: STOP SLAVE 'conn_name'
+     * MySQL 8+: STOP REPLICA FOR CHANNEL 'conn_name'
+     */
+    private static function buildReplicationCmd(string $verb, bool $isMariaDB, string $connectionName = ''): string
+    {
+        // verb = 'STOP' or 'START'
+        $keyword = $isMariaDB ? 'SLAVE' : 'REPLICA';
+        if (empty($connectionName)) {
+            return "$verb $keyword";
+        }
+        if ($isMariaDB) {
+            return "$verb SLAVE '$connectionName'";
+        }
+        return "$verb REPLICA FOR CHANNEL '$connectionName'";
+    }
+
     private function normalizeReplicationLagGraphRows($rows): array
     {
         if (empty($rows)) {
@@ -1196,38 +1214,33 @@ var chart = new Chart(ctx, {
         }
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $connection_name = self::sanitizeConnectionName($connection_name);
 
-        // Detect MariaDB vs MySQL: try slave_parallel_threads (MariaDB) first
-        $var_name = 'slave_parallel_workers'; // MySQL default
         try {
-            $res = $db->sql_query("SELECT @@GLOBAL.slave_parallel_threads AS val");
-            if ($res) {
-                $var_name = 'slave_parallel_threads'; // MariaDB
+            if ($isMariaDB) {
+                $var_name = 'slave_parallel_threads';
+                $connClause = !empty($connection_name) ? " '$connection_name'" : "";
+                $db->sql_query("STOP SLAVE $connClause;");
+                $db->sql_query("SET GLOBAL $var_name = $threads;");
+                $msg = "SET GLOBAL $var_name = $threads";
+                if ($mode !== null) {
+                    $db->sql_query("SET GLOBAL slave_parallel_mode = '$mode';");
+                    $msg .= ", slave_parallel_mode = '$mode'";
+                }
+                $db->sql_query("START SLAVE $connClause;");
+            } else {
+                $var_name = 'replica_parallel_workers';
+                $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
+                $db->sql_query("STOP REPLICA $channelClause;");
+                $db->sql_query("SET GLOBAL $var_name = $threads;");
+                $msg = "SET GLOBAL $var_name = $threads";
+                $db->sql_query("START REPLICA $channelClause;");
             }
-        } catch (\Exception $e) {}
-
-        // Stop slave, set threads (+mode), start slave — single stop/start cycle
-        if (empty($connection_name)) {
-            $db->sql_query("STOP SLAVE;");
-        } else {
-            $db->sql_query("STOP SLAVE '".$connection_name."';");
+            set_flash("success", __("Success"), $msg);
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
-
-        $db->sql_query("SET GLOBAL ".$var_name." = ".$threads.";");
-        $msg = "SET GLOBAL ".$var_name." = ".$threads;
-
-        if ($mode !== null) {
-            $db->sql_query("SET GLOBAL slave_parallel_mode = '".$mode."';");
-            $msg .= ", slave_parallel_mode = '".$mode."'";
-        }
-
-        if (empty($connection_name)) {
-            $db->sql_query("START SLAVE;");
-        } else {
-            $db->sql_query("START SLAVE '".$connection_name."';");
-        }
-
-        set_flash("success", "Success", $msg);
 
         header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
     }
@@ -1264,14 +1277,9 @@ var chart = new Chart(ctx, {
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
         try {
-            if (empty($connection_name)) {
-                $db->sql_query("START SLAVE;");
-            } elseif ($isMariaDB) {
-                $db->sql_query("START SLAVE '$connection_name';");
-            } else {
-                $db->sql_query("START SLAVE FOR CHANNEL '$connection_name';");
-            }
-            set_flash("success", __("Success"), "START SLAVE $connection_name");
+            $sql = self::buildReplicationCmd('START', $isMariaDB, $connection_name);
+            $db->sql_query("$sql;");
+            set_flash("success", __("Success"), $sql);
         } catch (\Exception $e) {
             set_flash("error", __("Error"), $e->getMessage());
         }
@@ -1313,14 +1321,9 @@ var chart = new Chart(ctx, {
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
         try {
-            if (empty($connection_name)) {
-                $db->sql_query("STOP SLAVE;");
-            } elseif ($isMariaDB) {
-                $db->sql_query("STOP SLAVE '$connection_name';");
-            } else {
-                $db->sql_query("STOP SLAVE FOR CHANNEL '$connection_name';");
-            }
-            set_flash("success", __("Success"), "STOP SLAVE $connection_name");
+            $sql = self::buildReplicationCmd('STOP', $isMariaDB, $connection_name);
+            $db->sql_query("$sql;");
+            set_flash("success", __("Success"), $sql);
         } catch (\Exception $e) {
             set_flash("error", __("Error"), $e->getMessage());
         }
@@ -1764,18 +1767,19 @@ var chart = new Chart(ctx, {
 
                 $db->sql_query("START SLAVE '$connection_name';");
             } else {
-                $sql = "CHANGE MASTER TO "
-                    ."MASTER_HOST='".$db->sql_real_escape_string($master_host)."', "
-                    ."MASTER_PORT=$master_port, "
-                    ."MASTER_USER='".$db->sql_real_escape_string($master_user)."', "
-                    ."MASTER_PASSWORD='".$db->sql_real_escape_string($master_password)."'";
+                $escapedCn = $db->sql_real_escape_string($connection_name);
+                $sql = "CHANGE REPLICATION SOURCE TO "
+                    ."SOURCE_HOST='".$db->sql_real_escape_string($master_host)."', "
+                    ."SOURCE_PORT=$master_port, "
+                    ."SOURCE_USER='".$db->sql_real_escape_string($master_user)."', "
+                    ."SOURCE_PASSWORD='".$db->sql_real_escape_string($master_password)."'";
                 if ($use_gtid) {
-                    $sql .= ", MASTER_AUTO_POSITION=1";
+                    $sql .= ", SOURCE_AUTO_POSITION=1";
                 }
                 if ($use_ssl) {
-                    $sql .= ", MASTER_SSL=1";
+                    $sql .= ", SOURCE_SSL=1";
                 }
-                $sql .= " FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."'";
+                $sql .= " FOR CHANNEL '$escapedCn'";
                 $db->sql_query($sql.";");
 
                 if ($replicate_do_db !== '') {
@@ -1783,10 +1787,10 @@ var chart = new Chart(ctx, {
                         implode(',', array_map(function($d) use ($db) {
                             return "'".$db->sql_real_escape_string(trim($d))."'";
                         }, explode(',', $replicate_do_db))).
-                        ") FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."';");
+                        ") FOR CHANNEL '$escapedCn';");
                 }
 
-                $db->sql_query("START SLAVE FOR CHANNEL '".$db->sql_real_escape_string($connection_name)."';");
+                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
             }
 
             set_flash("success", __("Success"), __("Replication source created and started").": $connection_name");
@@ -1829,17 +1833,15 @@ var chart = new Chart(ctx, {
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
         try {
+            $db->sql_query(self::buildReplicationCmd('STOP', $isMariaDB, $connection_name).";");
             if ($isMariaDB) {
                 $connClause = !empty($connection_name) ? " '$connection_name' " : "";
-                $db->sql_query("STOP SLAVE $connClause;");
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = slave_pos;");
-                $db->sql_query("START SLAVE $connClause;");
             } else {
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
-                $db->sql_query("STOP SLAVE $channelClause;");
-                $db->sql_query("CHANGE MASTER TO MASTER_AUTO_POSITION = 1 $channelClause;");
-                $db->sql_query("START SLAVE $channelClause;");
+                $db->sql_query("CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 1 $channelClause;");
             }
+            $db->sql_query(self::buildReplicationCmd('START', $isMariaDB, $connection_name).";");
             set_flash("success", __("Success"), __("GTID Activated"));
         } catch (\Exception $e) {
             set_flash("error", __("Error"), $e->getMessage());
@@ -1881,17 +1883,15 @@ var chart = new Chart(ctx, {
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
         try {
+            $db->sql_query(self::buildReplicationCmd('STOP', $isMariaDB, $connection_name).";");
             if ($isMariaDB) {
-                $connClause = !empty($connection_name) ? " '".$connection_name."' " : "";
-                $db->sql_query("STOP SLAVE $connClause;");
+                $connClause = !empty($connection_name) ? " '$connection_name' " : "";
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = no;");
-                $db->sql_query("START SLAVE $connClause;");
             } else {
-                $channelClause = !empty($connection_name) ? " FOR CHANNEL '".$connection_name."'" : "";
-                $db->sql_query("STOP SLAVE $channelClause;");
-                $db->sql_query("CHANGE MASTER TO MASTER_AUTO_POSITION = 0 $channelClause;");
-                $db->sql_query("START SLAVE $channelClause;");
+                $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
+                $db->sql_query("CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 0 $channelClause;");
             }
+            $db->sql_query(self::buildReplicationCmd('START', $isMariaDB, $connection_name).";");
             set_flash("success", __("Success"), __("GTID Deactivated"));
         } catch (\Exception $e) {
             set_flash("error", __("Error"), $e->getMessage());

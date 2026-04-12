@@ -423,6 +423,44 @@ final class SlaveTest extends TestCase
         $this->assertSame('7', $normalized[1]['']['seconds_behind_master']);
     }
 
+    // ── buildReplicationCmd ──
+
+    public function testBuildReplicationCmdMariaDBNoChannel(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
+        $method->setAccessible(true);
+
+        $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', true, ''));
+        $this->assertSame('START SLAVE', $method->invoke(null, 'START', true, ''));
+    }
+
+    public function testBuildReplicationCmdMariaDBWithChannel(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
+        $method->setAccessible(true);
+
+        $this->assertSame("STOP SLAVE 'production_fr'", $method->invoke(null, 'STOP', true, 'production_fr'));
+        $this->assertSame("START SLAVE 'chan-1'", $method->invoke(null, 'START', true, 'chan-1'));
+    }
+
+    public function testBuildReplicationCmdMySQLNoChannel(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
+        $method->setAccessible(true);
+
+        $this->assertSame('STOP REPLICA', $method->invoke(null, 'STOP', false, ''));
+        $this->assertSame('START REPLICA', $method->invoke(null, 'START', false, ''));
+    }
+
+    public function testBuildReplicationCmdMySQLWithChannel(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
+        $method->setAccessible(true);
+
+        $this->assertSame("STOP REPLICA FOR CHANNEL 'pmacontrol'", $method->invoke(null, 'STOP', false, 'pmacontrol'));
+        $this->assertSame("START REPLICA FOR CHANNEL 'chan.test'", $method->invoke(null, 'START', false, 'chan.test'));
+    }
+
     // ── getReplicationLagVariables ──
 
     public function testGetReplicationLagVariablesReturnsBothMetrics(): void
