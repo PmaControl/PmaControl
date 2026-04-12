@@ -2034,10 +2034,38 @@ var chart = new Chart(ctx, {
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
         try {
-            $db->sql_query(self::buildReplicationCmd('STOP', $isMariaDB, $connection_name).";");
-            // MySQL 8.0.26+ renamed sql_slave_skip_counter but still accepts the old name
-            $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
-            $db->sql_query(self::buildReplicationCmd('START', $isMariaDB, $connection_name).";");
+            if ($isMariaDB) {
+                // MariaDB: sql_slave_skip_counter works with or without GTID
+                $db->sql_query(self::buildReplicationCmd('STOP', true, $connection_name).";");
+                $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
+                $db->sql_query(self::buildReplicationCmd('START', true, $connection_name).";");
+            } else {
+                // MySQL: check if GTID is enabled
+                $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
+                $gtidMode = '';
+                if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $gtidMode = strtoupper($row['val']);
+                }
+
+                $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
+
+                if ($gtidMode === 'ON') {
+                    // With GTID: inject an empty transaction for the next pending GTID
+                    $gtidToSkip = self::getNextPendingGtid($db, $connection_name);
+                    if (empty($gtidToSkip)) {
+                        throw new \Exception(__("Cannot determine GTID to skip. No pending transaction found."));
+                    }
+                    $db->sql_query("SET GTID_NEXT = '".$db->sql_real_escape_string($gtidToSkip)."';");
+                    $db->sql_query("BEGIN;");
+                    $db->sql_query("COMMIT;");
+                    $db->sql_query("SET GTID_NEXT = 'AUTOMATIC';");
+                } else {
+                    // Without GTID: classic skip counter
+                    $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
+                }
+
+                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
+            }
             set_flash("success", __("Success"), __("Skipped 1 transaction"));
         } catch (\Exception $e) {
             set_flash("error", __("Error"), $e->getMessage());
@@ -2046,6 +2074,65 @@ var chart = new Chart(ctx, {
         if (!IS_CLI) {
             header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
         }
+    }
+
+    /**
+     * Find the next GTID to skip for a MySQL replica channel.
+     * Computes GTID_SUBTRACT(Retrieved_Gtid_Set, Executed_Gtid_Set) and
+     * returns the first GTID from the result (uuid:seq).
+     */
+    private static function getNextPendingGtid($db, string $connectionName): string
+    {
+        $channelFilter = $db->sql_real_escape_string($connectionName);
+
+        // Use performance_schema for precise per-channel data
+        $sql = "SELECT GTID_SUBTRACT(
+            (SELECT Received_transaction_set FROM performance_schema.replication_connection_status WHERE Channel_Name = '$channelFilter'),
+            @@GLOBAL.gtid_executed
+        ) AS pending";
+
+        $res = $db->sql_query_silent($sql);
+        if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $pending = trim($row['pending'] ?? '');
+            if ($pending !== '') {
+                // pending is like "uuid:5-8,uuid2:3". Take the first uuid:first_seq.
+                $firstSet = explode(',', $pending)[0];
+                $parts = explode(':', trim($firstSet));
+                if (count($parts) === 2) {
+                    $uuid = $parts[0];
+                    $seqRange = $parts[1];
+                    $firstSeq = explode('-', $seqRange)[0];
+                    return $uuid.':'.$firstSeq;
+                }
+            }
+        }
+
+        // Fallback: get Source_UUID and Executed_Gtid_Set from SHOW REPLICA STATUS
+        $showSql = "SHOW REPLICA STATUS";
+        if (!empty($connectionName)) {
+            $showSql .= " FOR CHANNEL '$channelFilter'";
+        }
+        $res = $db->sql_query_silent($showSql);
+        if ($res && $row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $sourceUuid = $row['Source_UUID'] ?? $row['Master_UUID'] ?? '';
+            $executed = $row['Executed_Gtid_Set'] ?? '';
+
+            if ($sourceUuid !== '' && $executed !== '') {
+                // Find the highest sequence for this source UUID in executed set
+                $lastSeq = 0;
+                foreach (explode(',', $executed) as $part) {
+                    $part = trim($part);
+                    if (stripos($part, $sourceUuid) === 0) {
+                        $seqPart = explode(':', $part)[1] ?? '0';
+                        $ranges = explode('-', $seqPart);
+                        $lastSeq = (int)end($ranges);
+                    }
+                }
+                return $sourceUuid.':'.($lastSeq + 1);
+            }
+        }
+
+        return '';
     }
 
 
