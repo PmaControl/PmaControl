@@ -1745,11 +1745,15 @@ var chart = new Chart(ctx, {
                 $db->sql_query($sql.";");
 
                 if ($replicate_do_db !== '') {
+                    $dbParts = [];
                     foreach (explode(',', $replicate_do_db) as $dbName) {
                         $dbName = trim($dbName);
                         if ($dbName !== '') {
-                            $db->sql_query("SET GLOBAL replicate_do_db='$connection_name:".$db->sql_real_escape_string($dbName)."';");
+                            $dbParts[] = $connection_name.':'.$db->sql_real_escape_string($dbName);
                         }
+                    }
+                    if (!empty($dbParts)) {
+                        $db->sql_query("SET GLOBAL replicate_do_db='".implode(',', $dbParts)."';");
                     }
                 }
 
