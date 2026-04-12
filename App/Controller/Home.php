@@ -4,114 +4,162 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Extraction2;
 
-
-/**
- * Class responsible for home workflows.
- *
- * This class belongs to the PmaControl application layer and documents the
- * public surface consumed by controllers, services, static analysis tools and IDEs.
- *
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
 class Home extends Controller {
 
-/**
- * Prepare home state through `before`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @param array<int,mixed> $param Route parameters forwarded by the router.
- * @phpstan-param array<int,mixed> $param
- * @psalm-param array<int,mixed> $param
- * @return void Returned value for before.
- * @phpstan-return void
- * @psalm-return void
- * @see self::before()
- * @example /fr/home/before
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
     function before($param) {
-        $this->di['js']->addJavascript(array("jquery-latest.min.js", "bootstrap.min.js", "http://getbootstrap.com/assets/js/docs.min.js"));
     }
 
-/**
- * Render home state through `index`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @return void Returned value for index.
- * @phpstan-return void
- * @psalm-return void
- * @see self::index()
- * @example /fr/home/index
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
     function index() {
-        $this->title = __("Home");
-        $this->ariane = " > " . __("Welcome to PmaControl !");
+        $this->title = __("Dashboard");
+        $this->ariane = "";
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM `home_box` ORDER BY `order`;";
 
+        // ── 1. Server inventory ──
+        $data['servers'] = ['total' => 0, 'monitored' => 0, 'proxy' => 0, 'vip' => 0, 'mysql' => 0];
+        $sql = "SELECT
+            COUNT(*) AS total,
+            SUM(is_monitored) AS monitored,
+            SUM(is_proxy) AS proxy,
+            SUM(is_vip) AS vip,
+            SUM(CASE WHEN is_proxy=0 AND is_vip=0 THEN 1 ELSE 0 END) AS mysql
+        FROM mysql_server WHERE is_deleted=0";
         $res = $db->sql_query($sql);
+        if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['servers'] = $row;
+        }
 
-        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $data['item'][] = $arr;
+        // ── 2. Clients ──
+        $data['clients'] = [];
+        $sql = "SELECT c.id, c.libelle AS name, c.is_monitored, COUNT(s.id) AS cnt
+                FROM client c
+                LEFT JOIN mysql_server s ON s.id_client=c.id AND s.is_deleted=0
+                GROUP BY c.id, c.libelle, c.is_monitored
+                HAVING cnt > 0
+                ORDER BY cnt DESC";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['clients'][] = $row;
+        }
+
+        // ── 3. Environments ──
+        $data['environments'] = [];
+        $sql = "SELECT d.libelle AS name, d.class, COUNT(s.id) AS cnt
+                FROM environment d
+                LEFT JOIN mysql_server s ON s.id_environment=d.id AND s.is_deleted=0
+                GROUP BY d.libelle, d.class
+                HAVING cnt > 0
+                ORDER BY FIELD(d.class,'danger','warning','default','info','success','primary') , cnt DESC";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['environments'][] = $row;
+        }
+
+        // ── 4. Availability (from latest Extraction2 data) ──
+        $data['available'] = 0;
+        $data['unavailable'] = 0;
+        $data['unavailable_servers'] = [];
+        $avail = Extraction2::display(array("mysql_available", "mysql_error"));
+        foreach ($avail as $id => $row) {
+            if (($row['mysql_available'] ?? '') === '1') {
+                $data['available']++;
+            } else {
+                $data['unavailable']++;
+                $data['unavailable_servers'][$id] = $row['mysql_error'] ?? 'Unknown';
+            }
+        }
+
+        // Map unavailable server IDs to display names
+        if (!empty($data['unavailable_servers'])) {
+            $ids = implode(',', array_map('intval', array_keys($data['unavailable_servers'])));
+            $sql = "SELECT id, display_name, ip, port FROM mysql_server WHERE id IN ($ids)";
+            $res = $db->sql_query($sql);
+            $nameMap = [];
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $nameMap[(int)$row['id']] = $row;
+            }
+            $enriched = [];
+            foreach ($data['unavailable_servers'] as $id => $error) {
+                $srv = $nameMap[(int)$id] ?? null;
+                if ($srv) {
+                    $enriched[] = ['id' => $id, 'name' => $srv['display_name'], 'ip' => $srv['ip'], 'port' => $srv['port'], 'error' => $error];
+                }
+            }
+            $data['unavailable_servers'] = $enriched;
+        }
+
+        // ── 5. Replication summary ──
+        $data['replication'] = ['ok' => 0, 'lag' => 0, 'error' => 0, 'stopped' => 0, 'total' => 0];
+        $slaveData = Extraction2::display(array("slave::slave_io_running", "slave::slave_sql_running",
+            "slave::seconds_behind_master", "slave::last_io_error", "slave::last_sql_error"));
+        foreach ($slaveData as $id => $row) {
+            if (!isset($row['@slave'])) continue;
+            foreach ($row['@slave'] as $cn => $s) {
+                $data['replication']['total']++;
+                $io = $s['slave_io_running'] ?? 'No';
+                $sql_r = $s['slave_sql_running'] ?? 'No';
+                $lag = $s['seconds_behind_master'] ?? null;
+                $err = !empty($s['last_io_error'] ?? '') || !empty($s['last_sql_error'] ?? '');
+                if ($io !== 'Yes' && $sql_r !== 'Yes') { $data['replication']['stopped']++; }
+                elseif ($io !== 'Yes' || $sql_r !== 'Yes' || $err) { $data['replication']['error']++; }
+                elseif ($lag !== null && $lag !== 'NULL' && (int)$lag > 0) { $data['replication']['lag']++; }
+                else { $data['replication']['ok']++; }
+            }
+        }
+
+        // ── 6. Daemon status ──
+        $data['daemons'] = ['total' => 0, 'running' => 0, 'stopped' => 0, 'error' => 0, 'list' => []];
+        $sql = "SELECT id, name, pid, class, method, refresh_time FROM daemon_main ORDER BY id";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['daemons']['total']++;
+            $status = 'stopped';
+            if (!empty($row['pid'])) {
+                $alive = @shell_exec("ps -p ".(int)$row['pid']." -o pid=");
+                $status = (trim($alive ?? '') !== '') ? 'running' : 'error';
+            }
+            $data['daemons'][$status]++;
+            $row['status'] = $status;
+            $data['daemons']['list'][] = $row;
+        }
+
+        // ── 7. Version distribution (from Extraction2) ──
+        $data['versions'] = [];
+        $versionData = Extraction2::display(array("version", "version_comment"));
+        foreach ($versionData as $id => $row) {
+            $v = $row['version'] ?? '';
+            $comment = $row['version_comment'] ?? '';
+            if ($v === '') continue;
+            $fork = 'MySQL';
+            if (stripos($v, 'mariadb') !== false || stripos($comment, 'mariadb') !== false) $fork = 'MariaDB';
+            elseif (stripos($comment, 'percona') !== false) $fork = 'Percona';
+            elseif (stripos($comment, 'proxysql') !== false) $fork = 'ProxySQL';
+            elseif (stripos($comment, 'maxscale') !== false) $fork = 'MaxScale';
+            elseif (stripos($comment, 'router') !== false) $fork = 'MySQL Router';
+            $major = explode('.', explode('-', $v)[0]);
+            $shortVersion = ($major[0] ?? '?').'.'.($major[1] ?? '?');
+            $key = $fork.' '.$shortVersion;
+            $data['versions'][$key] = ($data['versions'][$key] ?? 0) + 1;
+        }
+        arsort($data['versions']);
+
+        // ── 8. Data volume (from information_schema, fast) ──
+        $data['ts_rows'] = 0;
+        $sql = "SELECT SUM(TABLE_ROWS) AS total FROM information_schema.tables WHERE TABLE_SCHEMA='pmacontrol' AND TABLE_NAME LIKE 'ts_value%'";
+        $res = $db->sql_query($sql);
+        if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['ts_rows'] = (int)($row['total'] ?? 0);
         }
 
         $this->set('data', $data);
-
-
-        //$this->javascript = array("");
     }
 
-/**
- * Retrieve home state through `list_server`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @param array<int,mixed> $param Route parameters forwarded by the router.
- * @phpstan-param array<int,mixed> $param
- * @psalm-param array<int,mixed> $param
- * @return void Returned value for list_server.
- * @phpstan-return void
- * @psalm-return void
- * @see self::list_server()
- * @example /fr/home/list_server
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
     function list_server($param) {
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
-
         $this->set('data', $data);
     }
-
 }
-
