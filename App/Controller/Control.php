@@ -480,6 +480,7 @@ class Control extends Controller
                 $this->refreshVariable($param);
 
                 //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
+                Debug::debug("Pause de 10 secondes .......... pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions");
                 Sleep(10);
                 
                 $this->dropPartition(array($partitions['min']));
@@ -495,6 +496,7 @@ class Control extends Controller
             //System::deleteFiles("server");
             $this->logger->warning("Max partition to keep reeched : ".$this->partition_to_keep);
                 
+            Debug::debug("Pause de 10 secondes .......... pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions");
             //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
             Sleep(10);
 
@@ -1129,6 +1131,8 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
         while ($ob = $db->sql_fetch_object($res)) {
             $file = EngineV4::getFileMd5($ob->file_name, $ob->id_mysql_server);
+
+            //Debug::debug($file, "FILE");
             
             if (file_exists($file)) {
 

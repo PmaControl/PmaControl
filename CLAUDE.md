@@ -60,6 +60,39 @@ Legacy `Chart.bundle.js` (v2) still exists but should not be used for new code.
 
 `App\Library\Extraction::extract($vars, $servers, $dateRange, $range, $graph)` queries time-series data. With `$graph = true` and `Extraction::setOption('groupbyday', true)`, each result row contains a `graph` field (comma-separated `{x:new Date(...),y:...}` JS literals) and `day`, `min`, `max`, `avg`, `std` fields.
 
+## GeoIP
+
+Country/city lookups are served from `data_geoip` and `data_geoip_city`, which mirror the full GeoLite2 IPv4 network ranges in MySQL. Lookups are range queries on `varbinary(16)` bounds (`INET6_ATON`), so no `.mmdb` access at request time.
+
+- **Tables**: `data_geoip` (~650k rows) and `data_geoip_city` (~3.7M rows). Both use `network_start`/`network_end` varbinary(16) + `country_iso`, `country_name`; the city table also has `region_*`, `city`, `postal`, `latitude`, `longitude`, `time_zone`.
+- **Populate**:
+  ```bash
+  php App/Webroot/index.php server loadGeoip       # country, ~seconds
+  php App/Webroot/index.php server loadGeoipCity   # city, much longer
+  ```
+  Both actions `TRUNCATE` then iterate the IPv4 space via `MaxMind\Db\Reader::getWithPrefixLen()` and batch-insert CIDR blocks.
+- **Range lookup** (one IP):
+  ```sql
+  SELECT country_iso FROM data_geoip
+  WHERE network_start <= INET6_ATON('89.30.104.134')
+    AND network_end   >= INET6_ATON('89.30.104.134')
+  LIMIT 1;
+  ```
+  `Server::main()` runs this per unique server IP and populates `$data['geoip'][ip] = country_iso`. The view calls `isoToFlag($iso)` to render the emoji flag.
+- **Schemas**: `sql/incremental_v2/data_geoip.sql`, `sql/incremental_v2/data_geoip_city.sql`. Full notes in `doc/data_geoip.md`.
+- Private IPs (10.x, 172.16-31.x, 192.168.x, 127.x) have no GeoLite2 record → empty country, expected.
+- Re-run `loadGeoip` after a new `.mmdb` drop (MaxMind updates weekly); no need to re-run when adding servers.
+
+## CLI usage
+
+The framework supports CLI invocation:
+
+```bash
+php App/Webroot/index.php <controller> <action> [params...]
+```
+
+MySQL is accessible without password from localhost (`mysql pmacontrol -e "..."`).
+
 ## Commits
 
 Short, imperative descriptions: `add schema history`, `fix ProxySQL IPv6`. Group related changes per commit. Never commit credentials or `configuration/` files.

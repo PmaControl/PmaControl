@@ -469,8 +469,26 @@ class Server extends Controller
 
         $data['processing'] = $this->getDaemonRunning(['mysql']);
 
-
-        //debug($data);
+        // GeoIP: lookup country for each server IP via range join
+        $data['geoip'] = [];
+        if (!empty($data['servers'])) {
+            $ips = [];
+            foreach ($data['servers'] as $s) {
+                if (filter_var($s['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    $ips[$s['ip']] = true;
+                }
+            }
+            foreach (array_keys($ips) as $ip) {
+                $sqlGeo = "SELECT country_iso FROM data_geoip
+                           WHERE network_start <= INET6_ATON('".$db->sql_real_escape_string($ip)."')
+                           AND network_end >= INET6_ATON('".$db->sql_real_escape_string($ip)."')
+                           LIMIT 1";
+                $resGeo = $db->sql_query($sqlGeo);
+                if ($resGeo && ($row = $db->sql_fetch_array($resGeo, MYSQLI_ASSOC))) {
+                    $data['geoip'][$ip] = $row['country_iso'];
+                }
+            }
+        }
 
         $this->set('data', $data);
     }
@@ -493,6 +511,182 @@ class Server extends Controller
  * @since 5.0
  * @version 1.0
  */
+    /**
+     * Load the entire GeoLite2-Country.mmdb file into the data_geoip table.
+     * Iterates the IPv4 space using getWithPrefixLen to extract all network ranges.
+     * CLI: php App/Webroot/index.php server loadGeoip
+     */
+    public function loadGeoip()
+    {
+        $this->layout_name = false;
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $geoDbPath = ROOT.'/data/GeoLite2-Country.mmdb';
+        if (!file_exists($geoDbPath)) {
+            echo "GeoLite2-Country.mmdb not found in data/\n";
+            return;
+        }
+
+        $reader = new \MaxMind\Db\Reader($geoDbPath);
+
+        $db->sql_query("TRUNCATE TABLE data_geoip");
+        echo "Loading GeoLite2 IPv4 ranges...\n";
+
+        $ip = 0;
+        $endIp = 4294967295;
+        $count = 0;
+        $batch = [];
+        $batchSize = 1000;
+        $startTime = microtime(true);
+
+        while ($ip <= $endIp) {
+            $ipStr = long2ip($ip);
+            try {
+                [$record, $prefixLen] = $reader->getWithPrefixLen($ipStr);
+            } catch (\Exception $e) {
+                $ip++;
+                continue;
+            }
+
+            if ($prefixLen <= 0 || $prefixLen > 32) {
+                $ip++;
+                continue;
+            }
+
+            $networkSize = 1 << (32 - $prefixLen);
+            $networkEnd = $ip + $networkSize - 1;
+            if ($networkEnd > $endIp) $networkEnd = $endIp;
+
+            if ($record !== null && !empty($record['country']['iso_code'])) {
+                $iso = $record['country']['iso_code'];
+                $name = $record['country']['names']['en'] ?? '';
+                $startHex = bin2hex(inet_pton($ipStr));
+                $endHex = bin2hex(inet_pton(long2ip($networkEnd)));
+                $batch[] = "(UNHEX('$startHex'),UNHEX('$endHex'),'"
+                    .$db->sql_real_escape_string($iso)."','"
+                    .$db->sql_real_escape_string($name)."')";
+
+                if (count($batch) >= $batchSize) {
+                    $db->sql_query("INSERT INTO data_geoip (network_start,network_end,country_iso,country_name) VALUES ".implode(',', $batch));
+                    $count += count($batch);
+                    $batch = [];
+                }
+            }
+
+            $ip = $networkEnd + 1;
+            if ($ip <= 0) break;
+        }
+
+        if (!empty($batch)) {
+            $db->sql_query("INSERT INTO data_geoip (network_start,network_end,country_iso,country_name) VALUES ".implode(',', $batch));
+            $count += count($batch);
+        }
+
+        $reader->close();
+        $elapsed = round(microtime(true) - $startTime, 1);
+        echo "Loaded $count network ranges in {$elapsed}s\n";
+    }
+
+    /**
+     * Load GeoLite2-City.mmdb into data_geoip_city table.
+     * CLI: php App/Webroot/index.php server loadGeoipCity
+     */
+    public function loadGeoipCity()
+    {
+        $this->layout_name = false;
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $geoDbPath = ROOT.'/data/GeoLite2-City.mmdb';
+        if (!file_exists($geoDbPath)) {
+            echo "GeoLite2-City.mmdb not found in data/\n";
+            return;
+        }
+
+        $reader = new \MaxMind\Db\Reader($geoDbPath);
+
+        $db->sql_query("TRUNCATE TABLE data_geoip_city");
+        echo "Loading GeoLite2-City IPv4 ranges...\n";
+
+        $ip = 0;
+        $endIp = 4294967295;
+        $count = 0;
+        $batch = [];
+        $batchSize = 500;
+        $startTime = microtime(true);
+
+        while ($ip <= $endIp) {
+            $ipStr = long2ip($ip);
+            try {
+                [$record, $prefixLen] = $reader->getWithPrefixLen($ipStr);
+            } catch (\Exception $e) {
+                $ip++;
+                continue;
+            }
+
+            if ($prefixLen <= 0 || $prefixLen > 32) {
+                $ip++;
+                continue;
+            }
+
+            $networkSize = 1 << (32 - $prefixLen);
+            $networkEnd = $ip + $networkSize - 1;
+            if ($networkEnd > $endIp) $networkEnd = $endIp;
+
+            if ($record !== null && !empty($record['country']['iso_code'])) {
+                $iso = $record['country']['iso_code'];
+                $name = $record['country']['names']['en'] ?? '';
+                $regionIso = '';
+                $regionName = '';
+                if (!empty($record['subdivisions'][0])) {
+                    $regionIso = $record['subdivisions'][0]['iso_code'] ?? '';
+                    $regionName = $record['subdivisions'][0]['names']['en'] ?? '';
+                }
+                $city = $record['city']['names']['en'] ?? '';
+                $postal = $record['postal']['code'] ?? '';
+                $lat = $record['location']['latitude'] ?? null;
+                $lng = $record['location']['longitude'] ?? null;
+                $tz = $record['location']['time_zone'] ?? '';
+
+                $startHex = bin2hex(inet_pton($ipStr));
+                $endHex = bin2hex(inet_pton(long2ip($networkEnd)));
+                $latSql = $lat === null ? 'NULL' : (float)$lat;
+                $lngSql = $lng === null ? 'NULL' : (float)$lng;
+
+                $batch[] = "(UNHEX('$startHex'),UNHEX('$endHex'),"
+                    ."'".$db->sql_real_escape_string($iso)."',"
+                    ."'".$db->sql_real_escape_string($name)."',"
+                    ."'".$db->sql_real_escape_string($regionIso)."',"
+                    ."'".$db->sql_real_escape_string($regionName)."',"
+                    ."'".$db->sql_real_escape_string($city)."',"
+                    ."'".$db->sql_real_escape_string($postal)."',"
+                    .$latSql.",".$lngSql.","
+                    ."'".$db->sql_real_escape_string($tz)."')";
+
+                if (count($batch) >= $batchSize) {
+                    $db->sql_query("INSERT INTO data_geoip_city (network_start,network_end,country_iso,country_name,region_iso,region_name,city,postal,latitude,longitude,time_zone) VALUES ".implode(',', $batch));
+                    $count += count($batch);
+                    $batch = [];
+                    if ($count % 50000 === 0) {
+                        $elapsed = round(microtime(true) - $startTime, 1);
+                        echo "  $count rows inserted ({$elapsed}s)\n";
+                    }
+                }
+            }
+
+            $ip = $networkEnd + 1;
+            if ($ip <= 0) break;
+        }
+
+        if (!empty($batch)) {
+            $db->sql_query("INSERT INTO data_geoip_city (network_start,network_end,country_iso,country_name,region_iso,region_name,city,postal,latitude,longitude,time_zone) VALUES ".implode(',', $batch));
+            $count += count($batch);
+        }
+
+        $reader->close();
+        $elapsed = round(microtime(true) - $startTime, 1);
+        echo "Loaded $count city ranges in {$elapsed}s\n";
+    }
+
     public function database()
     {
         $db = Sgbd::sql(DB_DEFAULT);

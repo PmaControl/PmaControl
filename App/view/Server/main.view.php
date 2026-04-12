@@ -1,6 +1,5 @@
 <?php
 
-use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 use App\Library\Display;
@@ -10,27 +9,15 @@ use App\Library\Debug;
 function human_time_diff_dec($date_start, $precision = 1) {
     $seconds = time() - strtotime($date_start);
     $seconds--;
-
-    if ($seconds < 60) {
-        return round($seconds, $precision) . 's';
-    }
-
+    if ($seconds < 60) return round($seconds, $precision).'s';
     $minutes = $seconds / 60;
-    if ($minutes < 60) {
-        return round($minutes, $precision) . 'm';
-    }
-
+    if ($minutes < 60) return round($minutes, $precision).'m';
     $hours = $minutes / 60;
-    if ($hours < 24) {
-        return round($hours, $precision) . 'h';
-    }
-
-    $days = $hours / 24;
-    return round($days, $precision) . 'j';
+    if ($hours < 24) return round($hours, $precision).'h';
+    return round($hours / 24, $precision).'d';
 }
 
 function isoToFlag(string $iso): string {
-    // Chaque lettre est convertie en Regional Indicator Symbol
     $flag = '';
     $iso = strtoupper($iso);
     if (strlen($iso) === 2) {
@@ -40,549 +27,474 @@ function isoToFlag(string $iso): string {
     return $flag;
 }
 
-
-function format_time_ps_with_label($ps, $precision = 2)
-{
-    if (!is_numeric($ps)) {
-        return '<span class="badge bg-secondary">-</span>';
-    }
-
-    // Unités
-    $units = [
-        "ps" => 1,
-        "ns" => 1_000,
-        "µs" => 1_000_000,
-        "ms" => 1_000_000_000,
-        "s"  => 1_000_000_000_000,
-    ];
-
-    // Conversion
+function format_time_ps_with_label($ps, $precision = 2) {
+    if (!is_numeric($ps)) return '<span class="sm-badge muted">-</span>';
+    $units = ["ps" => 1, "ns" => 1_000, "µs" => 1_000_000, "ms" => 1_000_000_000, "s" => 1_000_000_000_000];
     foreach ($units as $unit => $factor) {
-        if ($ps < $factor * 1000) {
-            $value = $ps / $factor;
-            $formatted = round($value, $precision) . " " . $unit;
-            break;
-        }
+        if ($ps < $factor * 1000) { $formatted = round($ps / $factor, $precision).' '.$unit; break; }
     }
-
-    // Si pas encore défini, on est en secondes
-    if (!isset($formatted)) {
-        $value = $ps / 1_000_000_000_000;
-        $formatted = round($value, $precision) . " s";
-    }
-
-    // Détermination du type de label
-    // - success : ≤ 1 µs
-    // - warning : < 10 ms
-    // - danger  : ≥ 10 ms
-
-    $label = "danger"; 
-
-    if ($ps < 2_000_000_000) { 
-        $label = "warning";     // < 10 ms
-    } 
-    if ($ps <= 1_000_000_000) { 
-        $label = "success";     // ≤ 1 µs
-
-    } 
-    if ($ps <= 450_000_000) { 
-        $label = "primary";     // ≤ 1 µs
-    } 
-    if ($ps <= 250_000_000) { 
-        $label = "default";     // ≤ 1 µs
-    } 
-    return '<span class="label label-' . $label . '">' . $formatted . '</span>';
+    if (!isset($formatted)) $formatted = round($ps / 1_000_000_000_000, $precision).' s';
+    if ($ps <= 250_000_000) $cls = 'ok';
+    elseif ($ps <= 1_000_000_000) $cls = 'good';
+    elseif ($ps < 2_000_000_000) $cls = 'warn';
+    else $cls = 'crit';
+    return '<span class="sm-badge '.$cls.'">'.$formatted.'</span>';
 }
 
-function shorten_host_for_display($host, $max = 32)
-{
-    $host = (string) $host;
-
-    if ($host === '') {
-        return '';
-    }
-
-    if (mb_strlen($host, 'UTF-8') <= $max) {
-        return $host;
-    }
-
+function shorten_host_for_display($host, $max = 32) {
+    $host = (string)$host;
+    if ($host === '' || mb_strlen($host, 'UTF-8') <= $max) return $host;
     return mb_substr($host, 0, $max, 'UTF-8').'…';
 }
 
+function serverStatus($server, $extra, $isEffectiveMonitored) {
+    if (!$isEffectiveMonitored) return 'unmonitored';
 
-if (empty($_GET['ajax'])){
-    echo '<div class="well">';
+    // Detect error state first
+    $hasError = empty($extra['mysql_available'])
+             || $extra['mysql_available'] === "0"
+             || !empty($extra['mysql_error']);
+
+    // Acknowledged + error = acknowledged (green, error still shown on 2nd line)
+    // Acknowledged + ok = acknowledged
+    if ($server['is_acknowledged'] !== "0") return 'acknowledged';
+
+    if ($hasError) return 'error';
+    if ($extra['mysql_available'] === "2") return 'warning';
+    if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary") return 'warning';
+    return 'ok';
+}
+
+// Count servers by status
+$statusCounts = ['ok' => 0, 'warning' => 0, 'error' => 0, 'acknowledged' => 0, 'unmonitored' => 0];
+if (!empty($data['servers'])) {
+    foreach ($data['servers'] as $_s) {
+        $_eff = !empty($_s['effective_is_monitored']) && (string)$_s['effective_is_monitored'] === "1";
+        $_ex = $data['extra'][$_s['id']] ?? [];
+        $statusCounts[serverStatus($_s, $_ex, $_eff)]++;
+    }
+}
+
+if (empty($_GET['ajax'])):
+?>
+<style>
+/* ================================================================
+   SERVER MAIN — Modern monitoring dashboard
+   ================================================================ */
+:root { --sm-grad: linear-gradient(135deg, #0f172a, #1e3a8a); --sm-border: #e2e8f0;
+        --sm-ok: #10b981; --sm-warn: #f59e0b; --sm-crit: #ef4444; --sm-info: #3b82f6;
+        --sm-muted: #94a3b8; --sm-surface: #fff; --sm-r: 6px; --sm-text: #1e293b; }
+
+/* ---------- toolbar ---------- */
+.sm-toolbar { background: var(--sm-surface); border: 1px solid var(--sm-border); border-radius: var(--sm-r);
+              padding: 8px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+              box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.sm-toolbar .btn { font-size: 11px; padding: 4px 10px; }
+.sm-toolbar select { font-size: 11px; padding: 3px 6px; border: 1px solid #cbd5e1; border-radius: 4px;
+                     background: #fff; color: var(--sm-text); }
+.sm-sep { width: 1px; height: 22px; background: var(--sm-border); flex-shrink: 0; }
+.sm-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--sm-muted); font-weight: 600; }
+.sm-spacer { flex: 1; }
+
+/* ---------- card ---------- */
+.sm-card { background: var(--sm-surface); border: 1px solid var(--sm-border); border-radius: var(--sm-r);
+           overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+.sm-head { background: var(--sm-grad); color: #fff; padding: 10px 16px;
+           display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.sm-head-title { font-size: 14px; font-weight: 600; }
+.sm-head-title i { margin-right: 8px; opacity: .7; }
+.sm-head .sm-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+                    font-weight: 600; margin-left: 4px; }
+.sm-pill.ok   { background: rgba(16,185,129,.25); color: #a7f3d0; }
+.sm-pill.warn { background: rgba(245,158,11,.25); color: #fde68a; }
+.sm-pill.crit { background: rgba(239,68,68,.3); color: #fecaca; }
+.sm-pill.ack  { background: rgba(16,185,129,.15); color: #6ee7b7; }
+.sm-pill.off  { background: rgba(59,130,246,.2); color: #93c5fd; }
+
+/* search in header */
+.sm-search { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+             color: #fff; padding: 4px 12px 4px 28px; border-radius: 14px; font-size: 12px;
+             width: 200px; outline: none; transition: all .15s; }
+.sm-search:focus { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.5); width: 250px; }
+.sm-search::placeholder { color: rgba(255,255,255,.45); }
+.sm-search-wrap { position: relative; }
+.sm-search-wrap .fa-search { position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+                              color: rgba(255,255,255,.35); font-size: 11px; pointer-events: none; }
+
+/* ---------- table ---------- */
+.sm-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 220px); }
+.sm-wrap::-webkit-scrollbar { width: 6px; }
+.sm-wrap::-webkit-scrollbar-track { background: #f1f5f9; }
+.sm-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.sm-wrap::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.sm-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sm-t thead { position: sticky; top: 0; z-index: 2; }
+.sm-t th { background: #f8fafc; color: #64748b; font-size: 10px; text-transform: uppercase;
+           letter-spacing: .4px; padding: 8px 10px; border-bottom: 2px solid var(--sm-border);
+           white-space: nowrap; user-select: none; }
+.sm-t td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+           transition: background .12s; }
+.sm-t tbody tr { transition: transform .1s; }
+.sm-t tbody tr:hover td { background: #f0f4ff; }
+.sm-t tbody tr:last-child td { border-bottom: none; }
+
+/* status stripe left */
+.sm-t td.sm-status { width: 4px; padding: 0; position: relative; }
+.sm-t td.sm-status::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 4px; }
+.sm-row-ok td.sm-status::after { background: var(--sm-ok); }
+.sm-row-warn td.sm-status::after { background: var(--sm-warn); }
+.sm-row-err td.sm-status::after { background: var(--sm-crit); }
+.sm-row-ack td.sm-status::after { background: var(--sm-ok); }
+.sm-row-off td.sm-status::after { background: var(--sm-info); }
+
+/* subtle row tints */
+.sm-row-err td { background: #fef2f2; }
+.sm-row-err:hover td { background: #fee2e2 !important; }
+.sm-row-warn td { background: #fffbeb; }
+.sm-row-warn:hover td { background: #fef3c7 !important; }
+.sm-row-ack td { background: #f0fdf4; }
+.sm-row-ack:hover td { background: #dcfce7 !important; }
+.sm-row-off td { background: #eff6ff; }
+.sm-row-off:hover td { background: #dbeafe !important; }
+
+/* hidden rows for search filter */
+.sm-hidden { display: none !important; }
+
+/* ---------- cells ---------- */
+.sm-srv { min-width: 180px; }
+.sm-srv-name { font-weight: 600; color: var(--sm-text); font-size: 13px; }
+.sm-srv-name a { color: inherit; text-decoration: none; transition: color .12s; }
+.sm-srv-name a:hover { color: #1e3a8a; }
+.sm-srv-meta { margin-top: 2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sm-env { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+.sm-org { font-size: 11px; color: var(--sm-muted); }
+.sm-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; }
+
+.sm-host { font-family: 'SFMono-Regular',Consolas,monospace; font-size: 11px; white-space: nowrap; color: #475569; }
+.sm-host a { color: inherit; text-decoration: none; }
+.sm-ro { font-size: 8px; padding: 1px 4px; border-radius: 2px; background: var(--sm-ok); color: #fff; font-weight: 700; vertical-align: middle; }
+
+.sm-ver { white-space: nowrap; font-size: 11px; color: #475569; }
+.sm-ver img { vertical-align: middle; }
+
+.sm-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+.sm-badge.ok   { background: #d1fae5; color: #065f46; }
+.sm-badge.good { background: #dbeafe; color: #1e40af; }
+.sm-badge.warn { background: #fef3c7; color: #92400e; }
+.sm-badge.crit { background: #fee2e2; color: #991b1b; }
+.sm-badge.muted { background: #f1f5f9; color: #94a3b8; }
+.sm-badge.info { background: #dbeafe; color: #1e40af; }
+
+.sm-err-row td { padding: 0 10px 6px 38px; border-bottom: 1px solid #f1f5f9; font-size: 11px;
+                  background: #fef2f2; box-shadow: inset 4px 0 0 var(--sm-crit); }
+.sm-err-row td .sm-err-text { color: #991b1b; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.sm-err-row td .sm-err-text i { color: var(--sm-crit); font-size: 10px; }
+.sm-err-row td .label { font-size: 9px; }
+.sm-row-ack + .sm-err-row td { background: #f0fdf4; box-shadow: inset 4px 0 0 var(--sm-ok); }
+.sm-row-ack + .sm-err-row .sm-err-text { color: #065f46; }
+.sm-row-ack + .sm-err-row .sm-err-text i { color: var(--sm-ok); }
+.sm-row-warn + .sm-err-row td { background: #fffbeb; box-shadow: inset 4px 0 0 var(--sm-warn); }
+.sm-row-warn + .sm-err-row .sm-err-text { color: #92400e; }
+.sm-row-warn + .sm-err-row .sm-err-text i { color: var(--sm-warn); }
+.sm-row-off + .sm-err-row td { background: #eff6ff; box-shadow: inset 4px 0 0 var(--sm-info); }
+.sm-row-off + .sm-err-row .sm-err-text { color: #1e40af; }
+.sm-row-off + .sm-err-row .sm-err-text i { color: var(--sm-info); }
+.sm-t tbody tr:has(+ .sm-err-row) td { border-bottom: none; }
+
+/* general log switch compact */
+.sm-org-cell { font-size: 11px; color: #475569; white-space: nowrap; }
+
+/* ping cell */
+.sm-ping { white-space: nowrap; }
+
+/* actions */
+.sm-act .btn { font-size: 10px; padding: 2px 6px; margin-right: 2px; }
+
+/* no data */
+.sm-empty { text-align: center; padding: 40px; color: var(--sm-muted); }
+
+/* status dot (reuse from Display) */
+.sv-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.sv-dot.ok   { background: var(--sm-ok); box-shadow: 0 0 6px rgba(16,185,129,.4); }
+.sv-dot.fail { background: var(--sm-crit); box-shadow: 0 0 6px rgba(239,68,68,.4); }
+.sv-dot.info { background: var(--sm-info); box-shadow: 0 0 6px rgba(59,130,246,.4); }
+.sv-dot.warn { background: var(--sm-warn); box-shadow: 0 0 6px rgba(245,158,11,.4); }
+.sv-dot.halo { position: relative; }
+.sv-dot.halo::after { content: ""; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
+                       border-radius: 50%; border: 3px solid var(--sm-crit);
+                       transform: translate(-50%,-50%); animation: sm-halo 2s ease-out infinite; }
+@keyframes sm-halo { 0% { width:100%;height:100%;opacity:1; } 100% { width:280%;height:280%;opacity:0; } }
+</style>
+
+<?php
+    echo '<div class="well" style="margin-bottom:10px;padding:6px 12px">';
     FactoryController::addNode("Common", "displayClientEnvironment", array());
     echo '</div>';
-
-    echo '<div width="100%">';
 
     $showMode = $data['show_mode'] ?? 'monitored';
     $typeFilter = $data['type_filter'] ?? 'all';
     $typeFilters = $data['type_filters'] ?? ['all' => __('All types')];
     $encodedTypeFilter = rawurlencode((string)$typeFilter);
-    if ($showMode === 'all') {
-        $toggleLabel = __('Show monitored servers only');
-        $toggleUrl = LINK.'server/main/?show=monitored&type='.$encodedTypeFilter;
-        $toggleClass = 'btn btn-default';
-    } else {
-        $toggleLabel = __('Show all servers');
-        $toggleUrl = LINK.'server/main/?show=all&type='.$encodedTypeFilter;
-        $toggleClass = 'btn btn-info';
-    }
-
-    echo '<a href="'.$toggleUrl.'" class="'.$toggleClass.'" style="margin-right:10px">'
-        .'<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> '
-        .$toggleLabel
-        .'</a>';
-
+    $showToggleUrl = LINK.'server/main/?show='.($showMode === 'all' ? 'monitored' : 'all').'&type='.$encodedTypeFilter;
     $typeBaseUrl = LINK.'server/main/?show='.rawurlencode((string)$showMode).'&type=';
+?>
 
-    echo '<label for="server-type-filter" style="margin-right:6px">'.__('Type').'</label>';
-    echo '<select id="server-type-filter" class="form-control input-sm" style="display:inline-block; width:190px; margin-right:10px;">';
-    foreach ($typeFilters as $typeKey => $typeLabel) {
-        $typeKey = (string)$typeKey;
-        $selected = (strtolower($typeKey) === strtolower((string)$typeFilter)) ? ' selected' : '';
-        echo '<option value="'.htmlspecialchars($typeKey, ENT_QUOTES, 'UTF-8').'"'.$selected.'>'
-            .htmlspecialchars((string)$typeLabel, ENT_QUOTES, 'UTF-8')
-            .'</option>';
-    }
-    echo '</select>';
-    echo '<script>document.getElementById("server-type-filter").addEventListener("change", function(){window.location.href = "'
-        .htmlspecialchars($typeBaseUrl, ENT_QUOTES, 'UTF-8')
-        .'" + encodeURIComponent(this.value);});</script>';
+<div class="sm-toolbar">
+    <a href="<?= $showToggleUrl ?>" class="btn <?= $showMode === 'all' ? 'btn-default' : 'btn-info' ?>">
+        <i class="fa fa-eye"></i> <?= $showMode === 'all' ? __('Monitored only') : __('All servers') ?>
+    </a>
+    <div class="sm-sep"></div>
+    <span class="sm-lbl"><?= __('Type') ?></span>
+    <select id="sm-type-filter">
+        <?php foreach ($typeFilters as $typeKey => $typeLabel): ?>
+        <option value="<?= htmlspecialchars((string)$typeKey, ENT_QUOTES) ?>"<?= (strtolower((string)$typeKey) === strtolower((string)$typeFilter)) ? ' selected' : '' ?>><?= htmlspecialchars((string)$typeLabel, ENT_QUOTES) ?></option>
+        <?php endforeach; ?>
+    </select>
+    <script>document.getElementById("sm-type-filter").addEventListener("change",function(){window.location.href="<?= htmlspecialchars($typeBaseUrl, ENT_QUOTES) ?>"+encodeURIComponent(this.value);});</script>
+    <div class="sm-sep"></div>
+    <span class="sm-lbl"><?= __('Refresh') ?></span>
+    <div class="btn-group">
+        <a onclick="setRefreshInterval(1000)" class="btn btn-primary btn-xs">1s</a>
+        <a onclick="setRefreshInterval(2000)" class="btn btn-primary btn-xs">2s</a>
+        <a onclick="setRefreshInterval(5000)" class="btn btn-primary btn-xs">5s</a>
+        <a onclick="setRefreshInterval(10000)" class="btn btn-primary btn-xs">10s</a>
+        <a onclick="stopRefresh()" class="btn btn-default btn-xs"><i class="fa fa-pause"></i></a>
+    </div>
+    <div class="sm-spacer"></div>
+    <a href="<?= LINK ?>mysql/add/" class="btn btn-primary btn-xs"><i class="fa fa-plus"></i> <?= __('Add server') ?></a>
+</div>
 
+<div class="sm-card">
+    <div class="sm-head">
+        <span class="sm-head-title">
+            <i class="fa fa-server"></i> <?= __('Servers') ?>
+            <?php if ($statusCounts['ok']): ?><span class="sm-pill ok"><?= $statusCounts['ok'] ?> ok</span><?php endif; ?>
+            <?php if ($statusCounts['warning']): ?><span class="sm-pill warn"><?= $statusCounts['warning'] ?> warn</span><?php endif; ?>
+            <?php if ($statusCounts['error']): ?><span class="sm-pill crit"><?= $statusCounts['error'] ?> err</span><?php endif; ?>
+            <?php if ($statusCounts['acknowledged']): ?><span class="sm-pill ack"><?= $statusCounts['acknowledged'] ?> ack</span><?php endif; ?>
+            <?php if ($statusCounts['unmonitored']): ?><span class="sm-pill off"><?= $statusCounts['unmonitored'] ?> off</span><?php endif; ?>
+        </span>
+        <div class="sm-search-wrap">
+            <i class="fa fa-search"></i>
+            <input type="text" class="sm-search" id="sm-filter" placeholder="<?= __('Filter servers...') ?>" autocomplete="off">
+        </div>
+    </div>
+    <div class="sm-wrap">
+    <div id="servermain">
+<?php endif; /* end if !ajax */ ?>
 
-    echo __("Refresh each :")."&nbsp;";
-    echo '<div class="btn-group">';
-    echo '<a onclick="setRefreshInterval(1000)" type="button" class="btn btn-primary">1 sec</a>';
-    echo '<a onclick="setRefreshInterval(2000)" type="button" class="btn btn-primary">2 sec</a>';
-    echo '<a onclick="setRefreshInterval(5000)" type="button" class="btn btn-primary">5 sec</a>';
-    echo '<a onclick="setRefreshInterval(10000)" type="button" class="btn btn-primary">10 sec</a>';
-    echo '<a onclick="stopRefresh()" type="button" class="btn btn-primary">Stop</a>';
-    
-        echo '<div class="col-md-2" style="text-align: right">';
-echo '<a href="'.LINK.'mysql/add/" class="btn btn-primary" style="font-size:12px"><span class="glyphicon glyphicon-plus" style="font-size:12px"></span> Add a MySQL server</a>';
-echo '</div>';
-    
-    echo '</div><br /><br />';
-    
-    echo '<div id="servermain">';
-}
-
-$converter = new AnsiToHtmlConverter();
-
-
-echo '<table class="table table-condensed table-bordered table-striped">';
-echo '<tr>';
-echo '<th>'.__("Top").'</th>';
-echo '<th>'.__("ID").'</th>';
-//echo '<th>'.__("Available").'</th>';
-echo '<th>'.__("Organizations").'</th>';
-echo '<th>'.__("Environment").'</th>';
-echo '<th>'.__("Name").'</th>';
-echo '<th>';
-
-echo __('Tags');
-
-echo '</th>';
-echo '<th>'.__("IP").':'.__("Port").'</th>';
-echo '<th>'.__("SSL").'</th>';
-//echo '<th>'.__("Hostname").'</th>';
-echo '<th>'.__("Version").'</th>';
-echo '<th>'.__("Latency AVG").'</th>';
-echo '<th>'."G_L".'</th>';
-echo '<th>'."P_S".'</th>';
-echo '<th>'.__("Last refresh").'</th>';
-echo '<th>'.__("Ping").'</th>';
-
-echo '<th style="max-width:400px">'.__("Error").'</th>';
-//echo '<th>'.__("Acknowledge").'</th>';
-echo '</tr>';
-
-$i = 0;
-
-if (!empty($data['servers'])) {
-
-
-
+<table class="sm-t">
+<thead>
+<tr>
+    <th style="width:4px;padding:0"></th>
+    <th></th>
+    <th class="sm-srv"><?= __("Server") ?></th>
+    <th><?= __("Host") ?></th>
+    <th><?= __("Version") ?></th>
+    <th><?= __("Organization") ?></th>
+    <th><?= __("Latency") ?></th>
+    <th><?= __("Seen") ?></th>
+    <th><?= __("Ping") ?></th>
+    <th><?= __("Status") ?></th>
+</tr>
+</thead>
+<tbody>
+<?php
+if (empty($data['servers'])) {
+    echo '<tr><td colspan="10" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
+} else {
     foreach ($data['servers'] as $server) {
-        $i++;
-
         $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
-
-        $style = "";
-
-        $IS_AVAILABLE = true;
-        $IS_ACKNOWLEDGE = false;
-
-        if ($i % 2 === 1){
-            $intensity = "0.7";
-        }
-        else{
-            $intensity = "0.6";
-        }
-
-        $extra = array();
-        if (!empty($data['extra'][$server['id']])) {
-            $extra = $data['extra'][$server['id']];
-        }
-        else{
-            $style = 'background-color:rgb(150, 150, 150, '.$intensity.'); color:#ffffff';
-        }
-
+        $extra = $data['extra'][$server['id']] ?? [];
         $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
         $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
         $isProxyLikeServer = $isProxyServer || (!empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1");
-        $greyLatencyFields = $isVipServer || $isProxyLikeServer;
-        $greyCellStyle = 'background-color:rgb(220, 220, 220); color:#777777;';
+        $status = serverStatus($server, $extra, $isEffectiveMonitored);
 
-        // cas des warning
-        if (!empty($extra['mysql_available']) )
-        {
-            if ($extra['mysql_available'] === "2" && $isEffectiveMonitored) {
-                $style = 'background-color:rgb(240, 202, 78,'.$intensity.'); color:#000000'; //f0ad4e   FCF8E3
-            //$style = 'gg';
-            }
-        }
+        $rowClass = '';
+        if ($status === 'error') $rowClass = 'sm-row-err';
+        elseif ($status === 'warning') $rowClass = 'sm-row-warn';
+        elseif ($status === 'acknowledged') $rowClass = 'sm-row-ack';
+        elseif ($status === 'unmonitored') $rowClass = 'sm-row-off';
 
-        //node non primary
-        if (!empty($extra['wsrep_on']) && !empty($extra['wsrep_cluster_status']) && $extra['wsrep_on'] === "ON" && $extra['wsrep_cluster_status'] !== "Primary") {
-            $style = 'background-color:rgb(240, 202, 78, '.$intensity.'); color:#000000'; //f0ad4e   FCF8E3
-            $error_extra = "Galera node is ".$extra['wsrep_cluster_status'];
-        }
+        // Build searchable text
+        $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.$server['ip'].' '.($extra['version'] ?? ''));
+?>
+<tr class="<?= $rowClass ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
+    <td class="sm-status"></td>
 
+    <!-- Dot -->
+    <td style="width:20px;text-align:center">
+        <?php
+        if ($status === 'ok') echo '<span class="sv-dot ok"></span>';
+        elseif ($status === 'warning') echo '<span class="sv-dot warn"></span>';
+        elseif ($status === 'error') echo '<span class="sv-dot fail halo"></span>';
+        elseif ($status === 'acknowledged') echo '<span class="sv-dot ok"></span>';
+        elseif ($status === 'unmonitored') echo '<span class="sv-dot info"></span>';
+        ?>
+    </td>
 
-        //$style = 'background-color:#EEE; color:#000';
-        // cas des erreur
-        if (empty($extra['mysql_available']) && $isEffectiveMonitored) {
-            $IS_AVAILABLE = false;
-            $style = 'background-color:rgb(217, 83, 79,'.$intensity.'); color:#000';
-        }
+    <!-- Server -->
+    <td class="sm-srv">
+        <div class="sm-srv-name">
+            <a href="<?= LINK ?>MysqlServer/main/<?= $server['id'] ?>/pmacontrol"><?= htmlspecialchars($server['display_name']) ?></a>
+            <?php if (!empty($extra['read_only']) && $extra['read_only'] === "ON"): ?>
+                <span class="sm-ro">R/O</span>
+            <?php endif; ?>
+        </div>
+        <div class="sm-srv-meta">
+            <span class="sm-env label label-<?= $server['class'] ?>"><?= $server['environment'] ?></span>
+            <?php if (!empty($data['tag'][$server['id']])): ?>
+                <?php foreach ($data['tag'][$server['id']] as $tag): ?>
+                    <span class="sm-tag" style="color:<?= $tag['color'] ?>;background:<?= $tag['background'] ?>"><?= htmlspecialchars($tag['name']) ?></span>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </td>
 
-        // acknoledge GREEN
-        if ($server['is_acknowledged'] !== "0") {
-            $style = 'background-color:rgb(92, 184, 92, '.$intensity.'); color:#666666';
-            $IS_ACKNOWLEDGE = true;
-        }
-
-        // serveur non monitoré   BLUE
-        if (!$isEffectiveMonitored) {
-            $style = 'background-color:rgb(91, 192, 222, '.$intensity.');  color:#666666';
-        }
-
-        $alternate = 'alternate';
-
-        if (!empty($style)) {
-            $alternate = '';
-            $style     .= "; border-bottom:#fff 1px solid; border-top:#fff 1px solid;";
-        }
-
-        echo '<tr class="'.$alternate.'">';
-        echo '<td style="'.$style.'">'.$i.'</td>';
-        echo '<td style="'.$style.'">'.$server['id'].'</td>';
-        //echo '<td style="'.$style.'">';
-        //echo '<span class="glyphicon '.(empty($server['is_monitored']) ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span>';
-        //echo '</td>';
-
-        echo '<td style="'.$style.'">'.$server['client'].'</td>';
-        echo '<td style="'.$style.'">';
-        echo '<big><span class="label label-'.$server['class'].'">'.$server['environment'].'</span></big>';
-        echo '</td>';
-        
-        // http://10.68.68.111/pmacontrol/en/MysqlServer/main/1/pmacontrol/
-        //echo '<td style="'.$style.'"><a href="'.LINK.'server/id/mysql_server:id:'.$server['id'].'/ts_variable:name:com_select/ts_variable:date:1-hour/ts_variable:derivate:1">';
-        echo '<td style="'.$style.'"><a href="'.LINK.'MysqlServer/main/'.$server['id'].'/pmacontrol">';
-
-        echo '<span class="glyphicon '.(!$isEffectiveMonitored ? "glyphicon-question-sign" : (isset($extra['mysql_available']) && $extra['mysql_available'] == 1 ? "glyphicon-ok-sign" : "glyphicon-remove-sign")).'" aria-hidden="true"></span> ';
-        
-        echo $server['display_name'];
-        echo '</a>';
-        
-        /* A GARDER POUR DEBUG
-        if (empty($server['is_proxy']) && empty($server['is_vip']))
-        {
-            echo ' ('.$extra['hostname'].')';
-        }*/
-        
-        echo '</td>';
-        echo '<td style="'.$style.'">';
-
-        if (!empty($data['tag'][$server['id']])) {
-            foreach ($data['tag'][$server['id']] as $tag) {
-                echo '<span title="'.$tag['name'].'" class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].'">'.$tag['name'].'</span> ';
-            }
-        }
-        echo '</td>';
-
-        echo '<td style="'.$style.'">';
-
+    <!-- Host -->
+    <td class="sm-host">
+        <?php
         $flag = '';
-        if (filter_var($server['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            // C'est une IPv4 valide
-            try {
-                $reader = new \GeoIp2\Database\Reader(ROOT.'/data/GeoLite2-Country.mmdb');
-                $record = $reader->country($server['ip']);
-                $flag = isoToFlag($record->country->isoCode); 
-            } catch (\GeoIp2\Exception\AddressNotFoundException $e) {
-                // IP non trouvée, on continue avec un flag vide ou neutre
-                $flag = "🌐"; // drapeau par défaut ou vide ""
-            }
-        } else {
-            // Ce n'est pas une IPv4
-            $is_ipv4 = false;
+        if (!empty($data['geoip'][$server['ip']])) {
+            $flag = isoToFlag($data['geoip'][$server['ip']]);
         }
-
-
-
-        
-        
         $localEndpoint = trim((string)$server['ip']).':'.trim((string)$server['port']);
         $tunnelInfo = Display::getTunnelInfoForEndpoint((string)$server['ip'], (int)$server['port']);
         $remoteEndpoint = $tunnelInfo['remote'] ?? $localEndpoint;
-        $displayHost = shorten_host_for_display($server['ip'], 32);
         $endpointTitle = $tunnelInfo['info'] ?? $localEndpoint;
 
-
-
         if ($remoteEndpoint !== '' && $remoteEndpoint !== $localEndpoint) {
-            echo ' <span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES, 'UTF-8').'" class="text-muted">🔀'
-                .htmlspecialchars($remoteEndpoint, ENT_QUOTES, 'UTF-8')
-                .'</span>';
-        }
-        else{
-            echo $flag."&nbsp;";
-            echo '<span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES, 'UTF-8').'">'
-            .htmlspecialchars($displayHost, ENT_QUOTES, 'UTF-8').':'.$server['port']
-            .'</span>';
-        }
-
-        if (!empty($server['is_ssl']) && strtolower($server['is_ssl']) === "1")
-        {
-            echo "🔒";
-        }
-
-        if (!empty($extra['read_only']) && $extra['read_only'] === "ON") {
-            echo ' <span title="'.__('READ ONLY').'" class="label" style="color:#ffffff; background:green">R</span> ';
-        }
-
-        echo '</td>';
-
-        
-        echo '<td style="'.$style.'">';
-        if (!empty($extra['have_ssl']) && strtolower($extra['have_ssl']) === "yes")
-        {
-            echo __("Yes")." 🔒";
-        }
-        echo '</td>';
-        echo '<td style="'.$style.'">';
-
-        $is_proxysql = (empty($extra['is_proxysql'])) ? 0 : $extra['is_proxysql'];
-
-        if ($isVipServer) {
-            echo '<img title="VIP" alt="VIP" height="16" width="16" src="'.IMG.'/icon/vip.svg"/> VIP';
-        } elseif (!empty($extra['version'])) {
-            echo Format::mysqlVersion($extra['version'], $extra['version_comment'], $is_proxysql);
-        }
-
-        if (!$isVipServer && !empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON") {
-            echo '&nbsp;<img title="Galera Cluster" alt="Galera Cluster" height="12" width="12" src="'.IMG.'/icon/logo.svg"/>';
-        }
-
-        echo '</td>';
-        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
-        if ($greyLatencyFields) {
-            echo '<span class="label label-default">n/a</span>';
-        } elseif (!empty($extra['avg_latency'])) {
-
-            echo format_time_ps_with_label($extra['avg_latency'],2);
-
-
-            echo format_time_ps_with_label($extra['delta_sum_timer_wait'],2);
-            echo format_time_ps_with_label($extra['delta_sum_lock_time'],2);
-            
-            //echo round($extra['avg_latency'], 3)." ps";
-        }
-        echo '</td>';
-
-
-        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
-
-        if (!empty($extra['general_log'])) {
-
-
-            $checked = array();
-
-            if ($extra['general_log'] === "ON") {
-                $checked = array("checked" => "checked");
-            }
-
-            if ($greyLatencyFields) {
-                $checked['disabled'] = "true";
-            }
-            ?>
-            <div class="form-group" style="margin: 0">
-                <div class="checkbox checbox-switch switch-success" style="margin: 0">
-                    <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control general_log", "type" => "checkbox", "title" => "Monitored"),
-                            $checked);
-
-                        echo Form::input("check", "all", $computed);
-                        ?>
-                        <span></span>
-                    </label>
-                </div>
-            </div>
-
-            <?php
-        }
-
-        echo '</td>';
-
-        echo '<td style="'.($greyLatencyFields ? $greyCellStyle : $style).'">';
-        //echo $extra['performance_schema'];
-
-        if (!empty($extra['performance_schema'])) {
-
-            $checked = array();
-
-            if ($extra['performance_schema'] === "ON") {
-                $checked = array("checked" => "checked");
-            }
-            ?>
-            <div class="form-group" style="margin: 0">
-                <div class="checkbox checbox-switch switch-success" style="margin: 0">
-                    <label>
-                        <?php
-                        $computed = array_merge(array("data-id" => $server['id'], "class" => "form-control performance_schema", "disabled" => "true", "type" => "checkbox",
-                            "title" => "Monitored"), $checked);
-                        echo Form::input("check", "all", $computed);
-                        ?>
-                        <span></span>
-                    </label>
-                </div>
-            </div>
-
-            <?php
-        }
-
-        echo '</td>';
-        echo '<td style="'.$style.'">';
-
-
-
-
-        if (!empty($data['last_date'][$server['id']]['date'])) {
-            //echo $data['last_date'][$server['id']]['date'];
-
-            echo human_time_diff_dec($data['last_date'][$server['id']]['date'],2);
-        }
-        
-        echo '</td>';
-
-        echo '<td style="'.$style.'">';
-
-        if (!empty($extra['mysql_ping'])) {
-            echo Format::ping($extra['mysql_ping']);
-        }
-
-        echo '</td>';
-        echo '<td style="max-width:300px;'.$style.'" class="">';
-
-        if (isset($extra['mysql_available']) && $extra['mysql_available']==="0") {
-            echo $extra['mysql_error'] .' <span class="label label-primary">Last online : '.$extra['date'].'</span>';
-        }
-
-        //debug($data['last_date'][$server['id']]);
-        $data['last_date'][$server['id']]['date'] = $data['last_date'][$server['id']]['date'] ?? "";
-
-        $date1   = strtotime($data['last_date'][$server['id']]['date']);
-
-        //debug($date1);
-
-        $date2   = time();
-        $subTime = intval($date2 - $date1);
-
-
-        $d = $subTime / (60 * 60 * 24);
-        $h = intval(((int)$subTime / (60 * 60))) % 24;
-        $m = (int)($subTime / 60) % 60;
-
-        //debug($data['processing']);
-
-        if (!empty($data['processing'][$server['id']])) {
-            echo ' <span class="label label-warning" title="">'.__("Processing").' : '.$data['processing'][$server['id']]['time'].' '.__("seconds")
-            .' - pid : '.$data['processing'][$server['id']]['pid'].'</span>';
-        }
-
-
-        if ($d >= 1) {
-            echo ' <span class="label label-danger" title="'.$data['last_date'][$server['id']]['date'].'">'.round($d, 0).' '.__("Days").'</span>';
-        } else if ($subTime < 60) {
-            //echo ' <span class="label label-success" title="'.$data['last_date'][$server['id']]['date'].'">'.__("OK").'</span>';
-        } else if ($subTime >= 60 && $subTime < 3600) {
-            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'"><i class="glyphicon glyphicon-warning-sign"></i> '.$m.' '.__("Minutes").'</span>';
+            echo '<span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES).'" class="text-muted">&#x1F500; '.htmlspecialchars($remoteEndpoint).'</span>';
         } else {
-            echo ' <span class="label label-warning" title="'.$data['last_date'][$server['id']]['date'].'">'.$h.' '.__("hours").'</span>';
+            if ($flag) echo $flag.' ';
+            echo '<span data-info="'.htmlspecialchars($endpointTitle, ENT_QUOTES).'">'.htmlspecialchars(shorten_host_for_display($server['ip'], 22)).':'.$server['port'].'</span>';
         }
+        if (!empty($server['is_ssl']) && $server['is_ssl'] === "1") echo ' &#x1F512;';
+        ?>
+    </td>
 
-        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2") {
-            if (!empty($extra['mysql_error'])) {
-                echo htmlspecialchars((string)$extra['mysql_error'], ENT_QUOTES, 'UTF-8');
-            } else {
-                echo '<span class="label label-warning">'.__('Read only').'</span>';
-            }
-
-            if (!empty($data['processing'][$server['id']])) {
-                echo '&nbsp;<span class="label label-warning" style="cursor:pointer;">'.__('Kill').'</span>';
-            }
+    <!-- Version -->
+    <td class="sm-ver">
+        <?php
+        $is_proxysql = (empty($extra['is_proxysql'])) ? 0 : $extra['is_proxysql'];
+        if ($isVipServer) {
+            echo '<img title="VIP" alt="VIP" height="13" width="13" src="'.IMG.'/icon/vip.svg"/> <small>VIP</small>';
+        } elseif (!empty($extra['version'])) {
+            echo Format::mysqlVersion($extra['version'], $extra['version_comment'] ?? '', $is_proxysql);
         }
-
-        if ($IS_AVAILABLE === true)
-        {
-            if (! empty($error_extra))
-            {
-                echo "<br />";
-                echo $error_extra;
-                
-                if ($extra['wsrep_cluster_status'] !== "Primary") {
-                    echo ' <a href="'.LINK.'GaleraCluster/setNodeAsPrimary/'.$server['id'].'" type="submit" class="btn btn-danger btn-xs"><span class=" glyphicon glyphicon-play" aria-hidden="true"></span> SET PRIMARY</button>';
-                }
-            }
+        if (!$isVipServer && !empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON") {
+            echo ' <img title="Galera" height="11" width="11" src="'.IMG.'/icon/logo.svg"/>';
         }
-        unset($error_extra);
+        ?>
+    </td>
 
-        if (Debug::$debug){
-            echo " pmacontrol Aspirateur tryMysqlConnection {$server['name']} {$server['id']} --debug";
+    <!-- Organization -->
+    <td class="sm-org-cell"><?= htmlspecialchars($server['client']) ?></td>
+
+    <!-- Latency -->
+    <td>
+        <?php if ($isVipServer || $isProxyLikeServer): ?>
+            <span class="sm-badge muted">n/a</span>
+        <?php elseif (!empty($extra['avg_latency'])): ?>
+            <?= format_time_ps_with_label($extra['avg_latency'], 1) ?>
+        <?php endif; ?>
+    </td>
+
+    <!-- Last seen -->
+    <td>
+        <?php if (!empty($data['last_date'][$server['id']]['date'])):
+            $seen = human_time_diff_dec($data['last_date'][$server['id']]['date'], 1);
+            $subTime = time() - strtotime($data['last_date'][$server['id']]['date']);
+            $seenCls = '';
+            if ($subTime >= 86400) $seenCls = 'crit';
+            elseif ($subTime >= 3600) $seenCls = 'warn';
+            elseif ($subTime >= 60) $seenCls = 'warn';
+        ?>
+            <?php if ($seenCls): ?>
+                <span class="sm-badge <?= $seenCls ?>"><?= $seen ?></span>
+            <?php else: ?>
+                <?= $seen ?>
+            <?php endif; ?>
+        <?php endif; ?>
+    </td>
+
+    <!-- Ping -->
+    <td class="sm-ping">
+        <?php if (!empty($extra['mysql_ping'])) echo Format::ping($extra['mysql_ping']); ?>
+    </td>
+
+    <!-- Actions -->
+    <td class="sm-act">
+        <?php
+        if (!empty($data['processing'][$server['id']])) {
+            echo '<span class="label label-warning" style="font-size:9px">'.__("Processing").' '.$data['processing'][$server['id']]['time'].'s</span> ';
         }
-        
+        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && empty($extra['mysql_error'])) {
+            echo '<span class="sm-badge warn">R/O</span> ';
+        }
+        if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary") {
+            echo '<a href="'.LINK.'GaleraCluster/setNodeAsPrimary/'.$server['id'].'" class="btn btn-danger btn-xs" style="font-size:9px"><i class="fa fa-play"></i> PRIMARY</a> ';
+        }
         if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0") {
-            echo ' <a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
+            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" class="btn btn-primary btn-xs" style="font-size:9px"><i class="fa fa-star"></i> ACK</a> ';
         }
-
-        if ($IS_ACKNOWLEDGE === true) {
-            echo ' <a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
+        if ($server['is_acknowledged'] !== "0") {
+            echo '<a href="'.LINK.'server/retract/'.$server['id'].'" class="btn btn-default btn-xs" style="font-size:9px"><i class="fa fa-star-o"></i> Retract</a> ';
         }
-
-        echo '</td>';
-
-        /*
-        echo '<td style="'.$style.'">';
-        if (empty($extra['mysql_available']) && $server['is_monitored'] === "1" && $server['client_monitored'] === "1" && $server['is_acknowledged'] === "0") {
-            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> acknowledge</button>';
+        ?>
+    </td>
+</tr>
+<?php
+        // Error detail row — only if there's an error message to show
+        $errMsg = '';
+        if (isset($extra['mysql_available']) && $extra['mysql_available'] === "0") {
+            $errMsg .= htmlspecialchars((string)($extra['mysql_error'] ?? ''), ENT_QUOTES, 'UTF-8');
+            if (!empty($extra['date'])) $errMsg .= ' <span class="sm-badge info" style="margin-left:4px"><i class="fa fa-clock-o"></i> '.Display::humanDuration(time() - strtotime($extra['date'])).' ago <small style="opacity:.7">('.$extra['date'].')</small></span>';
         }
-
-        if ($IS_ACKNOWLEDGE === true) {
-            echo '<a href="'.LINK.'server/retract/'.$server['id'].'" type="submit" class="btn btn-primary btn-xs"><span class=" glyphicon glyphicon-star" aria-hidden="true"></span> Retract</button>';
+        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && !empty($extra['mysql_error'])) {
+            $errMsg .= htmlspecialchars((string)$extra['mysql_error'], ENT_QUOTES, 'UTF-8');
         }
-        echo '</td>'; */
-        echo '</tr>';
+        if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary") {
+            $errMsg .= ($errMsg ? ' | ' : '').'Galera node is '.$extra['wsrep_cluster_status'];
+        }
+        if ($errMsg):
+?>
+<tr class="sm-err-row" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
+    <td colspan="10">
+        <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>
+    </td>
+</tr>
+<?php endif; ?>
+<?php
     }
 }
-echo '</table>';
+?>
+</tbody>
+</table>
 
+<?php if (empty($_GET['ajax'])): ?>
+    </div>
+    </div>
+</div>
 
-if (empty($_GET['ajax'])){
-    echo '</div>';
-}
+<script>
+// Inline search filter
+(function() {
+    var timer = null;
+    var input = document.getElementById("sm-filter");
+    if (!input) return;
+    input.addEventListener("keyup", function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            var q = input.value.toLowerCase().trim();
+            var rows = document.querySelectorAll(".sm-t tbody tr[data-search]");
+            rows.forEach(function(row) {
+                var text = row.getAttribute("data-search") || "";
+                row.classList.toggle("sm-hidden", q !== "" && text.indexOf(q) === -1);
+            });
+        }, 120);
+    });
+})();
+</script>
+<?php endif; ?>
