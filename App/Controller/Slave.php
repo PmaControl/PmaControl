@@ -1377,7 +1377,13 @@ var chart = new Chart(ctx, {
         $slave_user     = "replication";
 
         $db_source = Mysql::getDbLink($id_mysql_server__source);
-        $db_source->sql_query("GRANT REPLICATION SLAVE, BINLOG MONITOR ON *.* TO `".$slave_user."`@`%` IDENTIFIED BY '".$slave_password."'");
+        $isMariaDB_source = (stripos($db_source->getServerType(), 'mariadb') !== false);
+        if ($isMariaDB_source) {
+            $db_source->sql_query("GRANT REPLICATION SLAVE, BINLOG MONITOR ON *.* TO `".$slave_user."`@`%` IDENTIFIED BY '".$db_source->sql_real_escape_string($slave_password)."'");
+        } else {
+            $db_source->sql_query_silent("CREATE USER IF NOT EXISTS `".$slave_user."`@`%` IDENTIFIED BY '".$db_source->sql_real_escape_string($slave_password)."'");
+            $db_source->sql_query("GRANT REPLICATION SLAVE ON *.* TO `".$slave_user."`@`%`");
+        }
         $db_source->sql_close();
         //end create user replication
 
@@ -1443,42 +1449,49 @@ var chart = new Chart(ctx, {
         Debug::debug("All myloader finished");
 
         $db_target = Mysql::getDbLink($id_mysql_server__target);
+        $isMariaDB_target = (stripos($db_target->getServerType(), 'mariadb') !== false);
 
-        $sql = "STOP SLAVE;";
-        Debug::sql($sql);
-        $db_target->sql_query($sql);
-        $sql = "RESET SLAVE ALL;";
-        Debug::sql($sql);
-        $db_target->sql_query($sql);
+        $stop = self::buildReplicationCmd('STOP', $isMariaDB_target);
+        $start = self::buildReplicationCmd('START', $isMariaDB_target);
+
+        Debug::sql("$stop;");
+        $db_target->sql_query("$stop;");
+        $resetCmd = $isMariaDB_target ? "RESET SLAVE ALL" : "RESET REPLICA ALL";
+        Debug::sql("$resetCmd;");
+        $db_target->sql_query("$resetCmd;");
 
         $i = 0;
         foreach ($servers as $server) {
 
             $i++;
-            // $dir_backup = self::BACKUP_TEMP.$source->display_name." / ".$database.";
             $dir = self::BACKUP_TEMP.$source->display_name."/".$database;
             Debug::debug($dir_backup, "backup_dir");
 
             $master_info = $this->getMasterInfo(array($dir.'/metadata'));
 
             if ($i === 1) {
-
-                $sql = "CHANGE MASTER TO MASTER_HOST='".$source->ip."',MASTER_USER='".$slave_user."', MASTER_PASSWORD='".$slave_password."', MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+                if ($isMariaDB_target) {
+                    $sql = "CHANGE MASTER TO MASTER_HOST='".$source->ip."',MASTER_USER='".$slave_user."', MASTER_PASSWORD='".$slave_password."', MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+                } else {
+                    $sql = "CHANGE REPLICATION SOURCE TO SOURCE_HOST='".$source->ip."',SOURCE_USER='".$slave_user."', SOURCE_PASSWORD='".$slave_password."', SOURCE_LOG_FILE='".$master_info['master_log_file']."', SOURCE_LOG_POS=".$master_info['master_log_pos'].";";
+                }
             } else {
-                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+                if ($isMariaDB_target) {
+                    $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
+                } else {
+                    $sql = "START REPLICA UNTIL SOURCE_LOG_FILE='".$master_info['master_log_file']."', SOURCE_LOG_POS=".$master_info['master_log_pos'].";";
+                }
             }
 
             Debug::sql($sql);
             $db_target->sql_query($sql);
         }
 
-        $sql = "STOP SLAVE;";
-        Debug::sql($sql);
-        $db_target->sql_query($sql);
+        Debug::sql("$stop;");
+        $db_target->sql_query("$stop;");
 
-        $sql = "START SLAVE;";
-        Debug::sql($sql);
-        $db_target->sql_query($sql);
+        Debug::sql("$start;");
+        $db_target->sql_query("$start;");
 
         // set up replication
     }
@@ -1926,31 +1939,24 @@ var chart = new Chart(ctx, {
         $this->view = false;
 
         $id_mysql_server = $param[0];
-        $connection_name = $param[1];
+        $connection_name = self::sanitizeConnectionName($param[1] ?? '');
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
-
-        if (! empty($connection_name))
-        {
-            $connection_name = " '$connection_name' ";
+        try {
+            $db->sql_query(self::buildReplicationCmd('STOP', $isMariaDB, $connection_name).";");
+            // MySQL 8.0.26+ renamed sql_slave_skip_counter but still accepts the old name
+            $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
+            $db->sql_query(self::buildReplicationCmd('START', $isMariaDB, $connection_name).";");
+            set_flash("success", __("Success"), __("Skipped 1 transaction"));
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
 
-        $sql = "STOP SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-        $sql = "SET GLOBAL sql_slave_skip_counter=1;";
-        $db->sql_query($sql);
-
-        $sql = "START SLAVE $connection_name;";
-        $db->sql_query($sql);
-
-
-        if (! IS_CLI){
-            usleep(5000);
+        if (!IS_CLI) {
             header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
         }
-
     }
 
 
@@ -2141,62 +2147,73 @@ var chart = new Chart(ctx, {
 
 
 
-        $sql = "GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '".$user."'@'%' IDENTIFIED BY '".$password."';";
-        execute($sql, $master, $DRY_RUN);
+        // Detect fork for proper SQL syntax
+        $isMariaDB_slave = true;
+        if ($DRY_RUN === false && is_object($slave)) {
+            $isMariaDB_slave = (stripos($slave->getServerType(), 'mariadb') !== false);
+        }
+        $isMariaDB_master = true;
+        if ($DRY_RUN === false && is_object($master)) {
+            $isMariaDB_master = (stripos($master->getServerType(), 'mariadb') !== false);
+        }
 
+        if ($isMariaDB_master) {
+            $sql = "GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '".$user."'@'%' IDENTIFIED BY '".$password."';";
+        } else {
+            $sql = "CREATE USER IF NOT EXISTS '".$user."'@'%' IDENTIFIED BY '".$password."'; GRANT REPLICATION SLAVE ON *.* TO '".$user."'@'%';";
+        }
+        execute($sql, $master, $DRY_RUN);
 
         $databases = "";
         $i = 0;
 
-        foreach($elems as $elem)
-        {
+        foreach ($elems as $elem) {
             $i++;
 
-            if ($i === 1)
-            {
-                $databases .=  $elem['db_names'];
-                
-                $sql = "RESET SLAVE ALL;";
+            if ($i === 1) {
+                $databases .= $elem['db_names'];
+
+                $sql = $isMariaDB_slave ? "RESET SLAVE ALL;" : "RESET REPLICA ALL;";
                 execute($sql, $slave, $DRY_RUN);
 
-                $sql = "CHANGE MASTER TO MASTER_HOST='".$master_host."', MASTER_USER='".$user."', MASTER_PASSWORD='".$password."', 
-                MASTER_SSL=0, MASTER_SSL_VERIFY_SERVER_CERT=0,
-                MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
-                execute($sql, $slave, $DRY_RUN);
-                
-
-                $sql  = "SET GLOBAL replicate_do_db='".$databases."';";
-                execute($sql, $slave, $DRY_RUN);
-            }
-            else{
-                $databases .=  ",".$elem['db_names'];
-                
-                $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
-                execute($sql, $slave, $DRY_RUN);
-                
-
-                if ($DRY_RUN === false) {
-                    $this->waitForSlavePosition([$id_mysql_server__slave,$elem['binlog_file'], $elem['binlog_pos'] ]);
+                if ($isMariaDB_slave) {
+                    $sql = "CHANGE MASTER TO MASTER_HOST='".$master_host."', MASTER_USER='".$user."', MASTER_PASSWORD='".$password."',
+                    MASTER_SSL=0, MASTER_SSL_VERIFY_SERVER_CERT=0,
+                    MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
+                } else {
+                    $sql = "CHANGE REPLICATION SOURCE TO SOURCE_HOST='".$master_host."', SOURCE_USER='".$user."', SOURCE_PASSWORD='".$password."',
+                    SOURCE_SSL=0, SOURCE_SSL_VERIFY_SERVER_CERT=0,
+                    SOURCE_LOG_FILE='".$elem['binlog_file']."', SOURCE_LOG_POS=".$elem['binlog_pos'].";";
                 }
-                $sql = "STOP SLAVE;";
                 execute($sql, $slave, $DRY_RUN);
-
 
                 $sql = "SET GLOBAL replicate_do_db='".$databases."';";
                 execute($sql, $slave, $DRY_RUN);
+            } else {
+                $databases .= ",".$elem['db_names'];
 
+                if ($isMariaDB_slave) {
+                    $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
+                } else {
+                    $sql = "START REPLICA UNTIL SOURCE_LOG_FILE='".$elem['binlog_file']."', SOURCE_LOG_POS=".$elem['binlog_pos'].";";
+                }
+                execute($sql, $slave, $DRY_RUN);
+
+                if ($DRY_RUN === false) {
+                    $this->waitForSlavePosition([$id_mysql_server__slave, $elem['binlog_file'], $elem['binlog_pos']]);
+                }
+                execute(self::buildReplicationCmd('STOP', $isMariaDB_slave).";", $slave, $DRY_RUN);
+
+                $sql = "SET GLOBAL replicate_do_db='".$databases."';";
+                execute($sql, $slave, $DRY_RUN);
             }
-
-
         }
 
-        $sql = "STOP SLAVE;";
-        execute($sql, $slave, $DRY_RUN);
+        execute(self::buildReplicationCmd('STOP', $isMariaDB_slave).";", $slave, $DRY_RUN);
 
         $sql = "SET GLOBAL replicate_do_db='';";
         execute($sql, $slave, $DRY_RUN);
-        $sql = "START SLAVE;";
-        execute($sql, $slave, $DRY_RUN);
+        execute(self::buildReplicationCmd('START', $isMariaDB_slave).";", $slave, $DRY_RUN);
 
         
     }
@@ -2264,15 +2281,18 @@ var chart = new Chart(ctx, {
         
         while (true) {
             $db = Mysql::getDbLink($id_mysql_server, "SLAVE");
+            $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+
             // Vérification du timeout
             if (time() - $startTime > $timeout) {
                 return false;
             }
 
-            // Exécution de SHOW SLAVE STATUS
-            $result = $db->sql_query("SHOW SLAVE STATUS");
+            // Exécution de SHOW SLAVE/REPLICA STATUS
+            $showCmd = $isMariaDB ? "SHOW SLAVE STATUS" : "SHOW REPLICA STATUS";
+            $result = $db->sql_query($showCmd);
             if (!$result) {
-                throw new \Exception("Erreur lors de l'exécution de SHOW SLAVE STATUS : " . $db->sql_error());
+                throw new \Exception("Erreur lors de l'exécution de $showCmd : " . $db->sql_error());
             }
 
             $slaveStatus = array_change_key_case($db->sql_fetch_array($result, MYSQLI_ASSOC));
