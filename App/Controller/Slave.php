@@ -789,6 +789,7 @@ $(document).ready(function() {
         var btn = $(this);
         var server = btn.data("server");
         var oldest = btn.data("oldest");
+        var replName = btn.data("replication") || "";
 
         if (!oldest) return;
 
@@ -798,7 +799,7 @@ $(document).ready(function() {
 
         btn.prop("disabled", true).html("<i class=\"fa fa-spinner fa-spin\"></i> '.__('Loading').'...");
 
-        $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/ajax:true/", function(html) {
+        $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/" + encodeURIComponent(replName) + "/ajax:true/", function(html) {
             var $parts = $($.parseHTML(html, document, true));
             var scripts = [];
             $parts.each(function() {
@@ -1126,6 +1127,7 @@ var chart = new Chart(ctx, {
 
         $id_mysql_server = $param[0];
         $day = $param[1];
+        $replication_name = $param[2] ?? '';
 
         Extraction::setOption('groupbyday', true);
 
@@ -1140,6 +1142,13 @@ var chart = new Chart(ctx, {
             true
         );
         $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
+
+        // Filter to selected replication source
+        if ($replication_name !== '') {
+            $slaves = array_values(array_filter($slaves, function($s) use ($replication_name) {
+                return ($s['connection_name'] ?? '') === $replication_name;
+            }));
+        }
 
         $data['graphs'] = [];
         foreach ($slaves as $slave) {

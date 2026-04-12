@@ -410,6 +410,7 @@ $(document).ready(function() {
         ?>
         <button type="button" class="sv-btn-load" id="btn-load-more-days"
                 data-server="<?= $data['id_mysql_server'] ?>"
+                data-replication="<?= htmlspecialchars($data['replication_name'] ?? '') ?>"
                 data-oldest="<?= $oldestDay ?>">
             <i class="fa fa-plus"></i> <?= __('Load previous day') ?>
         </button>
