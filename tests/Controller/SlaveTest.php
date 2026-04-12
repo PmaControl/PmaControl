@@ -380,6 +380,49 @@ final class SlaveTest extends TestCase
         $this->assertSame('ab', $method->invoke(null, 'a\\b'));
     }
 
+    public function testNormalizeReplicationLagGraphRowsMixedMetricsAcrossDays(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+        $method->setAccessible(true);
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $rows = [
+            // Day 1: only master metric available
+            ['id_mysql_server' => 1, 'connection_name' => 'ch1', 'id_ts_variable' => 10, 'day' => '2026-04-10', 'graph' => '{x:1,y:5}'],
+            // Day 2: both metrics — source should win
+            ['id_mysql_server' => 1, 'connection_name' => 'ch1', 'id_ts_variable' => 10, 'day' => '2026-04-11', 'graph' => '{x:2,y:99}'],
+            ['id_mysql_server' => 1, 'connection_name' => 'ch1', 'id_ts_variable' => 11, 'day' => '2026-04-11', 'graph' => '{x:2,y:3}'],
+        ];
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertCount(2, $normalized);
+        // Day 1 keeps master (only option)
+        $day1 = array_values(array_filter($normalized, fn($r) => $r['day'] === '2026-04-10'));
+        $this->assertSame(10, $day1[0]['id_ts_variable']);
+        $this->assertSame('{x:1,y:5}', $day1[0]['graph']);
+        // Day 2 picks source over master
+        $day2 = array_values(array_filter($normalized, fn($r) => $r['day'] === '2026-04-11'));
+        $this->assertSame(11, $day2[0]['id_ts_variable']);
+        $this->assertSame('{x:2,y:3}', $day2[0]['graph']);
+    }
+
+    public function testNormalizeReplicationLagDisplayRowsWhitespaceLagIgnored(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
+        $method->setAccessible(true);
+
+        $rows = [
+            1 => ['' => ['seconds_behind_master' => '7', 'seconds_behind_source' => '  ']],
+        ];
+
+        $normalized = $method->invoke($this->slave, $rows);
+        // Whitespace source should not override real master value
+        $this->assertSame('7', $normalized[1]['']['seconds_behind_master']);
+    }
+
     // ── getReplicationLagVariables ──
 
     public function testGetReplicationLagVariablesReturnsBothMetrics(): void
