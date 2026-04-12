@@ -238,7 +238,7 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
         $isActive = ($cn === $data['replication_name']);
         $lagLabel = '';
         if ($conn['lag'] !== null && $conn['lag'] !== 'NULL' && $conn['health'] !== 'stopped') {
-            $lagLabel = ((int)$conn['lag'] === 0) ? '0s' : $conn['lag'].'s';
+            $lagLabel = ((int)$conn['lag'] === 0) ? '0s' : (int)$conn['lag'].'s';
         }
     ?>
     <a class="sv-tab<?= $isActive ? ' active' : '' ?>"

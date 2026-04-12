@@ -2,7 +2,6 @@
 if (!empty($data['graphs'])) {
     foreach ($data['graphs'] as $slave) {
         $canvasId = 'myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']);
-        $varName  = 'myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']);
         ?>
         <div class="sv-chart-wrap"><canvas id="<?= $canvasId ?>"></canvas></div>
         <script>

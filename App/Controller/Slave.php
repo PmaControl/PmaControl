@@ -58,6 +58,12 @@ class Slave extends Controller
         return $rows;
     }
 
+    private static function sanitizeConnectionName(string $name): string
+    {
+        // MySQL/MariaDB connection names: alphanumeric, underscore, hyphen, dot
+        return preg_replace('/[^a-zA-Z0-9_\-.]/', '', $name);
+    }
+
     private function normalizeReplicationLagGraphRows($rows): array
     {
         if (empty($rows)) {
@@ -418,6 +424,7 @@ new Chart(ctx, {
                     $data['replication_name'] = $replication_name;
                 }
 
+                $slave = [];
                 if (count($slaves) === 1) {
                     $slave = end($slaves);
                 } else {
@@ -429,7 +436,7 @@ new Chart(ctx, {
                     }
                 }
 
-                $data['slave'] = $slave ?? [];
+                $data['slave'] = $slave;
             }
 
             // Fetch parallel threads and CPU count
@@ -1251,27 +1258,25 @@ var chart = new Chart(ctx, {
         $this->view = false;
 
         $id_mysql_server = $param[0];
-        $connection_name = $param[1];
+        $connection_name = self::sanitizeConnectionName($param[1] ?? '');
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
-        //MySQL 
-        $sql = "START SLAVE FOR CHANNEL ''";  
-
-        //MariaDB
-        $sql = "START SLAVE '".$connection_name."'";  
-
-        if (empty($connection_name)) {
-            $sql = "START SLAVE;";
+        try {
+            if (empty($connection_name)) {
+                $db->sql_query("START SLAVE;");
+            } elseif ($isMariaDB) {
+                $db->sql_query("START SLAVE '$connection_name';");
+            } else {
+                $db->sql_query("START SLAVE FOR CHANNEL '$connection_name';");
+            }
+            set_flash("success", __("Success"), "START SLAVE $connection_name");
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
 
-        $db->sql_query($sql);
-
-        $title = "Success";
-        $msg = $sql;
-        set_flash("success", $title, $msg);
-
-        if (! IS_CLI){
+        if (!IS_CLI) {
             header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
         }
     }
@@ -1299,34 +1304,30 @@ var chart = new Chart(ctx, {
  */
     public function stopSlave($param)
     {
-
         $this->view = false;
 
         $id_mysql_server = $param[0];
-        $connection_name = $param[1];
+        $connection_name = self::sanitizeConnectionName($param[1] ?? '');
 
         $db = Mysql::getDbLink($id_mysql_server);
+        $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
 
-        //MySQL 
-        $sql = "STOP SLAVE FOR CHANNEL ''";  
-
-        //MariaDB
-        $sql = "STOP SLAVE '".$connection_name."'";  
-
-        if (empty($connection_name)) {
-            $sql = "STOP SLAVE;";
+        try {
+            if (empty($connection_name)) {
+                $db->sql_query("STOP SLAVE;");
+            } elseif ($isMariaDB) {
+                $db->sql_query("STOP SLAVE '$connection_name';");
+            } else {
+                $db->sql_query("STOP SLAVE FOR CHANNEL '$connection_name';");
+            }
+            set_flash("success", __("Success"), "STOP SLAVE $connection_name");
+        } catch (\Exception $e) {
+            set_flash("error", __("Error"), $e->getMessage());
         }
 
-        $db->sql_query($sql);
-
-        $title = "Success";
-        $msg = $sql;
-        set_flash("success", $title, $msg);
-
-        if (! IS_CLI){
+        if (!IS_CLI) {
             header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
         }
-        
     }
 
 /**
@@ -1710,7 +1711,7 @@ var chart = new Chart(ctx, {
             return;
         }
 
-        $connection_name = trim($_POST['connection_name'] ?? '');
+        $connection_name = self::sanitizeConnectionName(trim($_POST['connection_name'] ?? ''));
         $master_host     = trim($_POST['master_host'] ?? '');
         $master_port     = (int)($_POST['master_port'] ?? 3306);
         $master_user     = trim($_POST['master_user'] ?? '');
@@ -1820,7 +1821,7 @@ var chart = new Chart(ctx, {
     public function activateGtid($param)
     {
         $id_mysql_server = $param[0];
-        $connection_name = $param[1];
+        $connection_name = self::sanitizeConnectionName($param[1] ?? '');
 
         $this->view = false;
 
@@ -1829,12 +1830,12 @@ var chart = new Chart(ctx, {
 
         try {
             if ($isMariaDB) {
-                $connClause = !empty($connection_name) ? " '".$connection_name."' " : "";
+                $connClause = !empty($connection_name) ? " '$connection_name' " : "";
                 $db->sql_query("STOP SLAVE $connClause;");
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = slave_pos;");
                 $db->sql_query("START SLAVE $connClause;");
             } else {
-                $channelClause = !empty($connection_name) ? " FOR CHANNEL '".$connection_name."'" : "";
+                $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
                 $db->sql_query("STOP SLAVE $channelClause;");
                 $db->sql_query("CHANGE MASTER TO MASTER_AUTO_POSITION = 1 $channelClause;");
                 $db->sql_query("START SLAVE $channelClause;");
@@ -1872,7 +1873,7 @@ var chart = new Chart(ctx, {
     public function deactivateGtid($param)
     {
         $id_mysql_server = $param[0];
-        $connection_name = $param[1];
+        $connection_name = self::sanitizeConnectionName($param[1] ?? '');
 
         $this->view = false;
 

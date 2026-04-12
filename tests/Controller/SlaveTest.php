@@ -125,4 +125,60 @@ final class SlaveTest extends TestCase
         $this->assertCount(1, $normalized);
         $this->assertSame(11, $normalized[0]['id_ts_variable']);
     }
+
+    public function testSanitizeConnectionNameRemovesInjectionChars(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
+        $method->setAccessible(true);
+
+        $this->assertSame('production_fr', $method->invoke(null, 'production_fr'));
+        $this->assertSame('slave-01', $method->invoke(null, 'slave-01'));
+        $this->assertSame('conn.test', $method->invoke(null, 'conn.test'));
+        $this->assertSame('', $method->invoke(null, ''));
+        // SQL injection attempts must be stripped
+        $this->assertSame('DROPTABLE--', $method->invoke(null, "'; DROP TABLE--"));
+        $this->assertSame('testOR11', $method->invoke(null, "test' OR '1'='1"));
+        $this->assertSame('nascriptme', $method->invoke(null, 'na<script>me'));
+        $this->assertSame('ab', $method->invoke(null, "a\x00b"));
+    }
+
+    public function testNormalizeReplicationLagGraphRowsKeepsMultipleDays(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+        $method->setAccessible(true);
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+
+        $rows = [
+            [
+                'id_mysql_server' => 228,
+                'connection_name' => 'production_fr',
+                'id_ts_variable' => 10,
+                'day' => '2026-04-10',
+                'graph' => '{x:1,y:0}',
+            ],
+            [
+                'id_mysql_server' => 228,
+                'connection_name' => 'production_fr',
+                'id_ts_variable' => 10,
+                'day' => '2026-04-11',
+                'graph' => '{x:2,y:1}',
+            ],
+            [
+                'id_mysql_server' => 228,
+                'connection_name' => 'production_uk',
+                'id_ts_variable' => 10,
+                'day' => '2026-04-10',
+                'graph' => '{x:3,y:2}',
+            ],
+        ];
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        // Must keep 3 distinct rows: 2 days for production_fr + 1 day for production_uk
+        $this->assertCount(3, $normalized);
+        $days = array_column($normalized, 'day');
+        $this->assertContains('2026-04-10', $days);
+        $this->assertContains('2026-04-11', $days);
+    }
 }
