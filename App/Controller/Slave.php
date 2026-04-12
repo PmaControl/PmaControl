@@ -67,7 +67,10 @@ class Slave extends Controller
         $normalized = [];
 
         foreach ($rows as $row) {
-            $key = $row['id_mysql_server'].'|'.($row['connection_name'] ?? '');
+            // Include day in key when present (groupbyday mode) so that
+            // multi-day extractions keep one series per channel per day.
+            $day = $row['day'] ?? '';
+            $key = $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.$day;
             $metricName = Extraction::$variable[$row['id_ts_variable']]['name'] ?? '';
 
             if (!isset($normalized[$key])) {
@@ -510,7 +513,12 @@ var myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).' = new 
 
         $slaves = Extraction::extract($this->getReplicationLagVariables(), array($id_mysql_server), array($next_date, $date), true, true);
         $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
-        
+
+        // Filter to the selected replication source only
+        $slaves = array_values(array_filter($slaves, function($s) use ($replication_name) {
+            return ($s['connection_name'] ?? '') === $replication_name;
+        }));
+
         $this->generateGraphSlave($slaves);
 
         foreach ($slaves as $slave) {
