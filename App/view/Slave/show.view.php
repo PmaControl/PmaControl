@@ -230,8 +230,8 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
 <!-- ============================================================
      0) SOURCE TABS (multi-source replication)
      ============================================================ -->
-<?php if (!empty($data['all_connections']) && count($data['all_connections']) > 0): ?>
 <div class="sv-tabs">
+    <?php if (!empty($data['all_connections'])): ?>
     <?php foreach ($data['all_connections'] as $conn):
         $cn = $conn['name'];
         $label = $cn !== '' ? $cn : __('default');
@@ -248,12 +248,13 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
         <?php if ($lagLabel): ?><span class="sv-tab-lag"><?= $lagLabel ?></span><?php endif; ?>
     </a>
     <?php endforeach; ?>
-    <a class="sv-tab sv-tab-add" href="<?= LINK ?>slave/show/<?= $data['id_mysql_server'] ?>/__new__/"
+    <?php endif; ?>
+    <a class="sv-tab sv-tab-add<?= (($data['replication_name'] ?? '') === '__new__') ? ' active' : '' ?>"
+       href="<?= LINK ?>slave/show/<?= $data['id_mysql_server'] ?>/__new__/"
        title="<?= __('Add replication source') ?>">
         <i class="fa fa-plus"></i>
     </a>
 </div>
-<?php endif; ?>
 
 <?php if (($data['replication_name'] ?? '') === '__new__'): ?>
 <!-- ============================================================
