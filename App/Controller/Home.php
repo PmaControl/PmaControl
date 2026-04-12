@@ -57,12 +57,26 @@ class Home extends Controller {
             $data['environments'][] = $row;
         }
 
-        // ── 4. Availability (from latest Extraction2 data) ──
+        // ── 4. Availability (monitored servers only) ──
         $data['available'] = 0;
         $data['unavailable'] = 0;
         $data['unavailable_servers'] = [];
+
+        // Build set of effectively monitored server IDs (server + client both monitored)
+        $sqlMon = "SELECT s.id FROM mysql_server s
+                   INNER JOIN client c ON c.id = s.id_client
+                   WHERE s.is_deleted = 0 AND s.is_monitored = 1 AND c.is_monitored = 1";
+        $resMon = $db->sql_query($sqlMon);
+        $monitoredIds = [];
+        while ($row = $db->sql_fetch_array($resMon, MYSQLI_ASSOC)) {
+            $monitoredIds[(int)$row['id']] = true;
+        }
+
         $avail = Extraction2::display(array("mysql_available", "mysql_error"));
         foreach ($avail as $id => $row) {
+            if (!isset($monitoredIds[(int)$id])) {
+                continue;
+            }
             if (($row['mysql_available'] ?? '') === '1') {
                 $data['available']++;
             } else {
