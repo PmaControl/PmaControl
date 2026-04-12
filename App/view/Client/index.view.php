@@ -15,11 +15,11 @@ echo '<tr>';
 echo '<th>'.__('Top').'</th>';
 echo '<th>'.__('ID').'</th>';
 echo '<th>'.__('Monitored').'</th>';
-echo '<th>'.__('Libelle').'</th>';
+echo '<th>'.__('Name').'</th>';
 echo '<th>'.__('Servers').'</th>';
 echo '<th>'.__('Date').'</th>';
 echo '<th>'.__('Logo').'</th>';
-echo '<th>'.__('Delete').'</th>';
+echo '<th>'.__('Actions').'</th>';
 echo '</tr>';
 
 
@@ -56,7 +56,8 @@ if (!empty($data['client'])) {
 
 
         echo '</td>';
-        echo '<td>'.$client['libelle'].'</td>';
+        echo '<td class="line-edit" data-name="libelle" data-pk="'.(int)$client['id'].'" data-type="text" data-url="'.LINK.'client/update" data-title="'.__('Edit name').'">'
+            .htmlspecialchars($client['libelle']).'</td>';
         echo '<td>';
 
         $online = (int) ($client['online_servers'] ?? 0);
@@ -93,13 +94,20 @@ if (!empty($data['client'])) {
 
         echo '</td>';
         echo '<td>'.$client['date'].'</td>';
-        echo '<td>'.$client['logo'].'</td>';
+        echo '<td class="line-edit" data-name="logo" data-pk="'.(int)$client['id'].'" data-type="text" data-url="'.LINK.'client/update" data-title="'.__('Edit logo URL').'">'
+            .htmlspecialchars($client['logo']).'</td>';
         echo '<td>'
+            .'<div class="btn-group btn-group-xs">'
+            .'<a href="'.LINK.'server/main/client:'.urlencode(json_encode([$client['id']])).'" '
+            .'class="btn btn-default" title="'.__('View servers').'">'
+            .'<span class="glyphicon glyphicon-eye-open"></span>'
+            .'</a>'
             .'<a href="'.LINK.'client/delete/'.$client['id'].'" '
-            .'class="btn btn-danger btn-xs" '
+            .'class="btn btn-danger" '
             .'onclick="return confirm(\''.__('Confirmation de supression : Yes/No').'\');">'
             .'<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>'
             .'</a>'
+            .'</div>'
             .'</td>';
 
         echo '</tr>';

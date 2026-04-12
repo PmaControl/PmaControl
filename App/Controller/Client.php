@@ -194,10 +194,21 @@ class Client extends Controller
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "UPDATE client SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            $allowedFields = ['libelle', 'logo', 'is_monitored', 'is_display'];
+            $field = $_POST['name'] ?? '';
+            if (!in_array($field, $allowedFields, true)) {
+                header("HTTP/1.0 400 Bad Request");
+                echo "Invalid field";
+                return;
+            }
+
+            $pk = (int)($_POST['pk'] ?? 0);
+            $value = $db->sql_real_escape_string($_POST['value'] ?? '');
+
+            $sql = "UPDATE client SET `$field` = '$value' WHERE id = $pk";
             $db->sql_query($sql);
 
-            if ($db->sql_affected_rows() === 1) {
+            if ($db->sql_affected_rows() >= 0) {
                 echo "OK";
             } else {
                 header("HTTP/1.0 503 Internal Server Error");
