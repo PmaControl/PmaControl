@@ -419,7 +419,7 @@ $(document).ready(function() {
         <?php
         if (!empty($data['graph'])) {
             foreach ($data['graph'] as $slave) {
-                echo '<div class="sv-chart-wrap"><canvas id="myChart'.$slave['id_mysql_server'].crc32($slave['day']).'"></canvas></div>';
+                echo '<div class="sv-chart-wrap"><canvas id="myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'"></canvas></div>';
             }
         } else {
             echo '<div style="text-align:center;padding:24px;color:var(--clr-muted)"><i class="fa fa-line-chart"></i> '.__('No replication lag data available').'</div>';

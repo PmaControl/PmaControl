@@ -1051,7 +1051,7 @@ $(document).ready(function() {
 Chart.defaults.plugins.legend.display = false;
 
 (function() {
-var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['day']).'");
+var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'");
 if (!canvas) return;
 var existing = Chart.getChart(canvas);
 if (existing) existing.destroy();
