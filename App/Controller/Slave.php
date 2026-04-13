@@ -568,7 +568,7 @@ new Chart(ctx, {
 
         $array_date = date_parse_from_format($date_format, $date);
 
-        $more_days = -5;
+        $more_days = -1;
         $next_date = date(
             $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
         );
