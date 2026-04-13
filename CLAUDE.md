@@ -142,7 +142,22 @@ MySQL is accessible without password from localhost (`mysql pmacontrol -e "..."`
 
 ## Commits
 
-Short, imperative descriptions: `add schema history`, `fix ProxySQL IPv6`. Group related changes per commit. Never commit credentials or `configuration/` files.
+Short, imperative descriptions: `add schema history`, `fix ProxySQL IPv6`. Group related changes per commit. Never commit credentials or `configuration/` files. **Do NOT add `Co-Authored-By` trailers.**
+
+## AJAX endpoints — both flags required
+
+For JSON/API endpoints that return no HTML, set **both** flags:
+
+```php
+$this->layout_name = false;  // skip HTML layout wrapper
+$this->view = false;          // skip .view.php require
+```
+
+Using only one of the two will either wrap the JSON in HTML (layout) or crash with a missing `.view.php` file.
+
+## grep on mysqlbinlog output
+
+Always use `grep -a` (text mode) when grepping mysqlbinlog output. Without `-a`, grep detects NUL bytes in base64 data and treats the stream as binary, silently returning only the first match.
 
 ## Security
 
