@@ -877,4 +877,518 @@ $catIcons = [
     </div>
 </div>
 
+<!-- ============================================================
+     4) BINLOG ANALYSIS TAB
+     ============================================================ -->
+<div class="sv-card" id="sv-binlog-analysis-card">
+    <div class="sv-health-strip ok"></div>
+    <div class="sv-card-head">
+        <span><i class="fa fa-bar-chart"></i> <?= __("Binlog Analysis") ?></span>
+        <span style="font-size:11px;opacity:.7"><?= __("Select a time range on the lag chart above, or enter manually") ?></span>
+    </div>
+    <div class="sv-card-body">
+
+        <!-- Time range selector -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+                <label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:2px"><?= __('Start') ?></label>
+                <input type="datetime-local" id="sv-ba-start" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
+            </div>
+            <div>
+                <label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:2px"><?= __('End') ?></label>
+                <input type="datetime-local" id="sv-ba-end" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
+            </div>
+            <div style="align-self:flex-end">
+                <button type="button" class="btn btn-primary btn-sm" id="sv-ba-launch" disabled>
+                    <i class="fa fa-rocket"></i> <?= __("Analyze Binlogs") ?>
+                </button>
+            </div>
+            <div style="align-self:flex-end" id="sv-ba-status-wrap" style="display:none">
+                <span id="sv-ba-status-badge" class="label label-default" style="font-size:12px"></span>
+            </div>
+        </div>
+
+        <!-- Live progress log -->
+        <div id="sv-ba-progress" style="display:none;margin-bottom:16px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+            <div style="background:#0f172a;color:#fff;padding:6px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">
+                <i class="fa fa-terminal"></i> <?= __("Analysis Progress") ?>
+            </div>
+            <div id="sv-ba-progress-log" style="background:#1e293b;color:#e2e8f0;padding:8px 12px;font-family:monospace;font-size:11px;max-height:300px;overflow-y:auto;line-height:1.7"></div>
+        </div>
+
+        <!-- Past analyses -->
+        <div id="sv-ba-history" style="margin-bottom:16px"></div>
+
+        <!-- Results container (hidden until loaded) -->
+        <div id="sv-ba-results" style="display:none">
+
+            <!-- Chart -->
+            <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-chart"></canvas>
+            </div>
+
+            <!-- Stats summary -->
+            <div class="row" style="margin-bottom:16px">
+                <div class="col-md-6">
+                    <table class="table table-condensed table-bordered" style="font-size:12px;margin-bottom:8px">
+                        <thead><tr><th colspan="2" style="background:#0f172a;color:#fff;font-size:11px;text-transform:uppercase"><i class="fa fa-info-circle"></i> <?= __("General Info") ?></th></tr></thead>
+                        <tbody id="sv-ba-info-table"></tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-condensed table-bordered" style="font-size:12px;margin-bottom:8px">
+                        <thead><tr><th colspan="2" style="background:#0f172a;color:#fff;font-size:11px;text-transform:uppercase"><i class="fa fa-database"></i> <?= __("DML Volume") ?></th></tr></thead>
+                        <tbody id="sv-ba-dml-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Replication risk factors -->
+            <div class="sv-collapse-head" id="sv-ba-risk-head" aria-expanded="true" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-risk-body').toggle()">
+                <i class="fa fa-chevron-right"></i> <?= __("Replication Risk Factors") ?>
+            </div>
+            <div class="sv-collapse-body" id="sv-ba-risk-body" style="padding:16px">
+                <div id="sv-ba-risks"></div>
+            </div>
+
+            <!-- Top tables -->
+            <div class="sv-collapse-head" id="sv-ba-tables-head" aria-expanded="false" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-tables-body').toggle()">
+                <i class="fa fa-chevron-right"></i> <?= __("Top Tables") ?> <span class="badge" id="sv-ba-tables-count">0</span>
+            </div>
+            <div class="sv-collapse-body" id="sv-ba-tables-body" style="display:none;padding:0">
+                <table class="table table-condensed table-striped" style="font-size:11px;margin:0">
+                    <thead><tr><th><?= __("Table") ?></th><th class="text-right">INSERT</th><th class="text-right">UPDATE</th><th class="text-right">DELETE</th><th class="text-right"><?= __("Total") ?></th></tr></thead>
+                    <tbody id="sv-ba-tables-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="sv-collapse-head" id="sv-ba-recs-head" aria-expanded="true" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-recs-body').toggle()">
+                <i class="fa fa-chevron-right"></i> <?= __("Recommendations") ?> <span class="badge" id="sv-ba-recs-count">0</span>
+            </div>
+            <div class="sv-collapse-body" id="sv-ba-recs-body" style="padding:16px">
+                <ul id="sv-ba-recs-list" style="margin:0;padding-left:20px"></ul>
+            </div>
+
+        </div><!-- /sv-ba-results -->
+
+    </div>
+</div>
+
+<script>
+(function() {
+    var serverId = <?= (int) $data['id_mysql_server'] ?>;
+    var replicationName = <?= json_encode($data['replication_name'] ?? '') ?>;
+    var masterId = <?= (int) ($data['master_id'] ?? 0) ?>;
+    var LINK = <?= json_encode(LINK) ?>;
+    var baChart = null;
+    var pollTimer = null;
+
+    // ---- Enable launch button when both dates are set ----
+    function checkDates() {
+        var s = document.getElementById('sv-ba-start').value;
+        var e = document.getElementById('sv-ba-end').value;
+        document.getElementById('sv-ba-launch').disabled = !(s && e);
+    }
+    document.getElementById('sv-ba-start').addEventListener('change', checkDates);
+    document.getElementById('sv-ba-end').addEventListener('change', checkDates);
+
+    // ---- Intercept Chart.js drag selection on lag charts ----
+    // We hook into the existing lag charts after they render.
+    // Use a simple mousedown/mouseup on the chart canvas to capture time range.
+    setTimeout(function() {
+        var canvases = document.querySelectorAll('.sv-chart-wrap canvas');
+        canvases.forEach(function(canvas) {
+            var chart = Chart.getChart(canvas);
+            if (!chart) return;
+
+            var dragStart = null;
+            var selBox = document.createElement('div');
+            selBox.style.cssText = 'position:absolute;background:rgba(30,58,138,0.15);border:1px dashed #1e3a8a;pointer-events:none;display:none;top:0;bottom:0;z-index:10';
+            canvas.parentElement.style.position = 'relative';
+            canvas.parentElement.appendChild(selBox);
+
+            canvas.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                var rect = canvas.getBoundingClientRect();
+                dragStart = { x: e.clientX - rect.left, clientX: e.clientX };
+                selBox.style.display = 'block';
+                selBox.style.left = dragStart.x + 'px';
+                selBox.style.width = '0px';
+            });
+
+            canvas.addEventListener('mousemove', function(e) {
+                if (!dragStart) return;
+                var rect = canvas.getBoundingClientRect();
+                var curX = e.clientX - rect.left;
+                var left = Math.min(dragStart.x, curX);
+                var width = Math.abs(curX - dragStart.x);
+                selBox.style.left = left + 'px';
+                selBox.style.width = width + 'px';
+            });
+
+            canvas.addEventListener('mouseup', function(e) {
+                if (!dragStart) return;
+                var rect = canvas.getBoundingClientRect();
+                var endX = e.clientX - rect.left;
+
+                var xScale = chart.scales.x;
+                var startVal = xScale.getValueForPixel(Math.min(dragStart.x, endX));
+                var endVal = xScale.getValueForPixel(Math.max(dragStart.x, endX));
+
+                dragStart = null;
+                selBox.style.display = 'none';
+
+                if (Math.abs(endX - parseFloat(selBox.style.left)) < 5) return; // too small
+
+                var startDate = new Date(startVal);
+                var endDate = new Date(endVal);
+
+                // Format for datetime-local input: YYYY-MM-DDTHH:MM:SS
+                function pad(n) { return n < 10 ? '0'+n : n; }
+                function fmtDT(d) {
+                    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
+                        +'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+                }
+
+                document.getElementById('sv-ba-start').value = fmtDT(startDate);
+                document.getElementById('sv-ba-end').value = fmtDT(endDate);
+                checkDates();
+
+                // Scroll to the analysis card
+                document.getElementById('sv-binlog-analysis-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                if (dragStart) {
+                    dragStart = null;
+                    selBox.style.display = 'none';
+                }
+            });
+        });
+    }, 1000);
+
+    // ---- Launch analysis ----
+    document.getElementById('sv-ba-launch').addEventListener('click', function() {
+        var btn = this;
+        var startVal = document.getElementById('sv-ba-start').value;
+        var endVal = document.getElementById('sv-ba-end').value;
+        if (!startVal || !endVal) return;
+
+        // Convert datetime-local to MySQL format
+        var timeStart = startVal.replace('T', ' ');
+        var timeEnd = endVal.replace('T', ' ');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Launching...';
+
+        $.ajax({
+            url: LINK + 'slave/startBinlogAnalysis/' + serverId + '/',
+            method: 'POST',
+            data: {
+                connection_name: replicationName,
+                time_start: timeStart,
+                time_end: timeEnd
+            },
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.error) {
+                    alert(resp.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-rocket"></i> Analyze Binlogs';
+                    return;
+                }
+                pollAnalysis(resp.id);
+            },
+            error: function() {
+                alert('Failed to start analysis');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-rocket"></i> Analyze Binlogs';
+            }
+        });
+    });
+
+    // ---- Poll analysis status with live progress ----
+    function pollAnalysis(id) {
+        var statusWrap = document.getElementById('sv-ba-status-wrap');
+        var statusBadge = document.getElementById('sv-ba-status-badge');
+        var progressWrap = document.getElementById('sv-ba-progress');
+        var progressLog = document.getElementById('sv-ba-progress-log');
+        statusWrap.style.display = 'inline-block';
+        progressWrap.style.display = 'block';
+        progressLog.innerHTML = '<span style="color:#94a3b8"><i class="fa fa-spinner fa-spin"></i> Waiting for analysis to start...</span>';
+
+        function renderProgress(steps) {
+            if (!steps || !steps.length) return;
+            var html = '';
+            steps.forEach(function(s) {
+                var icon = '', color = '';
+                if (s.status === 'done') {
+                    icon = '<span style="color:#10b981">&#10003;</span>';
+                    color = '#a7f3d0';
+                } else if (s.status === 'error') {
+                    icon = '<span style="color:#ef4444">&#10007;</span>';
+                    color = '#fca5a5';
+                } else {
+                    icon = '<span style="color:#f59e0b"><i class="fa fa-spinner fa-spin"></i></span>';
+                    color = '#fde68a';
+                }
+                html += '<div style="color:' + color + '">'
+                    + '<span style="color:#64748b;margin-right:6px">[' + s.time + ']</span>'
+                    + icon + ' <b>' + escHtml(s.phase) + '</b> — ' + escHtml(s.message)
+                    + '</div>';
+            });
+            progressLog.innerHTML = html;
+            progressLog.scrollTop = progressLog.scrollHeight;
+        }
+
+        function poll() {
+            $.getJSON(LINK + 'slave/binlogAnalysisResult/' + id + '/', function(data) {
+                if (data.error) {
+                    statusBadge.className = 'label label-danger';
+                    statusBadge.textContent = 'Error: ' + data.error;
+                    resetLaunchBtn();
+                    return;
+                }
+
+                // Render progress steps
+                if (data.progress) {
+                    renderProgress(data.progress);
+                }
+
+                if (data.status === 'pending' || data.status === 'running') {
+                    statusBadge.className = 'label label-warning';
+                    var stepCount = (data.progress || []).length;
+                    statusBadge.textContent = data.status === 'pending' ? 'Pending...' : 'Running... (step ' + stepCount + ')';
+                    pollTimer = setTimeout(poll, 2000);
+                } else if (data.status === 'done') {
+                    statusBadge.className = 'label label-success';
+                    statusBadge.textContent = 'Done!';
+                    renderResults(data);
+                    resetLaunchBtn();
+                    loadHistory();
+                } else if (data.status === 'error') {
+                    statusBadge.className = 'label label-danger';
+                    statusBadge.textContent = 'Error';
+                    resetLaunchBtn();
+                }
+            });
+        }
+        poll();
+    }
+
+    function resetLaunchBtn() {
+        var btn = document.getElementById('sv-ba-launch');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-rocket"></i> Analyze Binlogs';
+    }
+
+    // ---- Render results ----
+    function renderResults(d) {
+        var container = document.getElementById('sv-ba-results');
+        container.style.display = 'block';
+
+        // Info table
+        var sizeMb = (d.total_size_bytes / 1048576).toFixed(1);
+        var totalRows = (parseInt(d.total_inserts)||0) + (parseInt(d.total_updates)||0) + (parseInt(d.total_deletes)||0);
+        var infoHtml = '<tr><td><b>Server</b></td><td>' + (d.mysql_version||'?') + ', server_id=' + (d.server_id||'?') + '</td></tr>'
+            + '<tr><td><b>Size</b></td><td>' + sizeMb + ' MB</td></tr>'
+            + '<tr><td><b>Period</b></td><td>' + d.time_start + ' &rarr; ' + d.time_end + ' (' + d.duration_seconds + 's)</td></tr>'
+            + '<tr><td><b>Transactions</b></td><td>' + numberFmt(d.total_transactions) + '</td></tr>'
+            + '<tr><td><b>DDL</b></td><td>' + (d.total_ddl > 0 ? d.total_ddl : 'None &mdash; 100% DML row-based') + '</td></tr>';
+        document.getElementById('sv-ba-info-table').innerHTML = infoHtml;
+
+        // DML table
+        var dmlHtml = '<tr><td>INSERT</td><td class="text-right"><b>' + numberFmt(d.total_inserts) + '</b></td></tr>'
+            + '<tr><td>UPDATE</td><td class="text-right"><b>' + numberFmt(d.total_updates) + '</b></td></tr>'
+            + '<tr><td>DELETE</td><td class="text-right"><b>' + numberFmt(d.total_deletes) + '</b></td></tr>'
+            + '<tr style="background:#f0f4ff"><td><b>Total</b></td><td class="text-right"><b>' + numberFmt(totalRows) + ' rows in ' + d.duration_seconds + 's</b></td></tr>';
+        document.getElementById('sv-ba-dml-table').innerHTML = dmlHtml;
+
+        // Risk factors
+        var risksHtml = '';
+        // 1. Throughput
+        risksHtml += '<div style="margin-bottom:12px"><b>1. Write Throughput</b><ul style="margin:4px 0 0 20px">'
+            + '<li>Peak: <b>' + numberFmt(d.peak_txn_per_sec) + ' txn/s</b></li>'
+            + '<li>Avg: <b>' + d.avg_txn_per_sec + ' txn/s</b></li>'
+            + '<li>~' + numberFmt(Math.round(totalRows / Math.max(1, d.duration_seconds))) + ' row changes/s</li></ul></div>';
+        // 2. Parallelism
+        var distrib = d.parallelism_distribution || {};
+        var distribStr = Object.keys(distrib).map(function(k) { return distrib[k] + ' groups of ' + k; }).join(', ');
+        risksHtml += '<div style="margin-bottom:12px"><b>2. MTS Parallelism</b><ul style="margin:4px 0 0 20px">'
+            + '<li><b>' + d.sequential_pct + '%</b> sequential (non-parallelizable)</li>'
+            + '<li>Max parallelism: <b>' + d.max_parallelism + ' txn/group</b></li>'
+            + '<li>Distribution: ' + distribStr + '</li></ul></div>';
+        // 3. Large txn
+        risksHtml += '<div style="margin-bottom:12px"><b>3. Large Transactions</b><ul style="margin:4px 0 0 20px">'
+            + '<li>' + d.large_txn_500k + ' txn &gt; 500 KB, ' + d.large_txn_100k + ' txn &gt; 100 KB</li>'
+            + '<li>Max: <b>' + Math.round(d.max_txn_size_bytes / 1024) + ' KB</b></li></ul></div>';
+        // 4. Databases
+        risksHtml += '<div><b>4. Multi-database</b>: <b>' + d.databases_count + '</b> databases modified</div>';
+        document.getElementById('sv-ba-risks').innerHTML = risksHtml;
+
+        // Top tables
+        var tables = d.top_tables || [];
+        document.getElementById('sv-ba-tables-count').textContent = tables.length;
+        var tbodyHtml = '';
+        tables.forEach(function(t) {
+            var total = (t.inserts||0) + (t.updates||0) + (t.deletes||0);
+            tbodyHtml += '<tr><td><code>' + escHtml(t.table) + '</code></td>'
+                + '<td class="text-right">' + numberFmt(t.inserts) + '</td>'
+                + '<td class="text-right">' + numberFmt(t.updates) + '</td>'
+                + '<td class="text-right">' + numberFmt(t.deletes) + '</td>'
+                + '<td class="text-right"><b>' + numberFmt(total) + '</b></td></tr>';
+        });
+        document.getElementById('sv-ba-tables-tbody').innerHTML = tbodyHtml;
+
+        // Recommendations
+        var recs = d.recommendations || [];
+        document.getElementById('sv-ba-recs-count').textContent = recs.length;
+        var recsHtml = '';
+        recs.forEach(function(r) {
+            recsHtml += '<li style="margin-bottom:6px">' + escHtml(r) + '</li>';
+        });
+        document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
+
+        // Chart
+        renderChart(d.volume_per_second || []);
+    }
+
+    // ---- Chart.js bar+line chart ----
+    function renderChart(volData) {
+        var canvas = document.getElementById('sv-ba-chart');
+        if (baChart) { baChart.destroy(); baChart = null; }
+
+        var labels = volData.map(function(v) { return v.ts; });
+        var bytesKB = volData.map(function(v) { return (v.bytes / 1024).toFixed(1); });
+        var txnCounts = volData.map(function(v) { return v.txn; });
+
+        baChart = new Chart(canvas.getContext('2d'), {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Volume (KB/s)',
+                        data: bytesKB,
+                        backgroundColor: 'rgba(33,150,243,0.6)',
+                        borderColor: 'rgba(33,150,243,0.8)',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: 'Transactions/s',
+                        data: txnCounts,
+                        borderColor: '#FF5722',
+                        backgroundColor: 'rgba(255,87,34,0.1)',
+                        borderWidth: 2,
+                        pointRadius: 1,
+                        fill: false,
+                        tension: 0.2,
+                        yAxisID: 'y1',
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Binlog Volume — second by second',
+                        padding: 4,
+                        font: { size: 13, weight: 'bold' }
+                    },
+                    legend: { display: true, position: 'top', labels: { font: { size: 11 } } }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            parser: 'YYYY-MM-DD HH:mm:ss',
+                            tooltipFormat: 'YYYY-MM-DD HH:mm:ss',
+                            displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' }
+                        },
+                        title: { display: true, text: 'Time' },
+                        ticks: { maxRotation: 45, font: { size: 9 } }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: 'KB/s', color: '#2196F3' },
+                        ticks: { color: '#2196F3' },
+                        beginAtZero: true
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        title: { display: true, text: 'Txn/s', color: '#FF5722' },
+                        ticks: { color: '#FF5722' },
+                        grid: { drawOnChartArea: false },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // ---- Load past analyses ----
+    function loadHistory() {
+        $.getJSON(LINK + 'slave/binlogAnalysisList/' + serverId + '/', function(list) {
+            if (!list || !list.length) {
+                document.getElementById('sv-ba-history').innerHTML = '';
+                return;
+            }
+            var html = '<div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:4px">'
+                + '<?= __("Past Analyses") ?></div>'
+                + '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+            list.forEach(function(a) {
+                var sizeMb = (a.total_size_bytes / 1048576).toFixed(1);
+                var statusCls = a.status === 'done' ? 'success' : (a.status === 'error' ? 'danger' : 'warning');
+                html += '<button class="btn btn-xs btn-default sv-ba-history-btn" data-id="' + a.id + '" data-status="' + a.status + '">'
+                    + '<span class="label label-' + statusCls + '">' + a.status + '</span> '
+                    + a.time_start.substr(11, 5) + '&rarr;' + a.time_end.substr(11, 5)
+                    + ' <small>(' + sizeMb + 'MB, ' + numberFmt(a.total_transactions) + ' txn)</small>'
+                    + '</button>';
+            });
+            html += '</div>';
+            document.getElementById('sv-ba-history').innerHTML = html;
+
+            // Bind click
+            $('.sv-ba-history-btn').on('click', function() {
+                var id = $(this).data('id');
+                var st = $(this).data('status');
+                if (st === 'done') {
+                    $.getJSON(LINK + 'slave/binlogAnalysisResult/' + id + '/', function(data) {
+                        if (!data.error) renderResults(data);
+                    });
+                } else if (st === 'pending' || st === 'running') {
+                    pollAnalysis(id);
+                }
+            });
+        });
+    }
+
+    // ---- Helpers ----
+    function numberFmt(n) {
+        return parseInt(n || 0).toLocaleString();
+    }
+    function escHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    // ---- Init: load history on page load ----
+    $(document).ready(function() {
+        loadHistory();
+    });
+
+})();
+</script>
+
 <?php endif; /* end else __new__ */ ?>

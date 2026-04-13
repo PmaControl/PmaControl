@@ -14,6 +14,7 @@ use App\Controller\Tunnel;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
 use \App\Library\DryRun;
+use \App\Library\BinlogAnalyzer;
 
 /**
  * Class responsible for slave workflows.
@@ -730,6 +731,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
+        $data['master_id'] = $master_id ?? 0;
 
         $this->di['js']->code_javascript('
 function svHumanDuration(sec) {
@@ -2531,8 +2533,174 @@ var chart = new Chart(ctx, {
             sleep(1);
         }
 
-        
+
     }
 
+    // =========================================================================
+    //  Binlog Analysis — AJAX endpoints
+    // =========================================================================
+
+    /**
+     * AJAX: Start a binlog analysis for a given slave/master and time range.
+     * POST /slave/startBinlogAnalysis/<id_mysql_server>/
+     * Params: time_start, time_end, connection_name
+     * Returns JSON: { id: <analysis_id>, status: 'pending' }
+     */
+    public function startBinlogAnalysis($param)
+    {
+        $this->layout_name = false;
+        header('Content-Type: application/json');
+
+        $id_mysql_server = (int) $param[0];
+        $connection_name = $_POST['connection_name'] ?? '';
+        $time_start      = $_POST['time_start'] ?? '';
+        $time_end        = $_POST['time_end'] ?? '';
+
+        if (empty($time_start) || empty($time_end)) {
+            echo json_encode(['error' => 'time_start and time_end are required']);
+            return;
+        }
+
+        // Find master
+        $master_id = Mysql::getMaster($id_mysql_server, $connection_name);
+        if (!$master_id) {
+            echo json_encode(['error' => 'Cannot find master server for this slave']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server_master, connection_name, status, time_start, time_end, created_at)
+                VALUES (" . $id_mysql_server . ", " . (int) $master_id . ", '" . $db->sql_real_escape_string($connection_name) . "',
+                'pending', '" . $db->sql_real_escape_string($time_start) . "', '" . $db->sql_real_escape_string($time_end) . "', NOW())";
+        $db->sql_query($sql);
+        $analysisId = $db->sql_insert_id();
+
+        // Launch background process via Glial CLI
+        $cmd = "cd " . escapeshellarg(ROOT) . " && php App/Webroot/index.php slave runBinlogAnalysisCli " . (int) $analysisId . " > /tmp/binlog_analysis_{$analysisId}.log 2>&1 &";
+        exec($cmd);
+
+        echo json_encode(['id' => $analysisId, 'status' => 'pending']);
+    }
+
+    /**
+     * AJAX: Get binlog analysis status/result.
+     * GET /slave/binlogAnalysisResult/<analysis_id>/
+     * Returns JSON with full analysis data.
+     */
+    public function binlogAnalysisResult($param)
+    {
+        $this->layout_name = false;
+        header('Content-Type: application/json');
+
+        $analysisId = (int) $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT * FROM binlog_analysis WHERE id = " . $analysisId);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if (!$row) {
+            echo json_encode(['error' => 'Analysis not found']);
+            return;
+        }
+
+        // Decode JSON fields
+        $row['volume_per_second'] = json_decode($row['volume_per_second'] ?? '[]', true);
+        $row['top_tables'] = json_decode($row['top_tables'] ?? '[]', true);
+        $row['recommendations'] = json_decode($row['recommendations'] ?? '[]', true);
+        $row['parallelism_distribution'] = json_decode($row['parallelism_distribution'] ?? '{}', true);
+        $row['binlog_files'] = json_decode($row['binlog_files'] ?? '[]', true);
+        $row['progress'] = json_decode($row['progress'] ?? '[]', true);
+
+        echo json_encode($row);
+    }
+
+    /**
+     * CLI: Run binlog analysis in background.
+     * Called via: php App/Webroot/index.php slave runBinlogAnalysisCli <analysis_id>
+     */
+    public function runBinlogAnalysisCli($param)
+    {
+        $analysisId = (int) $param[0];
+
+        $analyzer = new BinlogAnalyzer($analysisId);
+        $ok = $analyzer->run();
+
+        // Send Telegram notification
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT ba.*, ms.display_name AS slave_name, ms.ip AS slave_ip,
+                    mm.display_name AS master_name, mm.ip AS master_ip
+             FROM binlog_analysis ba
+             JOIN mysql_server ms ON ba.id_mysql_server = ms.id
+             JOIN mysql_server mm ON ba.id_mysql_server_master = mm.id
+             WHERE ba.id = $analysisId"
+        );
+        $a = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if ($a) {
+            $slaveName = $a['slave_name'] ?: $a['slave_ip'];
+            $masterName = $a['master_name'] ?: $a['master_ip'];
+
+            if ($a['status'] === 'done') {
+                $totalRows = number_format($a['total_inserts'] + $a['total_updates'] + $a['total_deletes']);
+                $sizeMb = round($a['total_size_bytes'] / 1048576, 1);
+
+                $msg = "<b>Binlog Analysis Complete</b>\n"
+                     . "<b>Slave:</b> " . htmlspecialchars($slaveName) . "\n"
+                     . "<b>Master:</b> " . htmlspecialchars($masterName) . " (" . htmlspecialchars($a['mysql_version'] ?? '?') . ")\n"
+                     . "<b>Range:</b> " . $a['time_start'] . " → " . $a['time_end'] . "\n"
+                     . "━━━━━━━━━━━━━━━━━━━\n"
+                     . "<b>Size:</b> {$sizeMb} MB | <b>Txn:</b> " . number_format($a['total_transactions']) . " | <b>Duration:</b> {$a['duration_seconds']}s\n"
+                     . "<b>DML:</b> I:" . number_format($a['total_inserts']) . " U:" . number_format($a['total_updates']) . " D:" . number_format($a['total_deletes']) . " = {$totalRows} rows\n"
+                     . "<b>Peak:</b> {$a['peak_txn_per_sec']} txn/s | <b>Avg:</b> {$a['avg_txn_per_sec']} txn/s\n"
+                     . "<b>Sequential:</b> {$a['sequential_pct']}% | <b>Max parallel:</b> {$a['max_parallelism']}\n"
+                     . "<b>Large txn:</b> {$a['large_txn_100k']} >100K, {$a['large_txn_500k']} >500K (max " . round($a['max_txn_size_bytes'] / 1024) . " KB)\n"
+                     . "<b>Databases:</b> {$a['databases_count']}\n";
+
+                $recs = json_decode($a['recommendations'] ?? '[]', true);
+                if (!empty($recs)) {
+                    $msg .= "━━━━━━━━━━━━━━━━━━━\n";
+                    foreach (array_slice($recs, 0, 3) as $r) {
+                        $msg .= "• " . htmlspecialchars($r) . "\n";
+                    }
+                }
+
+                Telegram::broadcast($msg, 'HTML');
+            } else {
+                $msg = "<b>Binlog Analysis Failed</b>\n"
+                     . "<b>Slave:</b> " . htmlspecialchars($slaveName) . "\n"
+                     . "<b>Error:</b> " . htmlspecialchars(substr($a['error_message'] ?? 'Unknown', 0, 300));
+                Telegram::broadcast($msg, 'HTML');
+            }
+        }
+    }
+
+    /**
+     * AJAX: List past binlog analyses for a slave.
+     * GET /slave/binlogAnalysisList/<id_mysql_server>/
+     */
+    public function binlogAnalysisList($param)
+    {
+        $this->layout_name = false;
+        header('Content-Type: application/json');
+
+        $id_mysql_server = (int) $param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT id, status, time_start, time_end, total_transactions, total_size_bytes, duration_seconds, peak_txn_per_sec, created_at, completed_at
+             FROM binlog_analysis
+             WHERE id_mysql_server = $id_mysql_server
+             ORDER BY created_at DESC
+             LIMIT 20"
+        );
+
+        $rows = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $rows[] = $row;
+        }
+
+        echo json_encode($rows);
+    }
 
 }
