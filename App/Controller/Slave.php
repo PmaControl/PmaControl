@@ -361,19 +361,17 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js"));
 
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
 
                 $this->di['js']->code_javascript('
 (function() {
-Chart.defaults.plugins.legend.display = false;
+Chart.defaults.global.legend.display = false;
 
 var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'");
 if (!canvas) return;
-var existing = Chart.getChart(canvas);
-if (existing) existing.destroy();
 var ctx = canvas.getContext("2d");
 
 new Chart(ctx, {
@@ -386,27 +384,25 @@ new Chart(ctx, {
             borderColor: "rgba(0,0,0,1)",
             borderWidth: 2,
             pointRadius: 0,
-            tension: 0
+            lineTension: 0
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-            tooltip: { enabled: false },
-            legend: { display: false }
-        },
+        tooltips: { enabled: false },
+        legend: { display: false },
         scales: {
-            x: {
+            xAxes: [{
                 type: "time",
                 display: false,
-                grid: { display: false }
-            },
-            y: {
+                gridLines: { display: false }
+            }],
+            yAxes: [{
                 display: false,
-                min: 0,
-                grid: { display: false }
-            }
+                ticks: { min: 0 },
+                gridLines: { display: false }
+            }]
         }
     }
 });
@@ -1134,8 +1130,7 @@ var chart = new Chart(ctx, {
              pointRadius :1,
              tension: 0
 
-        },
-]
+        }]
     },
     options: {
         responsive: true,
