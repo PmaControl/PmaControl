@@ -1514,6 +1514,36 @@ class Graphviz
                         '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td>',
                     ]);
                 }
+
+                // Group Replication status
+                if (!empty($server['gr_role'])) {
+                    $grRole = strtoupper((string)$server['gr_role']);
+                    $grState = strtoupper((string)($server['gr_state'] ?? 'UNKNOWN'));
+                    $grMode = (string)($server['gr_mode'] ?? '');
+
+                    $roleBg = ($grRole === 'PRIMARY') ? '#c8e6c9' : '#bbdefb';
+                    $roleLabel = ($grRole === 'PRIMARY') ? '<b>PRIMARY</b>' : 'SECONDARY';
+
+                    $stateBg = 'lightgrey';
+                    $stateLabel = $grState;
+                    if ($grState === 'ONLINE') {
+                        $stateLabel = 'ONLINE';
+                    } elseif ($grState === 'RECOVERING') {
+                        $stateBg = '#fff9c4';
+                        $stateLabel = '<b>RECOVERING</b>';
+                    } elseif ($grState === 'ERROR' || $grState === 'OFFLINE') {
+                        $stateBg = '#ffcdd2';
+                        $stateLabel = '<b>'.$grState.'</b>';
+                    }
+
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="'.$roleBg.'" align="left">'.__('GR Role').' : '.$roleLabel.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="'.$stateBg.'" align="left">'.__('GR State').' : '.$stateLabel.'</td>',
+                    ]);
+                }
+
                 }
             }
             

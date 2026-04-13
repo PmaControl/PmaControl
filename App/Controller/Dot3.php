@@ -1549,11 +1549,27 @@ class Dot3 extends Controller
 
         //Debug::debug(self::$build_server, "BUILD_SERVER");
 
+        // Inject GR role/state into server nodes for display in generateServer()
+        $grRoleMap = [];
+        foreach (self::$build_innodb_cluster as $cluster) {
+            foreach ($cluster['node'] as $idSrv => $nodeInfo) {
+                $grRoleMap[$idSrv] = [
+                    'gr_role'  => $nodeInfo['member_role'] ?? '',
+                    'gr_state' => $nodeInfo['member_state'] ?? '',
+                    'gr_mode'  => $cluster['mode'] ?? '',
+                ];
+            }
+        }
+
         foreach(self::$build_server as $server) {
 
             if (! empty($server['is_proxysql']) && empty($server['mysql_servers'])) {
                 $this->logMissingProxySqlMysqlServers($server, 'writeDot');
                 $server['mysql_servers'] = array();
+            }
+
+            if (isset($grRoleMap[$server['id_mysql_server']])) {
+                $server = array_merge($server, $grRoleMap[$server['id_mysql_server']]);
             }
 
             //Debug::debug($server);
