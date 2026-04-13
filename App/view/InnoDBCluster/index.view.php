@@ -82,7 +82,9 @@ use App\Library\Display;
         if (in_array($m, ['off', '0', 'false'], true)) $mode = 'multi-primary';
         $sro = strtolower($n['super_read_only'] ?? 'on');
         $ro = strtolower($n['read_only'] ?? 'on');
-        if (($sro === 'off' || $sro === '0') && ($ro === 'off' || $ro === '0')) $primaries++;
+        $nRole = strtoupper(trim($n['gr_member_role'] ?? ''));
+        if ($nRole === 'PRIMARY') { $primaries++; }
+        elseif ($nRole === '' && ($sro === 'off' || $sro === '0') && ($ro === 'off' || $ro === '0')) { $primaries++; }
     }
 
     $healthClass = ($online === $total) ? 'ok' : (($online > $total / 2) ? 'warn' : 'crit');
@@ -112,7 +114,13 @@ use App\Library\Display;
             $isOnline = ($node['mysql_available'] ?? '0') === '1';
             $sro = strtolower($node['super_read_only'] ?? 'on');
             $ro = strtolower($node['read_only'] ?? 'on');
-            $isPrimary = ($sro === 'off' || $sro === '0') && ($ro === 'off' || $ro === '0');
+            $grRole = strtoupper(trim($node['gr_member_role'] ?? ''));
+            $grState = strtoupper(trim($node['gr_member_state'] ?? ''));
+            if ($grRole !== '') {
+                $isPrimary = ($grRole === 'PRIMARY');
+            } else {
+                $isPrimary = ($sro === 'off' || $sro === '0') && ($ro === 'off' || $ro === '0');
+            }
             $role = ($mode === 'multi-primary') ? 'primary' : ($isPrimary ? 'primary' : 'secondary');
             $dotClass = $isOnline ? 'ok' : 'crit';
             $error = $node['mysql_error'] ?? '';

@@ -83,6 +83,53 @@ Country/city lookups are served from `data_geoip` and `data_geoip_city`, which m
 - Private IPs (10.x, 172.16-31.x, 192.168.x, 127.x) have no GeoLite2 record → empty country, expected.
 - Re-run `loadGeoip` after a new `.mmdb` drop (MaxMind updates weekly); no need to re-run when adding servers.
 
+## Group Replication (InnoDB Cluster)
+
+PmaControl detects and displays MySQL Group Replication clusters via the `InnoDBCluster` controller. Page accessible at `/InnoDBCluster/index/` (menu: Architecture > Group Replication).
+
+### Role detection
+
+The PRIMARY/SECONDARY role is determined in priority order:
+1. **`gr_member_role`** — collected by the Aspirateur from `performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid`. Most reliable source. Values: `PRIMARY`, `SECONDARY`.
+2. **Fallback** — `super_read_only` / `read_only`: if `gr_member_role` is empty (not yet collected, or server offline), a node with `super_read_only = OFF` is considered PRIMARY.
+
+### State detection
+
+Same pattern: `gr_member_state` from `performance_schema` (values: `ONLINE`, `RECOVERING`, `ERROR`, `OFFLINE`, `UNREACHABLE`), with fallback to `mysql_available`.
+
+### Dot3 topology
+
+Dot3 renders GR clusters as a subgraph with two sub-groups:
+- **Primary** (green `#e8f5e9`, border `#1b5e20`)
+- **Replica** (blue `#e3f2fd`, border `#1565c0`)
+
+Each server node shows two extra rows: `GR Role` and `GR State`, colored by status (green=PRIMARY, blue=SECONDARY, yellow=RECOVERING, red=ERROR).
+
+### MySQL vs MariaDB compatibility
+
+All replication actions (`activateGtid`, `deactivateGtid`, `startSlave`, `stopSlave`, `skipCounter`, `setupSource`, `setParallelThreads`) detect the fork via `$db->getServerType()`:
+- **MariaDB**: `STOP SLAVE 'conn'`, `CHANGE MASTER ... TO MASTER_USE_GTID`, `slave_parallel_threads`
+- **MySQL 8+**: `STOP REPLICA FOR CHANNEL 'conn'`, `CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION`, `replica_parallel_workers`, `SET PERSIST` for durability
+
+### GTID activation (MySQL)
+
+MySQL requires a 4-step `gtid_mode` migration (`OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON`) plus `enforce_gtid_consistency = ON` before `SOURCE_AUTO_POSITION = 1`. `activateGtid()` enables GTID on the master first (found via `Mysql::getMaster()`), then the slave. Uses `SET PERSIST` so changes survive restart without editing `my.cnf`.
+
+### Skip counter with GTID
+
+`sql_slave_skip_counter` doesn't work with `gtid_mode = ON` on MySQL. `skipCounter()` detects this and injects an empty transaction: `SET GTID_NEXT = 'uuid:N'; BEGIN; COMMIT; SET GTID_NEXT = 'AUTOMATIC'`. The GTID to skip is found via `GTID_SUBTRACT()` from `performance_schema`, with fallback to parsing `Executed_Gtid_Set`.
+
+## Time-series tables (`ts_*`) — IMPORTANT
+
+Never run queries directly against `ts_*` tables (`ts_variable`, `ts_value_general_*`, `ts_value_slave_*`, `ts_value_digest_*`, `ts_max_date`, `ts_file`, etc.) without first checking the table exists via `information_schema.tables`:
+
+```sql
+SELECT 1 FROM information_schema.tables
+WHERE table_schema = DATABASE() AND table_name = 'ts_value_general_json';
+```
+
+These tables are created dynamically and may not exist on every installation. A missing table will cause a fatal SQL error in the controller or library.
+
 ## CLI usage
 
 The framework supports CLI invocation:

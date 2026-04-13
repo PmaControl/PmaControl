@@ -684,6 +684,14 @@ class Aspirateur extends Controller
         }
         Debug::debug($data['slave'], "SLAVE");
 
+        // Group Replication: collect MEMBER_ROLE and MEMBER_STATE from performance_schema
+        $grRes = $mysql_tested->sql_query_silent(
+            "SELECT MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid"
+        );
+        if ($grRes && $grRow = $mysql_tested->sql_fetch_array($grRes, MYSQLI_ASSOC)) {
+            $data['status']['gr_member_role'] = $grRow['MEMBER_ROLE'] ?? '';
+            $data['status']['gr_member_state'] = $grRow['MEMBER_STATE'] ?? '';
+        }
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
         

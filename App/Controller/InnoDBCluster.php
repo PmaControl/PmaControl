@@ -44,6 +44,8 @@ class InnoDBCluster extends Controller
             'mysql_available',
             'mysql_error',
             'mysql_ping',
+            'gr_member_role',
+            'gr_member_state',
         ));
 
         // Enrich with display_name from mysql_server

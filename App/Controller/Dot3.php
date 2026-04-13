@@ -330,7 +330,7 @@ class Dot3 extends Controller
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "mysql_available", "mysql_error","variables::version_comment","variables::is_single_store","is_proxy", "variables::server_id","read_only",
+                "mysql_available", "mysql_error","variables::version_comment","variables::is_single_store","is_proxy", "variables::server_id","read_only","gr_member_role","gr_member_state",
                 "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
                 "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
@@ -4421,33 +4421,37 @@ class Dot3 extends Controller
                     $online++;
                 }
 
-                $server_uuid = trim((string)($row['server_uuid'] ?? ''));
-                $primary_member_uuid = trim((string)($row['group_replication_primary_member'] ?? ''));
+                // Role detection: prefer gr_member_role from performance_schema (most reliable)
+                $gr_member_role = strtoupper(trim((string)($row['gr_member_role'] ?? '')));
                 $super_read_only = strtolower((string)($row['super_read_only'] ?? 'on'));
                 $read_only = strtolower((string)($row['read_only'] ?? 'on'));
 
                 $role = 'SECONDARY';
                 if (!$is_single_primary_mode) {
                     $role = 'PRIMARY';
-                } elseif ($server_uuid !== '' && $primary_member_uuid !== '' && strcasecmp($server_uuid, $primary_member_uuid) === 0) {
+                } elseif ($gr_member_role === 'PRIMARY') {
                     $role = 'PRIMARY';
-                } elseif ($super_read_only === 'off' || $read_only === 'off' || $read_only === '0') {
-                    $role = 'PRIMARY';
+                } elseif ($gr_member_role === '') {
+                    // Fallback when gr_member_role not collected: use super_read_only
+                    if ($super_read_only === 'off' || $read_only === 'off' || $read_only === '0') {
+                        $role = 'PRIMARY';
+                    }
                 }
 
                 if ($role === 'PRIMARY' && $is_online) {
                     $primary_online++;
                 }
 
-                $state = strtoupper((string)($row['group_replication_status'] ?? ''));
-                if ($state === '') {
-                    if ($is_online) {
-                        $state = 'ONLINE';
-                    } elseif (!empty($row['mysql_error'])) {
-                        $state = 'ERROR';
-                    } else {
-                        $state = 'OFFLINE';
-                    }
+                // State detection: prefer gr_member_state from performance_schema
+                $gr_member_state = strtoupper(trim((string)($row['gr_member_state'] ?? '')));
+                if ($gr_member_state !== '') {
+                    $state = $gr_member_state;
+                } elseif ($is_online) {
+                    $state = 'ONLINE';
+                } elseif (!empty($row['mysql_error'])) {
+                    $state = 'ERROR';
+                } else {
+                    $state = 'OFFLINE';
                 }
 
                 self::$build_innodb_cluster[$cluster_id]['node'][$id_mysql_server] = array(
