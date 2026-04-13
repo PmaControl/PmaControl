@@ -462,30 +462,26 @@ class BinlogAnalyzer
     /**
      * Fetch a binlog from the master using --read-from-remote-server.
      * This works like the replica IO thread — pure MySQL protocol, no SSH.
+     *
+     * IMPORTANT: --raw mode ignores --start-datetime/--stop-datetime on
+     * mysqlbinlog <= 5.7 (it acts like a slave IO thread and blocks).
+     * We use --raw WITHOUT datetime filters — the time filtering is done
+     * later during the parse phase.
      */
     private function fetchBinlogRemote(string $binary, array $creds, array $master, string $binlogName, string $timeStart, string $timeEnd): void
     {
         $connArgs = $this->buildRemoteArgs($creds);
         $localPath = $this->tmpDir . '/' . $binlogName;
 
-        // Use --raw --result-file to save the binlog locally
+        // --raw without datetime filters: downloads the full file and exits
+        // --stop-never is NOT used (we want it to stop after one file)
         $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
-             . " --start-datetime=" . escapeshellarg($timeStart)
-             . " --stop-datetime=" . escapeshellarg($timeEnd)
              . " --raw --result-file=" . escapeshellarg($this->tmpDir . '/')
              . " " . escapeshellarg($binlogName)
              . " 2>&1";
-        $output = shell_exec($cmd);
 
-        if (!file_exists($localPath) || filesize($localPath) < 100) {
-            // Fallback: without --raw, pipe to file
-            $cmd2 = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
-                  . " --start-datetime=" . escapeshellarg($timeStart)
-                  . " --stop-datetime=" . escapeshellarg($timeEnd)
-                  . " " . escapeshellarg($binlogName)
-                  . " > " . escapeshellarg($localPath) . " 2>/dev/null";
-            shell_exec($cmd2);
-        }
+        // Set a timeout: max 120s per file to avoid infinite hangs
+        $output = shell_exec("timeout 120 " . $cmd);
 
         if (!file_exists($localPath) || filesize($localPath) < 4) {
             throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server: " . substr($output ?? '', 0, 300));
