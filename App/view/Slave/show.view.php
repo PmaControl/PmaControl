@@ -927,6 +927,11 @@ $catIcons = [
                 <canvas id="sv-ba-chart"></canvas>
             </div>
 
+            <!-- Parallelism chart -->
+            <div style="position:relative;height:180px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-parallel-chart"></canvas>
+            </div>
+
             <!-- Stats summary -->
             <div class="row" style="margin-bottom:16px">
                 <div class="col-md-6">
@@ -1225,8 +1230,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var distrib = d.parallelism_distribution || {};
         var distribStr = Object.keys(distrib).map(function(k) { return distrib[k] + ' groups of ' + k; }).join(', ');
         risksHtml += '<div style="margin-bottom:12px"><b>2. MTS Parallelism</b><ul style="margin:4px 0 0 20px">'
-            + '<li><b>' + d.sequential_pct + '%</b> sequential (non-parallelizable)</li>'
-            + '<li>Max parallelism: <b>' + d.max_parallelism + ' txn/group</b></li>'
+            + '<li>Txn/s: min=<b>' + (d.min_txn_per_sec || 0) + '</b> avg=<b>' + d.avg_txn_per_sec + '</b> max=<b>' + d.peak_txn_per_sec + '</b></li>'
+            + '<li><b>' + d.sequential_pct + '%</b> of seconds with single txn (no parallelism possible)</li>'
+            + '<li>Max parallelism: <b>' + d.max_parallelism + ' txn/s</b> in a single second</li>'
             + '<li>Distribution: ' + distribStr + '</li></ul></div>';
         // 3. Large txn
         risksHtml += '<div style="margin-bottom:12px"><b>3. Large Transactions</b><ul style="margin:4px 0 0 20px">'
@@ -1280,6 +1286,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Chart
         renderChart(d.volume_per_second || []);
+        renderParallelismChart(d.volume_per_second || [], d);
     }
 
     // ---- Chart.js bar+line chart ----
@@ -1359,6 +1366,78 @@ document.addEventListener('DOMContentLoaded', function() {
                         grid: { drawOnChartArea: false },
                         beginAtZero: true
                     }
+                }
+            }
+        });
+    }
+
+    // ---- Parallelism chart (txn/s with min/avg/max lines) ----
+    var baParallelChart = null;
+    function renderParallelismChart(volData, d) {
+        var canvas = document.getElementById('sv-ba-parallel-chart');
+        if (baParallelChart) { baParallelChart.destroy(); baParallelChart = null; }
+        if (!volData || !volData.length) return;
+
+        var labels = volData.map(function(v) { return v.ts; });
+        var txnCounts = volData.map(function(v) { return v.txn; });
+        var avg = parseFloat(d.avg_txn_per_sec) || 0;
+        var min = parseInt(d.min_txn_per_sec) || 0;
+        var peak = parseInt(d.peak_txn_per_sec) || 0;
+
+        baParallelChart = new Chart(canvas.getContext('2d'), {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Txn/s',
+                        data: txnCounts,
+                        backgroundColor: txnCounts.map(function(v) {
+                            if (v <= 1) return 'rgba(239,68,68,0.6)';   // red = sequential
+                            if (v <= avg) return 'rgba(251,191,36,0.6)'; // yellow = below avg
+                            return 'rgba(16,185,129,0.6)';               // green = above avg
+                        }),
+                        borderWidth: 0,
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: 'Avg (' + avg.toFixed(1) + ')',
+                        data: txnCounts.map(function() { return avg; }),
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        borderDash: [6, 3],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Max (' + peak + ')',
+                        data: txnCounts.map(function() { return peak; }),
+                        borderColor: '#ef4444',
+                        borderWidth: 1,
+                        borderDash: [3, 3],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Parallelism — Transactions per second (min=' + min + ' avg=' + avg.toFixed(1) + ' max=' + peak + ')', font: { size: 12, weight: 'bold' }, padding: 4 },
+                    legend: { display: true, position: 'top', labels: { font: { size: 10 } } }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
+                        ticks: { maxRotation: 45, font: { size: 8 } }
+                    },
+                    y: { beginAtZero: true, title: { display: true, text: 'Txn/s (parallelism potential)' } }
                 }
             }
         });

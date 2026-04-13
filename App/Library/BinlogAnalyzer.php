@@ -733,17 +733,42 @@ class BinlogAnalyzer
         $large100k = count(array_filter($txnSizes, function($s) { return $s >= 100000; }));
         $large500k = count(array_filter($txnSizes, function($s) { return $s >= 500000; }));
 
-        // MariaDB doesn't expose parallelism metadata in binlogs
-        // (slave_parallel_mode handles this at apply time, not in the binlog)
+        // MariaDB parallelism: group transactions by second from GTID events.
+        // Transactions in the same second were committed together and can be
+        // replayed in parallel (in optimistic mode).
+        $cmd = $this->buildBinlogCmd(false);
+        $cmdGtidTs = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*GTID.*trans' | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' ";
+        $tsOutput = shell_exec($cmdGtidTs . " 2>/dev/null") ?: '';
+
+        $txnPerSec = [];
+        foreach (explode("\n", trim($tsOutput)) as $line) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $txnPerSec[$line] = ($txnPerSec[$line] ?? 0) + 1;
+            }
+        }
+
+        $maxParallelism = empty($txnPerSec) ? 0 : max($txnPerSec);
+        // "Sequential" in MariaDB context: seconds where only 1 txn committed (no parallelism)
+        $singleTxnSecs = count(array_filter($txnPerSec, function($c) { return $c === 1; }));
+        $totalSecs = count($txnPerSec);
+        $seqPct = $totalSecs > 0 ? round($singleTxnSecs / $totalSecs * 100, 1) : 0;
+
+        $distrib = [];
+        foreach ($txnPerSec as $count) {
+            $distrib[$count] = ($distrib[$count] ?? 0) + 1;
+        }
+        ksort($distrib);
+
         return [
             'total_transactions' => $txnCount,
             'total_size'         => $totalSize,
             'max_size'           => $maxSize,
             'large_100k'         => $large100k,
             'large_500k'         => $large500k,
-            'sequential_pct'     => 0, // not available in MariaDB binlogs
-            'max_parallelism'    => 0,
-            'parallelism_distrib' => [],
+            'sequential_pct'     => $seqPct,
+            'max_parallelism'    => $maxParallelism,
+            'parallelism_distrib' => $distrib,
         ];
     }
 
@@ -855,17 +880,21 @@ class BinlogAnalyzer
         $data = [];
         $peakBytes = 0;
         $peakTxn = 0;
+        $minTxn = PHP_INT_MAX;
         foreach ($volumePerSec as $ts => $bytes) {
             $txn = $txnPerSec[$ts] ?? 0;
             $data[] = ['ts' => $ts, 'bytes' => $bytes, 'txn' => $txn];
             if ($bytes > $peakBytes) $peakBytes = $bytes;
             if ($txn > $peakTxn) $peakTxn = $txn;
+            if ($txn < $minTxn) $minTxn = $txn;
         }
+        if ($minTxn === PHP_INT_MAX) $minTxn = 0;
 
         return [
             'data'       => $data,
             'peak_bytes' => $peakBytes,
             'peak_txn'   => $peakTxn,
+            'min_txn'    => $minTxn,
         ];
     }
 
@@ -998,10 +1027,12 @@ class BinlogAnalyzer
             "large_txn_100k = " . (int) $gtid['large_100k'],
             "large_txn_500k = " . (int) $gtid['large_500k'],
             "peak_txn_per_sec = " . (int) $volume['peak_txn'],
+            "min_txn_per_sec = " . (int) ($volume['min_txn'] ?? 0),
             "avg_txn_per_sec = " . (float) $avgTxnSec,
             "sequential_pct = " . (float) $gtid['sequential_pct'],
             "max_parallelism = " . (int) $gtid['max_parallelism'],
             "parallelism_distribution = '" . $this->db->sql_real_escape_string(json_encode($gtid['parallelism_distrib'])) . "'",
+            "parallelism_per_second = '" . $this->db->sql_real_escape_string(json_encode($volume['data'])) . "'",
             "top_tables = '" . $this->db->sql_real_escape_string(json_encode($dml['top_tables'])) . "'",
             "databases_count = " . (int) $dml['db_count'],
             "volume_per_second = '" . $this->db->sql_real_escape_string(json_encode($volData)) . "'",
