@@ -944,7 +944,7 @@ $catIcons = [
             </div>
 
             <!-- Replication risk factors -->
-            <div class="sv-collapse-head" id="sv-ba-risk-head" aria-expanded="true" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-risk-body').toggle()">
+            <div class="sv-collapse-head" id="sv-ba-risk-head" aria-expanded="true" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-risk-body').style.display=e==='true'?'':'none'">
                 <i class="fa fa-chevron-right"></i> <?= __("Replication Risk Factors") ?>
             </div>
             <div class="sv-collapse-body" id="sv-ba-risk-body" style="padding:16px">
@@ -952,7 +952,7 @@ $catIcons = [
             </div>
 
             <!-- Top tables -->
-            <div class="sv-collapse-head" id="sv-ba-tables-head" aria-expanded="false" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-tables-body').toggle()">
+            <div class="sv-collapse-head" id="sv-ba-tables-head" aria-expanded="false" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-tables-body').style.display=e==='true'?'':'none'">
                 <i class="fa fa-chevron-right"></i> <?= __("Top Tables") ?> <span class="badge" id="sv-ba-tables-count">0</span>
             </div>
             <div class="sv-collapse-body" id="sv-ba-tables-body" style="display:none;padding:0">
@@ -963,7 +963,7 @@ $catIcons = [
             </div>
 
             <!-- Recommendations -->
-            <div class="sv-collapse-head" id="sv-ba-recs-head" aria-expanded="true" onclick="$(this).attr('aria-expanded',$(this).attr('aria-expanded')==='true'?'false':'true');$('#sv-ba-recs-body').toggle()">
+            <div class="sv-collapse-head" id="sv-ba-recs-head" aria-expanded="true" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-recs-body').style.display=e==='true'?'':'none'">
                 <i class="fa fa-chevron-right"></i> <?= __("Recommendations") ?> <span class="badge" id="sv-ba-recs-count">0</span>
             </div>
             <div class="sv-collapse-body" id="sv-ba-recs-body" style="padding:16px">
@@ -976,7 +976,7 @@ $catIcons = [
 </div>
 
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
     var serverId = <?= (int) $data['id_mysql_server'] ?>;
     var replicationName = <?= json_encode($data['replication_name'] ?? '') ?>;
     var masterId = <?= (int) ($data['master_id'] ?? 0) ?>;
@@ -1082,29 +1082,27 @@ $catIcons = [
         btn.disabled = true;
         btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Launching...';
 
-        $.ajax({
-            url: LINK + 'slave/startBinlogAnalysis/' + serverId + '/',
+        var formData = new URLSearchParams();
+        formData.append('connection_name', replicationName);
+        formData.append('time_start', timeStart);
+        formData.append('time_end', timeEnd);
+
+        fetch(LINK + 'slave/startBinlogAnalysis/' + serverId + '/', {
             method: 'POST',
-            data: {
-                connection_name: replicationName,
-                time_start: timeStart,
-                time_end: timeEnd
-            },
-            dataType: 'json',
-            success: function(resp) {
-                if (resp.error) {
-                    alert(resp.error);
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa fa-rocket"></i> Analyze Binlogs';
-                    return;
-                }
-                pollAnalysis(resp.id);
-            },
-            error: function() {
-                alert('Failed to start analysis');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa fa-rocket"></i> Analyze Binlogs';
+            body: formData
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.error) {
+                alert(resp.error);
+                resetLaunchBtn();
+                return;
             }
+            pollAnalysis(resp.id);
+        })
+        .catch(function(err) {
+            alert('Failed to start analysis: ' + err);
+            resetLaunchBtn();
         });
     });
 
@@ -1143,7 +1141,7 @@ $catIcons = [
         }
 
         function poll() {
-            $.getJSON(LINK + 'slave/binlogAnalysisResult/' + id + '/', function(data) {
+            fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/').then(function(r){return r.json()}).then(function(data) {
                 if (data.error) {
                     statusBadge.className = 'label label-danger';
                     statusBadge.textContent = 'Error: ' + data.error;
@@ -1338,7 +1336,7 @@ $catIcons = [
 
     // ---- Load past analyses ----
     function loadHistory() {
-        $.getJSON(LINK + 'slave/binlogAnalysisList/' + serverId + '/', function(list) {
+        fetch(LINK + 'slave/binlogAnalysisList/' + serverId + '/').then(function(r){return r.json()}).then(function(list) {
             if (!list || !list.length) {
                 document.getElementById('sv-ba-history').innerHTML = '';
                 return;
@@ -1358,12 +1356,14 @@ $catIcons = [
             html += '</div>';
             document.getElementById('sv-ba-history').innerHTML = html;
 
-            // Bind click
-            $('.sv-ba-history-btn').on('click', function() {
-                var id = $(this).data('id');
-                var st = $(this).data('status');
+            // Bind click via event delegation
+            document.getElementById('sv-ba-history').addEventListener('click', function(e) {
+                var btn = e.target.closest('.sv-ba-history-btn');
+                if (!btn) return;
+                var id = btn.getAttribute('data-id');
+                var st = btn.getAttribute('data-status');
                 if (st === 'done') {
-                    $.getJSON(LINK + 'slave/binlogAnalysisResult/' + id + '/', function(data) {
+                    fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/').then(function(r){return r.json()}).then(function(data) {
                         if (!data.error) renderResults(data);
                     });
                 } else if (st === 'pending' || st === 'running') {
@@ -1384,11 +1384,9 @@ $catIcons = [
     }
 
     // ---- Init: load history on page load ----
-    $(document).ready(function() {
-        loadHistory();
-    });
+    loadHistory();
 
-})();
+});
 </script>
 
 <?php endif; /* end else __new__ */ ?>

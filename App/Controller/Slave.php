@@ -2547,6 +2547,7 @@ var chart = new Chart(ctx, {
      */
     public function startBinlogAnalysis($param)
     {
+        $this->layout_name = false;
         $this->view = false;
         header('Content-Type: application/json');
 
@@ -2588,6 +2589,7 @@ var chart = new Chart(ctx, {
      */
     public function binlogAnalysisResult($param)
     {
+        $this->layout_name = false;
         $this->view = false;
         header('Content-Type: application/json');
 
@@ -2681,6 +2683,7 @@ var chart = new Chart(ctx, {
      */
     public function binlogAnalysisList($param)
     {
+        $this->layout_name = false;
         $this->view = false;
         header('Content-Type: application/json');
 
