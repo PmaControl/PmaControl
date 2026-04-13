@@ -4780,7 +4780,7 @@ class Dot3 extends Controller
 
         $dot3_information = self::getInformation(self::$id_dot3_information);
 
-        $tunnel = $dot3_information['information']['tunnel'];
+        $tunnel = $dot3_information['information']['tunnel'] ?? [];
 
         //Debug::debug(maxScale::removeArraysDeeperThan($dot3_information, 3), "TUNNEL");
 
@@ -5196,14 +5196,15 @@ class Dot3 extends Controller
 
         // Récupère les informations du tunnel
         $dot3_information = self::getInformation(self::$id_dot3_information);
-        if (empty($dot3_information['information']['tunnel'])) {
-            throw new Exception(
-                "[PMACONTROL-4001] No tunnel information found in dot3::getTunnel() — application logic error.",
-                4001
-            );
-        }
+        $tunnel = $dot3_information['information']['tunnel'] ?? [];
 
-        $tunnel = $dot3_information['information']['tunnel'];
+        // No tunnels configured is a normal case — return early
+        if (empty($tunnel) || !is_array($tunnel)) {
+            if (!empty($param[0])) {
+                return false;
+            }
+            return [];
+        }
 
         // Si on a un paramètre de type ip:port, on valide le format
         if (!empty($param[0])) {
