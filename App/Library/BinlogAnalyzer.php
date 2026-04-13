@@ -164,12 +164,13 @@ class BinlogAnalyzer
 
             // Step 11 — Parse: DDL
             $this->addStep('parse_ddl', "Checking for DDL statements (CREATE/ALTER/DROP)...");
-            $ddlCount = $this->parseDdlCount();
+            $ddlResult = $this->parseDdlStatements();
+            $ddlCount = $ddlResult['count'];
             $this->updateLastStep($ddlCount > 0 ? "$ddlCount DDL statement(s) found" : "No DDL — 100% DML row-based");
 
             // Step 12 — Compile & store results
             $this->addStep('store', "Compiling final report and storing results...");
-            $this->storeResults($gtidStats, $dmlStats, $volumeStats, $ddlCount, $analysis);
+            $this->storeResults($gtidStats, $dmlStats, $volumeStats, $ddlResult, $analysis);
             $this->updateLastStep("Report stored successfully");
 
             // Step 13 — Cleanup
@@ -868,19 +869,82 @@ class BinlogAnalyzer
         ];
     }
 
-    private function parseDdlCount(): int
+    /**
+     * Parse DDL statements with full detail: type, database, table, statement.
+     */
+    private function parseDdlStatements(): array
     {
-        $cmd = $this->buildBinlogCmd(true);
-        $cmdDdl = $cmd . " 2>/dev/null | grep -icP '^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s'";
-        $count = (int) trim(shell_exec($cmdDdl . " 2>/dev/null") ?: '0');
-        return $count;
+        $cmd = $this->buildBinlogCmd(false);
+
+        // Extract use <db> + DDL lines. mysqlbinlog outputs "use `db`" before each DDL.
+        // We grab lines matching DDL keywords and the preceding "use" lines.
+        $cmdDdl = $cmd . " 2>/dev/null | grep -iP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
+        $output = shell_exec($cmdDdl . " 2>/dev/null") ?: '';
+
+        $details = [];
+        $currentDb = '';
+
+        foreach (explode("\n", trim($output)) as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            // Track current database from "use `dbname`" statements
+            if (preg_match('/^use\s+`?([^`;\s]+)`?/i', $line, $m)) {
+                $currentDb = $m[1];
+                continue;
+            }
+
+            // Parse DDL: extract type and table name
+            // Patterns: CREATE TABLE `db`.`tbl`, ALTER TABLE `tbl`, DROP TABLE IF EXISTS `tbl`, etc.
+            $type = '';
+            $table = '';
+            $db = $currentDb;
+
+            if (preg_match('/^\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\s+(TABLE|INDEX|DATABASE|SCHEMA|VIEW|TRIGGER|PROCEDURE|FUNCTION|EVENT)\s+(?:IF\s+(?:NOT\s+)?EXISTS\s+)?`?([^`\s(]+)`?(?:\.`?([^`\s(]+)`?)?/i', $line, $m)) {
+                $type = strtoupper($m[1]) . ' ' . strtoupper($m[2]);
+                if (!empty($m[4])) {
+                    // db.table format
+                    $db = $m[3];
+                    $table = $m[4];
+                } else {
+                    $table = $m[3];
+                }
+            } elseif (preg_match('/^\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\s+/i', $line, $m)) {
+                $type = strtoupper($m[1]);
+                // Try to extract object name
+                if (preg_match('/`([^`]+)`(?:\.`([^`]+)`)?/', $line, $tm)) {
+                    if (!empty($tm[2])) {
+                        $db = $tm[1];
+                        $table = $tm[2];
+                    } else {
+                        $table = $tm[1];
+                    }
+                }
+            }
+
+            if ($type) {
+                // Truncate the statement for storage (keep first 200 chars)
+                $stmt = substr($line, 0, 200);
+                $details[] = [
+                    'type'      => $type,
+                    'database'  => $db,
+                    'table'     => $table,
+                    'statement' => $stmt,
+                ];
+            }
+        }
+
+        return [
+            'count'   => count($details),
+            'details' => $details,
+        ];
     }
 
     // ------------------------------------------------------------------
     //  Store final results
     // ------------------------------------------------------------------
 
-    private function storeResults(array $gtid, array $dml, array $volume, int $ddlCount, array $analysis): void
+    private function storeResults(array $gtid, array $dml, array $volume, array $ddlResult, array $analysis): void
     {
         $totalFileSize = 0;
         foreach (glob($this->tmpDir . '/*') as $f) {
@@ -914,7 +978,8 @@ class BinlogAnalyzer
             "total_inserts = " . (int) $dml['inserts'],
             "total_updates = " . (int) $dml['updates'],
             "total_deletes = " . (int) $dml['deletes'],
-            "total_ddl = " . (int) $ddlCount,
+            "total_ddl = " . (int) $ddlResult['count'],
+            "ddl_details = '" . $this->db->sql_real_escape_string(json_encode($ddlResult['details'] ?? [])) . "'",
             "max_txn_size_bytes = " . (int) $gtid['max_size'],
             "large_txn_100k = " . (int) $gtid['large_100k'],
             "large_txn_500k = " . (int) $gtid['large_500k'],

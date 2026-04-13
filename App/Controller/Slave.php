@@ -2610,6 +2610,7 @@ var chart = new Chart(ctx, {
         $row['recommendations'] = json_decode($row['recommendations'] ?? '[]', true);
         $row['parallelism_distribution'] = json_decode($row['parallelism_distribution'] ?? '{}', true);
         $row['binlog_files'] = json_decode($row['binlog_files'] ?? '[]', true);
+        $row['ddl_details'] = json_decode($row['ddl_details'] ?? '[]', true);
         $row['progress'] = json_decode($row['progress'] ?? '[]', true);
 
         echo json_encode($row);

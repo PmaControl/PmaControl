@@ -962,6 +962,17 @@ $catIcons = [
                 </table>
             </div>
 
+            <!-- DDL Details -->
+            <div class="sv-collapse-head" id="sv-ba-ddl-head" aria-expanded="false" style="display:none" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-ddl-body').style.display=e==='true'?'':'none'">
+                <i class="fa fa-chevron-right"></i> <?= __("DDL Statements") ?> <span class="badge" id="sv-ba-ddl-count">0</span>
+            </div>
+            <div class="sv-collapse-body" id="sv-ba-ddl-body" style="display:none;padding:0">
+                <table class="table table-condensed table-striped" style="font-size:11px;margin:0">
+                    <thead><tr><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
+                    <tbody id="sv-ba-ddl-tbody"></tbody>
+                </table>
+            </div>
+
             <!-- Recommendations -->
             <div class="sv-collapse-head" id="sv-ba-recs-head" aria-expanded="true" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-recs-body').style.display=e==='true'?'':'none'">
                 <i class="fa fa-chevron-right"></i> <?= __("Recommendations") ?> <span class="badge" id="sv-ba-recs-count">0</span>
@@ -1193,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             + '<tr><td><b>Size</b></td><td>' + sizeMb + ' MB</td></tr>'
             + '<tr><td><b>Period</b></td><td>' + d.time_start + ' &rarr; ' + d.time_end + ' (' + d.duration_seconds + 's)</td></tr>'
             + '<tr><td><b>Transactions</b></td><td>' + numberFmt(d.total_transactions) + '</td></tr>'
-            + '<tr><td><b>DDL</b></td><td>' + (d.total_ddl > 0 ? d.total_ddl : 'None &mdash; 100% DML row-based') + '</td></tr>';
+            + '<tr><td><b>DDL</b></td><td>' + (d.total_ddl > 0 ? d.total_ddl + ' statement(s) &mdash; <a href="#sv-ba-ddl-head" onclick="document.getElementById(\'sv-ba-ddl-head\').click()">see details</a>' : 'None &mdash; 100% DML row-based') + '</td></tr>';
         document.getElementById('sv-ba-info-table').innerHTML = infoHtml;
 
         // DML table
@@ -1238,6 +1249,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 + '<td class="text-right"><b>' + numberFmt(total) + '</b></td></tr>';
         });
         document.getElementById('sv-ba-tables-tbody').innerHTML = tbodyHtml;
+
+        // DDL Details
+        var ddls = d.ddl_details || [];
+        var ddlHead = document.getElementById('sv-ba-ddl-head');
+        if (ddls.length > 0) {
+            ddlHead.style.display = '';
+            document.getElementById('sv-ba-ddl-count').textContent = ddls.length;
+            var ddlHtml = '';
+            ddls.forEach(function(dd) {
+                ddlHtml += '<tr><td><b>' + escHtml(dd.type || '') + '</b></td>'
+                    + '<td><code>' + escHtml(dd.database || '') + '</code></td>'
+                    + '<td><code>' + escHtml(dd.table || '') + '</code></td>'
+                    + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(dd.statement || '') + '">'
+                    + escHtml(dd.statement || '') + '</td></tr>';
+            });
+            document.getElementById('sv-ba-ddl-tbody').innerHTML = ddlHtml;
+        } else {
+            ddlHead.style.display = 'none';
+        }
 
         // Recommendations
         var recs = d.recommendations || [];
