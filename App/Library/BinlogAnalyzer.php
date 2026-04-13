@@ -103,41 +103,37 @@ class BinlogAnalyzer
             $this->db->sql_query("UPDATE binlog_analysis SET mysql_version = '" . $this->db->sql_real_escape_string($version) . "' WHERE id = " . $this->analysisId);
             $this->updateLastStep("Version: $version");
 
-            // Step 4 — SSH to master
-            $this->addStep('ssh', "Connecting via SSH to " . $master['ip'] . ":" . ($master['ssh_port'] ?: 22) . "...");
-            $ssh = Ssh::ssh($masterId);
-            if (!$ssh) {
-                throw new \Exception("Cannot SSH to master server " . $master['ip']);
-            }
-            $this->updateLastStep("SSH connected to " . $master['ip']);
-
-            // Step 5 — Find binlog files
-            $this->addStep('find_binlogs', "Searching binlog files covering " . $analysis['time_start'] . " → " . $analysis['time_end'] . "...");
-            $binlogFiles = $this->findBinlogFiles($ssh, $master, $analysis['time_start'], $analysis['time_end']);
-            if (empty($binlogFiles)) {
-                throw new \Exception("No binlog files found for the specified time range");
-            }
-            $names = array_map('basename', $binlogFiles);
-            $this->db->sql_query("UPDATE binlog_analysis SET binlog_files = '" . $this->db->sql_real_escape_string(json_encode($names)) . "' WHERE id = " . $this->analysisId);
-            $this->updateLastStep("Found " . count($binlogFiles) . " binlog file(s): " . implode(', ', $names));
-
-            // Step 6 — Download binlog files
-            @mkdir($this->tmpDir, 0755, true);
-            foreach ($binlogFiles as $idx => $remotePath) {
-                $name = basename($remotePath);
-                $this->addStep('download', "Downloading $name (" . ($idx + 1) . "/" . count($binlogFiles) . ")...");
-                $this->fetchBinlogFile($ssh, $remotePath);
-                $localSize = filesize($this->tmpDir . '/' . $name);
-                $sizeMb = round($localSize / 1048576, 1);
-                $this->updateLastStep("Downloaded $name — $sizeMb MB");
-            }
-
-            // Step 7 — Select mysqlbinlog binary
+            // Step 4 — Select mysqlbinlog binary (needed for remote fetch too)
             $binary = $this->getMysqlbinlogBinary($version);
             $this->addStep('binary', "Selecting mysqlbinlog binary for version $version...");
             $this->ensureBinary($binary);
             $binaryVersion = trim(shell_exec(escapeshellarg($binary) . " --version 2>&1") ?: 'unknown');
             $this->updateLastStep("Using: " . basename($binary) . " — " . $binaryVersion);
+
+            // Step 5 — Get MySQL credentials for remote binlog fetch
+            $this->addStep('credentials', "Decrypting MySQL credentials for master...");
+            $mysqlCreds = $this->getMysqlCredentials($master);
+            $this->updateLastStep("MySQL user: " . $mysqlCreds['user'] . "@" . $master['ip'] . ":" . $master['port']);
+
+            // Step 6 — Find binlog files via MySQL protocol
+            $this->addStep('find_binlogs', "Querying SHOW BINARY LOGS on master " . $master['ip'] . ":" . $master['port'] . "...");
+            $binlogFiles = $this->findBinlogFilesRemote($binary, $mysqlCreds, $master, $analysis['time_start'], $analysis['time_end']);
+            if (empty($binlogFiles)) {
+                throw new \Exception("No binlog files found for the specified time range");
+            }
+            $this->db->sql_query("UPDATE binlog_analysis SET binlog_files = '" . $this->db->sql_real_escape_string(json_encode($binlogFiles)) . "' WHERE id = " . $this->analysisId);
+            $this->updateLastStep("Found " . count($binlogFiles) . " binlog file(s): " . implode(', ', $binlogFiles));
+
+            // Step 7 — Fetch binlogs via --read-from-remote-server (like IO thread)
+            @mkdir($this->tmpDir, 0755, true);
+            foreach ($binlogFiles as $idx => $binlogName) {
+                $this->addStep('fetch', "Fetching $binlogName via MySQL protocol (" . ($idx + 1) . "/" . count($binlogFiles) . ")...");
+                $this->fetchBinlogRemote($binary, $mysqlCreds, $master, $binlogName, $analysis['time_start'], $analysis['time_end']);
+                $localPath = $this->tmpDir . '/' . $binlogName;
+                $localSize = file_exists($localPath) ? filesize($localPath) : 0;
+                $sizeMb = round($localSize / 1048576, 1);
+                $this->updateLastStep("Fetched $binlogName — $sizeMb MB (via --read-from-remote-server)");
+            }
 
             // Step 8 — Parse: transaction metadata (GTID events)
             $this->addStep('parse_gtid', "Parsing transaction metadata (GTID, sizes, parallelism)...");
@@ -224,49 +220,71 @@ class BinlogAnalyzer
     }
 
     // ------------------------------------------------------------------
-    //  Binlog file discovery
+    //  MySQL credentials
     // ------------------------------------------------------------------
 
-    private function findBinlogFiles($ssh, array $master, string $timeStart, string $timeEnd): array
+    /**
+     * Get MySQL credentials for the master server, decrypted.
+     */
+    private function getMysqlCredentials(array $master): array
     {
-        $datadir = trim($ssh->exec("mysql -N -e \"SELECT @@datadir\" 2>/dev/null"));
-        if (empty($datadir)) {
-            $datadir = '/var/lib/mysql/';
+        $password = $master['passwd'];
+        if (!empty($master['is_password_crypted']) && $master['is_password_crypted'] == 1) {
+            $password = Crypt::decrypt($password, CRYPT_KEY);
         }
-        $datadir = rtrim($datadir, '/') . '/';
+        return [
+            'user'     => $master['login'],
+            'password' => $password,
+            'host'     => $master['ip'],
+            'port'     => (int) ($master['port'] ?: 3306),
+        ];
+    }
 
-        $logBin = trim($ssh->exec("mysql -N -e \"SELECT @@log_bin_basename\" 2>/dev/null"));
-        if (empty($logBin)) {
-            $logBin = $datadir . 'mysql-bin';
+    // ------------------------------------------------------------------
+    //  Remote binlog discovery (via MySQL protocol)
+    // ------------------------------------------------------------------
+
+    /**
+     * Find binlog files that cover the requested time range.
+     * Uses a direct MySQL connection via the master's credentials.
+     */
+    private function findBinlogFilesRemote(string $binary, array $creds, array $master, string $timeStart, string $timeEnd): array
+    {
+        // Connect to master and get list of binlog files
+        $link = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
+        if ($link->connect_error) {
+            throw new \Exception("Cannot connect to master MySQL " . $creds['host'] . ":" . $creds['port'] . " — " . $link->connect_error);
         }
 
-        // List binlog files from MySQL
-        $binlogList = $ssh->exec("mysql -N -e \"SHOW BINARY LOGS\" 2>/dev/null");
+        $res = $link->query("SHOW BINARY LOGS");
         $allBinlogs = [];
-        foreach (explode("\n", trim($binlogList)) as $line) {
-            $parts = preg_split('/\s+/', trim($line));
-            if (count($parts) >= 2) {
-                $allBinlogs[] = ['name' => $parts[0], 'size' => (int) $parts[1]];
+        while ($row = $res->fetch_assoc()) {
+            $name = $row['Log_name'] ?? '';
+            $size = (int) ($row['File_size'] ?? 0);
+            if ($name) {
+                $allBinlogs[] = ['name' => $name, 'size' => $size];
             }
         }
+        $res->free();
+        $link->close();
 
         if (empty($allBinlogs)) {
-            throw new \Exception("No binary logs found on master (SHOW BINARY LOGS returned empty)");
+            throw new \Exception("SHOW BINARY LOGS returned empty on master");
         }
 
+        // Use mysqlbinlog --read-from-remote-server to probe each file's first timestamp
         $startTs = strtotime($timeStart);
         $endTs = strtotime($timeEnd);
         $selectedFiles = [];
         $lastCandidateBefore = null;
+        $connArgs = $this->buildRemoteArgs($creds);
 
         foreach ($allBinlogs as $i => $bl) {
-            $filePath = $datadir . $bl['name'];
-
-            // Get first timestamp in this binlog
-            $cmd = "mysqlbinlog --start-position=4 --read-from-remote-server " . escapeshellarg($filePath) . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1 2>/dev/null";
-            // Simpler: just read local file header
-            $cmd = "mysqlbinlog " . escapeshellarg($filePath) . " --stop-position=500 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
-            $firstTs = trim($ssh->exec($cmd));
+            // Probe first timestamp: read just the header
+            $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+                 . " --stop-position=500 " . escapeshellarg($bl['name'])
+                 . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
+            $firstTs = trim(shell_exec($cmd) ?: '');
 
             if (empty($firstTs)) continue;
 
@@ -282,40 +300,73 @@ class BinlogAnalyzer
             }
 
             if ($fileStartTs <= $startTs) {
-                $lastCandidateBefore = $filePath;
+                $lastCandidateBefore = $bl['name'];
             }
 
             if ($fileStartTs >= $startTs) {
-                $selectedFiles[] = $filePath;
+                $selectedFiles[] = $bl['name'];
             }
         }
 
-        // Include the file that starts before our range (it may contain events in our range)
+        // Include the file that starts before our range
         if ($lastCandidateBefore && !in_array($lastCandidateBefore, $selectedFiles)) {
             array_unshift($selectedFiles, $lastCandidateBefore);
         }
 
-        // Fallback: use last binlog file if nothing found
+        // Fallback: last binlog
         if (empty($selectedFiles) && !empty($allBinlogs)) {
-            $last = end($allBinlogs);
-            $selectedFiles[] = $datadir . $last['name'];
+            $selectedFiles[] = end($allBinlogs)['name'];
         }
 
         return $selectedFiles;
     }
 
     // ------------------------------------------------------------------
-    //  File transfer
+    //  Remote binlog fetch (like IO thread)
     // ------------------------------------------------------------------
 
-    private function fetchBinlogFile($ssh, string $remotePath): void
+    /**
+     * Fetch a binlog from the master using --read-from-remote-server.
+     * This works like the replica IO thread — pure MySQL protocol, no SSH.
+     */
+    private function fetchBinlogRemote(string $binary, array $creds, array $master, string $binlogName, string $timeStart, string $timeEnd): void
     {
-        $localPath = $this->tmpDir . '/' . basename($remotePath);
-        $content = $ssh->exec("cat " . escapeshellarg($remotePath));
-        if ($content === false || strlen($content) < 100) {
-            throw new \Exception("Failed to fetch binlog file: " . basename($remotePath) . " (got " . strlen($content ?: '') . " bytes)");
+        $connArgs = $this->buildRemoteArgs($creds);
+        $localPath = $this->tmpDir . '/' . $binlogName;
+
+        // Use --raw --result-file to save the binlog locally
+        $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+             . " --start-datetime=" . escapeshellarg($timeStart)
+             . " --stop-datetime=" . escapeshellarg($timeEnd)
+             . " --raw --result-file=" . escapeshellarg($this->tmpDir . '/')
+             . " " . escapeshellarg($binlogName)
+             . " 2>&1";
+        $output = shell_exec($cmd);
+
+        if (!file_exists($localPath) || filesize($localPath) < 100) {
+            // Fallback: without --raw, pipe to file
+            $cmd2 = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+                  . " --start-datetime=" . escapeshellarg($timeStart)
+                  . " --stop-datetime=" . escapeshellarg($timeEnd)
+                  . " " . escapeshellarg($binlogName)
+                  . " > " . escapeshellarg($localPath) . " 2>/dev/null";
+            shell_exec($cmd2);
         }
-        file_put_contents($localPath, $content);
+
+        if (!file_exists($localPath) || filesize($localPath) < 4) {
+            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server: " . substr($output ?? '', 0, 300));
+        }
+    }
+
+    /**
+     * Build connection arguments for mysqlbinlog --read-from-remote-server.
+     */
+    private function buildRemoteArgs(array $creds): string
+    {
+        return " --host=" . escapeshellarg($creds['host'])
+             . " --port=" . (int) $creds['port']
+             . " --user=" . escapeshellarg($creds['user'])
+             . " --password=" . escapeshellarg($creds['password']);
     }
 
     // ------------------------------------------------------------------
