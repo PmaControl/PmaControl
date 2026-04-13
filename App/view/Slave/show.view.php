@@ -932,6 +932,11 @@ $catIcons = [
                 <canvas id="sv-ba-parallel-chart"></canvas>
             </div>
 
+            <!-- Replication lag chart (synced with above) -->
+            <div style="position:relative;height:150px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-lag-chart"></canvas>
+            </div>
+
             <!-- Stats summary -->
             <div class="row" style="margin-bottom:16px">
                 <div class="col-md-6">
@@ -1287,6 +1292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Chart
         renderChart(d.volume_per_second || []);
         renderParallelismChart(d.volume_per_second || [], d);
+        renderLagChart(d.lag_data || []);
     }
 
     // ---- Chart.js bar+line chart ----
@@ -1338,7 +1344,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         padding: 4,
                         font: { size: 13, weight: 'bold' }
                     },
-                    legend: { display: true, position: 'top', labels: { font: { size: 11 } } }
+                    legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+                    tooltip: {
+                        mode: 'index', intersect: false,
+                        callbacks: {
+                            afterBody: function(ctx) {
+                                if (!baLagChart || !baLagChart.data) return [];
+                                var lagDs = baLagChart.data.datasets[0];
+                                if (!lagDs) return [];
+                                var idx = ctx[0].dataIndex;
+                                if (lagDs.data[idx] !== undefined) return ['Lag: ' + lagDs.data[idx] + 's'];
+                                return [];
+                            }
+                        }
+                    }
                 },
                 scales: {
                     x: {
@@ -1438,6 +1457,78 @@ document.addEventListener('DOMContentLoaded', function() {
                         ticks: { maxRotation: 45, font: { size: 8 } }
                     },
                     y: { beginAtZero: true, title: { display: true, text: 'Txn/s (parallelism potential)' } }
+                }
+            }
+        });
+    }
+
+    // ---- Lag chart ----
+    var baLagChart = null;
+    function renderLagChart(lagData) {
+        var canvas = document.getElementById('sv-ba-lag-chart');
+        if (baLagChart) { baLagChart.destroy(); baLagChart = null; }
+        if (!lagData || !lagData.length) {
+            canvas.parentElement.style.display = 'none';
+            return;
+        }
+        canvas.parentElement.style.display = '';
+
+        var labels = lagData.map(function(v) { return v.ts; });
+        var lags = lagData.map(function(v) { return v.lag; });
+
+        baLagChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Seconds Behind Master',
+                    data: lags,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220,38,38,0.15)',
+                    fill: true,
+                    borderWidth: 2,
+                    pointRadius: 1,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Replication Lag (seconds behind master)', font: { size: 12, weight: 'bold' }, padding: 4 },
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            afterBody: function(ctx) {
+                                // Show volume and parallelism from the same timestamp
+                                var idx = ctx[0].dataIndex;
+                                var ts = ctx[0].label;
+                                var extra = [];
+                                if (baChart && baChart.data && baChart.data.datasets[0]) {
+                                    var volData = baChart.data.datasets[0].data;
+                                    var txnData = baChart.data.datasets[1] ? baChart.data.datasets[1].data : [];
+                                    // Find closest index by timestamp
+                                    if (volData[idx] !== undefined) extra.push('Volume: ' + volData[idx] + ' KB/s');
+                                    if (txnData[idx] !== undefined) extra.push('Txn/s: ' + txnData[idx]);
+                                }
+                                return extra;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
+                        ticks: { maxRotation: 45, font: { size: 8 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Lag (s)', color: '#dc2626' },
+                        ticks: { color: '#dc2626' }
+                    }
                 }
             }
         });

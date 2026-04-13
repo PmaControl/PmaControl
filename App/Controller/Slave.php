@@ -2614,6 +2614,36 @@ var chart = new Chart(ctx, {
         $row['parallelism_per_second'] = json_decode($row['parallelism_per_second'] ?? '[]', true);
         $row['progress'] = json_decode($row['progress'] ?? '[]', true);
 
+        // Add replication lag data for the analysis time range
+        if ($row['status'] === 'done' && !empty($row['time_start']) && !empty($row['time_end'])) {
+            $lagSlaves = Extraction::extract(
+                $this->getReplicationLagVariables(),
+                array((int)$row['id_mysql_server']),
+                array($row['time_start'], $row['time_end']),
+                false,
+                true
+            );
+            $lagSlaves = $this->normalizeReplicationLagGraphRows($lagSlaves ?: []);
+            $cn = $row['connection_name'] ?? '';
+            foreach ($lagSlaves as $s) {
+                if (($s['connection_name'] ?? '') === $cn && !empty($s['graph'])) {
+                    // Convert JS format {x:new Date('ts'),y:val} to JSON [{ts,lag}]
+                    $jsGraph = $s['graph'];
+                    $lagData = [];
+                    if (preg_match_all("/new Date\('([^']+)'\),y:(\d+(?:\.\d+)?)/", $jsGraph, $matches, PREG_SET_ORDER)) {
+                        foreach ($matches as $m) {
+                            $lagData[] = ['ts' => $m[1], 'lag' => (float)$m[2]];
+                        }
+                    }
+                    $row['lag_data'] = $lagData;
+                    break;
+                }
+            }
+        }
+        if (!isset($row['lag_data'])) {
+            $row['lag_data'] = [];
+        }
+
         echo json_encode($row);
     }
 
