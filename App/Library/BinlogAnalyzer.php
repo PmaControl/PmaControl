@@ -283,24 +283,42 @@ class BinlogAnalyzer
         $currentNum = (int) $m[1];
         $prefix = substr($currentBinlog, 0, strrpos($currentBinlog, '.'));
 
-        // The time range we want is in the past (before "now"), so the binlogs we need
-        // have numbers <= currentNum. How far back? Estimate based on how old the data is.
+        // Also get the master's current binlog position (may be ahead if slave has lag)
+        $masterLink = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
+        $masterCurrentNum = $currentNum;
+        if (!$masterLink->connect_error) {
+            $mRes = $masterLink->query("SHOW MASTER STATUS");
+            if (!$mRes) $mRes = $masterLink->query("SHOW BINARY LOG STATUS");
+            if ($mRes && $mRow = $mRes->fetch_assoc()) {
+                $masterFile = $mRow['File'] ?? '';
+                if (preg_match('/\.(\d+)$/', $masterFile, $mm)) {
+                    $masterCurrentNum = (int) $mm[1];
+                }
+                if ($mRes) $mRes->free();
+            }
+            $masterLink->close();
+        }
+
+        // The time range could be between the slave's current read position and the
+        // master's current write position (if the slave is lagging behind).
         $now = time();
         $rangeEnd = strtotime($analysis['time_end']);
         $rangeStart = strtotime($analysis['time_start']);
-        $ageSeconds = max(1, $now - $rangeEnd);
+        $ageSeconds = max(1, $now - $rangeStart);
         $rangeDuration = max(1, $rangeEnd - $rangeStart);
 
-        // Assume ~1 binlog per minute as a rough estimate, add generous margin
+        // Estimate how many binlogs back from the slave position we need
         $estimatedBinlogsBack = max(20, (int)(($ageSeconds + $rangeDuration) / 30));
 
-        // Build a list of candidate binlog names
+        // Range: go back from slave position AND forward to master position
         $startNum = max(1, $currentNum - $estimatedBinlogsBack);
-        $endNum = $currentNum;
+        $endNum = $masterCurrentNum; // include all up to master's current file
 
         $connArgs = $this->buildRemoteArgs($creds);
 
-        $this->updateLastStep("Slave reading $currentBinlog. Scanning $prefix." . $startNum . " → $prefix." . $endNum . " (~" . ($endNum - $startNum + 1) . " files)...");
+        $lagFiles = $masterCurrentNum - $currentNum;
+        $lagInfo = $lagFiles > 0 ? " (slave lag: $lagFiles files behind master)" : "";
+        $this->updateLastStep("Slave at $currentBinlog, master at $prefix." . str_pad($masterCurrentNum, strlen($m[1]), '0', STR_PAD_LEFT) . "$lagInfo. Scanning $prefix." . $startNum . " → $prefix." . $endNum . " (~" . ($endNum - $startNum + 1) . " candidates)...");
 
         // Binary search within this narrow range
         $candidates = [];
