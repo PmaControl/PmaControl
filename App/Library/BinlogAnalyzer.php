@@ -601,6 +601,21 @@ class BinlogAnalyzer
 
     private function parseGtidEvents(): array
     {
+        $analysis = $this->getAnalysis();
+        $isMariaDB = (stripos($analysis['mysql_version'] ?? '', 'mariadb') !== false);
+
+        if ($isMariaDB) {
+            return $this->parseGtidEventsMariaDB();
+        }
+
+        return $this->parseGtidEventsMySQL();
+    }
+
+    /**
+     * MySQL 8+: parse transaction_length, last_committed, sequence_number from GTID events.
+     */
+    private function parseGtidEventsMySQL(): array
+    {
         $cmd = $this->buildBinlogCmd(false);
         $cmdGtid = $cmd . " 2>/dev/null | grep -E '(transaction_length|last_committed|sequence_number)=' | grep -oP '(transaction_length|last_committed|sequence_number)=\\d+'";
 
@@ -660,6 +675,77 @@ class BinlogAnalyzer
         ];
     }
 
+    /**
+     * MariaDB: no transaction_length/last_committed/sequence_number.
+     * Count transactions via Xid events (InnoDB commit markers) and
+     * compute sizes from end_log_pos differences between BEGIN and COMMIT/Xid.
+     */
+    private function parseGtidEventsMariaDB(): array
+    {
+        $cmd = $this->buildBinlogCmd(false);
+
+        // Extract: timestamp, event type, end_log_pos for each event
+        // MariaDB binlog format: #260414  0:01:25 server id 123  end_log_pos 12345  Query/Xid/...
+        $cmdParse = $cmd . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?(Query|Xid|GTID)'"
+                  . " | grep -oP '(end_log_pos\\s+\\d+|Query|Xid|GTID)'";
+
+        $output = shell_exec($cmdParse . " 2>/dev/null") ?: '';
+
+        $txnCount = 0;
+        $txnSizes = [];
+        $beginPos = null;
+
+        foreach (explode("\n", trim($output)) as $line) {
+            $line = trim($line);
+            if (preg_match('/end_log_pos\s+(\d+)/', $line, $m)) {
+                $currentPos = (int) $m[1];
+            } elseif ($line === 'Xid') {
+                // Xid = InnoDB transaction commit
+                $txnCount++;
+                if ($beginPos !== null && isset($currentPos)) {
+                    $size = $currentPos - $beginPos;
+                    if ($size > 0) $txnSizes[] = $size;
+                }
+                $beginPos = null;
+            } elseif ($line === 'Query') {
+                // Could be BEGIN or COMMIT
+                // We track position; BEGIN sets the start, COMMIT is tracked via Xid
+                if ($beginPos === null && isset($currentPos)) {
+                    $beginPos = $currentPos;
+                }
+            } elseif ($line === 'GTID') {
+                // MariaDB GTID event marks the start of a new transaction group
+                if (isset($currentPos)) {
+                    $beginPos = $currentPos;
+                }
+            }
+        }
+
+        // Fallback: if the above didn't work well, just count Xid events directly
+        if ($txnCount === 0) {
+            $cmdXid = $cmd . " 2>/dev/null | grep -c 'Xid'";
+            $txnCount = (int) trim(shell_exec($cmdXid . " 2>/dev/null") ?: '0');
+        }
+
+        $totalSize = array_sum($txnSizes);
+        $maxSize = empty($txnSizes) ? 0 : max($txnSizes);
+        $large100k = count(array_filter($txnSizes, function($s) { return $s >= 100000; }));
+        $large500k = count(array_filter($txnSizes, function($s) { return $s >= 500000; }));
+
+        // MariaDB doesn't expose parallelism metadata in binlogs
+        // (slave_parallel_mode handles this at apply time, not in the binlog)
+        return [
+            'total_transactions' => $txnCount,
+            'total_size'         => $totalSize,
+            'max_size'           => $maxSize,
+            'large_100k'         => $large100k,
+            'large_500k'         => $large500k,
+            'sequential_pct'     => 0, // not available in MariaDB binlogs
+            'max_parallelism'    => 0,
+            'parallelism_distrib' => [],
+        ];
+    }
+
     private function parseDmlEvents(): array
     {
         $cmd = $this->buildBinlogCmd(true);
@@ -707,21 +793,60 @@ class BinlogAnalyzer
 
     private function parseVolumePerSecond(): array
     {
+        $analysis = $this->getAnalysis();
+        $isMariaDB = (stripos($analysis['mysql_version'] ?? '', 'mariadb') !== false);
+
         $cmd = $this->buildBinlogCmd(false);
-        // Extract lines like: #260413 20:27:51 ... transaction_length=1234
-        $cmdTs = $cmd . " 2>/dev/null | grep -P 'transaction_length=\\d+' | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*transaction_length=\\d+'";
 
-        $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
+        if (!$isMariaDB) {
+            // MySQL 8+: use transaction_length from GTID events
+            $cmdTs = $cmd . " 2>/dev/null | grep -P 'transaction_length=\\d+' | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*transaction_length=\\d+'";
+            $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
 
-        $volumePerSec = [];
-        $txnPerSec = [];
+            $volumePerSec = [];
+            $txnPerSec = [];
 
-        foreach (explode("\n", trim($output)) as $line) {
-            if (preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+).*transaction_length=(\d+)/', $line, $m)) {
-                $fullTs = (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
-                $txnLen = (int) $m[5];
-                $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + $txnLen;
-                $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+            foreach (explode("\n", trim($output)) as $line) {
+                if (preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+).*transaction_length=(\d+)/', $line, $m)) {
+                    $fullTs = (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
+                    $txnLen = (int) $m[5];
+                    $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + $txnLen;
+                    $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+                }
+            }
+        } else {
+            // MariaDB: count Xid events per second and use end_log_pos delta as volume proxy
+            $cmdTs = $cmd . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?Xid'";
+            $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
+
+            $volumePerSec = [];
+            $txnPerSec = [];
+            $lastPos = [];
+
+            foreach (explode("\n", trim($output)) as $line) {
+                if (preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+).*end_log_pos\s+(\d+)/', $line, $m)) {
+                    $fullTs = (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
+                    $pos = (int) $m[5];
+                    $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+
+                    // Estimate bytes from pos delta
+                    if (isset($lastPos[$fullTs])) {
+                        $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + ($pos - $lastPos[$fullTs]);
+                    } else {
+                        $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0);
+                    }
+                    $lastPos[$fullTs] = $pos;
+                }
+            }
+
+            // If volume is 0 for all, estimate from total file size / seconds
+            if (array_sum($volumePerSec) === 0 && !empty($txnPerSec)) {
+                $totalSize = 0;
+                foreach (glob($this->tmpDir . '/*') as $f) $totalSize += filesize($f);
+                $avgPerTxn = count($txnPerSec) > 0 ? $totalSize / array_sum($txnPerSec) : 0;
+                foreach ($txnPerSec as $ts => $count) {
+                    $volumePerSec[$ts] = (int) ($count * $avgPerTxn);
+                }
             }
         }
 
