@@ -458,10 +458,10 @@ class Extraction2
         //Debug::sql($sql3);
 
 
-        
-        $res2 = $db->sql_query($sql3);
+        // Partition may have been purged or not yet created — handle gracefully
+        $res2 = $db->sql_query_silent($sql3);
 
-        if ($db->sql_num_rows($res2) === 0) {
+        if ($res2 === false || $db->sql_num_rows($res2) === 0) {
             return false;
         }
 
@@ -1001,9 +1001,9 @@ class Extraction2
                                 ";
                                 Debug::sql($sqlv);
 
-                                $res2 = $db->sql_query($sqlv);
+                                $res2 = $db->sql_query_silent($sqlv);
 
-                                if ($ob = $db->sql_fetch_object($res2)) {
+                                if ($res2 && $ob = $db->sql_fetch_object($res2)) {
 
                                     // JSON decode
                                     $value = ($type === "json")
