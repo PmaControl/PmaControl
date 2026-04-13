@@ -443,7 +443,7 @@ class BinlogAnalyzer
     {
         $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
              . " --stop-position=500 " . escapeshellarg($binlogName)
-             . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
+             . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
         $firstTs = trim(shell_exec($cmd) ?: '');
 
         if (empty($firstTs)) return null;
@@ -618,7 +618,7 @@ class BinlogAnalyzer
     private function parseGtidEventsMySQL(): array
     {
         $cmd = $this->buildBinlogCmd(false);
-        $cmdGtid = $cmd . " 2>/dev/null | grep -E '(transaction_length|last_committed|sequence_number)=' | grep -oP '(transaction_length|last_committed|sequence_number)=\\d+'";
+        $cmdGtid = $cmd . " 2>/dev/null | grep -aE '(transaction_length|last_committed|sequence_number)=' | grep -aoP '(transaction_length|last_committed|sequence_number)=\\d+'";
 
         $output = shell_exec($cmdGtid . " 2>/dev/null") ?: '';
 
@@ -687,8 +687,8 @@ class BinlogAnalyzer
 
         // Extract: timestamp, event type, end_log_pos for each event
         // MariaDB binlog format: #260414  0:01:25 server id 123  end_log_pos 12345  Query/Xid/...
-        $cmdParse = $cmd . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?(Query|Xid|GTID)'"
-                  . " | grep -oP '(end_log_pos\\s+\\d+|Query|Xid|GTID)'";
+        $cmdParse = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?(Query|Xid|GTID)'"
+                  . " | grep -aoP '(end_log_pos\\s+\\d+|Query|Xid|GTID)'";
 
         $output = shell_exec($cmdParse . " 2>/dev/null") ?: '';
 
@@ -724,7 +724,7 @@ class BinlogAnalyzer
 
         // Fallback: if the above didn't work well, just count Xid events directly
         if ($txnCount === 0) {
-            $cmdXid = $cmd . " 2>/dev/null | grep -c 'Xid'";
+            $cmdXid = $cmd . " 2>/dev/null | grep -ac 'Xid'";
             $txnCount = (int) trim(shell_exec($cmdXid . " 2>/dev/null") ?: '0');
         }
 
@@ -750,7 +750,7 @@ class BinlogAnalyzer
     private function parseDmlEvents(): array
     {
         $cmd = $this->buildBinlogCmd(true);
-        $cmdDml = $cmd . " 2>/dev/null | grep -oP '### (INSERT INTO|UPDATE|DELETE FROM) \`[^\`]+\`\.\`[^\`]+\`'";
+        $cmdDml = $cmd . " 2>/dev/null | grep -aoP '### (INSERT INTO|UPDATE|DELETE FROM) \`[^\`]+\`\.\`[^\`]+\`'";
 
         $output = shell_exec($cmdDml . " 2>/dev/null") ?: '';
 
@@ -801,7 +801,7 @@ class BinlogAnalyzer
 
         if (!$isMariaDB) {
             // MySQL 8+: use transaction_length from GTID events
-            $cmdTs = $cmd . " 2>/dev/null | grep -P 'transaction_length=\\d+' | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*transaction_length=\\d+'";
+            $cmdTs = $cmd . " 2>/dev/null | grep -aP 'transaction_length=\\d+' | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*transaction_length=\\d+'";
             $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
 
             $volumePerSec = [];
@@ -817,7 +817,7 @@ class BinlogAnalyzer
             }
         } else {
             // MariaDB: count Xid events per second and use end_log_pos delta as volume proxy
-            $cmdTs = $cmd . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?Xid'";
+            $cmdTs = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?Xid'";
             $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
 
             $volumePerSec = [];
@@ -892,7 +892,7 @@ class BinlogAnalyzer
         }
 
         // Extract use <db> + DDL lines. mysqlbinlog outputs "use `db`" before each DDL.
-        $cmdDdl = "timeout 60 " . $cmd . " 2>/dev/null | grep -iP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
+        $cmdDdl = "timeout 60 " . $cmd . " 2>/dev/null | grep -aiP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
         $output = shell_exec($cmdDdl . " 2>/dev/null") ?: '';
 
         $details = [];
