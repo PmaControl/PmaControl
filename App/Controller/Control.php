@@ -298,7 +298,31 @@ class Control extends Controller
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-            $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.");";
+            // Check if this specific table already has the partition
+            $checkSql = "SELECT 1 FROM information_schema.partitions
+                         WHERE table_schema = DATABASE() AND table_name = '".$table."'
+                         AND partition_name = 'p".$partition_number."' LIMIT 1";
+            $checkRes = $db->sql_query($checkSql);
+            if ($db->sql_num_rows($checkRes) > 0) {
+                continue;
+            }
+
+            // Check if the table has a MAXVALUE partition that needs reorganizing
+            $maxSql = "SELECT partition_name FROM information_schema.partitions
+                       WHERE table_schema = DATABASE() AND table_name = '".$table."'
+                       AND partition_description = 'MAXVALUE' LIMIT 1";
+            $maxRes = $db->sql_query($maxSql);
+            $maxRow = $db->sql_fetch_array($maxRes, MYSQLI_ASSOC);
+
+            if ($maxRow) {
+                // Reorganize the MAXVALUE partition to insert the new one before it
+                $sql = "ALTER TABLE `".$table."` REORGANIZE PARTITION `".$maxRow['partition_name']."` INTO (
+                    PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.",
+                    PARTITION `".$maxRow['partition_name']."` VALUES LESS THAN MAXVALUE ENGINE = ".$this->engine."
+                );";
+            } else {
+                $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.");";
+            }
 
             Debug::sql($sql);
             $db->sql_query($sql);
@@ -508,15 +532,12 @@ class Control extends Controller
 
         Debug::debug($part);
 
-        // check partition of today and tomorow and create it if it's not exist
+        // Ensure partitions exist on ALL tables for today, tomorrow and day after
+        // addPartition checks per-table, so safe to call even if some tables already have it
         foreach ($part as $date) {
             $partition_to_check = $this->getToDays(array($date));
-
             Debug::debug($partition_to_check);
-
-            if (!in_array($partition_to_check, $partitions['other'])) {
-                $this->addPartition(array($partition_to_check));
-            }
+            $this->addPartition(array($partition_to_check));
         }
 
         $this->syncMysqlLogPartitions();
@@ -1029,11 +1050,13 @@ PARTITION BY RANGE (to_days(`date`))
     {
         $today = date("Y-m-d");
 
-        $date   = new \DateTime($today);
+        $part = [];
+        $date = new \DateTime($today);
+        $part[] = $date->format('Y-m-d');         // today
         $date->modify('+1 day');
-        $part[] = $date->format('Y-m-d');
+        $part[] = $date->format('Y-m-d');         // tomorrow
         $date->modify('+1 day');
-        $part[] = $date->format('Y-m-d');
+        $part[] = $date->format('Y-m-d');         // day after tomorrow
 
         return $part;
     }
