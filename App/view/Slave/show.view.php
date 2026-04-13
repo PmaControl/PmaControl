@@ -892,11 +892,11 @@ $catIcons = [
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
             <div>
                 <label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:2px"><?= __('Start') ?></label>
-                <input type="datetime-local" id="sv-ba-start" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
+                <input type="datetime-local" id="sv-ba-start" step="1" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
             </div>
             <div>
                 <label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:2px"><?= __('End') ?></label>
-                <input type="datetime-local" id="sv-ba-end" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
+                <input type="datetime-local" id="sv-ba-end" step="1" class="form-control" style="font-size:13px;width:220px;padding:4px 8px">
             </div>
             <div style="align-self:flex-end">
                 <button type="button" class="btn btn-primary btn-sm" id="sv-ba-launch" disabled>

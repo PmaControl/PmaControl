@@ -115,9 +115,9 @@ class BinlogAnalyzer
             $mysqlCreds = $this->getMysqlCredentials($master);
             $this->updateLastStep("MySQL user: " . $mysqlCreds['user'] . "@" . $master['ip'] . ":" . $master['port']);
 
-            // Step 6 — Find binlog files via MySQL protocol
-            $this->addStep('find_binlogs', "Querying SHOW BINARY LOGS on master " . $master['ip'] . ":" . $master['port'] . "...");
-            $binlogFiles = $this->findBinlogFilesRemote($binary, $mysqlCreds, $master, $analysis['time_start'], $analysis['time_end']);
+            // Step 6 — Find binlog files using slave's current position as anchor
+            $this->addStep('find_binlogs', "Finding binlog files for time range (using slave position as anchor)...");
+            $binlogFiles = $this->findBinlogFilesFromSlavePos($binary, $mysqlCreds, $master, $analysis);
             if (empty($binlogFiles)) {
                 throw new \Exception("No binlog files found for the specified time range");
             }
@@ -245,12 +245,99 @@ class BinlogAnalyzer
     // ------------------------------------------------------------------
 
     /**
+     * Smart binlog discovery: use the slave's current IO position as an anchor point
+     * to avoid scanning the entire SHOW BINARY LOGS list. The slave knows exactly
+     * which binlog file it's reading from the master right now, so we only need to
+     * look at a small window around that position.
+     */
+    private function findBinlogFilesFromSlavePos(string $binary, array $creds, array $master, array $analysis): array
+    {
+        $slaveId = (int) $analysis['id_mysql_server'];
+        $connName = $analysis['connection_name'] ?? '';
+
+        // Get slave's current binlog position from the slave server
+        $slaveServer = $this->getServer($slaveId);
+        $slaveCreds = $this->getMysqlCredentials($slaveServer);
+        $slaveLink = new \mysqli($slaveCreds['host'], $slaveCreds['user'], $slaveCreds['password'], '', $slaveCreds['port']);
+        if ($slaveLink->connect_error) {
+            // Fallback to full search
+            return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
+        }
+
+        $res = $slaveLink->query("SHOW SLAVE STATUS");
+        if (!$res) $res = $slaveLink->query("SHOW REPLICA STATUS");
+        $slaveStatus = $res ? $res->fetch_assoc() : null;
+        if ($res) $res->free();
+        $slaveLink->close();
+
+        if (!$slaveStatus) {
+            return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
+        }
+
+        // Current master binlog being read by the IO thread
+        $currentBinlog = $slaveStatus['Master_Log_File'] ?? $slaveStatus['Source_Log_File'] ?? '';
+        // Extract numeric suffix: mysql-bin.1054501 → 1054501
+        if (!preg_match('/\.(\d+)$/', $currentBinlog, $m)) {
+            return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
+        }
+        $currentNum = (int) $m[1];
+        $prefix = substr($currentBinlog, 0, strrpos($currentBinlog, '.'));
+
+        // The time range we want is in the past (before "now"), so the binlogs we need
+        // have numbers <= currentNum. How far back? Estimate based on how old the data is.
+        $now = time();
+        $rangeEnd = strtotime($analysis['time_end']);
+        $rangeStart = strtotime($analysis['time_start']);
+        $ageSeconds = max(1, $now - $rangeEnd);
+        $rangeDuration = max(1, $rangeEnd - $rangeStart);
+
+        // Assume ~1 binlog per minute as a rough estimate, add generous margin
+        $estimatedBinlogsBack = max(20, (int)(($ageSeconds + $rangeDuration) / 30));
+
+        // Build a list of candidate binlog names
+        $startNum = max(1, $currentNum - $estimatedBinlogsBack);
+        $endNum = $currentNum;
+
+        $connArgs = $this->buildRemoteArgs($creds);
+
+        $this->updateLastStep("Slave reading $currentBinlog. Scanning $prefix." . $startNum . " → $prefix." . $endNum . " (~" . ($endNum - $startNum + 1) . " files)...");
+
+        // Binary search within this narrow range
+        $candidates = [];
+        for ($i = $startNum; $i <= $endNum; $i++) {
+            $candidates[] = ['name' => $prefix . '.' . str_pad($i, strlen($m[1]), '0', STR_PAD_LEFT)];
+        }
+
+        $startTs = strtotime($analysis['time_start']);
+        $endTs = strtotime($analysis['time_end']);
+
+        // Binary search for start file
+        $startIdx = $this->binarySearchBinlog($binary, $connArgs, $candidates, $startTs);
+        $endIdx = $this->binarySearchBinlog($binary, $connArgs, $candidates, $endTs);
+
+        $from = max(0, $startIdx - 1);
+        $to = min(count($candidates) - 1, $endIdx);
+
+        $selectedFiles = [];
+        for ($i = $from; $i <= $to; $i++) {
+            $selectedFiles[] = $candidates[$i]['name'];
+        }
+
+        if (empty($selectedFiles)) {
+            // Fallback
+            $selectedFiles[] = $currentBinlog;
+        }
+
+        return $selectedFiles;
+    }
+
+    /**
      * Find binlog files that cover the requested time range.
-     * Uses a direct MySQL connection via the master's credentials.
+     * Uses a direct MySQL connection + binary search on binlog list.
+     * Fallback method when slave position is not available.
      */
     private function findBinlogFilesRemote(string $binary, array $creds, array $master, string $timeStart, string $timeEnd): array
     {
-        // Connect to master and get list of binlog files
         $link = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
         if ($link->connect_error) {
             throw new \Exception("Cannot connect to master MySQL " . $creds['host'] . ":" . $creds['port'] . " — " . $link->connect_error);
@@ -272,53 +359,82 @@ class BinlogAnalyzer
             throw new \Exception("SHOW BINARY LOGS returned empty on master");
         }
 
-        // Use mysqlbinlog --read-from-remote-server to probe each file's first timestamp
+        $this->updateLastStep("SHOW BINARY LOGS: " . count($allBinlogs) . " files. Binary-searching for time range...");
+
         $startTs = strtotime($timeStart);
         $endTs = strtotime($timeEnd);
-        $selectedFiles = [];
-        $lastCandidateBefore = null;
         $connArgs = $this->buildRemoteArgs($creds);
 
-        foreach ($allBinlogs as $i => $bl) {
-            // Probe first timestamp: read just the header
-            $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
-                 . " --stop-position=500 " . escapeshellarg($bl['name'])
-                 . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
-            $firstTs = trim(shell_exec($cmd) ?: '');
+        // Binary search: find the first binlog that starts AFTER $startTs
+        // The file just before it is the one that contains $startTs
+        $startIdx = $this->binarySearchBinlog($binary, $connArgs, $allBinlogs, $startTs);
+        $endIdx = $this->binarySearchBinlog($binary, $connArgs, $allBinlogs, $endTs);
 
-            if (empty($firstTs)) continue;
+        // Include one file before startIdx (it may contain events in our range)
+        $from = max(0, $startIdx - 1);
+        $to = min(count($allBinlogs) - 1, $endIdx);
 
-            if (preg_match('/^#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+)$/', $firstTs, $tm)) {
-                $year = 2000 + (int) $tm[1];
-                $fileStartTs = strtotime("$year-$tm[2]-$tm[3] $tm[4]");
-            } else {
-                continue;
-            }
-
-            if ($fileStartTs > $endTs) {
-                break;
-            }
-
-            if ($fileStartTs <= $startTs) {
-                $lastCandidateBefore = $bl['name'];
-            }
-
-            if ($fileStartTs >= $startTs) {
-                $selectedFiles[] = $bl['name'];
-            }
+        $selectedFiles = [];
+        for ($i = $from; $i <= $to; $i++) {
+            $selectedFiles[] = $allBinlogs[$i]['name'];
         }
 
-        // Include the file that starts before our range
-        if ($lastCandidateBefore && !in_array($lastCandidateBefore, $selectedFiles)) {
-            array_unshift($selectedFiles, $lastCandidateBefore);
-        }
-
-        // Fallback: last binlog
-        if (empty($selectedFiles) && !empty($allBinlogs)) {
+        if (empty($selectedFiles)) {
             $selectedFiles[] = end($allBinlogs)['name'];
         }
 
         return $selectedFiles;
+    }
+
+    /**
+     * Binary search: find the index of the binlog file that contains the given timestamp.
+     * Returns the index of the last file whose first event is <= $targetTs.
+     */
+    private function binarySearchBinlog(string $binary, string $connArgs, array $binlogs, int $targetTs): int
+    {
+        $lo = 0;
+        $hi = count($binlogs) - 1;
+        $result = 0;
+
+        while ($lo <= $hi) {
+            $mid = intdiv($lo + $hi, 2);
+            $fileTs = $this->probeBinlogTimestamp($binary, $connArgs, $binlogs[$mid]['name']);
+
+            if ($fileTs === null) {
+                // Can't read this file, try next
+                $lo = $mid + 1;
+                continue;
+            }
+
+            if ($fileTs <= $targetTs) {
+                $result = $mid;
+                $lo = $mid + 1;
+            } else {
+                $hi = $mid - 1;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Probe the first event timestamp of a binlog file via --read-from-remote-server.
+     */
+    private function probeBinlogTimestamp(string $binary, string $connArgs, string $binlogName): ?int
+    {
+        $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+             . " --stop-position=500 " . escapeshellarg($binlogName)
+             . " 2>/dev/null | grep -oP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
+        $firstTs = trim(shell_exec($cmd) ?: '');
+
+        if (empty($firstTs)) return null;
+
+        if (preg_match('/^#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+)$/', $firstTs, $tm)) {
+            $year = 2000 + (int) $tm[1];
+            return strtotime("$year-$tm[2]-$tm[3] $tm[4]");
+        }
+
+        return null;
     }
 
     // ------------------------------------------------------------------
