@@ -634,8 +634,16 @@ class Binlog extends Controller {
                 }
 
                 if ($total_size > $ob->size_max) {
-                    
+
                     $db_remote = Mysql::getDbLink($ob->id_mysql_server);
+
+                    // MariaDB 10.6.1+: slave_connections_needed_for_purge blocks purge
+                    // if no slave is connected. Set to 0 to allow purge regardless.
+                    $isMariaDB = (stripos($db_remote->getServerType(), 'mariadb') !== false);
+                    if ($isMariaDB) {
+                        $db_remote->sql_query_silent("SET GLOBAL slave_connections_needed_for_purge = 0;");
+                    }
+
                     $sql = "PURGE BINARY LOGS TO '" . $file_previous . "';";
                     Debug::sql($sql);
                     $this->logger->notice('We purged binary logs on id_mysql_server:'.$ob->id_mysql_server.' "'.$sql.'"');
