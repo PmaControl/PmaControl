@@ -2707,4 +2707,59 @@ var chart = new Chart(ctx, {
         echo json_encode($rows);
     }
 
+    /**
+     * CLI: Detect and clean up stuck binlog analyses.
+     * An analysis is considered stuck if status='running' for > 10 minutes
+     * and no PHP process is alive for it.
+     *
+     * Usage: php App/Webroot/index.php slave checkStuckAnalyses
+     * Should be called periodically (e.g. every 5 minutes via cron).
+     */
+    public function checkStuckAnalyses($param = [])
+    {
+        $this->view = false;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $log = $this->di['log'] ?? null;
+
+        $res = $db->sql_query(
+            "SELECT ba.id, ba.id_mysql_server, ba.created_at, ba.time_start, ba.time_end,
+                    ms.display_name, ms.ip
+             FROM binlog_analysis ba
+             JOIN mysql_server ms ON ba.id_mysql_server = ms.id
+             WHERE ba.status = 'running'
+               AND ba.created_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)"
+        );
+
+        $fixed = 0;
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            // Check if a process is still alive for this analysis
+            $pid = trim(shell_exec("pgrep -f 'runBinlogAnalysisCli " . (int)$row['id'] . "' 2>/dev/null") ?: '');
+
+            if (empty($pid)) {
+                // Process is dead — mark as error
+                $msg = "Stuck analysis #" . $row['id'] . " detected: running since " . $row['created_at']
+                     . " for slave " . ($row['display_name'] ?: $row['ip']) . " (id=" . $row['id_mysql_server'] . ")"
+                     . " range [" . $row['time_start'] . " → " . $row['time_end'] . "]. Process is dead, marking as error.";
+
+                $db->sql_query(
+                    "UPDATE binlog_analysis SET status = 'error', error_message = 'Process died (stuck > 10 min, no PID found)', completed_at = NOW() WHERE id = " . (int)$row['id']
+                );
+
+                if ($log) {
+                    $log->error($msg);
+                }
+
+                // Also notify via Telegram
+                Telegram::broadcast("<b>Binlog Analysis Stuck</b>\n" . htmlspecialchars($msg), 'HTML');
+
+                $fixed++;
+            }
+        }
+
+        if (IS_CLI) {
+            echo $fixed > 0 ? "Fixed $fixed stuck analysis(es)\n" : "No stuck analyses found\n";
+        }
+    }
+
 }

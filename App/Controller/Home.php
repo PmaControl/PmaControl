@@ -167,6 +167,20 @@ class Home extends Controller {
             $data['ts_rows'] = (int)($row['total'] ?? 0);
         }
 
+        // ── 9. Stuck binlog analyses ──
+        $data['stuck_analyses'] = [];
+        $sql = "SELECT ba.id, ba.id_mysql_server, ba.created_at, ba.time_start, ba.time_end,
+                       ms.display_name, ms.ip, TIMESTAMPDIFF(MINUTE, ba.created_at, NOW()) AS minutes_ago
+                FROM binlog_analysis ba
+                JOIN mysql_server ms ON ba.id_mysql_server = ms.id
+                WHERE ba.status = 'running'
+                  AND ba.created_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                ORDER BY ba.created_at";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['stuck_analyses'][] = $row;
+        }
+
         $this->set('data', $data);
     }
 

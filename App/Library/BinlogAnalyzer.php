@@ -874,11 +874,25 @@ class BinlogAnalyzer
      */
     private function parseDdlStatements(): array
     {
-        $cmd = $this->buildBinlogCmd(false);
+        // Use --base64-output=NEVER to skip all binary row data.
+        // DDL is always logged as plain-text Query events, so we lose nothing.
+        // Without this, 200 MB of base64 flows through the pipe and kills PHP.
+        $analysis = $this->getAnalysis();
+        $version = $analysis['mysql_version'] ?? '';
+        $binary = $this->getMysqlbinlogBinary($version);
+
+        $cmd = escapeshellarg($binary) . " --base64-output=NEVER"
+             . " --start-datetime=" . escapeshellarg($analysis['time_start'])
+             . " --stop-datetime=" . escapeshellarg($analysis['time_end']);
+
+        $files = glob($this->tmpDir . '/*');
+        sort($files);
+        foreach ($files as $f) {
+            $cmd .= " " . escapeshellarg($f);
+        }
 
         // Extract use <db> + DDL lines. mysqlbinlog outputs "use `db`" before each DDL.
-        // We grab lines matching DDL keywords and the preceding "use" lines.
-        $cmdDdl = $cmd . " 2>/dev/null | grep -iP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
+        $cmdDdl = "timeout 60 " . $cmd . " 2>/dev/null | grep -iP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
         $output = shell_exec($cmdDdl . " 2>/dev/null") ?: '';
 
         $details = [];

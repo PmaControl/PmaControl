@@ -203,6 +203,27 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
 </div>
 <?php endif; ?>
 
+<?php if (!empty($data['stuck_analyses'])): ?>
+<div class="hm-card" style="margin-bottom:16px">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,#7f1d1d,#991b1b)">
+        <span><i class="fa fa-exclamation-circle"></i> <?= __('Stuck Binlog Analyses') ?> (<?= count($data['stuck_analyses']) ?>)</span>
+    </div>
+    <div class="hm-card-body" style="padding:0">
+        <?php foreach ($data['stuck_analyses'] as $sa): ?>
+        <div class="hm-alert">
+            <span class="hm-alert-name">
+                <a href="<?= LINK ?>slave/show/<?= (int)$sa['id_mysql_server'] ?>/"><?= htmlspecialchars($sa['display_name'] ?: $sa['ip']) ?></a>
+            </span>
+            <span class="hm-alert-msg">
+                Analysis #<?= $sa['id'] ?> running since <?= $sa['minutes_ago'] ?> min
+                (<?= $sa['time_start'] ?> &rarr; <?= $sa['time_end'] ?>)
+            </span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- ════════════════════════════════════════
      ROW 3: BREAKDOWN CHARTS
      ════════════════════════════════════════ -->
