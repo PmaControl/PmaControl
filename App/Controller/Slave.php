@@ -361,17 +361,19 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "chart.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
 
         if (!empty($slaves)) {
             foreach ($slaves as $slave) {
 
                 $this->di['js']->code_javascript('
 (function() {
-Chart.defaults.global.legend.display = false;
+Chart.defaults.plugins.legend.display = false;
 
 var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'");
 if (!canvas) return;
+var existing = Chart.getChart(canvas);
+if (existing) existing.destroy();
 var ctx = canvas.getContext("2d");
 
 new Chart(ctx, {
@@ -384,25 +386,27 @@ new Chart(ctx, {
             borderColor: "rgba(0,0,0,1)",
             borderWidth: 2,
             pointRadius: 0,
-            lineTension: 0
+            tension: 0
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        tooltips: { enabled: false },
-        legend: { display: false },
+        plugins: {
+            tooltip: { enabled: false },
+            legend: { display: false }
+        },
         scales: {
-            xAxes: [{
+            x: {
                 type: "time",
                 display: false,
-                gridLines: { display: false }
-            }],
-            yAxes: [{
+                grid: { display: false }
+            },
+            y: {
                 display: false,
-                ticks: { min: 0 },
-                gridLines: { display: false }
-            }]
+                min: 0,
+                grid: { display: false }
+            }
         }
     }
 });
@@ -2543,7 +2547,7 @@ var chart = new Chart(ctx, {
      */
     public function startBinlogAnalysis($param)
     {
-        $this->layout_name = false;
+        $this->view = false;
         header('Content-Type: application/json');
 
         $id_mysql_server = (int) $param[0];
@@ -2584,7 +2588,7 @@ var chart = new Chart(ctx, {
      */
     public function binlogAnalysisResult($param)
     {
-        $this->layout_name = false;
+        $this->view = false;
         header('Content-Type: application/json');
 
         $analysisId = (int) $param[0];
@@ -2615,6 +2619,7 @@ var chart = new Chart(ctx, {
      */
     public function runBinlogAnalysisCli($param)
     {
+        $this->view = false;
         $analysisId = (int) $param[0];
 
         $analyzer = new BinlogAnalyzer($analysisId);
@@ -2676,7 +2681,7 @@ var chart = new Chart(ctx, {
      */
     public function binlogAnalysisList($param)
     {
-        $this->layout_name = false;
+        $this->view = false;
         header('Content-Type: application/json');
 
         $id_mysql_server = (int) $param[0];
