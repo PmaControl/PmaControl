@@ -920,16 +920,25 @@ class BinlogAnalyzer
             $cmd .= " " . escapeshellarg($f);
         }
 
-        // Extract use <db> + DDL lines. mysqlbinlog outputs "use `db`" before each DDL.
-        $cmdDdl = "timeout 60 " . $cmd . " 2>/dev/null | grep -aiP '(^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
+        // Extract timestamp lines + use <db> + DDL lines.
+        // Timestamps are on lines like: #260414  0:01:18 server id 123 ...
+        $cmdDdl = "timeout 60 " . $cmd . " 2>/dev/null | grep -aiP '(^#\\d{6}\\s+\\d+:\\d+:\\d+|^use\s|^\\s*(CREATE|ALTER|DROP|TRUNCATE|RENAME)\\s)'";
         $output = shell_exec($cmdDdl . " 2>/dev/null") ?: '';
 
         $details = [];
         $currentDb = '';
+        $currentTs = '';
 
         foreach (explode("\n", trim($output)) as $line) {
             $line = trim($line);
             if (empty($line)) continue;
+
+            // Track timestamp from event header lines: #260414  0:01:18
+            if (preg_match('/^#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+)/', $line, $tsm)) {
+                $year = 2000 + (int) $tsm[1];
+                $currentTs = "$year-$tsm[2]-$tsm[3] $tsm[4]";
+                continue;
+            }
 
             // Track current database from "use `dbname`" statements
             if (preg_match('/^use\s+`?([^`;\s]+)`?/i', $line, $m)) {
@@ -966,9 +975,9 @@ class BinlogAnalyzer
             }
 
             if ($type) {
-                // Truncate the statement for storage (keep first 200 chars)
                 $stmt = substr($line, 0, 200);
                 $details[] = [
+                    'datetime'  => $currentTs,
                     'type'      => $type,
                     'database'  => $db,
                     'table'     => $table,

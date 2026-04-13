@@ -978,7 +978,7 @@ $catIcons = [
             </div>
             <div class="sv-collapse-body" id="sv-ba-ddl-body" style="display:none;padding:0">
                 <table class="table table-condensed table-striped" style="font-size:11px;margin:0">
-                    <thead><tr><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
+                    <thead><tr><th><?= __("Datetime") ?></th><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
                     <tbody id="sv-ba-ddl-tbody"></tbody>
                 </table>
             </div>
@@ -1269,7 +1269,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('sv-ba-ddl-count').textContent = ddls.length;
             var ddlHtml = '';
             ddls.forEach(function(dd) {
-                ddlHtml += '<tr><td><b>' + escHtml(dd.type || '') + '</b></td>'
+                ddlHtml += '<tr><td style="white-space:nowrap;color:#64748b"><small>' + escHtml(dd.datetime || '') + '</small></td>'
+                    + '<td><b>' + escHtml(dd.type || '') + '</b></td>'
                     + '<td><code>' + escHtml(dd.database || '') + '</code></td>'
                     + '<td><code>' + escHtml(dd.table || '') + '</code></td>'
                     + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(dd.statement || '') + '">'
