@@ -1249,6 +1249,11 @@ class Graphviz
             $fork = 'SingleStore';
         }
 
+        $recognizedForks = ['MySQL', 'MariaDB', 'Percona', 'ProxySQL', 'MySQL Router', 'MaxScale', 'SingleStore'];
+        if ($fork === '' || !in_array($fork, $recognizedForks, true)) {
+            $fork = 'MySQL';
+        }
+
         $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
         $version_label = trim($fork.' : '.$number);
         if ($version_label === ':') {

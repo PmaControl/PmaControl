@@ -95,6 +95,24 @@ final class GraphvizServerBoxRowsTest extends TestCase
         $this->assertStringContainsString('> 10.68.68.111:6033<', $dot);
         $this->assertStringNotContainsString('proxysql-admin-1:6033', $dot);
     }
+    public function testGenerateServerFallsBackToMysqlForGenericVersionSuffixes(): void
+    {
+        $server = [
+            'id_mysql_server' => '236',
+            'display_name' => 'mysql-generic-log',
+            'version' => '8.0.44-log',
+            'version_comment' => 'MySQL Community Server - GPL',
+            'color' => '#ffffff',
+            'ip' => '10.10.10.10',
+            'port' => '3306',
+        ];
+
+        $dot = Graphviz::generateServer($server);
+        $lines = $this->extractFirstBoxLines($dot);
+
+        $this->assertSame('MySQL : 8.0.44', $lines['line_1']);
+        $this->assertStringContainsString('mysql.svg', $dot);
+    }
 
     public static function firstTwoBoxLinesProvider(): array
     {
