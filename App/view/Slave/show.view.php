@@ -1454,9 +1454,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             return colors[ctx.dataIndex % colors.length];
                         },
                         borderColor: '#fff',
-                        borderWidth: 1,
-                        spacing: 0,
-                        borderColor: 'rgba(255,255,255,0.3)'
+                        borderWidth: 0,
+                        spacing: 0
                     }]
                 },
                 options: {
