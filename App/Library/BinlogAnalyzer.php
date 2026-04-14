@@ -803,10 +803,11 @@ class BinlogAnalyzer
         $cmd .= " --start-datetime=" . escapeshellarg($analysis['time_start']);
         $cmd .= " --stop-datetime=" . escapeshellarg($analysis['time_end']);
 
-        // Add all local binlog files
+        // Add only binlog files (exclude .meta.json or other non-binlog files)
         $files = glob($this->tmpDir . '/*');
         sort($files);
         foreach ($files as $f) {
+            if (preg_match('/\.(json|log|txt|md)$/i', $f)) continue;
             $cmd .= " " . escapeshellarg($f);
         }
 
@@ -1096,7 +1097,10 @@ class BinlogAnalyzer
             // If volume is 0 for all, estimate from total file size / seconds
             if (array_sum($volumePerSec) === 0 && !empty($txnPerSec)) {
                 $totalSize = 0;
-                foreach (glob($this->tmpDir . '/*') as $f) $totalSize += filesize($f);
+                foreach (glob($this->tmpDir . '/*') as $f) {
+                    if (preg_match('/\.(json|log|txt|md)$/i', $f)) continue;
+                    $totalSize += filesize($f);
+                }
                 $avgPerTxn = count($txnPerSec) > 0 ? $totalSize / array_sum($txnPerSec) : 0;
                 foreach ($txnPerSec as $ts => $count) {
                     $volumePerSec[$ts] = (int) ($count * $avgPerTxn);
@@ -1145,6 +1149,7 @@ class BinlogAnalyzer
         $files = glob($this->tmpDir . '/*');
         sort($files);
         foreach ($files as $f) {
+            if (preg_match('/\.(json|log|txt|md)$/i', $f)) continue;
             $cmd .= " " . escapeshellarg($f);
         }
 
@@ -1228,6 +1233,7 @@ class BinlogAnalyzer
     {
         $totalFileSize = 0;
         foreach (glob($this->tmpDir . '/*') as $f) {
+            if (preg_match('/\.(json|log|txt|md)$/i', $f)) continue;
             $totalFileSize += filesize($f);
         }
 
