@@ -71,6 +71,83 @@ class BinlogAnalyzer
     }
 
     /**
+     * Write a metadata JSON sidecar for a cached binlog file.
+     * Stored as: data/binlog_analysis/{server_id}/{binlog_name}.meta.json
+     *
+     * Contains structured data suitable for AI/LLM analysis:
+     * - file info (name, size, timestamps)
+     * - server context (master id, version, server_id)
+     * - transaction summary (count, size, parallelism)
+     * - DML breakdown per table
+     * - volume timeline
+     * - DDL statements
+     */
+    private function writeBinlogMetadata(string $binlogName, array $analysis, array $gtidStats, array $dmlStats, array $volumeStats, array $ddlResult): void
+    {
+        if (empty($this->cacheDir)) return;
+
+        $filePath = $this->cacheDir . $binlogName;
+        $metaPath = $this->cacheDir . $binlogName . '.meta.json';
+
+        $meta = [
+            '_schema_version' => 1,
+            '_generated_at'   => date('Y-m-d H:i:s'),
+            '_generator'      => 'PmaControl BinlogAnalyzer',
+
+            'file' => [
+                'name'      => $binlogName,
+                'size_bytes' => file_exists($filePath) ? filesize($filePath) : 0,
+                'cached_at' => date('Y-m-d H:i:s', file_exists($filePath) ? filemtime($filePath) : time()),
+            ],
+
+            'server' => [
+                'master_id'      => (int)($analysis['id_mysql_server__master'] ?? 0),
+                'slave_id'       => (int)($analysis['id_mysql_server'] ?? 0),
+                'mysql_version'  => $analysis['mysql_version'] ?? '',
+                'connection_name' => $analysis['connection_name'] ?? '',
+                'server_id'      => (int)($analysis['server_id'] ?? 0),
+            ],
+
+            'time_range' => [
+                'start' => $analysis['time_start'] ?? '',
+                'end'   => $analysis['time_end'] ?? '',
+            ],
+
+            'transactions' => [
+                'total'          => $gtidStats['total_transactions'] ?? 0,
+                'total_size_bytes' => $gtidStats['total_size'] ?? 0,
+                'max_size_bytes' => $gtidStats['max_size'] ?? 0,
+                'large_100k'     => $gtidStats['large_100k'] ?? 0,
+                'large_500k'     => $gtidStats['large_500k'] ?? 0,
+                'sequential_pct' => $gtidStats['sequential_pct'] ?? 0,
+                'max_parallelism' => $gtidStats['max_parallelism'] ?? 0,
+            ],
+
+            'dml' => [
+                'total_rows' => ($dmlStats['inserts'] ?? 0) + ($dmlStats['updates'] ?? 0) + ($dmlStats['deletes'] ?? 0),
+                'inserts'    => $dmlStats['inserts'] ?? 0,
+                'updates'    => $dmlStats['updates'] ?? 0,
+                'deletes'    => $dmlStats['deletes'] ?? 0,
+                'databases'  => $dmlStats['db_count'] ?? 0,
+                'top_tables' => array_slice($dmlStats['top_tables'] ?? [], 0, 20),
+            ],
+
+            'volume_per_second' => [
+                'peak_txn_per_sec'   => $volumeStats['peak_txn'] ?? 0,
+                'peak_bytes_per_sec' => $volumeStats['peak_bytes'] ?? 0,
+                'data_points'        => count($volumeStats['data'] ?? []),
+            ],
+
+            'ddl' => [
+                'count'   => $ddlResult['count'] ?? 0,
+                'details' => array_slice($ddlResult['details'] ?? [], 0, 50),
+            ],
+        ];
+
+        @file_put_contents($metaPath, json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
      * Purge cached binlog files older than TTL across all servers.
      */
     public static function purgeCacheOlderThan(int $days = self::CACHE_TTL_DAYS): int
@@ -247,7 +324,14 @@ class BinlogAnalyzer
             $ddlCount = $ddlResult['count'];
             $this->updateLastStep($ddlCount > 0 ? "$ddlCount DDL statement(s) found" : "No DDL — 100% DML row-based");
 
-            // Step 12 — Compile & store results
+            // Step 12 — Write metadata sidecar for each cached binlog
+            $this->addStep('metadata', "Writing metadata JSON for cached binlogs...");
+            foreach ($binlogFiles as $binlogName) {
+                $this->writeBinlogMetadata($binlogName, $analysis, $gtidStats, $dmlStats, $volumeStats, $ddlResult);
+            }
+            $this->updateLastStep(count($binlogFiles) . " metadata file(s) written");
+
+            // Step 13 — Compile & store results
             $this->addStep('store', "Compiling final report and storing results...");
             $this->storeResults($gtidStats, $dmlStats, $volumeStats, $ddlResult, $analysis);
             $this->updateLastStep("Report stored successfully");
