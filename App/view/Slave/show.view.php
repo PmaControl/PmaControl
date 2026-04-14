@@ -932,11 +932,6 @@ $catIcons = [
                 <canvas id="sv-ba-parallel-chart"></canvas>
             </div>
 
-            <!-- Replication lag chart (synced with above) -->
-            <div style="position:relative;height:150px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
-                <canvas id="sv-ba-lag-chart"></canvas>
-            </div>
-
             <!-- Stats summary -->
             <div class="row" style="margin-bottom:16px">
                 <div class="col-md-6">
@@ -1291,34 +1286,81 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
 
         // Chart
-        renderChart(d.volume_per_second || []);
+        renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
-        renderLagChart(d.lag_data || []);
     }
 
     // ---- Chart.js bar+line chart ----
-    function renderChart(volData) {
+    function renderChart(volData, lagData) {
         var canvas = document.getElementById('sv-ba-chart');
         if (baChart) { baChart.destroy(); baChart = null; }
 
         var labels = volData.map(function(v) { return v.ts; });
         var bytesKB = volData.map(function(v) { return (v.bytes / 1024).toFixed(1); });
-        var txnCounts = volData.map(function(v) { return v.txn; });
+
+        var datasets = [
+            {
+                type: 'bar',
+                label: 'Volume (KB/s)',
+                data: bytesKB,
+                backgroundColor: 'rgba(33,150,243,0.6)',
+                borderColor: 'rgba(33,150,243,0.8)',
+                borderWidth: 1,
+                yAxisID: 'y',
+                order: 2
+            }
+        ];
+
+        var hasLag = lagData && lagData.length > 0;
+        if (hasLag) {
+            datasets.push({
+                type: 'line',
+                label: 'Replication Lag (s)',
+                data: lagData.map(function(v) { return { x: v.ts, y: v.lag }; }),
+                borderColor: '#dc2626',
+                backgroundColor: 'rgba(220,38,38,0.08)',
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.2,
+                yAxisID: 'yLag',
+                order: 1
+            });
+        }
+
+        var scales = {
+            x: {
+                type: 'time',
+                time: {
+                    parser: 'YYYY-MM-DD HH:mm:ss',
+                    tooltipFormat: 'YYYY-MM-DD HH:mm:ss',
+                    displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' }
+                },
+                title: { display: true, text: 'Time' },
+                ticks: { maxRotation: 45, font: { size: 9 } }
+            },
+            y: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'KB/s', color: '#2196F3' },
+                ticks: { color: '#2196F3' },
+                beginAtZero: true
+            }
+        };
+
+        if (hasLag) {
+            scales.yLag = {
+                type: 'linear',
+                position: 'right',
+                title: { display: true, text: 'Lag (s)', color: '#dc2626' },
+                ticks: { color: '#dc2626' },
+                grid: { drawOnChartArea: false },
+                beginAtZero: true
+            };
+        }
 
         baChart = new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Volume (KB/s)',
-                        data: bytesKB,
-                        backgroundColor: 'rgba(33,150,243,0.6)',
-                        borderColor: 'rgba(33,150,243,0.8)',
-                        borderWidth: 1
-                    }
-                ]
-            },
+            data: { labels: labels, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -1326,29 +1368,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Binlog Volume (KB/s)',
+                        text: hasLag ? 'Binlog Volume + Replication Lag' : 'Binlog Volume (KB/s)',
                         padding: 4,
                         font: { size: 13, weight: 'bold' }
                     },
-                    legend: { display: false }
+                    legend: { display: hasLag, position: 'top', labels: { font: { size: 11 } } }
                 },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            parser: 'YYYY-MM-DD HH:mm:ss',
-                            tooltipFormat: 'YYYY-MM-DD HH:mm:ss',
-                            displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' }
-                        },
-                        title: { display: true, text: 'Time' },
-                        ticks: { maxRotation: 45, font: { size: 9 } }
-                    },
-                    y: {
-                        type: 'linear',
-                        title: { display: true, text: 'KB/s' },
-                        beginAtZero: true
-                    }
-                }
+                scales: scales
             }
         });
     }
@@ -1426,76 +1452,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---- Lag chart ----
-    var baLagChart = null;
-    function renderLagChart(lagData) {
-        var canvas = document.getElementById('sv-ba-lag-chart');
-        if (baLagChart) { baLagChart.destroy(); baLagChart = null; }
-        if (!lagData || !lagData.length) {
-            canvas.parentElement.style.display = 'none';
-            return;
-        }
-        canvas.parentElement.style.display = '';
-
-        var labels = lagData.map(function(v) { return v.ts; });
-        var lags = lagData.map(function(v) { return v.lag; });
-
-        baLagChart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Seconds Behind Master',
-                    data: lags,
-                    borderColor: '#dc2626',
-                    backgroundColor: 'rgba(220,38,38,0.15)',
-                    fill: true,
-                    borderWidth: 2,
-                    pointRadius: 1,
-                    tension: 0.2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: 'Replication Lag (seconds behind master)', font: { size: 12, weight: 'bold' }, padding: 4 },
-                    legend: { display: false },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            afterBody: function(ctx) {
-                                // Show volume and parallelism from the same timestamp
-                                var idx = ctx[0].dataIndex;
-                                var ts = ctx[0].label;
-                                var extra = [];
-                                if (baChart && baChart.data && baChart.data.datasets[0]) {
-                                    var volData = baChart.data.datasets[0].data;
-                                    var txnData = baChart.data.datasets[1] ? baChart.data.datasets[1].data : [];
-                                    // Find closest index by timestamp
-                                    if (volData[idx] !== undefined) extra.push('Volume: ' + volData[idx] + ' KB/s');
-                                    if (txnData[idx] !== undefined) extra.push('Txn/s: ' + txnData[idx]);
-                                }
-                                return extra;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
-                        ticks: { maxRotation: 45, font: { size: 8 } }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Lag (s)', color: '#dc2626' },
-                        ticks: { color: '#dc2626' }
-                    }
-                }
-            }
-        });
-    }
 
     // ---- Load past analyses ----
     function loadHistory() {
