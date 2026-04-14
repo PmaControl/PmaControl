@@ -940,12 +940,12 @@ $catIcons = [
             </div>
 
             <!-- Chart -->
-            <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+            <div style="position:relative;height:250px;margin-bottom:16px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-chart"></canvas>
             </div>
 
             <!-- Parallelism chart -->
-            <div style="position:relative;height:360px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+            <div style="position:relative;height:360px;margin-bottom:16px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-parallel-chart"></canvas>
             </div>
 
@@ -1321,6 +1321,12 @@ document.addEventListener('DOMContentLoaded', function() {
             recsHtml += '<li style="margin-bottom:6px">' + escHtml(r) + '</li>';
         });
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
+
+        // Dark theme for all charts
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(148,163,184,0.15)';
+        Chart.defaults.plugins.title.color = '#e2e8f0';
+        Chart.defaults.plugins.legend.labels.color = '#cbd5e1';
 
         // Binlog file timeline
         renderFileTimeline(d.binlog_file_ranges || []);
