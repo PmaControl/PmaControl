@@ -262,11 +262,12 @@ class Format
         $enterprise = false;
 
         if (strpos($version, "-")) {
-            $number = explode("-", $version)[0];
-            $fork   = explode("-", $version)[1];
+            $versionParts = explode("-", $version);
+            $number = $versionParts[0];
+            $fork   = $versionParts[1] ?? 'MySQL';
             
-            if (preg_match('/^-?\d+$/', $fork)) {
-                $fork   = explode("-", $version)[2];
+            if (preg_match('/^-?\d+$/', $fork) && !empty($versionParts[2])) {
+                $fork   = $versionParts[2];
                 $enterprise = true;
             }
         } else {

@@ -41,6 +41,15 @@ final class FormatTest extends TestCase
         $this->assertFalse($version['enterprise']);
     }
 
+    public function testGetMySQLNumVersionHandlesPerconaVersionSuffixWithoutWarning(): void
+    {
+        $version = Format::getMySQLNumVersion('8.4.8-8', "Percona Server (GPL), Release '8', Revision '1c288264'");
+
+        $this->assertSame('8.4.8', $version['number']);
+        $this->assertSame('Percona', $version['fork']);
+        $this->assertFalse($version['enterprise']);
+    }
+
     public function testMysqlVersionRendersProxySqlLabel(): void
     {
         $label = Format::mysqlVersion('2.5.5', 'ProxySQL');
