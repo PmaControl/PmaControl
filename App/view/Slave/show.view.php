@@ -955,7 +955,7 @@ $catIcons = [
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-database"></i> <?= __('DML by Database') ?>
                     </div>
-                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-db"></canvas>
                     </div>
                 </div>
@@ -963,7 +963,7 @@ $catIcons = [
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-table"></i> <?= __('DML by Table') ?>
                     </div>
-                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-tbl"></canvas>
                     </div>
                 </div>
@@ -1454,8 +1454,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             return colors[ctx.dataIndex % colors.length];
                         },
                         borderColor: '#fff',
-                        borderWidth: 0,
-                        spacing: 0
+                        borderWidth: 1,
+                        spacing: 0,
+                        borderColor: 'rgba(0,0,0,0.3)'
                     }]
                 },
                 options: {
