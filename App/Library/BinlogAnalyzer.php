@@ -696,6 +696,8 @@ class BinlogAnalyzer
      * We use --raw WITHOUT datetime filters — the time filtering is done
      * later during the parse phase.
      */
+    private const STALL_TIMEOUT = 120; // seconds without file growth → kill
+
     private function fetchBinlogRemote(string $binary, array $creds, array $master, string $binlogName, string $timeStart, string $timeEnd, int $expectedSizeBytes = 0): void
     {
         $connArgs = $this->buildRemoteArgs($creds);
@@ -708,14 +710,43 @@ class BinlogAnalyzer
              . " " . escapeshellarg($binlogName)
              . " 2>&1";
 
-        // Dynamic timeout: 15s per MB, minimum 300s, maximum 1800s
-        $sizeMb = max(1, $expectedSizeBytes / 1048576);
-        $timeout = (int) min(1800, max(300, $sizeMb * 15));
+        // Launch in background and monitor file growth
+        $logFile = $this->tmpDir . '/' . $binlogName . '.fetch.log';
+        $bgCmd = $cmd . " > " . escapeshellarg($logFile) . " 2>&1 & echo $!";
+        $pid = (int) trim(shell_exec($bgCmd) ?: '0');
 
-        $output = shell_exec("timeout $timeout " . $cmd);
+        if ($pid <= 0) {
+            throw new \Exception("Failed to launch mysqlbinlog for $binlogName");
+        }
+
+        // Poll: kill if file stops growing for STALL_TIMEOUT seconds
+        $lastSize = 0;
+        $lastGrowth = time();
+
+        while ($this->isProcessAlive($pid)) {
+            sleep(10);
+
+            $currentSize = file_exists($localPath) ? filesize($localPath) : 0;
+            clearstatcache(true, $localPath);
+            $currentSize = file_exists($localPath) ? filesize($localPath) : 0;
+
+            if ($currentSize > $lastSize) {
+                $lastSize = $currentSize;
+                $lastGrowth = time();
+            } elseif ((time() - $lastGrowth) > self::STALL_TIMEOUT) {
+                // Stalled — kill the process
+                @posix_kill($pid, 9);
+                $output = @file_get_contents($logFile) ?: '';
+                @unlink($logFile);
+                throw new \Exception("Fetch stalled for $binlogName — no growth for " . self::STALL_TIMEOUT . "s (last size: " . round($lastSize / 1048576, 1) . " MB): " . substr($output, 0, 300));
+            }
+        }
+
+        @unlink($logFile);
 
         if (!file_exists($localPath) || filesize($localPath) < 4) {
-            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server (timeout={$timeout}s): " . substr($output ?? '', 0, 300));
+            $output = '';
+            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server: " . substr($output, 0, 300));
         }
     }
 
@@ -1391,6 +1422,11 @@ class BinlogAnalyzer
             $link->close();
         } catch (\Throwable $e) {}
         return $sizes;
+    }
+
+    private function isProcessAlive(int $pid): bool
+    {
+        return $pid > 0 && @posix_kill($pid, 0);
     }
 
     private function detectVersionFromLink(\mysqli $link): string
