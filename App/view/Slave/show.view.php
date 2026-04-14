@@ -922,6 +922,14 @@ $catIcons = [
         <!-- Results container (hidden until loaded) -->
         <div id="sv-ba-results" style="display:none">
 
+            <!-- Zoom controls -->
+            <div style="margin-bottom:8px;text-align:right">
+                <button class="btn btn-default btn-xs" id="sv-ba-reset-zoom" title="<?= __('Reset zoom') ?>">
+                    <i class="fa fa-search-minus"></i> <?= __('Reset zoom') ?>
+                </button>
+                <small style="color:#94a3b8;margin-left:8px"><?= __('Drag to zoom, scroll to zoom, double-click to reset') ?></small>
+            </div>
+
             <!-- Chart -->
             <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-chart"></canvas>
@@ -1374,9 +1382,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     legend: { display: hasLag, position: 'top', labels: { font: { size: 11 } } }
                 },
-                scales: scales
+                scales: scales,
+                plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.1)', borderColor: '#2196F3', borderWidth: 1 },
+                            mode: 'x',
+                            onZoom: function(ctx) { syncZoom(ctx.chart, baParallelChart); }
+                        },
+                        pan: { enabled: true, mode: 'x', onPan: function(ctx) { syncZoom(ctx.chart, baParallelChart); } }
+                    }
+                }
             }
         });
+    }
+
+    function syncZoom(source, target) {
+        if (!target) return;
+        var srcX = source.scales.x;
+        target.options.scales.x.min = srcX.min;
+        target.options.scales.x.max = srcX.max;
+        target.update('none');
     }
 
     // ---- Parallelism chart (txn/s with min/avg/max lines) ----
@@ -1446,6 +1474,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         ticks: { maxRotation: 45, font: { size: 8 } }
                     },
                     y: { beginAtZero: true, title: { display: true, text: 'Txn/s (parallelism potential)' } }
+                },
+                plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.1)', borderColor: '#10b981', borderWidth: 1 },
+                            mode: 'x',
+                            onZoom: function(ctx) { syncZoom(ctx.chart, baChart); }
+                        },
+                        pan: { enabled: true, mode: 'x', onPan: function(ctx) { syncZoom(ctx.chart, baChart); } }
+                    }
                 }
             }
         });
@@ -1501,6 +1541,12 @@ document.addEventListener('DOMContentLoaded', function() {
         d.textContent = s;
         return d.innerHTML;
     }
+
+    // ---- Reset zoom button ----
+    document.getElementById('sv-ba-reset-zoom').addEventListener('click', function() {
+        if (baChart) { baChart.resetZoom(); }
+        if (baParallelChart) { baParallelChart.resetZoom(); }
+    });
 
     // ---- Init: load history on page load ----
     loadHistory();

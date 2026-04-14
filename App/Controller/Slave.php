@@ -1107,7 +1107,7 @@ $(document).ready(function() {
  */
     private function generateGraphSlave($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js", "hammer.min.js", "chartjs-plugin-zoom.js"));
 
         foreach ($slaves as $slave) {
 
