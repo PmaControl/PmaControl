@@ -21,11 +21,78 @@ class BinlogAnalyzer
     private $tmpDir;
     private $steps = [];
 
+    private const CACHE_BASE = ROOT . '/data/binlog_analysis/';
+    private const CACHE_TTL_DAYS = 30;
+
+    private $cacheDir;
+
     public function __construct(int $analysisId)
     {
         $this->db = Sgbd::sql(DB_DEFAULT);
         $this->analysisId = $analysisId;
         $this->tmpDir = '/tmp/binlog_analysis_' . $analysisId;
+    }
+
+    /**
+     * Set up the persistent cache directory for a given master server.
+     * Layout: data/binlog_analysis/{id_mysql_server}/mysql-bin.000123
+     */
+    private function initCache(int $masterId): void
+    {
+        $this->cacheDir = self::CACHE_BASE . $masterId . '/';
+        @mkdir($this->cacheDir, 0755, true);
+    }
+
+    /**
+     * Check if a binlog file is already cached and still valid (< TTL).
+     */
+    private function getCachedBinlog(string $binlogName): ?string
+    {
+        if (empty($this->cacheDir)) return null;
+        $path = $this->cacheDir . $binlogName;
+        if (file_exists($path) && filesize($path) > 4) {
+            $age = time() - filemtime($path);
+            if ($age < self::CACHE_TTL_DAYS * 86400) {
+                return $path;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Store a fetched binlog in the persistent cache.
+     */
+    private function cacheBinlog(string $binlogName, string $tmpPath): void
+    {
+        if (empty($this->cacheDir)) return;
+        if (!file_exists($tmpPath) || filesize($tmpPath) < 4) return;
+        $dest = $this->cacheDir . $binlogName;
+        @copy($tmpPath, $dest);
+    }
+
+    /**
+     * Purge cached binlog files older than TTL across all servers.
+     */
+    public static function purgeCacheOlderThan(int $days = self::CACHE_TTL_DAYS): int
+    {
+        $count = 0;
+        $cutoff = time() - ($days * 86400);
+        $base = self::CACHE_BASE;
+        if (!is_dir($base)) return 0;
+
+        foreach (glob($base . '*/') as $serverDir) {
+            foreach (glob($serverDir . '*') as $file) {
+                if (is_file($file) && filemtime($file) < $cutoff) {
+                    @unlink($file);
+                    $count++;
+                }
+            }
+            // Remove empty server dirs
+            if (is_dir($serverDir) && count(glob($serverDir . '*')) === 0) {
+                @rmdir($serverDir);
+            }
+        }
+        return $count;
     }
 
     // ------------------------------------------------------------------
@@ -124,15 +191,27 @@ class BinlogAnalyzer
             $this->db->sql_query("UPDATE binlog_analysis SET binlog_files = '" . $this->db->sql_real_escape_string(json_encode($binlogFiles)) . "' WHERE id = " . $this->analysisId);
             $this->updateLastStep("Found " . count($binlogFiles) . " binlog file(s): " . implode(', ', $binlogFiles));
 
-            // Step 7 — Fetch binlogs via --read-from-remote-server (like IO thread)
+            // Step 7 — Fetch binlogs (with persistent cache)
+            $this->initCache($masterId);
+            self::purgeCacheOlderThan();
             @mkdir($this->tmpDir, 0755, true);
             foreach ($binlogFiles as $idx => $binlogName) {
-                $this->addStep('fetch', "Fetching $binlogName via MySQL protocol (" . ($idx + 1) . "/" . count($binlogFiles) . ")...");
-                $this->fetchBinlogRemote($binary, $mysqlCreds, $master, $binlogName, $analysis['time_start'], $analysis['time_end']);
-                $localPath = $this->tmpDir . '/' . $binlogName;
-                $localSize = file_exists($localPath) ? filesize($localPath) : 0;
-                $sizeMb = round($localSize / 1048576, 1);
-                $this->updateLastStep("Fetched $binlogName — $sizeMb MB (via --read-from-remote-server)");
+                $this->addStep('fetch', "Fetching $binlogName (" . ($idx + 1) . "/" . count($binlogFiles) . ")...");
+                $cachedPath = $this->getCachedBinlog($binlogName);
+                if ($cachedPath) {
+                    // Use cached copy — symlink into tmpDir for parsing
+                    $localPath = $this->tmpDir . '/' . $binlogName;
+                    @symlink($cachedPath, $localPath);
+                    $sizeMb = round(filesize($cachedPath) / 1048576, 1);
+                    $this->updateLastStep("Cache hit: $binlogName — $sizeMb MB (cached)");
+                } else {
+                    $this->fetchBinlogRemote($binary, $mysqlCreds, $master, $binlogName, $analysis['time_start'], $analysis['time_end']);
+                    $localPath = $this->tmpDir . '/' . $binlogName;
+                    $localSize = file_exists($localPath) ? filesize($localPath) : 0;
+                    $sizeMb = round($localSize / 1048576, 1);
+                    $this->cacheBinlog($binlogName, $localPath);
+                    $this->updateLastStep("Fetched $binlogName — $sizeMb MB (via --read-from-remote-server, cached)");
+                }
             }
 
             // Step 8 — Parse: transaction metadata (GTID events)
@@ -1133,7 +1212,10 @@ class BinlogAnalyzer
     private function cleanup(): void
     {
         if (is_dir($this->tmpDir)) {
-            array_map('unlink', glob($this->tmpDir . '/*') ?: []);
+            foreach (glob($this->tmpDir . '/*') ?: [] as $f) {
+                // Remove symlinks and tmp files, but cached originals stay
+                @unlink($f);
+            }
             @rmdir($this->tmpDir);
         }
     }
