@@ -2576,6 +2576,14 @@ var chart = new Chart(ctx, {
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
+
+        // Table may not exist on all installations
+        $check = $db->sql_query_silent("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'binlog_analysis'");
+        if (!$check || $db->sql_num_rows($check) === 0) {
+            echo json_encode(['error' => 'binlog_analysis table not found — run the SQL patch first']);
+            return;
+        }
+
         $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server_master, connection_name, status, time_start, time_end, created_at)
                 VALUES (" . $id_mysql_server . ", " . (int) $master_id . ", '" . $db->sql_real_escape_string($connection_name) . "',
                 'pending', '" . $db->sql_real_escape_string($time_start) . "', '" . $db->sql_real_escape_string($time_end) . "', NOW())";
@@ -2735,17 +2743,29 @@ var chart = new Chart(ctx, {
         $id_mysql_server = (int) $param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $res = $db->sql_query(
+
+        // Table may not exist on all installations
+        $check = $db->sql_query_silent("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'binlog_analysis'");
+        if (!$check || $db->sql_num_rows($check) === 0) {
+            echo json_encode([]);
+            return;
+        }
+
+        ob_start();
+        $res = $db->sql_query_silent(
             "SELECT id, status, time_start, time_end, total_transactions, total_size_bytes, duration_seconds, peak_txn_per_sec, created_at, completed_at
              FROM binlog_analysis
              WHERE id_mysql_server = $id_mysql_server
              ORDER BY created_at DESC
              LIMIT 20"
         );
+        ob_end_clean();
 
         $rows = [];
-        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $rows[] = $row;
+        if ($res) {
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $rows[] = $row;
+            }
         }
 
         echo json_encode($rows);
