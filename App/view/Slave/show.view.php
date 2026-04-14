@@ -1303,14 +1303,14 @@ document.addEventListener('DOMContentLoaded', function() {
         var canvas = document.getElementById('sv-ba-chart');
         if (baChart) { baChart.destroy(); baChart = null; }
 
-        var labels = volData.map(function(v) { return v.ts; });
-        var bytesKB = volData.map(function(v) { return (v.bytes / 1024).toFixed(1); });
+        // Use {x,y} format for all datasets so timestamps align independently
+        var volXY = volData.map(function(v) { return { x: v.ts, y: parseFloat((v.bytes / 1024).toFixed(1)) }; });
 
         var datasets = [
             {
                 type: 'bar',
                 label: 'Volume (KB/s)',
-                data: bytesKB,
+                data: volXY,
                 backgroundColor: 'rgba(33,150,243,0.6)',
                 borderColor: 'rgba(33,150,243,0.8)',
                 borderWidth: 1,
@@ -1368,11 +1368,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         baChart = new Chart(canvas.getContext('2d'), {
-            data: { labels: labels, datasets: datasets },
+            data: { datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
                 plugins: {
                     title: {
                         display: true,
