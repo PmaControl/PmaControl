@@ -1470,12 +1470,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         captions: { display: false },
                         backgroundColor: function(ctx) {
                             if (!ctx.raw || !ctx.raw._data) return '#cbd5e1';
-                            var maxVal = data[0] ? data[0].value : 1;
-                            var ratio = Math.min(1, ctx.raw._data.value / maxVal);
-                            var r = Math.round(colorSmall[0] + ratio * (colorLarge[0] - colorSmall[0]));
-                            var g = Math.round(colorSmall[1] + ratio * (colorLarge[1] - colorSmall[1]));
-                            var b = Math.round(colorSmall[2] + ratio * (colorLarge[2] - colorSmall[2]));
-                            return 'rgb(' + r + ',' + g + ',' + b + ')';
+                            var n = data.length;
+                            var idx = 0;
+                            for (var j = 0; j < n; j++) {
+                                if (data[j].label === ctx.raw._data.label) { idx = j; break; }
+                            }
+                            // Equidistant hue across the spectrum per treemap
+                            var hueStart = colorSmall[0]; // reuse first element as hue offset
+                            var hue = (hueStart + (idx / Math.max(1, n)) * 360) % 360;
+                            return 'hsl(' + Math.round(hue) + ',65%,50%)';
                         },
                         borderColor: '#fff',
                         borderWidth: 1,
@@ -1508,10 +1511,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Databases: green (small) → deep blue (large)
-        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [34,197,94], [30,58,138]);
-        // Tables: amber (small) → red (large)
-        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [251,191,36], [185,28,28]);
+        // Databases: hue starting at 200 (blue range)
+        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [200,0,0]);
+        // Tables: hue starting at 0 (red/warm range)
+        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [20,0,0]);
     }
 
     // ---- Chart.js bar+line chart ----
