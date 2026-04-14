@@ -562,10 +562,18 @@ class BinlogAnalyzer
     private function ensureBinary(string $binary): void
     {
         if (!file_exists($binary)) {
-            throw new \Exception("mysqlbinlog binary not found: $binary");
+            throw new \Exception("mysqlbinlog binary not found: $binary — run: ls -la " . self::BINLOG_DIR);
         }
         if (!is_executable($binary)) {
-            chmod($binary, 0755);
+            // Try PHP chmod first (works if www-data owns the file)
+            @chmod($binary, 0755);
+            if (!is_executable($binary)) {
+                // Fallback: try shell chmod (works if sudo/setfacl is available)
+                @shell_exec("chmod +x " . escapeshellarg($binary) . " 2>/dev/null");
+            }
+            if (!is_executable($binary)) {
+                throw new \Exception("mysqlbinlog binary exists but is not executable: $binary — run: chmod +x " . self::BINLOG_DIR . "*");
+            }
         }
     }
 
