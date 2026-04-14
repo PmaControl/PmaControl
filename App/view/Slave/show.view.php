@@ -940,12 +940,12 @@ $catIcons = [
             </div>
 
             <!-- Chart -->
-            <div style="position:relative;height:250px;margin-bottom:16px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px">
+            <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-chart"></canvas>
             </div>
 
             <!-- Parallelism chart -->
-            <div style="position:relative;height:360px;margin-bottom:16px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px">
+            <div style="position:relative;height:360px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-parallel-chart"></canvas>
             </div>
 
@@ -955,7 +955,7 @@ $catIcons = [
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-database"></i> <?= __('DML by Database') ?>
                     </div>
-                    <div style="position:relative;height:440px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-db"></canvas>
                     </div>
                 </div>
@@ -963,7 +963,7 @@ $catIcons = [
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-table"></i> <?= __('DML by Table') ?>
                     </div>
-                    <div style="position:relative;height:440px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-tbl"></canvas>
                     </div>
                 </div>
@@ -1009,8 +1009,8 @@ $catIcons = [
                 <i class="fa fa-chevron-right"></i> <?= __("DDL Statements") ?> <span class="badge" id="sv-ba-ddl-count">0</span>
             </div>
             <div class="sv-collapse-body" id="sv-ba-ddl-body" style="padding:0">
-                <table class="table table-condensed" style="font-size:11px;margin:0;background:#0f172a;color:#cbd5e1">
-                    <thead><tr style="background:#1e293b;color:#94a3b8"><th><?= __("Datetime") ?></th><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
+                <table class="table table-condensed table-striped" style="font-size:11px;margin:0">
+                    <thead><tr><th><?= __("Datetime") ?></th><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
                     <tbody id="sv-ba-ddl-tbody"></tbody>
                 </table>
             </div>
@@ -1303,22 +1303,22 @@ document.addEventListener('DOMContentLoaded', function() {
             ddls.forEach(function(dd) {
                 var tp = (dd.type || '').toUpperCase();
                 var rowStyle = '';
-                var typeColor = '#cbd5e1';
-                if (tp.indexOf('ALTER') >= 0) { rowStyle = 'background:rgba(245,158,11,0.1)'; typeColor = '#f59e0b'; }
-                else if (tp.indexOf('DROP') >= 0) { rowStyle = 'background:rgba(239,68,68,0.1)'; typeColor = '#ef4444'; }
-                else if (tp.indexOf('CREATE') >= 0) { typeColor = '#10b981'; }
-                else if (tp.indexOf('TRUNCATE') >= 0) { rowStyle = 'background:rgba(239,68,68,0.05)'; typeColor = '#f87171'; }
+                var typeColor = '#334155';
+                if (tp.indexOf('ALTER') >= 0) { rowStyle = 'background:rgba(245,158,11,0.12)'; typeColor = '#b45309'; }
+                else if (tp.indexOf('DROP') >= 0) { rowStyle = 'background:rgba(239,68,68,0.1)'; typeColor = '#dc2626'; }
+                else if (tp.indexOf('CREATE') >= 0) { typeColor = '#059669'; }
+                else if (tp.indexOf('TRUNCATE') >= 0) { rowStyle = 'background:rgba(239,68,68,0.06)'; typeColor = '#ef4444'; }
 
                 var dt = dd.datetime || '';
                 var dtDisplay = dt ? dt.substring(11, 19) || dt : '';
                 var dtFull = dt;
 
                 ddlHtml += '<tr style="' + rowStyle + '">'
-                    + '<td style="white-space:nowrap"><small title="' + escHtml(dtFull) + '">' + escHtml(dtDisplay) + '</small></td>'
+                    + '<td style="white-space:nowrap;color:#64748b"><small title="' + escHtml(dtFull) + '">' + escHtml(dtDisplay) + '</small></td>'
                     + '<td style="color:' + typeColor + ';font-weight:700">' + escHtml(tp) + '</td>'
-                    + '<td><code style="color:#60a5fa">' + escHtml(dd.database || '') + '</code></td>'
-                    + '<td><code style="color:#e2e8f0">' + escHtml(dd.table || '') + '</code></td>'
-                    + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8" title="' + escHtml(dd.statement || '') + '">'
+                    + '<td><code>' + escHtml(dd.database || '') + '</code></td>'
+                    + '<td><code>' + escHtml(dd.table || '') + '</code></td>'
+                    + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b" title="' + escHtml(dd.statement || '') + '">'
                     + escHtml(dd.statement || '') + '</td></tr>';
             });
             document.getElementById('sv-ba-ddl-tbody').innerHTML = ddlHtml;
@@ -1334,12 +1334,6 @@ document.addEventListener('DOMContentLoaded', function() {
             recsHtml += '<li style="margin-bottom:6px">' + escHtml(r) + '</li>';
         });
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
-
-        // Dark theme for all charts
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.borderColor = 'rgba(148,163,184,0.15)';
-        Chart.defaults.plugins.title.color = '#e2e8f0';
-        Chart.defaults.plugins.legend.labels.color = '#cbd5e1';
 
         // Binlog file timeline
         renderFileTimeline(d.binlog_file_ranges || []);
