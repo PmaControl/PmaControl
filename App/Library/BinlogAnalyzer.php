@@ -449,14 +449,44 @@ class BinlogAnalyzer
         $slaveCreds = $this->getMysqlCredentials($slaveServer);
         $slaveLink = new \mysqli($slaveCreds['host'], $slaveCreds['user'], $slaveCreds['password'], '', $slaveCreds['port']);
         if ($slaveLink->connect_error) {
-            // Fallback to full search
             return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
         }
 
-        $res = $slaveLink->query("SHOW SLAVE STATUS");
-        if (!$res) $res = $slaveLink->query("SHOW REPLICA STATUS");
-        $slaveStatus = $res ? $res->fetch_assoc() : null;
-        if ($res) $res->free();
+        // Multi-source: query the specific channel, not the default one
+        $slaveStatus = null;
+        $isMariaDBSlave = (stripos($slaveServer['version'] ?? $this->detectVersionFromLink($slaveLink), 'mariadb') !== false);
+
+        if (!empty($connName)) {
+            if ($isMariaDBSlave) {
+                $res = @$slaveLink->query("SHOW SLAVE '" . $slaveLink->real_escape_string($connName) . "' STATUS");
+            } else {
+                $res = @$slaveLink->query("SHOW REPLICA STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
+                if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
+            }
+            if ($res && $res->num_rows > 0) {
+                $slaveStatus = $res->fetch_assoc();
+                $res->free();
+            }
+        }
+
+        // Fallback: default channel (single-source or channel query failed)
+        if (!$slaveStatus) {
+            $res = @$slaveLink->query("SHOW REPLICA STATUS");
+            if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS");
+            if ($res && $res->num_rows > 0) {
+                // For multi-source, find the row matching our channel
+                if (!empty($connName)) {
+                    while ($row = $res->fetch_assoc()) {
+                        $cn = $row['Connection_name'] ?? $row['Channel_Name'] ?? '';
+                        if ($cn === $connName) { $slaveStatus = $row; break; }
+                    }
+                } else {
+                    $slaveStatus = $res->fetch_assoc();
+                }
+                $res->free();
+            }
+        }
+
         $slaveLink->close();
 
         if (!$slaveStatus) {
@@ -476,14 +506,18 @@ class BinlogAnalyzer
         $masterLink = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
         $masterCurrentNum = $currentNum;
         if (!$masterLink->connect_error) {
-            $mRes = $masterLink->query("SHOW MASTER STATUS");
-            if (!$mRes) $mRes = $masterLink->query("SHOW BINARY LOG STATUS");
+            // SHOW MASTER STATUS removed in MySQL 8.4, try BINARY LOG STATUS first
+            $mRes = null;
+            try { $mRes = $masterLink->query("SHOW BINARY LOG STATUS"); } catch (\Throwable $e) {}
+            if (!$mRes) {
+                try { $mRes = $masterLink->query("SHOW MASTER STATUS"); } catch (\Throwable $e) {}
+            }
             if ($mRes && $mRow = $mRes->fetch_assoc()) {
                 $masterFile = $mRow['File'] ?? '';
                 if (preg_match('/\.(\d+)$/', $masterFile, $mm)) {
                     $masterCurrentNum = (int) $mm[1];
                 }
-                if ($mRes) $mRes->free();
+                $mRes->free();
             }
             $masterLink->close();
         }
@@ -1324,6 +1358,16 @@ class BinlogAnalyzer
     // ------------------------------------------------------------------
     //  Helpers
     // ------------------------------------------------------------------
+
+    private function detectVersionFromLink(\mysqli $link): string
+    {
+        $res = @$link->query("SELECT @@version AS v");
+        if ($res && $row = $res->fetch_assoc()) {
+            $res->free();
+            return $row['v'] ?? '';
+        }
+        return '';
+    }
 
     private function updateStatus(string $status, ?string $error = null): void
     {
