@@ -668,7 +668,7 @@ class BinlogAnalyzer
     private function probeBinlogTimestamp(string $binary, string $connArgs, string $binlogName): ?int
     {
         // 8192 bytes covers Format Description + Previous GTIDs + first real event
-        $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+        $cmd = escapeshellarg($binary) . " $connArgs"
              . " --stop-position=8192 " . escapeshellarg($binlogName)
              . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
         $firstTs = trim(shell_exec($cmd) ?: '');
@@ -705,7 +705,7 @@ class BinlogAnalyzer
 
         // --raw without datetime filters: downloads the full file and exits
         // --stop-never is NOT used (we want it to stop after one file)
-        $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
+        $cmd = escapeshellarg($binary) . " $connArgs"
              . " --raw --result-file=" . escapeshellarg($this->tmpDir . '/')
              . " " . escapeshellarg($binlogName)
              . " 2>&1";
@@ -753,12 +753,27 @@ class BinlogAnalyzer
     /**
      * Build connection arguments for mysqlbinlog --read-from-remote-server.
      */
+    private $tmpCnfFiles = [];
+
+    /**
+     * Build connection arguments for mysqlbinlog using a temporary .my.cnf file
+     * instead of --password= to avoid exposing credentials in ps output.
+     */
     private function buildRemoteArgs(array $creds): string
     {
-        return " --host=" . escapeshellarg($creds['host'])
-             . " --port=" . (int) $creds['port']
-             . " --user=" . escapeshellarg($creds['user'])
-             . " --password=" . escapeshellarg($creds['password']);
+        $tmpCnf = tempnam(sys_get_temp_dir(), 'pma_mycnf_');
+        $content = "[client]\n"
+            . "user=" . $creds['user'] . "\n"
+            . "password=" . $creds['password'] . "\n"
+            . "host=" . $creds['host'] . "\n"
+            . "port=" . (int) $creds['port'] . "\n";
+        file_put_contents($tmpCnf, $content);
+        chmod($tmpCnf, 0600);
+
+        $this->tmpCnfFiles[] = $tmpCnf;
+
+        return " --defaults-extra-file=" . escapeshellarg($tmpCnf)
+             . " --read-from-remote-server";
     }
 
     // ------------------------------------------------------------------
@@ -1453,10 +1468,14 @@ class BinlogAnalyzer
     {
         if (is_dir($this->tmpDir)) {
             foreach (glob($this->tmpDir . '/*') ?: [] as $f) {
-                // Remove symlinks and tmp files, but cached originals stay
                 @unlink($f);
             }
             @rmdir($this->tmpDir);
         }
+        // Remove temporary .my.cnf files containing credentials
+        foreach ($this->tmpCnfFiles as $cnf) {
+            @unlink($cnf);
+        }
+        $this->tmpCnfFiles = [];
     }
 }
