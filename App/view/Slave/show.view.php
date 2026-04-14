@@ -944,6 +944,26 @@ $catIcons = [
                 <div id="sv-ba-file-labels" style="display:flex;font-size:9px;color:#94a3b8;margin-top:2px"></div>
             </div>
 
+            <!-- Treemaps: Databases (left) + Tables (right) -->
+            <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+                <div style="flex:1;min-width:280px">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
+                        <i class="fa fa-database"></i> <?= __('DML by Database') ?>
+                    </div>
+                    <div style="position:relative;height:220px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                        <canvas id="sv-ba-treemap-db"></canvas>
+                    </div>
+                </div>
+                <div style="flex:1;min-width:280px">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
+                        <i class="fa fa-table"></i> <?= __('DML by Table') ?>
+                    </div>
+                    <div style="position:relative;height:220px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                        <canvas id="sv-ba-treemap-tbl"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Parallelism chart -->
             <div style="position:relative;height:180px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-parallel-chart"></canvas>
@@ -1305,6 +1325,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Binlog file timeline
         renderFileTimeline(d.binlog_file_ranges || []);
 
+        // Treemaps
+        renderTreemaps(d.top_tables || []);
+
         // Chart
         renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
@@ -1366,6 +1389,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
         bar.innerHTML = barHtml;
         labels.innerHTML = labelsHtml;
+    }
+
+    // ---- Treemaps: databases + tables ----
+    var baTreemapDb = null, baTreemapTbl = null;
+
+    function renderTreemaps(topTables) {
+        if (!topTables || !topTables.length) return;
+
+        // Parse `db`.`table` → extract db and table
+        var dbTotals = {};
+        var tblTotals = {};
+
+        topTables.forEach(function(t) {
+            var m = t.table.match(/^`([^`]+)`\.`([^`]+)`$/);
+            var db = m ? m[1] : 'unknown';
+            var tbl = m ? m[2] : t.table;
+            var total = (t.inserts || 0) + (t.updates || 0) + (t.deletes || 0);
+
+            // Aggregate by database
+            if (!dbTotals[db]) dbTotals[db] = { inserts: 0, updates: 0, deletes: 0, total: 0 };
+            dbTotals[db].inserts += (t.inserts || 0);
+            dbTotals[db].updates += (t.updates || 0);
+            dbTotals[db].deletes += (t.deletes || 0);
+            dbTotals[db].total += total;
+
+            // Aggregate by table name (merge across databases)
+            if (!tblTotals[tbl]) tblTotals[tbl] = { inserts: 0, updates: 0, deletes: 0, total: 0 };
+            tblTotals[tbl].inserts += (t.inserts || 0);
+            tblTotals[tbl].updates += (t.updates || 0);
+            tblTotals[tbl].deletes += (t.deletes || 0);
+            tblTotals[tbl].total += total;
+        });
+
+        // Convert to arrays sorted by total desc
+        var dbData = Object.keys(dbTotals).map(function(k) {
+            return { label: k, value: dbTotals[k].total, i: dbTotals[k].inserts, u: dbTotals[k].updates, d: dbTotals[k].deletes };
+        }).sort(function(a,b) { return b.value - a.value; });
+
+        var tblData = Object.keys(tblTotals).map(function(k) {
+            return { label: k, value: tblTotals[k].total, i: tblTotals[k].inserts, u: tblTotals[k].updates, d: tblTotals[k].deletes };
+        }).sort(function(a,b) { return b.value - a.value; });
+
+        // Color palette
+        var colors = ['#1e3a8a','#2563eb','#3b82f6','#60a5fa','#93c5fd','#0f766e','#14b8a6','#5eead4',
+                      '#7c3aed','#a78bfa','#c084fc','#db2777','#f472b6','#ea580c','#f97316','#fbbf24',
+                      '#84cc16','#22c55e','#06b6d4','#6366f1'];
+
+        function buildTreemap(canvasId, data, existing) {
+            var canvas = document.getElementById(canvasId);
+            if (existing) existing.destroy();
+            if (!data.length) return null;
+
+            return new Chart(canvas, {
+                type: 'treemap',
+                data: {
+                    datasets: [{
+                        tree: data,
+                        key: 'value',
+                        labels: { display: true, formatter: function(ctx) { return ctx.raw._data ? ctx.raw._data.label : ''; }, font: { size: 11, weight: 'bold' }, color: '#fff' },
+                        captions: { display: false },
+                        backgroundColor: function(ctx) {
+                            if (!ctx.raw || !ctx.raw._data) return '#cbd5e1';
+                            return colors[ctx.dataIndex % colors.length];
+                        },
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        spacing: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(ctx) { return ctx[0].raw._data ? ctx[0].raw._data.label : ''; },
+                                label: function(ctx) {
+                                    var d = ctx.raw._data;
+                                    if (!d) return '';
+                                    return [
+                                        'Total: ' + numberFmt(d.value) + ' rows',
+                                        'INSERT: ' + numberFmt(d.i),
+                                        'UPDATE: ' + numberFmt(d.u),
+                                        'DELETE: ' + numberFmt(d.d)
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb);
+        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl);
     }
 
     // ---- Chart.js bar+line chart ----
