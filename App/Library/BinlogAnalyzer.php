@@ -1,8 +1,12 @@
 <?php
 /**
- * BinlogAnalyzer — fetch binlog files from a master via SSH, analyze them
- * with mysqlbinlog inside a Docker container matching the master version,
- * and store the parsed statistics.
+ * BinlogAnalyzer — fetch binlog files from a master via MySQL protocol
+ * (--read-from-remote-server), parse them with a version-matched mysqlbinlog
+ * binary, and store the parsed statistics.
+ *
+ * Supports MySQL 5.6+ / 8.x / 9.x and MariaDB 10.x+ (x86_64 and aarch64).
+ * Fetched binlogs are cached in data/binlog_analysis/{server_id}/ with a
+ * 30-day TTL and per-file .meta.json sidecar for AI analysis.
  *
  * Reports granular progress via the `progress` JSON column so the frontend
  * can show a live step-by-step log.
@@ -342,7 +346,7 @@ class BinlogAnalyzer
             $this->storeResults($gtidStats, $dmlStats, $volumeStats, $ddlResult, $analysis);
             $this->updateLastStep("Report stored successfully");
 
-            // Step 13 — Cleanup
+            // Step 14 — Cleanup
             $this->addStep('cleanup', "Cleaning up temporary files...");
             $this->cleanup();
             $this->updateLastStep("Cleanup done — analysis complete");
