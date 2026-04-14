@@ -1467,7 +1467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 var w = ctx.raw.w || 0;
                                 var h = ctx.raw.h || 0;
                                 var area = w * h;
-                                var size = area > 15000 ? 13 : area > 5000 ? 11 : area > 1500 ? 9 : 7;
+                                var size = area > 15000 ? 13 : area > 5000 ? 11 : 9;
                                 return { size: size, weight: area > 5000 ? 'bold' : 'normal' };
                             },
                             color: '#fff',
