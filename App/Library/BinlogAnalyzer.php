@@ -374,12 +374,37 @@ class BinlogAnalyzer
 
     private function getMasterVersion(int $masterId): ?string
     {
+        // Primary source: global_variable table (populated by Aspirateur)
         $res = $this->db->sql_query(
             "SELECT value FROM global_variable WHERE id_mysql_server = $masterId AND variable_name = 'version' LIMIT 1"
         );
         if ($res && $row = $this->db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             return $row['value'];
         }
+
+        // Fallback: Extraction2 time-series (may have data before global_variable is populated)
+        $versionData = Extraction2::display(array('version'), array($masterId));
+        if (!empty($versionData[$masterId]['version'])) {
+            return (string) $versionData[$masterId]['version'];
+        }
+
+        // Last resort: direct query on the master (just after server creation, no collected data yet)
+        try {
+            $master = $this->getServer($masterId);
+            if ($master) {
+                $creds = $this->getMysqlCredentials($master);
+                $link = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
+                if (!$link->connect_error) {
+                    $qr = $link->query("SELECT @@version AS v");
+                    if ($qr && $vrow = $qr->fetch_assoc()) {
+                        $link->close();
+                        return $vrow['v'];
+                    }
+                    $link->close();
+                }
+            }
+        } catch (\Throwable $e) {}
+
         return null;
     }
 
