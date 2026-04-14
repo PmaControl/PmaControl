@@ -18,6 +18,8 @@ class BinlogAnalyzer
 {
     private $db;
     private $analysisId;
+    private $cachedAnalysis = null;
+    private $cachedBinary = null;
     private $tmpDir;
     private $steps = [];
 
@@ -364,9 +366,21 @@ class BinlogAnalyzer
 
     private function getAnalysis(): ?array
     {
+        if ($this->cachedAnalysis !== null) {
+            return $this->cachedAnalysis;
+        }
         $res = $this->db->sql_query("SELECT * FROM binlog_analysis WHERE id = " . (int) $this->analysisId);
         $row = $this->db->sql_fetch_array($res, MYSQLI_ASSOC);
-        return $row ?: null;
+        $this->cachedAnalysis = $row ?: null;
+        return $this->cachedAnalysis;
+    }
+
+    /**
+     * Force refresh the cached analysis (after UPDATE statements).
+     */
+    private function invalidateAnalysisCache(): void
+    {
+        $this->cachedAnalysis = null;
     }
 
     private function getServer(int $id): ?array
@@ -803,6 +817,15 @@ class BinlogAnalyzer
      * Binaries are stored as: bin/mysqlbinlog/{arch}/mysqlbinlog-{version}
      */
     private function getMysqlbinlogBinary(string $version): string
+    {
+        if ($this->cachedBinary !== null) {
+            return $this->cachedBinary;
+        }
+        $this->cachedBinary = $this->resolveMysqlbinlogBinary($version);
+        return $this->cachedBinary;
+    }
+
+    private function resolveMysqlbinlogBinary(string $version): string
     {
         $dir = self::getBinlogDir();
         $vLower = strtolower($version);
