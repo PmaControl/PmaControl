@@ -2561,8 +2561,15 @@ var chart = new Chart(ctx, {
             return;
         }
 
-        // Find master
-        $master_id = Mysql::getMaster($id_mysql_server, $connection_name);
+        // Find master — buffer output to prevent SQL warnings from corrupting JSON
+        ob_start();
+        try {
+            $master_id = Mysql::getMaster($id_mysql_server, $connection_name);
+        } catch (\Throwable $e) {
+            $master_id = 0;
+        }
+        ob_end_clean();
+
         if (!$master_id) {
             echo json_encode(['error' => 'Cannot find master server for this slave']);
             return;
@@ -2616,13 +2623,19 @@ var chart = new Chart(ctx, {
 
         // Add replication lag data for the analysis time range
         if ($row['status'] === 'done' && !empty($row['time_start']) && !empty($row['time_end'])) {
-            $lagSlaves = Extraction::extract(
-                $this->getReplicationLagVariables(),
-                array((int)$row['id_mysql_server']),
-                array($row['time_start'], $row['time_end']),
-                false,
-                true
-            );
+            ob_start();
+            try {
+                $lagSlaves = Extraction::extract(
+                    $this->getReplicationLagVariables(),
+                    array((int)$row['id_mysql_server']),
+                    array($row['time_start'], $row['time_end']),
+                    false,
+                    true
+                );
+            } catch (\Throwable $e) {
+                $lagSlaves = [];
+            }
+            ob_end_clean();
             $lagSlaves = $this->normalizeReplicationLagGraphRows($lagSlaves ?: []);
             $cn = $row['connection_name'] ?? '';
             foreach ($lagSlaves as $s) {
